@@ -90,7 +90,6 @@ if (-not ($actual.Contains("[DEBUG] External asset downloads are blocked (x-bloc
 
 # Testing asset caching && x-block-orgin promises when --debug is passed (disabled)
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("install", "vcpkg-internal-e2e-test-port", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--x-asset-sources=clear", "--downloads-root=$DownloadsRoot", "--debug"))
 if (-not ($actual.Contains("[DEBUG] External asset downloads are allowed (x-block-origin is disabled)") -and $actual.Contains("[DEBUG] Asset cache is not configured"))) {
     throw "Failure: couldn't find expected debug promises (asset caching disabled + x-block-origin disabled)"
@@ -99,7 +98,6 @@ if (-not ($actual.Contains("[DEBUG] External asset downloads are allowed (x-bloc
 # azurl (no), x-block-origin (no), asset-cache (n/a), download (fail)
 # Expected: Download failure message, nothing about asset caching
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html"))
 if (-not ($actual.Contains("error: https://localhost:1234/foobar.html: curl failed to download with exit code 7"))) {
     throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (fail)"
@@ -132,7 +130,6 @@ if (-not ($actual.Contains("Downloading example3.html") -and
 # azurl (no), x-block-origin (yes), asset-cache (n/a), download (n/a)
 # Expected: Download failure message, nothing about asset caching, x-block-origin complaint
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=clear;x-block-origin"))
 if (-not ($actual.Contains("error: Missing example3.html and downloads are blocked by x-block-origin."))) {
     throw "Failure: azurl (no), x-block-origin (yes), asset-cache (n/a), download (n/a)"
@@ -141,7 +138,6 @@ if (-not ($actual.Contains("error: Missing example3.html and downloads are block
 # azurl (yes), x-block-origin (no), asset-cache (miss), download (fail)
 # Expected: Download failure message, asset cache named, nothing about x-block-origin
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 if (-not ($actual.Contains("Asset cache miss; downloading from https://localhost:1234/foobar.html") -and
           $actual.Contains("Downloading example3.html") -and
@@ -163,7 +159,6 @@ if (-not ($actual.Contains("Asset cache hit for example3.html; downloaded from: 
 # azurl (yes), x-block-origin (no), asset-cache (miss), download (sha-mismatch)
 # Expected: Download message with "you might need to configure a proxy" and expected/actual sha
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 if (-not ($actual.Contains("Asset cache miss; downloading from https://example.com") -and
           $actual.Contains("Downloading example3.html") -and
@@ -179,7 +174,6 @@ if (-not ($actual.Contains("Asset cache miss; downloading from https://example.c
 # azurl (yes), x-block-origin (no), asset-cache (miss), download (succeed)
 # Expected: Download success message, asset cache upload, nothing about x-block-origin
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 if (-not ($actual.Contains("Asset cache miss; downloading from https://example.com") -and
           $actual.Contains("Downloading example3.html") -and
@@ -191,7 +185,6 @@ if (-not ($actual.Contains("Asset cache miss; downloading from https://example.c
 # azurl (yes), x-block-origin (yes), asset-cache (miss), download (n/a)
 # Expected: Download failure message, which asset cache was tried, x-block-origin complaint
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin"))
 if (-not ($actual.Contains("Asset cache miss for example3.html and downloads are blocked by x-block-origin.") -and
           $actual.Contains("error: Missing example3.html and downloads are blocked by x-block-origin."))) {
@@ -201,7 +194,6 @@ if (-not ($actual.Contains("Asset cache miss for example3.html and downloads are
 # azurl (yes), x-block-origin (yes), asset-cache (hit), download (n/a)
 # Expected: Download success message, asset cache named, nothing about x-block-origin
 Refresh-TestRoot
-$actual = $actual -replace "`r`n", "`n"
 Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite;x-block-origin"))
 if (-not ($actual.Contains("Asset cache hit for example3.html; downloaded from: file://$AssetCache"))) {
