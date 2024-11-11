@@ -995,7 +995,11 @@ namespace vcpkg
             }
         }
 
-        if (!block_origin_enabled)
+        if (block_origin_enabled)
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+        else
         {
             if (urls.size() != 0)
             {
@@ -1021,10 +1025,6 @@ namespace vcpkg
                     return *url;
                 }
             }
-        }
-        else
-        {
-            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
         }
 
         for (LocalizedString& error : errors)

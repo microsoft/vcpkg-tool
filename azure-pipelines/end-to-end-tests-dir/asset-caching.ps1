@@ -104,7 +104,7 @@ if (-not ($actual.Contains("error: https://localhost:1234/foobar.html: curl fail
 }
 
 #azurl (no), x-block-origin (no), asset-cache (n/a), download (sha-mismatch)
-#Expected: Download message with "you might need to configure a proxy" and expected/actual sha
+#Expected: Download message with expected/actual sha
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com"))
 if (-not ($actual.Contains("error: File does not have the expected hash:") -and
