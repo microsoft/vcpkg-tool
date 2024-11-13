@@ -1144,10 +1144,7 @@ DECLARE_MESSAGE(ErrorRequirePackagesList,
                 (),
                 "",
                 "`vcpkg install` requires a list of packages to install in classic mode.")
-DECLARE_MESSAGE(ErrorScriptDownloadFailed,
-                (msg::error_msg),
-                "",
-                "The script download failed.\n{error_msg}.")
+DECLARE_MESSAGE(ErrorScriptDownloadFailed, (msg::error_msg), "", "The script download failed.\n{error_msg}.")
 DECLARE_MESSAGE(ErrorInvalidExtractOption,
                 (msg::option, msg::value),
                 "The keyword 'AUTO' should not be localized",
