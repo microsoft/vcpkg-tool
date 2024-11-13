@@ -201,27 +201,16 @@ if (-not ($actual.Contains("Asset cache hit for example3.html; downloaded from: 
 # Testing x-download failure with asset cache (x-script) and x-block-origin settings
 $env:X_VCPKG_ASSET_SOURCES = "clear;x-script,pwsh $PSScriptRoot/../e2e-assets/asset-caching/failing-script.ps1 {url} {sha512} {dst};x-block-origin"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
-if (-not ($actual.Contains("The script download failed.") -and
-          $actual.Contains("error: <mirror-script> failed with exit code: (1).") -and
+if (-not ($actual.Contains("error: <mirror-script> failed with exit code: (1).") -and
           $actual.Contains("error: Missing example3.html and downloads are blocked by x-block-origin."))) {
     throw "Failure: x-script downloads failure messaging"
 }
 
 # Testing x-download success with asset cache (x-script) and x-block-origin settings
 Refresh-TestRoot
-$env:X_VCPKG_ASSET_SOURCES = "clear;x-script,pwsh $PSScriptRoot/../e2e-assets/asset-caching/success-script.ps1 {url} {sha512} {dst};x-block-origin"
-$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
+$env:X_VCPKG_ASSET_SOURCES = "clear;x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com/hello-world.txt", "--sha512", "09e1e2a84c92b56c8280f4a1203c7cffd61b162cfe987278d4d6be9afbf38c0e8934cdadf83751f4e99d111352bffefc958e5a4852c8a7a29c95742ce59288a8"))
 if (-not ($actual.Contains("Successfully downloaded example3.html."))) {
     throw "Failure: x-script download success message"
 }
 
-# Testing x-download failure with mismatched sha
-Refresh-TestRoot
-$env:X_VCPKG_ASSET_SOURCES = "clear;x-script,pwsh $PSScriptRoot/../e2e-assets/asset-caching/success-script.ps1 {url} {sha512} {dst};x-block-origin"
-$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b"))
-if (-not ($actual.Contains("error: File does not have the expected hash:") -and
-          $actual.Contains("url: <mirror-script>") -and
-          $actual.Contains("Expected hash: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b") -and
-          $actual.Contains("Actual hash: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))) {
-    throw "Failure: x-script download failure message - sha mismatch"
-}

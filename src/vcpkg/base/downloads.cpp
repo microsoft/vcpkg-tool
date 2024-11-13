@@ -990,7 +990,7 @@ namespace vcpkg
                     }
                     else
                     {
-                        msg::println(msgErrorScriptDownloadFailed, msg::error_msg = maybe_res.error());
+                        msg::println_error(maybe_res.error());
                     }
                 }
             }
