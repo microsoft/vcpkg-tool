@@ -1239,7 +1239,7 @@ namespace vcpkg
             auto extended_overlay_port_directories = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_port_directories.overlay_ports.emplace_back(paths.builtin_ports_directory());
+                extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
             }
 
             auto oprovider =

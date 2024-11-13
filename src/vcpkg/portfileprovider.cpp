@@ -239,6 +239,16 @@ namespace vcpkg
         }
     }
 
+    void OverlayPortIndexEntry::check_directory(const ReadOnlyFilesystem& fs) const
+    {
+        Debug::println("Using overlay: ", m_directory);
+
+        Checks::msg_check_exit(VCPKG_LINE_INFO,
+                               vcpkg::is_directory(fs.status(m_directory, VCPKG_LINE_INFO)),
+                               msgOverlayPatchDir,
+                               msg::path = m_directory);
+    }
+
     struct OverlayPortIndex
     {
         OverlayPortIndex() = delete;
@@ -247,9 +257,9 @@ namespace vcpkg
 
         OverlayPortIndex(const OverlayPortPaths& paths)
         {
-            for (auto&& overlay_port_dir : paths.overlay_port_dirs)
+            if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
             {
-                m_entries.emplace_back(OverlayPortKind::Directory, overlay_port_dir);
+                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
             }
 
             for (auto&& overlay_port : paths.overlay_ports)
@@ -287,10 +297,22 @@ namespace vcpkg
             return Unit{};
         }
 
+        void check_directories(const ReadOnlyFilesystem& fs)
+        {
+            for (auto&& overlay : m_entries)
+            {
+                overlay.check_directory(fs);
+            }
+        }
+
+    private:
         std::vector<OverlayPortIndexEntry> m_entries;
     };
 
-    bool OverlayPortPaths::empty() const noexcept { return overlay_port_dirs.empty() && overlay_ports.empty(); }
+    bool OverlayPortPaths::empty() const noexcept
+    {
+        return !builtin_overlay_port_dir.has_value() && overlay_ports.empty();
+    }
 
     MapPortFileProvider::MapPortFileProvider(const std::unordered_map<std::string, SourceControlFileAndLocation>& map)
         : ports(map)
@@ -492,25 +514,7 @@ namespace vcpkg
             OverlayProviderImpl(const ReadOnlyFilesystem& fs, const OverlayPortPaths& overlay_port_paths)
                 : m_fs(fs), m_overlay_index(overlay_port_paths)
             {
-                for (auto&& overlay : overlay_port_paths.overlay_port_dirs)
-                {
-                    Debug::println("Using overlay-dir: ", overlay);
-
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
-                                           msgOverlayPatchDir,
-                                           msg::path = overlay);
-                }
-
-                for (auto&& overlay : overlay_port_paths.overlay_ports)
-                {
-                    Debug::println("Using overlay: ", overlay);
-
-                    Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                           vcpkg::is_directory(m_fs.status(overlay, VCPKG_LINE_INFO)),
-                                           msgOverlayPatchDir,
-                                           msg::path = overlay);
-                }
+                m_overlay_index.check_directories(m_fs);
             }
 
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;

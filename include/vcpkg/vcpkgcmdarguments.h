@@ -228,8 +228,6 @@ namespace vcpkg
 
         Optional<std::string> triplet;
         Optional<std::string> host_triplet;
-        std::vector<std::string> cli_overlay_port_dirs;
-        std::vector<std::string> env_overlay_port_dirs;
         std::vector<std::string> cli_overlay_ports;
         std::vector<std::string> env_overlay_ports;
         std::vector<std::string> cli_overlay_triplets;

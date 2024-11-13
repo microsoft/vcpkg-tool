@@ -113,7 +113,7 @@ namespace
             }
 
             auto full_entry = relative_root / entry;
-            if (fs.almost_canonical(full_entry, VCPKG_LINE_INFO) == config_directory)
+            if (forbid_dot && fs.almost_canonical(full_entry, VCPKG_LINE_INFO) == config_directory)
             {
                 Checks::msg_exit_with_error(
                     VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlay, msg::path = config_directory);
@@ -705,13 +705,6 @@ namespace vcpkg
                                                    std::move(maybe_json_config),
                                                    m_pimpl->m_config_dir,
                                                    *this);
-        overlay_ports.overlay_port_dirs = merge_overlays(m_pimpl->m_fs,
-                                                         args.cli_overlay_port_dirs,
-                                                         args.env_overlay_port_dirs,
-                                                         original_cwd,
-                                                         true,
-                                                         m_pimpl->m_config.config.overlay_port_dirs,
-                                                         m_pimpl->m_config.directory);
         overlay_ports.overlay_ports = merge_overlays(m_pimpl->m_fs,
                                                      args.cli_overlay_ports,
                                                      args.env_overlay_ports,

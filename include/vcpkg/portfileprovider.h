@@ -19,7 +19,7 @@ namespace vcpkg
 {
     struct OverlayPortPaths
     {
-        std::vector<Path> overlay_port_dirs;
+        Optional<Path> builtin_overlay_port_dir;
         std::vector<Path> overlay_ports;
 
         bool empty() const noexcept;
@@ -36,6 +36,8 @@ namespace vcpkg
 
         ExpectedL<Unit> try_load_all_ports(const ReadOnlyFilesystem& fs,
                                            std::map<std::string, const SourceControlFileAndLocation*>& out);
+
+        void check_directory(const ReadOnlyFilesystem& fs) const;
 
     private:
         OverlayPortKind m_kind;

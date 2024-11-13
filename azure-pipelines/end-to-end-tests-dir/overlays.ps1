@@ -4,8 +4,7 @@
 Copy-Item -Recurse -LiteralPath @(
     "$PSScriptRoot/../e2e-projects/overlays-malformed-shadowing",
     "$PSScriptRoot/../e2e-projects/overlays-project-config-embedded",
-    "$PSScriptRoot/../e2e-projects/overlays-project-with-config",
-    "$PSScriptRoot/../e2e-projects/overlays-project-with-config-dirs"
+    "$PSScriptRoot/../e2e-projects/overlays-project-with-config"
     ) $TestingRoot
 
 $manifestRoot = "$TestingRoot/overlays-project-with-config"
@@ -17,33 +16,6 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --x-install-root=$installRoot `
     --triplet fancy-triplet
 Throw-IfFailed
-
-# And also with overlay-port-dirs
-$manifestRoot = "$TestingRoot/overlays-project-with-config-dirs"
-$canonicalManifestRoot = (Get-Item $manifestRoot).FullName
-Remove-Item env:VCPKG_OVERLAY_PORTS
-$env:VCPKG_OVERLAY_PORT_DIRS = "$manifestRoot/env-overlays"
-
-Run-Vcpkg install --x-manifest-root=$manifestRoot `
-    --overlay-port-dirs=$manifestRoot/cli-overlays `
-    --overlay-triplets=$manifestRoot/my-triplets `
-    --x-install-root=$installRoot `
-    --triplet fancy-triplet
-Throw-IfFailed
-
-# ... but not if the manifest directory is an overlay
-$output = Run-VcpkgAndCaptureStdErr install --x-manifest-root=$manifestRoot `
-    --overlay-port-dirs=$manifestRoot `
-    --overlay-port-dirs=$manifestRoot/cli-overlays `
-    --overlay-triplets=$manifestRoot/my-triplets `
-    --x-install-root=$installRoot `
-    --triplet fancy-triplet
-Throw-IfNotFailed
-Throw-IfNonContains -Actual $output -Expected @"
-The manifest directory ($canonicalManifestRoot) cannot be the same as a directory configured as an overlay-port or overlay-port-dir.
-"@
-
-Remove-Item env:VCPKG_OVERLAY_PORT_DIRS
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
 $manifestRoot = "$TestingRoot/overlays-project-config-embedded"
@@ -102,7 +74,7 @@ $manifestRoot = "$PSScriptRoot/../e2e-projects/overlays-dot"
 $output = Run-VcpkgAndCaptureStdErr install --x-manifest-root=$manifestRoot --x-install-root=$installRoot
 Throw-IfNotFailed
 Throw-IfNonContains -Actual $output -Expected @"
-error: The manifest directory cannot be the same as a directory configured as an overlay-port or overlay-port-dir, so "overlay-ports" and "overlay-port-dir" values cannot be ".".
+error: The manifest directory cannot be the same as a directory configured in overlay-ports, so "overlay-ports" values cannot be ".".
 "@
 
 # Test that trying to declare overlay-ports as the same directory in a roundabout way fails
@@ -111,7 +83,7 @@ $canonicalManifestRoot = (Get-Item $manifestRoot).FullName
 $output = Run-VcpkgAndCaptureStdErr install --x-manifest-root=$manifestRoot --x-install-root=$installRoot
 Throw-IfNotFailed
 Throw-IfNonContains -Actual $output -Expected @"
-The manifest directory ($canonicalManifestRoot) cannot be the same as a directory configured as an overlay-port or overlay-port-dir.
+The manifest directory ($canonicalManifestRoot) cannot be the same as a directory configured in overlay-ports.
 "@
 
 # Test that removals can happen without the overlay triplets

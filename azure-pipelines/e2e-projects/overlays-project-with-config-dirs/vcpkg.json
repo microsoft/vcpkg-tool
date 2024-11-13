@@ -1,7 +1,0 @@
-{
-	"dependencies": [
-		"vcpkg-empty-port",
-		"another-vcpkg-empty-port",
-		"beicode"
-	]
-}

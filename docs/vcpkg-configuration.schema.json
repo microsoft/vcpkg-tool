@@ -21,13 +21,6 @@
       "type": "string",
       "description": "A message to print if this entry is evaluated."
     },
-    "overlay-port-dirs": {
-      "type": "array",
-      "description": "An array of port overlay directory paths.",
-      "items": {
-        "type": "string"
-      }
-    },
     "overlay-ports": {
       "type": "array",
       "description": "An array of port overlay paths.",

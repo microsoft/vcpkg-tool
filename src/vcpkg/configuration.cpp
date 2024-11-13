@@ -549,8 +549,6 @@ namespace
 
         r.optional_object_field(obj, JsonIdOverlayPorts, ret.overlay_ports, OverlayPathArrayDeserializer::instance);
         r.optional_object_field(
-            obj, JsonIdOverlayPortDirs, ret.overlay_port_dirs, OverlayPathArrayDeserializer::instance);
-        r.optional_object_field(
             obj, JsonIdOverlayTriplets, ret.overlay_triplets, OverlayTripletsPathArrayDeserializer::instance);
 
         RegistryConfig default_registry;
@@ -773,7 +771,6 @@ namespace vcpkg
             JsonIdDefaultRegistry,
             JsonIdRegistries,
             JsonIdOverlayPorts,
-            JsonIdOverlayPortDirs,
             JsonIdOverlayTriplets,
             JsonIdMessage,
             JsonIdWarning,
@@ -959,15 +956,6 @@ namespace vcpkg
             for (const auto& reg : registries)
             {
                 reg_arr.push_back(reg.serialize());
-            }
-        }
-
-        if (!overlay_port_dirs.empty())
-        {
-            auto& opd_arr = obj.insert(JsonIdOverlayPortDirs, Json::Array());
-            for (const auto& port : overlay_port_dirs)
-            {
-                opd_arr.push_back(port);
             }
         }
 

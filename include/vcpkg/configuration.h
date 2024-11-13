@@ -51,7 +51,6 @@ namespace vcpkg
         std::vector<RegistryConfig> registries;
         Json::Object ce_metadata;
         Json::Object extra_info;
-        std::vector<std::string> overlay_port_dirs;
         std::vector<std::string> overlay_ports;
         std::vector<std::string> overlay_triplets;
 

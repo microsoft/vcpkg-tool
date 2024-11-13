@@ -1123,13 +1123,12 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
 DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlay,
                 (msg::path),
                 "",
-                "The manifest directory ({path}) cannot be the same as a directory configured as an overlay-port or "
-                "overlay-port-dir.")
+                "The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.")
 DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlayDot,
                 (),
                 "",
-                "The manifest directory cannot be the same as a directory configured as an overlay-port or "
-                "overlay-port-dir, so \"overlay-ports\" and \"overlay-port-dir\" values cannot be \".\".")
+                "The manifest directory cannot be the same as a directory configured in overlay-ports, so "
+                "\"overlay-ports\" values cannot be \".\".")
 DECLARE_MESSAGE(
     ErrorMissingVcpkgRoot,
     (),
@@ -2236,10 +2235,6 @@ DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a comman
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
 DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must be an existing directory.")
-DECLARE_MESSAGE(OverlayPortDirsHelp,
-                (msg::env_var),
-                "",
-                "Directories containing overlay-port directories (also: {env_var})")
 DECLARE_MESSAGE(OverlayPortsHelp,
                 (msg::env_var),
                 "",
