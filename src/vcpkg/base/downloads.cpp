@@ -974,6 +974,7 @@ namespace vcpkg
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();
                     settings.echo_in_debug = EchoInDebug::Show;
+
                     auto maybe_res = flatten(cmd_execute_and_capture_output(cmd, settings), "<mirror-script>");
                     if (maybe_res)
                     {
@@ -982,14 +983,14 @@ namespace vcpkg
                         if (maybe_success)
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
                             return urls[0];
                         }
-
-                        errors.push_back(std::move(maybe_success).error());
+                        msg::println_error(maybe_success.error());
                     }
                     else
                     {
-                        errors.push_back(std::move(maybe_res).error());
+                        msg::println(msgErrorScriptDownloadFailed, msg::error_msg = maybe_res.error());
                     }
                 }
             }
