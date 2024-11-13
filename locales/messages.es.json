@@ -557,7 +557,7 @@
   "FollowingPackagesNotInstalled": "Los paquetes siguientes no están instalados:",
   "FollowingPackagesUpgraded": "Los siguientes paquetes están actualizados:",
   "ForMoreHelp": "Para obtener más ayuda",
-  "ForceClassicMode": "Force classic mode, even if a manifest could be found.",
+  "ForceClassicMode": "Forzar el modo clásico, incluso si se puede encontrar un manifiesto.",
   "ForceSystemBinariesOnWeirdPlatforms": "La variable de entorno VCPKG_FORCE_SYSTEM_BINARIES debe establecerse en las plataformas arm, s390x, ppc64le y riscv.",
   "FormattedParseMessageExpressionPrefix": "en la expresión:",
   "GHAParametersMissing": "El origen binario GHA requiere que se establezcan las variables de entorno ACTIONS_RUNTIME_TOKEN y ACTIONS_CACHE_URL. Consulte {url} para obtener más detalles.",

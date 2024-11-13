@@ -557,7 +557,7 @@
   "FollowingPackagesNotInstalled": "未安装以下包:",
   "FollowingPackagesUpgraded": "以下包是最新的:",
   "ForMoreHelp": "有关更多帮助",
-  "ForceClassicMode": "Force classic mode, even if a manifest could be found.",
+  "ForceClassicMode": "强制使用经典模式，即使可找到清单也是如此。",
   "ForceSystemBinariesOnWeirdPlatforms": "必须在 arm、s390x、ppc64le、riscv 平台上设置环境变量 VCPKG_FORCE_SYSTEM_BINARIES。",
   "FormattedParseMessageExpressionPrefix": "表达式:",
   "GHAParametersMissing": "GHA 二进制源要求设置 ACTIONS_RUNTIME_TOKEN 和 ACTIONS_CACHE_URL 环境变量。有关详细信息，请参阅 {url}。",

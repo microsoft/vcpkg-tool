@@ -557,7 +557,7 @@
   "FollowingPackagesNotInstalled": "다음 패키지가 설치되지 않았습니다.",
   "FollowingPackagesUpgraded": "다음 패키지는 최신 상태입니다.",
   "ForMoreHelp": "추가 도움말",
-  "ForceClassicMode": "Force classic mode, even if a manifest could be found.",
+  "ForceClassicMode": "매니페스트를 찾을 수 있더라도 클래식 모드를 강제 적용합니다.",
   "ForceSystemBinariesOnWeirdPlatforms": "arm, s390x, ppc64le 및 riscv 플랫폼에서 환경 변수 VCPKG_FORCE_SYSTEM_BINARIES를 설정해야 합니다.",
   "FormattedParseMessageExpressionPrefix": "on 식:",
   "GHAParametersMissing": "GHA 이진 원본을 사용하려면 ACTIONS_RUNTIME_TOKEN 및 ACTIONS_CACHE_URL 환경 변수를 설정해야 합니다. 자세한 내용은 {url}을(를) 참조하세요.",

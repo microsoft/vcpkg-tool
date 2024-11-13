@@ -557,7 +557,7 @@
   "FollowingPackagesNotInstalled": "Следующие пакеты не установлены.",
   "FollowingPackagesUpgraded": "Следующие пакеты обновлены.",
   "ForMoreHelp": "Для получения дополнительной справки",
-  "ForceClassicMode": "Force classic mode, even if a manifest could be found.",
+  "ForceClassicMode": "Принудительный классический режим, даже если удалось найти манифест.",
   "ForceSystemBinariesOnWeirdPlatforms": "Переменная среды VCPKG_FORCE_SYSTEM_BINARIES должна быть задана на платформах ARM, s390x, ppc64le и RISC.",
   "FormattedParseMessageExpressionPrefix": "в выражении:",
   "GHAParametersMissing": "Для двоичного источника GHA требуется настройка переменных среды ACTIONS_RUNTIME_TOKEN и ACTIONS_CACHE_URL. Дополнительные сведения: {url}.",
