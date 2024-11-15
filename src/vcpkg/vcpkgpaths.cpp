@@ -113,7 +113,7 @@ namespace
             }
 
             auto full_entry = relative_root / entry;
-            if (forbid_dot && fs.almost_canonical(full_entry, VCPKG_LINE_INFO) == config_directory)
+            if (forbid_dot && (fs.almost_canonical(full_entry, VCPKG_LINE_INFO) / "") == (config_directory / ""))
             {
                 Checks::msg_exit_with_error(
                     VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlay, msg::path = config_directory);
