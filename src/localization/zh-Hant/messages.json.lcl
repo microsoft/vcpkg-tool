@@ -4417,6 +4417,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to download {path}.]A;If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See, {url}]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無法下載 {path}。]A;如果您使用 Proxy，請確定您的 Proxy 設定正確。]A;可能的原因為:]A;1. 您實際上使用的是 HTTP Proxy，但卻將 HTTPS_PROXY 變數設定為 `https//address:port`。]A;這不正確，因為 `https://` 前置詞會宣告 Proxy 是 HTTPS Proxy，但您的 Proxy (v2ray、shadowsocksr 等...) 是 HTTP Proxy。]A;請嘗試改將 `http://address:port` 設定為 HTTP_PROXY 和 HTTPS_PROXY。]A;2. 如果您使用 Windows，vcpkg 會自動使用您的 Proxy 軟體所設定的 Windows IE Proxy 設定。請參閱 {url}]A;您的 Proxy 所設定的值可能錯誤，或具有相同的 `https://` 前置詞問題。]A;3. 您的 Proxy 的遠端伺服器是我們的服務。]A;如果您已經嘗試直接下載連結，而且認為這不是暫時性的下載伺服器失敗，請於 https://github.com/Microsoft/vcpkg/issues 提交問題，]A;以回報此上游下載伺服器失敗。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
@@ -4444,6 +4453,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Specify the downloads root directory.]A;(default: {env_var})]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已成功下載 {path}。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5140,6 +5158,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedInstallStateField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'not-installed', 'half-installed', or 'installed']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[應該是 'not-installed'、'half-installed' 或 'installed' 其中之一]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedOneOfNumberBooleanIdentifierStringFoundToken$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected one of {Number, Boolean, Identifier, String}, found token ${p0}]]></Val>
@@ -5206,6 +5233,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedTextHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected '{expected}' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[這裡應該是 '{expected}']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
@@ -5215,6 +5251,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected a triplet name here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedWantField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'install', 'hold', 'deinstall', or 'purge' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[這裡應該是 'install'、'hold'、'deinstall' 或 'purge' 其中之一]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5847,6 +5892,15 @@
           <Val><![CDATA[For More Help]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[更多協助]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ForceClassicMode" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force classic mode, even if a manifest could be found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[強制使用傳統模式，即使可以找到指令清單。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
