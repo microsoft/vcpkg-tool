@@ -18,6 +18,7 @@ StringView vcpkg::find_cmake_invocation(StringView content, StringView command)
     if (it_end == content.end()) return {};
     return StringView{it, it_end};
 }
+
 StringView vcpkg::extract_cmake_invocation_argument(StringView command, StringView argument)
 {
     auto it = Util::search_and_skip(command.begin(), command.end(), argument);
@@ -26,11 +27,13 @@ StringView vcpkg::extract_cmake_invocation_argument(StringView command, StringVi
     if (it == command.end()) return {};
     if (*it == '"')
     {
-        return {it + 1, std::find(it + 1, command.end(), '"')};
+        ++it;
+        return {it, std::find(it, command.end(), '"')};
     }
     return {it,
             std::find_if(it + 1, command.end(), [](char ch) { return ParserBase::is_whitespace(ch) || ch == ')'; })};
 }
+
 std::string vcpkg::replace_cmake_var(StringView text, StringView var, StringView value)
 {
     return Strings::replace_all(text, std::string("${") + var + "}", value);
@@ -41,10 +44,17 @@ static std::string fix_ref_version(StringView ref, StringView version)
     return replace_cmake_var(ref, CMakeVariableVersion, version);
 }
 
-static std::string conclude_license(const std::string& license)
+static ZStringView conclude_license(const Optional<std::string>& maybe_license)
 {
-    if (license.empty()) return SpdxNoAssertion.to_string();
-    return license;
+    if (auto license = maybe_license.get())
+    {
+        if (!license->empty())
+        {
+            return *license;
+        }
+    }
+
+    return SpdxNoAssertion;
 }
 
 static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj, StringView property)
@@ -66,7 +76,7 @@ static Json::Object make_resource(
 {
     Json::Object obj;
     obj.insert(SpdxSpdxId, std::move(spdxid));
-    obj.insert(JsonIdName, name.to_string());
+    obj.insert(JsonIdName, name);
     if (!filename.empty())
     {
         obj.insert(SpdxPackageFileName, filename);
@@ -85,7 +95,7 @@ static Json::Object make_resource(
     return obj;
 }
 
-static void find_all_github(StringView text, Json::Array& packages, size_t& n, StringView version_text)
+static void find_all_github(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -100,8 +110,8 @@ static void find_all_github(StringView text, Json::Array& packages, size_t& n, S
         auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
         auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
 
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", n++),
-                                         repo.to_string(),
+        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
+                                         repo,
                                          fmt::format("git+https://github.com/{}@{}", repo, ref),
                                          sha,
                                          {}));
@@ -109,7 +119,7 @@ static void find_all_github(StringView text, Json::Array& packages, size_t& n, S
     }
 }
 
-static void find_all_bitbucket(StringView text, Json::Array& packages, size_t& n, StringView version_text)
+static void find_all_bitbucket(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -124,8 +134,8 @@ static void find_all_bitbucket(StringView text, Json::Array& packages, size_t& n
         auto ref = fix_ref_version(extract_cmake_invocation_argument(bitbucket, CMakeVariableRef), version_text);
         auto sha = extract_cmake_invocation_argument(bitbucket, CMakeVariableSHA512);
 
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", n++),
-                                         repo.to_string(),
+        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
+                                         repo,
                                          fmt::format("git+https://bitbucket.com/{}@{}", repo, ref),
                                          sha,
                                          {}));
@@ -133,7 +143,7 @@ static void find_all_bitbucket(StringView text, Json::Array& packages, size_t& n
     }
 }
 
-static void find_all_gitlab(StringView text, Json::Array& packages, size_t& n, StringView version_text)
+static void find_all_gitlab(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -149,8 +159,8 @@ static void find_all_gitlab(StringView text, Json::Array& packages, size_t& n, S
         auto ref = fix_ref_version(extract_cmake_invocation_argument(gitlab, CMakeVariableRef), version_text);
         auto sha = extract_cmake_invocation_argument(gitlab, CMakeVariableSHA512);
 
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", n++),
-                                         repo.to_string(),
+        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
+                                         repo,
                                          fmt::format("git+{}/{}@{}", url, repo, ref),
                                          sha,
                                          {}));
@@ -158,7 +168,7 @@ static void find_all_gitlab(StringView text, Json::Array& packages, size_t& n, S
     }
 }
 
-static void find_all_git(StringView text, Json::Array& packages, size_t& n, StringView version_text)
+static void find_all_git(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -172,12 +182,12 @@ static void find_all_git(StringView text, Json::Array& packages, size_t& n, Stri
         auto url = extract_cmake_invocation_argument(git, CMakeVariableUrl);
         auto ref = fix_ref_version(extract_cmake_invocation_argument(git, CMakeVariableRef), version_text);
         packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", n++), url.to_string(), fmt::format("git+{}@{}", url, ref), {}, {}));
+            fmt::format("SPDXRef-resource-{}", packages.size()), url, fmt::format("git+{}@{}", url, ref), {}, {}));
         it = git.end();
     }
 }
 
-static void find_all_distfile(StringView text, Json::Array& packages, size_t& n)
+static void find_all_distfile(StringView text, Json::Array& packages)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -192,12 +202,12 @@ static void find_all_distfile(StringView text, Json::Array& packages, size_t& n)
         auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
         auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
         packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", n++), filename.to_string(), url.to_string(), sha, filename));
+            fmt::format("SPDXRef-resource-{}", packages.size()), filename, url.to_string(), sha, filename));
         it = distfile.end();
     }
 }
 
-static void find_all_sourceforge(StringView text, Json::Array& packages, size_t& n, StringView version_text)
+static void find_all_sourceforge(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -214,7 +224,7 @@ static void find_all_sourceforge(StringView text, Json::Array& packages, size_t&
         auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
         auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
         packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", n++), filename.to_string(), std::move(url), sha, filename));
+            fmt::format("SPDXRef-resource-{}", packages.size()), filename, std::move(url), sha, filename));
         it = sfg.end();
     }
 }
@@ -223,16 +233,15 @@ Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView vers
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
-    size_t n = 0;
     Json::Object ret;
     auto& packages = ret.insert(JsonIdPackages, Json::Array{});
 
-    find_all_github(contents, packages, n, version_text);
-    find_all_gitlab(contents, packages, n, version_text);
-    find_all_git(contents, packages, n, version_text);
-    find_all_distfile(contents, packages, n);
-    find_all_sourceforge(contents, packages, n, version_text);
-    find_all_bitbucket(contents, packages, n, version_text);
+    find_all_github(contents, packages, version_text);
+    find_all_gitlab(contents, packages, version_text);
+    find_all_git(contents, packages, version_text);
+    find_all_distfile(contents, packages);
+    find_all_sourceforge(contents, packages, version_text);
+    find_all_bitbucket(contents, packages, version_text);
 
     return ret;
 }
@@ -280,7 +289,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         {
             obj.insert(JsonIdHomepage, cpgh.homepage);
         }
-        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
+        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license));
         obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
         obj.insert(SpdxCopyrightText, SpdxNoAssertion);
         if (!cpgh.summary.empty()) obj.insert(JsonIdSummary, Strings::join("\n", cpgh.summary));
@@ -306,7 +315,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         obj.insert(SpdxSpdxId, SpdxRefBinary);
         obj.insert(SpdxVersionInfo, abi);
         obj.insert(SpdxDownloadLocation, SpdxNone);
-        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license.value_or("")));
+        obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license));
         obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
         obj.insert(SpdxCopyrightText, SpdxNoAssertion);
         obj.insert(JsonIdComment, "This is a binary package built by vcpkg.");
