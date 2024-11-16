@@ -248,6 +248,11 @@ DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when a
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
 DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
@@ -1046,6 +1051,22 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
                 "{url}: failed: status code {value}")
+DECLARE_MESSAGE(DownloadFailedProxySettings,
+                (msg::path, msg::url),
+                "",
+                "Failed to download {path}.\nIf you are using a proxy, please ensure your proxy settings are "
+                "correct.\nPossible causes are:\n"
+                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable "
+                "to `https//address:port`.\nThis is not correct, because `https://` prefix "
+                "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
+                "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
+                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings "
+                "set by your proxy software. See, {url}\n"
+                "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
+                "3. Your proxy's remote server is our of service.\n"
+                "If you've tried directly download the link, and believe this is not a temporay download server "
+                "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
+                "to report this upstream download server failure.")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
@@ -1240,10 +1261,6 @@ DECLARE_MESSAGE(MissingShaVariable,
                 (),
                 "{{sha}} should not be translated",
                 "The {{sha}} variable must be used in the template if other variables are used.")
-DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
-                (msg::path),
-                "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -1358,6 +1375,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
+DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
