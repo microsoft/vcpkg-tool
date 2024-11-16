@@ -1,0 +1,13 @@
+{
+  "name": "vcpkg-license-bsd-on-mit-feature",
+  "version": "0",
+  "license": "BSD-3-Clause",
+  "features": {
+    "enable-license": {
+      "description": "Enable license",
+      "dependencies": [
+        "vcpkg-license-mit-feature"
+      ]
+    }
+  }
+}

@@ -189,6 +189,8 @@ namespace vcpkg
             {
                 obj.insert(JsonIdHomepage, cpgh.homepage);
             }
+
+            // FIXME this needs to consider features
             obj.insert(SpdxLicenseConcluded, conclude_license(cpgh.license));
             obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
             obj.insert(SpdxCopyrightText, SpdxNoAssertion);

@@ -573,6 +573,32 @@ namespace vcpkg
         }
     }
 
+    static void add_licenses(LicenseReport& report, const SourceControlFileAndLocation* scfl)
+    {
+        if (!scfl)
+        {
+            return;
+        }
+
+        auto scf = scfl->source_control_file.get();
+        if (auto license = scf->core_paragraph->license.get())
+        {
+            report.named_licenses.insert(*license);
+        }
+        else
+        {
+            report.any_unknown_licenses = true;
+        }
+
+        for (auto&& feature : scf->feature_paragraphs)
+        {
+            if (auto license = feature->license.get())
+            {
+                report.named_licenses.insert(*license);
+            }
+        }
+    }
+
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
@@ -609,17 +635,7 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
             if (result.code == BuildResult::Succeeded)
             {
-                if (auto scfl = action.source_control_file_and_location.get())
-                {
-                    if (auto license = scfl->source_control_file->core_paragraph->license.get())
-                    {
-                        summary.license_report.named_licenses.insert(*license);
-                    }
-                    else
-                    {
-                        summary.license_report.any_unknown_licenses = true;
-                    }
-                }
+                add_licenses(summary.license_report, action.source_control_file_and_location.get());
             }
             else
             {
