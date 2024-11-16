@@ -26,7 +26,7 @@ namespace vcpkg
     constexpr CommandMetadata CommandUseMetadata{
         "use",
         msgCmdUseSynopsis,
-        {msgCmdUseExample1, "vcpkg use cmake"},
+        {msgCmdUseExample1, "vcpkg-shell use cmake"},
         Undocumented,
         AutocompletePriority::Public,
         1,

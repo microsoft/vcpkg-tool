@@ -82,7 +82,7 @@ TEST_CASE ("append", "[util]")
         b.emplace_back("jkl");
         b.emplace_back("mno");
         b.emplace_back("pqr");
-        vcpkg::Util::Vectors::append(&a, std::move(b));
+        vcpkg::Util::Vectors::append(a, std::move(b));
         REQUIRE(b.size() == 3);
         REQUIRE(b[0] == "");
         REQUIRE(a.size() == 6);
@@ -96,7 +96,7 @@ TEST_CASE ("append", "[util]")
         b.emplace_back("jkl");
         b.emplace_back("mno");
         b.emplace_back("pqr");
-        vcpkg::Util::Vectors::append(&a, b);
+        vcpkg::Util::Vectors::append(a, b);
         REQUIRE(b.size() == 3);
         REQUIRE(b[0] == "jkl");
         REQUIRE(a.size() == 6);
@@ -111,7 +111,7 @@ TEST_CASE ("append", "[util]")
             "mno",
             "pqr",
         };
-        vcpkg::Util::Vectors::append(&a, b);
+        vcpkg::Util::Vectors::append(a, b);
         REQUIRE(b.size() == 3);
         REQUIRE(b[0] == "jkl");
         REQUIRE(a.size() == 6);

@@ -51,9 +51,9 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
 {
     if (auto p = obj.get(property))
     {
-        if (p->is_array())
+        if (auto arr = p->maybe_array())
         {
-            for (auto& e : p->array(VCPKG_LINE_INFO))
+            for (auto& e : *arr)
             {
                 out.push_back(std::move(e));
             }
@@ -62,11 +62,11 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
 }
 
 static Json::Object make_resource(
-    std::string spdxid, std::string name, std::string downloadLocation, StringView sha512, StringView filename)
+    std::string spdxid, StringView name, std::string downloadLocation, StringView sha512, StringView filename)
 {
     Json::Object obj;
     obj.insert(SpdxSpdxId, std::move(spdxid));
-    obj.insert(JsonIdName, std::move(name));
+    obj.insert(JsonIdName, name.to_string());
     if (!filename.empty())
     {
         obj.insert(SpdxPackageFileName, filename);
@@ -219,7 +219,7 @@ static void find_all_sourceforge(StringView text, Json::Array& packages, size_t&
     }
 }
 
-Json::Value vcpkg::run_resource_heuristics(StringView text, StringView version_text)
+Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
 {
     // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
     // inclusion
@@ -227,14 +227,14 @@ Json::Value vcpkg::run_resource_heuristics(StringView text, StringView version_t
     Json::Object ret;
     auto& packages = ret.insert(JsonIdPackages, Json::Array{});
 
-    find_all_github(text, packages, n, version_text);
-    find_all_gitlab(text, packages, n, version_text);
-    find_all_git(text, packages, n, version_text);
-    find_all_distfile(text, packages, n);
-    find_all_sourceforge(text, packages, n, version_text);
-    find_all_bitbucket(text, packages, n, version_text);
+    find_all_github(contents, packages, n, version_text);
+    find_all_gitlab(contents, packages, n, version_text);
+    find_all_git(contents, packages, n, version_text);
+    find_all_distfile(contents, packages, n);
+    find_all_sourceforge(contents, packages, n, version_text);
+    find_all_bitbucket(contents, packages, n, version_text);
 
-    return Json::Value::object(std::move(ret));
+    return ret;
 }
 
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
@@ -242,7 +242,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<std::string> hashes,
                                     std::string created_time,
                                     std::string document_namespace,
-                                    std::vector<Json::Value>&& resource_docs)
+                                    std::vector<Json::Object>&& resource_docs)
 {
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
 
@@ -260,11 +260,11 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
-    doc.insert(JsonIdName, Strings::concat(action.spec.to_string(), '@', cpgh.version.to_string(), ' ', abi));
+    doc.insert(JsonIdName, fmt::format("{}@{} {}", action.spec, cpgh.version, abi));
     {
         auto& cinfo = doc.insert(SpdxCreationInfo, Json::Object());
         auto& creators = cinfo.insert(JsonIdCreators, Json::Array());
-        creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_VERSION_AS_STRING));
+        creators.push_back(Strings::concat("Tool: vcpkg-", VCPKG_BASE_VERSION_AS_STRING, '-', VCPKG_VERSION_AS_STRING));
         cinfo.insert(JsonIdCreated, std::move(created_time));
     }
 
@@ -353,11 +353,9 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     for (auto&& rdoc : resource_docs)
     {
-        if (!rdoc.is_object()) continue;
-        auto robj = std::move(rdoc).object(VCPKG_LINE_INFO);
-        append_move_if_exists_and_array(rels, robj, JsonIdRelationships);
-        append_move_if_exists_and_array(files, robj, JsonIdFiles);
-        append_move_if_exists_and_array(packages, robj, JsonIdPackages);
+        append_move_if_exists_and_array(rels, rdoc, JsonIdRelationships);
+        append_move_if_exists_and_array(files, rdoc, JsonIdFiles);
+        append_move_if_exists_and_array(packages, rdoc, JsonIdPackages);
     }
 
     return Json::stringify(doc);

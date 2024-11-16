@@ -63,8 +63,7 @@ namespace vcpkg
 
     struct PathsPortFileProvider : PortFileProvider
     {
-        explicit PathsPortFileProvider(const ReadOnlyFilesystem& fs,
-                                       const RegistrySet& registry_set,
+        explicit PathsPortFileProvider(const RegistrySet& registry_set,
                                        std::unique_ptr<IFullOverlayProvider>&& overlay);
         ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& src_name) const override;
         std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override;
@@ -76,14 +75,10 @@ namespace vcpkg
     };
 
     std::unique_ptr<IBaselineProvider> make_baseline_provider(const RegistrySet& registry_set);
-    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const ReadOnlyFilesystem& fs,
-                                                                                     const RegistrySet& registry_set);
-    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
-                                                                const Path& original_cwd,
-                                                                View<std::string> overlay_ports);
+    std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const RegistrySet& registry_set);
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs, View<Path> overlay_ports);
     std::unique_ptr<IOverlayProvider> make_manifest_provider(const ReadOnlyFilesystem& fs,
-                                                             const Path& original_cwd,
-                                                             View<std::string> overlay_ports,
+                                                             View<Path> overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf);
 }

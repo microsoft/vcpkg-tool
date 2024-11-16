@@ -22,11 +22,13 @@ namespace vcpkg
         }
     }
 
-    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
+    void append_caret_line(LocalizedString& res,
+                           const Unicode::Utf8Decoder& cursor,
+                           const Unicode::Utf8Decoder& start_of_line)
     {
-        auto line_end = Util::find_if(loc.it, ParserBase::is_lineend);
+        auto line_end = Util::find_if(cursor, ParserBase::is_lineend);
         StringView line = StringView{
-            loc.start_of_line.pointer_to_current(),
+            start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
         };
 
@@ -41,8 +43,8 @@ namespace vcpkg
 
         std::string caret_string;
         caret_string.append(line_prefix_space, ' ');
-        // note *it is excluded because it is where the ^ goes
-        for (auto it = loc.start_of_line; it != loc.it; ++it)
+        // note *cursor is excluded because it is where the ^ goes
+        for (auto it = start_of_line; it != cursor; ++it)
         {
             if (*it == '\t')
                 caret_string.push_back('\t');
@@ -55,6 +57,11 @@ namespace vcpkg
         caret_string.push_back('^');
 
         res.append_indent().append_raw(caret_string);
+    }
+
+    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
+    {
+        append_caret_line(res, loc.it, loc.start_of_line);
     }
 
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
@@ -136,6 +143,27 @@ namespace vcpkg
         }
 
         add_error(msg::format(msgExpectedCharacterHere, msg::expected = ch));
+        return true;
+    }
+
+    bool ParserBase::require_text(StringLiteral text)
+    {
+        auto encoded = m_it;
+        // check that the encoded stream matches the keyword:
+        for (const char ch : text)
+        {
+            if (encoded.is_eof() || *encoded != static_cast<char32_t>(ch))
+            {
+                add_error(msg::format(msgExpectedTextHere, msg::expected = text));
+                return false;
+            }
+
+            ++encoded;
+        }
+
+        // success
+        m_it = encoded;
+        m_column += static_cast<int>(text.size());
         return true;
     }
 

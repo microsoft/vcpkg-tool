@@ -29,6 +29,9 @@
     <FilesToSign Include="$(IntermediateOutputPath)\scripts\posh-vcpkg.psm1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\scripts\posh-vcpkg.psd1">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
   </ItemGroup>
 
   <ImportGroup Label="ExtensionTargets">

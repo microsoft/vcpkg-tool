@@ -87,7 +87,8 @@ TEST_CASE ("qualified dependency", "[dependencies]")
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", Test::X64_LINUX}].emplace("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
 
-    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    const CreateInstallPlanOptions create_options{
+        nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
 
     auto plan =
         vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, create_options);

@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/fwd/binarycaching.h>
+#include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -120,6 +121,13 @@ namespace vcpkg
         std::string commit;
     };
 
+    struct AzureUpkgSource
+    {
+        std::string organization;
+        std::string project;
+        std::string feed;
+    };
+
     struct BinaryConfigParserState
     {
         bool nuget_interactive = false;
@@ -145,6 +153,9 @@ namespace vcpkg
 
         bool gha_write = false;
         bool gha_read = false;
+
+        std::vector<AzureUpkgSource> upkg_templates_to_get;
+        std::vector<AzureUpkgSource> upkg_templates_to_put;
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
@@ -203,7 +214,7 @@ namespace vcpkg
         BinaryCache(BinaryCache&&) = default;
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const InstallPlanAction& action);
+        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
     private:
         BinaryCache(BinaryProviders&& providers, const Filesystem& fs);

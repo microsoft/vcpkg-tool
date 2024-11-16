@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
 #include <vcpkg/triplet.h>
 
@@ -80,7 +81,7 @@ TEST_CASE ("parse_package_spec forbid illegal characters", "[input][parse_packag
     {
         REQUIRE(
             maybe_parsed.error() ==
-            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib#notaport
                      ^)");
     }
@@ -94,13 +95,33 @@ TEST_CASE ("check_triplet validates", "[input][check_triplet]")
     REQUIRE(maybe_check.has_value());
     maybe_check = check_triplet("x86-windows", db);
     REQUIRE(!maybe_check.has_value());
-    REQUIRE(maybe_check.error() == LocalizedString::from_raw(R"(error: Invalid triplet: x86-windows
+    std::string expected_error = R"(error: Invalid triplet: x86-windows
 Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
-)"));
+See )" + docs::triplets_url + R"( for more information.
+)";
+    REQUIRE(maybe_check.error() == expected_error);
+}
+
+TEST_CASE ("check_triplet rejects malformed triplet", "[input][check_triplet]")
+{
+    TripletDatabase db;
+    db.available_triplets.push_back(TripletFile{"invalid.triplet_name", "invalid.triplet_name.cmake"});
+    auto maybe_check = check_triplet("invalid.triplet_name", db);
+    REQUIRE(!maybe_check.has_value());
+    REQUIRE(!maybe_check.has_value());
+    REQUIRE(maybe_check.error().data() ==
+            R"(error: Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.
+  on expression: invalid.triplet_name
+                        ^
+Built-in Triplets:
+Community Triplets:
+Overlay Triplets from "invalid.triplet_name.cmake":
+  invalid.triplet_name
+See https://learn.microsoft.com/vcpkg/users/triplets?WT.mc_id=vcpkg_inproduct_cli for more information.
+)");
 }
 
 TEST_CASE ("check_and_get_package_spec validates the triplet", "[input][check_and_get_package_spec]")
@@ -120,13 +141,14 @@ TEST_CASE ("check_and_get_package_spec validates the triplet", "[input][check_an
 
     maybe_spec = check_and_get_package_spec("zlib:x86-windows", Triplet::from_canonical_name("x64-windows"), db);
     REQUIRE(!maybe_spec.has_value());
-    REQUIRE(maybe_spec.error() == LocalizedString::from_raw(R"(error: Invalid triplet: x86-windows
+    std::string expected_error = R"(error: Invalid triplet: x86-windows
 Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
-)"));
+See )" + docs::triplets_url + R"( for more information.
+)";
+    REQUIRE(maybe_spec.error() == expected_error);
 }
 
 TEST_CASE ("check_and_get_package_spec forbids malformed", "[input][check_and_get_package_spec]")
@@ -138,7 +160,7 @@ TEST_CASE ("check_and_get_package_spec forbids malformed", "[input][check_and_ge
     REQUIRE(
         maybe_spec.error() ==
         LocalizedString::from_raw(
-            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib:x86-windows#
                                  ^)"));
 }
@@ -187,13 +209,14 @@ TEST_CASE ("check_and_get_full_package_spec validates the triplet", "[input][che
     maybe_spec =
         check_and_get_full_package_spec("zlib[core]:x86-windows", Triplet::from_canonical_name("x64-windows"), db);
     REQUIRE(!maybe_spec.has_value());
-    REQUIRE(maybe_spec.error() == LocalizedString::from_raw(R"(error: Invalid triplet: x86-windows
+    std::string expected_error = R"(error: Invalid triplet: x86-windows
 Built-in Triplets:
 Community Triplets:
 Overlay Triplets from "x64-windows.cmake":
   x64-windows
-See https://learn.microsoft.com/vcpkg/users/triplets for more information.
-)"));
+See )" + docs::triplets_url + R"( for more information.
+)";
+    REQUIRE(maybe_spec.error() == expected_error);
 }
 
 TEST_CASE ("check_and_get_full_package_spec forbids malformed", "[input][check_and_get_full_package_spec]")
@@ -206,7 +229,7 @@ TEST_CASE ("check_and_get_full_package_spec forbids malformed", "[input][check_a
     REQUIRE(
         maybe_spec.error() ==
         LocalizedString::from_raw(
-            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.
+            R"(error: expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.
   on expression: zlib[core]:x86-windows#
                                        ^)"));
 }

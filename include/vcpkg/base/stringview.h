@@ -6,7 +6,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <array>
 #include <iterator>
 #include <limits>
 #include <string>
@@ -107,6 +106,12 @@ namespace vcpkg
 }
 
 template<class Char>
+struct fmt::range_format_kind<vcpkg::StringView, Char>
+    : std::integral_constant<fmt::range_format, fmt::range_format::disabled>
+{
+};
+
+template<class Char>
 struct fmt::formatter<vcpkg::StringView, Char, void> : fmt::formatter<fmt::basic_string_view<char>, Char, void>
 {
     template<class FormatContext>
@@ -116,5 +121,18 @@ struct fmt::formatter<vcpkg::StringView, Char, void> : fmt::formatter<fmt::basic
     }
 };
 
+template<class Char>
+struct fmt::range_format_kind<vcpkg::ZStringView, Char>
+    : std::integral_constant<fmt::range_format, fmt::range_format::disabled>
+{
+};
+
 VCPKG_FORMAT_AS(vcpkg::ZStringView, vcpkg::StringView);
+
+template<class Char>
+struct fmt::range_format_kind<vcpkg::StringLiteral, Char>
+    : std::integral_constant<fmt::range_format, fmt::range_format::disabled>
+{
+};
+
 VCPKG_FORMAT_AS(vcpkg::StringLiteral, vcpkg::StringView);

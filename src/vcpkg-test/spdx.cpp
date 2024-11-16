@@ -20,7 +20,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::Relaxed;
     cpgh.version = Version{"1.0", 5};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -42,7 +43,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
   "name": "zlib:arm-uwp@1.0#5 ABIHASH",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now"
   },
@@ -174,7 +175,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
     cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -195,7 +197,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
   "name": "zlib:arm-uwp@1.0 deadbeef",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now+1"
   },
@@ -302,7 +304,8 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version_scheme = VersionScheme::String;
     cpgh.version = Version{"1.0", 0};
 
-    InstallPlanAction ipa(spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, Test::X86_WINDOWS, {}, {}, {});
+    InstallPlanAction ipa(
+        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -313,7 +316,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
@@ -321,7 +324,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
@@ -335,7 +338,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
   "name": "zlib:arm-uwp@1.0 deadbeef",
   "creationInfo": {
     "creators": [
-      "Tool: vcpkg-unknownhash"
+      "Tool: vcpkg-2999-12-31-unknownhash"
     ],
     "created": "now+1"
   },

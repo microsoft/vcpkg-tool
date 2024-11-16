@@ -11,15 +11,16 @@ if ($IsLinux) {
     return
 }
 
-
 Write-Trace "test native qualified dependencies"
 
-Run-Vcpkg install @CommonArgs --host-triplet $Triplet vcpkg-native-dependency:$Triplet
+$commonArgs += @("--x-builtin-ports-root=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
+
+Run-Vcpkg install @commonArgs --host-triplet $Triplet vcpkg-native-dependency:$Triplet
 Throw-IfFailed
 Require-FileExists "$installRoot/$Triplet/share/vcpkg-empty-port"
 Refresh-TestRoot
 
-Run-Vcpkg install @CommonArgs --host-triplet $host_triplet vcpkg-native-dependency:$Triplet
+Run-Vcpkg install @commonArgs --host-triplet $host_triplet vcpkg-native-dependency:$Triplet
 Throw-IfFailed
 Require-FileNotExists "$installRoot/$Triplet/share/vcpkg-empty-port"
 Refresh-TestRoot
