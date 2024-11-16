@@ -13,8 +13,8 @@
 
 namespace vcpkg
 {
-    StringView find_cmake_invocation(StringView content, StringView command);
-    StringView extract_cmake_invocation_argument(StringView command, StringView argument);
+    StringView extract_first_cmake_invocation_args(StringView content, StringView command);
+    StringView extract_arg_from_cmake_invocation_args(StringView invocation_args, StringView target_arg);
     std::string replace_cmake_var(StringView text, StringView var, StringView value);
 
     /// Generate an SDPX 2.2.1 manifest (https://spdx.github.io/spdx-spec)

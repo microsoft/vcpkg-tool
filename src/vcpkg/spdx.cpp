@@ -9,34 +9,80 @@
 
 using namespace vcpkg;
 
-StringView vcpkg::find_cmake_invocation(StringView content, StringView command)
+StringView vcpkg::extract_first_cmake_invocation_args(StringView content, StringView command)
 {
-    auto it = Util::search_and_skip(content.begin(), content.end(), command);
-    if (it == content.end() || ParserBase::is_word_char(*it)) return {};
+    // command\s*\(([^)]+)\)
+    auto it = content.begin();
+    do
+    {
+        it = Util::search_and_skip(it, content.end(), command);
+        if (it == content.end())
+        {
+            return {};
+        }
+
+        while (ParserBase::is_whitespace(*it))
+        {
+            ++it;
+            if (it == content.end())
+            {
+                return {};
+            }
+        }
+        // if we don't get a ( here, then we matched a prefix of the command but not the command itself
+    } while (*it != '(');
     ++it;
     auto it_end = std::find(it, content.end(), ')');
-    if (it_end == content.end()) return {};
+    if (it_end == content.end())
+    {
+        return {};
+    }
+
     return StringView{it, it_end};
 }
 
-StringView vcpkg::extract_cmake_invocation_argument(StringView command, StringView argument)
+StringView vcpkg::extract_arg_from_cmake_invocation_args(StringView invocation_args, StringView target_arg)
 {
-    auto it = Util::search_and_skip(command.begin(), command.end(), argument);
-    if (it == command.end() || ParserBase::is_alphanum(*it)) return {};
-    it = std::find_if_not(it, command.end(), ParserBase::is_whitespace);
-    if (it == command.end()) return {};
+    auto it = invocation_args.begin();
+    do
+    {
+        it = Util::search_and_skip(it, invocation_args.end(), target_arg);
+        if (it == invocation_args.end())
+        {
+            return {};
+        }
+    } while (!ParserBase::is_whitespace(*it));
+    it = std::find_if_not(it, invocation_args.end(), ParserBase::is_whitespace);
+    if (it == invocation_args.end())
+    {
+        return {};
+    }
+
     if (*it == '"')
     {
+        // quoted value
         ++it;
-        return {it, std::find(it, command.end(), '"')};
+        auto it_end = std::find(it, invocation_args.end(), '"');
+        if (it_end == invocation_args.end())
+        {
+            return {};
+        }
+
+        return {it, it_end};
     }
-    return {it,
-            std::find_if(it + 1, command.end(), [](char ch) { return ParserBase::is_whitespace(ch) || ch == ')'; })};
+
+    // unquoted value
+    return {it, std::find_if(it + 1, invocation_args.end(), ParserBase::is_whitespace)};
 }
 
 std::string vcpkg::replace_cmake_var(StringView text, StringView var, StringView value)
 {
-    return Strings::replace_all(text, std::string("${") + var + "}", value);
+    std::string replacement;
+    replacement.reserve(var.size() + 3);
+    replacement.append("${", 2);
+    replacement.append(var.data(), var.size());
+    replacement.push_back('}');
+    return Strings::replace_all(text, replacement, value);
 }
 
 static std::string fix_ref_version(StringView ref, StringView version)
@@ -100,15 +146,15 @@ static void find_all_github(StringView text, Json::Array& packages, StringView v
     auto it = text.begin();
     while (it != text.end())
     {
-        auto github = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_from_github");
+        auto github = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_github");
         if (github.empty())
         {
             it = text.end();
             continue;
         }
-        auto repo = extract_cmake_invocation_argument(github, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(github, CMakeVariableRef), version_text);
-        auto sha = extract_cmake_invocation_argument(github, CMakeVariableSHA512);
+        auto repo = extract_arg_from_cmake_invocation_args(github, CMakeVariableRepo);
+        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(github, CMakeVariableRef), version_text);
+        auto sha = extract_arg_from_cmake_invocation_args(github, CMakeVariableSHA512);
 
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
                                          repo,
@@ -124,15 +170,15 @@ static void find_all_bitbucket(StringView text, Json::Array& packages, StringVie
     auto it = text.begin();
     while (it != text.end())
     {
-        auto bitbucket = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_from_bitbucket");
+        auto bitbucket = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_bitbucket");
         if (bitbucket.empty())
         {
             it = text.end();
             continue;
         }
-        auto repo = extract_cmake_invocation_argument(bitbucket, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(bitbucket, CMakeVariableRef), version_text);
-        auto sha = extract_cmake_invocation_argument(bitbucket, CMakeVariableSHA512);
+        auto repo = extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableRepo);
+        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableRef), version_text);
+        auto sha = extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableSHA512);
 
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
                                          repo,
@@ -148,16 +194,16 @@ static void find_all_gitlab(StringView text, Json::Array& packages, StringView v
     auto it = text.begin();
     while (it != text.end())
     {
-        auto gitlab = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_from_gitlab");
+        auto gitlab = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_gitlab");
         if (gitlab.empty())
         {
             it = text.end();
             continue;
         }
-        auto repo = extract_cmake_invocation_argument(gitlab, CMakeVariableRepo);
-        auto url = extract_cmake_invocation_argument(gitlab, CMakeVariableGitlabUrl);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(gitlab, CMakeVariableRef), version_text);
-        auto sha = extract_cmake_invocation_argument(gitlab, CMakeVariableSHA512);
+        auto repo = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableRepo);
+        auto url = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableGitlabUrl);
+        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableRef), version_text);
+        auto sha = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableSHA512);
 
         packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
                                          repo,
@@ -173,14 +219,14 @@ static void find_all_git(StringView text, Json::Array& packages, StringView vers
     auto it = text.begin();
     while (it != text.end())
     {
-        auto git = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_from_git");
+        auto git = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_git");
         if (git.empty())
         {
             it = text.end();
             continue;
         }
-        auto url = extract_cmake_invocation_argument(git, CMakeVariableUrl);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(git, CMakeVariableRef), version_text);
+        auto url = extract_arg_from_cmake_invocation_args(git, CMakeVariableUrl);
+        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(git, CMakeVariableRef), version_text);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", packages.size()), url, fmt::format("git+{}@{}", url, ref), {}, {}));
         it = git.end();
@@ -192,15 +238,15 @@ static void find_all_distfile(StringView text, Json::Array& packages)
     auto it = text.begin();
     while (it != text.end())
     {
-        auto distfile = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_download_distfile");
+        auto distfile = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_download_distfile");
         if (distfile.empty())
         {
             it = text.end();
             continue;
         }
-        auto url = extract_cmake_invocation_argument(distfile, CMakeVariableUrls);
-        auto filename = extract_cmake_invocation_argument(distfile, CMakeVariableFilename);
-        auto sha = extract_cmake_invocation_argument(distfile, CMakeVariableSHA512);
+        auto url = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableUrls);
+        auto filename = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableFilename);
+        auto sha = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableSHA512);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", packages.size()), filename, url.to_string(), sha, filename));
         it = distfile.end();
@@ -212,16 +258,16 @@ static void find_all_sourceforge(StringView text, Json::Array& packages, StringV
     auto it = text.begin();
     while (it != text.end())
     {
-        auto sfg = find_cmake_invocation(StringView{it, text.end()}, "vcpkg_from_sourceforge");
+        auto sfg = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_sourceforge");
         if (sfg.empty())
         {
             it = text.end();
             continue;
         }
-        auto repo = extract_cmake_invocation_argument(sfg, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_cmake_invocation_argument(sfg, CMakeVariableRef), version_text);
-        auto filename = extract_cmake_invocation_argument(sfg, CMakeVariableFilename);
-        auto sha = extract_cmake_invocation_argument(sfg, CMakeVariableSHA512);
+        auto repo = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRepo);
+        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRef), version_text);
+        auto filename = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename);
+        auto sha = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableSHA512);
         auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
         packages.push_back(make_resource(
             fmt::format("SPDXRef-resource-{}", packages.size()), filename, std::move(url), sha, filename));
