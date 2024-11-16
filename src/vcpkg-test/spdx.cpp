@@ -5,6 +5,76 @@
 
 using namespace vcpkg;
 
+TEST_CASE ("replace CMake variable", "[spdx]")
+{
+    static constexpr StringLiteral str{"lorem ip${VERSION}"};
+    {
+        auto res = replace_cmake_var(str, "VERSION", "sum");
+        REQUIRE(res == "lorem ipsum");
+    }
+    {
+        auto res = replace_cmake_var(str, "VERSiON", "sum");
+        REQUIRE(res == "lorem ip${VERSION}");
+    }
+}
+
+TEST_CASE ("find cmake invocation", "[spdx]")
+{
+    {
+        auto res = find_cmake_invocation("lorem_ipsum()", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = find_cmake_invocation("lorem_ipsum(abc)", "lorem_ipsu");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = find_cmake_invocation("lorem_ipsum(abc", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = find_cmake_invocation("lorem_ipum(abc)", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = find_cmake_invocation("lorem_ipsum( )", "lorem_ipsum");
+        REQUIRE(res == " ");
+    }
+}
+
+TEST_CASE ("extract cmake invocation argument", "[spdx]")
+{
+    {
+        auto res = extract_cmake_invocation_argument("loremipsum", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem \"", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem   ", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem ipsum", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem \"ipsum", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+    {
+        auto res = extract_cmake_invocation_argument("lorem \"ipsum\"", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+}
+
+
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackageSpec spec{"zlib", Test::ARM_UWP};
