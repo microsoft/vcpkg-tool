@@ -259,14 +259,17 @@ namespace
 
     Path compute_manifest_dir(const ReadOnlyFilesystem& fs, const VcpkgCmdArguments& args, const Path& original_cwd)
     {
+        if (args.force_classic_mode.value_or(false))
+        {
+            return Path{};
+        }
+
         if (auto manifest_root_dir = args.manifest_root_dir.get())
         {
             return fs.almost_canonical(*manifest_root_dir, VCPKG_LINE_INFO);
         }
-        else
-        {
-            return fs.find_file_recursively_up(original_cwd, "vcpkg.json", VCPKG_LINE_INFO);
-        }
+
+        return fs.find_file_recursively_up(original_cwd, FileVcpkgDotJson, VCPKG_LINE_INFO);
     }
 
     // This structure holds members for VcpkgPathsImpl that don't require explicit initialization/destruction

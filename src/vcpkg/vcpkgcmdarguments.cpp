@@ -336,6 +336,8 @@ namespace vcpkg
             args.host_triplet,
             msg::format(msgSpecifyHostArch,
                         msg::env_var = format_environment_variable(EnvironmentVariableVcpkgDefaultHostTriplet)));
+        args.parser.parse_switch(
+            SwitchClassic, StabilityTag::Standard, args.force_classic_mode, msg::format(msgForceClassicMode));
         args.parser.parse_option(SwitchManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
         args.parser.parse_option(SwitchBuildtreesRoot,
                                  StabilityTag::Experimental,
