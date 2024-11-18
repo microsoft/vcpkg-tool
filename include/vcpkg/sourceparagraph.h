@@ -9,6 +9,7 @@
 
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/path.h>
+#include <vcpkg/base/stringview.h>
 
 #include <vcpkg/paragraphparser.h>
 #include <vcpkg/platform-expression.h>
@@ -70,13 +71,14 @@ namespace vcpkg
     {
         std::string name;
         Version version;
-        VersionScheme scheme;
 
         Json::Object extra_info;
 
         friend bool operator==(const DependencyOverride& lhs, const DependencyOverride& rhs);
         friend bool operator!=(const DependencyOverride& lhs, const DependencyOverride& rhs) { return !(lhs == rhs); }
     };
+
+    void serialize_dependency_override(Json::Array& arr, const DependencyOverride& dep);
 
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<Dependency>& deps,
                                                      Triplet t,
@@ -208,6 +210,17 @@ namespace vcpkg
         VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
         Path port_directory() const { return control_path.parent_path(); }
 
+        SourceControlFileAndLocation clone() const
+        {
+            std::unique_ptr<SourceControlFile> scf;
+            if (source_control_file)
+            {
+                scf = std::make_unique<SourceControlFile>(source_control_file->clone());
+            }
+
+            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location};
+        }
+
         std::unique_ptr<SourceControlFile> source_control_file;
         Path control_path;
 
@@ -224,4 +237,6 @@ namespace vcpkg
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
                                                                StringView origin,
                                                                TextRowCol textrowcol = {});
+
+    constexpr StringLiteral OVERRIDES = "overrides";
 }

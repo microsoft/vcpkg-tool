@@ -14,8 +14,6 @@
 #include <string>
 #include <vector>
 
-#include <fmt/compile.h>
-
 using namespace vcpkg;
 
 namespace vcpkg::Strings::details
@@ -106,6 +104,11 @@ namespace
         bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
     } icase_eq;
 
+    constexpr struct
+    {
+        bool operator()(char a, char b) const noexcept { return tolower_char(a) < tolower_char(b); }
+    } icase_less;
+
 }
 
 #if defined(_WIN32)
@@ -173,6 +176,11 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
 bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
 {
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_less(StringView left, StringView right)
+{
+    return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(), icase_less);
 }
 
 void Strings::inplace_ascii_to_lowercase(char* first, char* last) { std::transform(first, last, first, tolower_char); }
@@ -385,8 +393,7 @@ Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, String
     return result.front();
 }
 
-bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
-                                                      View<boyer_moore_horspool_searcher> to_find)
+bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<vcpkg_searcher> to_find)
 {
     std::string::size_type offset = 0;
     std::string::size_type no_comment_offset = 0;
@@ -450,7 +457,7 @@ bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source,
     return false;
 }
 
-bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_moore_horspool_searcher> to_find)
+bool Strings::contains_any_ignoring_hash_comments(StringView source, View<vcpkg_searcher> to_find)
 {
     auto first = source.data();
     auto block_start = first;
@@ -477,17 +484,11 @@ bool Strings::contains_any_ignoring_hash_comments(StringView source, View<boyer_
     return Strings::long_string_contains_any(StringView{block_start, last}, to_find);
 }
 
-bool Strings::long_string_contains_any(StringView source, View<boyer_moore_horspool_searcher> to_find)
+bool Strings::long_string_contains_any(StringView source, View<vcpkg_searcher> to_find)
 {
-    for (const auto& subject : to_find)
-    {
-        auto found = std::search(source.begin(), source.end(), subject);
-        if (found != source.end())
-        {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(to_find.begin(), to_find.end(), [&](const vcpkg_searcher& searcher) {
+        return searcher.search(source.begin(), source.end()) != source.end();
+    });
 }
 
 bool Strings::equals(StringView a, StringView b)

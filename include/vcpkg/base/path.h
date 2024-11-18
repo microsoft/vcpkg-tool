@@ -8,12 +8,7 @@ namespace vcpkg
 {
     struct Path
     {
-        Path();
-        Path(const Path&);
-        Path(Path&&);
-        Path& operator=(const Path&);
-        Path& operator=(Path&&);
-
+        Path() = default;
         Path(const StringView sv);
         Path(const std::string& s);
         Path(std::string&& s);
@@ -41,6 +36,7 @@ namespace vcpkg
         void replace_filename(StringView sv);
         void remove_filename();
         void make_preferred();
+        void make_generic();
         void clear();
         Path lexically_normal() const;
 

@@ -7,7 +7,7 @@ using namespace vcpkg;
 namespace
 {
     const auto DOT_TEMPLATE =
-        "digraph G{{ rankdir=LR; edge [minlen=3]; overlap=false;{}empty [label=\"{} singletons...\"]; }}";
+        "digraph G{{ rankdir=LR; node [fontname=Sans]; edge [minlen=3]; overlap=false;\n{}\"{} singletons...\";\n}}";
 
     const auto DGML_TEMPLATE =
         "<?xml version=\"1.0\" encoding=\"utf-8\"?><DirectedGraph "
@@ -32,13 +32,17 @@ TEST_CASE ("depend-info DOT graph output", "[depend-info]")
 
     SECTION ("single node")
     {
-        CHECK(create_dot_as_string(single_node_dependencies()) == fmt::format(DOT_TEMPLATE, "a;a -> a;", 0));
+        CHECK(create_dot_as_string(single_node_dependencies()) ==
+              fmt::format(DOT_TEMPLATE, "\"a\";\n\"a\" -> \"a\";\n", 0));
     }
 
     SECTION ("4 nodes")
     {
         CHECK(create_dot_as_string(four_nodes_dependencies()) ==
-              fmt::format(DOT_TEMPLATE, "a;a -> b;a -> c;a -> d;b;b -> c;c;c -> d;", 1));
+              fmt::format(DOT_TEMPLATE,
+                          "\"a\";\n\"a\" -> \"b\";\n\"a\" -> \"c\";\n\"a\" -> \"d\";\n\"b\";\n\"b\" -> "
+                          "\"c\";\n\"c\";\n\"c\" -> \"d\";\n\"d\";\n",
+                          1));
     }
 }
 

@@ -18,12 +18,7 @@ namespace vcpkg
     {
     }
 
-    std::string Version::to_string() const
-    {
-        std::string result;
-        to_string(result);
-        return result;
-    }
+    std::string Version::to_string() const { return adapt_to_string(*this); }
 
     void Version::to_string(std::string& out) const
     {
@@ -81,9 +76,17 @@ namespace vcpkg
     VersionDiff::VersionDiff() noexcept : left(), right() { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
-    std::string VersionDiff::to_string() const { return fmt::format("{} -> {}", left, right); }
+    std::string VersionDiff::to_string() const { return adapt_to_string(*this); }
+    void VersionDiff::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{} -> {}", left, right);
+    }
 
-    std::string VersionSpec::to_string() const { return fmt::format("{}@{}", port_name, version); }
+    std::string VersionSpec::to_string() const { return adapt_to_string(*this); }
+    void VersionSpec::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{}@{}", port_name, version);
+    }
 
     namespace
     {
@@ -363,6 +366,22 @@ namespace vcpkg
         }
 
         return ret;
+    }
+
+    SchemedVersion::SchemedVersion() noexcept { }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, Version&& version) noexcept
+        : scheme(scheme), version(std::move(version))
+    {
+    }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, const Version& version) : scheme(scheme), version(version) { }
+    SchemedVersion::SchemedVersion(VersionScheme scheme, std::string&& value, int port_version) noexcept
+        : scheme(scheme), version(std::move(value), port_version)
+    {
+    }
+
+    SchemedVersion::SchemedVersion(VersionScheme scheme, StringView value, int port_version)
+        : scheme(scheme), version(value, port_version)
+    {
     }
 
     bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)

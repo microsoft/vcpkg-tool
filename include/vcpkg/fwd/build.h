@@ -4,94 +4,96 @@ namespace vcpkg
 {
     enum class BuildResult
     {
-        SUCCEEDED,
-        BUILD_FAILED,
-        POST_BUILD_CHECKS_FAILED,
-        FILE_CONFLICTS,
-        CASCADED_DUE_TO_MISSING_DEPENDENCIES,
-        EXCLUDED,
-        CACHE_MISSING,
-        DOWNLOADED,
-        REMOVED
+        Succeeded,
+        BuildFailed,
+        PostBuildChecksFailed,
+        FileConflicts,
+        CascadedDueToMissingDependencies,
+        Excluded,
+        CacheMissing,
+        Downloaded,
+        Removed
     };
 
     enum class UseHeadVersion
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class AllowDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class OnlyDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanBuildtrees
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanPackages
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class CleanDownloads
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class ConfigurationType
     {
-        DEBUG,
-        RELEASE,
+        Debug,
+        Release,
     };
 
     enum class DownloadTool
     {
-        BUILT_IN,
-        ARIA2,
-    };
-    enum class PurgeDecompressFailure
-    {
-        NO = 0,
-        YES
+        Builtin,
+        Aria2,
     };
 
     enum class Editable
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class BackcompatFeatures
     {
-        ALLOW = 0,
-        PROHIBIT
+        Allow = 0,
+        Prohibit
     };
 
     enum class BuildMissing
     {
-        NO = 0,
-        YES
+        No = 0,
+        Yes
     };
 
     enum class PrintUsage
     {
-        YES = 0,
-        NO
+        No = 0,
+        Yes
     };
 
+    enum class KeepGoing
+    {
+        No = 0,
+        Yes
+    };
+
+    // These names are intended to match VCPKG_POLICY_Xxx constants settable in portfile.cmake
     enum class BuildPolicy
     {
         EMPTY_PACKAGE,
@@ -107,6 +109,21 @@ namespace vcpkg
         SKIP_ARCHITECTURE_CHECK,
         CMAKE_HELPER_PORT,
         SKIP_ABSOLUTE_PATHS_CHECK,
+        SKIP_ALL_POST_BUILD_CHECKS,
+        SKIP_APPCONTAINER_CHECK,
+        SKIP_CRT_LINKAGE_CHECK,
+        SKIP_MISPLACED_CMAKE_FILES_CHECK,
+        SKIP_LIB_CMAKE_MERGE_CHECK,
+        ALLOW_DLLS_IN_LIB,
+        SKIP_MISPLACED_REGULAR_FILES_CHECK,
+        SKIP_COPYRIGHT_CHECK,
+        ALLOW_KERNEL32_FROM_XBOX,
+        ALLOW_EXES_IN_BIN,
+        SKIP_USAGE_INSTALL_CHECK,
+        ALLOW_EMPTY_FOLDERS,
+        ALLOW_DEBUG_INCLUDE,
+        ALLOW_DEBUG_SHARE,
+        SKIP_PKGCONFIG_CHECK,
         // Must be last
         COUNT,
     };

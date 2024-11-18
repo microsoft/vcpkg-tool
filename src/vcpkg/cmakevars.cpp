@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/strings.h>
@@ -150,6 +151,8 @@ VCPKG_ENV_PASSTHROUGH=${VCPKG_ENV_PASSTHROUGH}
 VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
+VCPKG_HASH_ADDITIONAL_FILES=${VCPKG_HASH_ADDITIONAL_FILES}
+VCPKG_POST_PORTFILE_INCLUDES=${VCPKG_POST_PORTFILE_INCLUDES}
 VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
@@ -164,7 +167,7 @@ endfunction()
             std::string featurelist;
             for (auto&& f : spec.features)
             {
-                if (f == "core" || f == "default" || f == "*") continue;
+                if (f == FeatureNameCore || f == FeatureNameDefault || f == "*") continue;
                 if (!featurelist.empty()) featurelist.push_back(';');
                 featurelist.append(f);
             }
@@ -257,22 +260,19 @@ endfunction()
         static constexpr StringLiteral BLOCK_START_GUID = "c35112b6-d1ba-415b-aa5d-81de856ef8eb";
         static constexpr StringLiteral BLOCK_END_GUID = "e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f";
 
-        const auto cmd_launch_cmake = vcpkg::make_cmake_cmd(paths, script_path, {});
+        auto cmd = vcpkg::make_cmake_cmd(paths, script_path, {});
 
         std::vector<std::string> lines;
-        auto const exit_code = cmd_execute_and_stream_lines(
-                                   cmd_launch_cmake,
-                                   [&](StringView sv) { lines.emplace_back(sv.begin(), sv.end()); },
-                                   default_working_directory)
-                                   .value_or_exit(VCPKG_LINE_INFO);
+        auto const exit_code = cmd_execute_and_stream_lines(cmd, [&](StringView sv) {
+                                   lines.emplace_back(sv.begin(), sv.end());
+                               }).value_or_exit(VCPKG_LINE_INFO);
 
         if (exit_code != 0)
         {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgCommandFailed, msg::command_line = cmd_launch_cmake.command_line())
-                    .append_raw('\n')
-                    .append_raw(Strings::join(", ", lines)));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msgCommandFailed, msg::command_line = cmd.command_line())
+                                              .append_raw('\n')
+                                              .append_raw(Strings::join(", ", lines)));
         }
 
         const auto end = lines.cend();
@@ -318,8 +318,9 @@ endfunction()
     {
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
-        const auto file_path = create_tag_extraction_file(std::array<std::pair<FullPackageSpec, std::string>, 1>{
-            std::pair<FullPackageSpec, std::string>{FullPackageSpec{{"", triplet}, {}}, ""}});
+        std::pair<FullPackageSpec, std::string> tag_extracts{FullPackageSpec{{"", triplet}, {}}, ""};
+        const auto file_path =
+            create_tag_extraction_file(View<std::pair<FullPackageSpec, std::string>>{&tag_extracts, 1});
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 

@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/graphs.h>
 
 #include <vcpkg/dependencies.h>
@@ -37,9 +38,9 @@ static void features_check(InstallPlanAction& plan,
     for (auto&& feature_name : expected_features)
     {
         // TODO: see if this can be simplified
-        if (feature_name == "core" || feature_name.empty())
+        if (feature_name == FeatureNameCore || feature_name.empty())
         {
-            REQUIRE((Util::find(feature_list, "core") != feature_list.end() ||
+            REQUIRE((Util::find(feature_list, FeatureNameCore) != feature_list.end() ||
                      Util::find(feature_list, "") != feature_list.end()));
             continue;
         }
@@ -61,7 +62,9 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               View<FullPackageSpec> specs,
                                               const StatusParagraphs& status_db)
 {
-    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    const CreateInstallPlanOptions create_options{
+        nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+
     return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
 }
 
@@ -71,7 +74,8 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               const StatusParagraphs& status_db,
                                               Triplet host_triplet)
 {
-    const CreateInstallPlanOptions create_options{host_triplet, "pkg"};
+    const CreateInstallPlanOptions create_options{
+        nullptr, host_triplet, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
     return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
 }
 
@@ -80,7 +84,7 @@ static ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                       const std::vector<PackageSpec>& specs,
                                       const StatusParagraphs& status_db)
 {
-    const CreateInstallPlanOptions create_options{Test::X64_ANDROID, "pkg"};
+    const CreateUpgradePlanOptions create_options{nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error};
     return create_upgrade_plan(provider, var_provider, specs, status_db, create_options);
 }
 

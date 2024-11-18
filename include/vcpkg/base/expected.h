@@ -102,8 +102,8 @@ namespace vcpkg
         {
         }
 
-        ExpectedT(const ExpectedT& other) noexcept(
-            std::is_nothrow_copy_constructible_v<Error>&& std::is_nothrow_copy_constructible_v<ExpectedHolder<T>>)
+        ExpectedT(const ExpectedT& other) noexcept(std::is_nothrow_copy_constructible_v<Error> &&
+                                                   std::is_nothrow_copy_constructible_v<ExpectedHolder<T>>)
             : value_is_error(other.value_is_error)
         {
             if (value_is_error)
@@ -116,8 +116,8 @@ namespace vcpkg
             }
         }
 
-        ExpectedT(ExpectedT&& other) noexcept(
-            std::is_nothrow_move_constructible_v<Error>&& std::is_nothrow_move_constructible_v<ExpectedHolder<T>>)
+        ExpectedT(ExpectedT&& other) noexcept(std::is_nothrow_move_constructible_v<Error> &&
+                                              std::is_nothrow_move_constructible_v<ExpectedHolder<T>>)
             : value_is_error(other.value_is_error)
         {
             if (value_is_error)
@@ -228,6 +228,12 @@ namespace vcpkg
             return std::move(*m_t.get());
         }
 
+        Error& error() & noexcept
+        {
+            unreachable_if_not_error(VCPKG_LINE_INFO);
+            return m_error;
+        }
+
         const Error& error() const& noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
@@ -235,6 +241,12 @@ namespace vcpkg
         }
 
         Error&& error() && noexcept
+        {
+            unreachable_if_not_error(VCPKG_LINE_INFO);
+            return std::move(m_error);
+        }
+
+        const Error&& error() const&& noexcept
         {
             unreachable_if_not_error(VCPKG_LINE_INFO);
             return std::move(m_error);

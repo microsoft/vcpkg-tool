@@ -363,11 +363,13 @@ namespace vcpkg::IFW
             const Filesystem& fs = paths.get_filesystem();
             fs.remove_all(repository_dir, VCPKG_LINE_INFO);
 
-            auto cmd_line =
-                Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir);
-
-            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
-                    repogen_exe)
+            RedirectedProcessLaunchSettings settings;
+            settings.environment = get_clean_environment();
+            flatten(
+                cmd_execute_and_capture_output(
+                    Command(repogen_exe).string_arg("--packages").string_arg(packages_dir).string_arg(repository_dir),
+                    settings),
+                repogen_exe)
                 .value_or_exit(VCPKG_LINE_INFO);
         }
 
@@ -381,32 +383,31 @@ namespace vcpkg::IFW
             const auto installer_file = get_installer_file_path(export_id, ifw_options, paths);
             msg::println(msgGeneratingInstaller, msg::path = installer_file);
 
-            Command cmd_line;
-
+            Command cmd;
             std::string ifw_repo_url = ifw_options.maybe_repository_url.value_or("");
             if (!ifw_repo_url.empty())
             {
-                cmd_line = Command(binarycreator_exe)
-                               .string_arg("--online-only")
-                               .string_arg("--config")
-                               .string_arg(config_file)
-                               .string_arg("--repository")
-                               .string_arg(repository_dir)
-                               .string_arg(installer_file);
+                cmd.string_arg(binarycreator_exe)
+                    .string_arg("--online-only")
+                    .string_arg("--config")
+                    .string_arg(config_file)
+                    .string_arg("--repository")
+                    .string_arg(repository_dir)
+                    .string_arg(installer_file);
             }
             else
             {
-                cmd_line = Command(binarycreator_exe)
-                               .string_arg("--config")
-                               .string_arg(config_file)
-                               .string_arg("--packages")
-                               .string_arg(packages_dir)
-                               .string_arg(installer_file);
+                cmd.string_arg(binarycreator_exe)
+                    .string_arg("--config")
+                    .string_arg(config_file)
+                    .string_arg("--packages")
+                    .string_arg(packages_dir)
+                    .string_arg(installer_file);
             }
 
-            flatten(cmd_execute_and_capture_output(cmd_line, default_working_directory, get_clean_environment()),
-                    binarycreator_exe)
-                .value_or_exit(VCPKG_LINE_INFO);
+            RedirectedProcessLaunchSettings settings;
+            settings.environment = get_clean_environment();
+            flatten(cmd_execute_and_capture_output(cmd, settings), binarycreator_exe).value_or_exit(VCPKG_LINE_INFO);
             msg::println(Color::success, msgGeneratedInstaller, msg::path = installer_file);
         }
     }

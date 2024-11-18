@@ -1,0 +1,4 @@
+set(VCPKG_BUILD_TYPE release)
+
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/include/")
+file(WRITE "${CURRENT_PACKAGES_DIR}/include/common.h" "// THIS IS A HEADER FILE")

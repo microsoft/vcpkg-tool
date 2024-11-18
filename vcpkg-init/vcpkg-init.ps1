@@ -6,7 +6,7 @@ if #ftw NEQ '' goto :init
 # Licensed under the MIT License.
 
 # wrapper script for vcpkg
-# this is intended to be dot-sourced and then you can use the vcpkg() function
+# this is intended to be dot-sourced and then you can use the vcpkg-shell() function
 
 # Workaround for $IsWindows not existing in Windows PowerShell
 if (-Not (Test-Path variable:IsWindows)) {
@@ -80,7 +80,7 @@ if(-Not (bootstrap-vcpkg)) {
 # Export vcpkg to the current shell.
 New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
   param($VCPKG)
-  function vcpkg() {
+  function vcpkg-shell() {
     # setup the postscript file
     # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
     $env:Z_VCPKG_POSTSCRIPT = Join-Path ([System.IO.Path]::GetTempPath()) "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
@@ -92,13 +92,15 @@ New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
         iex $postscr
       }
 
-      Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT,env:Z_VCPKG_POSTSCRIPT
+      Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT
     }
+
+    Remove-Item env:Z_VCPKG_POSTSCRIPT
   }
 } | Out-Null
 
 if ($args.Count -ne 0) {
-  return vcpkg @args
+  return vcpkg-shell @args
 }
 
 return
@@ -109,22 +111,22 @@ IF EXIST $null DEL $null
 
 :: Figure out where VCPKG_ROOT is
 IF EXIST "%~dp0.vcpkg-root" (
-  SET VCPKG_ROOT=%~dp0
+  SET "VCPKG_ROOT=%~dp0"
 )
 
 IF "%VCPKG_ROOT:~-1%"=="\" (
-  SET VCPKG_ROOT=%VCPKG_ROOT:~0,-1%
+  SET "VCPKG_ROOT=%VCPKG_ROOT:~0,-1%"
 )
 
 IF "%VCPKG_ROOT%"=="" (
-  SET VCPKG_ROOT=%USERPROFILE%\.vcpkg
+  SET "VCPKG_ROOT=%USERPROFILE%\.vcpkg"
 )
 
 :: Call powershell which may or may not invoke bootstrap if there's a version mismatch
 SET Z_POWERSHELL_EXE=
 FOR %%i IN (pwsh.exe powershell.exe) DO (
   IF EXIST "%%~$PATH:i" (
-    SET Z_POWERSHELL_EXE=%%~$PATH:i
+    SET "Z_POWERSHELL_EXE=%%~$PATH:i"
     GOTO :gotpwsh
   )
 )
@@ -140,7 +142,7 @@ IF ERRORLEVEL 1 (
 SET Z_POWERSHELL_EXE=
 
 :: Install the doskey
-DOSKEY vcpkg="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
+DOSKEY vcpkg-shell="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
 
 :: If there were any arguments, also invoke vcpkg with them
 IF "%1"=="" GOTO fin

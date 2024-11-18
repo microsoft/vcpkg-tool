@@ -1,5 +1,6 @@
 #include <vcpkg/base/cmd-parser.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 
 #include <stdint.h>
@@ -392,8 +393,6 @@ namespace vcpkg
 
     bool OptionTableKey::operator<(const OptionTableKey& rhs) const { return switch_name < rhs.switch_name; }
 
-    CmdParser::CmdParser() = default;
-
     CmdParser::CmdParser(View<std::string> inputs)
         : argument_strings(inputs.begin(), inputs.end())
         , argument_strings_lowercase()
@@ -413,11 +412,6 @@ namespace vcpkg
     {
         insert_lowercase_strings(argument_strings_lowercase, argument_strings);
     }
-
-    CmdParser::CmdParser(const CmdParser&) = default;
-    CmdParser::CmdParser(CmdParser&&) = default;
-    CmdParser& CmdParser::operator=(const CmdParser&) = default;
-    CmdParser& CmdParser::operator=(CmdParser&&) = default;
 
     bool CmdParser::parse_switch(StringView switch_name, StabilityTag stability, bool& value)
     {
@@ -970,11 +964,22 @@ namespace vcpkg
         bool error = consume_remaining_args_impl(results);
         if (max_arity < results.size() || results.size() < min_arity)
         {
-            errors.emplace_back(msg::format_error(msgNonRangeArgs,
-                                                  msg::command_name = command_name,
-                                                  msg::lower = min_arity,
-                                                  msg::upper = max_arity,
-                                                  msg::actual = results.size()));
+            if (max_arity == SIZE_MAX)
+            {
+                errors.emplace_back(msg::format_error(msgNonRangeArgsGreater,
+                                                      msg::command_name = command_name,
+                                                      msg::lower = min_arity,
+                                                      msg::actual = results.size()));
+            }
+            else
+            {
+                errors.emplace_back(msg::format_error(msgNonRangeArgs,
+                                                      msg::command_name = command_name,
+                                                      msg::lower = min_arity,
+                                                      msg::upper = max_arity,
+                                                      msg::actual = results.size()));
+            }
+
             for (std::size_t idx = max_arity; idx < results.size(); ++idx)
             {
                 errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));
@@ -1010,14 +1015,11 @@ namespace vcpkg
             return;
         }
 
-        for (auto&& error : errors)
-        {
-            msg::write_unlocalized_text(Color::error, error.append_raw("\n"));
-        }
+        msg::write_unlocalized_text_to_stderr(Color::error, Strings::join("\n", errors).append("\n"));
 
         example.append_raw('\n');
         append_options_table(example);
-        msg::println(Color::none, example);
+        stderr_sink.println(Color::none, example);
         Checks::exit_with_code(VCPKG_LINE_INFO, 1);
     }
 }
