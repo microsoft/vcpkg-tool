@@ -201,9 +201,20 @@ if (-not ($actual.Contains("Asset cache hit for example3.html; downloaded from: 
 # Testing x-download failure with asset cache (x-script) and x-block-origin settings
 $env:X_VCPKG_ASSET_SOURCES = "clear;x-script,pwsh $PSScriptRoot/../e2e-assets/asset-caching/failing-script.ps1 {url} {sha512} {dst};x-block-origin"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
-if (-not ($actual.Contains("error: <mirror-script> failed with exit code: (1).") -and
-          $actual.Contains("error: Missing example3.html and downloads are blocked by x-block-origin."))) {
-    throw "Failure: x-script downloads failure messaging"
+# Check for the expected messages in order
+$expectedOrder = @(
+    "error: <mirror-script> failed with exit code: (1).",
+    "error: Missing example3.html and downloads are blocked by x-block-origin."
+)
+
+# Verify order
+$index = 0
+foreach ($message in $expectedOrder) {
+    $index = $actual.IndexOf($message, $index)
+    if ($index -lt 0) {
+        throw "Failure: Expected message '$message' not found in the correct order."
+    }
+    $index += $message.Length
 }
 
 # Testing x-download success with asset cache (x-script) and x-block-origin settings
