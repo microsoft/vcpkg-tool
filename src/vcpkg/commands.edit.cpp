@@ -280,6 +280,6 @@ namespace vcpkg
         }
 #endif // ^^^ _WIN32
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO));
+        Checks::exit_with_code(VCPKG_LINE_INFO, static_cast<int>(cmd_execute(cmd).value_or_exit(VCPKG_LINE_INFO)));
     }
 } // namespace vcpkg

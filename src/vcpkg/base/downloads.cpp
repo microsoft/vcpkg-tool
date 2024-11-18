@@ -583,7 +583,7 @@ namespace vcpkg
         msg::println(msgAssetCacheSuccesfullyStored,
                      msg::path = file.filename(),
                      msg::url = replace_secrets(url.to_string(), secrets));
-        return res;
+        return 0;
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
@@ -905,6 +905,8 @@ namespace vcpkg
                                                MessageSink& progress_sink) const
     {
         std::vector<LocalizedString> errors;
+        bool block_origin_enabled = m_config.m_block_origin;
+
         if (urls.size() == 0)
         {
             if (auto hash = sha512.get())
@@ -935,6 +937,14 @@ namespace vcpkg
                                  msg::path = download_path.filename(),
                                  msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
+                }
+                else if (block_origin_enabled)
+                {
+                    msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+                }
+                else
+                {
+                    msg::println(msgAssetCacheMiss, msg::url = urls[0]);
                 }
             }
             else if (auto script = m_config.m_script.get())
@@ -985,16 +995,20 @@ namespace vcpkg
             }
         }
 
-        if (!m_config.m_block_origin)
+        if (block_origin_enabled)
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+        else
         {
             if (urls.size() != 0)
             {
+                msg::println(msgDownloadingUrl, msg::url = download_path.filename());
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
-                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0])
-                                                             : msg::println(msgDownloadingUrl, msg::url = urls[0]);
+                    msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
 
                     if (auto hash = sha512.get())
                     {
@@ -1010,16 +1024,13 @@ namespace vcpkg
 
                     return *url;
                 }
+                else
+                {
+                    msg::println(msgDownloadFailedProxySettings,
+                                 msg::path = download_path.filename(),
+                                 msg::url = "https://github.com/microsoft/vcpkg-tool/pull/77");
+                }
             }
-        }
-        // Asset cache is not configured and x-block-origin enabled
-        if (m_config.m_read_url_template.has_value())
-        {
-            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
-        }
-        else
-        {
-            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
         }
 
         for (LocalizedString& error : errors)

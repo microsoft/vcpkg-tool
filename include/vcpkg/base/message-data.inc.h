@@ -74,6 +74,19 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
+DECLARE_MESSAGE(
+    AddVersionPortVersionShouldBeGone,
+    (msg::package_name, msg::version),
+    "",
+    "In {package_name}, {version} is completely new version, so the \"port-version\" field should be removed. Remove "
+    "\"port-version\", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .")
+DECLARE_MESSAGE(AddVersionPortVersionShouldBeOneMore,
+                (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
+                "",
+                "In {package_name}, the current \"port-version\" for {version} is {count}, so the next added "
+                "\"port-version\" should be {expected_version}, but the port declares \"port-version\" "
+                "{actual_version}. Change \"port-version\" to {expected_version}, commit that change, and try again. "
+                "To skip this check, rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionSuggestVersionDate,
                 (msg::package_name),
                 "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
@@ -235,6 +248,11 @@ DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when a
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
 DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
+                (msg::path),
+                "x-block-origin is a vcpkg term. Do not translate",
+                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
+DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
 DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
@@ -1033,6 +1051,22 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
                 "{url}: failed: status code {value}")
+DECLARE_MESSAGE(DownloadFailedProxySettings,
+                (msg::path, msg::url),
+                "",
+                "Failed to download {path}.\nIf you are using a proxy, please ensure your proxy settings are "
+                "correct.\nPossible causes are:\n"
+                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable "
+                "to `https//address:port`.\nThis is not correct, because `https://` prefix "
+                "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
+                "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
+                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings "
+                "set by your proxy software. See, {url}\n"
+                "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
+                "3. Your proxy's remote server is our of service.\n"
+                "If you've tried directly download the link, and believe this is not a temporay download server "
+                "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
+                "to report this upstream download server failure.")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
@@ -1159,6 +1193,10 @@ DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' 
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
+DECLARE_MESSAGE(ExpectedInstallStateField,
+                (),
+                "The values in ''s are locale-invariant",
+                "expected one of 'not-installed', 'half-installed', or 'installed'")
 DECLARE_MESSAGE(ExpectedOneSetOfTags,
                 (msg::count, msg::old_value, msg::new_value, msg::value),
                 "{old_value} is a left tag and {new_value} is the right tag. {value} is the input.",
@@ -1168,7 +1206,15 @@ DECLARE_MESSAGE(ExpectedPathToExist, (msg::path), "", "Expected {path} to exist 
 DECLARE_MESSAGE(ExpectedPortName, (), "", "expected a port name here (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedReadWriteReadWrite, (), "", "unexpected argument: expected 'read', readwrite', or 'write'")
 DECLARE_MESSAGE(ExpectedStatusField, (), "", "Expected 'status' field in status paragraph")
+DECLARE_MESSAGE(ExpectedTextHere,
+                (msg::expected),
+                "{expected} is a locale-invariant string a parser was searching for",
+                "expected '{expected}' here")
 DECLARE_MESSAGE(ExpectedTripletName, (), "", "expected a triplet name here (must be lowercase, digits, '-')")
+DECLARE_MESSAGE(ExpectedWantField,
+                (),
+                "The values in ''s are locale-invariant",
+                "expected one of 'install', 'hold', 'deinstall', or 'purge' here")
 DECLARE_MESSAGE(ExportArchitectureReq,
                 (),
                 "",
@@ -1215,10 +1261,6 @@ DECLARE_MESSAGE(MissingShaVariable,
                 (),
                 "{{sha}} should not be translated",
                 "The {{sha}} variable must be used in the template if other variables are used.")
-DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
-                (msg::path),
-                "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(FailedToExtract, (msg::path), "", "Failed to extract \"{path}\":")
 DECLARE_MESSAGE(FailedToFetchRepo, (msg::url), "", "Failed to fetch {url}.")
 DECLARE_MESSAGE(FailedToFindPortFeature,
@@ -1342,6 +1384,7 @@ DECLARE_MESSAGE(
     (),
     "",
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
+DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
@@ -1486,6 +1529,12 @@ DECLARE_MESSAGE(HelpBinaryCachingAzBlob,
                 "**Experimental: will change or be removed without warning**\n"
                 "Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include "
                 "the container path. <sas> must be be prefixed with a \"?\".")
+DECLARE_MESSAGE(HelpBinaryCachingAzUpkg,
+                (),
+                "Printed as the 'definition' for 'x-az-universal,<organization>,<project>,<feed>[,<rw>]'.",
+                "**Experimental: will change or be removed without warning**\n"
+                "Adds a Universal Package Azure Artifacts source. Uses the Azure CLI "
+                "(az artifacts) for uploads and downloads.")
 DECLARE_MESSAGE(HelpBinaryCachingCos,
                 (),
                 "Printed as the 'definition' for 'x-cos,<prefix>[,<rw>]'.",
@@ -1714,10 +1763,10 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
-DECLARE_MESSAGE(InstallingMavenFile,
-                (msg::path),
-                "Printed after a filesystem operation error",
-                "{path} installing Maven file")
+DECLARE_MESSAGE(InstallingMavenFileFailure,
+                (msg::path, msg::command_line, msg::exit_code),
+                "Printed after a maven install command fails",
+                "{path} installing Maven file, {command_line} failed with {exit_code}")
 DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
@@ -1807,6 +1856,10 @@ DECLARE_MESSAGE(InvalidArgumentRequiresBaseUrlAndToken,
                 (msg::binary_source),
                 "",
                 "invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token")
+DECLARE_MESSAGE(InvalidArgumentRequiresFourOrFiveArguments,
+                (msg::binary_source),
+                "",
+                "invalid argument: binary config '{binary_source}' requires 4 or 5 arguments")
 DECLARE_MESSAGE(InvalidArgumentRequiresNoneArguments,
                 (msg::binary_source),
                 "",
@@ -2134,6 +2187,10 @@ DECLARE_MESSAGE(NonRangeArgs,
                 "{actual} is an integer",
                 "the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} "
                 "were provided")
+DECLARE_MESSAGE(NonRangeArgsGreater,
+                (msg::command_name, msg::lower, msg::actual),
+                "{actual} is an integer",
+                "the command '{command_name}' requires at least {lower} arguments, but {actual} were provided")
 DECLARE_MESSAGE(NonZeroOrOneRemainingArgs,
                 (msg::command_name),
                 "",
@@ -2216,25 +2273,25 @@ DECLARE_MESSAGE(
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid feature name. "
-    "Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParseIdentifierError,
                 (msg::value, msg::url),
                 "{value} is a lowercase identifier like 'boost'",
                 "\"{value}\" is not a valid identifier. "
-                "Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+                "Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(
     ParsePackageNameNotEof,
     (msg::url),
     "",
     "expected the end of input parsing a package name; this usually means the indicated character is not allowed to be "
-    "in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more "
+    "in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more "
     "information).")
 DECLARE_MESSAGE(
     ParsePackageNameError,
     (msg::package_name, msg::url),
     "",
     "\"{package_name}\" is not a valid package name. "
-    "Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).")
+    "Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).")
 DECLARE_MESSAGE(ParsePackagePatternError,
                 (msg::package_name, msg::url),
                 "",
@@ -2246,12 +2303,16 @@ DECLARE_MESSAGE(
     (),
     "",
     "expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be "
-    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.")
+    "in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
                 (msg::version_spec),
                 "",
                 "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
 DECLARE_MESSAGE(ParserWarnings, (msg::path), "", "The following warnings were generated while parsing {path}:")
+DECLARE_MESSAGE(ParseTripletNotEof,
+                (),
+                "",
+                "Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.")
 DECLARE_MESSAGE(PathMustBeAbsolute,
                 (msg::path),
                 "",
@@ -2569,6 +2630,11 @@ DECLARE_MESSAGE(RestoredPackagesFromAWS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAZUPKG,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from Universal Packages in {elapsed}. "
+                "Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromCOS,
                 (msg::count, msg::elapsed),
                 "",

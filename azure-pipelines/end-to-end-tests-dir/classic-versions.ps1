@@ -1,5 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$commonArgs += @("--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
+
 # Not a number
 Refresh-TestRoot
 $out = Run-VcpkgAndCaptureOutput @commonArgs install classic-versions-b

@@ -121,6 +121,13 @@ namespace vcpkg
         std::string commit;
     };
 
+    struct AzureUpkgSource
+    {
+        std::string organization;
+        std::string project;
+        std::string feed;
+    };
+
     struct BinaryConfigParserState
     {
         bool nuget_interactive = false;
@@ -146,6 +153,9 @@ namespace vcpkg
 
         bool gha_write = false;
         bool gha_read = false;
+
+        std::vector<AzureUpkgSource> upkg_templates_to_get;
+        std::vector<AzureUpkgSource> upkg_templates_to_put;
 
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
