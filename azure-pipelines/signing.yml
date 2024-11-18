@@ -205,7 +205,7 @@ extends:
         - arch_independent
         pool:
           name: Azure Pipelines
-          vmImage: macOS-12
+          vmImage: macOS-13
           os: macOS
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]

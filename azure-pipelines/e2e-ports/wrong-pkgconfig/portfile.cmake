@@ -23,4 +23,4 @@ if("debug-bad" IN_LIST FEATURES)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/wrong-pkgconfig.pc.in" "${CURRENT_PACKAGES_DIR}/debug/lib/wrong-pkgconfig.pc" @ONLY)
 endif()
 
-file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/../../../../LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/" RENAME copyright)
+file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/../../../LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}/" RENAME copyright)

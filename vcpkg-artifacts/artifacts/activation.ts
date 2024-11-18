@@ -705,7 +705,7 @@ function generatePowerShellScript(variables: Record<string, string | undefined>,
 }
 
 function generatePosixScript(variables: Record<string, string | undefined>, aliases: Record<string, string>): string {
-  return linq.entries(variables).select(([k, v]) => { return v ? `export ${k}="${v}"` : `unset ${k[0]}`; }).join('\n') +
+  return linq.entries(variables).select(([k, v]) => { return v ? `export ${k}="${v}"` : `unset ${k}`; }).join('\n') +
     '\n' +
     linq.entries(aliases).select(([k, v]) => { return v ? `${k}() {\n  ${v} $* \n}` : `unset -f ${v} > /dev/null 2>&1`; }).join('\n') +
     '\n';

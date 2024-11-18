@@ -53,6 +53,11 @@ namespace vcpkg::Util
             const auto last = end(container);
             return std::find(first, last, item) != last;
         }
+        template<class Vec, class Key, size_t N>
+        bool contains(const Vec (&container)[N], const Key& item)
+        {
+            return std::find(container, container + N, item) != container + N;
+        }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
         {

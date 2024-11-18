@@ -108,14 +108,22 @@ namespace vcpkg::Json
         int64_t integer(LineInfo li) const noexcept;
         double number(LineInfo li) const noexcept;
         StringView string(LineInfo li) const noexcept;
+        std::string* maybe_string() noexcept;
+        const std::string* maybe_string() const noexcept;
 
         const Array& array(LineInfo li) const& noexcept;
         Array& array(LineInfo li) & noexcept;
         Array&& array(LineInfo li) && noexcept;
 
+        Array* maybe_array() noexcept;
+        const Array* maybe_array() const noexcept;
+
         const Object& object(LineInfo li) const& noexcept;
         Object& object(LineInfo li) & noexcept;
         Object&& object(LineInfo li) && noexcept;
+
+        Object* maybe_object() noexcept;
+        const Object* maybe_object() const noexcept;
 
         static Value null(std::nullptr_t) noexcept;
         static Value boolean(bool) noexcept;
@@ -327,7 +335,6 @@ namespace vcpkg::Json
         JsonStyle style;
     };
 
-    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem&, const Path&, std::error_code& ec);
     ExpectedL<ParsedJson> parse(StringView text, StringView origin);
     ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin);

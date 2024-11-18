@@ -48,6 +48,7 @@ namespace vcpkg
         VersionDiff(const Version& left, const Version& right);
 
         std::string to_string() const;
+        void to_string(std::string& out) const;
     };
 
     struct VersionMapLess
@@ -85,6 +86,7 @@ namespace vcpkg
         VersionSpec(const std::string& port_name, const std::string& version_string, int port_version);
 
         std::string to_string() const;
+        void to_string(std::string& out) const;
 
         friend bool operator==(const VersionSpec& lhs, const VersionSpec& rhs);
         friend bool operator!=(const VersionSpec& lhs, const VersionSpec& rhs);
@@ -97,7 +99,7 @@ namespace vcpkg
 
     struct DotVersion
     {
-        DotVersion() { } // intentionally disable making this type an aggregate
+        DotVersion() noexcept { } // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;
@@ -122,7 +124,7 @@ namespace vcpkg
 
     struct DateVersion
     {
-        DateVersion() { } // intentionally disable making this type an aggregate
+        DateVersion() noexcept { } // intentionally disable making this type an aggregate
 
         std::string original_string;
         std::string version_string;

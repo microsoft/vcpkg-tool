@@ -28,6 +28,8 @@ Param(
     [ValidateNotNullOrEmpty()]
     [string]$Filter,
     [Parameter(Mandatory = $false)]
+    [string]$StartAt,
+    [Parameter(Mandatory = $false)]
     [string]$VcpkgExe,
     [Parameter(Mandatory = $false, HelpMessage="Run artifacts tests, only usable when vcpkg was built with VCPKG_ARTIFACTS_DEVELOPMENT=ON")]
     [switch]$RunArtifactsTests
@@ -76,12 +78,10 @@ $VcpkgExe = $VcpkgItem.FullName
 $VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg-shell.ps1"
 $TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
 
-[Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
-if ($Filter -ne $Null) {
+[Array]$AllTests = Get-ChildItem -LiteralPath "$PSScriptRoot/end-to-end-tests-dir" -Filter "*.ps1" | Sort-Object -Property Name
+if ($Filter -ne $null) {
     $AllTests = $AllTests | ? { $_.Name -match $Filter }
 }
-$n = 1
-$m = $AllTests.Count
 
 $envvars_clear = @(
     'VCPKG_BINARY_SOURCES',
@@ -99,12 +99,25 @@ $envvars_clear = @(
 )
 $envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH", "GITHUB_ACTIONS")
 
-foreach ($Test in $AllTests)
+$allTestsCount = $AllTests.Count
+for ($n = 1; $n -le $allTestsCount; $n++)
 {
+    $Test = $AllTests[$n - 1]
+    if ($StartAt.Length -ne 0) {
+        [string]$TestName = $Test.Name
+        $TestName = $TestName.Substring(0, $TestName.Length - 4) # remove .ps1
+        if ($StartAt.Equals($TestName, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $StartAt = [string]::Empty
+        } else {
+            Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Suite $Test skipped by -StartAt"
+            continue
+        }
+    }
+
     if ($env:GITHUB_ACTIONS) {
-        Write-Host -ForegroundColor Green "::group::[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+        Write-Host -ForegroundColor Green "::group::[end-to-end-tests.ps1] [$n/$allTestsCount] Running suite $Test"
     } else {
-        Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+        Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Running suite $Test"
     }
 
     $envbackup = @{}
@@ -145,7 +158,6 @@ foreach ($Test in $AllTests)
     if ($env:GITHUB_ACTIONS) {
         Write-Host "::endgroup::"
     }
-    $n += 1
 }
 
 Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] All tests passed."

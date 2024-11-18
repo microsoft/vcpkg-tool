@@ -337,8 +337,9 @@ endfunction()
     {
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
-        const auto file_path = create_tag_extraction_file(std::array<std::pair<FullPackageSpec, std::string>, 1>{
-            std::pair<FullPackageSpec, std::string>{FullPackageSpec{{"", triplet}, {}}, ""}});
+        std::pair<FullPackageSpec, std::string> tag_extracts{FullPackageSpec{{"", triplet}, {}}, ""};
+        const auto file_path =
+            create_tag_extraction_file(View<std::pair<FullPackageSpec, std::string>>{&tag_extracts, 1});
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 

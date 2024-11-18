@@ -54,30 +54,32 @@ namespace
         {
             return insert_version_to_json_object(obj, version.version, JsonIdVersionString);
         }
+
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    void check_used_version_scheme(const SchemedVersion& version, const std::string& port_name)
+    bool check_used_version_scheme(const SchemedVersion& version, const std::string& port_name)
     {
         if (version.scheme == VersionScheme::String)
         {
             if (DateVersion::try_parse(version.version.text))
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgAddVersionSuggestVersionDate, msg::package_name = port_name)
-                        .append_raw("\n")
-                        .append(msgSeeURL, msg::url = docs::version_schemes));
+                msg::println(msg::format(msgAddVersionSuggestVersionDate, msg::package_name = port_name)
+                                 .append_raw("\n")
+                                 .append(msgSeeURL, msg::url = docs::version_schemes));
+                return true;
             }
+
             if (DotVersion::try_parse_relaxed(version.version.text))
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    msg::format(msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name)
-                        .append_raw("\n")
-                        .append(msgSeeURL, msg::url = docs::version_schemes));
+                msg::println(msg::format(msgAddVersionSuggestVersionRelaxed, msg::package_name = port_name)
+                                 .append_raw("\n")
+                                 .append(msgSeeURL, msg::url = docs::version_schemes));
+                return true;
             }
         }
+
+        return false;
     }
 
     Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
@@ -111,24 +113,19 @@ namespace
         return output_object;
     }
 
-    void write_baseline_file(const Filesystem& fs,
-                             const std::map<std::string, Version, std::less<>>& baseline_map,
-                             const Path& output_path)
+    static void write_json_file(const Filesystem& fs, const Json::Object& obj, const Path& output_path)
     {
         auto new_path = output_path + ".tmp";
         fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path, Json::stringify(serialize_baseline(baseline_map)), VCPKG_LINE_INFO);
+        fs.write_contents(new_path, Json::stringify(obj), VCPKG_LINE_INFO);
         fs.rename(new_path, output_path, VCPKG_LINE_INFO);
     }
 
-    void write_versions_file(const Filesystem& fs,
-                             const std::vector<GitVersionDbEntry>& versions,
-                             const Path& output_path)
+    static void write_versions_file(const Filesystem& fs,
+                                    const std::vector<GitVersionDbEntry>& versions,
+                                    const Path& output_path)
     {
-        auto new_path = output_path + ".tmp";
-        fs.create_directories(output_path.parent_path(), VCPKG_LINE_INFO);
-        fs.write_contents(new_path, Json::stringify(serialize_versions(versions)), VCPKG_LINE_INFO);
-        fs.rename(new_path, output_path, VCPKG_LINE_INFO);
+        write_json_file(fs, serialize_versions(versions), output_path);
     }
 
     UpdateResult update_baseline_version(const VcpkgPaths& paths,
@@ -153,8 +150,10 @@ namespace
                                  msg::version = version,
                                  msg::path = baseline_path);
                 }
+
                 return UpdateResult::NotUpdated;
             }
+
             baseline_version = version;
         }
         else
@@ -162,12 +161,13 @@ namespace
             baseline_map.emplace(port_name, version);
         }
 
-        write_baseline_file(fs, baseline_map, baseline_path);
+        write_json_file(fs, serialize_baseline(baseline_map), baseline_path);
         if (print_success)
         {
             msg::println(
                 Color::success, msgAddVersionAddedVersionToFile, msg::version = version, msg::path = baseline_path);
         }
+
         return UpdateResult::Updated;
     }
 
@@ -194,8 +194,30 @@ namespace
         {
             if (!skip_version_format_check)
             {
-                check_used_version_scheme(port_version, port_name);
+                if (check_used_version_scheme(port_version, port_name))
+                {
+                    if (!keep_going)
+                    {
+                        return UpdateResult::NotUpdated;
+                    }
+
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                if (port_version.version.port_version != 0)
+                {
+                    msg::println_warning(msgAddVersionPortVersionShouldBeGone,
+                                         msg::package_name = port_name,
+                                         msg::version = port_version.version.text);
+                    if (keep_going)
+                    {
+                        return UpdateResult::NotUpdated;
+                    }
+
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
             }
+
             std::vector<GitVersionDbEntry> new_entry{{port_version, git_tree}};
             write_versions_file(fs, new_entry, maybe_maybe_versions.versions_file_path);
             if (print_success)
@@ -207,15 +229,38 @@ namespace
                                  .append_raw(' ')
                                  .append(msgAddVersionNewFile));
             }
+
             return UpdateResult::Updated;
         }
 
-        const auto& versions_end = versions->end();
-        auto found_same_sha = std::find_if(
-            versions->begin(), versions_end, [&](auto&& entry) -> bool { return entry.git_tree == git_tree; });
-        if (found_same_sha != versions_end)
+        const GitVersionDbEntry* exactly_matching_sha_version_entry = nullptr;
+        GitVersionDbEntry* exactly_matching_version_entry = nullptr;
+        const GitVersionDbEntry* highest_matching_version_entry = nullptr;
+        for (auto&& version_entry : *versions)
         {
-            if (found_same_sha->version.version == port_version.version)
+            if (version_entry.version.version.text == port_version.version.text)
+            {
+                if (version_entry.version.version.port_version == port_version.version.port_version)
+                {
+                    exactly_matching_version_entry = &version_entry;
+                }
+
+                if (!highest_matching_version_entry || highest_matching_version_entry->version.version.port_version <
+                                                           version_entry.version.version.port_version)
+                {
+                    highest_matching_version_entry = &version_entry;
+                }
+            }
+
+            if (version_entry.git_tree == git_tree)
+            {
+                exactly_matching_sha_version_entry = &version_entry;
+            }
+        }
+
+        if (exactly_matching_sha_version_entry)
+        {
+            if (exactly_matching_version_entry == exactly_matching_sha_version_entry)
             {
                 if (print_success)
                 {
@@ -224,11 +269,13 @@ namespace
                                  msg::version = port_version.version,
                                  msg::path = maybe_maybe_versions.versions_file_path);
                 }
+
                 return UpdateResult::NotUpdated;
             }
+
             msg::println_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                              msg::package_name = port_name,
-                                             msg::version = found_same_sha->version.version)
+                                             msg::version = port_version.version)
                                      .append_raw("\n-- SHA: ")
                                      .append_raw(git_tree)
                                      .append_raw("\n-- ")
@@ -238,15 +285,15 @@ namespace
                                      .append_raw("\n*** ")
                                      .append(msgSeeURL, msg::url = docs::add_version_command_url)
                                      .append_raw("\n***"));
-            if (keep_going) return UpdateResult::NotUpdated;
+            if (keep_going)
+            {
+                return UpdateResult::NotUpdated;
+            }
+
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        auto it = std::find_if(versions->begin(), versions_end, [&](const GitVersionDbEntry& entry) -> bool {
-            return entry.version.version == port_version.version;
-        });
-
-        if (it != versions_end)
+        if (exactly_matching_version_entry)
         {
             if (!overwrite_version)
             {
@@ -255,7 +302,7 @@ namespace
                         .append_raw('\n')
                         .append(msgAddVersionVersionIs, msg::version = port_version.version)
                         .append_raw('\n')
-                        .append(msgAddVersionOldShaIs, msg::commit_sha = it->git_tree)
+                        .append(msgAddVersionOldShaIs, msg::commit_sha = exactly_matching_version_entry->git_tree)
                         .append_raw('\n')
                         .append(msgAddVersionNewShaIs, msg::commit_sha = git_tree)
                         .append_raw('\n')
@@ -267,12 +314,46 @@ namespace
                         .append_raw("\n***")
                         .append(msgAddVersionNoFilesUpdated)
                         .append_raw("***"));
-                if (keep_going) return UpdateResult::NotUpdated;
+                if (keep_going)
+                {
+                    return UpdateResult::NotUpdated;
+                }
+
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            it->version = port_version;
-            it->git_tree = git_tree;
+            exactly_matching_version_entry->git_tree = git_tree;
+        }
+        else if (!skip_version_format_check && port_version.version.port_version != 0 &&
+                 !highest_matching_version_entry)
+        {
+            msg::println_warning(msgAddVersionPortVersionShouldBeGone,
+                                 msg::package_name = port_name,
+                                 msg::version = port_version.version.text);
+            if (keep_going)
+            {
+                return UpdateResult::NotUpdated;
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        else if (!skip_version_format_check && port_version.version.port_version != 0 &&
+                 highest_matching_version_entry->version.version.port_version !=
+                     (port_version.version.port_version - 1))
+        {
+            msg::println_warning(msgAddVersionPortVersionShouldBeOneMore,
+                                 msg::package_name = port_name,
+                                 msg::version = port_version.version.text,
+                                 msg::count = highest_matching_version_entry->version.version.port_version,
+                                 msg::expected_version =
+                                     highest_matching_version_entry->version.version.port_version + 1,
+                                 msg::actual_version = port_version.version.port_version);
+            if (keep_going)
+            {
+                return UpdateResult::NotUpdated;
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
         else
         {
@@ -281,7 +362,15 @@ namespace
 
         if (!skip_version_format_check)
         {
-            check_used_version_scheme(port_version, port_name);
+            if (check_used_version_scheme(port_version, port_name))
+            {
+                if (!keep_going)
+                {
+                    return UpdateResult::NotUpdated;
+                }
+
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
 
         write_versions_file(fs, *versions, maybe_maybe_versions.versions_file_path);
@@ -292,6 +381,7 @@ namespace
                          msg::version = port_version.version,
                          msg::path = maybe_maybe_versions.versions_file_path);
         }
+
         return UpdateResult::Updated;
     }
 
@@ -313,7 +403,7 @@ namespace vcpkg
         Undocumented,
         AutocompletePriority::Public,
         0,
-        1,
+        SIZE_MAX,
         {AddVersionSwitches},
         nullptr,
     };
@@ -335,15 +425,7 @@ namespace vcpkg
         }
 
         std::vector<std::string> port_names;
-        if (!parsed_args.command_arguments.empty())
-        {
-            if (add_all)
-            {
-                msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
-            }
-            port_names.emplace_back(parsed_args.command_arguments[0]);
-        }
-        else
+        if (parsed_args.command_arguments.empty())
         {
             Checks::msg_check_exit(
                 VCPKG_LINE_INFO,
@@ -357,6 +439,15 @@ namespace vcpkg
                 port_names.emplace_back(port_dir.stem().to_string());
             }
         }
+        else
+        {
+            if (add_all)
+            {
+                msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
+            }
+
+            port_names = std::move(parsed_args.command_arguments);
+        }
 
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
             if (!fs.exists(baseline_path, IgnoreErrors{}))
@@ -364,6 +455,7 @@ namespace vcpkg
                 std::map<std::string, vcpkg::Version, std::less<>> ret;
                 return ret;
             }
+
             auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
             return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
         }();
@@ -388,15 +480,18 @@ namespace vcpkg
         for (auto&& port_name : port_names)
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
-
-            auto maybe_scfl = Paragraphs::try_load_port_required(
-                                  fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name})
-                                  .maybe_scfl;
+            auto load_result = Paragraphs::try_load_port_required(
+                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+            auto& maybe_scfl = load_result.maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
             {
                 msg::println(Color::error, maybe_scfl.error());
-                Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                if (!add_all)
+                {
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
                 continue;
             }
 
@@ -406,10 +501,9 @@ namespace vcpkg
 
                 if (scfl->control_path.filename() == FileVcpkgDotJson)
                 {
-                    const auto current_file_content = fs.read_contents(scfl->control_path, VCPKG_LINE_INFO);
                     const auto json = serialize_manifest(*scfl->source_control_file);
                     const auto formatted_content = Json::stringify(json);
-                    if (current_file_content != formatted_content)
+                    if (load_result.on_disk_contents != formatted_content)
                     {
                         std::string command_line = "vcpkg format-manifest ";
                         append_shell_escaped(command_line, scfl->control_path);
@@ -418,11 +512,12 @@ namespace vcpkg
                                 .append_raw('\n')
                                 .append(msgAddVersionFormatPortSuggestion, msg::command_line = command_line)
                                 .append_raw('\n')
-                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url)
-                                .append(msgAddVersionCommitChangesReminder)
-                                .append_raw('\n')
-                                .append(msgSeeURL, msg::url = docs::add_version_command_url));
-                        Checks::check_exit(VCPKG_LINE_INFO, !add_all);
+                                .append(msgSeeURL, msg::url = docs::format_manifest_command_url));
+                        if (!add_all)
+                        {
+                            Checks::exit_fail(VCPKG_LINE_INFO);
+                        }
+
                         continue;
                     }
                 }
@@ -449,6 +544,7 @@ namespace vcpkg
                 if (add_all) continue;
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+
             const auto& git_tree = git_tree_it->second;
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
@@ -466,6 +562,7 @@ namespace vcpkg
                 msg::println(msgAddVersionNoFilesUpdatedForPort, msg::package_name = port_name);
             }
         }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
