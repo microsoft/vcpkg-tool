@@ -1273,17 +1273,20 @@ namespace vcpkg
 
         Util::Vectors::append(abi_tag_entries, cache_entry.abi_entries);
 
-        size_t i = 0;
-        for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
         {
-            Path file(filestr);
-            if (file.is_relative() || !fs.is_regular_file(file))
+            size_t i = 0;
+            for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
             {
-                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+                Path file(filestr);
+                if (file.is_relative() || !fs.is_regular_file(file))
+                {
+                    Checks::msg_exit_with_message(
+                        VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
+                }
+                const auto hash =
+                    vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
+                abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
             }
-            const auto hash =
-                vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-            abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
         }
 
         for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
