@@ -70,3 +70,27 @@ jobs:
         with:
           name: format.patch
           path: out/format.patch
+
+  json-schema:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
+        id: vcpkg_sha
+        shell: pwsh
+        run: |
+          "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
+      - name: Checkout microsoft/vcpkg for end-to-end tests
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          path: ${{ github.workspace }}/vcpkg-root
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
+      - name: Run vcpkg json-schema end-to-end tests
+        shell: pwsh
+        run: |
+          ${{ github.workspace }}/azure-pipelines/json-schema-tests.ps1
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root

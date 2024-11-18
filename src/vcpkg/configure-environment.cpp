@@ -42,30 +42,32 @@ namespace
             return;
         }
 
-        auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts);
-        if (acquired_artifacts)
+        if (auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts))
         {
-            if (acquired_artifacts->is_string())
+            if (auto maybe_acquired_string = acquired_artifacts->maybe_string())
             {
-                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts,
-                                                            acquired_artifacts->string(VCPKG_LINE_INFO));
+                get_global_metrics_collector().track_string(StringMetric::AcquiredArtifacts, *maybe_acquired_string);
             }
-            Debug::println("Acquired artifacts was not a string.");
+            else
+            {
+                Debug::println("Acquired artifacts was not a string.");
+            }
         }
         else
         {
             Debug::println("No artifacts acquired.");
         }
 
-        auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts);
-        if (activated_artifacts)
+        if (auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts))
         {
-            if (activated_artifacts->is_string())
+            if (auto maybe_activated_string = activated_artifacts->maybe_string())
             {
-                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts,
-                                                            activated_artifacts->string(VCPKG_LINE_INFO));
+                get_global_metrics_collector().track_string(StringMetric::ActivatedArtifacts, *maybe_activated_string);
             }
-            Debug::println("Activated artifacts was not a string.");
+            else
+            {
+                Debug::println("Activated artifacts was not a string.");
+            }
         }
         else
         {
@@ -223,19 +225,26 @@ namespace vcpkg
 
         ProcessLaunchSettings settings;
         settings.working_directory = paths.original_cwd;
-        auto result = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
+        const auto node_result = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
         if (auto telemetry_file_path = maybe_telemetry_file_path.get())
         {
             track_telemetry(fs, *telemetry_file_path);
         }
 
-        // workaround some systems which only keep the lower 7 bits
-        if (result < 0 || result > 127)
+        if constexpr (std::is_signed_v<decltype(node_result)>)
         {
-            result = 1;
-        }
+            // workaround some systems which only keep the lower 7 bits
+            if (node_result < 0 || node_result > 127)
+            {
+                return 1;
+            }
 
-        return result;
+            return node_result;
+        }
+        else
+        {
+            return static_cast<int>(node_result);
+        }
     }
 
     void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)

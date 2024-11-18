@@ -151,7 +151,7 @@ namespace vcpkg
             }
         }
 
-        result.append(msgSeeURL, msg::url = "https://learn.microsoft.com/vcpkg/users/triplets");
+        result.append(msgSeeURL, msg::url = docs::triplets_url);
         result.append_raw('\n');
     }
 

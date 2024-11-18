@@ -36,6 +36,8 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <numeric>
+
 using namespace vcpkg;
 
 namespace
@@ -96,7 +98,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Allow,
-            PrintUsage::Yes,
         };
 
         const FullPackageSpec spec =
@@ -105,8 +106,7 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         Checks::exit_with_code(VCPKG_LINE_INFO,
                                command_build_ex(args,
                                                 paths,
@@ -215,19 +215,6 @@ namespace vcpkg
         }
     }
 
-    static std::remove_const_t<decltype(ALL_POLICIES)> generate_all_policies()
-    {
-        std::remove_const_t<decltype(ALL_POLICIES)> res{};
-        for (size_t i = 0; i < res.size(); ++i)
-        {
-            res[i] = static_cast<BuildPolicy>(i);
-        }
-
-        return res;
-    }
-
-    decltype(ALL_POLICIES) ALL_POLICIES = generate_all_policies();
-
     StringLiteral to_string_view(BuildPolicy policy)
     {
         switch (policy)
@@ -245,6 +232,21 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return PolicySkipArchitectureCheck;
             case BuildPolicy::CMAKE_HELPER_PORT: return PolicyCMakeHelperPort;
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return PolicySkipAbsolutePathsCheck;
+            case BuildPolicy::SKIP_ALL_POST_BUILD_CHECKS: return PolicySkipAllPostBuildChecks;
+            case BuildPolicy::SKIP_APPCONTAINER_CHECK: return PolicySkipAppcontainerCheck;
+            case BuildPolicy::SKIP_CRT_LINKAGE_CHECK: return PolicySkipCrtLinkageCheck;
+            case BuildPolicy::SKIP_MISPLACED_CMAKE_FILES_CHECK: return PolicySkipMisplacedCMakeFilesCheck;
+            case BuildPolicy::SKIP_LIB_CMAKE_MERGE_CHECK: return PolicySkipLibCMakeMergeCheck;
+            case BuildPolicy::ALLOW_DLLS_IN_LIB: return PolicyAllowDllsInLib;
+            case BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK: return PolicySkipMisplacedRegularFilesCheck;
+            case BuildPolicy::SKIP_COPYRIGHT_CHECK: return PolicySkipCopyrightCheck;
+            case BuildPolicy::ALLOW_KERNEL32_FROM_XBOX: return PolicyAllowKernel32FromXBox;
+            case BuildPolicy::ALLOW_EXES_IN_BIN: return PolicyAllowExesInBin;
+            case BuildPolicy::SKIP_USAGE_INSTALL_CHECK: return PolicySkipUsageInstallCheck;
+            case BuildPolicy::ALLOW_EMPTY_FOLDERS: return PolicyAllowEmptyFolders;
+            case BuildPolicy::ALLOW_DEBUG_INCLUDE: return PolicyAllowDebugInclude;
+            case BuildPolicy::ALLOW_DEBUG_SHARE: return PolicyAllowDebugShare;
+            case BuildPolicy::SKIP_PKGCONFIG_CHECK: return PolicySkipPkgConfigCheck;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -267,6 +269,22 @@ namespace vcpkg
             case BuildPolicy::SKIP_ARCHITECTURE_CHECK: return CMakeVariablePolicySkipArchitectureCheck;
             case BuildPolicy::CMAKE_HELPER_PORT: return CMakeVariablePolicyCMakeHelperPort;
             case BuildPolicy::SKIP_ABSOLUTE_PATHS_CHECK: return CMakeVariablePolicySkipAbsolutePathsCheck;
+            case BuildPolicy::SKIP_ALL_POST_BUILD_CHECKS: return CMakeVariablePolicySkipAllPostBuildChecks;
+            case BuildPolicy::SKIP_APPCONTAINER_CHECK: return CMakeVariablePolicySkipAppcontainerCheck;
+            case BuildPolicy::SKIP_CRT_LINKAGE_CHECK: return CMakeVariablePolicySkipCrtLinkageCheck;
+            case BuildPolicy::SKIP_MISPLACED_CMAKE_FILES_CHECK: return CMakeVariablePolicySkipMisplacedCMakeFilesCheck;
+            case BuildPolicy::SKIP_LIB_CMAKE_MERGE_CHECK: return CMakeVariablePolicySkipLibCMakeMergeCheck;
+            case BuildPolicy::ALLOW_DLLS_IN_LIB: return CMakeVariablePolicyAllowDllsInLib;
+            case BuildPolicy::SKIP_MISPLACED_REGULAR_FILES_CHECK:
+                return CMakeVariablePolicySkipMisplacedRegularFilesCheck;
+            case BuildPolicy::SKIP_COPYRIGHT_CHECK: return CMakeVariablePolicySkipCopyrightCheck;
+            case BuildPolicy::ALLOW_KERNEL32_FROM_XBOX: return CMakeVariablePolicyAllowKernel32FromXBox;
+            case BuildPolicy::ALLOW_EXES_IN_BIN: return CMakeVariablePolicyAllowExesInBin;
+            case BuildPolicy::SKIP_USAGE_INSTALL_CHECK: return CMakeVariablePolicySkipUsageInstallCheck;
+            case BuildPolicy::ALLOW_EMPTY_FOLDERS: return CMakeVariablePolicyAllowEmptyFolders;
+            case BuildPolicy::ALLOW_DEBUG_INCLUDE: return CMakeVariablePolicyAllowDebugInclude;
+            case BuildPolicy::ALLOW_DEBUG_SHARE: return CMakeVariablePolicyAllowDebugShare;
+            case BuildPolicy::SKIP_PKGCONFIG_CHECK: return CMakeVariablePolicySkipPkgConfigCheck;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -687,39 +705,38 @@ namespace vcpkg
         CompilerInfo compiler_info;
         std::string buf;
 
-        ExpectedL<int> rc = LocalizedString();
-        {
-            const auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
-                if (Strings::starts_with(s, MarkerCompilerHash))
-                {
-                    compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
-                }
-                if (Strings::starts_with(s, MarkerCompilerCxxVersion))
-                {
-                    compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
-                }
-                if (Strings::starts_with(s, MarkerCompilerCxxId))
-                {
-                    compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
-                }
-                static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
-                if (Strings::starts_with(s, s_path_marker))
-                {
-                    const auto compiler_cxx_path = s.substr(s_path_marker.size());
-                    compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
-                }
-                Debug::println(s);
-                const auto old_buf_size = buf.size();
-                Strings::append(buf, s, '\n');
-                const auto write_size = buf.size() - old_buf_size;
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
-                                       msgErrorWhileWriting,
-                                       msg::path = stdoutlog);
-            });
-        } // close out_file
+        Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
+        auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
+        auto rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
+            if (Strings::starts_with(s, MarkerCompilerHash))
+            {
+                compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxVersion))
+            {
+                compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxId))
+            {
+                compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
+            }
+            static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
+            if (Strings::starts_with(s, s_path_marker))
+            {
+                const auto compiler_cxx_path = s.substr(s_path_marker.size());
+                compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
+            }
+            Debug::println(s);
+            const auto old_buf_size = buf.size();
+            Strings::append(buf, s, '\n');
+            const auto write_size = buf.size() - old_buf_size;
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                   msgErrorWhileWriting,
+                                   msg::path = stdoutlog);
+        });
 
+        out_file_storage.clear();
         if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
@@ -756,6 +773,10 @@ namespace vcpkg
             all_features.append(feature->name + ";");
         }
 
+        auto& post_portfile_includes = action.pre_build_info(VCPKG_LINE_INFO).post_portfile_includes;
+        std::string all_post_portfile_includes =
+            Strings::join(";", Util::fmap(post_portfile_includes, [](const Path& p) { return p.generic_u8string(); }));
+
         std::vector<CMakeVariable> variables{
             {CMakeVariableAllFeatures, all_features},
             {CMakeVariableCurrentPortDir, scfl.port_directory()},
@@ -768,6 +789,7 @@ namespace vcpkg
             {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
+            {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes},
         };
 
         if (build_options.download_tool == DownloadTool::Aria2)
@@ -898,7 +920,7 @@ namespace vcpkg
 
     static void write_sbom(const VcpkgPaths& paths,
                            const InstallPlanAction& action,
-                           std::vector<Json::Value> heuristic_resources)
+                           std::vector<Json::Object> heuristic_resources)
     {
         auto& fs = paths.get_filesystem();
         const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
@@ -917,7 +939,7 @@ namespace vcpkg
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
 
         const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / action.spec.name() / "vcpkg.spdx.json";
+            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / action.spec.name() / FileVcpkgSpdxJson;
         fs.write_contents_and_dirs(
             json_path,
             create_spdx_sbom(
@@ -981,18 +1003,17 @@ namespace vcpkg
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         env.add_entry(EnvironmentVariableGitCeilingDirectories, fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
-        ExpectedL<int> return_code = LocalizedString();
-        {
-            auto out_file = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
-            return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
-                msg::write_unlocalized_text(Color::none, sv);
-                Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                       out_file.write(sv.data(), 1, sv.size()) == sv.size(),
-                                       msgErrorWhileWriting,
-                                       msg::path = stdoutlog);
-            });
-        } // close out_file
+        Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
+        auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
+        auto return_code = cmd_execute_and_stream_data(cmd, settings, [&](StringView sv) {
+            msg::write_unlocalized_text(Color::none, sv);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   out_file.write(sv.data(), 1, sv.size()) == sv.size(),
+                                   msgErrorWhileWriting,
+                                   msg::path = stdoutlog);
+        });
 
+        out_file_storage.clear();
         const auto buildtimeus = timer.microseconds();
         const auto spec_string = action.spec.to_string();
         const bool build_failed = !succeeded(return_code);
@@ -1197,8 +1218,22 @@ namespace vcpkg
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
             }
+
             abi_tag_entries.emplace_back(
                 fmt::format("additional_file_{}", i),
+                Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
+        }
+
+        for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
+        {
+            auto& file = abi_info.pre_build_info->post_portfile_includes[i];
+            if (file.is_relative() || !fs.is_regular_file(file) || file.extension() != ".cmake")
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValuePostPortfileIncludes, msg::path = file);
+            }
+
+            abi_tag_entries.emplace_back(
+                fmt::format("post_portfile_include_{}", i),
                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
         }
 
@@ -1409,7 +1444,7 @@ namespace vcpkg
         if (abi_info.abi_tag_file)
         {
             auto& abi_file = *abi_info.abi_tag_file.get();
-            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / "share" / spec.name();
+            const auto abi_package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / spec.name();
             const auto abi_file_in_package = abi_package_dir / FileVcpkgAbiInfo;
             build_logs_recorder.record_build_result(paths, spec, result.code);
             filesystem.create_directories(abi_package_dir, VCPKG_LINE_INFO);
@@ -1437,28 +1472,33 @@ namespace vcpkg
     }
 
     template<class Message>
-    static void print_build_result_summary_line(Message build_result_message, int count)
+    static void append_build_result_summary_line(Message build_result_message, int count, LocalizedString& str)
     {
         if (count != 0)
         {
-            msg::println(LocalizedString().append_indent().append(
-                msgBuildResultSummaryLine, msg::build_result = msg::format(build_result_message), msg::count = count));
+            str.append_indent()
+                .append(msgBuildResultSummaryLine,
+                        msg::build_result = msg::format(build_result_message),
+                        msg::count = count)
+                .append_raw('\n');
         }
     }
 
-    void BuildResultCounts::println(const Triplet& triplet) const
+    LocalizedString BuildResultCounts::format(const Triplet& triplet) const
     {
-        msg::println(msgBuildResultSummaryHeader, msg::triplet = triplet);
-        print_build_result_summary_line(msgBuildResultSucceeded, succeeded);
-        print_build_result_summary_line(msgBuildResultBuildFailed, build_failed);
-        print_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed);
-        print_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts);
-        print_build_result_summary_line(msgBuildResultCascadeDueToMissingDependencies,
-                                        cascaded_due_to_missing_dependencies);
-        print_build_result_summary_line(msgBuildResultExcluded, excluded);
-        print_build_result_summary_line(msgBuildResultCacheMissing, cache_missing);
-        print_build_result_summary_line(msgBuildResultDownloaded, downloaded);
-        print_build_result_summary_line(msgBuildResultRemoved, removed);
+        LocalizedString str;
+        str.append(msgBuildResultSummaryHeader, msg::triplet = triplet).append_raw('\n');
+        append_build_result_summary_line(msgBuildResultSucceeded, succeeded, str);
+        append_build_result_summary_line(msgBuildResultBuildFailed, build_failed, str);
+        append_build_result_summary_line(msgBuildResultPostBuildChecksFailed, post_build_checks_failed, str);
+        append_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts, str);
+        append_build_result_summary_line(
+            msgBuildResultCascadeDueToMissingDependencies, cascaded_due_to_missing_dependencies, str);
+        append_build_result_summary_line(msgBuildResultExcluded, excluded, str);
+        append_build_result_summary_line(msgBuildResultCacheMissing, cache_missing, str);
+        append_build_result_summary_line(msgBuildResultDownloaded, downloaded, str);
+        append_build_result_summary_line(msgBuildResultRemoved, removed, str);
+        return str;
     }
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result)
@@ -1512,7 +1552,7 @@ namespace vcpkg
             }
         }
 
-        return res;
+        return res.append_raw('\n').append(msgSeeURL, msg::url = docs::troubleshoot_build_failures_url);
     }
 
     void append_log(const Path& path, const std::string& log, size_t max_log_length, std::string& out)
@@ -1744,8 +1784,9 @@ namespace vcpkg
         }
 
         std::unordered_map<BuildPolicy, bool> policies;
-        for (const auto& policy : ALL_POLICIES)
+        for (size_t policy_idx = 0; policy_idx < static_cast<size_t>(BuildPolicy::COUNT); ++policy_idx)
         {
+            auto policy = static_cast<BuildPolicy>(policy_idx);
             const auto setting = parser.optional_field_or_empty(to_string_view(policy));
             if (setting.empty()) continue;
             if (setting == "enabled")
@@ -1753,10 +1794,10 @@ namespace vcpkg
             else if (setting == "disabled")
                 policies.emplace(policy, false);
             else
-                Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                               msgUnknownPolicySetting,
-                                               msg::option = setting,
-                                               msg::value = to_string_view(policy));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgUnknownPolicySetting,
+                                            msg::value = setting,
+                                            msg::cmake_var = to_cmake_variable(policy));
         }
 
         auto maybe_error = parser.error();
@@ -1830,7 +1871,7 @@ namespace vcpkg
         // Note that this must come after CMakeVariableEnvPassthrough since the leading values come from there
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableEnvPassthroughUntracked))
         {
-            Util::Vectors::append(&passthrough_env_vars, Strings::split(*value, ';'));
+            Util::Vectors::append(passthrough_env_vars, Strings::split(*value, ';'));
         }
 
         Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
@@ -1839,6 +1880,13 @@ namespace vcpkg
             hash_additional_files =
                 Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
         }
+
+        if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariablePostPortfileIncludes))
+        {
+            post_portfile_includes =
+                Util::fmap(Strings::split(*value, ';'), [](auto&& str) { return Path(std::move(str)); });
+        }
+
         // Note that this value must come after CMakeVariableChainloadToolchainFile because its default depends upon it
         load_vcvars_env = !external_toolchain_file.has_value();
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableLoadVcvarsEnv))

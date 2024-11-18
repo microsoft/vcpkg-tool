@@ -580,8 +580,10 @@ namespace vcpkg
                     msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = url, msg::value = code);
             }
         }
-
-        return res;
+        msg::println(msgAssetCacheSuccesfullyStored,
+                     msg::path = file.filename(),
+                     msg::url = replace_secrets(url.to_string(), secrets));
+        return 0;
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
@@ -592,9 +594,7 @@ namespace vcpkg
             return url;
         }
 
-        std::string query = Strings::join("&", query_params);
-
-        return url + "?" + query;
+        return url + "?" + Strings::join("&", query_params);
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,
@@ -717,7 +717,6 @@ namespace vcpkg
         fs.create_directories(dir, VCPKG_LINE_INFO);
 
         const auto sanitized_url = replace_secrets(url, secrets);
-        msg::println(msgDownloadingUrl, msg::url = sanitized_url);
         static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
         for (size_t trials = 0; trials < 4; ++trials)
         {
@@ -761,12 +760,25 @@ namespace vcpkg
         download_path_part_path += ".part";
 
 #if defined(_WIN32)
-        if (headers.size() == 0)
+        auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+        bool needs_proxy_auth = false;
+        if (maybe_https_proxy_env)
+        {
+            const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
+            needs_proxy_auth = proxy_url.find('@') != std::string::npos;
+        }
+        if (headers.size() == 0 && !needs_proxy_auth)
         {
             auto split_uri = split_uri_view(url).value_or_exit(VCPKG_LINE_INFO);
-            auto authority = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
             if (split_uri.scheme == "https" || split_uri.scheme == "http")
             {
+                auto maybe_authority = split_uri.authority.get();
+                if (!maybe_authority)
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidUri, msg::value = url);
+                }
+
+                auto authority = maybe_authority->substr(2);
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
@@ -871,6 +883,10 @@ namespace vcpkg
         return s_headers;
     }
 
+    bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
+
+    bool DownloadManager::asset_cache_configured() const { return m_config.m_read_url_template.has_value(); }
+
     void DownloadManager::download_file(const Filesystem& fs,
                                         const std::string& url,
                                         View<std::string> headers,
@@ -889,6 +905,8 @@ namespace vcpkg
                                                MessageSink& progress_sink) const
     {
         std::vector<LocalizedString> errors;
+        bool block_origin_enabled = m_config.m_block_origin;
+
         if (urls.size() == 0)
         {
             if (auto hash = sha512.get())
@@ -915,7 +933,18 @@ namespace vcpkg
                                       errors,
                                       progress_sink))
                 {
+                    msg::println(msgAssetCacheHit,
+                                 msg::path = download_path.filename(),
+                                 msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
+                }
+                else if (block_origin_enabled)
+                {
+                    msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+                }
+                else
+                {
+                    msg::println(msgAssetCacheMiss, msg::url = urls[0]);
                 }
             }
             else if (auto script = m_config.m_script.get())
@@ -966,29 +995,44 @@ namespace vcpkg
             }
         }
 
-        if (!m_config.m_block_origin)
+        if (block_origin_enabled)
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+        else
         {
             if (urls.size() != 0)
             {
+                msg::println(msgDownloadingUrl, msg::url = download_path.filename());
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
+                    msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
+
                     if (auto hash = sha512.get())
                     {
                         auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror);
+                            msg::println_warning(msgFailedToStoreBackToMirror,
+                                                 msg::path = download_path.filename(),
+                                                 msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
 
                     return *url;
                 }
+                else
+                {
+                    msg::println(msgDownloadFailedProxySettings,
+                                 msg::path = download_path.filename(),
+                                 msg::url = "https://github.com/microsoft/vcpkg-tool/pull/77");
+                }
             }
         }
-        msg::println_error(msgFailedToDownloadFromMirrorSet);
+
         for (LocalizedString& error : errors)
         {
             msg::println(error);
