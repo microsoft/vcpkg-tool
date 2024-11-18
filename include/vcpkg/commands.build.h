@@ -255,7 +255,7 @@ namespace vcpkg
             std::vector<AbiEntry> abi_entries;
             std::vector<Path> files;
             std::vector<std::string> hashes;
-            Json::Value heuristic_resources;
+            Json::Object heuristic_resources;
         };
         AbiCacheEntry& get(const Path& port_dir) const;
 
