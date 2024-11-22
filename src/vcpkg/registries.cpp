@@ -399,31 +399,6 @@ namespace
         DelayedInit<ExpectedL<Baseline>> m_baseline;
     };
 
-    struct FilesystemFromGitRegistry;
-
-    struct FilesystemFromGitRegistryEntry final : RegistryEntry
-    {
-        FilesystemFromGitRegistryEntry(StringView port_name,
-                                       const FilesystemFromGitRegistry& parent,
-                                       bool stale,
-                                       std::vector<GitVersionDbEntry>&& version_entries);
-
-        ExpectedL<View<Version>> get_port_versions() const override;
-        ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const override;
-
-    private:
-        ExpectedL<Unit> ensure_not_stale() const;
-
-        std::string port_name;
-
-        const FilesystemFromGitRegistry& parent;
-
-        // Indicates whether port_versions and git_trees were filled in with stale (i.e. lock) data.
-        mutable bool stale;
-
-        mutable PortVersionsGitTreesStructOfArrays last_loaded;
-    };
-
     struct FilesystemFromGitRegistry final : RegistryImplementation
     {
         FilesystemFromGitRegistry(const VcpkgPaths& paths,
@@ -448,8 +423,6 @@ namespace
         ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
     private:
-        friend FilesystemFromGitRegistryEntry;
-
         const ExpectedL<LockFile::Entry>& get_lock_entry() const
         {
             return m_lock_entry.get(
@@ -1062,17 +1035,6 @@ namespace
         });
     }
 
-    FilesystemFromGitRegistryEntry::FilesystemFromGitRegistryEntry(StringView port_name,
-                                                                   const FilesystemFromGitRegistry& parent,
-                                                                   bool stale,
-                                                                   std::vector<GitVersionDbEntry>&& version_entries)
-        : port_name(port_name.data(), port_name.size())
-        , parent(parent)
-        , stale(stale)
-        , last_loaded(std::move(version_entries))
-    {
-    }
-
     ExpectedL<Optional<Version>> FilesystemFromGitRegistry::get_baseline_version(StringView port_name) const
     {
         return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
@@ -1412,89 +1374,6 @@ namespace
         return Paragraphs::try_load_port_required(fs, port_name, PortLocation{load_path}).maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
-
-    // { FilesystemFromGitRegistryEntry::RegistryEntry
-    ExpectedL<Unit> FilesystemFromGitRegistryEntry::ensure_not_stale() const
-    {
-        if (stale)
-        {
-            auto maybe_live_vdb = parent.get_versions_tree_path();
-            auto live_vdb = maybe_live_vdb.get();
-            if (!live_vdb)
-            {
-                return std::move(maybe_live_vdb).error();
-            }
-
-            auto maybe_maybe_version_entries =
-                load_git_versions_file(parent.m_paths.get_filesystem(), *live_vdb, port_name).entries;
-            auto maybe_version_entries = maybe_maybe_version_entries.get();
-            if (!maybe_version_entries)
-            {
-                return std::move(maybe_maybe_version_entries).error();
-            }
-
-            auto version_entries = maybe_version_entries->get();
-            if (!version_entries)
-            {
-                // Somehow the port existed in the stale version database but doesn't exist in the
-                // live one?
-                return msg::format_error(msgCouldNotFindVersionDatabaseFile,
-                                         msg::path = *live_vdb / relative_path_to_versions(port_name));
-            }
-
-            last_loaded.assign(std::move(*version_entries));
-            stale = false;
-        }
-
-        return Unit{};
-    }
-
-    ExpectedL<View<Version>> FilesystemFromGitRegistryEntry::get_port_versions() const
-    {
-        // Getting all versions that might exist must always be done with 'live' data
-        auto maybe_not_stale = ensure_not_stale();
-        if (maybe_not_stale)
-        {
-            return View<Version>{last_loaded.port_versions()};
-        }
-
-        return std::move(maybe_not_stale).error();
-    }
-
-    ExpectedL<SourceControlFileAndLocation> FilesystemFromGitRegistryEntry::try_load_port(const Version& version) const
-    {
-        auto it = std::find(last_loaded.port_versions().begin(), last_loaded.port_versions().end(), version);
-        if (it == last_loaded.port_versions().end() && stale)
-        {
-            // didn't find the version, maybe a newer version database will have it
-            auto maybe_not_stale = ensure_not_stale();
-            if (!maybe_not_stale)
-            {
-                return std::move(maybe_not_stale).error();
-            }
-
-            it = std::find(last_loaded.port_versions().begin(), last_loaded.port_versions().end(), version);
-        }
-
-        if (it == last_loaded.port_versions().end())
-        {
-            return format_version_git_entry_missing(port_name, version, last_loaded.port_versions());
-        }
-
-        const auto& git_tree = last_loaded.git_trees()[it - last_loaded.port_versions().begin()];
-        return parent.m_paths.git_extract_tree_from_remote_registry(git_tree).then(
-            [this, &git_tree](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
-                return Paragraphs::try_load_port_required(parent.m_paths.get_filesystem(),
-                                                          port_name,
-                                                          PortLocation{
-                                                              p,
-                                                              Strings::concat("git+", parent.m_repo, "@", git_tree),
-                                                          })
-                    .maybe_scfl;
-            });
-    }
-
-    // } FilesystemFromGitRegistryEntry::RegistryEntry
 
     // { GitRegistryEntry::RegistryEntry
     ExpectedL<Unit> GitRegistryEntry::ensure_not_stale() const
