@@ -261,13 +261,14 @@ namespace
         mutable PortVersionsGitTreesStructOfArrays last_loaded;
     };
 
-    struct GitRegistry final : RegistryImplementation
+    struct GitRegistry : RegistryImplementation
     {
         GitRegistry(const VcpkgPaths& paths, std::string&& repo, std::string&& reference, std::string&& baseline)
             : m_paths(paths)
             , m_repo(std::move(repo))
             , m_reference(std::move(reference))
             , m_baseline_identifier(std::move(baseline))
+            , m_remote_root_path(FileVersions.to_string())
         {
         }
 
@@ -281,7 +282,7 @@ namespace
 
         ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
-    private:
+    protected:
         friend GitRegistryEntry;
 
         const ExpectedL<LockFile::Entry>& get_lock_entry() const
@@ -290,7 +291,7 @@ namespace
                 [this]() { return m_paths.get_installed_lockfile().get_or_fetch(m_paths, m_repo, m_reference); });
         }
 
-        const ExpectedL<Path>& get_versions_tree_path() const
+        virtual const ExpectedL<Path>& get_versions_tree_path() const
         {
             return m_versions_tree.get([this]() -> ExpectedL<Path> {
                 auto& maybe_lock_entry = get_lock_entry();
@@ -306,8 +307,8 @@ namespace
                     return std::move(maybe_up_to_date).error();
                 }
 
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(),
-                                                                                      FileVersions.to_string());
+                auto maybe_tree =
+                    m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(), m_remote_root_path);
                 auto tree = maybe_tree.get();
                 if (!tree)
                 {
@@ -397,144 +398,23 @@ namespace
         mutable Optional<Path> m_stale_versions_tree;
         DelayedInit<ExpectedL<Path>> m_versions_tree;
         DelayedInit<ExpectedL<Baseline>> m_baseline;
+        std::string m_remote_root_path;
     };
 
-    struct FilesystemFromGitRegistry final : RegistryImplementation
+    struct FilesystemFromGitRegistry final : GitRegistry
     {
         FilesystemFromGitRegistry(const VcpkgPaths& paths,
                                   std::string&& repo,
                                   std::string&& reference,
                                   std::string&& baseline)
-            : m_paths(paths)
-            , m_repo(std::move(repo))
-            , m_reference(std::move(reference))
-            , m_baseline_identifier(std::move(baseline))
+            : GitRegistry(paths, std::move(repo), std::move(reference), std::move(baseline))
         {
+            m_remote_root_path = "";
         }
 
         StringLiteral kind() const override { return "filesystem-from-git"; }
 
         ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView) const override;
-
-        ExpectedL<Unit> append_all_port_names(std::vector<std::string>&) const override;
-
-        ExpectedL<bool> try_append_all_port_names_no_network(std::vector<std::string>& port_names) const override;
-
-        ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
-
-    private:
-        const ExpectedL<LockFile::Entry>& get_lock_entry() const
-        {
-            return m_lock_entry.get(
-                [this]() { return m_paths.get_installed_lockfile().get_or_fetch(m_paths, m_repo, m_reference); });
-        }
-
-        const ExpectedL<Path>& get_versions_tree_path() const
-        {
-            return m_versions_tree.get([this]() -> ExpectedL<Path> {
-                auto& maybe_lock_entry = get_lock_entry();
-                auto lock_entry = maybe_lock_entry.get();
-                if (!lock_entry)
-                {
-                    return maybe_lock_entry.error();
-                }
-
-                auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
-                if (!maybe_up_to_date)
-                {
-                    return std::move(maybe_up_to_date).error();
-                }
-
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(), "");
-                auto tree = maybe_tree.get();
-                if (!tree)
-                {
-                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorNoVersionsAtCommit);
-                    return msg::format_error(msgCouldNotFindGitTreeAtCommit,
-                                             msg::package_name = m_repo,
-                                             msg::commit_sha = lock_entry->commit_id())
-                        .append_raw('\n')
-                        .append_raw(maybe_tree.error());
-                }
-
-                auto maybe_path = m_paths.git_extract_tree_from_remote_registry(*tree);
-                auto path = maybe_path.get();
-                if (!path)
-                {
-                    return msg::format_error(msgFailedToCheckoutRepo, msg::package_name = m_repo)
-                        .append_raw('\n')
-                        .append(maybe_path.error());
-                }
-
-                return std::move(*path);
-            });
-        }
-
-        struct VersionsTreePathResult
-        {
-            Path p;
-            bool stale;
-        };
-
-        ExpectedL<VersionsTreePathResult> get_unstale_stale_versions_tree_path() const
-        {
-            auto& maybe_versions_tree = get_versions_tree_path();
-            if (auto versions_tree = maybe_versions_tree.get())
-            {
-                return VersionsTreePathResult{*versions_tree, false};
-            }
-
-            return maybe_versions_tree.error();
-        }
-
-        ExpectedL<VersionsTreePathResult> get_stale_versions_tree_path() const
-        {
-            const auto& maybe_entry = get_lock_entry();
-            auto entry = maybe_entry.get();
-            if (!entry)
-            {
-                return maybe_entry.error();
-            }
-
-            if (!entry->stale())
-            {
-                return get_unstale_stale_versions_tree_path();
-            }
-
-            if (!m_stale_versions_tree.has_value())
-            {
-                auto maybe_tree =
-                    m_paths.git_find_object_id_for_remote_registry_path(entry->commit_id(), FileVersions.to_string());
-                auto tree = maybe_tree.get();
-                if (!tree)
-                {
-                    // This could be caused by git gc or otherwise -- fall back to full fetch
-                    return get_unstale_stale_versions_tree_path();
-                }
-
-                auto maybe_path = m_paths.git_extract_tree_from_remote_registry(*tree);
-                auto path = maybe_path.get();
-                if (!path)
-                {
-                    // This could be caused by git gc or otherwise -- fall back to full fetch
-                    return get_unstale_stale_versions_tree_path();
-                }
-
-                m_stale_versions_tree = std::move(*path);
-            }
-
-            return VersionsTreePathResult{m_stale_versions_tree.value_or_exit(VCPKG_LINE_INFO), true};
-        }
-
-        const VcpkgPaths& m_paths;
-
-        std::string m_repo;
-        std::string m_reference;
-        std::string m_baseline_identifier;
-        DelayedInit<ExpectedL<LockFile::Entry>> m_lock_entry;
-        mutable Optional<Path> m_stale_versions_tree;
-        DelayedInit<ExpectedL<Path>> m_versions_tree;
-        DelayedInit<ExpectedL<Baseline>> m_baseline;
     };
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
@@ -1033,109 +913,6 @@ namespace
                         m_paths.get_filesystem(), port_name, std::move(*version_entries));
                 });
         });
-    }
-
-    ExpectedL<Optional<Version>> FilesystemFromGitRegistry::get_baseline_version(StringView port_name) const
-    {
-        return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
-            // We delay baseline validation until here to give better error messages and suggestions
-            if (!is_git_commit_sha(m_baseline_identifier))
-            {
-                auto& maybe_lock_entry = get_lock_entry();
-                auto lock_entry = maybe_lock_entry.get();
-                if (!lock_entry)
-                {
-                    return maybe_lock_entry.error();
-                }
-
-                auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
-                if (maybe_up_to_date)
-                {
-                    return msg::format_error(
-                        msgGitRegistryMustHaveBaseline, msg::url = m_repo, msg::commit_sha = lock_entry->commit_id());
-                }
-
-                return std::move(maybe_up_to_date).error();
-            }
-
-            auto path_to_baseline = Path(FileVersions) / FileBaselineDotJson;
-            auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-            if (!maybe_contents)
-            {
-                auto& maybe_lock_entry = get_lock_entry();
-                auto lock_entry = maybe_lock_entry.get();
-                if (!lock_entry)
-                {
-                    return maybe_lock_entry.error();
-                }
-
-                auto maybe_up_to_date = lock_entry->ensure_up_to_date(m_paths);
-                if (!maybe_up_to_date)
-                {
-                    return std::move(maybe_up_to_date).error();
-                }
-
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-            }
-
-            if (!maybe_contents)
-            {
-                msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
-                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
-                if (!maybe_err)
-                {
-                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    return msg::format_error(msgFailedToFetchRepo, msg::url = m_repo)
-                        .append_raw('\n')
-                        .append(maybe_err.error());
-                }
-
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
-            }
-
-            if (!maybe_contents)
-            {
-                get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                return msg::format_error(msgCouldNotFindBaselineInCommit,
-                                         msg::url = m_repo,
-                                         msg::commit_sha = m_baseline_identifier,
-                                         msg::package_name = port_name)
-                    .append_raw('\n')
-                    .append_raw(maybe_contents.error());
-            }
-
-            auto contents = maybe_contents.get();
-            return parse_baseline_versions(*contents, JsonIdDefault, path_to_baseline)
-                .map_error([&](LocalizedString&& error) {
-                    get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    return msg::format_error(msgErrorWhileFetchingBaseline,
-                                             msg::value = m_baseline_identifier,
-                                             msg::package_name = m_repo)
-                        .append_raw('\n')
-                        .append(error);
-                });
-        }),
-                                        port_name);
-    }
-
-    ExpectedL<Unit> FilesystemFromGitRegistry::append_all_port_names(std::vector<std::string>& out) const
-    {
-        auto maybe_versions_path = get_stale_versions_tree_path();
-        if (auto versions_path = maybe_versions_path.get())
-        {
-            return load_all_port_names_from_registry_versions(out, m_paths.get_filesystem(), versions_path->p);
-        }
-
-        return std::move(maybe_versions_path).error();
-    }
-
-    ExpectedL<bool> FilesystemFromGitRegistry::try_append_all_port_names_no_network(std::vector<std::string>&) const
-    {
-        // At this time we don't record enough information to know what the last fetch for a registry is,
-        // so we can't even return what the most recent answer was.
-        //
-        // This would be fixable if we recorded LockFile in the registries cache.
-        return false;
     }
     // } FilesystemFromGitRegistry::RegistryImplementation
 
