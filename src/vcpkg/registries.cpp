@@ -472,8 +472,7 @@ namespace
                     return std::move(maybe_up_to_date).error();
                 }
 
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(),
-                                                                                      FileVersions.to_string());
+                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(), "");
                 auto tree = maybe_tree.get();
                 if (!tree)
                 {
@@ -1046,50 +1045,19 @@ namespace
     // { FilesystemFromGitRegistry::RegistryImplementation
     ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemFromGitRegistry::get_port_entry(StringView port_name) const
     {
-        auto maybe_stale_vtp = get_stale_versions_tree_path();
-        auto stale_vtp = maybe_stale_vtp.get();
-        if (!stale_vtp)
-        {
-            return std::move(maybe_stale_vtp).error();
-        }
-
-        {
-            // try to load using "stale" version database
-            auto maybe_maybe_version_entries =
-                load_git_versions_file(m_paths.get_filesystem(), stale_vtp->p, port_name).entries;
-            auto maybe_version_entries = maybe_maybe_version_entries.get();
-            if (!maybe_version_entries)
-            {
-                return std::move(maybe_maybe_version_entries).error();
-            }
-
-            auto version_entries = maybe_version_entries->get();
-            if (version_entries)
-            {
-                return std::make_unique<FilesystemFromGitRegistryEntry>(
-                    port_name, *this, stale_vtp->stale, std::move(*version_entries));
-            }
-        }
-
-        if (!stale_vtp->stale)
-        {
-            // data is already live but we don't know of this port
-            return std::unique_ptr<RegistryEntry>();
-        }
-
         return get_versions_tree_path().then([this, &port_name](const Path& live_vcb) {
-            return load_git_versions_file(m_paths.get_filesystem(), live_vcb, port_name)
-                .entries.then([this, &port_name](Optional<std::vector<GitVersionDbEntry>>&& maybe_version_entries)
-                                  -> ExpectedL<std::unique_ptr<RegistryEntry>> {
+            return load_filesystem_versions_file(
+                       m_paths.get_filesystem(), live_vcb / Path(FileVersions), port_name, live_vcb)
+                .then([&](Optional<std::vector<FilesystemVersionDbEntry>>&& maybe_version_entries)
+                          -> ExpectedL<std::unique_ptr<RegistryEntry>> {
                     auto version_entries = maybe_version_entries.get();
                     if (!version_entries)
                     {
-                        // data is already live but we don't know of this port
-                        return std::unique_ptr<RegistryEntry>();
+                        return std::unique_ptr<RegistryEntry>{};
                     }
 
-                    return std::make_unique<FilesystemFromGitRegistryEntry>(
-                        port_name, *this, false, std::move(*version_entries));
+                    return std::make_unique<FilesystemRegistryEntry>(
+                        m_paths.get_filesystem(), port_name, std::move(*version_entries));
                 });
         });
     }
