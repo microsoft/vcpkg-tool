@@ -235,6 +235,28 @@ namespace
 
             r.check_for_unexpected_fields(obj, valid_filesystem_fields, msg::format(msgAFilesystemRegistry));
         }
+        else if (kind == JsonIdFilesystemFromGit)
+        {
+            r.required_object_field(msg::format(msgAFilesystemRegistryFromGit),
+                                    obj,
+                                    JsonIdRepository,
+                                    res.repo.emplace(),
+                                    GitUrlDeserializer::instance);
+
+            if (!r.optional_object_field(
+                    obj, JsonIdReference, res.reference.emplace(), GitReferenceDeserializer::instance))
+            {
+                res.reference = nullopt;
+            }
+
+            r.required_object_field(msg::format(msgAFilesystemRegistryFromGit),
+                                    obj,
+                                    JsonIdBaseline,
+                                    res.baseline.emplace(),
+                                    BaselineShaDeserializer::instance);
+
+            r.check_for_unexpected_fields(obj, valid_git_fields, msg::format(msgAFilesystemRegistryFromGit));
+        }
         else if (kind == JsonIdGit)
         {
             r.required_object_field(
@@ -272,7 +294,8 @@ namespace
         }
         else
         {
-            StringLiteral valid_kinds[] = {JsonIdBuiltin, JsonIdFilesystem, JsonIdGit, JsonIdArtifact};
+            StringLiteral valid_kinds[] = {
+                JsonIdBuiltin, JsonIdFilesystem, JsonIdFilesystemFromGit, JsonIdGit, JsonIdArtifact};
             r.add_generic_error(type_name(),
                                 msg::format(msgFieldKindDidNotHaveExpectedValue,
                                             msg::expected = Strings::join(", ", valid_kinds),
@@ -753,6 +776,10 @@ namespace vcpkg
         {
             return path.value_or_exit(VCPKG_LINE_INFO);
         }
+        if (kind == JsonIdFilesystemFromGit)
+        {
+            return repo.value_or_exit(VCPKG_LINE_INFO);
+        }
         if (kind == JsonIdGit)
         {
             return repo.value_or_exit(VCPKG_LINE_INFO);
@@ -901,6 +928,13 @@ namespace vcpkg
                                          config.repo.value_or_exit(VCPKG_LINE_INFO),
                                          config.reference.value_or("HEAD"),
                                          config.baseline.value_or_exit(VCPKG_LINE_INFO));
+            }
+            else if (*k == JsonIdFilesystemFromGit)
+            {
+                return make_filesystem_from_git_registry(paths,
+                                                         config.repo.value_or_exit(VCPKG_LINE_INFO),
+                                                         config.reference.value_or("HEAD"),
+                                                         config.baseline.value_or_exit(VCPKG_LINE_INFO));
             }
             else if (*k == JsonIdFilesystem)
             {
