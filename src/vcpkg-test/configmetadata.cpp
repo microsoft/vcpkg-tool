@@ -183,7 +183,7 @@ test: error: $ (a configuration object): The default registry cannot be an artif
     }]
 })json";
         check_errors(raw_bad_kind, R"(
-test: error: $.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, git, artifact; found custom)
+test: error: $.registries[0] (a registry): "kind" did not have an expected value: (expected one of: builtin, filesystem, filesystem-from-git, git, artifact; found custom)
 test: error: $.registries[0]: mismatched type: expected a registry
 )");
 
