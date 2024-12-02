@@ -1443,6 +1443,7 @@ namespace vcpkg
         Debug::print(fmt::format("{}: system({})\n", debug_id, real_command_line));
         fflush(nullptr);
 
+        // CodeQL [cpp/uncontrolled-process-operation]: This is intended to run whatever process the user supplies.
         return system(real_command_line.c_str());
 #endif
     }
