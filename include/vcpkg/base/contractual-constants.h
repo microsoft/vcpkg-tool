@@ -187,6 +187,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchBuiltinPortsRoot = "builtin-ports-root";
     inline constexpr StringLiteral SwitchBuiltinRegistryVersionsDir = "builtin-registry-versions-dir";
     inline constexpr StringLiteral SwitchCIBaseline = "ci-baseline";
+    inline constexpr StringLiteral SwitchClassic = "classic";
     inline constexpr StringLiteral SwitchCleanAfterBuild = "clean-after-build";
     inline constexpr StringLiteral SwitchCleanBuildtreesAfterBuild = "clean-buildtrees-after-build";
     inline constexpr StringLiteral SwitchCleanDownloadsAfterBuild = "clean-downloads-after-build";
@@ -331,17 +332,31 @@ namespace vcpkg
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
     inline constexpr StringLiteral FileControl = "CONTROL";
+    inline constexpr StringLiteral FileCopying = "COPYING";
+    inline constexpr StringLiteral FileCopyright = "copyright";
     inline constexpr StringLiteral FileDebug = "debug";
     inline constexpr StringLiteral FileDetectCompiler = "detect_compiler";
     inline constexpr StringLiteral FileDotDsStore = ".DS_Store";
     inline constexpr StringLiteral FileInclude = "include";
+    inline constexpr StringLiteral FileIncomplete = "incomplete";
+    inline constexpr StringLiteral FileInfo = "info";
+    inline constexpr StringLiteral FileLicense = "LICENSE";
+    inline constexpr StringLiteral FileLicenseDotTxt = "LICENSE.txt";
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
+    inline constexpr StringLiteral FileShare = "share";
+    inline constexpr StringLiteral FileStatus = "status";
     inline constexpr StringLiteral FileTools = "tools";
+    inline constexpr StringLiteral FileUpdates = "updates";
+    inline constexpr StringLiteral FileUsage = "usage";
+    inline constexpr StringLiteral FileVcpkg = "vcpkg";
     inline constexpr StringLiteral FileVcpkgAbiInfo = "vcpkg_abi_info.txt";
     inline constexpr StringLiteral FileVcpkgBundleDotJson = "vcpkg-bundle.json";
     inline constexpr StringLiteral FileVcpkgConfigurationDotJson = "vcpkg-configuration.json";
     inline constexpr StringLiteral FileVcpkgDotJson = "vcpkg.json";
+    inline constexpr StringLiteral FileVcpkgLock = "vcpkg-lock.json";
     inline constexpr StringLiteral FileVcpkgPathTxt = "vcpkg.path.txt";
+    inline constexpr StringLiteral FileVcpkgPortConfig = "vcpkg-port-config.cmake";
+    inline constexpr StringLiteral FileVcpkgSpdxJson = "vcpkg.spdx.json";
     inline constexpr StringLiteral FileVcpkgUserProps = "vcpkg.user.props";
     inline constexpr StringLiteral FileVcpkgUserTargets = "vcpkg.user.targets";
     inline constexpr StringLiteral FileVersions = "versions";
@@ -558,4 +573,13 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
     inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
+
+    inline constexpr StringLiteral StatusDeinstall = "deinstall";
+    inline constexpr StringLiteral StatusError = "error";
+    inline constexpr StringLiteral StatusHalfInstalled = "half-installed";
+    inline constexpr StringLiteral StatusHold = "hold";
+    inline constexpr StringLiteral StatusInstall = "install";
+    inline constexpr StringLiteral StatusInstalled = "installed";
+    inline constexpr StringLiteral StatusNotInstalled = "not-installed";
+    inline constexpr StringLiteral StatusPurge = "purge";
 }

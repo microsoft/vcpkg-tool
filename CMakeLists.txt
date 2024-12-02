@@ -144,6 +144,11 @@ else()
 
         string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers ${DECL_WARNING}")
         string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers -Wno-redundant-move ${DECL_WARNING}")
+
+        if(VCPKG_COMPILER STREQUAL "gcc" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+            # -Wno-dangling-reference results from https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107532 :(
+            string(APPEND CMAKE_CXX_FLAGS " -Wno-dangling-reference")
+        endif()
     endif()
 
     if(VCPKG_WARNINGS_AS_ERRORS)

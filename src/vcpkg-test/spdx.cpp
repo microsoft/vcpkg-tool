@@ -316,7 +316,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
@@ -324,7 +324,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
