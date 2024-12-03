@@ -134,6 +134,7 @@ namespace vcpkg
 
     {
         const auto ext = archive.extension();
+        const auto stem = archive.stem();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             return ExtractionType::Nupkg;
@@ -156,7 +157,16 @@ namespace vcpkg
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            return ExtractionType::Exe;
+            // Special case to differentiate between self-extracting 7z archives and other exe files
+            Path stem_path(stem);
+            if (Strings::case_insensitive_ascii_equals(stem_path.extension(), ".7z"))
+            {
+                return ExtractionType::SelfExtracting7z;
+            }
+            else
+            {
+                return ExtractionType::Exe;
+            }
         }
         else
         {
@@ -175,19 +185,17 @@ namespace vcpkg
 #if defined(_WIN32)
         switch (ext_type)
         {
-            case ExtractionType::Unknown: break;
+            case ExtractionType::Unknown:
+                break;
             case ExtractionType::Nupkg: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
             case ExtractionType::Msi: win32_extract_msi(archive, to_path); break;
             case ExtractionType::SevenZip:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
-                break;
             case ExtractionType::Zip:
+            case ExtractionType::Tar:
+            case ExtractionType::Exe:
                 win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
                 break;
-            case ExtractionType::Tar:
-                extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
-                break;
-            case ExtractionType::Exe:
+            case ExtractionType::SelfExtracting7z:
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
