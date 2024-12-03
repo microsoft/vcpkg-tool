@@ -200,7 +200,7 @@ namespace vcpkg
             {
                 if (args.github_server_url.has_value())
                 {
-                    s = send_snapshot_to_api(*args.github_server_url.get(),
+                    s = send_snapshot_to_api(*args.github_server_url.get() + "/api/v3",
                                              *args.github_token.get(),
                                              *args.github_repository.get(),
                                              *snapshot.get());
