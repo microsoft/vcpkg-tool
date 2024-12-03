@@ -36,6 +36,10 @@ namespace vcpkg
                                     View<std::string> headers,
                                     View<std::string> secrets);
 
+    bool send_snapshot_to_api(StringView github_api_url,
+                              StringView github_token,
+                              StringView github_repository,
+                              const Json::Object& snapshot);
     bool send_snapshot_to_api(const std::string& github_token,
                               const std::string& github_repository,
                               const Json::Object& snapshot);
