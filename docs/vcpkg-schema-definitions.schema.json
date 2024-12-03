@@ -132,6 +132,7 @@
               "enum": [
                 "builtin",
                 "git",
+                "filesystem-from-git",
                 "filesystem"
               ]
             },
@@ -145,6 +146,9 @@
             },
             {
               "$ref": "#/definitions/git-registry"
+            },
+            {
+              "$ref": "#/definitions/filesystem-from-git-registry"
             },
             {
               "$ref": "#/definitions/filesystem-registry"
@@ -650,6 +654,56 @@
       },
       "else": false
     },
+    "filesystem-from-git-registry": {
+      "type": "object",
+      "description": "A port registry backed by a filesystem layout and a git repo.",
+      "if": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem-from-git"
+            ]
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "filesystem-from-git"
+            ]
+          },
+          "repository": {
+            "type": "string",
+            "description": "The URI or SSH entry to clone from. (as if by `git clone`)"
+          },
+          "baseline": {
+            "description": "The SHA that will be checked out to find default versions for ports from this registry.",
+            "$ref": "#/definitions/sha1"
+          },
+          "reference": {
+            "type": "string",
+            "description": "The ref to fetch when cloning this git registry."
+          },
+          "packages": true
+        },
+        "required": [
+          "kind",
+          "repository",
+          "baseline"
+        ],
+        "patternProperties": {
+          "^\\$": {}
+        },
+        "additionalProperties": false
+      },
+      "else": false
+    },
     "has-one-version": {
       "type": "object",
       "oneOf": [
@@ -846,6 +900,7 @@
               "enum": [
                 "builtin",
                 "git",
+                "filesystem-from-git",
                 "filesystem",
                 "artifact"
               ]
@@ -879,6 +934,9 @@
                     },
                     {
                       "$ref": "#/definitions/git-registry"
+                    },
+                    {
+                      "$ref": "#/definitions/filesystem-from-git-registry"
                     },
                     {
                       "$ref": "#/definitions/filesystem-registry"

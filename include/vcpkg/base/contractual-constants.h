@@ -49,6 +49,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdFeatures = "features";
     inline constexpr StringLiteral JsonIdFiles = "files";
     inline constexpr StringLiteral JsonIdFilesystem = "filesystem";
+    inline constexpr StringLiteral JsonIdFilesystemFromGit = "filesystem-from-git";
     inline constexpr StringLiteral JsonIdGit = "git";
     inline constexpr StringLiteral JsonIdGitTree = "git-tree";
     inline constexpr StringLiteral JsonIdHomepage = "homepage";
