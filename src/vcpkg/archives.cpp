@@ -158,8 +158,7 @@ namespace vcpkg
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             // Special case to differentiate between self-extracting 7z archives and other exe files
-            Path stem_path(stem);
-            if (Strings::case_insensitive_ascii_equals(stem_path.extension(), ".7z"))
+            if (Strings::case_insensitive_ascii_equals(Path(stem).extension(), ".7z"))
             {
                 return ExtractionType::SelfExtracting7z;
             }
