@@ -134,7 +134,6 @@ namespace vcpkg
 
     {
         const auto ext = archive.extension();
-        const auto stem = archive.stem();
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             return ExtractionType::Nupkg;
@@ -158,6 +157,7 @@ namespace vcpkg
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
             // Special case to differentiate between self-extracting 7z archives and other exe files
+            const auto stem = archive.stem();
             if (Strings::case_insensitive_ascii_equals(Path(stem).extension(), ".7z"))
             {
                 return ExtractionType::SelfExtracting7z;
@@ -188,6 +188,8 @@ namespace vcpkg
             case ExtractionType::Nupkg: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
             case ExtractionType::Msi: win32_extract_msi(archive, to_path); break;
             case ExtractionType::SevenZip:
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_R, status_sink), archive, to_path);
+                break;
             case ExtractionType::Zip:
             case ExtractionType::Tar:
             case ExtractionType::Exe:
