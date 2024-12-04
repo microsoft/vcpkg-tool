@@ -148,7 +148,7 @@ namespace
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
         return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
@@ -181,7 +181,7 @@ namespace vcpkg
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, SwitchOutdated))
         {
@@ -298,6 +298,7 @@ namespace vcpkg
             }
         }
 
+        database_load_collapse(fs, paths.installed());
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

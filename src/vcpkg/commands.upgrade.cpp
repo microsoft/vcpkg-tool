@@ -75,7 +75,7 @@ namespace vcpkg
         const CreateUpgradePlanOptions create_upgrade_plan_options{
             nullptr, host_triplet, paths.packages(), unsupported_port_action};
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
@@ -209,11 +209,14 @@ namespace vcpkg
         const InstallSummary summary = install_execute_plan(
             args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder());
 
+        // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
+        // success.
         if (keep_going == KeepGoing::Yes)
         {
-            msg::print(summary.format());
+            msg::print(summary.format_results());
         }
 
+        summary.print_complete_message();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

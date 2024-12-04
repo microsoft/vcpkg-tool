@@ -500,7 +500,7 @@ namespace vcpkg
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
@@ -530,7 +530,7 @@ namespace vcpkg
                            .append_raw(' ')
                            .append_raw(target_triplet)
                            .append_raw('\n')
-                           .append(summary.format()));
+                           .append(summary.format_results()));
             const bool any_regressions = print_regressions(summary.results,
                                                            split_specs->known,
                                                            cidata,

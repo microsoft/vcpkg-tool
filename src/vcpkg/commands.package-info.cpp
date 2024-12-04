@@ -61,7 +61,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         if (installed)
         {
-            const StatusParagraphs status_paragraphs = database_load_check(fs, paths.installed());
+            const StatusParagraphs status_paragraphs = database_load(fs, paths.installed());
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : options.command_arguments)
