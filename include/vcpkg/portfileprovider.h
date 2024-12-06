@@ -5,12 +5,66 @@
 
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/registries.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/versions.h>
 
-#include <vcpkg/sourceparagraph.h>
+#include <vcpkg/base/path.h>
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace vcpkg
 {
+    struct OverlayPortPaths
+    {
+        Optional<Path> builtin_overlay_port_dir;
+        std::vector<Path> overlay_ports;
+
+        bool empty() const noexcept;
+    };
+
+    struct OverlayPortIndexEntry
+    {
+        OverlayPortIndexEntry(OverlayPortKind kind, const Path& directory);
+        OverlayPortIndexEntry(const OverlayPortIndexEntry&) = delete;
+        OverlayPortIndexEntry(OverlayPortIndexEntry&&);
+
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port(const ReadOnlyFilesystem& fs,
+                                                                     StringView port_name);
+
+        ExpectedL<Unit> try_load_all_ports(const ReadOnlyFilesystem& fs,
+                                           std::map<std::string, const SourceControlFileAndLocation*>& out);
+
+        void check_directory(const ReadOnlyFilesystem& fs) const;
+
+    private:
+        OverlayPortKind m_kind;
+        Path m_directory;
+
+        using MapT = std::map<std::string, ExpectedL<SourceControlFileAndLocation>, std::less<>>;
+        // If kind == OverlayPortKind::Unknown, empty
+        // Otherwise, if kind == OverlayPortKind::Port,
+        //    upon load success, contains exactly one entry with the loaded name of the port
+        //    upon load failure, contains exactly one entry with a key of empty string, value being the load error
+        // Otherwise, if kind == OverlayPortKind::Directory, contains an entry for each loaded overlay-port in the
+        // directory
+        MapT m_loaded_ports;
+
+        OverlayPortKind determine_kind(const ReadOnlyFilesystem& fs);
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port_cached_port(StringView port_name);
+
+        MapT::iterator try_load_port_subdirectory_uncached(MapT::iterator hint,
+                                                           const ReadOnlyFilesystem& fs,
+                                                           StringView port_name);
+
+        ExpectedL<Unit> load_all_port_subdirectories(const ReadOnlyFilesystem& fs);
+
+        const ExpectedL<SourceControlFileAndLocation>* try_load_port_subdirectory_with_cache(
+            const ReadOnlyFilesystem& fs, StringView port_name);
+    };
+
     struct PortFileProvider
     {
         virtual ~PortFileProvider() = default;
@@ -76,9 +130,10 @@ namespace vcpkg
 
     std::unique_ptr<IBaselineProvider> make_baseline_provider(const RegistrySet& registry_set);
     std::unique_ptr<IFullVersionedPortfileProvider> make_versioned_portfile_provider(const RegistrySet& registry_set);
-    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs, View<Path> overlay_ports);
+    std::unique_ptr<IFullOverlayProvider> make_overlay_provider(const ReadOnlyFilesystem& fs,
+                                                                const OverlayPortPaths& overlay_ports);
     std::unique_ptr<IOverlayProvider> make_manifest_provider(const ReadOnlyFilesystem& fs,
-                                                             View<Path> overlay_ports,
+                                                             const OverlayPortPaths& overlay_ports,
                                                              const Path& manifest_path,
                                                              std::unique_ptr<SourceControlFile>&& manifest_scf);
 }

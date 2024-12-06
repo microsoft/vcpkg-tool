@@ -27,8 +27,6 @@ namespace vcpkg::Paragraphs
 
     void append_paragraph_field(StringView name, StringView field, std::string& out_str);
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory);
-
     struct PortLoadResult
     {
         ExpectedL<SourceControlFileAndLocation> maybe_scfl;
@@ -63,7 +61,4 @@ namespace vcpkg::Paragraphs
 
     LoadResults try_load_all_registry_ports(const RegistrySet& registries);
     std::vector<SourceControlFileAndLocation> load_all_registry_ports(const RegistrySet& registries);
-
-    LoadResults try_load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& dir);
-    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& dir);
 }
