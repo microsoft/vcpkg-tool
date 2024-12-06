@@ -18,3 +18,11 @@ VCPKG_MSVC_WARNING(disable : 6239 4702)
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 VCPKG_MSVC_WARNING(pop)
+
+template<class T>
+std::string adapt_to_string(const T& val)
+{
+    std::string result;
+    val.to_string(result);
+    return result;
+}

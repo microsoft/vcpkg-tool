@@ -1202,9 +1202,9 @@ namespace vcpkg
 
             if (auto configuration = obj.get(JsonIdVcpkgConfiguration))
             {
-                if (configuration->is_object())
+                if (auto configuration_object = configuration->maybe_object())
                 {
-                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
+                    spgh.vcpkg_configuration.emplace(*configuration_object);
                 }
                 else
                 {
@@ -1347,6 +1347,8 @@ namespace vcpkg
         {
             ret.feature_paragraphs.push_back(std::make_unique<FeatureParagraph>(*feat_ptr));
         }
+
+        ret.extra_features_info = extra_features_info;
         return ret;
     }
 

@@ -21,7 +21,7 @@ if ($output -match 'vcpkg-internal-e2e-test-port3') {
 }
 
 # Note that broken-manifests contains ports that must not be 'visited' while trying to install these
-Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
+Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-empty-port
 Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install vcpkg-internal-e2e-test-port
 Throw-IfFailed
@@ -51,12 +51,28 @@ if ($output -notmatch 'Trailing comma') {
 # Check for msgAlreadyInstalled vs. msgAlreadyInstalledNotHead
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3
 Throw-IfFailed
-if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed') {
-    throw 'Wrong already installed message'
-}
+Throw-IfNonContains -Actual $output -Expected @"
+The following packages are already installed:
+    vcpkg-internal-e2e-test-port3:
+"@
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
 Throw-IfFailed
 if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
     throw 'Wrong already installed message for --head'
+}
+
+Refresh-TestRoot
+$output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install vcpkg-bad-spdx-license
+Throw-IfFailed
+$expected = @"
+vcpkg.json: warning: $.license (an SPDX license expression): warning: Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
+  on expression: BSD-new
+                 ^
+"@
+$firstMatch = $output.IndexOf($expected)
+if ($firstMatch -lt 0) {
+    throw 'Did not detect expected bad license'
+} elseif ($output.IndexOf($expected, $firstMatch + 1) -ge 0) {
+    throw 'Duplicated bad license'
 }

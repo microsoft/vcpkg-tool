@@ -1430,7 +1430,7 @@ TEST_CASE ("default-feature-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0] (a feature name): \"\" is not a valid feature name. Feature "
-            "names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }
 
@@ -1443,7 +1443,7 @@ TEST_CASE ("default-feature-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0].name (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }
 
@@ -1456,7 +1456,7 @@ TEST_CASE ("dependency-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0] (a package name): \"\" is not a valid package name. Package "
-            "names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }
 
@@ -1469,7 +1469,7 @@ TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].name (a package name): \"\" is not a valid package name. "
-            "Package names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "Package names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }
 
@@ -1556,7 +1556,7 @@ TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }
 
@@ -1574,6 +1574,6 @@ TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature "
-            "name. Feature names must be lowercase alphanumeric+hypens and not reserved (see " +
+            "name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
                 docs::manifests_url + " for more information).");
 }

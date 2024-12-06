@@ -70,12 +70,7 @@ namespace
 
 namespace vcpkg
 {
-    std::string FeatureSpec::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string FeatureSpec::to_string() const { return adapt_to_string(*this); }
     void FeatureSpec::to_string(std::string& out) const
     {
         if (feature().empty()) return spec().to_string(out);
@@ -130,7 +125,7 @@ namespace vcpkg
 
     std::string PackageSpec::dir() const { return fmt::format("{}_{}", this->m_name, this->m_triplet); }
 
-    std::string PackageSpec::to_string() const { return fmt::format("{}:{}", this->name(), this->triplet()); }
+    std::string PackageSpec::to_string() const { return adapt_to_string(*this); }
     void PackageSpec::to_string(std::string& s) const
     {
         fmt::format_to(std::back_inserter(s), "{}:{}", this->name(), this->triplet());

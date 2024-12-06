@@ -5,11 +5,19 @@ if ($IsWindows) {
     $NativeSlash = '\'
 }
 
+# Fail if installed files exist
+Refresh-TestRoot
+[string]$dupOutput = Run-VcpkgAndCaptureOutput install @commonArgs "--overlay-ports=$PSScriptRoot/../e2e-ports" duplicate-file-a duplicate-file-b
+Throw-IfNotFailed
+if (-not $dupOutput.Contains('The following files are already installed')) {
+    throw ('Incorrect error message for due to duplicate files; output was ' + $dupOutput)
+}
+
 # Empty package / disable all checks
 Refresh-TestRoot
 [string]$buildOutput = Run-VcpkgAndCaptureStderr install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" vcpkg-policy-set-incorrectly
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").EndsWith("error: Unknown setting of VCPKG_POLICY_EMPTY_PACKAGE: ON. Valid policy values are '', 'disabled', and 'enabled'.`n")) {
+if (-not $buildOutput.EndsWith("error: Unknown setting of VCPKG_POLICY_EMPTY_PACKAGE: ON. Valid policy values are '', 'disabled', and 'enabled'.`n")) {
     throw ('Incorrect error message for incorrect policy value; output was ' + $buildOutput)
 }
 
@@ -75,13 +83,13 @@ $($packagesRoot)$($NativeSlash)vcpkg-policy-include-folder_$($Triplet)$($NativeS
 note: <json.h>
 "@
 
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect restricted header'
 }
 
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-include-folder[do-install-restricted,policy-allow-restricted-headers]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_ALLOW_RESTRICTED_HEADERS didn''t allow'
 }
 
@@ -92,13 +100,13 @@ $expected = @"
 $($PortfilePath): warning: `${CURRENT_PACKAGES_DIR}/debug/include should not exist. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_INCLUDE enabled)
 note: If this directory was created by a build system that does not allow installing headers in debug to be disabled, delete the duplicate directory with file(REMOVE_RECURSE "`${CURRENT_PACKAGES_DIR}/debug/include")
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect debug headers'
 }
 
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-include-folder[do-install,do-install-debug,policy-allow-debug-include]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_ALLOW_DEBUG_INCLUDE didn''t suppress'
 }
 
@@ -108,13 +116,13 @@ Throw-IfNotFailed
 $expected = @"
 $($PortfilePath): warning: `${CURRENT_PACKAGES_DIR}/debug/share should not exist. Please reorganize any important files, then delete any remaining by adding ``file(REMOVE_RECURSE "`${CURRENT_PACKAGES_DIR}/debug/share")``. To suppress this message, add set(VCPKG_POLICY_ALLOW_DEBUG_SHARE enabled)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect debug share'
 }
 
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-include-folder[do-install,do-install-debug-share,policy-allow-debug-share]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_ALLOW_DEBUG_SHARE didn''t suppress'
 }
 
@@ -136,7 +144,7 @@ note: debug/cmake/some_cmake.cmake
 if ($buildOutput.Contains("legitimate.cmake")) {
     throw 'Complained about legitimate CMake files'
 }
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad CMake files'
 }
 
@@ -153,7 +161,7 @@ $($PortfilePath): warning: This port creates `${CURRENT_PACKAGES_DIR}/lib/cmake 
 if ($buildOutput.Contains("legitimate.cmake")) {
     throw 'Complained about legitimate CMake files'
 }
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad CMake files'
 }
 
@@ -172,7 +180,7 @@ $($PortfilePath): warning: This port creates `${CURRENT_PACKAGES_DIR}/lib/cmake 
 if ($buildOutput.Contains("legitimate.cmake")) {
     throw 'Complained about legitimate CMake files'
 }
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad CMake files'
 }
 
@@ -185,7 +193,7 @@ $($PortfilePath): warning: This port creates `${CURRENT_PACKAGES_DIR}/lib/cmake 
 if ($buildOutput.Contains("legitimate.cmake")) {
     throw 'Complained about legitimate CMake files'
 }
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad CMake files'
 }
 
@@ -203,7 +211,7 @@ note: debug/lib/cmake/some_cmake.cmake
 if ($buildOutput.Contains("legitimate.cmake")) {
     throw 'Complained about legitimate CMake files'
 }
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad CMake files'
 }
 
@@ -240,7 +248,7 @@ $($PortfilePath): warning: the license is not installed to `${CURRENT_PACKAGES_D
 
 $buildOutput = Run-VcpkgAndCaptureOutput install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-copyright' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect missing copyright no source'
 }
 
@@ -252,7 +260,7 @@ $($PortfilePath): note: Consider adding: vcpkg_install_copyright(FILE_LIST "`${S
 
 $buildOutput = Run-VcpkgAndCaptureOutput install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-copyright[source]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect missing copyright source'
 }
 
@@ -264,7 +272,7 @@ $($PortfilePath): note: Consider adding: vcpkg_install_copyright(FILE_LIST "`${S
 
 $buildOutput = Run-VcpkgAndCaptureOutput install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-copyright[source2]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect missing copyright source2'
 }
 
@@ -280,13 +288,13 @@ note: src/v1.3.1-2e5db616bf.clean/LICENSE.txt
 
 $buildOutput = Run-VcpkgAndCaptureOutput install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-copyright[source,source2]' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect missing copyright source + source2'
 }
 
 $buildOutput = Run-VcpkgAndCaptureOutput install @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-copyright[source,source2,policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_SKIP_COPYRIGHT_CHECK didn''t suppress source + source2'
 }
 
@@ -306,7 +314,7 @@ $($packagesRoot)$($NativeSlash)test-exe_x86-windows: note: the executables are r
 note: bin/test_exe.exe
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect EXE in bin.'
     }
 
@@ -319,13 +327,13 @@ note: debug/bin/test_exe.exe
 note: bin/test_exe.exe
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect EXEs in bin.'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/exes-in-bin" "test-exe[policy-allow-exes-in-bin]" --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_ALLOW_EXES_IN_BIN didn''t suppress'
     }
 } # windows
@@ -341,12 +349,12 @@ $PSScriptRoot/../e2e-ports$($NativeSlash)vcpkg-policy-forgot-usage$($NativeSlash
 note: you can install the usage file with the following CMake
 note: file(INSTALL "`${CMAKE_CURRENT_LIST_DIR}/usage" DESTINATION "`${CURRENT_PACKAGES_DIR}/share/`${PORT}")
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect forgotten usage'
 }
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-forgot-usage[policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_SKIP_USAGE_INSTALL_CHECK didn''t suppress'
 }
 
@@ -368,7 +376,7 @@ note: Release binaries were not found.
 "@
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/debug-release-mismatch" 'test-dll[debug-only]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect debug only mismatch'
     }
 
@@ -382,7 +390,7 @@ note: bin/test_dll.dll
 "@
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/debug-release-mismatch" 'test-dll[bad-release-only]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect release only mismatch'
     }
 
@@ -400,7 +408,7 @@ note: bin/test_dll.dll
 "@
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/debug-release-mismatch" 'test-dll[extra-debug]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect extra debug mismatch'
     }
 
@@ -418,13 +426,13 @@ note: bin/test_dll2.dll
 "@
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/debug-release-mismatch" 'test-dll[extra-release]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect extra release mismatch'
     }
 
         $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/debug-release-mismatch" 'test-dll[extra-release,policy-mismatched-number-of-binaries]' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains('mismatching number of debug and release binaries')) {
+    if ($buildOutput.Contains('mismatching number of debug and release binaries')) {
         throw 'VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES didn''t suppress'
     }
 }
@@ -446,13 +454,13 @@ note: debug/bin/test_dll.dll
 note: bin/test_dll.dll
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect Kernel32 from xbox.'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput --triplet x64-xbox-xboxone "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/kernel32-from-xbox" 'test-dll[policy-allow-kernel32-from-xbox]' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX didn''t suppress'
     }
 } # windows
@@ -471,19 +479,19 @@ $($PortfilePath): warning: Import libraries for installed DLLs appear to be miss
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/dlls-no-lib" "test-dll[install-no-lib-debug]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLLs with no import libraries debug'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/dlls-no-lib" "test-dll[install-no-lib-release]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLLs with no import libraries release'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/dlls-no-lib" "test-dll[install-no-lib-debug,install-no-lib-release]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    $buildOutput = $buildOutput.Replace("`r`n", "`n")
+    $buildOutput = $buildOutput
     $first = $buildOutput.IndexOf($expected)
     if ($first -lt 0) {
         throw 'Did not detect DLLs with no import libraries both'
@@ -494,7 +502,7 @@ $($PortfilePath): warning: Import libraries for installed DLLs appear to be miss
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/dlls-in-lib" "test-dll[install-no-lib-debug,install-no-lib-release,policy-dlls-without-libs]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_DLLS_WITHOUT_LIBS didn''t suppress'
     }
 } # windows
@@ -516,13 +524,13 @@ note: debug/lib/test_dll.dll
 note: lib/test_dll.dll
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLL in lib.'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/dlls-in-lib" "test-dll[install-to-lib,policy-allow-dlls-in-lib]" --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_ALLOW_DLLS_IN_LIB didn''t suppress'
     }
 } # windows
@@ -540,14 +548,14 @@ note: debug/bin/no_exports.dll
 note: bin/no_exports.dll
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLLs with no exports'
     }
 
     Refresh-TestRoot
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-internal-dll-with-no-exports[policy]' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_DLLS_WITHOUT_EXPORTS didn''t suppress'
     }
 } # windows
@@ -570,7 +578,7 @@ note: debug/bin/test_dll.dll is built for x64
 note: bin/test_dll.dll is built for x64
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLL with wrong architecture.'
     }
 
@@ -598,7 +606,7 @@ note: debug/bin/test_dll.dll
 note: bin/test_dll.dll
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLL with wrong appcontainer.'
     }
 
@@ -622,13 +630,13 @@ note: bin/test_dll.dll
 
     $buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-msvc-2013' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect obsolete CRT.'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-msvc-2013[policy]' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT did not suppress'
     }
 
@@ -641,7 +649,7 @@ note: bin/test_dll.dll
 
     $buildOutput = Run-VcpkgAndCaptureOutput --triplet x86-windows "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-msvc-2013[release-only]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect obsolete CRT.'
     }
 } # windows
@@ -667,7 +675,7 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
 endif()
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLL in static release-only.'
     } 
 
@@ -687,13 +695,13 @@ if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
 endif()
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect DLL in static.'
     }
 
     $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet x64-windows-static --overlay-ports="$TestingRoot/dlls-in-static" "test-dll[policy-dlls-in-static-library]" --no-binarycaching --enforce-port-checks
     Throw-IfFailed
-    if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY didn''t suppress'
     }
 } # windows
@@ -720,7 +728,7 @@ note: lib/both_lib.lib links with: Dynamic Release (/MD)
 note: lib/test_lib.lib links with: Dynamic Release (/MD)
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect lib with wrong CRT linkage.'
     }
 
@@ -748,7 +756,7 @@ note: The following binaries should link with only: Static Release (/MT)
 note: lib/test_lib.lib links with: Dynamic Release (/MD)
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect lib with wrong CRT linkage release only.'
     }
 
@@ -762,7 +770,7 @@ note: debug/lib/test_lib.lib links with: Dynamic Release (/MD)
 note: lib/test_lib.lib links with: Dynamic Release (/MD)
 "@
 
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+    if (-not $buildOutput.Contains($expected)) {
         throw 'Did not detect lib with wrong CRT linkage release only.'
     }
 
@@ -787,13 +795,13 @@ note: file(REMOVE_RECURSE "`${CURRENT_PACKAGES_DIR}/empty-directory" "`${CURRENT
 "@
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-empty-folders' --no-binarycaching --enforce-port-checks
 Throw-IfNotFailed
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect empty directories'
 }
 
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-empty-folders[policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_ALLOW_EMPTY_FOLDERS didn''t suppress'
 }
 
@@ -808,12 +816,12 @@ $($packagesRoot)$($NativeSlash)vcpkg-policy-misplaced-regular-files_$($Triplet):
 note: debug/bad_debug_file.txt
 note: bad_file.txt
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad regular files'
 }
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-regular-files[policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK didn''t suppress'
 }
 
@@ -834,7 +842,7 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/debug/bin/pkgconfig/zlib.pc" "`${CURRENT_P
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig misplaced'
 }
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-agnostic-bad-misplaced,install-arch-agnostic-empty-libs-bad-misplaced,install-arch-dependent-bad-misplaced,install-arch-dependent-bad-share]' --no-binarycaching --enforce-port-checks
@@ -857,12 +865,12 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/share/pkgconfig/zlib.pc" "`${CURRENT_PACKA
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig all bad'
 }
 $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-misplaced-pkgconfig[install-arch-agnostic-bad-misplaced,install-arch-agnostic-empty-libs-bad-misplaced,install-arch-dependent-bad-misplaced,install-arch-dependent-bad-share,policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
-if ($buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if ($buildOutput.Contains($expected)) {
     throw 'VCPKG_POLICY_SKIP_PKGCONFIG_CHECK didn''t suppress'
 }
 
@@ -880,7 +888,7 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/bin/pkgconfig/zlib.pc" "`${CURRENT_PACKAGE
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig release only'
 }
 
@@ -896,7 +904,7 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/bin/pkgconfig/libmorton.pc" "`${CURRENT_PA
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig arch agnostic'
 }
 
@@ -912,7 +920,7 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/bin/pkgconfig/zlib-no-libs.pc" "`${CURRENT
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig arch agnostic empty libs'
 }
 
@@ -928,7 +936,7 @@ file(RENAME "`${CURRENT_PACKAGES_DIR}/share/pkgconfig/zlib.pc" "`${CURRENT_PACKA
 vcpkg_fixup_pkgconfig()
 file(REMOVE_RECURSE empty directories left by the above renames)
 "@
-if (-not $buildOutput.Replace("`r`n", "`n").Contains($expected)) {
+if (-not $buildOutput.Contains($expected)) {
     throw 'Did not detect bad pkgconfig arch dependent share'
 }
 
@@ -954,10 +962,10 @@ $($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeS
 foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir')) {
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" "vcpkg-policy-absolute-paths[$bad_dir]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expectedHeader)) {
+    if (-not $buildOutput.Contains($expectedHeader)) {
         throw 'Did not detect bad absolute paths header'
     }
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expectedFooter)) {
+    if (-not $buildOutput.Contains($expectedFooter)) {
         throw 'Did not detect bad absolute paths footer'
     }
 }
@@ -972,10 +980,10 @@ $($packagesRoot)$($NativeSlash)vcpkg-policy-absolute-paths_$($Triplet)$($NativeS
 foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir')) {
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" "vcpkg-policy-absolute-paths[$bad_dir,pkgconfig]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expectedHeader)) {
+    if (-not $buildOutput.Contains($expectedHeader)) {
         throw 'Did not detect bad absolute paths header'
     }
-    if (-not $buildOutput.Replace("`r`n", "`n").Contains($expectedFooter)) {
+    if (-not $buildOutput.Contains($expectedFooter)) {
         throw 'Did not detect bad absolute paths pkgconfig footer'
     }
 }

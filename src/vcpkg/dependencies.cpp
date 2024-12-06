@@ -680,8 +680,6 @@ namespace vcpkg
             }
 
             PackageSpec load_vertex_data(const PackageSpec& s) const override { return s; }
-
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
         };
 
         RemoveAdjacencyProvider p;
@@ -746,8 +744,6 @@ namespace vcpkg
 
                 return ExportPlanAction{spec, request_type};
             }
-
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
         };
 
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
@@ -997,7 +993,6 @@ namespace vcpkg
         {
             BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
             const Cluster* load_vertex_data(const PackageSpec& spec) const override
             {
                 return &m_parent.find_or_exit(spec, VCPKG_LINE_INFO);

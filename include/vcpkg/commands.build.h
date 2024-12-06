@@ -72,7 +72,6 @@ namespace vcpkg
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
         BackcompatFeatures backcompat_features;
-        PrintUsage print_usage;
         KeepGoing keep_going;
     };
 
@@ -132,6 +131,7 @@ namespace vcpkg
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
+        std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -245,7 +245,7 @@ namespace vcpkg
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Value> heuristic_resources;
+        std::vector<Json::Object> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,

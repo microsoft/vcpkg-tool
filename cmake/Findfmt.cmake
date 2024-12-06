@@ -22,6 +22,9 @@ if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "A
     set(SKIP_WARNINGS ON)
     # fmt\base.h(451): warning C6239: (<non-zero constant> && <expression>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) operator? If not, consider removing the redundant '<non-zero constant>' and the `&&` operator.
     string(APPEND CMAKE_CXX_FLAGS " /wd6239")
+    # This one is guarded by an assert
+    # fmt\format-inl.h(294): warning C6385: Reading invalid data from 'pow10_significands'.: Lines: 265, 267, 294
+    string(APPEND CMAKE_CXX_FLAGS " /wd6385")
     # fmt\os.h(377): warning C6326: Potential comparison of a constant with another constant.
     string(APPEND CMAKE_CXX_FLAGS " /wd6326")
 endif()

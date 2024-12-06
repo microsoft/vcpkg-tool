@@ -210,6 +210,17 @@ namespace vcpkg
         VersionSpec to_version_spec() const { return source_control_file->to_version_spec(); }
         Path port_directory() const { return control_path.parent_path(); }
 
+        SourceControlFileAndLocation clone() const
+        {
+            std::unique_ptr<SourceControlFile> scf;
+            if (source_control_file)
+            {
+                scf = std::make_unique<SourceControlFile>(source_control_file->clone());
+            }
+
+            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location};
+        }
+
         std::unique_ptr<SourceControlFile> source_control_file;
         Path control_path;
 

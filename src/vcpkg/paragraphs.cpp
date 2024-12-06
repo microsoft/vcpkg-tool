@@ -412,6 +412,16 @@ namespace vcpkg::Paragraphs
             init_row);
     }
 
+    void append_paragraph_field(StringView name, StringView field, std::string& out_str)
+    {
+        if (field.empty())
+        {
+            return;
+        }
+
+        out_str.append(name.data(), name.size()).append(": ").append(field.data(), field.size()).push_back('\n');
+    }
+
     bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
     {
         return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
@@ -448,7 +458,7 @@ namespace vcpkg::Paragraphs
         });
     }
 
-    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, StringView port_name, const PortLocation& port_location)
+    PortLoadResult try_load_port(const ReadOnlyFilesystem& fs, const PortLocation& port_location)
     {
         StatsTimer timer(g_load_ports_stats);
 
@@ -503,34 +513,34 @@ namespace vcpkg::Paragraphs
                                   std::string{}};
         }
 
-        if (fs.exists(port_location.port_directory, IgnoreErrors{}))
-        {
-            return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                      .append_raw(": ")
-                                      .append_raw(ErrorPrefix)
-                                      .append(msgPortMissingManifest2, msg::package_name = port_name),
-                                  std::string{}};
-        }
-
-        return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
-                                  .append_raw(": ")
-                                  .append_raw(ErrorPrefix)
-                                  .append(msgPortDoesNotExist, msg::package_name = port_name),
-                              std::string{}};
+        return PortLoadResult{SourceControlFileAndLocation{}, std::string{}};
     }
 
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
                                           const PortLocation& port_location)
     {
-        auto load_result = try_load_port(fs, port_name, port_location);
+        auto load_result = try_load_port(fs, port_location);
         auto maybe_res = load_result.maybe_scfl.get();
         if (maybe_res)
         {
             auto res = maybe_res->source_control_file.get();
             if (!res)
             {
-                load_result.maybe_scfl = msg::format_error(msgPortDoesNotExist, msg::package_name = port_name);
+                if (fs.exists(port_location.port_directory, IgnoreErrors{}))
+                {
+                    load_result.maybe_scfl = LocalizedString::from_raw(port_location.port_directory)
+                                                 .append_raw(": ")
+                                                 .append_raw(ErrorPrefix)
+                                                 .append(msgPortMissingManifest2, msg::package_name = port_name);
+                }
+                else
+                {
+                    load_result.maybe_scfl = LocalizedString::from_raw(port_location.port_directory)
+                                                 .append_raw(": ")
+                                                 .append_raw(ErrorPrefix)
+                                                 .append(msgPortDoesNotExist, msg::package_name = port_name);
+                }
             }
         }
 
@@ -570,7 +580,7 @@ namespace vcpkg::Paragraphs
         return maybe_paragraphs.error();
     }
 
-    LoadResults try_load_all_registry_ports(const ReadOnlyFilesystem& fs, const RegistrySet& registries)
+    LoadResults try_load_all_registry_ports(const RegistrySet& registries)
     {
         LoadResults ret;
         std::vector<std::string> ports = registries.get_all_reachable_port_names().value_or_exit(VCPKG_LINE_INFO);
@@ -592,11 +602,8 @@ namespace vcpkg::Paragraphs
             const auto port_entry = maybe_port_entry.get();
             if (!port_entry) continue;  // port is attributed to this registry, but loading it failed
             if (!*port_entry) continue; // port is attributed to this registry, but doesn't exist in this registry
-            auto maybe_port_location = (*port_entry)->get_version(*baseline_version);
-            const auto port_location = maybe_port_location.get();
-            if (!port_location) continue; // baseline version was not in version db (registry consistency issue)
-            auto maybe_result = try_load_port_required(fs, port_name, *port_location);
-            if (const auto scfl = maybe_result.maybe_scfl.get())
+            auto maybe_scfl = (*port_entry)->try_load_port(*baseline_version);
+            if (const auto scfl = maybe_scfl.get())
             {
                 ret.paragraphs.push_back(std::move(*scfl));
             }
@@ -604,7 +611,7 @@ namespace vcpkg::Paragraphs
             {
                 ret.errors.emplace_back(std::piecewise_construct,
                                         std::forward_as_tuple(port_name.data(), port_name.size()),
-                                        std::forward_as_tuple(std::move(maybe_result.maybe_scfl).error()));
+                                        std::forward_as_tuple(std::move(maybe_scfl).error()));
             }
         }
 
@@ -636,10 +643,9 @@ namespace vcpkg::Paragraphs
         }
     }
 
-    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const ReadOnlyFilesystem& fs,
-                                                                      const RegistrySet& registries)
+    std::vector<SourceControlFileAndLocation> load_all_registry_ports(const RegistrySet& registries)
     {
-        auto results = try_load_all_registry_ports(fs, registries);
+        auto results = try_load_all_registry_ports(registries);
         load_results_print_error(results);
         return std::move(results.paragraphs);
     }

@@ -157,6 +157,26 @@ namespace vcpkg::Json
         return underlying_->string;
     }
 
+    std::string* Value::maybe_string() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::String)
+        {
+            return &underlying_->string;
+        }
+
+        return nullptr;
+    }
+
+    const std::string* Value::maybe_string() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::String)
+        {
+            return &underlying_->string;
+        }
+
+        return nullptr;
+    }
+
     const Array& Value::array(LineInfo li) const& noexcept
     {
         vcpkg::Checks::msg_check_exit(li, is_array(), msgJsonValueNotArray);
@@ -169,6 +189,26 @@ namespace vcpkg::Json
     }
     Array&& Value::array(LineInfo li) && noexcept { return std::move(this->array(li)); }
 
+    Array* Value::maybe_array() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Array)
+        {
+            return &underlying_->array;
+        }
+
+        return nullptr;
+    }
+
+    const Array* Value::maybe_array() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Array)
+        {
+            return &underlying_->array;
+        }
+
+        return nullptr;
+    }
+
     const Object& Value::object(LineInfo li) const& noexcept
     {
         vcpkg::Checks::msg_check_exit(li, is_object(), msgJsonValueNotObject);
@@ -180,6 +220,26 @@ namespace vcpkg::Json
         return underlying_->object;
     }
     Object&& Value::object(LineInfo li) && noexcept { return std::move(this->object(li)); }
+
+    Object* Value::maybe_object() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Object)
+        {
+            return &underlying_->object;
+        }
+
+        return nullptr;
+    }
+
+    const Object* Value::maybe_object() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Object)
+        {
+            return &underlying_->object;
+        }
+
+        return nullptr;
+    }
 
     Value::Value() noexcept = default;
     Value::Value(Value&&) noexcept = default;
@@ -1085,12 +1145,13 @@ namespace vcpkg::Json
 
         if (sv.size() < 5)
         {
+            // see https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
             if (sv == "prn" || sv == "aux" || sv == "nul" || sv == "con" || sv == FeatureNameCore)
             {
                 return false; // we're a reserved identifier
             }
             if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv[3] >= '1' && sv[3] <= '9')
+                sv[3] >= '0' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }
@@ -1106,26 +1167,16 @@ namespace vcpkg::Json
         return true;
     }
 
-    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem& fs, const Path& json_file, std::error_code& ec)
-    {
-        auto res = fs.read_contents(json_file, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, "read_contents", {json_file});
-        }
-
-        return parse(res, json_file);
-    }
-
     ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
     {
         std::error_code ec;
-        auto ret = parse_file(fs, json_file, ec);
+        auto disk_contents = fs.read_contents(json_file, ec);
         if (ec)
         {
             Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
         }
-        return std::move(ret).value_or_exit(VCPKG_LINE_INFO);
+
+        return parse(disk_contents, json_file).value_or_exit(VCPKG_LINE_INFO);
     }
 
     ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
@@ -1134,9 +1185,9 @@ namespace vcpkg::Json
     {
         return parse(text, origin).then([&](ParsedJson&& mabeValueIsh) -> ExpectedL<Json::Object> {
             auto& asValue = mabeValueIsh.value;
-            if (asValue.is_object())
+            if (auto as_object = asValue.maybe_object())
             {
-                return std::move(asValue).object(VCPKG_LINE_INFO);
+                return std::move(*as_object);
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);

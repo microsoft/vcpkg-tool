@@ -419,13 +419,13 @@ namespace vcpkg
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
         const auto& ps = paths.get_tool_exe("powershell-core", out_sink);
-        const int rc = cmd_execute(Command{ps}
-                                       .string_arg("-NoProfile")
-                                       .string_arg("-ExecutionPolicy")
-                                       .string_arg("Bypass")
-                                       .string_arg("-Command")
-                                       .string_arg(fmt::format("& {{& '{}' }}", script_path)))
-                           .value_or_exit(VCPKG_LINE_INFO);
+        const auto rc = cmd_execute(Command{ps}
+                                        .string_arg("-NoProfile")
+                                        .string_arg("-ExecutionPolicy")
+                                        .string_arg("Bypass")
+                                        .string_arg("-Command")
+                                        .string_arg(fmt::format("& {{& '{}' }}", script_path)))
+                            .value_or_exit(VCPKG_LINE_INFO);
         if (rc)
         {
             msg::println_error(msg::format(msgCommandFailed, msg::command_line = TITLE)
@@ -434,7 +434,7 @@ namespace vcpkg
             get_global_metrics_collector().track_string(StringMetric::Title, TITLE);
         }
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc);
+        Checks::exit_with_code(VCPKG_LINE_INFO, static_cast<int>(rc));
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         (void)paths;
         Checks::msg_exit_with_error(
