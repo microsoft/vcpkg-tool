@@ -2,13 +2,13 @@
 
 #include <vcpkg/fwd/paragraphparser.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/packagespec.h>
-#include <vcpkg/base/diagnostics.h>
 
 #include <map>
 #include <memory>

@@ -2,12 +2,11 @@
 
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
-
-#include <vcpkg/base/diagnostics.h>
 
 #include <string>
 
