@@ -65,7 +65,7 @@ namespace vcpkg
         msg::println(msgLocalPortfileVersion);
 
         auto& fs = paths.get_filesystem();
-        const StatusParagraphs status_db = database_load_check(fs, paths.installed());
+        const StatusParagraphs status_db = database_load(fs, paths.installed());
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));

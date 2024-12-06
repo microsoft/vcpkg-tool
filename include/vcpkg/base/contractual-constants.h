@@ -345,6 +345,7 @@ namespace vcpkg
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
     inline constexpr StringLiteral FileShare = "share";
     inline constexpr StringLiteral FileStatus = "status";
+    inline constexpr StringLiteral FileStatusNew = "status-new";
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";

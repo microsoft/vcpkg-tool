@@ -500,7 +500,7 @@ namespace vcpkg
         }
         else
         {
-            StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+            StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });

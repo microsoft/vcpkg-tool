@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -103,7 +104,7 @@ namespace vcpkg
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
-        const StatusParagraphs status_paragraphs = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_paragraphs = database_load(paths.get_filesystem(), paths.installed());
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
         const auto output_json = Util::Sets::contains(options.switches, SwitchXJson);
