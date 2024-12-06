@@ -483,19 +483,26 @@ namespace vcpkg
                                    secrets);
     }
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot)
-    {
-        return send_snapshot_to_api("https://api.github.com", github_token, github_repository, snapshot);
-    }
-
-    bool send_snapshot_to_api(StringView github_api_url,
-                              StringView github_token,
-                              StringView github_repository,
-                              const Json::Object& snapshot)
+    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot)
     {
         static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        std::string uri;
+        if (auto github_server_url = maybe_github_server_url.get())
+        {
+            uri = *github_server_url;
+            uri.append("/api/v3");
+        }
+        else
+        {
+            uri = "https://api.github.com";
+        }
+
+        fmt::format_to(
+            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
         auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
@@ -505,9 +512,7 @@ namespace vcpkg
         std::string res = "Authorization: Bearer " + github_token;
         cmd.string_arg("-H").string_arg(res);
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(Strings::concat(static_cast<std::string>(github_api_url) + "/repos/",
-                                       url_encode_spaces(github_repository),
-                                       "/dependency-graph/snapshots"));
+        cmd.string_arg(uri);
         cmd.string_arg("-d").string_arg("@-");
 
         RedirectedProcessLaunchSettings settings;
