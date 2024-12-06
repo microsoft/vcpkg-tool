@@ -317,8 +317,7 @@ namespace vcpkg
     MetricsUserConfig try_parse_metrics_user(StringView content)
     {
         MetricsUserConfig ret;
-        auto maybe_paragraph =
-            Paragraphs::parse_single_merged_paragraph(console_diagnostic_context, content, "userconfig", 0);
+        auto maybe_paragraph = Paragraphs::parse_single_merged_paragraph(content, "userconfig");
         if (const auto p = maybe_paragraph.get())
         {
             const auto& paragraph = *p;

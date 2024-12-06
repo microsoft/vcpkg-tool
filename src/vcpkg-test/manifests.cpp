@@ -3,7 +3,6 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/json.h>
-#include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
 #include <vcpkg/sourceparagraph.h>
@@ -1261,22 +1260,20 @@ static std::string test_serialized_license(StringView license)
 
 static bool license_is_parsable(StringView license)
 {
-    BufferedDiagnosticContext bdc;
-    auto result = parse_spdx_license_expression(bdc, license).has_value();
-    CHECK(result == !bdc.any_errors());
-    return result;
+    ParseMessages messages;
+    parse_spdx_license_expression(license, messages);
+    return !messages.error.has_value();
 }
 static bool license_is_strict(StringView license)
 {
-    BufferedDiagnosticContext bdc;
-    auto parsable = parse_spdx_license_expression(bdc, license).has_value();
-    if (parsable)
-    {
-        CHECK(!bdc.any_errors());
-        return bdc.lines.empty();
-    }
+    ParseMessages messages;
+    parse_spdx_license_expression(license, messages);
+    return !messages.error.has_value() && messages.warnings.empty();
+}
 
-    return false;
+static std::string test_format_parse_warning(const ParseMessage& msg)
+{
+    return msg.format("<license string>", MessageKind::Warning).extract_data();
 }
 
 TEST_CASE ("simple license in manifest", "[manifests][license]")
@@ -1326,51 +1323,43 @@ TEST_CASE ("license serialization", "[manifests][license]")
 
 TEST_CASE ("license error messages", "[manifests][license]")
 {
-    {
-        BufferedDiagnosticContext bdc;
-        CHECK(!parse_spdx_license_expression(bdc, "").has_value());
-        CHECK(bdc.to_string() ==
-              R"(<license string>: error: SPDX license expression was empty.
+    ParseMessages messages;
+    parse_spdx_license_expression("", messages);
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(R"(<license string>:1:1: error: SPDX license expression was empty.
   on expression: 
-                 ^)");
-    }
+                 ^)"));
 
-    {
-        BufferedDiagnosticContext bdc;
-        CHECK(!parse_spdx_license_expression(bdc, "MIT ()").has_value());
-        CHECK(bdc.to_string() ==
-              R"(<license string>: error: Expected a compound or the end of the string, found a parenthesis.
+    parse_spdx_license_expression("MIT ()", messages);
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(
+              R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
-                     ^)");
-    }
+                     ^)"));
 
-    {
-        BufferedDiagnosticContext bdc;
-        CHECK(!parse_spdx_license_expression(bdc, "MIT +").has_value());
-        CHECK(
-            bdc.to_string() ==
-            R"(<license string>: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+    parse_spdx_license_expression("MIT +", messages);
+    CHECK(
+        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+        LocalizedString::from_raw(
+            R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
-                     ^)");
-    }
+                     ^)"));
 
-    {
-        BufferedDiagnosticContext bdc;
-        CHECK(!parse_spdx_license_expression(bdc, "MIT AND").has_value());
-        CHECK(bdc.to_string() ==
-              R"(<license string>: error: Expected a license name, found the end of the string.
+    parse_spdx_license_expression("MIT AND", messages);
+    CHECK(
+        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+        LocalizedString::from_raw(R"(<license string>:1:8: error: Expected a license name, found the end of the string.
   on expression: MIT AND
-                        ^)");
-    }
-    {
-        BufferedDiagnosticContext bdc;
-        CHECK(parse_spdx_license_expression(bdc, "MIT AND unknownlicense").has_value());
-        CHECK(
-            bdc.to_string() ==
-            R"(<license string>: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+                        ^)"));
+
+    parse_spdx_license_expression("MIT AND unknownlicense", messages);
+    CHECK(!messages.error);
+    REQUIRE(messages.warnings.size() == 1);
+    CHECK(
+        test_format_parse_warning(messages.warnings[0]) ==
+        R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
   on expression: MIT AND unknownlicense
                          ^)");
-    }
 }
 
 TEST_CASE ("default-feature-core errors", "[manifests]")

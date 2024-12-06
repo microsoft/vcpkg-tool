@@ -53,9 +53,7 @@ namespace vcpkg
         bool operator()(const PackageSpec& spec) const;
     };
 
-    Optional<std::vector<CiBaselineLine>> parse_ci_baseline(DiagnosticContext& context,
-                                                            StringView text,
-                                                            StringView origin);
+    std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
     struct CiBaselineData
     {

@@ -118,11 +118,8 @@ namespace vcpkg::PlatformExpression
 
         struct ExpressionParser : ParserBase
         {
-            ExpressionParser(DiagnosticContext& context,
-                             StringView str,
-                             int init_row,
-                             MultipleBinaryOperators multiple_binary_operators)
-                : ParserBase(context, str, "CONTROL", init_row), multiple_binary_operators(multiple_binary_operators)
+            ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
+                : ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
             {
             }
 
@@ -651,27 +648,19 @@ namespace vcpkg::PlatformExpression
         return Impl{}(underlying_);
     }
 
-    Optional<Expr> parse_platform_expression(DiagnosticContext& context,
-                                             StringView expression,
-                                             MultipleBinaryOperators multiple_binary_operators)
-    {
-        ExpressionParser parser(context, expression, 0, multiple_binary_operators);
-        auto res = parser.parse();
-        if (parser.any_errors())
-        {
-            return nullopt;
-        }
-
-        return res;
-    }
-
     ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
     {
-        return adapt_context_to_expected(
-            static_cast<Optional<Expr> (*)(DiagnosticContext&, StringView, MultipleBinaryOperators)>(
-                parse_platform_expression),
-            expression,
-            multiple_binary_operators);
+        ExpressionParser parser(expression, multiple_binary_operators);
+        auto res = parser.parse();
+
+        if (auto p = parser.get_error())
+        {
+            return LocalizedString::from_raw(p->to_string());
+        }
+        else
+        {
+            return res;
+        }
     }
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)

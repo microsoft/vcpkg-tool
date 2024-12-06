@@ -2,13 +2,13 @@
 
 #include <vcpkg/fwd/paragraphparser.h>
 
-#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/packagespec.h>
+#include <vcpkg/base/diagnostics.h>
 
 #include <map>
 #include <memory>
@@ -43,18 +43,10 @@ namespace vcpkg
         std::vector<LocalizedString> errors;
     };
 
-    Optional<std::vector<std::string>> parse_default_features_list(DiagnosticContext& context,
-                                                                   const std::string& str,
-                                                                   Optional<StringView> origin,
-                                                                   int init_row);
     ExpectedL<std::vector<std::string>> parse_default_features_list(const std::string& str,
                                                                     Optional<StringView> origin,
-                                                                    int init_row);
-    Optional<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(DiagnosticContext& context,
-                                                                                   const std::string& str,
-                                                                                   Optional<StringView> origin,
-                                                                                   int init_row);
+                                                                    TextRowCol textrowcol);
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
                                                                                     Optional<StringView> origin,
-                                                                                    int init_row);
+                                                                                    TextRowCol textrowcol);
 }

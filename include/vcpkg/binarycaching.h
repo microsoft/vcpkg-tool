@@ -8,7 +8,6 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/path.h>
@@ -173,9 +172,6 @@ namespace vcpkg
         void clear();
     };
 
-    Optional<BinaryConfigParserState> parse_binary_provider_configs(DiagnosticContext& context,
-                                                                    const std::string& env_string,
-                                                                    View<std::string> args);
     ExpectedL<BinaryConfigParserState> parse_binary_provider_configs(const std::string& env_string,
                                                                      View<std::string> args);
 
@@ -229,8 +225,6 @@ namespace vcpkg
         bool m_needs_zip_file = false;
     };
 
-    Optional<DownloadManagerConfig> parse_download_configuration(DiagnosticContext& context,
-                                                                 const Optional<std::string>& arg);
     ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action, StringView prefix);

@@ -49,7 +49,7 @@ namespace vcpkg
         if (auto depends_field = maybe_depends_field.get())
         {
             this->dependencies = Util::fmap(
-                parse_qualified_specifier_list(std::move(depends_field->first), origin, depends_field->second.row)
+                parse_qualified_specifier_list(std::move(depends_field->first), origin, depends_field->second)
                     .value_or_exit(VCPKG_LINE_INFO),
                 [my_triplet](const ParsedQualifiedSpecifier& dep) {
                     // for compatibility with previous vcpkg versions, we discard all irrelevant information
@@ -67,7 +67,7 @@ namespace vcpkg
             {
                 this->default_features = parse_default_features_list(std::move(default_features_field->first),
                                                                      origin,
-                                                                     default_features_field->second.row)
+                                                                     default_features_field->second)
                                              .value_or_exit(VCPKG_LINE_INFO);
             }
         }
@@ -245,14 +245,15 @@ namespace vcpkg
         // sanity check the serialized data
         auto my_paragraph = StringView{out_str}.substr(initial_end);
         static constexpr StringLiteral sanity_parse_origin = "vcpkg::serialize(const BinaryParagraph&, std::string&)";
-        auto parsed_paragraph = Paragraphs::parse_single_paragraph(
-            console_diagnostic_context, StringView{out_str}.substr(initial_end), sanity_parse_origin, 0);
+        auto parsed_paragraph =
+            Paragraphs::parse_single_paragraph(StringView{out_str}.substr(initial_end), sanity_parse_origin);
         if (!parsed_paragraph)
         {
-            console_diagnostic_context.report(DiagnosticLine{
-                DiagKind::Note,
-                msg::format(msgFailedToParseSerializedBinParagraphSuffix).append_raw('\n').append_raw(my_paragraph)});
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_maybe_upgrade(
+                VCPKG_LINE_INFO,
+                msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
+                    .append_raw('\n')
+                    .append_raw(my_paragraph));
         }
 
         auto binary_paragraph = BinaryParagraph(sanity_parse_origin, std::move(*parsed_paragraph.get()));

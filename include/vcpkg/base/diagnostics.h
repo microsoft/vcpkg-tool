@@ -23,7 +23,7 @@ namespace vcpkg
 
     struct TextRowCol
     {
-        // '0' indicates uninitialized; '1' is the first row/column
+        // '0' indicates that line and column information is unknown; '1' is the first row/column
         int row = 0;
         int column = 0;
     };

@@ -84,96 +84,51 @@ namespace vcpkg
         return std::string(mac_address, non_zero_mac ? MAC_STRING_LENGTH : 0);
     }
 
-    Optional<std::string> extract_mac_from_getmac_output_line(DiagnosticContext& context, StringView line)
+    bool extract_mac_from_getmac_output_line(StringView line, std::string& out)
     {
         // getmac /V /NH /FO CSV
         // outputs each interface on its own comma-separated line
         // "connection name","network adapter","physical address","transport name"
         auto is_quote = [](auto ch) -> bool { return ch == '"'; };
 
-        auto parser = ParserBase(context, line, "getmac output", 0);
+        auto parser = ParserBase(line, "getmac output");
 
-        Optional<std::string> result;
-        auto& out = result.emplace();
+        out.clear();
 
         // ignore "connection name"
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
         parser.match_until(is_quote);
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
-        if (parser.require_character(','))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
 
         // ignore "network adapter"
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
         parser.match_until(is_quote);
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
-        if (parser.require_character(','))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
 
         // get "physical address"
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
         out = parser.match_until(is_quote).to_string();
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
-        if (parser.require_character(','))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
+        if (parser.require_character(',')) return false;
 
         // ignore "transport name"
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
         parser.match_until(is_quote);
-        if (parser.require_character('"'))
-        {
-            result.clear();
-            return result;
-        }
+        if (parser.require_character('"')) return false;
 
         parser.skip_whitespace();
         if (!parser.at_eof())
         {
-            result.clear();
-            return result;
+            out.clear();
+            return false;
         }
 
         // output line was properly formatted
         std::replace(out.begin(), out.end(), '-', ':');
         Strings::inplace_ascii_to_lowercase(out);
-        return result;
+        return true;
     }
 
     std::string get_user_mac_hash()
@@ -188,13 +143,10 @@ namespace vcpkg
         {
             for (auto&& line : Strings::split(getmac->output, '\n'))
             {
-                auto maybe_mac = extract_mac_from_getmac_output_line(null_diagnostic_context, line);
-                if (auto mac = maybe_mac.get())
+                std::string mac;
+                if (extract_mac_from_getmac_output_line(line, mac) && is_valid_mac_for_telemetry(mac))
                 {
-                    if (is_valid_mac_for_telemetry(*mac))
-                    {
-                        return Hash::get_string_hash(*mac, Hash::Algorithm::Sha256);
-                    }
+                    return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
                 }
             }
         }

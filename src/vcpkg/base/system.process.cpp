@@ -265,9 +265,9 @@ namespace vcpkg
 #endif
     }
 
-    Optional<ProcessStat> try_parse_process_stat_file(DiagnosticContext& context, const FileContents& contents)
+    Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(context, contents.content, contents.origin, 1);
+        ParserBase p(contents.content, contents.origin);
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
@@ -341,7 +341,7 @@ namespace
         auto maybe_contents = real_filesystem.try_read_contents(filepath);
         if (auto contents = maybe_contents.get())
         {
-            return try_parse_process_stat_file(console_diagnostic_context, *contents);
+            return try_parse_process_stat_file(*contents);
         }
 
         return nullopt;

@@ -46,9 +46,7 @@ namespace vcpkg
         return {};
     }
 
-    Optional<std::vector<GitStatusLine>> parse_git_status_output(DiagnosticContext& context,
-                                                                 StringView output,
-                                                                 StringView cmd_line)
+    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output, StringView cmd_line)
     {
         // Output of git status --porcelain=v1 is in the form:
         //
@@ -79,16 +77,16 @@ namespace vcpkg
                 case '?': into = Status::Untracked; break;
                 case '!': into = Status::Ignored; break;
                 default:
-                    parser.add_error(msg::format(msgGitStatusUnknownFileStatus, msg::value = static_cast<char>(c)));
+                    parser.add_error(msg::format(msgGitStatusUnknownFileStatus, msg::value = static_cast<char>(c)),
+                                     parser.cur_loc());
                     into = Status::Unknown;
             }
             parser.next();
             return Status::Unknown != into;
         };
 
-        Optional<std::vector<GitStatusLine>> results_storage;
-        auto& results = results_storage.emplace();
-        ParserBase parser(context, output, "git status", 0);
+        std::vector<GitStatusLine> results;
+        ParserBase parser(output, "git status");
         while (!parser.at_eof())
         {
             GitStatusLine result;
@@ -115,52 +113,38 @@ namespace vcpkg
                     parser.skip_tabs_spaces();
                     if (ParserBase::is_lineend(parser.cur()))
                     {
-                        parser.add_error(msg::format(msgGitStatusOutputExpectedFileName));
-                        results_storage.clear();
-                        return results_storage;
+                        parser.add_error(msg::format(msgGitStatusOutputExpectedFileName), parser.cur_loc());
+                        break;
                     }
-
                     auto path = parser.match_until(ParserBase::is_whitespace).to_string();
                     result.old_path = orig_path;
                     result.path = path;
                 }
                 else
                 {
-                    parser.add_error(msg::format(msgGitStatusOutputExpectedRenameOrNewline));
-                    results_storage.clear();
-                    return results_storage;
+                    parser.add_error(msg::format(msgGitStatusOutputExpectedRenameOrNewline), parser.cur_loc());
+                    break;
                 }
             }
 
             if (!ParserBase::is_lineend(parser.cur()))
             {
-                parser.add_error(msg::format(msgGitStatusOutputExpectedNewLine));
-                results_storage.clear();
-                return results_storage;
+                parser.add_error(msg::format(msgGitStatusOutputExpectedNewLine), parser.cur_loc());
+                break;
             }
 
             parser.next();
             results.push_back(result);
         }
 
-        if (parser.any_errors())
+        if (auto error = parser.get_error())
         {
-            context.report(DiagnosticLine{DiagKind::Note,
-                                          msg::format(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd_line)});
-            results_storage.clear();
+            return msg::format(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd_line)
+                .append_raw('\n')
+                .append_raw(error->to_string());
         }
 
-        return results_storage;
-    }
-
-    ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output,
-                                                                  StringView git_command_line)
-    {
-        return adapt_context_to_expected(
-            static_cast<Optional<std::vector<GitStatusLine>> (*)(DiagnosticContext&, StringView, StringView)>(
-                parse_git_status_output),
-            git_status_output,
-            git_command_line);
+        return results;
     }
 
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path)

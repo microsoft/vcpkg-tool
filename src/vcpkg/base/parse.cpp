@@ -9,8 +9,19 @@ namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
+        if (row == 0 && column == 0)
+        {
+            return;
+        }
+        else if (row == 0 || column == 0)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
         if (ch == '\t')
+        {
             column = ((column + 7) & ~7) + 1; // round to next 8-width tab stop
+        }
         else if (ch == '\n')
         {
             row++;
@@ -79,15 +90,31 @@ namespace vcpkg
         return res;
     }
 
-    ParserBase::ParserBase(DiagnosticContext& context, StringView text, Optional<StringView> origin, int init_row)
+    void ParseMessages::exit_if_errors_or_warnings(StringView origin) const
+    {
+        for (const auto& warning : warnings)
+        {
+            msg::println(warning.format(origin, MessageKind::Warning));
+        }
+
+        if (auto e = error.get())
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, *e);
+        }
+
+        if (!warnings.empty())
+        {
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgWarningsTreatedAsErrors);
+        }
+    }
+
+    ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
-        , m_row(init_row)
-        , m_column(init_row == 0 ? 0 : 1)
+        , m_row(init_rowcol.row)
+        , m_column(init_rowcol.column)
         , m_text(text)
         , m_origin(origin)
-        , m_context(context)
-        , m_any_errors(false)
     {
 #ifndef NDEBUG
         if (auto check_origin = origin.get())
@@ -98,11 +125,6 @@ namespace vcpkg
             }
         }
 #endif
-    }
-
-    ParserBase ParserBase::clone_with_context(DiagnosticContext& context)
-    {
-        return ParserBase(m_it, m_start_of_line, m_row, m_column, m_text, m_origin, context, m_any_errors);
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -210,59 +232,35 @@ namespace vcpkg
     void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
         // avoid cascading errors by only saving the first
-        if (!m_any_errors)
+        if (!m_messages.error)
         {
-            message.append_raw('\n');
-            append_caret_line(message, loc);
+            auto& res = m_messages.error.emplace();
             if (auto origin = m_origin.get())
             {
-                m_context.report(
-                    DiagnosticLine{DiagKind::Error, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
-            }
-            else
-            {
-                m_context.report(DiagnosticLine{DiagKind::Error, std::move(message)});
+                if (loc.row == 0 && loc.column == 0)
+                {
+                    res.append_raw(fmt::format("{}: ", *origin));
+                }
+                else
+                {
+                    res.append_raw(fmt::format("{}:{}:{}: ", *origin, loc.row, loc.column));
+                }
             }
 
-            m_any_errors = true;
-            // Avoid error loops by skipping to the end
-            skip_to_eof();
+            res.append_raw(ErrorPrefix);
+            res.append(message);
+            res.append_raw('\n');
+            append_caret_line(res, loc);
         }
+
+        // Avoid error loops by skipping to the end
+        skip_to_eof();
     }
 
     void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
 
     void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
     {
-        message.append_raw('\n');
-        append_caret_line(message, loc);
-        if (auto origin = m_origin.get())
-        {
-            m_context.report(
-                DiagnosticLine{DiagKind::Warning, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
-        }
-        else
-        {
-            m_context.report(DiagnosticLine{DiagKind::Warning, std::move(message)});
-        }
-    }
-
-    ParserBase::ParserBase(Unicode::Utf8Decoder it,
-                           Unicode::Utf8Decoder start_of_line,
-                           int row,
-                           int column,
-                           StringView text,
-                           Optional<StringView> origin,
-                           DiagnosticContext& context,
-                           bool any_errors)
-        : m_it(it)
-        , m_start_of_line(start_of_line)
-        , m_row(row)
-        , m_column(column)
-        , m_text(text)
-        , m_origin(origin)
-        , m_context(context)
-        , m_any_errors(any_errors)
-    {
+        m_messages.warnings.push_back(ParseMessage{loc, std::move(message)});
     }
 }

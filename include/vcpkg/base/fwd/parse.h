@@ -12,5 +12,6 @@ namespace vcpkg
     };
 
     struct ParseMessage;
+    struct ParseMessages;
     struct ParserBase;
 }

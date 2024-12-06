@@ -231,12 +231,12 @@ namespace vcpkg
 
     void print_error_message(const LocalizedString& message);
 
-    Optional<std::string> parse_spdx_license_expression(DiagnosticContext& context, StringView sv);
-    Optional<std::vector<Dependency>> parse_dependencies_list(DiagnosticContext& context,
-                                                              const std::string& str,
-                                                              StringView origin,
-                                                              int init_row);
-    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str, StringView origin, int init_row);
+    std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
+
+    // Exposed for testing
+    ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,
+                                                               StringView origin,
+                                                               TextRowCol textrowcol = {});
 
     constexpr StringLiteral OVERRIDES = "overrides";
 }

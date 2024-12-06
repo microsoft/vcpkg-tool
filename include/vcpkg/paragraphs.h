@@ -7,8 +7,6 @@
 #include <vcpkg/fwd/paragraphparser.h>
 #include <vcpkg/fwd/registries.h>
 
-#include <vcpkg/base/diagnostics.h>
-
 #include <vcpkg/sourceparagraph.h>
 
 #include <string>
@@ -19,25 +17,13 @@ namespace vcpkg::Paragraphs
 {
     uint64_t get_load_ports_stats();
 
-    Optional<Paragraph> parse_single_merged_paragraph(DiagnosticContext& context,
-                                                      StringView str,
-                                                      StringView origin,
-                                                      int init_row);
-    Optional<Paragraph> parse_single_paragraph(DiagnosticContext& context,
-                                               StringView str,
-                                               StringView origin,
-                                               int init_row);
-    Optional<Paragraph> get_single_paragraph(DiagnosticContext& context,
-                                             const ReadOnlyFilesystem& fs,
-                                             const Path& control_path);
+    ExpectedL<Paragraph> parse_single_merged_paragraph(StringView str, StringView origin);
+    ExpectedL<Paragraph> parse_single_paragraph(StringView str, StringView origin);
+    ExpectedL<Paragraph> get_single_paragraph(const ReadOnlyFilesystem& fs, const Path& control_path);
 
     ExpectedL<std::vector<Paragraph>> get_paragraphs(const ReadOnlyFilesystem& fs, const Path& control_path);
 
-    Optional<std::vector<Paragraph>> parse_paragraphs(DiagnosticContext& context,
-                                                      StringView str,
-                                                      StringView origin,
-                                                      int init_row);
-    ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin, int init_row);
+    ExpectedL<std::vector<Paragraph>> parse_paragraphs(StringView str, StringView origin);
 
     void append_paragraph_field(StringView name, StringView field, std::string& out_str);
 
@@ -63,9 +49,7 @@ namespace vcpkg::Paragraphs
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_port_manifest_text(StringView text,
                                                                               StringView control_path,
                                                                               MessageSink& warning_sink);
-    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text,
-                                                                             StringView control_path,
-                                                                             int init_row);
+    ExpectedL<std::unique_ptr<SourceControlFile>> try_load_control_file_text(StringView text, StringView control_path);
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,
                                                          const Path& package_dir,

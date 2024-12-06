@@ -3,9 +3,6 @@
 #include <vcpkg/base/fwd/span.h>
 #include <vcpkg/base/fwd/stringview.h>
 
-#include <vcpkg/base/diagnostics.h>
-#include <vcpkg/base/optional.h>
-
 #include <string>
 
 namespace vcpkg
@@ -16,5 +13,5 @@ namespace vcpkg
     bool validate_mac_address_format(StringView mac);
     bool is_valid_mac_for_telemetry(StringView mac);
     std::string mac_bytes_to_string(const Span<char>& bytes);
-    Optional<std::string> extract_mac_from_getmac_output_line(DiagnosticContext& context, StringView line);
+    bool extract_mac_from_getmac_output_line(StringView line, std::string& out);
 }

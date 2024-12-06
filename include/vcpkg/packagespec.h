@@ -6,7 +6,6 @@
 
 #include <vcpkg/fwd/packagespec.h>
 
-#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 
@@ -152,11 +151,6 @@ namespace vcpkg
 
     Optional<std::string> parse_feature_name(ParserBase& parser);
     Optional<std::string> parse_package_name(ParserBase& parser);
-    Optional<ParsedQualifiedSpecifier> parse_qualified_specifier(DiagnosticContext& context,
-                                                                 StringView input,
-                                                                 AllowFeatures allow_features,
-                                                                 ParseExplicitTriplet parse_explicit_triplet,
-                                                                 AllowPlatformSpec allow_platform_spec);
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
                                                                   AllowFeatures allow_features,
                                                                   ParseExplicitTriplet parse_explicit_triplet,
