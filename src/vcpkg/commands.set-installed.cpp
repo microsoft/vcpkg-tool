@@ -194,12 +194,16 @@ namespace vcpkg
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
-            auto snapshot = create_dependency_graph_snapshot(args, action_plan);
-            bool s = false;
-            if (snapshot.has_value() && args.github_token.has_value() && args.github_repository.has_value())
+            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan);
+            auto snapshot = maybe_snapshot.get();
+            auto github_token = args.github_token.get();
+            auto github_repository = args.github_repository.get();
+            bool dependency_graph_success = false;
+            if (snapshot && github_token && github_repository)
             {
-                s = send_snapshot_to_api(*args.github_token.get(), *args.github_repository.get(), *snapshot.get());
-                if (s)
+                dependency_graph_success = submit_github_dependency_graph_snapshot(
+                    args.github_server_url, *github_token, *github_repository, *snapshot);
+                if (dependency_graph_success)
                 {
                     msg::println(msgDependencyGraphSuccess);
                 }
@@ -208,7 +212,7 @@ namespace vcpkg
                     msg::println(msgDependencyGraphFailure);
                 }
             }
-            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, s);
+            get_global_metrics_collector().track_bool(BoolMetric::DependencyGraphSuccess, dependency_graph_success);
         }
 
         // currently (or once) installed specifications
