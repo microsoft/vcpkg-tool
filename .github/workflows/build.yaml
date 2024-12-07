@@ -80,6 +80,7 @@ jobs:
         shell: pwsh
         run: |
           cd out/build/${{ matrix.preset }}
+          Import-Module Pester -Force -MinimumVersion '5.6.1' -MaximumVersion '5.99'
           ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
