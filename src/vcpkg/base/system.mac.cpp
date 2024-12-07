@@ -91,7 +91,7 @@ namespace vcpkg
         // "connection name","network adapter","physical address","transport name"
         auto is_quote = [](auto ch) -> bool { return ch == '"'; };
 
-        auto parser = ParserBase(line, "getmac output");
+        auto parser = ParserBase(line, "getmac output", {0, 0});
 
         out.clear();
 

@@ -80,7 +80,14 @@ namespace vcpkg
         LocalizedString res;
         if (!origin.empty())
         {
-            res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+            if (location.row == 0 && location.column == 0)
+            {
+                res.append_raw(fmt::format("{}: ", origin));
+            }
+            else
+            {
+                res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+            }
         }
 
         res.append_raw(kind == MessageKind::Warning ? WarningPrefix : ErrorPrefix);
@@ -174,7 +181,11 @@ namespace vcpkg
 
         // success
         m_it = encoded;
-        m_column += static_cast<int>(text.size());
+        if (m_column != 0)
+        {
+            m_column += static_cast<int>(text.size());
+        }
+
         return true;
     }
 
@@ -200,7 +211,11 @@ namespace vcpkg
 
         // success
         m_it = encoded;
-        m_column += static_cast<int>(keyword_content.size());
+        if (m_column != 0)
+        {
+            m_column += static_cast<int>(keyword_content.size());
+        }
+
         return true;
     }
 

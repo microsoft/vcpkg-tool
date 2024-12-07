@@ -43,7 +43,7 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol = {});
+        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol);
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }

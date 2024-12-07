@@ -1455,7 +1455,7 @@ namespace
     struct BinaryConfigParser : ConfigSegmentsParser
     {
         BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 
@@ -1907,7 +1907,7 @@ namespace
     struct AssetSourcesParser : ConfigSegmentsParser
     {
         AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 

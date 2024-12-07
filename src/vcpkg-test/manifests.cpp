@@ -1326,14 +1326,14 @@ TEST_CASE ("license error messages", "[manifests][license]")
     ParseMessages messages;
     parse_spdx_license_expression("", messages);
     CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
-          LocalizedString::from_raw(R"(<license string>:1:1: error: SPDX license expression was empty.
+          LocalizedString::from_raw(R"(<license string>: error: SPDX license expression was empty.
   on expression: 
                  ^)"));
 
     parse_spdx_license_expression("MIT ()", messages);
     CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
           LocalizedString::from_raw(
-              R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+              R"(<license string>: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
                      ^)"));
 
@@ -1341,14 +1341,14 @@ TEST_CASE ("license error messages", "[manifests][license]")
     CHECK(
         messages.error.value_or_exit(VCPKG_LINE_INFO) ==
         LocalizedString::from_raw(
-            R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+            R"(<license string>: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
                      ^)"));
 
     parse_spdx_license_expression("MIT AND", messages);
     CHECK(
         messages.error.value_or_exit(VCPKG_LINE_INFO) ==
-        LocalizedString::from_raw(R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+        LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
 
@@ -1357,7 +1357,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
     REQUIRE(messages.warnings.size() == 1);
     CHECK(
         test_format_parse_warning(messages.warnings[0]) ==
-        R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+        R"(<license string>: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
   on expression: MIT AND unknownlicense
                          ^)");
 }

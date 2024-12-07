@@ -172,7 +172,7 @@ namespace vcpkg
                                                                   AllowPlatformSpec allow_platform_spec)
     {
         // there is no origin because this function is used for user inputs
-        auto parser = ParserBase(input, nullopt);
+        auto parser = ParserBase(input, nullopt, {0, 0});
         auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
         if (!parser.at_eof())
         {

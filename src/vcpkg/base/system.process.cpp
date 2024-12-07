@@ -267,7 +267,7 @@ namespace vcpkg
 
     Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(contents.content, contents.origin);
+        ParserBase p(contents.content, contents.origin, {1, 1});
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
