@@ -1346,9 +1346,8 @@ TEST_CASE ("license error messages", "[manifests][license]")
                      ^)"));
 
     parse_spdx_license_expression("MIT AND", messages);
-    CHECK(
-        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
-        LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
 
