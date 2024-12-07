@@ -21,7 +21,8 @@ namespace vcpkg
         SevenZip,
         Nupkg,
         Msi,
-        Exe
+        Exe,
+        SelfExtracting7z
     };
 
     // Extract `archive` to `to_path` using `tar_tool`.

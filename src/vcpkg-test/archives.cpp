@@ -15,4 +15,5 @@ TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
     REQUIRE(guess_extraction_type(Path("/path/to/archive.xz")) == ExtractionType::Tar);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.exe")) == ExtractionType::Exe);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.unknown")) == ExtractionType::Unknown);
+    REQUIRE(guess_extraction_type(Path("/path/to/archive.7z.exe")) == ExtractionType::SelfExtracting7z);
 }
