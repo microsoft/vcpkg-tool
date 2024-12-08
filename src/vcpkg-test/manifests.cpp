@@ -4,6 +4,7 @@
 
 #include <vcpkg/base/json.h>
 
+#include <vcpkg/documentation.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -1325,14 +1326,14 @@ TEST_CASE ("license error messages", "[manifests][license]")
     ParseMessages messages;
     parse_spdx_license_expression("", messages);
     CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
-          LocalizedString::from_raw(R"(<license string>:1:1: error: SPDX license expression was empty.
+          LocalizedString::from_raw(R"(<license string>: error: SPDX license expression was empty.
   on expression: 
                  ^)"));
 
     parse_spdx_license_expression("MIT ()", messages);
     CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
           LocalizedString::from_raw(
-              R"(<license string>:1:5: error: Expected a compound or the end of the string, found a parenthesis.
+              R"(<license string>: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
                      ^)"));
 
@@ -1340,14 +1341,13 @@ TEST_CASE ("license error messages", "[manifests][license]")
     CHECK(
         messages.error.value_or_exit(VCPKG_LINE_INFO) ==
         LocalizedString::from_raw(
-            R"(<license string>:1:5: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
+            R"(<license string>: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
                      ^)"));
 
     parse_spdx_license_expression("MIT AND", messages);
-    CHECK(
-        messages.error.value_or_exit(VCPKG_LINE_INFO) ==
-        LocalizedString::from_raw(R"(<license string>:1:8: error: Expected a license name, found the end of the string.
+    CHECK(messages.error.value_or_exit(VCPKG_LINE_INFO) ==
+          LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
 
@@ -1356,7 +1356,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
     REQUIRE(messages.warnings.size() == 1);
     CHECK(
         test_format_parse_warning(messages.warnings[0]) ==
-        R"(<license string>:1:9: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
+        R"(<license string>: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
   on expression: MIT AND unknownlicense
                          ^)");
 }
@@ -1418,8 +1418,8 @@ TEST_CASE ("default-feature-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0] (a feature name): \"\" is not a valid feature name. Feature "
-            "names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("default-feature-empty-object errors", "[manifests]")
@@ -1431,8 +1431,8 @@ TEST_CASE ("default-feature-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.default-features[0].name (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-name-empty errors", "[manifests]")
@@ -1444,8 +1444,8 @@ TEST_CASE ("dependency-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0] (a package name): \"\" is not a valid package name. Package "
-            "names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
@@ -1457,8 +1457,8 @@ TEST_CASE ("dependency-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].name (a package name): \"\" is not a valid package name. "
-            "Package names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Package names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-core errors", "[manifests]")
@@ -1544,8 +1544,8 @@ TEST_CASE ("dependency-feature-name-empty errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0] (a feature name): \"\" is not a valid feature name. "
-            "Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }
 
 TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
@@ -1562,6 +1562,6 @@ TEST_CASE ("dependency-feature-name-empty-object errors", "[manifests]")
     REQUIRE(!m_pgh.has_value());
     REQUIRE(m_pgh.error().data() ==
             "<test manifest>: error: $.dependencies[0].features[0].name (a feature name): \"\" is not a valid feature "
-            "name. Feature names must be lowercase alphanumeric+hypens and not reserved (see "
-            "https://learn.microsoft.com/vcpkg/users/manifests for more information).");
+            "name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see " +
+                docs::manifests_url + " for more information).");
 }

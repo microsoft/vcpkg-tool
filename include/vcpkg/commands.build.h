@@ -23,7 +23,6 @@
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <array>
 #include <map>
 #include <set>
 #include <vector>
@@ -41,17 +40,19 @@ namespace vcpkg
 
     extern const CommandMetadata CommandBuildMetadata;
     int command_build_ex(const VcpkgCmdArguments& args,
-                         const FullPackageSpec& full_spec,
+                         const VcpkgPaths& paths,
                          Triplet host_triplet,
+                         const BuildPackageOptions& build_options,
+                         const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder,
-                         const VcpkgPaths& paths);
+                         const IBuildLogsRecorder& build_logs_recorder);
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
-                                   const FullPackageSpec& full_spec,
+                                   const VcpkgPaths& paths,
                                    Triplet host_triplet,
+                                   const BuildPackageOptions& build_options,
+                                   const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder,
-                                   const VcpkgPaths& paths);
+                                   const IBuildLogsRecorder& build_logs_recorder);
 
     void command_build_and_exit(const VcpkgCmdArguments& args,
                                 const VcpkgPaths& paths,
@@ -64,47 +65,14 @@ namespace vcpkg
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
-        UseHeadVersion use_head_version;
         AllowDownloads allow_downloads;
         OnlyDownloads only_downloads;
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
         DownloadTool download_tool;
-        PurgeDecompressFailure purge_decompress_failure;
-        Editable editable;
         BackcompatFeatures backcompat_features;
-        PrintUsage print_usage;
-    };
-
-    static constexpr BuildPackageOptions default_build_package_options{
-        BuildMissing::Yes,
-        UseHeadVersion::No,
-        AllowDownloads::Yes,
-        OnlyDownloads::No,
-        CleanBuildtrees::Yes,
-        CleanPackages::Yes,
-        CleanDownloads::No,
-        DownloadTool::Builtin,
-        PurgeDecompressFailure::Yes,
-        Editable::No,
-        BackcompatFeatures::Allow,
-        PrintUsage::Yes,
-    };
-
-    static constexpr BuildPackageOptions backcompat_prohibiting_package_options{
-        BuildMissing::Yes,
-        UseHeadVersion::No,
-        AllowDownloads::Yes,
-        OnlyDownloads::No,
-        CleanBuildtrees::Yes,
-        CleanPackages::Yes,
-        CleanDownloads::No,
-        DownloadTool::Builtin,
-        PurgeDecompressFailure::Yes,
-        Editable::No,
-        BackcompatFeatures::Prohibit,
-        PrintUsage::Yes,
+        KeepGoing keep_going;
     };
 
     struct BuildResultCounts
@@ -120,7 +88,7 @@ namespace vcpkg
         int removed = 0;
 
         void increment(const BuildResult build_result);
-        void println(const Triplet& triplet) const;
+        LocalizedString format(const Triplet& triplet) const;
     };
 
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
@@ -157,11 +125,13 @@ namespace vcpkg
         Optional<std::string> platform_toolset;
         Optional<std::string> platform_toolset_version;
         Optional<Path> visual_studio_path;
-        Optional<std::string> external_toolchain_file;
+        Optional<Path> external_toolchain_file;
         Optional<ConfigurationType> build_type;
         Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
+        std::vector<Path> hash_additional_files;
+        std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -200,12 +170,11 @@ namespace vcpkg
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
                                       const VcpkgPaths& paths,
+                                      Triplet host_triplet,
+                                      const BuildPackageOptions& build_options,
                                       const InstallPlanAction& config,
                                       const IBuildLogsRecorder& build_logs_recorder,
                                       const StatusParagraphs& status_db);
-
-    // could be constexpr, but we want to generate this and that's not constexpr in C++14
-    extern const std::array<BuildPolicy, size_t(BuildPolicy::COUNT)> ALL_POLICIES;
 
     StringLiteral to_string_view(BuildPolicy policy);
     std::string to_string(BuildPolicy policy);
@@ -276,7 +245,7 @@ namespace vcpkg
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Value> heuristic_resources;
+        std::vector<Json::Object> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,

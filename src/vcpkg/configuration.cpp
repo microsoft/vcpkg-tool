@@ -441,20 +441,20 @@ namespace
                 continue;
             }
 
-            if (!el.second.is_object())
+            auto maybe_demand_obj = el.second.maybe_object();
+            if (!maybe_demand_obj)
             {
                 r.add_generic_error(type_name(), msg::format(msgJsonFieldNotObject, msg::json_field = key));
                 continue;
             }
 
-            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
-            if (demand_obj.contains(JsonIdDemands))
+            if (maybe_demand_obj->contains(JsonIdDemands))
             {
                 r.add_generic_error(type_name(),
                                     msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
             }
 
-            auto maybe_demand = r.visit(demand_obj, CeMetadataDeserializer::instance);
+            auto maybe_demand = r.visit(*maybe_demand_obj, CeMetadataDeserializer::instance);
             if (maybe_demand.has_value())
             {
                 ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
@@ -602,13 +602,14 @@ namespace
         auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
             if (auto demands = obj.get(JsonIdDemands))
             {
-                if (!demands->is_object())
+                auto demands_obj = demands->maybe_object();
+                if (!demands_obj)
                 {
                     return;
                 }
 
                 Json::Object serialized_demands;
-                for (const auto& el : demands->object(VCPKG_LINE_INFO))
+                for (const auto& el : *demands_obj)
                 {
                     auto key = el.first;
                     if (Strings::starts_with(key, "$"))
@@ -617,10 +618,10 @@ namespace
                         continue;
                     }
 
-                    if (el.second.is_object())
+                    if (auto demand_obj = el.second.maybe_object())
                     {
                         auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
+                        serialize_ce_metadata(*demand_obj, inserted);
                     }
                 }
                 put_into.insert_or_replace(JsonIdDemands, serialized_demands);
@@ -667,12 +668,13 @@ namespace
 
             if (el.first == JsonIdDemands)
             {
-                if (!el.second.is_object())
+                auto maybe_demands_object = el.second.maybe_object();
+                if (!maybe_demands_object)
                 {
                     continue;
                 }
 
-                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
+                for (const auto& demand : *maybe_demands_object)
                 {
                     if (Strings::starts_with(demand.first, "$"))
                     {
@@ -690,9 +692,11 @@ namespace
 
 namespace vcpkg
 {
-    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths, StringView url)
+    static ExpectedL<Optional<std::string>> get_baseline_from_git_repo(const VcpkgPaths& paths,
+                                                                       StringView url,
+                                                                       std::string reference)
     {
-        auto res = paths.git_fetch_from_remote_registry(url, "HEAD");
+        auto res = paths.git_fetch_from_remote_registry(url, reference);
         if (auto p = res.get())
         {
             return Optional<std::string>(std::move(*p));
@@ -709,13 +713,13 @@ namespace vcpkg
     {
         if (kind == JsonIdGit)
         {
-            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO));
+            return get_baseline_from_git_repo(paths, repo.value_or_exit(VCPKG_LINE_INFO), reference.value_or("HEAD"));
         }
         else if (kind == JsonIdBuiltin)
         {
             if (paths.use_git_default_registry())
             {
-                return get_baseline_from_git_repo(paths, builtin_registry_git_url);
+                return get_baseline_from_git_repo(paths, builtin_registry_git_url, reference.value_or("HEAD"));
             }
             else
             {
@@ -838,13 +842,13 @@ namespace vcpkg
         }
 
         auto conf_value = std::move(conf).value(VCPKG_LINE_INFO).value;
-        if (!conf_value.is_object())
+        if (auto conf_value_object = conf_value.maybe_object())
         {
-            messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
-            return nullopt;
+            return parse_configuration(std::move(*conf_value_object), origin, messageSink);
         }
 
-        return parse_configuration(std::move(conf_value).object(VCPKG_LINE_INFO), origin, messageSink);
+        messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
+        return nullopt;
     }
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
@@ -1020,32 +1024,34 @@ namespace vcpkg
             return true;
         }
 
-        /*if (sv == "*")
-        {
-            return true;
-        }*/
-
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        // ([a-z0-9]+-)*([a-z0-9]+[*]?|[*])
         auto cur = sv.begin();
         const auto last = sv.end();
+        // each iteration of this loop matches either
+        // ([a-z0-9]+-)
+        // or the last
+        // ([a-z0-9]+[*]?|[*])
         for (;;)
         {
-            // [a-z0-9]+
             if (cur == last)
             {
                 return false;
             }
 
+            // this if checks for the first matched character of [a-z0-9]+
             if (!ParserBase::is_lower_digit(*cur))
             {
-                if (*cur != '*')
+                // [a-z0-9]+ didn't match anything, so we must be matching
+                // the last [*]
+                if (*cur == '*')
                 {
-                    return false;
+                    return ++cur == last;
                 }
 
-                return ++cur == last;
+                return false;
             }
 
+            // match the rest of the [a-z0-9]+
             do
             {
                 ++cur;
@@ -1058,11 +1064,11 @@ namespace vcpkg
             switch (*cur)
             {
                 case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    // this loop iteration matched [a-z0-9]+- once
                     ++cur;
                     continue;
                 case '*':
-                    // match last optional *
+                    // this loop matched [a-z0-9]+[*]? (and [*] was present)
                     ++cur;
                     return cur == last;
                 default: return false;

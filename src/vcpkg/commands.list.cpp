@@ -17,19 +17,20 @@ namespace
         Json::Object obj;
         for (const StatusParagraph* status_paragraph : installed_packages)
         {
-            auto current_spec = status_paragraph->package.spec;
-            if (obj.contains(current_spec.to_string()))
+            const auto& current_spec = status_paragraph->package.spec;
+            const auto current_spec_string = current_spec.to_string();
+            if (obj.contains(current_spec_string))
             {
                 if (status_paragraph->package.is_feature())
                 {
-                    Json::Value* value_obj = obj.get(current_spec.to_string());
+                    Json::Value* value_obj = obj.get(current_spec_string);
                     auto& feature_list = value_obj->object(VCPKG_LINE_INFO)[JsonIdFeatures].array(VCPKG_LINE_INFO);
                     feature_list.push_back(Json::Value::string(status_paragraph->package.feature));
                 }
             }
             else
             {
-                Json::Object& library_obj = obj.insert(current_spec.to_string(), Json::Object());
+                Json::Object& library_obj = obj.insert(current_spec_string, Json::Object());
                 library_obj.insert(JsonIdPackageUnderscoreName, Json::Value::string(current_spec.name()));
                 library_obj.insert(JsonIdTriplet, Json::Value::string(current_spec.triplet().to_string()));
                 library_obj.insert(JsonIdVersion, Json::Value::string(status_paragraph->package.version.text));

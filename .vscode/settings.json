@@ -98,6 +98,7 @@
     "cinttypes": "cpp",
     "typeindex": "cpp",
     "typeinfo": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "__bit_reference": "cpp"
   }
 }

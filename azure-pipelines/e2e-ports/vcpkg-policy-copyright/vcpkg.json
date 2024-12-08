@@ -1,0 +1,18 @@
+{
+  "name": "vcpkg-policy-copyright",
+  "version": "1",
+  "features": {
+    "policy": {
+      "description": "enable VCPKG_POLICY_SKIP_COPYRIGHT_CHECK"
+    },
+    "source": {
+      "description": "Create a source so that ${SOURCE_PATH} can be assumed to work"
+    },
+    "source2": {
+      "description": "Create another source so that ${SOURCE_PATH} can't be assumed to work"
+    },
+    "copyright-directory": {
+      "description": "create ${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright as a directory"
+    }
+  }
+}

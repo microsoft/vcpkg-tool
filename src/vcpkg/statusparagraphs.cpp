@@ -19,11 +19,16 @@ namespace vcpkg
             if (p->package.spec.name() == name && p->package.spec.triplet() == triplet)
             {
                 if (p->package.is_feature())
+                {
                     spghs.emplace_back(&p);
+                }
                 else
+                {
                     spghs.emplace(spghs.begin(), &p);
+                }
             }
         }
+
         return spghs;
     }
 
@@ -46,10 +51,13 @@ namespace vcpkg
                 }
             }
         }
+
         if (ipv.core != nullptr)
+        {
             return ipv;
-        else
-            return nullopt;
+        }
+
+        return nullopt;
     }
 
     StatusParagraphs::iterator StatusParagraphs::find(const std::string& name,
@@ -76,6 +84,7 @@ namespace vcpkg
             // The core feature maps to .feature == ""
             return find(name, triplet, "");
         }
+
         return std::find_if(begin(), end(), [&](const std::unique_ptr<StatusParagraph>& pgh) {
             const PackageSpec& spec = pgh->package.spec;
             return spec.name() == name && spec.triplet() == triplet && pgh->package.feature == feature;
@@ -89,10 +98,8 @@ namespace vcpkg
         {
             return it;
         }
-        else
-        {
-            return end();
-        }
+
+        return end();
     }
 
     StatusParagraphs::const_iterator StatusParagraphs::find_installed(const FeatureSpec& spec) const
@@ -102,10 +109,8 @@ namespace vcpkg
         {
             return it;
         }
-        else
-        {
-            return end();
-        }
+
+        return end();
     }
 
     bool vcpkg::StatusParagraphs::is_installed(const PackageSpec& spec) const

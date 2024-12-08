@@ -54,23 +54,27 @@ if(MSVC AND NOT COMMAND target_precompile_headers)
 endif()
 
 if(VCPKG_EMBED_GIT_SHA)
-    find_package(Git REQUIRED)
-    execute_process(
-        COMMAND "${GIT_EXECUTABLE}" status --porcelain=v1
-        WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-        OUTPUT_VARIABLE VCPKG_GIT_STATUS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    if(VCPKG_GIT_STATUS STREQUAL "")
+    if(DEFINED VCPKG_VERSION)
+        message(STATUS "Using supplied version SHA ${VCPKG_VERSION}.")
+    else()
+        find_package(Git REQUIRED)
         execute_process(
-            COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+            COMMAND "${GIT_EXECUTABLE}" status --porcelain=v1
             WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
-            OUTPUT_VARIABLE VCPKG_VERSION
+            OUTPUT_VARIABLE VCPKG_GIT_STATUS
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    else()
-        message(WARNING "Skipping embedding SHA due to local changes.")
+
+        if(VCPKG_GIT_STATUS STREQUAL "")
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+                WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+                OUTPUT_VARIABLE VCPKG_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+        else()
+            message(WARNING "Skipping embedding SHA due to local changes.")
+        endif()
     endif()
 endif()
 
@@ -140,6 +144,11 @@ else()
 
         string(APPEND CMAKE_C_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers ${DECL_WARNING}")
         string(APPEND CMAKE_CXX_FLAGS " -Wall -Wextra -Wpedantic -Wno-unknown-pragmas -Wno-missing-field-initializers -Wno-redundant-move ${DECL_WARNING}")
+
+        if(VCPKG_COMPILER STREQUAL "gcc" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13 AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+            # -Wno-dangling-reference results from https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107532 :(
+            string(APPEND CMAKE_CXX_FLAGS " -Wno-dangling-reference")
+        endif()
     endif()
 
     if(VCPKG_WARNINGS_AS_ERRORS)
@@ -173,6 +182,7 @@ file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
 
 set(VCPKG_FUZZ_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz/main.cpp")
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
+set(CLOSES_EXIT_MINUS_ONE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-exit-minus-one.c")
 set(CLOSES_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdin.c")
 set(CLOSES_STDOUT_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdout.c")
 set(READS_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/reads-stdin.c")
@@ -440,14 +450,14 @@ endif()
 # === Target: vcpkg-ps1 ===
 add_custom_command(
     OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
     COMMAND
-        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1"
+        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
     DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
     VERBATIM
 )
-add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg.ps1")
+add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1")
 
 # === Target: vcpkg ===
 
@@ -496,7 +506,7 @@ if (BUILD_TESTING)
         target_link_libraries(vcpkg-test PRIVATE log)
     endif()
 
-    add_dependencies(vcpkg-test reads-stdin closes-stdin closes-stdout test-editor)
+    add_dependencies(vcpkg-test reads-stdin closes-exit-minus-one closes-stdin closes-stdout test-editor)
 
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
@@ -530,6 +540,11 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
 endif()
 
 if (BUILD_TESTING)
+# === Target: closes-exit-minus-one ===
+
+add_executable(closes-exit-minus-one ${CLOSES_EXIT_MINUS_ONE_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+set_property(TARGET closes-exit-minus-one PROPERTY PDB_NAME "closes-exit-minus-one${VCPKG_PDB_SUFFIX}")
+
 # === Target: closes-stdin ===
 
 add_executable(closes-stdin ${CLOSES_STDIN_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
@@ -556,6 +571,13 @@ add_executable(test-script-asset-cache ${TEST_SCRIPT_ASSET_CACHE_SOURCES} "${CMA
 set_property(TARGET test-script-asset-cache PROPERTY PDB_NAME "test-script-asset-cache${VCPKG_PDB_SUFFIX}")
 endif()
 
+# === Target: verify_messages ===
+add_custom_target(
+    verify-messages
+    COMMAND pwsh -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/verifyMessages.ps1"
+    COMMENT "Running PowerShell script to verify message usage..."
+)
+
 # === Target: format ===
 
 find_program(CLANG_FORMAT clang-format PATHS "$ENV{PROGRAMFILES}/LLVM/bin")
@@ -574,7 +596,7 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_TEST_INCLUDES}
 
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES} ${TLS12_DOWNLOAD_SOURCES}
-            ${CLOSES_STDIN_SOURCES} ${CLOSES_STDOUT_SOURCES} ${READS_STDIN_SOURCES}
+            ${CLOSES_STDIN_SOURCES} ${CLOSES_STDOUT_SOURCES} ${READS_STDIN_SOURCES} ${CLOSES_EXIT_MINUS_ONE_SOURCES}
             ${TEST_EDITOR_SOURCES} ${TEST_SCRIPT_ASSET_CACHE_SOURCES}
     )
 endif()

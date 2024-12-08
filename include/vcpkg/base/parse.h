@@ -2,12 +2,11 @@
 
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
-
-#include <vcpkg/textrowcol.h>
 
 #include <string>
 
@@ -20,6 +19,10 @@ namespace vcpkg
         int row;
         int column;
     };
+
+    void append_caret_line(LocalizedString& res,
+                           const Unicode::Utf8Decoder& it,
+                           const Unicode::Utf8Decoder& start_of_line);
 
     struct ParseMessage
     {
@@ -40,7 +43,7 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol = {});
+        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol);
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -56,11 +59,8 @@ namespace vcpkg
         {
             return is_lower_alpha(ch) || is_ascii_digit(ch) || ch == '-';
         }
-
-        static constexpr bool is_hex_digit(char32_t ch)
-        {
-            return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-        }
+        static constexpr bool is_hex_digit_lower(char32_t ch) { return is_ascii_digit(ch) || (ch >= 'a' && ch <= 'f'); }
+        static constexpr bool is_hex_digit(char32_t ch) { return is_hex_digit_lower(ch) || (ch >= 'A' && ch <= 'F'); }
         static constexpr bool is_word_char(char32_t ch) { return is_alphanum(ch) || ch == '_'; }
 
         StringView skip_whitespace();
@@ -89,6 +89,7 @@ namespace vcpkg
         }
 
         bool require_character(char ch);
+        bool require_text(StringLiteral keyword);
 
         bool try_match_keyword(StringView keyword_content);
 

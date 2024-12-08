@@ -172,6 +172,25 @@
                 "CMAKE_OSX_DEPLOYMENT_TARGET": "10.13",
                 "VCPKG_WARNINGS_AS_ERRORS": true
             }
+        },
+        {
+            "name": "bootstrap.sh",
+            "description": "Preset used by vcpkg's bootstrap-vcpkg.sh",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "VCPKG_DEVELOPMENT_WARNINGS": "OFF"
+            }
+        },
+        {
+            "name": "bootstrap.sh parallel build",
+            "description": "Preset used by vcpkg's bootstrap-vcpkg.sh when the VCPKG_MAX_CONCURRENCY variable is non-empty",
+            "inherits": ["bootstrap.sh"],
+            "cacheVariables": {
+                "CMAKE_JOB_POOL_COMPILE": "compile",
+                "CMAKE_JOB_POOL_LINK": "link",
+                "CMAKE_JOB_POOLS": "compile=$env{VCPKG_MAX_CONCURRENCY};link=$env{VCPKG_MAX_CONCURRENCY}"
+            }
         }
     ],
     "buildPresets": [

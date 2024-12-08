@@ -1,4 +1,59 @@
 {
   "name": "test-dll",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "features": {
+    "bad-release-only": {
+      "description": "Install only the release versions, but don't set the build type",
+      "dependencies": [
+        {
+          "name": "test-dll",
+          "features": [
+            "release-only"
+          ]
+        }
+      ]
+    },
+    "debug-only": {
+      "description": "Install only the debug versions"
+    },
+    "extra-debug": {
+      "description": "Install an extra debug DLL"
+    },
+    "extra-release": {
+      "description": "Install an extra release DLL"
+    },
+    "install-to-lib": {
+      "description": "Incorrectly install the DLL to lib instead of bin"
+    },
+    "install-no-lib-debug": {
+      "description": "Incorrectly install no import lib for debug only"
+    },
+    "install-no-lib-release": {
+      "description": "Incorrectly install no import lib for release only"
+    },
+    "policy-allow-dlls-in-lib": {
+      "description": "Turn on VCPKG_POLICY_ALLOW_DLLS_IN_LIB"
+    },
+    "policy-allow-kernel32-from-xbox": {
+      "description": "Turn on VCPKG_POLICY_ALLOW_KERNEL32_FROM_XBOX"
+    },
+    "policy-dlls-in-static-library": {
+      "description": "Turn on VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY"
+    },
+    "policy-skip-appcontainer-check": {
+      "description": "Turn on VCPKG_POLICY_SKIP_APPCONTAINER_CHECK"
+    },
+    "policy-skip-architecture-check": {
+      "description": "Turn on VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK"
+    },
+    "policy-mismatched-number-of-binaries": {
+      "description": "Turn on VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES"
+    },
+    "policy-dlls-without-libs": {
+      "description": "Turn on VCPKG_POLICY_DLLS_WITHOUT_LIBS"
+    },
+    "release-only": {
+      "description": "Install only the release versions"
+    }
+  }
 }
