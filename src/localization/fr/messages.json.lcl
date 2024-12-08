@@ -730,6 +730,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dans {package_name}, {version} est une version complètement nouvelle, donc le champ « port-version » doit être supprimé. Supprimez « port-version », validez cette modification et réessayez. Pour ignorer cette vérification, réexécutez avec --skip-version-format-check .]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dans {package_name}, la « version de port » actuelle pour {version} est {count}, donc la prochaine « version de port » ajoutée devrait être {expected_version}, mais le port déclare la « version de port » {actual_version}. Remplacez « port-version » par {expected_version}, validez cette modification et réessayez. Pour ignorer cette vérification, réexécutez avec --skip-version-format-check .]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
@@ -4399,6 +4417,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Failed to download {path}.]A;If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See, {url}]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nous n’avons pas pu télécharger {path}.]A;Si vous utilisez un proxy, veuillez vérifier que vos paramètres de proxy sont corrects.]A;Les causes possibles sont les suivantes :]A;1. Vous utilisez en fait un proxy HTTP, mais vous avez défini la variable HTTPS_PROXY sur `https//address:port`.]A;Ceci n’est pas correct, car le préfixe `https://` demande que le proxy soit un proxy HTTPS, alors que votre proxy (v2ray, shadowsocksr, etc.) est un proxy HTTP.]A;Essayez plutôt de définir `http://address:port` sur HTTP_PROXY et sur HTTPS_PROXY.]A;2. Si vous utilisez Windows, vcpkg utilise automatiquement vos paramètres de proxy Windows IE définis par votre logiciel de proxy. Voir, {url}]A;Il est possible que la valeur définie par votre proxy soit incorrecte ou a le même problème de préfixe `https://`.]A;3. Le serveur distant de votre proxy est hors service.]A;Si vous avez essayé de télécharger directement le lien et que vous pensez qu’il ne s’agit pas d’une défaillance du serveur de téléchargement temporaire, soumettez un problème à https://github.com/Microsoft/vcpkg/issues]A;pour signaler cette défaillance du serveur de téléchargement en amont.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
@@ -4426,6 +4453,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Specify the downloads root directory.]A;(default: {env_var})]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Le chargement de {path} est correct.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5122,6 +5158,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedInstallStateField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'not-installed', 'half-installed', or 'installed']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['not-installed', 'half-installed' ou 'installed' attendu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedOneOfNumberBooleanIdentifierStringFoundToken$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected one of {Number, Boolean, Identifier, String}, found token ${p0}]]></Val>
@@ -5188,6 +5233,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedTextHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected '{expected}' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{expected}' attendu ici]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
@@ -5197,6 +5251,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[expected a triplet name here]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedWantField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'install', 'hold', 'deinstall', or 'purge' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['install', 'hold', 'deinstall' ou 'purge' attendu ici]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5833,6 +5896,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ForceClassicMode" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force classic mode, even if a manifest could be found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Forcer le mode classique, même si un manifeste est trouvé.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ForceSystemBinariesOnWeirdPlatforms" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.]]></Val>
@@ -6147,6 +6219,15 @@
           <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a "?".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[**Expérimental : sera modifié ou supprimé sans avertissement**]A;Ajoute une source Stockage Blob Azure. Utilise la validation de signature d’accès partagé. <url>Doit inclure le chemin d’accès du conteneur. <sas>Doit avoir le préfixe « ? ».]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAzUpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Universal Package Azure Artifacts source. Uses the Azure CLI (az artifacts) for uploads and downloads.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Expérimental : sera modifié ou supprimé sans avertissement**]A;Permet d’ajouter une source Azure Artifacts de package universel. Permet d’utiliser l’interface Azure CLI (artefacts az) pour les chargements et les téléchargements.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7054,15 +7135,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InstallingMavenFileFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file]]></Val>
+          <Val><![CDATA[{path} installing Maven file, {command_line} failed with {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} installation du fichier Maven]]></Val>
+            <Val><![CDATA[{path} l’installation du fichier Maven, {command_line} a échoué avec {exit_code}]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{path} installing maven file]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7269,6 +7347,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[argument non valide : la configuration binaire '{binary_source}' nécessite au moins une URL de base et un jeton SAS]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresFourOrFiveArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 4 or 5 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[argument non valide : la configuration binaire « {binary_source} » nécessite 4 ou 5 arguments]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8518,6 +8605,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NonRangeArgsGreater" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires at least {lower} arguments, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[la commande « {command_name} » requiert au moins {expected} arguments, mais {actual} ont été fournis]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NonZeroOrOneRemainingArgs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[the command '{command_name}' requires zero or one arguments]]></Val>
@@ -8973,43 +9069,49 @@
       </Item>
       <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[« {package_name} » n’est pas un nom de fonctionnalité valide. Les noms de package doivent être alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour plus d’informations).]]></Val>
+            <Val><![CDATA[« {package_name} » n'est pas un nom de fonctionnalité valide. Les noms de fonctionnalités doivent être alphanumériques minuscules + tirets et non réservés (voir {url} pour plus d'informations).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[« {value} » n’est pas un identificateur valide. Les identificateurs doivent être alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour plus d’informations).]]></Val>
+            <Val><![CDATA["{value}" n'est pas un identifiant valide. Les identifiants doivent être alphanumériques minuscules + tirets et non réservés (voir {url} pour plus d'informations).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[« {package_name} » n’est pas un nom de package valide. Les noms de package doivent être alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour plus d’informations).]]></Val>
+            <Val><![CDATA["{package_name}" n'est pas un nom de package valide. Les noms de packages doivent être alphanumériques minuscules + tirets et non réservés (voir {url} pour plus d'informations).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[fin d’entrée attendue d’entrée analysant un nom de package. Cela signifie généralement que le caractère indiqué n’est pas autorisé à se trouver dans un nom de port. Les noms de port sont tous alphanumériques en minuscules+traits d’union et non réservés (voir {url} pour obtenir plus d’informations).]]></Val>
+            <Val><![CDATA[attend la fin de l'analyse d'entrée d'un nom de package ; cela signifie généralement que le caractère indiqué n'est pas autorisé à figurer dans un nom de port. Les noms de port sont tous alphanumériques minuscules + tirets et ne sont pas réservés (voir {url} pour plus d'informations).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9027,10 +9129,13 @@
       </Item>
       <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[fin attendue d’entrée analysant une spécification de package. Cela signifie généralement que le caractère indiqué n’est pas autorisé à se trouver dans une spécification de package. Le port, le triplet et les noms de fonctionnalité sont des caractères alphanumériques en minuscules+traits d’union.]]></Val>
+            <Val><![CDATA[attend la fin de l'analyse d'entrée d'une spécification de package ; cela signifie généralement que le caractère indiqué n'est pas autorisé à figurer dans une spécification de package. Les noms de port, de triplet et de fonctionnalité sont tous des caractères alphanumériques minuscules + tirets.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9039,6 +9144,15 @@
           <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[fin attendue d’entrée analysant une spécification de package. Vouliez-vous dire {version_spec} à la place ?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseTripletNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nom de triplet non valide. Les noms des triplets sont tous des lettres minuscules alphanumériques + tirets.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9762,6 +9876,15 @@
           <Val><![CDATA[Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{count} package(s) restauré(s) à partir d’AWS dans {elapsed}. Utilisez --debug pour afficher plus de détails.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RestoredPackagesFromAZUPKG" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from Universal Packages in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} package(s) ont été restauré(s) à partir d’Universal Packages en {elapsed}. Utilisez --debug pour afficher plus d’informations.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11581,15 +11704,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[{spec}@{version} does not have required feature {feature}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{expected} n’est pas disponible, seul {actual} est disponible]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

@@ -1,0 +1,1 @@
+throw "Script download error"

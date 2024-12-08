@@ -1,7 +1,5 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-Refresh-TestRoot
-
 Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/ci-verify-versions-registry" "$TestingRoot/ci-verify-versions-registry"
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions init
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions add -A
@@ -155,22 +153,19 @@ $buildtreesRoot/versioning_/versions/version-scheme-mismatch/89c88798a9fa17ea675
 note: versions must be unique, even if they are declared with different schemes
 "@
 
+Remove-Problem-Matchers
 $actual = Run-VcpkgAndCaptureOutput x-ci-verify-versions @directoryArgs "--x-builtin-ports-root=$TestingRoot/ci-verify-versions-registry/ports" "--x-builtin-registry-versions-dir=$TestingRoot/ci-verify-versions-registry/versions" --verbose --verify-git-trees
+Restore-Problem-Matchers
 Throw-IfNotFailed
 
 function Sanitize() {
   Param([string]$text)
-  $workTreeRegex = 'error: failed to execute:[^\r\n]+' # Git command line has an unpredictable PID inside
-  $text = $text.Replace('\', '/').Replace("`r`n", "`n").Trim()
+  $workTreeRegex = 'error: failed to execute:[^\n]+' # Git command line has an unpredictable PID inside
+  $text = $text.Replace('\', '/').Trim()
   $text = [System.Text.RegularExpressions.Regex]::Replace($text, $workTreeRegex, '')
   return $text
 }
 
 $expected = Sanitize $expected
 $actual = Sanitize $actual
-if ($actual -ne $expected) {
-    Set-Content -Value $expected -LiteralPath "$TestingRoot/expected.txt"
-    Set-Content -Value $actual -LiteralPath "$TestingRoot/actual.txt"
-    git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
-    throw "Bad x-ci-verify-versions output."
-}
+Throw-IfNonEqual -Expected $expected -Actual $actual

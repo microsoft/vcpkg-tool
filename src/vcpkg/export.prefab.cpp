@@ -36,12 +36,7 @@ namespace vcpkg::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string NdkVersion::to_string() const { return adapt_to_string(*this); }
     void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")
@@ -229,12 +224,14 @@ namespace vcpkg::Prefab
 
         ProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        const int exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
-
-        if (!(exit_code == 0))
+        const auto exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
+        if (exit_code != 0)
         {
-            msg::println_error(msgInstallingMavenFile, msg::path = aar);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgInstallingMavenFileFailure,
+                                        msg::path = aar,
+                                        msg::command_line = cmd.command_line(),
+                                        msg::exit_code = exit_code);
         }
     }
 
@@ -436,8 +433,8 @@ namespace vcpkg::Prefab
 
             const auto share_root = paths.packages() / fmt::format("{}_{}", name, action.spec.triplet());
 
-            fs.copy_file(share_root / "share" / name / "copyright",
-                         meta_dir / "LICENSE",
+            fs.copy_file(share_root / FileShare / name / FileCopyright,
+                         meta_dir / FileLicense,
                          CopyOptions::overwrite_existing,
                          IgnoreErrors{});
 

@@ -483,11 +483,26 @@ namespace vcpkg
                                    secrets);
     }
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot)
+    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot)
     {
         static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        std::string uri;
+        if (auto github_server_url = maybe_github_server_url.get())
+        {
+            uri = *github_server_url;
+            uri.append("/api/v3");
+        }
+        else
+        {
+            uri = "https://api.github.com";
+        }
+
+        fmt::format_to(
+            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
         auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
@@ -497,8 +512,7 @@ namespace vcpkg
         std::string res = "Authorization: Bearer " + github_token;
         cmd.string_arg("-H").string_arg(res);
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(Strings::concat(
-            "https://api.github.com/repos/", url_encode_spaces(github_repository), "/dependency-graph/snapshots"));
+        cmd.string_arg(uri);
         cmd.string_arg("-d").string_arg("@-");
 
         RedirectedProcessLaunchSettings settings;
@@ -583,7 +597,7 @@ namespace vcpkg
         msg::println(msgAssetCacheSuccesfullyStored,
                      msg::path = file.filename(),
                      msg::url = replace_secrets(url.to_string(), secrets));
-        return res;
+        return 0;
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
@@ -905,6 +919,8 @@ namespace vcpkg
                                                MessageSink& progress_sink) const
     {
         std::vector<LocalizedString> errors;
+        bool block_origin_enabled = m_config.m_block_origin;
+
         if (urls.size() == 0)
         {
             if (auto hash = sha512.get())
@@ -936,6 +952,14 @@ namespace vcpkg
                                  msg::url = replace_secrets(read_url, m_config.m_secrets));
                     return read_url;
                 }
+                else if (block_origin_enabled)
+                {
+                    msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+                }
+                else
+                {
+                    msg::println(msgAssetCacheMiss, msg::url = urls[0]);
+                }
             }
             else if (auto script = m_config.m_script.get())
             {
@@ -964,6 +988,7 @@ namespace vcpkg
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();
                     settings.echo_in_debug = EchoInDebug::Show;
+
                     auto maybe_res = flatten(cmd_execute_and_capture_output(cmd, settings), "<mirror-script>");
                     if (maybe_res)
                     {
@@ -972,29 +997,33 @@ namespace vcpkg
                         if (maybe_success)
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
                             return urls[0];
                         }
-
-                        errors.push_back(std::move(maybe_success).error());
+                        msg::println_error(maybe_success.error());
                     }
                     else
                     {
-                        errors.push_back(std::move(maybe_res).error());
+                        msg::println_error(maybe_res.error());
                     }
                 }
             }
         }
 
-        if (!m_config.m_block_origin)
+        if (block_origin_enabled)
+        {
+            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+        }
+        else
         {
             if (urls.size() != 0)
             {
+                msg::println(msgDownloadingUrl, msg::url = download_path.filename());
                 auto maybe_url = try_download_file(
                     fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
-                    m_config.m_read_url_template.has_value() ? msg::println(msgAssetCacheMiss, msg::url = urls[0])
-                                                             : msg::println(msgDownloadingUrl, msg::url = urls[0]);
+                    msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
 
                     if (auto hash = sha512.get())
                     {
@@ -1010,16 +1039,13 @@ namespace vcpkg
 
                     return *url;
                 }
+                else
+                {
+                    msg::println(msgDownloadFailedProxySettings,
+                                 msg::path = download_path.filename(),
+                                 msg::url = "https://github.com/microsoft/vcpkg-tool/pull/77");
+                }
             }
-        }
-        // Asset cache is not configured and x-block-origin enabled
-        if (m_config.m_read_url_template.has_value())
-        {
-            msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
-        }
-        else
-        {
-            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
         }
 
         for (LocalizedString& error : errors)
