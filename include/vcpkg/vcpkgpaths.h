@@ -103,8 +103,6 @@ namespace vcpkg
     public:
         std::vector<std::string> overlay_ports;
 
-        bool is_overlay_port(StringView port_name) const;
-
         std::string get_toolver_diagnostics() const;
 
         const Filesystem& get_filesystem() const;

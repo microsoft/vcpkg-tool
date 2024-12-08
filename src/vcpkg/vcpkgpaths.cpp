@@ -834,13 +834,6 @@ namespace vcpkg
             .map([](Path&& dot_git_parent) { return std::move(dot_git_parent) / ".git"; });
     }
 
-    bool VcpkgPaths::is_overlay_port(StringView port_name) const
-    {
-        return std::find_if(overlay_ports.begin(), overlay_ports.end(), [&port_name](StringView port_dir) {
-                   return Strings::ends_with(port_dir, port_name);
-               }) != overlay_ports.end();
-    }
-
     std::string VcpkgPaths::get_toolver_diagnostics() const
     {
         std::string ret;
