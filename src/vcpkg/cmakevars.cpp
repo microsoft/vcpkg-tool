@@ -152,6 +152,7 @@ VCPKG_ENV_PASSTHROUGH_UNTRACKED=${VCPKG_ENV_PASSTHROUGH_UNTRACKED}
 VCPKG_LOAD_VCVARS_ENV=${VCPKG_LOAD_VCVARS_ENV}
 VCPKG_DISABLE_COMPILER_TRACKING=${VCPKG_DISABLE_COMPILER_TRACKING}
 VCPKG_HASH_ADDITIONAL_FILES=${VCPKG_HASH_ADDITIONAL_FILES}
+VCPKG_POST_PORTFILE_INCLUDES=${VCPKG_POST_PORTFILE_INCLUDES}
 VCPKG_XBOX_CONSOLE_TARGET=${VCPKG_XBOX_CONSOLE_TARGET}
 Z_VCPKG_GameDKLatest=$ENV{GameDKLatest}
 e1e74b5c-18cb-4474-a6bd-5c1c8bc81f3f
@@ -317,8 +318,9 @@ endfunction()
     {
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(1);
         // Hack: PackageSpecs should never have .name==""
-        const auto file_path = create_tag_extraction_file(std::array<std::pair<FullPackageSpec, std::string>, 1>{
-            std::pair<FullPackageSpec, std::string>{FullPackageSpec{{"", triplet}, {}}, ""}});
+        std::pair<FullPackageSpec, std::string> tag_extracts{FullPackageSpec{{"", triplet}, {}}, ""};
+        const auto file_path =
+            create_tag_extraction_file(View<std::pair<FullPackageSpec, std::string>>{&tag_extracts, 1});
         launch_and_split(file_path, vars);
         paths.get_filesystem().remove(file_path, VCPKG_LINE_INFO);
 

@@ -9,8 +9,19 @@ namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
+        if (row == 0 && column == 0)
+        {
+            return;
+        }
+        else if (row == 0 || column == 0)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
         if (ch == '\t')
+        {
             column = ((column + 7) & ~7) + 1; // round to next 8-width tab stop
+        }
         else if (ch == '\n')
         {
             row++;
@@ -22,11 +33,13 @@ namespace vcpkg
         }
     }
 
-    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
+    void append_caret_line(LocalizedString& res,
+                           const Unicode::Utf8Decoder& cursor,
+                           const Unicode::Utf8Decoder& start_of_line)
     {
-        auto line_end = Util::find_if(loc.it, ParserBase::is_lineend);
+        auto line_end = Util::find_if(cursor, ParserBase::is_lineend);
         StringView line = StringView{
-            loc.start_of_line.pointer_to_current(),
+            start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
         };
 
@@ -41,8 +54,8 @@ namespace vcpkg
 
         std::string caret_string;
         caret_string.append(line_prefix_space, ' ');
-        // note *it is excluded because it is where the ^ goes
-        for (auto it = loc.start_of_line; it != loc.it; ++it)
+        // note *cursor is excluded because it is where the ^ goes
+        for (auto it = start_of_line; it != cursor; ++it)
         {
             if (*it == '\t')
                 caret_string.push_back('\t');
@@ -57,12 +70,24 @@ namespace vcpkg
         res.append_indent().append_raw(caret_string);
     }
 
+    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
+    {
+        append_caret_line(res, loc.it, loc.start_of_line);
+    }
+
     LocalizedString ParseMessage::format(StringView origin, MessageKind kind) const
     {
         LocalizedString res;
         if (!origin.empty())
         {
-            res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+            if (location.row == 0 && location.column == 0)
+            {
+                res.append_raw(fmt::format("{}: ", origin));
+            }
+            else
+            {
+                res.append_raw(fmt::format("{}:{}:{}: ", origin, location.row, location.column));
+            }
         }
 
         res.append_raw(kind == MessageKind::Warning ? WarningPrefix : ErrorPrefix);
@@ -93,8 +118,8 @@ namespace vcpkg
     ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
-        , m_row(init_rowcol.row_or(1))
-        , m_column(init_rowcol.column_or(1))
+        , m_row(init_rowcol.row)
+        , m_column(init_rowcol.column)
         , m_text(text)
         , m_origin(origin)
     {
@@ -139,6 +164,31 @@ namespace vcpkg
         return true;
     }
 
+    bool ParserBase::require_text(StringLiteral text)
+    {
+        auto encoded = m_it;
+        // check that the encoded stream matches the keyword:
+        for (const char ch : text)
+        {
+            if (encoded.is_eof() || *encoded != static_cast<char32_t>(ch))
+            {
+                add_error(msg::format(msgExpectedTextHere, msg::expected = text));
+                return false;
+            }
+
+            ++encoded;
+        }
+
+        // success
+        m_it = encoded;
+        if (m_column != 0)
+        {
+            m_column += static_cast<int>(text.size());
+        }
+
+        return true;
+    }
+
     bool ParserBase::try_match_keyword(StringView keyword_content)
     {
         auto encoded = m_it;
@@ -161,7 +211,11 @@ namespace vcpkg
 
         // success
         m_it = encoded;
-        m_column += static_cast<int>(keyword_content.size());
+        if (m_column != 0)
+        {
+            m_column += static_cast<int>(keyword_content.size());
+        }
+
         return true;
     }
 
@@ -198,7 +252,14 @@ namespace vcpkg
             auto& res = m_messages.error.emplace();
             if (auto origin = m_origin.get())
             {
-                res.append_raw(fmt::format("{}:{}:{}: ", *origin, loc.row, loc.column));
+                if (loc.row == 0 && loc.column == 0)
+                {
+                    res.append_raw(fmt::format("{}: ", *origin));
+                }
+                else
+                {
+                    res.append_raw(fmt::format("{}:{}:{}: ", *origin, loc.row, loc.column));
+                }
             }
 
             res.append_raw(ErrorPrefix);

@@ -3,7 +3,7 @@
 # Test that prohibiting backcompat features actually prohibits
 $backcompatFeaturePorts = @('vcpkg-uses-test-cmake', 'vcpkg-uses-vcpkg-common-functions')
 foreach ($backcompatFeaturePort in $backcompatFeaturePorts) {
-    $succeedArgs = $commonArgs + @('install',$backcompatFeaturePort,'--no-binarycaching')
+    $succeedArgs = $commonArgs + @('install',$backcompatFeaturePort,'--no-binarycaching',"--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
     $failArgs = $succeedArgs + @('--x-prohibit-backcompat-features')
     $CurrentTest = "Should fail: ./vcpkg $($failArgs -join ' ')"
     Run-Vcpkg @failArgs

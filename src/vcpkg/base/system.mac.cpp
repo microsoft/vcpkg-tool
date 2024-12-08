@@ -51,7 +51,7 @@ namespace vcpkg
     {
         // this exclusion list is the taken from VS Code's source code
         // https://github.com/microsoft/vscode/blob/main/src/vs/base/node/macAddress.ts
-        static constexpr std::array<StringLiteral, 3> invalid_macs{
+        static constexpr StringLiteral invalid_macs[] = {
             "00:00:00:00:00:00",
             "ff:ff:ff:ff:ff:ff",
             // iBridge MAC address used on some Apple devices
@@ -91,7 +91,7 @@ namespace vcpkg
         // "connection name","network adapter","physical address","transport name"
         auto is_quote = [](auto ch) -> bool { return ch == '"'; };
 
-        auto parser = ParserBase(line, "getmac ouptut");
+        auto parser = ParserBase(line, "getmac output", {0, 0});
 
         out.clear();
 

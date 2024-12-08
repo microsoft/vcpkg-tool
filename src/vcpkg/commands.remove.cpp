@@ -4,6 +4,7 @@
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
@@ -29,8 +30,7 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.want = Want::PURGE;
-            spgh.state = InstallState::HALF_INSTALLED;
+            spgh.status = {Want::PURGE, InstallState::HALF_INSTALLED};
             write_update(fs, installed, spgh);
         }
 
@@ -92,9 +92,8 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.state = InstallState::NOT_INSTALLED;
+            spgh.status.state = InstallState::NOT_INSTALLED;
             write_update(fs, installed, spgh);
-
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
     }
@@ -195,8 +194,7 @@ namespace vcpkg
             // Load ports from ports dirs
             auto& fs = paths.get_filesystem();
             auto registry_set = paths.make_registry_set();
-            PathsPortFileProvider provider(
-                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+            PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
             specs =
                 Util::fmap(find_outdated_packages(provider, status_db), [](auto&& outdated) { return outdated.spec; });
@@ -239,7 +237,9 @@ namespace vcpkg
 
             if (!is_recursive)
             {
-                msg::println_warning(msgAddRecurseOption);
+                msg::println_warning(msg::format(msgAddRecurseOption)
+                                         .append_raw('\n')
+                                         .append(msgSeeURL, msg::url = docs::add_command_recurse_opt_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }

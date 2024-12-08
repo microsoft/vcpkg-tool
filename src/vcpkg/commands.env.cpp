@@ -80,8 +80,7 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandEnvMetadata);
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -144,7 +143,7 @@ namespace vcpkg
         enter_interactive_subprocess();
         auto rc = cmd_execute(cmd, settings);
         exit_interactive_subprocess();
-        Checks::exit_with_code(VCPKG_LINE_INFO, rc.value_or_exit(VCPKG_LINE_INFO));
+        Checks::exit_with_code(VCPKG_LINE_INFO, static_cast<int>(rc.value_or_exit(VCPKG_LINE_INFO)));
 #else  // ^^^ _WIN32 / !_WIN32 vvv
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgEnvPlatformNotSupported);
 #endif // ^^^ !_WIN32

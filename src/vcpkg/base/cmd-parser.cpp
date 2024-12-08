@@ -964,11 +964,22 @@ namespace vcpkg
         bool error = consume_remaining_args_impl(results);
         if (max_arity < results.size() || results.size() < min_arity)
         {
-            errors.emplace_back(msg::format_error(msgNonRangeArgs,
-                                                  msg::command_name = command_name,
-                                                  msg::lower = min_arity,
-                                                  msg::upper = max_arity,
-                                                  msg::actual = results.size()));
+            if (max_arity == SIZE_MAX)
+            {
+                errors.emplace_back(msg::format_error(msgNonRangeArgsGreater,
+                                                      msg::command_name = command_name,
+                                                      msg::lower = min_arity,
+                                                      msg::actual = results.size()));
+            }
+            else
+            {
+                errors.emplace_back(msg::format_error(msgNonRangeArgs,
+                                                      msg::command_name = command_name,
+                                                      msg::lower = min_arity,
+                                                      msg::upper = max_arity,
+                                                      msg::actual = results.size()));
+            }
+
             for (std::size_t idx = max_arity; idx < results.size(); ++idx)
             {
                 errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = results[idx]));

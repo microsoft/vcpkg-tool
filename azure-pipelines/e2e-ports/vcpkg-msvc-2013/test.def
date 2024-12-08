@@ -1,0 +1,4 @@
+LIBRARY test_dll
+
+EXPORTS
+export_me

@@ -3,8 +3,6 @@
 #include <vcpkg/tools.h>
 #include <vcpkg/tools.test.h>
 
-#include <array>
-
 using namespace vcpkg;
 
 TEST_CASE ("parse_tool_version_string", "[tools]")
@@ -126,6 +124,18 @@ TEST_CASE ("extract_prefixed_nonwhitespace", "[tools]")
               .value_or_exit(VCPKG_LINE_INFO) == "1.2");
     auto error_result =
         extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
+    CHECK(!error_result.has_value());
+    CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
+                                  "determine the version:\nmalformed output");
+}
+
+TEST_CASE ("extract_prefixed_nonquote", "[tools]")
+{
+    CHECK(extract_prefixed_nonquote("fooutil version ", "fooutil", "fooutil version 1.2\"", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    CHECK(extract_prefixed_nonquote("fooutil version ", "fooutil", "fooutil version 1.2 \"  ", "fooutil.exe")
+              .value_or_exit(VCPKG_LINE_INFO) == "1.2 ");
+    auto error_result = extract_prefixed_nonquote("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
     CHECK(!error_result.has_value());
     CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
                                   "determine the version:\nmalformed output");
