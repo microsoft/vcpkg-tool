@@ -58,46 +58,39 @@ namespace vcpkg
     static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
     {
         std::vector<PathAndType> output(files.size());
-        auto first = output.begin();
-        auto last = output.end();
-        static const PathAndType invalid{"", FileType::none};
-        std::mutex mtx;
 
-        parallel_transform(files, first, [&](auto&& file) -> PathAndType {
-            std::error_code ec;
-            auto status = fs.symlink_status(file, ec);
-            if (ec)
-            {
-                std::lock_guard lck(mtx);
-                msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));
-                return invalid;
-            }
-
-            if (is_regular_file(status))
-            {
-                const auto filename = file.filename();
-                if (filename == FileDotDsStore || filename == "CONTROL" || filename == "vcpkg.json" ||
-                    filename == "BUILD_INFO")
-                {
-                    // Don't copy control or manifest files
-                    return invalid;
-                }
-            }
-            else if (!is_symlink(status) && !is_directory(status))
-            {
-                std::lock_guard lck(mtx);
-                msg::println_error(msgInvalidFileType, msg::path = file);
-                return invalid;
-            }
-            return PathAndType{std::move(file), status};
+        parallel_transform(files, output.begin(), [&fs](auto&& file) -> PathAndType {
+            return PathAndType{std::move(file), fs.symlink_status(file, IgnoreErrors{})};
         });
-        auto last_non_empty = std::partition(first, last, [](const auto& pt) { return !pt.path.empty(); });
+
+        Util::erase_remove_if(output, [](const PathAndType& file_and_status) {
+            // regular file
+            if (is_regular_file(file_and_status.type))
+            {
+                const auto filename = file_and_status.path.filename();
+                // Don't copy control or manifest files
+                return filename == FileDotDsStore || filename == "CONTROL" || filename == "vcpkg.json" ||
+                       filename == "BUILD_INFO";
+            }
+            // not found
+            else if (!exists(file_and_status.type))
+            {
+                msg::println_error(msgFileNotFound, msg::path = file_and_status.path);
+                return true;
+            }
+            // invalid file type
+            else if (!is_symlink(file_and_status.type) && !is_directory(file_and_status.type))
+            {
+                msg::println_error(msgInvalidFileType, msg::path = file_and_status.path);
+                return true;
+            }
+            return false;
+        });
 #ifdef _WIN32
-        std::sort(std::execution::par_unseq, first, last_non_empty);
+        std::sort(std::execution::par_unseq, output.begin(), output.end());
 #else
-        std::sort(first, last_non_empty);
+        std::sort(output.begin(), output.end());
 #endif
-        output.erase(last_non_empty, last);
         return output;
     }
 
