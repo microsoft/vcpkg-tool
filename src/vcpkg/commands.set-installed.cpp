@@ -64,8 +64,7 @@ namespace vcpkg
         {
             Json::Object job;
             job.insert(JsonIdId, Json::Value::string(*github_run_id));
-            job.insert(JsonIdCorrelator,
-                       Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+            job.insert(JsonIdCorrelator, Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
             snapshot.insert(JsonIdJob, std::move(job));
         } // destroy job
 
@@ -91,7 +90,8 @@ namespace vcpkg
                 return nullopt;
             }
             auto spec = action.spec.to_string();
-            map.emplace(std::move(spec), fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+            map.emplace(std::move(spec),
+                        fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
         }
 
         Json::Object manifest;
