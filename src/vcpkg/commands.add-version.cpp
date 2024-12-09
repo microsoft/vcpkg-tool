@@ -544,8 +544,6 @@ namespace vcpkg
 
             const auto& git_tree = git_tree_it->second;
 
-            const char prefix[] = {port_name[0], '-', '\0'};
-            auto port_versions_path = paths.builtin_registry_versions / prefix / Strings::concat(port_name, ".json");
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,

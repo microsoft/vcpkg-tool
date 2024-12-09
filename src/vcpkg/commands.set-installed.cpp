@@ -90,8 +90,7 @@ namespace vcpkg
                 return nullopt;
             }
             auto spec = action.spec.to_string();
-            map.emplace(spec,
-                        fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+            map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
         }
 
         Json::Object manifest;
