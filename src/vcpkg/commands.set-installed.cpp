@@ -69,7 +69,7 @@ namespace vcpkg
         } // destroy job
 
         snapshot.insert(JsonIdVersion, Json::Value::integer(0));
-        snapshot.insert(JsonIdSha, Json::Value::string(*args.github_sha.get()));
+        snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
         snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
         snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
 
