@@ -2517,13 +2517,8 @@ namespace vcpkg
     {
         std::vector<ActionToPush> my_tasks;
         int count_pushed = 0;
-        while (true)
+        while (m_actions_to_push.get_work(my_tasks))
         {
-            m_actions_to_push.wait_for_items(my_tasks);
-            if (my_tasks.empty())
-            {
-                break;
-            }
             for (auto& action_to_push : my_tasks)
             {
                 ElapsedTimer timer;
@@ -2578,7 +2573,6 @@ namespace vcpkg
                     m_fs.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
             }
-            my_tasks.clear();
         }
     }
 

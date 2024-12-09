@@ -8,7 +8,7 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
-#include <vcpkg/base/batch-queue.h>
+#include <vcpkg/base/background-work-queue.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/message_sinks.h>
@@ -252,7 +252,7 @@ namespace vcpkg
             bool m_needs_zip_file = false;
 
             BGMessageSink m_bg_msg_sink;
-            BGThreadBatchQueue<ActionToPush> m_actions_to_push;
+            BackgroundWorkQueue<ActionToPush> m_actions_to_push;
             std::atomic_int m_remaining_packages_to_push = 0;
             std::thread m_push_thread;
 
