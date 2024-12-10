@@ -130,13 +130,15 @@ namespace vcpkg
                                  const Path& packages_dir,
                                  UnsupportedPortAction action,
                                  UseHeadVersion use_head_version_if_user_requested,
-                                 Editable editable_if_user_requested)
+                                 Editable editable_if_user_requested,
+                                 ImplicitDefault implicit_default = ImplicitDefault::Yes)
             : randomizer(randomizer)
             , host_triplet(host_triplet)
             , packages_dir(packages_dir)
             , unsupported_port_action(action)
             , use_head_version_if_user_requested(use_head_version_if_user_requested)
             , editable_if_user_requested(editable_if_user_requested)
+            , implicit_default(implicit_default)
         {
         }
 
@@ -146,6 +148,7 @@ namespace vcpkg
         UnsupportedPortAction unsupported_port_action;
         UseHeadVersion use_head_version_if_user_requested;
         Editable editable_if_user_requested;
+        ImplicitDefault implicit_default;
     };
 
     struct CreateUpgradePlanOptions
@@ -165,6 +168,7 @@ namespace vcpkg
         Triplet host_triplet;
         Path packages_dir;
         UnsupportedPortAction unsupported_port_action;
+        ImplicitDefault implicit_default;
     };
 
     struct RemovePlan
