@@ -133,7 +133,7 @@ namespace vcpkg
                                     bool full_description,
                                     bool enable_json,
                                     Optional<StringView> filter,
-                                    View<Path> overlay_ports)
+                                    const OverlayPortPaths& overlay_ports)
     {
         Checks::check_exit(VCPKG_LINE_INFO, msg::default_output_stream == OutputStream::StdErr);
         auto& fs = paths.get_filesystem();

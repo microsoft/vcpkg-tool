@@ -21,6 +21,8 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
+#include <vcpkg/portfileprovider.h>
+
 #include <map>
 #include <string>
 #include <utility>
@@ -101,7 +103,7 @@ namespace vcpkg
         std::vector<Path> overlay_triplets;
 
     public:
-        std::vector<Path> overlay_ports;
+        OverlayPortPaths overlay_ports;
 
         std::string get_toolver_diagnostics() const;
 
