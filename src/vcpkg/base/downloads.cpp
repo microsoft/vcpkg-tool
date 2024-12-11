@@ -531,6 +531,8 @@ namespace vcpkg
                             StringView method)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+        static constexpr int DEFAULT_MAX_TIME = 60;
+        static constexpr int DEFAULT_CONNECT_TIMEOUT = 10;
 
         if (Strings::starts_with(url, "ftp://"))
         {
@@ -538,6 +540,8 @@ namespace vcpkg
             auto ftp_cmd = Command{"curl"};
             ftp_cmd.string_arg(url_encode_spaces(url));
             ftp_cmd.string_arg("-T").string_arg(file);
+            ftp_cmd.string_arg("--max-time").string_arg(std::to_string(DEFAULT_MAX_TIME));
+            ftp_cmd.string_arg("--connect-timeout").string_arg(std::to_string(DEFAULT_CONNECT_TIMEOUT));
             auto maybe_res = cmd_execute_and_capture_output(ftp_cmd);
             if (auto res = maybe_res.get())
             {
@@ -564,6 +568,8 @@ namespace vcpkg
         http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         http_cmd.string_arg(url);
         http_cmd.string_arg("-T").string_arg(file);
+        http_cmd.string_arg("--max-time").string_arg(std::to_string(DEFAULT_MAX_TIME));
+        http_cmd.string_arg("--connect-timeout").string_arg(std::to_string(DEFAULT_CONNECT_TIMEOUT));
         int code = 0;
         auto res = cmd_execute_and_stream_lines(http_cmd, [&code](StringView line) {
             if (Strings::starts_with(line, guid_marker))
