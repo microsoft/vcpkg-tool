@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
@@ -30,4 +31,35 @@ namespace vcpkg
     };
 
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
+
+    struct ArchToolData
+    {
+        std::string tool;
+        std::string os;
+        Optional<vcpkg::CPUArchitecture> arch;
+        std::string version;
+        std::string exeRelativePath;
+        std::string url;
+        std::string sha512;
+        std::string archiveName;
+    };
+
+    const ArchToolData* get_raw_tool_data(const std::vector<ArchToolData>& tool_data_table,
+                                          StringView toolname,
+                                          const CPUArchitecture arch,
+                                          StringView os);
+
+    struct ToolDataDeserializer final : Json::IDeserializer<ArchToolData>
+    {
+        virtual LocalizedString type_name() const override;
+
+        virtual Optional<ArchToolData> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+        static const ToolDataDeserializer instance;
+    };
+
+    struct ToolDataArrayDeserializer final : Json::ArrayDeserializer<ToolDataDeserializer>
+    {
+        virtual LocalizedString type_name() const override;
+        static const ToolDataArrayDeserializer instance;
+    };
 }

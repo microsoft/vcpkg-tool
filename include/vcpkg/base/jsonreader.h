@@ -361,4 +361,18 @@ namespace vcpkg::Json
         virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
         static const FeatureNameDeserializer instance;
     };
+
+    struct ArchitectureDeserializer final : Json::IDeserializer<std::string>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const ArchitectureDeserializer instance;
+    };
+
+    struct Sha512Deserializer final : Json::IDeserializer<std::string>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const Sha512Deserializer instance;
+    };
 }
