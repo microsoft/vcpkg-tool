@@ -7,25 +7,6 @@
 
 using namespace vcpkg;
 
-namespace
-{
-    std::vector<ArchToolData> parse_tool_data_json(StringView json_contents, StringView origin)
-    {
-        auto as_json = Json::parse(json_contents, origin);
-        REQUIRE(as_json.has_value());
-
-        auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
-        REQUIRE(as_value.is_array());
-
-        Json::Reader r(origin);
-        ToolDataArrayDeserializer tool_data_deserializer;
-        auto maybe_tool_data = r.visit(as_value, tool_data_deserializer);
-        REQUIRE(maybe_tool_data.has_value());
-
-        return std::move(*maybe_tool_data.get());
-    }
-}
-
 TEST_CASE ("parse_tool_version_string", "[tools]")
 {
     auto result = parse_tool_version_string("1.2.3");
@@ -87,7 +68,7 @@ TEST_CASE ("extract_prefixed_nonquote", "[tools]")
                                   "determine the version:\nmalformed output");
 }
 
-TEST_CASE ("parse_tool_data_from_json", "[tools]")
+TEST_CASE ("parse_tool_data", "[tools]")
 {
     const StringView tool_doc = R"([
 {
@@ -122,7 +103,10 @@ TEST_CASE ("parse_tool_data_from_json", "[tools]")
 }
 ])";
 
-    auto data = parse_tool_data_json(tool_doc, "vcpkgTools.json");
+    auto maybe_data = parse_tool_data(tool_doc, "vcpkgTools.json");
+    REQUIRE(maybe_data.has_value());
+
+    auto data = maybe_data.value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(data.size() == 4);
 
     auto git_linux = data[0];

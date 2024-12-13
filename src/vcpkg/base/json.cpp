@@ -1571,26 +1571,26 @@ namespace vcpkg::Json
 
     const FeatureNameDeserializer FeatureNameDeserializer::instance;
 
+    const std::vector<StringLiteral> ArchitectureDeserializer::KNOWN_ARCHITECTURES = {
+        "x86",
+        "x64",
+        "arm",
+        "arm64",
+        "arm64ec",
+        "s390x",
+        "ppc64le",
+        "riscv32",
+        "riscv64",
+        "loongarch32",
+        "loongarch64",
+        "mips64",
+    };
+
     LocalizedString ArchitectureDeserializer::type_name() const { return msg::format(msgACpuArchitecture); }
 
     Optional<std::string> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
-        static const std::vector<StringLiteral> known_architectures{
-            "x86",
-            "x64",
-            "arm",
-            "arm64",
-            "arm64ec",
-            "s390x",
-            "ppc64le",
-            "riscv32",
-            "riscv64",
-            "loongarch32",
-            "loongarch64",
-            "mips64",
-        };
-
-        if (Util::contains(known_architectures, sv))
+        if (Util::contains(KNOWN_ARCHITECTURES, sv))
         {
             return sv.to_string();
         }
@@ -1598,7 +1598,7 @@ namespace vcpkg::Json
         r.add_generic_error(type_name(),
                             msg::format(msgInvalidArchitectureValue,
                                         msg::value = sv,
-                                        msg::expected = Strings::join(",", known_architectures)));
+                                        msg::expected = Strings::join(",", KNOWN_ARCHITECTURES)));
         return nullopt;
     }
 

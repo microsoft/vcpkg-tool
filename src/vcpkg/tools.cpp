@@ -64,40 +64,25 @@ namespace vcpkg
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
-    ExpectedL<std::vector<ArchToolData>> parse_tool_data(const Filesystem& fs, Path path)
+    ExpectedL<std::vector<ArchToolData>> parse_tool_data(StringView contents, StringView origin)
     {
-        auto contents = fs.read_contents(path, IgnoreErrors{});
-        if (contents.empty())
-        {
-            // TODO: Add an error message
-            return msg::format_error(LocalizedString::from_raw(""));
-        }
-
-        auto as_json = Json::parse(contents, path);
+        auto as_json = Json::parse(contents, origin);
         if (!as_json)
         {
-            // TODO: Add an error message
-            return msg::format_error(LocalizedString::from_raw(""));
+            return as_json.error();
         }
 
         auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
         if (!as_value.is_array())
         {
-            // TODO: Add an error message
-            return msg::format_error(LocalizedString::from_raw(""));
+            return msg::format_error(msgFailedToParseTopLevelArray, msg::path = origin);
         }
 
-        Json::Reader r(path);
+        Json::Reader r(origin);
         auto maybe_tool_data = r.visit(as_value, ToolDataArrayDeserializer::instance);
-
-        if (!r.errors().empty())
+        if (!r.errors().empty() || !r.warnings().empty())
         {
-            // TODO: Extract error messages
-            for (auto&& e : r.errors())
-            {
-                msg::println_error(e);
-            }
-            return msg::format_error(LocalizedString::from_raw("error parsing tools json file"));
+            return r.join();
         }
 
         if (auto tool_data = maybe_tool_data.get())
@@ -105,8 +90,19 @@ namespace vcpkg
             return *tool_data;
         }
 
-        // TODO: Add an error message
-        return msg::format_error(LocalizedString::from_raw(""));
+        return msg::format_error(msgErrorWhileParsingToolData, msg::path = origin);
+    }
+
+    static ExpectedL<std::vector<ArchToolData>> parse_tool_data_file(const Filesystem& fs, Path path)
+    {
+        std::error_code ec;
+        auto contents = fs.read_contents(path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {path});
+        }
+
+        return parse_tool_data(contents, path);
     }
 
     const ArchToolData* get_raw_tool_data(const std::vector<ArchToolData>& tool_data_table,
@@ -974,7 +970,7 @@ namespace vcpkg
         std::vector<ArchToolData> load_tool_data() const
         {
             return m_tool_data_cache.get_lazy([&]() {
-                auto maybe_tool_data = parse_tool_data(fs, config_path);
+                auto maybe_tool_data = parse_tool_data_file(fs, config_path);
                 if (auto tool_data = maybe_tool_data.get())
                 {
                     return std::move(*tool_data);
@@ -1062,7 +1058,7 @@ namespace vcpkg
             fs, std::move(downloader), downloads, config_path, tools, abiToolVersionHandling);
     }
 
-    LocalizedString ToolDataDeserializer::type_name() const { return msg::format(msgAConfigurationObject); }
+    LocalizedString ToolDataDeserializer::type_name() const { return msg::format(msgAToolDataObject); }
 
     Optional<ArchToolData> ToolDataDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
@@ -1097,16 +1093,14 @@ namespace vcpkg
             }
             else
             {
-                // TODO: Add an error message
-                // r.add_generic_error(type_name(), msg::format(msgInvalidArch, msg::arch = arch_str));
+                // ArchitectureDeserializer ensures that one of the valid architectures is set
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
         r.optional_object_field(obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
         r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
         r.optional_object_field(obj, "sha512", value.sha512, Json::Sha512Deserializer::instance);
         r.optional_object_field(obj, "archive", value.archiveName, Json::UntypedStringDeserializer::instance);
-
-        // arch string needs to be converted to CPUArchitecture
         return value;
     }
 

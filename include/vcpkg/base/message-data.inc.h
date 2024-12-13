@@ -261,6 +261,7 @@ DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
 DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings")
 DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dictionary")
+DECLARE_MESSAGE(AToolDataObject, (), "", "an executable tool's metadata")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",
@@ -1145,6 +1146,10 @@ DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
                 "{value} is a commit sha.",
                 "while fetching baseline `\"{value}\"` from repo {package_name}:")
 DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.")
+DECLARE_MESSAGE(ErrorWhileParsingToolData,
+                (msg::path),
+                "",
+                "An unexpected error ocurred while parsing tool data from {path}.")
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
 DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command lines", "Examples:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
@@ -1262,6 +1267,7 @@ DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baselin
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
 DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
+DECLARE_MESSAGE(FailedToParseTopLevelArray, (msg::path), "", "Failed to parse {path}, expected a top-level array.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 (msg::error_msg),

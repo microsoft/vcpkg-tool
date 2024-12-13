@@ -44,6 +44,8 @@ namespace vcpkg
         std::string archiveName;
     };
 
+    ExpectedL<std::vector<ArchToolData>> parse_tool_data(StringView contents, StringView origin);
+
     const ArchToolData* get_raw_tool_data(const std::vector<ArchToolData>& tool_data_table,
                                           StringView toolname,
                                           const CPUArchitecture arch,
