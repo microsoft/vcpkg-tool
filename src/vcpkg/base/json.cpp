@@ -1571,11 +1571,7 @@ namespace vcpkg::Json
 
     const FeatureNameDeserializer FeatureNameDeserializer::instance;
 
-    LocalizedString ArchitectureDeserializer::type_name() const
-    {
-        // TODO: Add type name
-        return msg::format(msgAFeatureName);
-    }
+    LocalizedString ArchitectureDeserializer::type_name() const { return msg::format(msgACpuArchitecture); }
 
     Optional<std::string> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
@@ -1599,27 +1595,25 @@ namespace vcpkg::Json
             return sv.to_string();
         }
 
-        r.add_generic_error(type_name(), msg::format(msgInvalidArchitecture, msg::value = sv));
+        r.add_generic_error(type_name(),
+                            msg::format(msgInvalidArchitectureValue,
+                                        msg::value = sv,
+                                        msg::expected = Strings::join(",", known_architectures)));
         return nullopt;
     }
 
     const ArchitectureDeserializer ArchitectureDeserializer::instance;
 
-    LocalizedString Sha512Deserializer::type_name() const
-    {
-        // TODO: Add type name
-        return msg::format(msgAFeatureName);
-    }
+    LocalizedString Sha512Deserializer::type_name() const { return msg::format(msgASha512); }
 
-    Optional<std::string> Sha512Deserializer::visit_string(Json::Reader&, StringView sv) const
+    Optional<std::string> Sha512Deserializer::visit_string(Json::Reader& r, StringView sv) const
     {
         if (sv.size() == 128 && std::all_of(sv.begin(), sv.end(), ParserBase::is_hex_digit))
         {
             return sv.to_string();
         }
 
-        // TODO: Add error
-        // r.add_generic_error(type_name(), msg::format(msgInvalidSha512Length, msg::value = sv));
+        r.add_generic_error(type_name(), msg::format(msgInvalidSha512, msg::sha = sv));
         return nullopt;
     }
 

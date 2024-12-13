@@ -4,6 +4,7 @@ DECLARE_MESSAGE(ADefaultFeature, (), "", "a default feature")
 DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
+DECLARE_MESSAGE(ACpuArchitecture, (), "", "a CPU architecture")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
 DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature of a dependency")
 DECLARE_MESSAGE(ADemandObject,
@@ -11,6 +12,7 @@ DECLARE_MESSAGE(ADemandObject,
                 "'demands' are a concept in the schema of a JSON file the user can edit",
                 "a demand object")
 DECLARE_MESSAGE(AString, (), "", "a string")
+DECLARE_MESSAGE(ASha512, (), "", "a SHA512 hex string")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
 DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
 DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
@@ -1798,6 +1800,10 @@ DECLARE_MESSAGE(InvalidArchitecture,
                 (msg::value),
                 "{value} is what the user entered that we did not understand",
                 "invalid architecture: {value}")
+DECLARE_MESSAGE(InvalidArchitectureValue,
+                (msg::value, msg::expected),
+                "{value} is what the user entered that we did not understand",
+                "Invalid architecture: {value}. Expected one of: {expected}.")
 DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument")
 DECLARE_MESSAGE(
     InvalidArgumentRequiresAbsolutePath,
@@ -1920,6 +1926,7 @@ DECLARE_MESSAGE(InvalidOptionForRemove,
                 "'remove' is a command that should not be changed.",
                 "'remove' accepts either libraries or '--outdated'")
 DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.")
+DECLARE_MESSAGE(InvalidSha512, (msg::sha), "", "Invalid SHA512: {sha}")
 DECLARE_MESSAGE(InvalidSharpInVersion, (), "", "invalid character '#' in version text")
 DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
                 (msg::value),
