@@ -55,13 +55,19 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override;
 
+        virtual View<StringView> valid_fields() const override;
+
         virtual Optional<ArchToolData> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+
         static const ToolDataDeserializer instance;
     };
 
     struct ToolDataArrayDeserializer final : Json::ArrayDeserializer<ToolDataDeserializer>
     {
         virtual LocalizedString type_name() const override;
+
+        virtual Optional<std::vector<ArchToolData>> visit_object(Json::Reader& r, const Json::Object&) const override;
+
         static const ToolDataArrayDeserializer instance;
     };
 }

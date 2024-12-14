@@ -193,3 +193,60 @@ TEST_CASE ("parse_tool_data", "[tools]")
           "fb7068ed1f8a7678e446260c3db3537fa888");
     CHECK(tooL_node_windows->archiveName == "node-v16.12.0-win-x64.7z");
 }
+
+TEST_CASE ("parse_tool_data failuress", "[tools]")
+{
+    auto empty = parse_tool_data("", "empty.json");
+    REQUIRE(!empty.has_value());
+    CHECK(Strings::starts_with(empty.error(), "empty.json:1:1: error: Unexpected EOF"));
+
+    auto top_level_object_json = parse_tool_data("{}", "top-level-object.json");
+    REQUIRE(!top_level_object_json.has_value());
+    CHECK("top-level-object.json: error: $ (an array of tool metadata): Expected a top-level array." ==
+          top_level_object_json.error());
+
+    auto missing_required = parse_tool_data(R"([{ "executable": "git.exe" }])", "missing_required.json");
+    REQUIRE(!missing_required.has_value());
+    CHECK("missing_required.json: error: $[0] (tool metadata): missing required field 'name' (a string)\n"
+          "missing_required.json: error: $[0] (tool metadata): missing required field 'os' (a string)\n"
+          "missing_required.json: error: $[0] (tool metadata): missing required field 'version' (a string)" ==
+          missing_required.error());
+
+    auto uexpected_field = parse_tool_data(R"([{
+"name": "git",
+"os": "linux",
+"version": "2.7.4",
+"arc": "x64"
+}])",
+                                           "uexpected_field.json");
+    REQUIRE(!uexpected_field.has_value());
+    CHECK("uexpected_field.json: error: $[0] (tool metadata): unexpected field 'arc', did you mean 'arch'?" ==
+          uexpected_field.error());
+
+    auto invalid_arch = parse_tool_data(R"([{ 
+"name": "git",
+"os": "linux",
+"version": "2.7.4",
+"arch": "notanarchitecture"
+}])",
+                                        "invalid_arch.json");
+    REQUIRE(!invalid_arch.has_value());
+    CHECK("invalid_arch.json: error: $[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. Expected "
+          "one of: x86,x64,arm,arm64,arm64ec,s390x,ppc64le,riscv32,riscv64,loongarch32,loongarch64,mips64\n"
+          "invalid_arch.json: error: $[0].arch: mismatched type: expected a CPU architecture" == invalid_arch.error());
+
+    auto invalid_sha512 = parse_tool_data(R"([{ 
+"name": "git",
+"os": "linux",
+"version": "2.7.4",
+"executable": "git",
+"sha512": "notasha512"
+}])",
+                                          "invalid_sha512.json");
+
+    REQUIRE(!invalid_sha512.has_value());
+    CHECK("invalid_sha512.json: error: $[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
+          "SHA-512 hash must be 128 characters long and contain only hexadecimal digits\n"
+          "invalid_sha512.json: error: $[0].sha512: mismatched type: expected a SHA-512 hash" ==
+          invalid_sha512.error());
+}

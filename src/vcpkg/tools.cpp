@@ -71,12 +71,7 @@ namespace vcpkg
         {
             return as_json.error();
         }
-
         auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
-        if (!as_value.is_array())
-        {
-            return msg::format_error(msgFailedToParseTopLevelArray, msg::path = origin);
-        }
 
         Json::Reader r(origin);
         auto maybe_tool_data = r.visit(as_value, ToolDataArrayDeserializer::instance);
@@ -1060,6 +1055,21 @@ namespace vcpkg
 
     LocalizedString ToolDataDeserializer::type_name() const { return msg::format(msgAToolDataObject); }
 
+    View<StringView> ToolDataDeserializer::valid_fields() const
+    {
+        static const StringView valid_fields[] = {
+            "name",
+            "os",
+            "version",
+            "arch",
+            "executable",
+            "url",
+            "sha512",
+            "archive",
+        };
+        return valid_fields;
+    }
+
     Optional<ArchToolData> ToolDataDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
     {
         static const std::map<std::string, CPUArchitecture> arch_map{
@@ -1091,11 +1101,6 @@ namespace vcpkg
             {
                 value.arch = it->second;
             }
-            else
-            {
-                // ArchitectureDeserializer ensures that one of the valid architectures is set
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
         }
         r.optional_object_field(obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
         r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
@@ -1106,6 +1111,15 @@ namespace vcpkg
 
     const ToolDataDeserializer ToolDataDeserializer::instance;
 
-    LocalizedString ToolDataArrayDeserializer::type_name() const { return ToolDataDeserializer::instance.type_name(); }
+    LocalizedString ToolDataArrayDeserializer::type_name() const { return msg::format(msgAToolDataArray); }
+
+    Optional<std::vector<ArchToolData>> ToolDataArrayDeserializer::visit_object(Json::Reader& r,
+                                                                                const Json::Object&) const
+    {
+        // Maybe the base class should override all non-array visitor methods and add error messages
+        r.add_generic_error(type_name(), msg::format(msgFailedToParseTopLevelArray));
+        return nullopt;
+    }
+
     const ToolDataArrayDeserializer ToolDataArrayDeserializer::instance;
 }

@@ -12,7 +12,7 @@ DECLARE_MESSAGE(ADemandObject,
                 "'demands' are a concept in the schema of a JSON file the user can edit",
                 "a demand object")
 DECLARE_MESSAGE(AString, (), "", "a string")
-DECLARE_MESSAGE(ASha512, (), "", "a SHA512 hex string")
+DECLARE_MESSAGE(ASha512, (), "", "a SHA-512 hash")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
 DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
 DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
@@ -261,7 +261,8 @@ DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
 DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings")
 DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dictionary")
-DECLARE_MESSAGE(AToolDataObject, (), "", "an executable tool's metadata")
+DECLARE_MESSAGE(AToolDataObject, (), "", "tool metadata")
+DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",
@@ -1267,7 +1268,7 @@ DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baselin
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
 DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
-DECLARE_MESSAGE(FailedToParseTopLevelArray, (msg::path), "", "Failed to parse {path}, expected a top-level array.")
+DECLARE_MESSAGE(FailedToParseTopLevelArray, (), "", "Expected a top-level array.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 (msg::error_msg),
@@ -1809,7 +1810,7 @@ DECLARE_MESSAGE(InvalidArchitecture,
 DECLARE_MESSAGE(InvalidArchitectureValue,
                 (msg::value, msg::expected),
                 "{value} is what the user entered that we did not understand",
-                "Invalid architecture: {value}. Expected one of: {expected}.")
+                "Invalid architecture: {value}. Expected one of: {expected}")
 DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument")
 DECLARE_MESSAGE(
     InvalidArgumentRequiresAbsolutePath,
@@ -1932,7 +1933,11 @@ DECLARE_MESSAGE(InvalidOptionForRemove,
                 "'remove' is a command that should not be changed.",
                 "'remove' accepts either libraries or '--outdated'")
 DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.")
-DECLARE_MESSAGE(InvalidSha512, (msg::sha), "", "Invalid SHA512: {sha}")
+DECLARE_MESSAGE(InvalidSha512,
+                (msg::sha),
+                "",
+                "invalid SHA-512 hash: {sha}\n"
+                "SHA-512 hash must be 128 characters long and contain only hexadecimal digits")
 DECLARE_MESSAGE(InvalidSharpInVersion, (), "", "invalid character '#' in version text")
 DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
                 (msg::value),
