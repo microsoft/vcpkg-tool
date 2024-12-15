@@ -32,7 +32,7 @@ namespace vcpkg
 
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
 
-    struct ArchToolData
+    struct ToolDataEntry
     {
         std::string tool;
         std::string os;
@@ -44,30 +44,22 @@ namespace vcpkg
         std::string archiveName;
     };
 
-    ExpectedL<std::vector<ArchToolData>> parse_tool_data(StringView contents, StringView origin);
+    ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin);
 
-    const ArchToolData* get_raw_tool_data(const std::vector<ArchToolData>& tool_data_table,
-                                          StringView toolname,
-                                          const CPUArchitecture arch,
-                                          StringView os);
+    const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
+                                           StringView toolname,
+                                           const CPUArchitecture arch,
+                                           StringView os);
 
-    struct ToolDataDeserializer final : Json::IDeserializer<ArchToolData>
+    struct ToolDataFileDeserializer final : Json::IDeserializer<std::vector<ToolDataEntry>>
     {
         virtual LocalizedString type_name() const override;
 
         virtual View<StringView> valid_fields() const override;
 
-        virtual Optional<ArchToolData> visit_object(Json::Reader& r, const Json::Object& obj) const override;
+        virtual Optional<std::vector<ToolDataEntry>> visit_object(Json::Reader& r,
+                                                                  const Json::Object& obj) const override;
 
-        static const ToolDataDeserializer instance;
-    };
-
-    struct ToolDataArrayDeserializer final : Json::ArrayDeserializer<ToolDataDeserializer>
-    {
-        virtual LocalizedString type_name() const override;
-
-        virtual Optional<std::vector<ArchToolData>> visit_object(Json::Reader& r, const Json::Object&) const override;
-
-        static const ToolDataArrayDeserializer instance;
+        static const ToolDataFileDeserializer instance;
     };
 }

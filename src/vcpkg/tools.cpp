@@ -64,7 +64,7 @@ namespace vcpkg
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
-    ExpectedL<std::vector<ArchToolData>> parse_tool_data(StringView contents, StringView origin)
+    ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin)
     {
         auto as_json = Json::parse(contents, origin);
         if (!as_json)
@@ -74,7 +74,7 @@ namespace vcpkg
         auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
 
         Json::Reader r(origin);
-        auto maybe_tool_data = r.visit(as_value, ToolDataArrayDeserializer::instance);
+        auto maybe_tool_data = r.visit(as_value, ToolDataFileDeserializer::instance);
         if (!r.errors().empty() || !r.warnings().empty())
         {
             return r.join();
@@ -85,10 +85,10 @@ namespace vcpkg
             return *tool_data;
         }
 
-        return msg::format_error(msgErrorWhileParsingToolData, msg::path = origin);
+        return msg::format(msgErrorWhileParsingToolData, msg::path = origin);
     }
 
-    static ExpectedL<std::vector<ArchToolData>> parse_tool_data_file(const Filesystem& fs, Path path)
+    static ExpectedL<std::vector<ToolDataEntry>> parse_tool_data_file(const Filesystem& fs, Path path)
     {
         std::error_code ec;
         auto contents = fs.read_contents(path, ec);
@@ -100,12 +100,12 @@ namespace vcpkg
         return parse_tool_data(contents, path);
     }
 
-    const ArchToolData* get_raw_tool_data(const std::vector<ArchToolData>& tool_data_table,
-                                          StringView toolname,
-                                          const CPUArchitecture arch,
-                                          StringView os)
+    const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
+                                           StringView toolname,
+                                           const CPUArchitecture arch,
+                                           StringView os)
     {
-        const ArchToolData* default_tool = nullptr;
+        const ToolDataEntry* default_tool = nullptr;
         for (auto&& tool_candidate : tool_data_table)
         {
             if (tool_candidate.tool == toolname && tool_candidate.os == os)
@@ -126,7 +126,7 @@ namespace vcpkg
         return default_tool;
     }
 
-    static Optional<ToolData> get_tool_data(const std::vector<ArchToolData>& tool_data_table, StringView tool)
+    static Optional<ToolData> get_tool_data(const std::vector<ToolDataEntry>& tool_data_table, StringView tool)
     {
         auto hp = get_host_processor();
 #if defined(_WIN32)
@@ -697,7 +697,7 @@ namespace vcpkg
         const RequireExactVersions abiToolVersionHandling;
 
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
-        vcpkg::Lazy<std::vector<ArchToolData>> m_tool_data_cache;
+        vcpkg::Lazy<std::vector<ToolDataEntry>> m_tool_data_cache;
 
         ToolCacheImpl(const Filesystem& fs,
                       const std::shared_ptr<const DownloadManager>& downloader,
@@ -962,7 +962,7 @@ namespace vcpkg
             return get_tool_pathversion(tool, status_sink).version;
         }
 
-        std::vector<ArchToolData> load_tool_data() const
+        std::vector<ToolDataEntry> load_tool_data() const
         {
             return m_tool_data_cache.get_lazy([&]() {
                 auto maybe_tool_data = parse_tool_data_file(fs, config_path);
@@ -1053,73 +1053,104 @@ namespace vcpkg
             fs, std::move(downloader), downloads, config_path, tools, abiToolVersionHandling);
     }
 
-    LocalizedString ToolDataDeserializer::type_name() const { return msg::format(msgAToolDataObject); }
-
-    View<StringView> ToolDataDeserializer::valid_fields() const
+    struct ToolDataEntryDeserializer final : Json::IDeserializer<ToolDataEntry>
     {
-        static const StringView valid_fields[] = {
-            "name",
-            "os",
-            "version",
-            "arch",
-            "executable",
-            "url",
-            "sha512",
-            "archive",
-        };
+        virtual LocalizedString type_name() const override { return msg::format(msgAToolDataObject); }
+
+        virtual View<StringView> valid_fields() const override
+        {
+            static const StringView valid_fields[] = {
+                "name",
+                "os",
+                "version",
+                "arch",
+                "executable",
+                "url",
+                "sha512",
+                "archive",
+            };
+            return valid_fields;
+        }
+
+        virtual Optional<ToolDataEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            static const std::map<std::string, CPUArchitecture> arch_map{
+                {"x86", CPUArchitecture::X86},
+                {"x64", CPUArchitecture::X64},
+                {"arm", CPUArchitecture::ARM},
+                {"arm64", CPUArchitecture::ARM64},
+                {"arm64ec", CPUArchitecture::ARM64EC},
+                {"s390x", CPUArchitecture::S390X},
+                {"ppc64le", CPUArchitecture::PPC64LE},
+                {"riscv32", CPUArchitecture::RISCV32},
+                {"riscv64", CPUArchitecture::RISCV64},
+                {"loongarch32", CPUArchitecture::LOONGARCH32},
+                {"loongarch64", CPUArchitecture::LOONGARCH64},
+                {"mips64", CPUArchitecture::MIPS64},
+            };
+
+            ToolDataEntry value;
+
+            r.required_object_field(type_name(), obj, "name", value.tool, Json::UntypedStringDeserializer::instance);
+            r.required_object_field(type_name(), obj, "os", value.os, Json::UntypedStringDeserializer::instance);
+            r.required_object_field(
+                type_name(), obj, "version", value.version, Json::UntypedStringDeserializer::instance);
+
+            std::string arch_str;
+            if (r.optional_object_field(obj, "arch", arch_str, Json::ArchitectureDeserializer::instance))
+            {
+                auto it = arch_map.find(arch_str);
+                if (it != arch_map.end())
+                {
+                    value.arch = it->second;
+                }
+            }
+            r.optional_object_field(
+                obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, "sha512", value.sha512, Json::Sha512Deserializer::instance);
+            r.optional_object_field(obj, "archive", value.archiveName, Json::UntypedStringDeserializer::instance);
+            return value;
+        }
+
+        static const ToolDataEntryDeserializer instance;
+    };
+    const ToolDataEntryDeserializer ToolDataEntryDeserializer::instance;
+
+    struct ToolDataArrayDeserializer final : Json::ArrayDeserializer<ToolDataEntryDeserializer>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgAToolDataArray); }
+
+        static const ToolDataArrayDeserializer instance;
+    };
+    const ToolDataArrayDeserializer ToolDataArrayDeserializer::instance;
+
+    LocalizedString ToolDataFileDeserializer::type_name() const { return msg::format(msgAToolDataArray); }
+
+    View<StringView> ToolDataFileDeserializer::valid_fields() const
+    {
+        static const StringView valid_fields[] = {"schema-version", "tools"};
         return valid_fields;
     }
 
-    Optional<ArchToolData> ToolDataDeserializer::visit_object(Json::Reader& r, const Json::Object& obj) const
+    Optional<std::vector<ToolDataEntry>> ToolDataFileDeserializer::visit_object(Json::Reader& r,
+                                                                                const Json::Object& obj) const
     {
-        static const std::map<std::string, CPUArchitecture> arch_map{
-            {"x86", CPUArchitecture::X86},
-            {"x64", CPUArchitecture::X64},
-            {"arm", CPUArchitecture::ARM},
-            {"arm64", CPUArchitecture::ARM64},
-            {"arm64ec", CPUArchitecture::ARM64EC},
-            {"s390x", CPUArchitecture::S390X},
-            {"ppc64le", CPUArchitecture::PPC64LE},
-            {"riscv32", CPUArchitecture::RISCV32},
-            {"riscv64", CPUArchitecture::RISCV64},
-            {"loongarch32", CPUArchitecture::LOONGARCH32},
-            {"loongarch64", CPUArchitecture::LOONGARCH64},
-            {"mips64", CPUArchitecture::MIPS64},
-        };
+        int schema_version = -1;
+        r.required_object_field(
+            type_name(), obj, "schema-version", schema_version, Json::NaturalNumberDeserializer::instance);
 
-        ArchToolData value;
-
-        r.required_object_field(type_name(), obj, "name", value.tool, Json::UntypedStringDeserializer::instance);
-        r.required_object_field(type_name(), obj, "os", value.os, Json::UntypedStringDeserializer::instance);
-        r.required_object_field(type_name(), obj, "version", value.version, Json::UntypedStringDeserializer::instance);
-
-        std::string arch_str;
-        if (r.optional_object_field(obj, "arch", arch_str, Json::ArchitectureDeserializer::instance))
+        if (schema_version != 1)
         {
-            auto it = arch_map.find(arch_str);
-            if (it != arch_map.end())
-            {
-                value.arch = it->second;
-            }
+            r.add_generic_error(type_name(),
+                                msg::format(msgToolDataFileSchemaVersionNotSupported, msg::version = schema_version));
+            return nullopt;
         }
-        r.optional_object_field(obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
-        r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
-        r.optional_object_field(obj, "sha512", value.sha512, Json::Sha512Deserializer::instance);
-        r.optional_object_field(obj, "archive", value.archiveName, Json::UntypedStringDeserializer::instance);
+
+        std::vector<ToolDataEntry> value;
+        r.required_object_field(type_name(), obj, "tools", value, ToolDataArrayDeserializer::instance);
         return value;
     }
 
-    const ToolDataDeserializer ToolDataDeserializer::instance;
-
-    LocalizedString ToolDataArrayDeserializer::type_name() const { return msg::format(msgAToolDataArray); }
-
-    Optional<std::vector<ArchToolData>> ToolDataArrayDeserializer::visit_object(Json::Reader& r,
-                                                                                const Json::Object&) const
-    {
-        // Maybe the base class should override all non-array visitor methods and add error messages
-        r.add_generic_error(type_name(), msg::format(msgFailedToParseTopLevelArray));
-        return nullopt;
-    }
-
-    const ToolDataArrayDeserializer ToolDataArrayDeserializer::instance;
+    const ToolDataFileDeserializer ToolDataFileDeserializer::instance;
 }

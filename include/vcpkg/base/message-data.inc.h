@@ -263,6 +263,11 @@ DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings")
 DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dictionary")
 DECLARE_MESSAGE(AToolDataObject, (), "", "tool metadata")
 DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
+DECLARE_MESSAGE(AToolDataFile, (), "", "a tool data file")
+DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
+                (msg::version),
+                "",
+                "document schema version {version} is not supported by this version of vcpkg")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",

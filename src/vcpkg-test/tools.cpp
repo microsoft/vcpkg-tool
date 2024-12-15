@@ -70,38 +70,42 @@ TEST_CASE ("extract_prefixed_nonquote", "[tools]")
 
 TEST_CASE ("parse_tool_data", "[tools]")
 {
-    const StringView tool_doc = R"([
+    const StringView tool_doc = R"(
 {
-    "name": "git",
-    "os": "linux",
-    "version": "2.7.4",
-    "executable": "git"
-},
-{
-    "name": "git",
-    "os": "linux",
-    "arch": "arm64",
-    "version": "2.7.4",
-    "executable": "git-arm64"
-},
-{
-    "name": "nuget",
-    "os": "osx",
-    "version": "5.11.0",
-    "executable": "nuget.exe",
-    "url": "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe",
-    "sha512": "06a337c9404dec392709834ef2cdbdce611e104b510ef40201849595d46d242151749aef65bc2d7ce5ade9ebfda83b64c03ce14c8f35ca9957a17a8c02b8c4b7"
-},
-{
-    "name": "node",
-    "os": "windows",
-    "version": "16.12.0",
-    "executable": "node-v16.12.0-win-x64\\node.exe",
-    "url": "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z",
-    "sha512": "0bb793fce8140bd59c17f3ac9661b062eac0f611d704117774f5cb2453d717da94b1e8b17d021d47baff598dc023fb7068ed1f8a7678e446260c3db3537fa888",
-    "archive": "node-v16.12.0-win-x64.7z"
-}
-])";
+    "schema-version": 1,
+    "tools": [
+        {
+            "name": "git",
+            "os": "linux",
+            "version": "2.7.4",
+            "executable": "git"
+        },
+        {
+            "name": "git",
+            "os": "linux",
+            "arch": "arm64",
+            "version": "2.7.4",
+            "executable": "git-arm64"
+        },
+        {
+            "name": "nuget",
+            "os": "osx",
+            "version": "5.11.0",
+            "executable": "nuget.exe",
+            "url": "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe",
+            "sha512": "06a337c9404dec392709834ef2cdbdce611e104b510ef40201849595d46d242151749aef65bc2d7ce5ade9ebfda83b64c03ce14c8f35ca9957a17a8c02b8c4b7"
+        },
+        {
+            "name": "node",
+            "os": "windows",
+            "version": "16.12.0",
+            "executable": "node-v16.12.0-win-x64\\node.exe",
+            "url": "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z",
+            "sha512": "0bb793fce8140bd59c17f3ac9661b062eac0f611d704117774f5cb2453d717da94b1e8b17d021d47baff598dc023fb7068ed1f8a7678e446260c3db3537fa888",
+            "archive": "node-v16.12.0-win-x64.7z"
+        }
+    ]
+})";
 
     auto maybe_data = parse_tool_data(tool_doc, "vcpkgTools.json");
     REQUIRE(maybe_data.has_value());
@@ -194,59 +198,73 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(tooL_node_windows->archiveName == "node-v16.12.0-win-x64.7z");
 }
 
-TEST_CASE ("parse_tool_data failuress", "[tools]")
+TEST_CASE ("parse_tool_data errors", "[tools]")
 {
     auto empty = parse_tool_data("", "empty.json");
     REQUIRE(!empty.has_value());
     CHECK(Strings::starts_with(empty.error(), "empty.json:1:1: error: Unexpected EOF"));
 
-    auto top_level_object_json = parse_tool_data("{}", "top-level-object.json");
-    REQUIRE(!top_level_object_json.has_value());
-    CHECK("top-level-object.json: error: $ (an array of tool metadata): Expected a top-level array." ==
-          top_level_object_json.error());
+    auto top_level_json = parse_tool_data("[]", "top_level.json");
+    REQUIRE(!top_level_json.has_value());
+    CHECK("An unexpected error ocurred while parsing tool data from top_level.json." == top_level_json.error());
 
-    auto missing_required = parse_tool_data(R"([{ "executable": "git.exe" }])", "missing_required.json");
+    auto missing_required =
+        parse_tool_data(R"({ "schema-version": 1, "tools": [{ "executable": "git.exe" }]})", "missing_required.json");
     REQUIRE(!missing_required.has_value());
-    CHECK("missing_required.json: error: $[0] (tool metadata): missing required field 'name' (a string)\n"
-          "missing_required.json: error: $[0] (tool metadata): missing required field 'os' (a string)\n"
-          "missing_required.json: error: $[0] (tool metadata): missing required field 'version' (a string)" ==
+    CHECK("missing_required.json: error: $.tools[0] (tool metadata): missing required field 'name' (a string)\n"
+          "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'os' (a string)\n"
+          "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'version' (a string)" ==
           missing_required.error());
 
-    auto uexpected_field = parse_tool_data(R"([{
-"name": "git",
-"os": "linux",
-"version": "2.7.4",
-"arc": "x64"
-}])",
+    auto uexpected_field = parse_tool_data(R"(
+{
+    "schema-version": 1,
+    "tools": [{
+        "name": "git",
+        "os": "linux",
+        "version": "2.7.4",
+        "arc": "x64"
+    }]
+})",
                                            "uexpected_field.json");
     REQUIRE(!uexpected_field.has_value());
-    CHECK("uexpected_field.json: error: $[0] (tool metadata): unexpected field 'arc', did you mean 'arch'?" ==
+    CHECK("uexpected_field.json: error: $.tools[0] (tool metadata): unexpected field 'arc', did you mean 'arch'?" ==
           uexpected_field.error());
 
-    auto invalid_arch = parse_tool_data(R"([{ 
-"name": "git",
-"os": "linux",
-"version": "2.7.4",
-"arch": "notanarchitecture"
-}])",
+    auto invalid_arch = parse_tool_data(R"(
+{
+    "schema-version": 1,
+    "tools": [{ 
+        "name": "git",
+        "os": "linux",
+        "version": "2.7.4",
+        "arch": "notanarchitecture"
+    }]
+})",
                                         "invalid_arch.json");
     REQUIRE(!invalid_arch.has_value());
-    CHECK("invalid_arch.json: error: $[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. Expected "
+    CHECK("invalid_arch.json: error: $.tools[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. "
+          "Expected "
           "one of: x86,x64,arm,arm64,arm64ec,s390x,ppc64le,riscv32,riscv64,loongarch32,loongarch64,mips64\n"
-          "invalid_arch.json: error: $[0].arch: mismatched type: expected a CPU architecture" == invalid_arch.error());
+          "invalid_arch.json: error: $.tools[0].arch: mismatched type: expected a CPU architecture" ==
+          invalid_arch.error());
 
-    auto invalid_sha512 = parse_tool_data(R"([{ 
-"name": "git",
-"os": "linux",
-"version": "2.7.4",
-"executable": "git",
-"sha512": "notasha512"
-}])",
+    auto invalid_sha512 = parse_tool_data(R"(
+{
+    "schema-version": 1,
+    "tools": [{ 
+        "name": "git",
+        "os": "linux",
+        "version": "2.7.4",
+        "executable": "git",
+        "sha512": "notasha512"
+    }]
+})",
                                           "invalid_sha512.json");
 
     REQUIRE(!invalid_sha512.has_value());
-    CHECK("invalid_sha512.json: error: $[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
+    CHECK("invalid_sha512.json: error: $.tools[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
           "SHA-512 hash must be 128 characters long and contain only hexadecimal digits\n"
-          "invalid_sha512.json: error: $[0].sha512: mismatched type: expected a SHA-512 hash" ==
+          "invalid_sha512.json: error: $.tools[0].sha512: mismatched type: expected a SHA-512 hash" ==
           invalid_sha512.error());
 }
