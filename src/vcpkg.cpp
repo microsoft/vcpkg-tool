@@ -93,6 +93,21 @@ namespace
         return false;
     }
 
+    template<class CommandRegistrationKind>
+    static const CommandRegistrationKind* choose_command(const std::string& command_name,
+                                                         View<CommandRegistrationKind> command_registrations)
+    {
+        for (const auto& command_registration : command_registrations)
+        {
+            if (Strings::case_insensitive_ascii_equals(command_registration.metadata.name, command_name))
+            {
+                return &command_registration;
+            }
+        }
+
+        return nullptr;
+    }
+
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
         // track version on each invocation
@@ -104,24 +119,9 @@ namespace
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        static const auto find_command = [&](auto&& commands) {
-            auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.metadata.name, args.get_command());
-            });
-            using std::end;
-            if (it != end(commands))
-            {
-                return &*it;
-            }
-            else
-            {
-                return static_cast<decltype(&*it)>(nullptr);
-            }
-        };
-
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        if (const auto command_function = find_command(basic_commands))
+        if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, fs);
@@ -133,7 +133,7 @@ namespace
 
         fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-        if (const auto command_function = find_command(paths_commands))
+        if (const auto command_function = choose_command(args.get_command(), paths_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths);
@@ -141,7 +141,7 @@ namespace
 
         Triplet default_triplet = vcpkg::default_triplet(args, paths.get_triplet_db());
         Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
-        if (const auto command_function = find_command(triplet_commands))
+        if (const auto command_function = choose_command(args.get_command(), triplet_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths, default_triplet, host_triplet);
