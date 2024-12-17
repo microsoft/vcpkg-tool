@@ -472,8 +472,7 @@ namespace
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
-                const std::string display_name = action.spec.to_string();
-                msg::println(msgExportingPackage, msg::package_name = display_name);
+                msg::println(msgExportingPackage, msg::package_name = action.spec);
 
                 const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
 
@@ -603,8 +602,7 @@ namespace vcpkg
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set,
-                                       make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
         // create the plan
         std::vector<ExportPlanAction> export_plan = create_export_plan(opts.specs, status_db);

@@ -753,7 +753,7 @@ namespace vcpkg
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin, {0, 0}) { }
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
@@ -1194,9 +1194,9 @@ namespace vcpkg
 
             if (auto configuration = obj.get(JsonIdVcpkgConfiguration))
             {
-                if (configuration->is_object())
+                if (auto configuration_object = configuration->maybe_object())
                 {
-                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
+                    spgh.vcpkg_configuration.emplace(*configuration_object);
                 }
                 else
                 {

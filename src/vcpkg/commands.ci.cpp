@@ -52,11 +52,11 @@ namespace
             (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
             if (children.empty())
             {
-                std::string message =
-                    "There are no build logs for " + spec.to_string() +
-                    " build.\n"
-                    "This is usually because the build failed early and outside of a task that is logged.\n"
-                    "See the console output logs from vcpkg for more information on the failure.\n";
+                auto message =
+                    fmt::format("There are no build logs for {} build.\n"
+                                "This is usually because the build failed early and outside of a task that is logged.\n"
+                                "See the console output logs from vcpkg for more information on the failure.\n",
+                                spec);
                 filesystem.write_contents(std::move(target_path) / "readme.log", message, VCPKG_LINE_INFO);
             }
             else
@@ -327,7 +327,6 @@ namespace vcpkg
             CleanDownloads::No,
             DownloadTool::Builtin,
             BackcompatFeatures::Prohibit,
-            PrintUsage::Yes,
             KeepGoing::Yes,
         };
 
@@ -376,8 +375,7 @@ namespace vcpkg
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set,
-                                       make_overlay_provider(filesystem, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(filesystem, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 

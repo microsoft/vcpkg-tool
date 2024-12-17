@@ -158,6 +158,26 @@ namespace vcpkg::Json
         return underlying_->string;
     }
 
+    std::string* Value::maybe_string() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::String)
+        {
+            return &underlying_->string;
+        }
+
+        return nullptr;
+    }
+
+    const std::string* Value::maybe_string() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::String)
+        {
+            return &underlying_->string;
+        }
+
+        return nullptr;
+    }
+
     const Array& Value::array(LineInfo li) const& noexcept
     {
         vcpkg::Checks::msg_check_exit(li, is_array(), msgJsonValueNotArray);
@@ -170,6 +190,26 @@ namespace vcpkg::Json
     }
     Array&& Value::array(LineInfo li) && noexcept { return std::move(this->array(li)); }
 
+    Array* Value::maybe_array() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Array)
+        {
+            return &underlying_->array;
+        }
+
+        return nullptr;
+    }
+
+    const Array* Value::maybe_array() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Array)
+        {
+            return &underlying_->array;
+        }
+
+        return nullptr;
+    }
+
     const Object& Value::object(LineInfo li) const& noexcept
     {
         vcpkg::Checks::msg_check_exit(li, is_object(), msgJsonValueNotObject);
@@ -181,6 +221,26 @@ namespace vcpkg::Json
         return underlying_->object;
     }
     Object&& Value::object(LineInfo li) && noexcept { return std::move(this->object(li)); }
+
+    Object* Value::maybe_object() noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Object)
+        {
+            return &underlying_->object;
+        }
+
+        return nullptr;
+    }
+
+    const Object* Value::maybe_object() const noexcept
+    {
+        if (underlying_ && underlying_->tag == VK::Object)
+        {
+            return &underlying_->object;
+        }
+
+        return nullptr;
+    }
 
     Value::Value() noexcept = default;
     Value::Value(Value&&) noexcept = default;
@@ -485,7 +545,10 @@ namespace vcpkg::Json
     {
         struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin, TextRowCol init_rowcol)
+                : ParserBase(text, origin, init_rowcol), style_()
+            {
+            }
 
             char32_t next() noexcept
             {
@@ -1000,7 +1063,7 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
-                auto parser = Parser(json, origin);
+                auto parser = Parser(json, origin, {1, 1});
 
                 auto val = parser.parse_value();
 
@@ -1121,9 +1184,9 @@ namespace vcpkg::Json
     {
         return parse(text, origin).then([&](ParsedJson&& mabeValueIsh) -> ExpectedL<Json::Object> {
             auto& asValue = mabeValueIsh.value;
-            if (asValue.is_object())
+            if (auto as_object = asValue.maybe_object())
             {
-                return std::move(asValue).object(VCPKG_LINE_INFO);
+                return std::move(*as_object);
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);

@@ -36,9 +36,10 @@ namespace vcpkg
                                     View<std::string> headers,
                                     View<std::string> secrets);
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot);
+    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot);
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,
