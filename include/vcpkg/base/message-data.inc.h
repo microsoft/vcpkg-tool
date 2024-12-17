@@ -1812,10 +1812,11 @@ DECLARE_MESSAGE(InvalidArchitecture,
                 (msg::value),
                 "{value} is what the user entered that we did not understand",
                 "invalid architecture: {value}")
-DECLARE_MESSAGE(InvalidArchitectureValue,
-                (msg::value, msg::expected),
-                "{value} is what the user entered that we did not understand",
-                "Invalid architecture: {value}. Expected one of: {expected}")
+DECLARE_MESSAGE(
+    InvalidArchitectureValue,
+    (msg::value, msg::expected),
+    "{value} is an unknown CPU architecture type, {expected} is the list of accepted CPU architecture values",
+    "Invalid architecture: {value}. Expected one of: {expected}")
 DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument")
 DECLARE_MESSAGE(
     InvalidArgumentRequiresAbsolutePath,
