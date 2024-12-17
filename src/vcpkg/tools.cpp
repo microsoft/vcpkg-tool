@@ -143,7 +143,6 @@ namespace vcpkg
 #endif
         if (!data)
         {
-            // Make get_raw_tool_data return ExpectedL<ArchToolData> and handle error here?
             return nullopt;
         }
         const Optional<std::array<int, 3>> version = parse_tool_version_string(data->version);
@@ -1124,7 +1123,7 @@ namespace vcpkg
     };
     const ToolDataArrayDeserializer ToolDataArrayDeserializer::instance;
 
-    LocalizedString ToolDataFileDeserializer::type_name() const { return msg::format(msgAToolDataArray); }
+    LocalizedString ToolDataFileDeserializer::type_name() const { return msg::format(msgAToolDataFile); }
 
     View<StringView> ToolDataFileDeserializer::valid_fields() const
     {

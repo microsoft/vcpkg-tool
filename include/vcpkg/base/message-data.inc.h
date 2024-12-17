@@ -1302,7 +1302,6 @@ DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baselin
 DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
 DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
-DECLARE_MESSAGE(FailedToParseTopLevelArray, (), "", "Expected a top-level array.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 (msg::error_msg),
