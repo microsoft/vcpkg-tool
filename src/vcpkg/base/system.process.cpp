@@ -267,7 +267,7 @@ namespace vcpkg
 
     Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
     {
-        ParserBase p(contents.content, contents.origin);
+        ParserBase p(contents.content, contents.origin, {1, 1});
 
         p.match_while(ParserBase::is_ascii_digit); // pid %d (ignored)
 
@@ -1443,6 +1443,7 @@ namespace vcpkg
         Debug::print(fmt::format("{}: system({})\n", debug_id, real_command_line));
         fflush(nullptr);
 
+        // CodeQL [cpp/uncontrolled-process-operation]: This is intended to run whatever process the user supplies.
         return system(real_command_line.c_str());
 #endif
     }

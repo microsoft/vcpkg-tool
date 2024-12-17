@@ -1,94 +1,129 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/paragraphs.h>
 #include <vcpkg/statusparagraph.h>
+
+using namespace vcpkg::Paragraphs;
 
 namespace vcpkg
 {
-    StatusParagraph::StatusParagraph() noexcept : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE) { }
-
-    void serialize(const StatusParagraph& pgh, std::string& out_str)
+    void StatusLine::to_string(std::string& out) const
     {
-        serialize(pgh.package, out_str);
-        out_str.append("Status: ")
-            .append(to_string(pgh.want))
-            .append(" ok ")
-            .append(to_string(pgh.state))
-            .push_back('\n');
+        fmt::format_to(std::back_inserter(out), "{} ok {}", want, state);
+    }
+
+    std::string StatusLine::to_string() const { return adapt_to_string(*this); }
+
+    ExpectedL<StatusLine> parse_status_line(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
+    {
+        ParserBase parser{text, origin, init_rowcol};
+        StatusLine result;
+        const auto want_start = parser.cur_loc();
+        auto want_text = parser.match_until(ParserBase::is_whitespace);
+        if (want_text == StatusInstall)
+        {
+            result.want = Want::INSTALL;
+        }
+        else if (want_text == StatusHold)
+        {
+            result.want = Want::HOLD;
+        }
+        else if (want_text == StatusDeinstall)
+        {
+            result.want = Want::DEINSTALL;
+        }
+        else if (want_text == StatusPurge)
+        {
+            result.want = Want::PURGE;
+        }
+        else
+        {
+            parser.add_error(msg::format(msgExpectedWantField), want_start);
+            return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+        }
+
+        if (parser.require_text(" ok "))
+        {
+            auto state_start = parser.cur_loc();
+            auto state_text = parser.match_until(ParserBase::is_whitespace);
+            if (state_text == StatusNotInstalled)
+            {
+                result.state = InstallState::NOT_INSTALLED;
+            }
+            else if (state_text == StatusInstalled)
+            {
+                result.state = InstallState::INSTALLED;
+            }
+            else if (state_text == StatusHalfInstalled)
+            {
+                result.state = InstallState::HALF_INSTALLED;
+            }
+            else
+            {
+                parser.add_error(msg::format(msgExpectedInstallStateField), state_start);
+                return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+            }
+
+            if (parser.messages().good())
+            {
+                return result;
+            }
+        }
+
+        return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+    }
+
+    void serialize(const StatusParagraph& pgh, std::string& out)
+    {
+        serialize(pgh.package, out);
+        append_paragraph_field(ParagraphIdStatus, pgh.status.to_string(), out);
     }
 
     StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields)
-        : want(Want::ERROR_STATE), state(InstallState::ERROR_STATE)
     {
         auto status_it = fields.find(ParagraphIdStatus);
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
-        std::string status_field = std::move(status_it->second.first);
+        auto status_field = std::move(status_it->second);
         fields.erase(status_it);
-
         this->package = BinaryParagraph(origin, std::move(fields));
-
-        auto b = status_field.begin();
-        const auto mark = b;
-        const auto e = status_field.end();
-
-        // Todo: improve error handling
-        while (b != e && *b != ' ')
-            ++b;
-
-        want = [](const std::string& text) {
-            if (text == "unknown") return Want::UNKNOWN;
-            if (text == "install") return Want::INSTALL;
-            if (text == "hold") return Want::HOLD;
-            if (text == "deinstall") return Want::DEINSTALL;
-            if (text == "purge") return Want::PURGE;
-            return Want::ERROR_STATE;
-        }(std::string(mark, b));
-
-        if (std::distance(b, e) < 4) return;
-        b += 4;
-
-        state = [](const std::string& text) {
-            if (text == "not-installed") return InstallState::NOT_INSTALLED;
-            if (text == "installed") return InstallState::INSTALLED;
-            if (text == "half-installed") return InstallState::HALF_INSTALLED;
-            return InstallState::ERROR_STATE;
-        }(std::string(b, e));
+        this->status =
+            parse_status_line(status_field.first, origin, status_field.second).value_or_exit(VCPKG_LINE_INFO);
     }
 
-    std::string to_string(InstallState f)
+    StringLiteral to_string_literal(InstallState f)
     {
         switch (f)
         {
-            case InstallState::HALF_INSTALLED: return "half-installed";
-            case InstallState::INSTALLED: return "installed";
-            case InstallState::NOT_INSTALLED: return "not-installed";
-            default: return "error";
+            case InstallState::HALF_INSTALLED: return StatusHalfInstalled;
+            case InstallState::INSTALLED: return StatusInstalled;
+            case InstallState::NOT_INSTALLED: return StatusNotInstalled;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
-    std::string to_string(Want f)
+    StringLiteral to_string_literal(Want f)
     {
         switch (f)
         {
-            case Want::DEINSTALL: return "deinstall";
-            case Want::HOLD: return "hold";
-            case Want::INSTALL: return "install";
-            case Want::PURGE: return "purge";
-            case Want::UNKNOWN: return "unknown";
-            default: return "error";
+            case Want::DEINSTALL: return StatusDeinstall;
+            case Want::HOLD: return StatusHold;
+            case Want::INSTALL: return StatusInstall;
+            case Want::PURGE: return StatusPurge;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
     std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
     {
-        auto extract_deps = [&](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore.to_string()}; };
+        auto extract_deps = [](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore}; };
 
         std::map<std::string, std::vector<FeatureSpec>> deps;
-
         deps.emplace(FeatureNameCore, Util::fmap(core->package.dependencies, extract_deps));
-
-        for (const StatusParagraph* const& feature : features)
+        for (const StatusParagraph* feature : features)
+        {
             deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
+        }
 
         return deps;
     }
@@ -97,10 +132,11 @@ namespace vcpkg
     {
         InternalFeatureSet ret;
         ret.emplace_back(FeatureNameCore);
-        for (const auto& f : features)
+        for (const StatusParagraph* f : features)
         {
             ret.emplace_back(f->package.feature);
         }
+
         return ret;
     }
 
@@ -111,18 +147,17 @@ namespace vcpkg
         // accumulate all features in installed dependencies
         // Todo: make this unneeded by collapsing all package dependencies into the core package
         std::vector<PackageSpec> deps;
-        for (auto&& feature : features)
-            for (auto&& dep : feature->package.dependencies)
-                deps.push_back(dep);
+        for (const StatusParagraph* feature : features)
+        {
+            Util::Vectors::append(deps, feature->package.dependencies);
+        }
 
         // Add the core paragraph dependencies to the list
-        for (auto&& dep : core->package.dependencies)
-            deps.push_back(dep);
+        Util::Vectors::append(deps, core->package.dependencies);
 
-        auto this_spec = this->spec();
+        const auto& this_spec = this->spec();
         Util::erase_remove_if(deps, [this_spec](const PackageSpec& pspec) { return pspec == this_spec; });
         Util::sort_unique_erase(deps);
-
         return deps;
     }
 

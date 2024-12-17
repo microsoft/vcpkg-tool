@@ -212,6 +212,7 @@ namespace vcpkg
 
         Optional<std::string> vcpkg_root_dir_arg;
         Optional<std::string> vcpkg_root_dir_env;
+        Optional<bool> force_classic_mode;
         Optional<std::string> manifest_root_dir;
 
         Optional<std::string> buildtrees_root_dir;

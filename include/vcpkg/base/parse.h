@@ -2,12 +2,11 @@
 
 #include <vcpkg/base/fwd/parse.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/unicode.h>
-
-#include <vcpkg/textrowcol.h>
 
 #include <string>
 
@@ -44,7 +43,7 @@ namespace vcpkg
 
     struct ParserBase
     {
-        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol = {});
+        ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol);
 
         static constexpr bool is_whitespace(char32_t ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
         static constexpr bool is_lower_alpha(char32_t ch) { return ch >= 'a' && ch <= 'z'; }
@@ -90,6 +89,7 @@ namespace vcpkg
         }
 
         bool require_character(char ch);
+        bool require_text(StringLiteral keyword);
 
         bool try_match_keyword(StringView keyword_content);
 
