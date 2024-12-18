@@ -290,6 +290,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchTargetX86 = "target:x86";
     inline constexpr StringLiteral SwitchTLogFile = "tlog-file";
     inline constexpr StringLiteral SwitchTools = "tools";
+    inline constexpr StringLiteral SwitchToolDataFile = "tool-data-file";
     inline constexpr StringLiteral SwitchTriplet = "triplet";
     inline constexpr StringLiteral SwitchUrl = "url";
     inline constexpr StringLiteral SwitchVcpkgRoot = "vcpkg-root";
