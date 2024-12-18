@@ -5,6 +5,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
 
@@ -1632,4 +1633,52 @@ namespace vcpkg::Json
     }
 
     const FeatureNameDeserializer FeatureNameDeserializer::instance;
+
+    const std::vector<StringLiteral> ArchitectureDeserializer::KNOWN_ARCHITECTURES = {
+        "x86",
+        "x64",
+        "arm",
+        "arm64",
+        "arm64ec",
+        "s390x",
+        "ppc64le",
+        "riscv32",
+        "riscv64",
+        "loongarch32",
+        "loongarch64",
+        "mips64",
+    };
+
+    LocalizedString ArchitectureDeserializer::type_name() const { return msg::format(msgACpuArchitecture); }
+
+    Optional<std::string> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (Util::contains(KNOWN_ARCHITECTURES, sv))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(),
+                            msg::format(msgInvalidArchitectureValue,
+                                        msg::value = sv,
+                                        msg::expected = Strings::join(",", KNOWN_ARCHITECTURES)));
+        return nullopt;
+    }
+
+    const ArchitectureDeserializer ArchitectureDeserializer::instance;
+
+    LocalizedString Sha512Deserializer::type_name() const { return msg::format(msgASha512); }
+
+    Optional<std::string> Sha512Deserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (sv.size() == 128 && std::all_of(sv.begin(), sv.end(), ParserBase::is_hex_digit))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidSha512, msg::sha = sv));
+        return nullopt;
+    }
+
+    const Sha512Deserializer Sha512Deserializer::instance;
 }

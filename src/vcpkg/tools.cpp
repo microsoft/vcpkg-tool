@@ -3,6 +3,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/optional.h>
@@ -62,82 +63,114 @@ namespace vcpkg
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
-    static Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool)
+    ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin)
     {
+        auto as_json = Json::parse(contents, origin);
+        if (!as_json)
+        {
+            return as_json.error();
+        }
+        auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
+
+        Json::Reader r(origin);
+        auto maybe_tool_data = r.visit(as_value, ToolDataFileDeserializer::instance);
+        if (!r.errors().empty() || !r.warnings().empty())
+        {
+            return r.join();
+        }
+
+        if (auto tool_data = maybe_tool_data.get())
+        {
+            return *tool_data;
+        }
+
+        return msg::format(msgErrorWhileParsingToolData, msg::path = origin);
+    }
+
+    static ExpectedL<std::vector<ToolDataEntry>> parse_tool_data_file(const Filesystem& fs, Path path)
+    {
+        std::error_code ec;
+        auto contents = fs.read_contents(path, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {path});
+        }
+
+        return parse_tool_data(contents, path);
+    }
+
+    const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
+                                           StringView toolname,
+                                           const CPUArchitecture arch,
+                                           StringView os)
+    {
+        const ToolDataEntry* default_tool = nullptr;
+        for (auto&& tool_candidate : tool_data_table)
+        {
+            if (tool_candidate.tool == toolname && tool_candidate.os == os)
+            {
+                if (!tool_candidate.arch)
+                {
+                    if (!default_tool)
+                    {
+                        default_tool = &tool_candidate;
+                    }
+                }
+                else if (arch == *tool_candidate.arch.get())
+                {
+                    return &tool_candidate;
+                }
+            }
+        }
+        return default_tool;
+    }
+
+    static Optional<ToolData> get_tool_data(const std::vector<ToolDataEntry>& tool_data_table, StringView tool)
+    {
+        auto hp = get_host_processor();
 #if defined(_WIN32)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "windows");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, "windows");
 #elif defined(__APPLE__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "osx");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, "osx");
 #elif defined(__linux__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "linux");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, "linux");
 #elif defined(__FreeBSD__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "freebsd");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, "freebsd");
 #elif defined(__OpenBSD__)
-        return parse_tool_data_from_xml(XML, XML_PATH, tool, "openbsd");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, "openbsd");
 #else
         return nullopt;
 #endif
-    }
-
-    Optional<ToolData> parse_tool_data_from_xml(StringView XML, StringView XML_PATH, StringView tool, StringView os)
-    {
-        static const char* XML_VERSION = "2";
-        static const std::regex XML_VERSION_REGEX{R"###(<tools[\s]+version="([^"]+)">)###"};
-        std::cmatch match_xml_version;
-        const bool has_xml_version = std::regex_search(XML.begin(), XML.end(), match_xml_version, XML_VERSION_REGEX);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               has_xml_version,
-                               msgCouldNotFindToolVersion,
-                               msg::version = XML_VERSION,
-                               msg::path = XML_PATH);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               XML_VERSION == match_xml_version[1],
-                               msgVersionConflictXML,
-                               msg::path = XML_PATH,
-                               msg::expected_version = XML_VERSION,
-                               msg::actual_version = match_xml_version[1].str());
-
-        const std::regex tool_regex{fmt::format(R"###(<tool[\s]+name="{}"[\s]+os="{}">)###", tool, os)};
-        std::cmatch match_tool_entry;
-        const bool has_tool_entry = std::regex_search(XML.begin(), XML.end(), match_tool_entry, tool_regex);
-        if (!has_tool_entry) return nullopt;
-
-        const std::string tool_data =
-            Strings::find_exactly_one_enclosed(XML, match_tool_entry[0].str(), "</tool>").to_string();
-        const std::string version_as_string =
-            Strings::find_exactly_one_enclosed(tool_data, "<version>", "</version>").to_string();
-        const std::string exe_relative_path =
-            Strings::find_exactly_one_enclosed(tool_data, "<exeRelativePath>", "</exeRelativePath>").to_string();
-        const std::string url = Strings::find_exactly_one_enclosed(tool_data, "<url>", "</url>").to_string();
-        const std::string sha512 = Strings::find_exactly_one_enclosed(tool_data, "<sha512>", "</sha512>").to_string();
-        auto archive_name = Strings::find_at_most_one_enclosed(tool_data, "<archiveName>", "</archiveName>");
-
-        const Optional<std::array<int, 3>> version = parse_tool_version_string(version_as_string);
+        if (!data)
+        {
+            return nullopt;
+        }
+        const Optional<std::array<int, 3>> version = parse_tool_version_string(data->version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                version.has_value(),
                                msgFailedToParseVersionXML,
                                msg::tool_name = tool,
-                               msg::version = version_as_string);
+                               msg::version = data->version);
 
-        Path tool_dir_name = fmt::format("{}-{}-{}", tool, version_as_string, os);
+        Path tool_dir_name = fmt::format("{}-{}-{}", tool, data->version, data->os);
         Path download_subpath;
-        if (auto a = archive_name.get())
+        if (!data->archiveName.empty())
         {
-            download_subpath = a->to_string();
+            download_subpath = data->archiveName;
         }
-        else if (!exe_relative_path.empty())
+        else if (!data->exeRelativePath.empty())
         {
-            download_subpath = Strings::concat(sha512.substr(0, 8), '-', exe_relative_path);
+            download_subpath = Strings::concat(StringView{data->sha512}.substr(0, 8), '-', data->exeRelativePath);
         }
 
         return ToolData{tool.to_string(),
                         *version.get(),
-                        exe_relative_path,
-                        url,
+                        data->exeRelativePath,
+                        data->url,
                         download_subpath,
-                        archive_name.has_value(),
+                        !data->archiveName.empty(),
                         tool_dir_name,
-                        sha512};
+                        data->sha512};
     }
 
     struct PathAndVersion
@@ -664,23 +697,23 @@ namespace vcpkg
         const Filesystem& fs;
         const std::shared_ptr<const DownloadManager> downloader;
         const Path downloads;
-        const Path xml_config;
+        const Path config_path;
         const Path tools;
         const RequireExactVersions abiToolVersionHandling;
 
-        vcpkg::Lazy<std::string> xml_config_contents;
         vcpkg::Cache<std::string, PathAndVersion> path_version_cache;
+        vcpkg::Lazy<std::vector<ToolDataEntry>> m_tool_data_cache;
 
         ToolCacheImpl(const Filesystem& fs,
                       const std::shared_ptr<const DownloadManager>& downloader,
                       Path downloads,
-                      Path xml_config,
+                      Path config_path,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
             , downloader(downloader)
             , downloads(std::move(downloads))
-            , xml_config(std::move(xml_config))
+            , config_path(std::move(config_path))
             , tools(std::move(tools))
             , abiToolVersionHandling(abiToolVersionHandling)
         {
@@ -763,12 +796,6 @@ namespace vcpkg
             return exe_path;
         }
 
-        const std::string& get_config_contents() const
-        {
-            return xml_config_contents.get_lazy(
-                [this]() { return this->fs.read_contents(this->xml_config, VCPKG_LINE_INFO); });
-        }
-
         virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const override
         {
             return get_tool_pathversion(tool, status_sink).p;
@@ -780,9 +807,7 @@ namespace vcpkg
                 get_environment_variable(EnvironmentVariableVcpkgForceSystemBinaries).has_value();
             const bool env_force_download_binaries =
                 get_environment_variable(EnvironmentVariableVcpkgForceDownloadedBinaries).has_value();
-            const auto maybe_tool_data =
-                parse_tool_data_from_xml(get_config_contents(), xml_config, tool.tool_data_name());
-
+            const auto maybe_tool_data = get_tool_data(load_tool_data(), tool.tool_data_name());
             const bool download_available = maybe_tool_data.has_value() && !maybe_tool_data.get()->url.empty();
             // search for system searchable tools unless forcing downloads and download available
             const auto system_exe_stems = tool.system_exe_stems();
@@ -800,7 +825,7 @@ namespace vcpkg
 
             if (auto tool_data = maybe_tool_data.get())
             {
-                // If there is an entry for the tool in vcpkgTools.xml, use that version as the minimum
+                // If there is an entry for the tool in vcpkg-tools.json, use that version as the minimum
                 min_version = tool_data->version;
 
                 if (consider_downloads)
@@ -941,6 +966,18 @@ namespace vcpkg
         {
             return get_tool_pathversion(tool, status_sink).version;
         }
+
+        std::vector<ToolDataEntry> load_tool_data() const
+        {
+            return m_tool_data_cache.get_lazy([&]() {
+                auto maybe_tool_data = parse_tool_data_file(fs, config_path);
+                if (auto tool_data = maybe_tool_data.get())
+                {
+                    return std::move(*tool_data);
+                }
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, maybe_tool_data.error());
+            });
+        }
     };
 
     ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs)
@@ -1013,11 +1050,112 @@ namespace vcpkg
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
-                                              Path xml_config,
+                                              Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(
-            fs, std::move(downloader), downloads, xml_config, tools, abiToolVersionHandling);
+            fs, std::move(downloader), downloads, config_path, tools, abiToolVersionHandling);
     }
+
+    struct ToolDataEntryDeserializer final : Json::IDeserializer<ToolDataEntry>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgAToolDataObject); }
+
+        virtual View<StringView> valid_fields() const override
+        {
+            static const StringView valid_fields[] = {
+                "name",
+                "os",
+                "version",
+                "arch",
+                "executable",
+                "url",
+                "sha512",
+                "archive",
+            };
+            return valid_fields;
+        }
+
+        virtual Optional<ToolDataEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            static const std::map<std::string, CPUArchitecture> arch_map{
+                {"x86", CPUArchitecture::X86},
+                {"x64", CPUArchitecture::X64},
+                {"arm", CPUArchitecture::ARM},
+                {"arm64", CPUArchitecture::ARM64},
+                {"arm64ec", CPUArchitecture::ARM64EC},
+                {"s390x", CPUArchitecture::S390X},
+                {"ppc64le", CPUArchitecture::PPC64LE},
+                {"riscv32", CPUArchitecture::RISCV32},
+                {"riscv64", CPUArchitecture::RISCV64},
+                {"loongarch32", CPUArchitecture::LOONGARCH32},
+                {"loongarch64", CPUArchitecture::LOONGARCH64},
+                {"mips64", CPUArchitecture::MIPS64},
+            };
+
+            ToolDataEntry value;
+
+            r.required_object_field(type_name(), obj, "name", value.tool, Json::UntypedStringDeserializer::instance);
+            r.required_object_field(type_name(), obj, "os", value.os, Json::UntypedStringDeserializer::instance);
+            r.required_object_field(
+                type_name(), obj, "version", value.version, Json::UntypedStringDeserializer::instance);
+
+            std::string arch_str;
+            if (r.optional_object_field(obj, "arch", arch_str, Json::ArchitectureDeserializer::instance))
+            {
+                auto it = arch_map.find(arch_str);
+                if (it != arch_map.end())
+                {
+                    value.arch = it->second;
+                }
+            }
+            r.optional_object_field(
+                obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, "sha512", value.sha512, Json::Sha512Deserializer::instance);
+            r.optional_object_field(obj, "archive", value.archiveName, Json::UntypedStringDeserializer::instance);
+            return value;
+        }
+
+        static const ToolDataEntryDeserializer instance;
+    };
+    const ToolDataEntryDeserializer ToolDataEntryDeserializer::instance;
+
+    struct ToolDataArrayDeserializer final : Json::ArrayDeserializer<ToolDataEntryDeserializer>
+    {
+        virtual LocalizedString type_name() const override { return msg::format(msgAToolDataArray); }
+
+        static const ToolDataArrayDeserializer instance;
+    };
+    const ToolDataArrayDeserializer ToolDataArrayDeserializer::instance;
+
+    LocalizedString ToolDataFileDeserializer::type_name() const { return msg::format(msgAToolDataFile); }
+
+    View<StringView> ToolDataFileDeserializer::valid_fields() const
+    {
+        static const StringView valid_fields[] = {"schema-version", "tools"};
+        return valid_fields;
+    }
+
+    Optional<std::vector<ToolDataEntry>> ToolDataFileDeserializer::visit_object(Json::Reader& r,
+                                                                                const Json::Object& obj) const
+    {
+        int schema_version = -1;
+        r.required_object_field(
+            type_name(), obj, "schema-version", schema_version, Json::NaturalNumberDeserializer::instance);
+
+        if (schema_version != 1)
+        {
+            r.add_generic_error(type_name(),
+                                msg::format(msgToolDataFileSchemaVersionNotSupported, msg::version = schema_version));
+            return nullopt;
+        }
+
+        std::vector<ToolDataEntry> value;
+        r.required_object_field(type_name(), obj, "tools", value, ToolDataArrayDeserializer::instance);
+        return value;
+    }
+
+    const ToolDataFileDeserializer ToolDataFileDeserializer::instance;
 }

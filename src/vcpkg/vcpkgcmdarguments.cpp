@@ -358,6 +358,7 @@ namespace vcpkg
         args.parser.parse_option(
             SwitchBuiltinRegistryVersionsDir, StabilityTag::Experimental, args.builtin_registry_versions_dir);
         args.parser.parse_option(SwitchRegistriesCache, StabilityTag::Experimental, args.registries_cache_dir);
+        args.parser.parse_option(SwitchToolDataFile, StabilityTag::ImplementationDetail, args.tools_data_file);
         args.parser.parse_option(SwitchAssetSources,
                                  StabilityTag::Experimental,
                                  args.asset_sources_template_arg,

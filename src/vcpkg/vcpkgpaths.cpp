@@ -570,13 +570,13 @@ namespace vcpkg
                                           "packages",
                                           "pkgs",
                                           VCPKG_LINE_INFO))
-            , m_tool_cache(get_tool_cache(fs,
-                                          m_download_manager,
-                                          downloads,
-                                          scripts / "vcpkgTools.xml",
-                                          tools,
-                                          args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES
-                                                                                        : RequireExactVersions::NO))
+            , m_tool_cache(get_tool_cache(
+                  fs,
+                  m_download_manager,
+                  downloads,
+                  args.tools_data_file.has_value() ? Path{*args.tools_data_file.get()} : scripts / "vcpkg-tools.json",
+                  tools,
+                  args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES : RequireExactVersions::NO))
             , m_env_cache(m_ff_settings.compiler_tracking)
             , triplets_dirs()
             , m_artifacts_dir(downloads / "artifacts")
