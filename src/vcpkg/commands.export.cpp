@@ -506,7 +506,13 @@ namespace
         if (opts.nuget)
         {
             const auto nuget_id = opts.maybe_nuget_id.value_or(raw_exported_dir_path.filename().to_string());
-            const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
+            std::string template_nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
+            if (std::count(template_nuget_version.begin(), template_nuget_version.end(), '.') == 1)
+            {
+                // If the version is in the format "X.Y", make it "X.Y.0" for NuGet's semantic versioning.
+                template_nuget_version += ".0";
+            }
+            const auto nuget_version = template_nuget_version;
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
 
             msg::println(msgCreatingNugetPackage);
