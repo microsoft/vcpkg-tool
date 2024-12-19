@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
 
@@ -79,6 +80,9 @@ namespace vcpkg
 
     struct DiagnosticContext
     {
+        // The `report` family are used to report errors or warnings that may result in a function failing
+        // to do what it is intended to do. Data sent to the `report` family is expected to not be printed
+        // to the console if a caller decides to handle an error.
         virtual void report(const DiagnosticLine& line) = 0;
         virtual void report(DiagnosticLine&& line) { report(line); }
 
@@ -92,15 +96,36 @@ namespace vcpkg
             this->report_error(std::move(message));
         }
 
+        // The `status` family are used to report status or progress information that callers are expected
+        // to show on the console, even if it would decide to handle errors or warnings itself.
+        // Examples:
+        //  * "Downloading file..."
+        //  * "Building package 1 of 47..."
+        //
+        // Some implementations of DiagnosticContext may buffer these messages *anyway* if that makes sense,
+        // for example, if the work is happening on a background thread.
+        virtual void statusln(const LocalizedString& message) = 0;
+        virtual void statusln(LocalizedString&& message) = 0;
+        virtual void statusln(const MessageLine& message) = 0;
+        virtual void statusln(MessageLine&& message) = 0;
+
     protected:
         ~DiagnosticContext() = default;
     };
 
     struct BufferedDiagnosticContext final : DiagnosticContext
     {
+        BufferedDiagnosticContext(MessageSink& status_sink) : status_sink(status_sink) { }
+
         virtual void report(const DiagnosticLine& line) override;
         virtual void report(DiagnosticLine&& line) override;
 
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        MessageSink& status_sink;
         std::vector<DiagnosticLine> lines;
 
         // Prints all diagnostics to the supplied sink.
@@ -191,7 +216,7 @@ namespace vcpkg
     {
         using Unwrapper = AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>;
         using ReturnType = ExpectedL<typename Unwrapper::type>;
-        BufferedDiagnosticContext bdc;
+        BufferedDiagnosticContext bdc{out_sink};
         decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (auto result = maybe_result.get())
         {
@@ -261,7 +286,7 @@ namespace vcpkg
     {
         using ReturnType = ExpectedL<
             typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>;
-        BufferedDiagnosticContext bdc;
+        BufferedDiagnosticContext bdc{out_sink};
         decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (maybe_result)
         {

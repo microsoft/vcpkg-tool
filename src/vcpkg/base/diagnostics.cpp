@@ -163,6 +163,11 @@ namespace vcpkg
 
         return false;
     }
+
+    void BufferedDiagnosticContext::statusln(const LocalizedString& message) { status_sink.println(message); }
+    void BufferedDiagnosticContext::statusln(LocalizedString&& message) { status_sink.println(std::move(message)); }
+    void BufferedDiagnosticContext::statusln(const MessageLine& message) { status_sink.println(message); }
+    void BufferedDiagnosticContext::statusln(MessageLine&& message) { status_sink.println(std::move(message)); }
 } // namespace vcpkg
 
 namespace
@@ -170,6 +175,10 @@ namespace
     struct ConsoleDiagnosticContext : DiagnosticContext
     {
         virtual void report(const DiagnosticLine& line) override { line.print_to(out_sink); }
+        virtual void statusln(const LocalizedString& message) override { out_sink.println(message); }
+        virtual void statusln(LocalizedString&& message) override { out_sink.println(std::move(message)); }
+        virtual void statusln(const MessageLine& message) override { out_sink.println(message); }
+        virtual void statusln(MessageLine&& message) override { out_sink.println(std::move(message)); }
     };
 
     ConsoleDiagnosticContext console_diagnostic_context_instance;
@@ -184,10 +193,12 @@ namespace
 {
     struct NullDiagnosticContext : DiagnosticContext
     {
-        virtual void report(const DiagnosticLine&) override
-        {
-            // intentionally empty
-        }
+        // these are all intentionally empty
+        virtual void report(const DiagnosticLine&) override { }
+        virtual void statusln(const LocalizedString&) override { }
+        virtual void statusln(LocalizedString&&) override { }
+        virtual void statusln(const MessageLine&) override { }
+        virtual void statusln(MessageLine&&) override { }
     };
 
     NullDiagnosticContext null_diagnostic_context_instance;
