@@ -741,7 +741,7 @@ namespace vcpkg
     struct ToolCacheImpl final : ToolCache
     {
         const Filesystem& fs;
-        const std::shared_ptr<const DownloadManager> downloader;
+        AssetCachingSettings download_settings;
         const Path downloads;
         const Path config_path;
         const Path tools;
@@ -751,13 +751,13 @@ namespace vcpkg
         vcpkg::Lazy<std::vector<ToolDataEntry>> m_tool_data_cache;
 
         ToolCacheImpl(const Filesystem& fs,
-                      const std::shared_ptr<const DownloadManager>& downloader,
+                      const AssetCachingSettings& download_settings,
                       Path downloads,
                       Path config_path,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
-            , downloader(downloader)
+            , download_settings(download_settings)
             , downloads(std::move(downloads))
             , config_path(std::move(config_path))
             , tools(std::move(tools))
@@ -814,7 +814,7 @@ namespace vcpkg
             const auto download_path = downloads / tool_data.download_subpath;
             if (!fs.exists(download_path, IgnoreErrors{}))
             {
-                downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
             else
             {
@@ -1095,14 +1095,14 @@ namespace vcpkg
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              std::shared_ptr<const DownloadManager> downloader,
+                                              const AssetCachingSettings& download_settings,
                                               Path downloads,
                                               Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(
-            fs, std::move(downloader), downloads, config_path, tools, abiToolVersionHandling);
+            fs, download_settings, downloads, config_path, tools, abiToolVersionHandling);
     }
 
     struct ToolDataEntryDeserializer final : Json::IDeserializer<ToolDataEntry>

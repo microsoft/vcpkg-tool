@@ -403,8 +403,7 @@ namespace
             {
                 this_error.append_raw('\n')
                     .append_raw(NotePrefix)
-                    .append(msgDependencyInFeature, msg::feature = *feature_name)
-                    ;
+                    .append(msgDependencyInFeature, msg::feature = *feature_name);
             }
 
             errors_sink.println(Color::error, std::move(this_error));
@@ -465,26 +464,26 @@ namespace
             {
                 success = false;
                 errors_sink.println(Color::error,
-                                  LocalizedString::from_raw(scfl.control_path)
-                                      .append_raw(": ")
-                                      .append_raw(ErrorPrefix)
-                                      .append(msgVersionOverrideVersionNotInVersionDatabase1,
-                                              msg::package_name = override_.name,
-                                              msg::version = override_.version)
-                                      .append_raw('\n')
-                                      .append_raw(override_versions_db_entry.versions_file_path)
-                                      .append_raw(": ")
-                                      .append_raw(NotePrefix)
-                                      .append(msgVersionOverrideVersionNotInVersionDatabase2));
+                                    LocalizedString::from_raw(scfl.control_path)
+                                        .append_raw(": ")
+                                        .append_raw(ErrorPrefix)
+                                        .append(msgVersionOverrideVersionNotInVersionDatabase1,
+                                                msg::package_name = override_.name,
+                                                msg::version = override_.version)
+                                        .append_raw('\n')
+                                        .append_raw(override_versions_db_entry.versions_file_path)
+                                        .append_raw(": ")
+                                        .append_raw(NotePrefix)
+                                        .append(msgVersionOverrideVersionNotInVersionDatabase2));
             }
         }
 
         if (success)
         {
             success_sink.println(LocalizedString::from_raw(scfl.control_path)
-                                   .append_raw(": ")
-                                   .append_raw(MessagePrefix)
-                                   .append(msgVersionConstraintOk));
+                                     .append_raw(": ")
+                                     .append_raw(MessagePrefix)
+                                     .append(msgVersionConstraintOk));
         }
 
         return success;

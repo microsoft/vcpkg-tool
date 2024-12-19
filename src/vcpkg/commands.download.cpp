@@ -91,8 +91,8 @@ namespace vcpkg
     void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandDownloadMetadata);
-        DownloadManager download_manager{
-            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
+        auto download_settings =
+            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO);
         auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
 
         auto sha = get_sha512_check(parsed);
@@ -118,7 +118,7 @@ namespace vcpkg
                 msg::println_error(msgMismatchedFiles);
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-            download_manager.put_file_to_mirror(fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
+            put_file_to_mirror(download_settings, fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         else
@@ -138,13 +138,13 @@ namespace vcpkg
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(
-                fs,
-                urls,
-                headers,
-                file,
-                sha,
-                Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink);
+            download_file(download_settings,
+                          fs,
+                          urls,
+                          headers,
+                          file,
+                          sha,
+                          Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink);
             Checks::exit_success(VCPKG_LINE_INFO);
         }
     }

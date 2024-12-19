@@ -459,6 +459,11 @@ namespace vcpkg
         return ret;
     }
 
+    bool AssetCachingSettings::asset_cache_configured() const noexcept
+    {
+        return m_read_url_template.has_value() || m_script.has_value();
+    }
+
     std::vector<ExpectedL<int>> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
     {
         return curl_bulk_operation(
@@ -832,7 +837,8 @@ namespace vcpkg
             const auto maybe_parsed = try_parse_curl_progress_data(line);
             if (const auto parsed = maybe_parsed.get())
             {
-                progress_sink.println(Color::none, LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
+                progress_sink.println(Color::none,
+                                      LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
             }
             else
             {
@@ -980,29 +986,27 @@ namespace vcpkg
         }
     }
 
-    bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
-
-    bool DownloadManager::asset_cache_configured() const { return m_config.m_read_url_template.has_value(); }
-
-    void DownloadManager::download_file(const Filesystem& fs,
-                                        const std::string& url,
-                                        View<std::string> headers,
-                                        const Path& download_path,
-                                        const Optional<std::string>& sha512,
-                                        MessageSink& progress_sink) const
+    void download_file(const AssetCachingSettings& settings,
+                       const Filesystem& fs,
+                       const std::string& url,
+                       View<std::string> headers,
+                       const Path& download_path,
+                       const Optional<std::string>& sha512,
+                       MessageSink& progress_sink)
     {
-        this->download_file(fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
+        download_file(settings, fs, View<std::string>(&url, 1), headers, download_path, sha512, progress_sink);
     }
 
-    std::string DownloadManager::download_file(const Filesystem& fs,
-                                               View<std::string> urls,
-                                               View<std::string> headers,
-                                               const Path& download_path,
-                                               const Optional<std::string>& sha512,
-                                               MessageSink& progress_sink) const
+    std::string download_file(const AssetCachingSettings& download_settings,
+                              const Filesystem& fs,
+                              View<std::string> urls,
+                              View<std::string> headers,
+                              const Path& download_path,
+                              const Optional<std::string>& sha512,
+                              MessageSink& progress_sink)
     {
         std::vector<LocalizedString> errors;
-        bool block_origin_enabled = m_config.m_block_origin;
+        bool block_origin_enabled = download_settings.m_block_origin;
 
         if (urls.size() == 0)
         {
@@ -1018,21 +1022,21 @@ namespace vcpkg
 
         if (auto hash = sha512.get())
         {
-            if (auto read_template = m_config.m_read_url_template.get())
+            if (auto read_template = download_settings.m_read_url_template.get())
             {
                 auto read_url = Strings::replace_all(*read_template, "<SHA>", *hash);
                 if (try_download_file(fs,
                                       read_url,
-                                      m_config.m_read_headers,
+                                      download_settings.m_read_headers,
                                       download_path,
                                       sha512,
-                                      m_config.m_secrets,
+                                      download_settings.m_secrets,
                                       errors,
                                       progress_sink))
                 {
                     msg::println(msgAssetCacheHit,
                                  msg::path = download_path.filename(),
-                                 msg::url = replace_secrets(read_url, m_config.m_secrets));
+                                 msg::url = replace_secrets(read_url, download_settings.m_secrets));
                     return read_url;
                 }
                 else if (block_origin_enabled)
@@ -1044,7 +1048,7 @@ namespace vcpkg
                     msg::println(msgAssetCacheMiss, msg::url = urls[0]);
                 }
             }
-            else if (auto script = m_config.m_script.get())
+            else if (auto script = download_settings.m_script.get())
             {
                 if (urls.size() != 0)
                 {
@@ -1103,19 +1107,20 @@ namespace vcpkg
             {
                 msg::println(msgDownloadingUrl, msg::url = download_path.filename());
                 auto maybe_url = try_download_file(
-                    fs, urls, headers, download_path, sha512, m_config.m_secrets, errors, progress_sink);
+                    fs, urls, headers, download_path, sha512, download_settings.m_secrets, errors, progress_sink);
                 if (auto url = maybe_url.get())
                 {
                     msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
 
                     if (auto hash = sha512.get())
                     {
-                        auto maybe_push = put_file_to_mirror(fs, download_path, *hash);
+                        auto maybe_push = put_file_to_mirror(download_settings, fs, download_path, *hash);
                         if (!maybe_push)
                         {
-                            msg::println_warning(msgFailedToStoreBackToMirror,
-                                                 msg::path = download_path.filename(),
-                                                 msg::url = replace_secrets(download_path.c_str(), m_config.m_secrets));
+                            msg::println_warning(
+                                msgFailedToStoreBackToMirror,
+                                msg::path = download_path.filename(),
+                                msg::url = replace_secrets(download_path.c_str(), download_settings.m_secrets));
                             msg::println(maybe_push.error());
                         }
                     }
@@ -1139,14 +1144,17 @@ namespace vcpkg
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    ExpectedL<int> DownloadManager::put_file_to_mirror(const ReadOnlyFilesystem& fs,
-                                                       const Path& file_to_put,
-                                                       StringView sha512) const
+    ExpectedL<int> put_file_to_mirror(const AssetCachingSettings& download_settings,
+                                      const ReadOnlyFilesystem& fs,
+                                      const Path& file_to_put,
+                                      StringView sha512)
     {
-        auto maybe_mirror_url = Strings::replace_all(m_config.m_write_url_template.value_or(""), "<SHA>", sha512);
+        auto maybe_mirror_url =
+            Strings::replace_all(download_settings.m_write_url_template.value_or(""), "<SHA>", sha512);
         if (!maybe_mirror_url.empty())
         {
-            return put_file(fs, maybe_mirror_url, m_config.m_secrets, m_config.m_write_headers, file_to_put);
+            return put_file(
+                fs, maybe_mirror_url, download_settings.m_secrets, download_settings.m_write_headers, file_to_put);
         }
         return 0;
     }

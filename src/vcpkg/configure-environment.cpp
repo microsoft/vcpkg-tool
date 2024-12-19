@@ -105,7 +105,7 @@ namespace
 
 namespace vcpkg
 {
-    ExpectedL<Path> download_vcpkg_standalone_bundle(const DownloadManager& download_manager,
+    ExpectedL<Path> download_vcpkg_standalone_bundle(const AssetCachingSettings& download_settings,
                                                      const Filesystem& fs,
                                                      const Path& download_root)
     {
@@ -115,15 +115,20 @@ namespace vcpkg
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
             "/vcpkg-standalone-bundle.tar.gz";
-        download_manager.download_file(
-            fs, bundle_uri, {}, bundle_tarball, MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA), null_sink);
+        download_file(download_settings,
+                      fs,
+                      bundle_uri,
+                      {},
+                      bundle_tarball,
+                      MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA),
+                      null_sink);
 #else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
         const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-latest.tar.gz";
         msg::println(Color::warning, msgDownloadingVcpkgStandaloneBundleLatest);
         fs.remove(bundle_tarball, VCPKG_LINE_INFO);
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
-        download_manager.download_file(fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
+        download_file(download_settings, fs, bundle_uri, {}, bundle_tarball, nullopt, null_sink);
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
         return bundle_tarball;
     }
@@ -159,7 +164,7 @@ namespace vcpkg
                 fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
                 auto temp = get_exe_path_of_current_process();
                 temp.replace_filename("vcpkg-artifacts-temp");
-                auto tarball = download_vcpkg_standalone_bundle(paths.get_download_manager(), fs, paths.downloads)
+                auto tarball = download_vcpkg_standalone_bundle(paths.get_download_settings(), fs, paths.downloads)
                                    .value_or_exit(VCPKG_LINE_INFO);
                 set_directory_to_archive_contents(fs, paths.get_tool_cache(), null_sink, tarball, temp);
                 fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);

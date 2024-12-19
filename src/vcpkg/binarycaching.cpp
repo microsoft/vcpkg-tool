@@ -2601,14 +2601,15 @@ namespace vcpkg
     }
 }
 
-ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+ExpectedL<AssetCachingSettings> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
+    AssetCachingSettings result;
+    if (!arg || arg.get()->empty()) return result;
 
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
+    const auto source = format_environment_variable(EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
@@ -2634,27 +2635,22 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
-    Optional<std::string> get_url;
     if (!s.url_templates_to_get.empty())
     {
-        get_url = std::move(s.url_templates_to_get.back());
-    }
-    Optional<std::string> put_url;
-    std::vector<std::string> put_headers;
-    if (!s.azblob_templates_to_put.empty())
-    {
-        put_url = std::move(s.azblob_templates_to_put.back());
-        auto v = azure_blob_headers();
-        put_headers.assign(v.begin(), v.end());
+        result.m_read_url_template = std::move(s.url_templates_to_get.back());
     }
 
-    return DownloadManagerConfig{std::move(get_url),
-                                 std::vector<std::string>{},
-                                 std::move(put_url),
-                                 std::move(put_headers),
-                                 std::move(s.secrets),
-                                 s.block_origin,
-                                 s.script};
+    if (!s.azblob_templates_to_put.empty())
+    {
+        result.m_write_url_template = std::move(s.azblob_templates_to_put.back());
+        auto v = azure_blob_headers();
+        result.m_write_headers.assign(v.begin(), v.end());
+    }
+
+    result.m_secrets = std::move(s.secrets);
+    result.m_block_origin = s.block_origin;
+    result.m_script = std::move(s.script);
+    return result;
 }
 
 ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
@@ -2669,7 +2665,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
         return *err;
     }
 
-    BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
+    BinaryConfigParser env_parser(env_string, format_environment_variable("VCPKG_BINARY_SOURCES"), &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {

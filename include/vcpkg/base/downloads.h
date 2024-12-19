@@ -62,7 +62,7 @@ namespace vcpkg
 
     std::vector<ExpectedL<int>> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
-    struct DownloadManagerConfig
+    struct AssetCachingSettings
     {
         Optional<std::string> m_read_url_template;
         std::vector<std::string> m_read_headers;
@@ -71,40 +71,32 @@ namespace vcpkg
         std::vector<std::string> m_secrets;
         bool m_block_origin = false;
         Optional<std::string> m_script;
+
+        bool asset_cache_configured() const noexcept;
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    struct DownloadManager
-    {
-        DownloadManager() = default;
-        explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
-        explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
+    void download_file(const AssetCachingSettings& download_settings,
+                       const Filesystem& fs,
+                       const std::string& url,
+                       View<std::string> headers,
+                       const Path& download_path,
+                       const Optional<std::string>& sha512,
+                       MessageSink& progress_sink);
 
-        void download_file(const Filesystem& fs,
-                           const std::string& url,
-                           View<std::string> headers,
-                           const Path& download_path,
-                           const Optional<std::string>& sha512,
-                           MessageSink& progress_sink) const;
+    // Returns url that was successfully downloaded from
+    std::string download_file(const AssetCachingSettings& download_settings,
+                              const Filesystem& fs,
+                              View<std::string> urls,
+                              View<std::string> headers,
+                              const Path& download_path,
+                              const Optional<std::string>& sha512,
+                              MessageSink& progress_sink);
 
-        // Returns url that was successfully downloaded from
-        std::string download_file(const Filesystem& fs,
-                                  View<std::string> urls,
-                                  View<std::string> headers,
-                                  const Path& download_path,
-                                  const Optional<std::string>& sha512,
-                                  MessageSink& progress_sink) const;
-
-        ExpectedL<int> put_file_to_mirror(const ReadOnlyFilesystem& fs,
-                                          const Path& file_to_put,
-                                          StringView sha512) const;
-
-        bool get_block_origin() const;
-        bool asset_cache_configured() const;
-
-    private:
-        DownloadManagerConfig m_config;
-    };
+    ExpectedL<int> put_file_to_mirror(const AssetCachingSettings& download_settings,
+                                      const ReadOnlyFilesystem& fs,
+                                      const Path& file_to_put,
+                                      StringView sha512);
 
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 

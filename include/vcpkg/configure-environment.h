@@ -16,7 +16,7 @@
 
 namespace vcpkg
 {
-    ExpectedL<Path> download_vcpkg_standalone_bundle(const DownloadManager& download_manager,
+    ExpectedL<Path> download_vcpkg_standalone_bundle(const AssetCachingSettings& download_settings,
                                                      const Filesystem& fs,
                                                      const Path& download_root);
 
