@@ -77,7 +77,7 @@ namespace vcpkg
             {
                 const double percent =
                     (static_cast<double>(total_downloaded_size) / static_cast<double>(*content_length)) * 100;
-                progress_sink.print(Color::none, fmt::format("{:.2f}%\n", percent));
+                progress_sink.println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
                 last_write = now;
             }
         }
@@ -832,7 +832,7 @@ namespace vcpkg
             const auto maybe_parsed = try_parse_curl_progress_data(line);
             if (const auto parsed = maybe_parsed.get())
             {
-                progress_sink.print(Color::none, fmt::format("{}%\n", parsed->total_percent));
+                progress_sink.println(Color::none, LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
             }
             else
             {

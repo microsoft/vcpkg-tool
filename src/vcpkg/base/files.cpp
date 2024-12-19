@@ -3912,8 +3912,7 @@ namespace vcpkg
             ls.append_indent().append_raw(as_preferred).append_raw('\n');
         }
 
-        ls.append_raw('\n');
-        msg_sink.print(ls);
+        msg_sink.println(ls);
     }
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }

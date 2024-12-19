@@ -1058,7 +1058,7 @@ namespace
                 }
                 else
                 {
-                    out_sink.println_warning(res.error());
+                    msg::println_warning(res.error());
                 }
             }
         }
@@ -1117,7 +1117,7 @@ namespace
                 }
                 else
                 {
-                    msg_sink.println_warning(res.error());
+                    msg_sink.println(warning_prefix().append(std::move(res).error()));
                 }
             }
             return upload_count;

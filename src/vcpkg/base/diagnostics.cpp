@@ -54,35 +54,36 @@ namespace vcpkg
 {
     void DiagnosticLine::print_to(MessageSink& sink) const
     {
-        std::string buf;
-        append_file_prefix(buf, m_origin, m_position);
+        MessageLine buf;
+        {
+            std::string file_prefix;
+            append_file_prefix(file_prefix, m_origin, m_position);
+            buf.print(file_prefix);
+        }
         switch (m_kind)
         {
             case DiagKind::None:
                 // intentionally blank
                 break;
-            case DiagKind::Message: buf.append(MessagePrefix.data(), MessagePrefix.size()); break;
+            case DiagKind::Message: buf.print(MessagePrefix); break;
             case DiagKind::Error:
             {
-                sink.print(Color::none, buf);
-                sink.print(Color::error, "error");
-                buf.assign(ColonSpace.data(), ColonSpace.size());
+                buf.print(Color::error, "error");
+                buf.print(ColonSpace);
             }
             break;
             case DiagKind::Warning:
             {
-                sink.print(Color::none, buf);
-                sink.print(Color::warning, "warning");
-                buf.assign(ColonSpace.data(), ColonSpace.size());
+                buf.print(Color::warning, "warning");
+                buf.print(ColonSpace);
             }
             break;
-            case DiagKind::Note: buf.append(NotePrefix.data(), NotePrefix.size()); break;
+            case DiagKind::Note: buf.print(NotePrefix); break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        buf.append(m_message.data());
-        buf.push_back('\n');
-        sink.print(Color::none, buf);
+        buf.print(m_message);
+        sink.println(buf);
     }
     std::string DiagnosticLine::to_string() const
     {
