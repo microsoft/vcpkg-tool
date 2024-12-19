@@ -96,6 +96,8 @@ namespace vcpkg
             this->report_error(std::move(message));
         }
 
+        void report_system_error(StringLiteral system_api_name, int error_value);
+
         // The `status` family are used to report status or progress information that callers are expected
         // to show on the console, even if it would decide to handle errors or warnings itself.
         // Examples:

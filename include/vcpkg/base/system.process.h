@@ -3,6 +3,7 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/system.process.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
@@ -119,8 +120,23 @@ namespace vcpkg
         std::string stdin_content;
     };
 
-    ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd);
-    ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings);
+    Optional<ExitCodeIntegral> cmd_execute(DiagnosticContext& context, const Command& cmd);
+    inline ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(DiagnosticContext&, const Command&)>(cmd_execute), cmd);
+    }
+    Optional<ExitCodeIntegral> cmd_execute(DiagnosticContext& context,
+                                           const Command& cmd,
+                                           const ProcessLaunchSettings& settings);
+    inline ExpectedL<ExitCodeIntegral> cmd_execute(const Command& cmd, const ProcessLaunchSettings& settings)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(
+                DiagnosticContext&, const Command&, const ProcessLaunchSettings&)>(cmd_execute),
+            cmd,
+            settings);
+    }
 
 #if defined(_WIN32)
     Environment cmd_execute_and_capture_environment(const Command& cmd, const Environment& env);
@@ -128,25 +144,97 @@ namespace vcpkg
 
     void cmd_execute_background(const Command& cmd_line);
 
-    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd);
-    ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd,
-                                                                const RedirectedProcessLaunchSettings& settings);
+    Optional<ExitCodeAndOutput> cmd_execute_and_capture_output(DiagnosticContext& context, const Command& cmd);
+    inline ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeAndOutput> (*)(DiagnosticContext&, const Command&)>(
+                cmd_execute_and_capture_output),
+            cmd);
+    }
+    Optional<ExitCodeAndOutput> cmd_execute_and_capture_output(DiagnosticContext& context,
+                                                               const Command& cmd,
+                                                               const RedirectedProcessLaunchSettings& settings);
+    inline ExpectedL<ExitCodeAndOutput> cmd_execute_and_capture_output(const Command& cmd,
+                                                                       const RedirectedProcessLaunchSettings& settings)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeAndOutput> (*)(
+                DiagnosticContext&, const Command&, const RedirectedProcessLaunchSettings&)>(
+                cmd_execute_and_capture_output),
+            cmd,
+            settings);
+    }
 
     std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands);
     std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
         View<Command> commands, const RedirectedProcessLaunchSettings& settings);
 
-    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
-                                                             const std::function<void(StringView)>& per_line_cb);
-    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
-                                                             const RedirectedProcessLaunchSettings& settings,
-                                                             const std::function<void(StringView)>& per_line_cb);
-
-    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
-                                                            const std::function<void(StringView)>& data_cb);
-    ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
+    Optional<ExitCodeIntegral> cmd_execute_and_stream_lines(DiagnosticContext& context,
+                                                            const Command& cmd,
+                                                            const std::function<void(StringView)>& per_line_cb);
+    inline ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
+                                                                    const std::function<void(StringView)>& per_line_cb)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(
+                DiagnosticContext&, const Command&, const std::function<void(StringView)>&)>(
+                cmd_execute_and_stream_lines),
+            cmd,
+            per_line_cb);
+    }
+    Optional<ExitCodeIntegral> cmd_execute_and_stream_lines(DiagnosticContext& context,
+                                                            const Command& cmd,
                                                             const RedirectedProcessLaunchSettings& settings,
-                                                            const std::function<void(StringView)>& data_cb);
+                                                            const std::function<void(StringView)>& per_line_cb);
+    inline ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_lines(const Command& cmd,
+                                                                    const RedirectedProcessLaunchSettings& settings,
+                                                                    const std::function<void(StringView)>& per_line_cb)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(DiagnosticContext&,
+                                                       const Command&,
+                                                       const RedirectedProcessLaunchSettings&,
+                                                       const std::function<void(StringView)>&)>(
+                cmd_execute_and_stream_lines),
+            cmd,
+            settings,
+            per_line_cb);
+    }
+
+    Optional<ExitCodeIntegral> cmd_execute_and_stream_data(DiagnosticContext& context,
+                                                           const Command& cmd,
+                                                           const std::function<void(StringView)>& data_cb);
+    inline ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
+                                                                   const std::function<void(StringView)>& data_cb)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(
+                DiagnosticContext&, const Command&, const std::function<void(StringView)>&)>(
+                cmd_execute_and_stream_data),
+            cmd,
+            data_cb);
+    }
+
+    Optional<ExitCodeIntegral> cmd_execute_and_stream_data(DiagnosticContext& context,
+                                                           const Command& cmd,
+                                                           const RedirectedProcessLaunchSettings& settings,
+                                                           const std::function<void(StringView)>& data_cb);
+
+    inline ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
+                                                                   const RedirectedProcessLaunchSettings& settings,
+                                                                   const std::function<void(StringView)>& data_cb)
+    {
+        return adapt_context_to_expected(
+            static_cast<Optional<ExitCodeIntegral> (*)(DiagnosticContext&,
+                                                       const Command&,
+                                                       const RedirectedProcessLaunchSettings&,
+                                                       const std::function<void(StringView)>&)>(
+                cmd_execute_and_stream_data),
+            cmd,
+            settings,
+            data_cb);
+    }
 
     uint64_t get_subproccess_stats();
 
@@ -170,9 +258,13 @@ namespace vcpkg
 
     // If exit code is 0, returns a 'success' ExpectedL.
     // Otherwise, returns an ExpectedL containing error text
-    ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>&, StringView tool_name);
+    ExpectedL<Unit> flatten(const ExpectedL<ExitCodeAndOutput>& maybe_exit, StringView tool_name);
 
     // If exit code is 0, returns a 'success' ExpectedL containing the output
     // Otherwise, returns an ExpectedL containing error text
-    ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&&, StringView tool_name);
+    ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&& maybe_exit, StringView tool_name);
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      StringView exe_path);
 }

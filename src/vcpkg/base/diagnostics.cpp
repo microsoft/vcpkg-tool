@@ -2,6 +2,8 @@
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/message_sinks.h>
 
+#include <system_error>
+
 #include <fmt/compile.h>
 
 using namespace vcpkg;
@@ -52,6 +54,14 @@ namespace
 
 namespace vcpkg
 {
+    void DiagnosticContext::report_system_error(StringLiteral system_api_name, int error_value)
+    {
+        report_error(msgSystemApiErrorMessage,
+                     msg::system_api = system_api_name,
+                     msg::exit_code = error_value,
+                     msg::error_msg = std::system_category().message(error_value));
+    }
+
     void DiagnosticLine::print_to(MessageSink& sink) const
     {
         MessageLine buf;

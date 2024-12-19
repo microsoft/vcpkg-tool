@@ -2600,6 +2600,7 @@ DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
                 "{tool_name} failed with exit code: ({exit_code}).")
+DECLARE_MESSAGE(ProgramPathReturnedNonzeroExitCode, (msg::exit_code), "", "failed with exit code {exit_code}")
 DECLARE_MESSAGE(
     ProvideExportType,
     (),

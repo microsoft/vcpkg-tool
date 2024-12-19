@@ -1363,6 +1363,8 @@
   "_PortsUpdated.comment": "An example of {count} is 42.",
   "PrebuiltPackages": "There are packages that have not been built. To build them run:",
   "PreviousIntegrationFileRemains": "Previous integration file was not removed.",
+  "ProgramPathReturnedNonzeroExitCode": "failed with exit code {exit_code}",
+  "_ProgramPathReturnedNonzeroExitCode.comment": "An example of {exit_code} is 127.",
   "ProgramReturnedNonzeroExitCode": "{tool_name} failed with exit code: ({exit_code}).",
   "_ProgramReturnedNonzeroExitCode.comment": "The program's console output is appended after this. An example of {tool_name} is aria2. An example of {exit_code} is 127.",
   "ProvideExportType": "At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.",
