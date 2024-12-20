@@ -2740,6 +2740,11 @@ DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
                 "",
                 "Expected the SystemRoot environment variable to be always set on Windows.")
 DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}")
+DECLARE_MESSAGE(
+    ToolHashMismatch,
+    (msg::tool_name, msg::expected, msg::actual),
+    "{expected} and {actual} are SHA512 hashes in hex format.",
+    "{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}")
 DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.")
 DECLARE_MESSAGE(ToolOfVersionXNotFound,

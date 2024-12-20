@@ -350,14 +350,6 @@ namespace vcpkg
         return Unit{};
     }
 
-    void verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
-                                     StringView url,
-                                     const Path& downloaded_path,
-                                     StringView sha512)
-    {
-        try_verify_downloaded_file_hash(fs, url, downloaded_path, sha512).value_or_exit(VCPKG_LINE_INFO);
-    }
-
     static ExpectedL<Unit> check_downloaded_file_hash(const ReadOnlyFilesystem& fs,
                                                       const Optional<std::string>& hash,
                                                       StringView sanitized_url,

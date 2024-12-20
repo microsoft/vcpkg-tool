@@ -3,6 +3,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/message_sinks.h>
@@ -812,13 +813,25 @@ namespace vcpkg
                                 msg::version = version_as_string);
 
             const auto download_path = downloads / tool_data.download_subpath;
-            if (!fs.exists(download_path, IgnoreErrors{}))
+            const auto maybe_actual_hash =
+                get_maybe_file_hash(fs, download_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
+            if (const auto actual_hash = maybe_actual_hash.get())
             {
-                download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                if (!Strings::case_insensitive_ascii_equals(tool_data.sha512, *actual_hash))
+                {
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  LocalizedString::from_raw(download_path)
+                                                      .append_raw(": ")
+                                                      .append_raw(ErrorPrefix)
+                                                      .append(msgToolHashMismatch,
+                                                              msg::tool_name = tool_data.name,
+                                                              msg::expected = tool_data.sha512,
+                                                              msg::actual = *actual_hash));
+                }
             }
             else
             {
-                verify_downloaded_file_hash(fs, tool_data.url, download_path, tool_data.sha512);
+                download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
             }
 
             const auto tool_dir_path = tools / tool_data.tool_dir_subpath;

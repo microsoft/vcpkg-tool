@@ -555,15 +555,33 @@ namespace vcpkg::Hash
 
     ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
     {
+        return get_maybe_file_hash(fs, path, algo)
+            .then([&](Optional<std::string>&& maybe_hash) -> ExpectedL<std::string> {
+                if (auto hash = maybe_hash.get())
+                {
+                    return std::move(*hash);
+                }
+
+                return error_prefix().append(msgHashFileFailureToRead, msg::path = path);
+            });
+    }
+
+    ExpectedL<Optional<std::string>> get_maybe_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
+    {
         Debug::println("Trying to hash ", path);
         std::error_code ec;
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
+            if (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory)
+            {
+                return nullopt;
+            }
+
             return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
         }
 
-        return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
+        return do_hash<ExpectedL<Optional<std::string>>>(algo, [&](Hasher& hasher) -> ExpectedL<Optional<std::string>> {
             constexpr std::size_t buffer_size = 1024 * 32;
             char buffer[buffer_size];
             do

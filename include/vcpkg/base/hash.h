@@ -33,5 +33,15 @@ namespace vcpkg::Hash
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo);
     std::string get_string_hash(StringView s, Algorithm algo);
     std::string get_string_sha256(StringView s);
-    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& target, Algorithm algo);
+    // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
+    // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
+    // Otherwise, returns the read operation error.
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo);
+    // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
+    // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
+    // Otherwise, if the file does not exist, returns a disengaged optional.
+    // Otherwise, returns the read operation error.
+    ExpectedL<Optional<std::string>> get_maybe_file_hash(const ReadOnlyFilesystem& fs,
+                                                         const Path& path,
+                                                         Algorithm algo);
 }
