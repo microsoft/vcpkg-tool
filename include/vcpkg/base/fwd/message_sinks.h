@@ -11,4 +11,5 @@ namespace vcpkg
 
     struct FileSink;
     struct CombiningSink;
+    struct BGMessageSink;
 }

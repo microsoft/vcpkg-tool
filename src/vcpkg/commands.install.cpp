@@ -597,6 +597,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.install_actions)
         {
+            binary_cache.print_push_success_messages();
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
@@ -611,6 +612,7 @@ namespace vcpkg
                         VCPKG_LINE_INFO);
                     return issue_body_path;
                 }));
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1408,7 +1410,7 @@ namespace vcpkg
                 install_print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
-
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
     }
 
