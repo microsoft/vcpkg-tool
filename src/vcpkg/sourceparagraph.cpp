@@ -753,7 +753,7 @@ namespace vcpkg
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin, {0, 0}) { }
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {

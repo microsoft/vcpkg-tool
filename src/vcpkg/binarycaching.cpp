@@ -640,7 +640,7 @@ namespace
                     file_handle.try_seek_to(cur_size).value_or_exit(VCPKG_LINE_INFO);
                     std::error_code ec;
                     auto file_content = file_handle.read_to_end(ec);
-                    ParserBase parser(file_content, file);
+                    ParserBase parser(file_content, file, {0, 0});
                     while (!parser.at_eof())
                     {
                         auto start = parser.it().pointer_to_current();
@@ -1922,7 +1922,7 @@ namespace
     struct BinaryConfigParser : ConfigSegmentsParser
     {
         BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 
@@ -2374,7 +2374,7 @@ namespace
     struct AssetSourcesParser : ConfigSegmentsParser
     {
         AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 

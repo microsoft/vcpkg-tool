@@ -86,7 +86,7 @@ namespace vcpkg
         };
 
         std::vector<GitStatusLine> results;
-        ParserBase parser(output, "git status");
+        ParserBase parser(output, "git status", {0, 0});
         while (!parser.at_eof())
         {
             GitStatusLine result;

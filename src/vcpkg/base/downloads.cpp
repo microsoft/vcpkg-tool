@@ -483,11 +483,26 @@ namespace vcpkg
                                    secrets);
     }
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot)
+    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot)
     {
         static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
+        std::string uri;
+        if (auto github_server_url = maybe_github_server_url.get())
+        {
+            uri = *github_server_url;
+            uri.append("/api/v3");
+        }
+        else
+        {
+            uri = "https://api.github.com";
+        }
+
+        fmt::format_to(
+            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
         auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
@@ -497,8 +512,7 @@ namespace vcpkg
         std::string res = "Authorization: Bearer " + github_token;
         cmd.string_arg("-H").string_arg(res);
         cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
-        cmd.string_arg(Strings::concat(
-            "https://api.github.com/repos/", url_encode_spaces(github_repository), "/dependency-graph/snapshots"));
+        cmd.string_arg(uri);
         cmd.string_arg("-d").string_arg("@-");
 
         RedirectedProcessLaunchSettings settings;
@@ -974,6 +988,7 @@ namespace vcpkg
                     RedirectedProcessLaunchSettings settings;
                     settings.environment = get_clean_environment();
                     settings.echo_in_debug = EchoInDebug::Show;
+
                     auto maybe_res = flatten(cmd_execute_and_capture_output(cmd, settings), "<mirror-script>");
                     if (maybe_res)
                     {
@@ -982,14 +997,14 @@ namespace vcpkg
                         if (maybe_success)
                         {
                             fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                            msg::println(msgDownloadSuccesful, msg::path = download_path.filename());
                             return urls[0];
                         }
-
-                        errors.push_back(std::move(maybe_success).error());
+                        msg::println_error(maybe_success.error());
                     }
                     else
                     {
-                        errors.push_back(std::move(maybe_res).error());
+                        msg::println_error(maybe_res.error());
                     }
                 }
             }
