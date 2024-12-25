@@ -383,10 +383,9 @@ finally
     Pop-Location
 }
 
-
 # test builtin registry
 Write-Trace "test builtin registry with baseline"
-$manifestDir = "$TestingRoot/manifest"
+$manifestDir = "$TestingRoot/manifest-builtin"
 
 New-Item -Path $manifestDir -ItemType Directory
 $manifestDir = (Get-Item $manifestDir).FullName
@@ -405,6 +404,152 @@ try
 
     Run-Vcpkg search @commonArgs zlib
     Throw-IfFailed
+}
+finally
+{
+    Pop-Location
+}
+
+
+# test nonexistent overrides regression (https://github.com/microsoft/vcpkg/issues/36994)
+Write-Trace "test nonexistent overrides regression"
+$manifestDir = "$TestingRoot/manifest-nonexistent-override"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $vcpkgJson = @{
+        "name" = "manifest-test";
+        "version" = "1.0.0";
+        "dependencies" = @(
+            "nonexistent"
+        );
+        "overrides" = @(@{
+            "name" = "nonexistent";
+            "version" = "0";
+        });
+        "vcpkg-configuration" = @{
+            "default-registry" = @{
+                "kind" = "git";
+                "repository" = "https://github.com/microsoft/vcpkg";
+                "baseline" = "a4b5cde7f504c1bbbbc455f4a6ee60efd9034772";
+            };
+        };
+    }
+
+    New-Item -Path 'vcpkg.json' -ItemType File `
+        -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    $out = Run-VcpkgAndCaptureOutput install @commonArgs
+    Throw-IfNotFailed
+    if (-not $out.Contains("error: nonexistent does not exist")) {
+        throw "Expected nonexistent package to be mentioned in the output"
+    }
+}
+finally
+{
+    Pop-Location
+}
+
+# test x-update-baseline reference in registry
+Write-Trace "test x-update-baseline reference in registry"
+$manifestDir = "$TestingRoot/update-baseline-registry-reference"
+
+New-Item -Path $manifestDir -ItemType Directory
+$manifestDir = (Get-Item $manifestDir).FullName
+
+Push-Location $manifestDir
+try
+{
+    $gitMainBranch = 'master'
+    $gitSecondaryBranch = 'secondary'
+
+    $CurrentTest = 'git init .'
+    git @gitConfigOptions init .
+    Throw-IfFailed
+
+    $vcpkgBaseline = @{
+        "default" = @{
+        }
+    }
+
+    New-Item -Path './ports' -ItemType Directory
+    New-Item -Path './versions' -ItemType Directory
+
+    New-Item -Path './versions/baseline.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgBaseline)
+
+    $CurrentTest = 'git add versions/baseline.json'
+    git @gitConfigOptions add versions/baseline.json
+    Throw-IfFailed
+
+    $CurrentTest = 'git commit initial commit'
+    git @gitConfigOptions commit -m "initial commit"
+    Throw-IfFailed
+
+    $vcpkgConfigurationJson = @{
+        "default-registry"= @{
+            "kind" = "git";
+            "baseline" = "";
+            "repository" = $manifestDir;
+        }
+    }
+
+    $vcpkgJson = @{}
+    New-Item -Path './vcpkg-configuration.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson)
+    New-Item -Path './vcpkg.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson)
+
+    $CurrentTest = 'vcpkg x-update-baseline'
+    $out = Run-VcpkgAndCaptureOutput x-update-baseline
+    Throw-IfFailed
+
+    $CurrentTest = 'git rev-parse HEAD'
+    $registryBaseline = git rev-parse HEAD
+    Throw-IfFailed
+
+    $configurationBefore = Get-Content "$manifestDir/vcpkg-configuration.json" | ConvertFrom-Json -AsHashTable
+    if ($configurationBefore["default-registry"]["baseline"] -ne $registryBaseline) {
+        throw "x-update-baseline baseline mismatch"
+    }
+
+    $CurrentTest = 'git checkout secondary branch'
+    git @gitConfigOptions checkout -b $gitSecondaryBranch
+    Throw-IfFailed
+
+    $CurrentTest = 'git commit empty commit'
+    git @gitConfigOptions commit --allow-empty -m "empty commit"
+    Throw-IfFailed
+
+    $CurrentTest = 'git checkout main branch'
+    git @gitConfigOptions checkout $gitMainBranch
+    Throw-IfFailed
+
+    $vcpkgConfigurationJson = @{
+        "default-registry"= @{
+            "kind" = "git";
+            "baseline" = "";
+            "repository" = $manifestDir;
+            "reference" = "secondary";
+        }
+    }
+
+    New-Item -Path './vcpkg-configuration.json' -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgConfigurationJson) -Force
+
+    $CurrentTest = 'git rev-parse branch'
+    $refBaseline = git rev-parse $gitSecondaryBranch
+    Throw-IfFailed
+
+    $CurrentTest = 'vcpkg x-update-baseline on reference'
+    $out = Run-VcpkgAndCaptureOutput x-update-baseline
+    Throw-IfFailed
+
+    $configurationBefore = Get-Content "$manifestDir/vcpkg-configuration.json" | ConvertFrom-Json -AsHashTable
+
+    if ($configurationBefore["default-registry"]["baseline"] -ne $refBaseline) {
+        throw "Unexpected baseline mismatch on reference branch"
+    }
 }
 finally
 {

@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.acquire.h>
@@ -9,10 +10,8 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_VERSION = "version";
-
     constexpr CommandMultiSetting AcquireMultiOptions[] = {
-        {OPTION_VERSION, msgArtifactsOptionVersion},
+        {SwitchVersion, msgArtifactsOptionVersion},
     };
 } // unnamed namespace
 
@@ -36,7 +35,7 @@ namespace vcpkg
         std::vector<std::string> ecmascript_args;
         ecmascript_args.emplace_back("acquire");
         forward_common_artifacts_arguments(ecmascript_args, parsed);
-        auto maybe_versions = Util::lookup_value(parsed.multisettings, OPTION_VERSION);
+        auto maybe_versions = Util::lookup_value(parsed.multisettings, SwitchVersion);
         if (auto versions = maybe_versions.get())
         {
             if (versions->size() != parsed.command_arguments.size())

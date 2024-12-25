@@ -42,9 +42,9 @@ $b = @{
     downloads = Join-Path $VcpkgRoot "downloads"
     packages = Join-Path $VcpkgRoot "packages"
     installed = Join-Path $VcpkgRoot "installed"
-    versions_output = Join-Path $VcpkgRoot "buildtrees" "versioning_" "versions"
+    'versions-output' = Join-Path $VcpkgRoot "buildtrees" "versioning_" "versions"
     tools = Join-Path $VcpkgRoot "downloads" "tools"
-    vcpkg_root = $VcpkgRoot
+    'vcpkg-root' = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -67,9 +67,9 @@ $b = @{
     downloads = Join-Path $cache_home "vcpkg" "downloads"
     packages = $null
     installed = $null
-    versions_output = $null
+    'versions-output' = $null
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $VcpkgRoot
+    'vcpkg-root' = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -97,10 +97,10 @@ $b = @{
     downloads = Join-Path $cache_home "vcpkg" "downloads"
     packages = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "pkgs"
     installed = Join-Path $manifestdir "vcpkg_installed"
-    versions_output = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "blds" "versioning_" "versions"
+    'versions-output' = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "blds" "versioning_" "versions"
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $VcpkgRoot
-    manifest_mode_enabled = $True
+    'vcpkg-root' = $VcpkgRoot
+    'manifest-mode-enabled' = $True
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -137,10 +137,10 @@ $b = @{
     downloads = Join-Path $cache_home "vcpkg" "downloads"
     packages = $packagesRoot
     installed = $installRoot
-    versions_output = Join-Path $buildtreesRoot "versioning_" "versions"
+    'versions-output' = Join-Path $buildtreesRoot "versioning_" "versions"
     tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
-    vcpkg_root = $VcpkgRoot
-    manifest_mode_enabled = $True
+    'vcpkg-root' = $VcpkgRoot
+    'manifest-mode-enabled' = $True
 }
 foreach ($k in $b.keys) {
     if ($a[$k] -ne $b[$k]) {
@@ -198,7 +198,7 @@ Run-Vcpkg search vcpkg-hello-world-1 @commonArgs `
 Throw-IfFailed
 
 # Test CI environment detection
-$detected_ci_key = 'detected_ci_environment'
+$detected_ci_key = 'detected-ci-environment'
 $known_ci_vars = (
     "env:VCPKG_NO_CI",
     "env:TF_BUILD",

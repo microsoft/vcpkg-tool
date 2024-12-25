@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.process.h>
@@ -17,7 +18,7 @@
 
 namespace vcpkg::Prefab
 {
-    static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, const std::string& ext)
+    static std::vector<Path> find_modules(const VcpkgPaths& system, const Path& root, StringLiteral ext)
     {
         const Filesystem& fs = system.get_filesystem();
         std::error_code ec;
@@ -35,12 +36,7 @@ namespace vcpkg::Prefab
         return paths;
     }
 
-    std::string NdkVersion::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string NdkVersion::to_string() const { return adapt_to_string(*this); }
     void NdkVersion::to_string(std::string& out) const
     {
         out.append("NdkVersion{major=")
@@ -216,20 +212,26 @@ namespace vcpkg::Prefab
             msg::println(Color::warning, msgDeprecatedPrefabDebugOption);
         }
         Debug::print("Installing POM and AAR file to ~/.m2");
-        auto cmd_line = Command(Tools::MAVEN);
+        auto cmd = Command{Tools::MAVEN};
         if (!prefab_options.enable_debug)
         {
-            cmd_line.string_arg("-q");
+            cmd.string_arg("-q");
         }
-        cmd_line.string_arg("install:install-file")
+
+        cmd.string_arg("install:install-file")
             .string_arg(Strings::concat("-Dfile=", aar))
             .string_arg(Strings::concat("-DpomFile=", pom));
-        const int exit_code = cmd_execute_clean(cmd_line).value_or_exit(VCPKG_LINE_INFO);
 
-        if (!(exit_code == 0))
+        ProcessLaunchSettings settings;
+        settings.environment = get_clean_environment();
+        const auto exit_code = cmd_execute(cmd, settings).value_or_exit(VCPKG_LINE_INFO);
+        if (exit_code != 0)
         {
-            msg::println_error(msgInstallingMavenFile, msg::path = aar);
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                        msgInstallingMavenFileFailure,
+                                        msg::path = aar,
+                                        msg::command_line = cmd.command_line(),
+                                        msg::exit_code = exit_code);
         }
     }
 
@@ -275,11 +277,11 @@ namespace vcpkg::Prefab
         std::unordered_map<Triplet, std::string> triplet_abi_map;
         std::unordered_map<Triplet, int> triplet_api_map;
 
-        for (auto& triplet_file : triplet_db.available_triplets)
+        for (const auto& triplet_file : triplet_db.available_triplets)
         {
             if (triplet_file.name.size() > 0)
             {
-                Triplet triplet = Triplet::from_canonical_name(std::move(triplet_file.name));
+                Triplet triplet = Triplet::from_canonical_name(triplet_file.name);
                 auto triplet_build_info = build_info_from_triplet(paths, provider, triplet);
                 if (is_supported(*triplet_build_info))
                 {
@@ -299,7 +301,7 @@ namespace vcpkg::Prefab
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, required_archs.empty(), msgExportArchitectureReq);
 
-        Optional<std::string> android_ndk_home = get_environment_variable("ANDROID_NDK_HOME");
+        Optional<std::string> android_ndk_home = get_environment_variable(EnvironmentVariableAndroidNdkHome);
 
         if (!android_ndk_home.has_value())
         {
@@ -319,7 +321,7 @@ namespace vcpkg::Prefab
         Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
                                         fs.exists(ndk_location, IgnoreErrors{}),
                                         msgAndroidHomeDirMissingProps,
-                                        msg::env_var = format_environment_variable("ANDROID_NDK_HOME"),
+                                        msg::env_var = format_environment_variable(EnvironmentVariableAndroidNdkHome),
                                         msg::path = source_properties_location);
 
         std::string content = fs.read_contents(source_properties_location, VCPKG_LINE_INFO);
@@ -431,8 +433,8 @@ namespace vcpkg::Prefab
 
             const auto share_root = paths.packages() / fmt::format("{}_{}", name, action.spec.triplet());
 
-            fs.copy_file(share_root / "share" / name / "copyright",
-                         meta_dir / "LICENSE",
+            fs.copy_file(share_root / FileShare / name / FileCopyright,
+                         meta_dir / FileLicense,
                          CopyOptions::overwrite_existing,
                          IgnoreErrors{});
 

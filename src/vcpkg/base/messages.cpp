@@ -123,6 +123,7 @@ namespace vcpkg
     LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
     LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
     LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
+    LocalizedString info_prefix() { return LocalizedString::from_raw(InfoPrefix); }
     LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
     LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
@@ -157,18 +158,23 @@ namespace vcpkg
     {
         static constexpr const size_t max_number_of_args = 5;
 
+        struct ExamplesArray
+        {
+            const StringLiteral* examples[max_number_of_args];
+        };
+
         struct MessageData
         {
             StringLiteral name;
-            std::array<const StringLiteral*, max_number_of_args> arg_examples;
+            ExamplesArray arg_examples;
             const char* comment;
             StringLiteral builtin_message;
         };
 
         template<class... Args>
-        constexpr std::array<const StringLiteral*, max_number_of_args> make_arg_examples_array(Args...)
+        constexpr ExamplesArray make_arg_examples_array(Args...)
         {
-            return std::array<const StringLiteral*, max_number_of_args>{&ArgExample<Args>::example...};
+            return ExamplesArray{&ArgExample<Args>::example...};
         }
 
         constexpr MessageData message_data[] = {
@@ -204,7 +210,7 @@ namespace vcpkg
             {
                 if (index >= detail::number_of_messages) Checks::unreachable(VCPKG_LINE_INFO);
                 std::string msg = message_data[index].comment;
-                for (auto&& ex : message_data[index].arg_examples)
+                for (auto&& ex : message_data[index].arg_examples.examples)
                 {
                     if (ex == nullptr || ex->empty()) continue;
                     if (!msg.empty()) msg.push_back(' ');

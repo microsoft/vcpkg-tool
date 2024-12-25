@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/span.h>
@@ -6,6 +7,7 @@
 
 #include <vcpkg/commands.find.h>
 #include <vcpkg/configure-environment.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -25,10 +27,11 @@ namespace
         {
             auto& source_paragraph = scf->core_paragraph;
             Json::Object& library_obj = obj.insert(source_paragraph->name, Json::Object());
-            library_obj.insert("package_name", Json::Value::string(source_paragraph->name));
-            library_obj.insert("version", Json::Value::string(source_paragraph->version.text));
-            library_obj.insert("port_version", Json::Value::integer(source_paragraph->version.port_version));
-            Json::Array& desc = library_obj.insert("description", Json::Array());
+            library_obj.insert(JsonIdPackageUnderscoreName, Json::Value::string(source_paragraph->name));
+            library_obj.insert(JsonIdVersion, Json::Value::string(source_paragraph->version.text));
+            library_obj.insert(JsonIdPortUnderscoreVersion,
+                               Json::Value::integer(source_paragraph->version.port_version));
+            Json::Array& desc = library_obj.insert(JsonIdDescription, Json::Array());
             for (const auto& line : source_paragraph->description)
             {
                 desc.push_back(Json::Value::string(line));
@@ -98,12 +101,9 @@ namespace
         }
     }
 
-    constexpr StringLiteral OPTION_FULLDESC = "x-full-desc"; // TODO: This should find a better home, eventually
-    constexpr StringLiteral OPTION_JSON = "x-json";
-
     constexpr CommandSwitch FindSwitches[] = {
-        {OPTION_FULLDESC, msgHelpTextOptFullDesc},
-        {OPTION_JSON, msgJsonSwitch},
+        {SwitchXFullDesc, msgHelpTextOptFullDesc},
+        {SwitchXJson, msgJsonSwitch},
     };
 
     void perform_find_artifact_and_exit(const VcpkgPaths& paths,
@@ -133,12 +133,12 @@ namespace vcpkg
                                     bool full_description,
                                     bool enable_json,
                                     Optional<StringView> filter,
-                                    View<std::string> overlay_ports)
+                                    View<Path> overlay_ports)
     {
         Checks::check_exit(VCPKG_LINE_INFO, msg::default_output_stream == OutputStream::StdErr);
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, overlay_ports));
         auto source_paragraphs =
             Util::fmap(provider.load_all_control_files(),
                        [](auto&& port) -> const SourceControlFile* { return port->source_control_file.get(); });
@@ -229,8 +229,8 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandFindMetadata);
-        const bool full_description = Util::Sets::contains(options.switches, OPTION_FULLDESC);
-        const bool enable_json = Util::Sets::contains(options.switches, OPTION_JSON);
+        const bool full_description = Util::Sets::contains(options.switches, SwitchXFullDesc);
+        const bool enable_json = Util::Sets::contains(options.switches, SwitchXJson);
         auto&& selector = options.command_arguments[0];
         Optional<StringView> filter;
         if (options.command_arguments.size() == 2)
@@ -244,7 +244,7 @@ namespace vcpkg
             {
                 msg::write_unlocalized_text_to_stderr(
                     Color::warning,
-                    msg::format_warning(msgArtifactsOptionIncompatibility, msg::option = OPTION_FULLDESC)
+                    msg::format_warning(msgArtifactsOptionIncompatibility, msg::option = SwitchXFullDesc)
                         .append_raw('\n'));
             }
 
@@ -264,12 +264,12 @@ namespace vcpkg
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
-            perform_find_artifact_and_exit(paths, filter, Util::lookup_value(options.settings, OPTION_VERSION));
+            perform_find_artifact_and_exit(paths, filter, Util::lookup_value(options.settings, SwitchVersion));
         }
 
         if (selector == "port")
         {
-            if (Util::Maps::contains(options.settings, OPTION_VERSION))
+            if (Util::Maps::contains(options.settings, SwitchVersion))
             {
                 Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFindVersionArtifactsOnly);
             }
@@ -286,6 +286,8 @@ namespace vcpkg
             perform_find_port_and_exit(paths, full_description, enable_json, filter, paths.overlay_ports);
         }
 
-        Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddCommandFirstArg);
+        Checks::msg_exit_with_error(
+            VCPKG_LINE_INFO,
+            msg::format(msgFindCommandFirstArg).append_raw('\n').append(msgSeeURL, msg::url = docs::add_command_url));
     }
 } // namespace vcpkg

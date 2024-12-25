@@ -1,4 +1,5 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.generate-msbuild-props.h>
@@ -9,10 +10,8 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral OPTION_MSBUILD_PROPS = "msbuild-props";
-
     constexpr CommandSetting GenerateMSBuildPropsOptions[] = {
-        {OPTION_MSBUILD_PROPS, msgArtifactsOptionMSBuildProps},
+        {SwitchMSBuildProps, msgArtifactsOptionMSBuildProps},
     };
 } // unnamed namespace
 
@@ -38,9 +37,9 @@ namespace vcpkg
 
         forward_common_artifacts_arguments(ecmascript_args, parsed);
 
-        if (!Util::Maps::contains(parsed.settings, OPTION_MSBUILD_PROPS))
+        if (!Util::Maps::contains(parsed.settings, SwitchMSBuildProps))
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = OPTION_MSBUILD_PROPS);
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgOptionRequiresAValue, msg::option = SwitchMSBuildProps);
         }
 
         Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ecmascript_args));

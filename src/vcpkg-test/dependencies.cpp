@@ -1,9 +1,13 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/contractual-constants.h>
+
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 
 #include <memory>
 #include <vector>
@@ -216,14 +220,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         s_empty_mock_overlay,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        s_empty_mock_overlay,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -234,14 +239,15 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(provider,
-                                         bprovider,
-                                         oprovider,
-                                         var_provider,
-                                         deps,
-                                         overrides,
-                                         toplevel,
-                                         {Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error});
+    return create_versioned_install_plan(
+        provider,
+        bprovider,
+        oprovider,
+        var_provider,
+        deps,
+        overrides,
+        toplevel,
+        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -440,11 +446,11 @@ TEST_CASE ("version string baseline agree", "[versionplan]")
 TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
 {
     MockBaselineProvider bp;
-    bp.v["a"] = {"2", 0};
+    bp.v["a"] = {"2with\"quotes", 0};
 
     MockVersionedPortfileProvider vp;
     vp.emplace("a", {"1", 0});
-    vp.emplace("a", {"2", 0});
+    vp.emplace("a", {"2with\"quotes", 0});
     vp.emplace("a", {"3", 0});
 
     MockCMakeVarProvider var_provider;
@@ -462,17 +468,19 @@ TEST_CASE ("version install scheme baseline conflict", "[versionplan]")
     REQUIRE(!install_plan.has_value());
     REQUIRE_LINES(
         install_plan.error(),
-        R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2.
+        R"(error: version conflict on a:x86-windows: toplevel-spec required 3, which cannot be compared with the baseline version 2with"quotes.
 
 Both versions have scheme string but different primary text.
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "2" }
+    {
+      "name": "a",
+      "version": "2with\"quotes"
+    }
   ]
-
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+            docs::troubleshoot_versioning_url + R"( for more information.)");
 }
 
 TEST_CASE ("version install string port version", "[versionplan]")
@@ -1105,12 +1113,14 @@ The versions have incomparable schemes:
   a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "1.0.0" }
+    {
+      "name": "a",
+      "version": "1.0.0"
+    }
   ]
-
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("higher baseline")
     {
@@ -1135,12 +1145,14 @@ The versions have incomparable schemes:
   a@1.0.1 has scheme string
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "a", "version": "1.0.2" }
+    {
+      "name": "a",
+      "version": "1.0.2"
+    }
   ]
-
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
 }
 
@@ -1227,12 +1239,14 @@ The versions have incomparable schemes:
   b@1#1 has scheme relaxed
 
 This can be resolved by adding an explicit override to the preferred version. For example:
-
   "overrides": [
-    { "name": "b", "version": "1" }
+    {
+      "name": "b",
+      "version": "1"
+    }
   ]
-
-See `vcpkg help versioning` or https://learn.microsoft.com/vcpkg/users/versioning for more information.)");
+See `vcpkg help versioning` or )" +
+                docs::troubleshoot_versioning_url + R"( for more information.)");
     }
     SECTION ("lower baseline")
     {
@@ -1552,8 +1566,8 @@ TEST_CASE ("version install overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 0};
 
-    DependencyOverride bdo{"b", Version{"1", 0}, VersionScheme::String};
-    DependencyOverride cdo{"c", Version{"1", 0}, VersionScheme::String};
+    DependencyOverride bdo{"b", Version{"1", 0}};
+    DependencyOverride cdo{"c", Version{"1", 0}};
     SECTION ("string")
     {
         auto install_plan =
@@ -1592,8 +1606,8 @@ TEST_CASE ("version install transitive overrides", "[versionplan]")
     bp.v["b"] = {"2", 0};
     bp.v["c"] = {"2", 1};
 
-    DependencyOverride bdo{"b", Version{"1", 0}, VersionScheme::String};
-    DependencyOverride cdo{"c", Version{"1", 0}, VersionScheme::String};
+    DependencyOverride bdo{"b", Version{"1", 0}};
+    DependencyOverride cdo{"c", Version{"1", 0}};
     WITH_EXPECTED(install_plan,
                   create_versioned_install_plan(vp, bp, var_provider, {Dependency{"b"}}, {bdo, cdo}, toplevel_spec()));
 
@@ -2142,7 +2156,7 @@ TEST_CASE ("version overlay ports", "[versionplan]")
                                     Dependency{"a", {}, {}, {VersionConstraintKind::Minimum, Version{"1", 1}}},
                                 },
                                 {
-                                    DependencyOverride{"a", Version{"2", 0}, VersionScheme::String},
+                                    DependencyOverride{"a", Version{"2", 0}},
                                 },
                                 toplevel_spec())
                                 .value_or_exit(VCPKG_LINE_INFO);
@@ -2152,19 +2166,18 @@ TEST_CASE ("version overlay ports", "[versionplan]")
     }
     SECTION ("override")
     {
-        auto install_plan =
-            create_versioned_install_plan(vp,
-                                          bp,
-                                          oprovider,
-                                          var_provider,
-                                          {
-                                              Dependency{"a"},
-                                          },
-                                          {
-                                              DependencyOverride{"a", Version{"2", 0}, VersionScheme::String},
-                                          },
-                                          toplevel_spec())
-                .value_or_exit(VCPKG_LINE_INFO);
+        auto install_plan = create_versioned_install_plan(vp,
+                                                          bp,
+                                                          oprovider,
+                                                          var_provider,
+                                                          {
+                                                              Dependency{"a"},
+                                                          },
+                                                          {
+                                                              DependencyOverride{"a", Version{"2", 0}},
+                                                          },
+                                                          toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
 
         REQUIRE(install_plan.size() == 1);
         check_name_and_version(install_plan.install_actions[0], "a", {"overlay", 0});
@@ -2198,7 +2211,7 @@ TEST_CASE ("respect supports expression", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a"}},
-                                                     {DependencyOverride{"a", Version{"1", 1}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 1}}},
                                                      toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
@@ -2208,7 +2221,7 @@ TEST_CASE ("respect supports expression", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a"}},
-                                                     {DependencyOverride{"a", Version{"1", 0}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 0}}},
                                                      toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
@@ -2246,7 +2259,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", Version{"1", 1}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 1}}},
                                                      toplevel_spec());
         CHECK(install_plan.has_value());
         // override from supported to non supported version
@@ -2256,7 +2269,7 @@ TEST_CASE ("respect supports expressions of features", "[versionplan]")
                                                      oprovider,
                                                      var_provider,
                                                      {Dependency{"a", {{"x"}}}},
-                                                     {DependencyOverride{"a", Version{"1", 0}, VersionScheme::String}},
+                                                     {DependencyOverride{"a", Version{"1", 0}}},
                                                      toplevel_spec());
         CHECK_FALSE(install_plan.has_value());
     }
@@ -2360,23 +2373,34 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     const Path pr = "packages_root";
     InstallPlanAction install_a(
-        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {}, {}, {});
+        {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     REQUIRE(install_a.display_name() == "a:x64-osx@1");
-    InstallPlanAction install_b(
-        {"b", Test::X64_OSX}, scfl_b, pr, RequestType::AUTO_SELECTED, Test::X64_ANDROID, {{"1", {}}}, {}, {});
+    InstallPlanAction install_b({"b", Test::X64_OSX},
+                                scfl_b,
+                                pr,
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {{"1", {}}},
+                                {},
+                                {});
     InstallPlanAction install_c(
-        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+        {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, Test::X64_ANDROID, {}, {}, {});
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
     InstallPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::AUTO_SELECTED);
+        RequestType::AUTO_SELECTED,
+        UseHeadVersion::No,
+        Editable::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
     InstallPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
-        RequestType::USER_REQUESTED);
+        RequestType::USER_REQUESTED,
+        UseHeadVersion::No,
+        Editable::No);
 
     ActionPlan plan;
     {
@@ -2459,21 +2483,35 @@ TEST_CASE ("dependency graph API snapshot: host and target")
 {
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
-    InstallPlanAction install_a(
-        {"a", Test::X86_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
-    InstallPlanAction install_a_host(
-        {"a", Test::X64_WINDOWS}, scfl_a, "packages_root", RequestType::AUTO_SELECTED, Test::X64_WINDOWS, {}, {}, {});
+    InstallPlanAction install_a({"a", Test::X86_WINDOWS},
+                                scfl_a,
+                                "packages_root",
+                                RequestType::AUTO_SELECTED,
+                                UseHeadVersion::No,
+                                Editable::No,
+                                {},
+                                {},
+                                {});
+    InstallPlanAction install_a_host({"a", Test::X64_WINDOWS},
+                                     scfl_a,
+                                     "packages_root",
+                                     RequestType::AUTO_SELECTED,
+                                     UseHeadVersion::No,
+                                     Editable::No,
+                                     {},
+                                     {},
+                                     {});
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
-    std::map<std::string, std::string, std::less<>> envmap = {
-        {VcpkgCmdArguments::GITHUB_JOB_ENV.to_string(), "123"},
-        {VcpkgCmdArguments::GITHUB_RUN_ID_ENV.to_string(), "123"},
-        {VcpkgCmdArguments::GITHUB_REF_ENV.to_string(), "refs/heads/main"},
-        {VcpkgCmdArguments::GITHUB_REPOSITORY_ENV.to_string(), "owner/repo"},
-        {VcpkgCmdArguments::GITHUB_SHA_ENV.to_string(), "abc123"},
-        {VcpkgCmdArguments::GITHUB_TOKEN_ENV.to_string(), "abc"},
-        {VcpkgCmdArguments::GITHUB_WORKFLOW_ENV.to_string(), "test"},
+    std::map<StringLiteral, std::string, std::less<>> envmap = {
+        {EnvironmentVariableGitHubJob, "123"},
+        {EnvironmentVariableGitHubRunId, "123"},
+        {EnvironmentVariableGitHubRef, "refs/heads/main"},
+        {EnvironmentVariableGitHubRepository, "owner/repo"},
+        {EnvironmentVariableGitHubSha, "abc123"},
+        {EnvironmentVariableGitHubToken, "abc"},
+        {EnvironmentVariableGitHubWorkflow, "test"},
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);

@@ -1,20 +1,20 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$commonArgs += @("--x-binarysource=clear")
+$commonArgs += @("--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
 
 $hostTriplet = "$Triplet"
 $env:VCPKG_DEFAULT_HOST_TRIPLET = "$hostTriplet"
-if (!$IsLinux -and !$IsMacOS)
-{
-    $targetTriplet = "x64-windows-e2e"
-}
-elseif ($IsMacOS)
+if ($IsMacOS)
 {
     $targetTriplet = "x64-osx-e2e"
 }
-else
+elseif ($ISLinux)
 {
     $targetTriplet = "x64-linux-e2e"
+}
+else
+{
+    $targetTriplet = "x64-windows-e2e"
 }
 
 $env:VCPKG_FEATURE_FLAGS="-compilertracking"

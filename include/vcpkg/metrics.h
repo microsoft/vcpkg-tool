@@ -4,7 +4,6 @@
 
 #include <vcpkg/base/stringview.h>
 
-#include <array>
 #include <atomic>
 #include <map>
 #include <mutex>
@@ -25,6 +24,7 @@ namespace vcpkg
         BinaryCachingHttp,
         BinaryCachingNuget,
         BinaryCachingSource,
+        BinaryCachingUpkg,
         ErrorVersioningDisabled,
         ErrorVersioningNoBaseline,
         GitHubRepository,
@@ -37,7 +37,7 @@ namespace vcpkg
         VcpkgDefaultBinaryCache,
         VcpkgNugetRepository,
         VersioningErrorBaseline,
-        VersioningErrorVersion,
+        VersioningErrorVersion, // no longer used
         X_VcpkgRegistriesCache,
         X_WriteNugetPackagesConfig,
         COUNT // always keep COUNT last
@@ -49,7 +49,7 @@ namespace vcpkg
         StringLiteral name;
     };
 
-    extern const std::array<DefineMetricEntry, static_cast<size_t>(DefineMetric::COUNT)> all_define_metrics;
+    extern const DefineMetricEntry all_define_metrics[static_cast<size_t>(DefineMetric::COUNT)];
 
     enum class StringMetric
     {
@@ -60,6 +60,7 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
+        DevDeviceId,
         CiProjectId,
         CiOwnerId,
         InstallPlan_1,
@@ -81,7 +82,7 @@ namespace vcpkg
         StringLiteral preregister_value; // mock values
     };
 
-    extern const std::array<StringMetricEntry, static_cast<size_t>(StringMetric::COUNT)> all_string_metrics;
+    extern const StringMetricEntry all_string_metrics[static_cast<size_t>(StringMetric::COUNT)];
 
     enum class BoolMetric
     {
@@ -104,7 +105,7 @@ namespace vcpkg
         StringLiteral name;
     };
 
-    extern const std::array<BoolMetricEntry, static_cast<size_t>(BoolMetric::COUNT)> all_bool_metrics;
+    extern const BoolMetricEntry all_bool_metrics[static_cast<size_t>(BoolMetric::COUNT)];
 
     // Batches metrics changes so they can be submitted under a single lock acquisition or
     // in a single JSON payload.

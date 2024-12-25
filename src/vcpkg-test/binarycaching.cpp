@@ -166,30 +166,30 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(assignee.is_restored());
 }
 
-TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref semver-ish", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.2", "abitag") == "1.2.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v52", "abitag") == "52.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1", "abitag") == "1.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.2", "abitag") == "1.2.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v52", "abitag") == "52.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1", "abitag") == "1.0.0-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref date", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref date", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref generic", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref generic", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("apr", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("apr", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("", "abitag") == "0.0.0-vcpkgabitag");
 }
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
@@ -212,7 +212,7 @@ Build-Depends: bzip
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
 
@@ -220,7 +220,8 @@ Build-Depends: bzip
                           scfl,
                           "test_packages_root",
                           RequestType::USER_REQUESTED,
-                          Test::ARM_UWP,
+                          UseHeadVersion::No,
+                          Editable::No,
                           {{"a", {}}, {"b", {}}},
                           {},
                           {});
@@ -235,11 +236,11 @@ Build-Depends: bzip
     compiler_info.version = "compilerversion";
     ipa.abi_info.get()->compiler_info = compiler_info;
 
-    NugetReference ref2 = make_nugetref(ipa, "prefix_");
+    FeedReference ref2 = make_nugetref(ipa, "prefix_");
 
     REQUIRE(ref2.nupkg_filename() == "prefix_zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
-    NugetReference ref = make_nugetref(ipa, "");
+    FeedReference ref = make_nugetref(ipa, "");
 
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
@@ -338,7 +339,7 @@ Description:
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     std::vector<InstallPlanAction> install_plan;
@@ -346,7 +347,8 @@ Description:
                               scfl,
                               "test_packages_root",
                               RequestType::USER_REQUESTED,
-                              Test::ARM_UWP,
+                              UseHeadVersion::No,
+                              Editable::No,
                               std::map<std::string, std::vector<FeatureSpec>>{},
                               std::vector<LocalizedString>{},
                               std::vector<std::string>{});
@@ -416,14 +418,15 @@ Description: a spiffy compression library wrapper
 )",
                                              "<testdata>");
     REQUIRE(pghs.has_value());
-    auto maybe_scf = SourceControlFile::parse_control_file("", std::move(*pghs.get()));
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
                                       "test_packages_root",
                                       RequestType::USER_REQUESTED,
-                                      Test::ARM64_WINDOWS,
+                                      UseHeadVersion::No,
+                                      Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{},
                                       std::vector<std::string>{});
@@ -444,14 +447,15 @@ Description: a spiffy compression library wrapper
 )",
                                               "<testdata>");
     REQUIRE(pghs2.has_value());
-    auto maybe_scf2 = SourceControlFile::parse_control_file("", std::move(*pghs2.get()));
+    auto maybe_scf2 = SourceControlFile::parse_control_file("test-origin", std::move(*pghs2.get()));
     REQUIRE(maybe_scf2.has_value());
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
                                       "test_packages_root",
                                       RequestType::USER_REQUESTED,
-                                      Test::ARM64_WINDOWS,
+                                      UseHeadVersion::No,
+                                      Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
                                       std::vector<LocalizedString>{},
                                       std::vector<std::string>{});

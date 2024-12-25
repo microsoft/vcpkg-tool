@@ -32,18 +32,17 @@ namespace
 
     bool parse_optional_json_string(const Json::Object& doc, StringLiteral field_name, Optional<std::string>& output)
     {
-        auto value = doc.get(field_name);
-        if (!value)
+        if (auto value = doc.get(field_name))
         {
-            return true;
-        }
+            if (auto value_string = value->maybe_string())
+            {
+                output = *value_string;
+                return true;
+            }
 
-        if (!value->is_string())
-        {
             return false;
         }
 
-        output = value->string(VCPKG_LINE_INFO).to_string();
         return true;
     }
 }

@@ -12,5 +12,5 @@ namespace vcpkg
 
     void command_help_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
-    void help_topic_valid_triplet(const TripletDatabase& database);
+    void append_help_topic_valid_triplet(LocalizedString& result, const TripletDatabase& database);
 }

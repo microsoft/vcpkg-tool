@@ -1,12 +1,15 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -27,8 +30,7 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.want = Want::PURGE;
-            spgh.state = InstallState::HALF_INSTALLED;
+            spgh.status = {Want::PURGE, InstallState::HALF_INSTALLED};
             write_update(fs, installed, spgh);
         }
 
@@ -90,9 +92,8 @@ namespace vcpkg
 
         for (auto&& spgh : spghs)
         {
-            spgh.state = InstallState::NOT_INSTALLED;
+            spgh.status.state = InstallState::NOT_INSTALLED;
             write_update(fs, installed, spgh);
-
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
     }
@@ -138,21 +139,16 @@ namespace
         }
     }
 
-    constexpr StringLiteral OPTION_PURGE = "purge";
-    constexpr StringLiteral OPTION_RECURSE = "recurse";
-    constexpr StringLiteral OPTION_DRY_RUN = "dry-run";
-    constexpr StringLiteral OPTION_OUTDATED = "outdated";
-
     constexpr CommandSwitch SWITCHES[] = {
-        {OPTION_PURGE, {}},
-        {OPTION_RECURSE, msgCmdRemoveOptRecurse},
-        {OPTION_DRY_RUN, msgCmdRemoveOptDryRun},
-        {OPTION_OUTDATED, msgCmdRemoveOptOutdated},
+        {SwitchPurge, {}},
+        {SwitchRecurse, msgCmdRemoveOptRecurse},
+        {SwitchDryRun, msgCmdRemoveOptDryRun},
+        {SwitchOutdated, msgCmdRemoveOptOutdated},
     };
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
         return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
@@ -185,9 +181,9 @@ namespace vcpkg
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
-        if (Util::Sets::contains(options.switches, OPTION_OUTDATED))
+        if (Util::Sets::contains(options.switches, SwitchOutdated))
         {
             if (options.command_arguments.size() != 0)
             {
@@ -198,8 +194,7 @@ namespace vcpkg
             // Load ports from ports dirs
             auto& fs = paths.get_filesystem();
             auto registry_set = paths.make_registry_set();
-            PathsPortFileProvider provider(
-                fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+            PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
             specs =
                 Util::fmap(find_outdated_packages(provider, status_db), [](auto&& outdated) { return outdated.spec; });
@@ -218,21 +213,14 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            bool default_triplet_used = false;
             specs = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return parse_package_spec(
-                    arg, default_triplet, default_triplet_used, CommandRemoveMetadata.get_example_text());
+                return parse_package_spec(arg, default_triplet).value_or_exit(VCPKG_LINE_INFO);
             });
-
-            if (default_triplet_used)
-            {
-                print_default_triplet_warning(args, paths.get_triplet_db());
-            }
         }
 
-        const Purge purge = Util::Sets::contains(options.switches, OPTION_PURGE) ? Purge::YES : Purge::NO;
-        const bool is_recursive = Util::Sets::contains(options.switches, OPTION_RECURSE);
-        const bool dry_run = Util::Sets::contains(options.switches, OPTION_DRY_RUN);
+        const Purge purge = Util::Sets::contains(options.switches, SwitchPurge) ? Purge::YES : Purge::NO;
+        const bool is_recursive = Util::Sets::contains(options.switches, SwitchRecurse);
+        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
         const auto plan = create_remove_plan(specs, status_db);
 
@@ -249,7 +237,9 @@ namespace vcpkg
 
             if (!is_recursive)
             {
-                msg::println_warning(msgAddRecurseOption);
+                msg::println_warning(msg::format(msgAddRecurseOption)
+                                         .append_raw('\n')
+                                         .append(msgSeeURL, msg::url = docs::add_command_recurse_opt_url));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -308,6 +298,7 @@ namespace vcpkg
             }
         }
 
+        database_load_collapse(fs, paths.installed());
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

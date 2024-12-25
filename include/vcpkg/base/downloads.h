@@ -32,13 +32,14 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(const Filesystem& fs,
-                                    View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers);
+    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers,
+                                    View<std::string> secrets);
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot);
+    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot);
     ExpectedL<int> put_file(const ReadOnlyFilesystem&,
                             StringView url,
                             const std::vector<std::string>& secrets,
@@ -91,6 +92,9 @@ namespace vcpkg
         ExpectedL<int> put_file_to_mirror(const ReadOnlyFilesystem& fs,
                                           const Path& file_to_put,
                                           StringView sha512) const;
+
+        bool get_block_origin() const;
+        bool asset_cache_configured() const;
 
     private:
         DownloadManagerConfig m_config;

@@ -1,6 +1,7 @@
 #include <vcpkg/base/system-headers.h>
 
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -47,7 +48,7 @@ namespace
             LocalizedString::from_raw(ErrorPrefix)
                 .append(msgVcpkgInvalidCommand, msg::command_name = args.get_command())
                 .append_raw('\n'));
-        print_zero_args_usage();
+        msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
@@ -92,6 +93,21 @@ namespace
         return false;
     }
 
+    template<class CommandRegistrationKind>
+    static const CommandRegistrationKind* choose_command(const std::string& command_name,
+                                                         View<CommandRegistrationKind> command_registrations)
+    {
+        for (const auto& command_registration : command_registrations)
+        {
+            if (Strings::case_insensitive_ascii_equals(command_registration.metadata.name, command_name))
+            {
+                return &command_registration;
+            }
+        }
+
+        return nullptr;
+    }
+
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
         // track version on each invocation
@@ -99,28 +115,13 @@ namespace
 
         if (args.get_command().empty())
         {
-            print_zero_args_usage();
+            msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        static const auto find_command = [&](auto&& commands) {
-            auto it = Util::find_if(commands, [&](auto&& commandc) {
-                return Strings::case_insensitive_ascii_equals(commandc.metadata.name, args.get_command());
-            });
-            using std::end;
-            if (it != end(commands))
-            {
-                return &*it;
-            }
-            else
-            {
-                return static_cast<decltype(&*it)>(nullptr);
-            }
-        };
-
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        if (const auto command_function = find_command(basic_commands))
+        if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, fs);
@@ -132,7 +133,7 @@ namespace
 
         fs.current_path(paths.root, VCPKG_LINE_INFO);
 
-        if (const auto command_function = find_command(paths_commands))
+        if (const auto command_function = choose_command(args.get_command(), paths_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths);
@@ -140,7 +141,7 @@ namespace
 
         Triplet default_triplet = vcpkg::default_triplet(args, paths.get_triplet_db());
         Triplet host_triplet = vcpkg::default_host_triplet(args, paths.get_triplet_db());
-        if (const auto command_function = find_command(triplet_commands))
+        if (const auto command_function = choose_command(args.get_command(), triplet_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);
             return command_function->function(args, paths, default_triplet, host_triplet);
@@ -214,7 +215,7 @@ int main(const int argc, const char* const* const argv)
     if (argc == 0) std::abort();
 
     ElapsedTimer total_timer;
-    auto maybe_vslang = get_environment_variable("VSLANG");
+    auto maybe_vslang = get_environment_variable(EnvironmentVariableVsLang);
     if (const auto vslang = maybe_vslang.get())
     {
         const auto maybe_lcid_opt = Strings::strto<int>(*vslang);
@@ -255,7 +256,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 #endif
-    set_environment_variable("VCPKG_COMMAND", get_exe_path_of_current_process().generic_u8string());
+    set_environment_variable(EnvironmentVariableVcpkgCommand, get_exe_path_of_current_process().generic_u8string());
 
     // Prevent child processes (ex. cmake) from producing "colorized"
     // output (which may include ANSI escape codes), since it would
@@ -274,7 +275,7 @@ int main(const int argc, const char* const* const argv)
       defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)) ||                                       \
      defined(_M_ARM) || defined(_M_ARM64)) &&                                                                          \
     !defined(_WIN32) && !defined(__APPLE__)
-    if (!get_environment_variable("VCPKG_FORCE_SYSTEM_BINARIES").has_value())
+    if (!get_environment_variable(EnvironmentVariableVcpkgForceSystemBinaries).has_value())
     {
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
@@ -288,7 +289,7 @@ int main(const int argc, const char* const* const argv)
     {
         msg::write_unlocalized_text(Color::none,
                                     "[DEBUG] The following environment variables are currently set:\n" +
-                                        get_environment_variables() + '\n');
+                                        Strings::join("\n", get_environment_variables()) + '\n');
     }
     else if (Debug::g_debugging)
     {
@@ -310,7 +311,7 @@ int main(const int argc, const char* const* const argv)
     }
 
     auto bundle_path = current_exe_path;
-    bundle_path.replace_filename("vcpkg-bundle.json");
+    bundle_path.replace_filename(FileVcpkgBundleDotJson);
     Debug::println("Trying to load bundleconfig from ", bundle_path);
     auto bundle =
         real_filesystem.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});

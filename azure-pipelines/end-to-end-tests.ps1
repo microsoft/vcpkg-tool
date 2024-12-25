@@ -28,6 +28,8 @@ Param(
     [ValidateNotNullOrEmpty()]
     [string]$Filter,
     [Parameter(Mandatory = $false)]
+    [string]$StartAt,
+    [Parameter(Mandatory = $false)]
     [string]$VcpkgExe,
     [Parameter(Mandatory = $false, HelpMessage="Run artifacts tests, only usable when vcpkg was built with VCPKG_ARTIFACTS_DEVELOPMENT=ON")]
     [switch]$RunArtifactsTests
@@ -47,7 +49,7 @@ if ($IsLinux) {
     $Triplet = 'x86-windows'
 }
 
-New-Item -Path $WorkingRoot -ItemType Directory -Force
+New-Item -Path $WorkingRoot -ItemType Directory -Force | Out-Null
 $WorkingRoot = (Get-Item $WorkingRoot).FullName
 if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
     $VcpkgRoot = $env:VCPKG_ROOT
@@ -60,50 +62,64 @@ if ([string]::IsNullOrWhitespace($VcpkgRoot)) {
 
 $VcpkgRoot = (Get-Item $VcpkgRoot).FullName
 
+[string]$executableExtension = ''
+if ($IsWindows)
+{
+    $executableExtension = '.exe'
+}
+
 if ([string]::IsNullOrEmpty($VcpkgExe))
 {
-    if ($IsWindows)
-    {
-        $VcpkgExe = Get-Item './vcpkg.exe'
-    }
-    else
-    {
-        $VcpkgExe = Get-Item './vcpkg'
-    }
+    $VcpkgExe = "./vcpkg$executableExtension"
 }
 
 $VcpkgItem = Get-Item $VcpkgExe
 $VcpkgExe = $VcpkgItem.FullName
-$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg.ps1"
+$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg-shell.ps1"
+$TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
+$TestSuitesDir = Join-Path $PSScriptRoot "end-to-end-tests-dir"
 
-[Array]$AllTests = Get-ChildItem $PSScriptRoot/end-to-end-tests-dir/*.ps1
-if ($Filter -ne $Null) {
-    $AllTests = $AllTests | ? { $_.Name -match $Filter }
+[System.IO.FileInfo[]]$AllTests = Get-ChildItem -LiteralPath $TestSuitesDir -File -Filter "*.ps1" | Sort-Object -Property Name
+if ($null -ne $Filter) {
+    $AllTests = $AllTests | Where-Object Name -Match $Filter
 }
-$n = 1
-$m = $AllTests.Count
 
 $envvars_clear = @(
-    "VCPKG_FORCE_SYSTEM_BINARIES",
-    "VCPKG_FORCE_DOWNLOADED_BINARIES",
-    "VCPKG_DEFAULT_HOST_TRIPLET",
-    "VCPKG_DEFAULT_TRIPLET",
-    "VCPKG_BINARY_SOURCES",
-    "VCPKG_OVERLAY_PORTS",
-    "VCPKG_OVERLAY_TRIPLETS",
-    "VCPKG_KEEP_ENV_VARS",
-    "VCPKG_ROOT",
-    "VCPKG_FEATURE_FLAGS",
-    "VCPKG_DISABLE_METRICS"
+    'VCPKG_BINARY_SOURCES',
+    'VCPKG_DEFAULT_HOST_TRIPLET',
+    'VCPKG_DEFAULT_TRIPLET',
+    'VCPKG_DISABLE_METRICS',
+    'VCPKG_FEATURE_FLAGS',
+    'VCPKG_FORCE_DOWNLOADED_BINARIES',
+    'VCPKG_FORCE_SYSTEM_BINARIES',
+    'VCPKG_KEEP_ENV_VARS',
+    'VCPKG_OVERLAY_PORTS',
+    'VCPKG_OVERLAY_TRIPLETS',
+    'VCPKG_ROOT',
+    'X_VCPKG_ASSET_SOURCES'
 )
-$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH")
+$envvars = $envvars_clear + @("VCPKG_DOWNLOADS", "X_VCPKG_REGISTRIES_CACHE", "PATH", "GITHUB_ACTIONS")
 
-foreach ($Test in $AllTests)
+$allTestsCount = $AllTests.Count
+for ($n = 1; $n -le $allTestsCount; $n++)
 {
+    $Test = $AllTests[$n - 1]
+    $testDisplayName = [System.IO.Path]::GetRelativePath($TestSuitesDir, $Test.FullName)
+    if ($StartAt.Length -ne 0) {
+        [string]$TestName = $Test.Name
+        $TestName = $TestName.Substring(0, $TestName.Length - 4) # remove .ps1
+        if ($StartAt.Equals($TestName, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $StartAt = [string]::Empty
+        } else {
+            Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Suite $testDisplayName skipped by -StartAt"
+            continue
+        }
+    }
+
     if ($env:GITHUB_ACTIONS) {
-        Write-Host -ForegroundColor Green "::group::[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+        Write-Host -ForegroundColor Green "::group::[end-to-end-tests.ps1] [$n/$allTestsCount] Running suite $testDisplayName"
     } else {
-        Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$m] Running suite $Test"
+        Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] [$n/$allTestsCount] Running suite $testDisplayName"
     }
 
     $envbackup = @{}
@@ -112,6 +128,7 @@ foreach ($Test in $AllTests)
         $envbackup[$var] = [System.Environment]::GetEnvironmentVariable($var)
     }
 
+    [int]$lastTestExitCode = 0
     try
     {
         foreach ($var in $envvars_clear)
@@ -123,12 +140,13 @@ foreach ($Test in $AllTests)
         }
         $env:VCPKG_ROOT = $VcpkgRoot
         & $Test
+        $lastTestExitCode = $LASTEXITCODE
     }
     finally
     {
         foreach ($var in $envvars)
         {
-            if ($envbackup[$var] -eq $null)
+            if ($null -eq $envbackup[$var])
             {
                 if (Test-Path "Env:\$var")
                 {
@@ -144,8 +162,11 @@ foreach ($Test in $AllTests)
     if ($env:GITHUB_ACTIONS) {
         Write-Host "::endgroup::"
     }
-    $n += 1
+
+    if ($lastTestExitCode -ne 0)
+    {
+        Write-Error "[end-to-end-tests.ps1] Suite $testDisplayName failed with exit code $lastTestExitCode"
+    }
 }
 
 Write-Host -ForegroundColor Green "[end-to-end-tests.ps1] All tests passed."
-$global:LASTEXITCODE = 0

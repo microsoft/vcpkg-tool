@@ -6,5 +6,10 @@
       "name": "vcpkg-cmake",
       "host": true
     }
-  ]
+  ],
+  "features": {
+    "policy": {
+      "description": "Turn on VCPKG_POLICY_DLLS_WITHOUT_EXPORTS"
+    }
+  }
 }
