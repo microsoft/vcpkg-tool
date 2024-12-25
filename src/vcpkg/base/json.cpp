@@ -544,7 +544,10 @@ namespace vcpkg::Json
     {
         struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin) : ParserBase(text, origin), style_() { }
+            Parser(StringView text, StringView origin, TextRowCol init_rowcol)
+                : ParserBase(text, origin, init_rowcol), style_()
+            {
+            }
 
             char32_t next() noexcept
             {
@@ -1059,7 +1062,7 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
-                auto parser = Parser(json, origin);
+                auto parser = Parser(json, origin, {1, 1});
 
                 auto val = parser.parse_value();
 

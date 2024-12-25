@@ -268,7 +268,7 @@ namespace vcpkg::Paragraphs
         }
 
     public:
-        PghParser(StringView text, StringView origin) : ParserBase(text, origin) { }
+        PghParser(StringView text, StringView origin) : ParserBase(text, origin, {1, 1}) { }
 
         ExpectedL<std::vector<Paragraph>> get_paragraphs()
         {

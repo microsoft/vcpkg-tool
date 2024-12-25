@@ -345,6 +345,7 @@ namespace vcpkg
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
     inline constexpr StringLiteral FileShare = "share";
     inline constexpr StringLiteral FileStatus = "status";
+    inline constexpr StringLiteral FileStatusNew = "status-new";
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";
@@ -383,6 +384,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableFeatures = "FEATURES";
     inline constexpr StringLiteral CMakeVariableFilename = "FILENAME";
     inline constexpr StringLiteral CMakeVariableGit = "GIT";
+    inline constexpr StringLiteral CMakeVariableGitlabUrl = "GITLAB_URL";
     inline constexpr StringLiteral CMakeVariableHashAdditionalFiles = "VCPKG_HASH_ADDITIONAL_FILES";
     inline constexpr StringLiteral CMakeVariableHostTriplet = "_HOST_TRIPLET";
     inline constexpr StringLiteral CMakeVariableLoadVcvarsEnv = "VCPKG_LOAD_VCVARS_ENV";
