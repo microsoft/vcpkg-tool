@@ -940,6 +940,10 @@ DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...")
 DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
+DECLARE_MESSAGE(CurlFailedGeneric,
+                (msg::exit_code),
+                "curl is the name of a program, see curl.se.",
+                "curl operation failed with error code {exit_code}.")
 DECLARE_MESSAGE(CurlFailedToPut,
                 (msg::exit_code, msg::url),
                 "curl is the name of a program, see curl.se",
@@ -948,15 +952,13 @@ DECLARE_MESSAGE(CurlFailedToPutHttp,
                 (msg::exit_code, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
                 "curl failed to put file to {url} with exit code {exit_code} and http code {value}.")
-DECLARE_MESSAGE(CurlResponseTruncatedRetrying,
-                (msg::value),
-                "{value} is the number of milliseconds for which we are waiting this time",
-                "curl returned a partial response; waiting {value} milliseconds and trying again")
-DECLARE_MESSAGE(CurlTimeout,
-                (msg::command_line),
-                "",
-                "curl was unable to perform all requested HTTP operations, even after timeout and retries. The last "
-                "command line was: {command_line}")
+DECLARE_MESSAGE(
+    CurlFailedToReturnExpectedNumberOfExitCodes,
+    (msg::exit_code, msg::command_line),
+    "",
+    "curl failed to return the expected number of exit codes; this can happen if something terminates curl "
+    "before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, "
+    "but may be the result of a crash. The command line was {command_line}, and all output is below:")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",
