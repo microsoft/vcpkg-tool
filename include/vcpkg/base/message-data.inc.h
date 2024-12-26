@@ -869,12 +869,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "command:\n"
                 "{command_line}\n"
                 "failed with the following output:")
-DECLARE_MESSAGE(CommandFailedCode,
-                (msg::command_line, msg::exit_code),
-                "",
-                "command:\n"
-                "{command_line}\n"
-                "failed with exit code {exit_code} and the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
