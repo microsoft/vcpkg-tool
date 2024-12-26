@@ -32,9 +32,15 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers,
-                                    View<std::string> secrets);
+    // Parses a curl output line for curl invoked with
+    // -w "PREFIX%{http_code} %{exitcode} %{errormsg}"
+    // with specific handling for curl version < 7.75.0 which does not understand %{exitcode} %{errormsg}
+    // If the line is malformed for any reason, no entry to http_codes is added.
+    void parse_curl_status_line(std::vector<ExpectedL<int>>& http_codes, StringLiteral prefix, StringView this_line);
+
+    std::vector<ExpectedL<int>> download_files(View<std::pair<std::string, Path>> url_pairs,
+                                               View<std::string> headers,
+                                               View<std::string> secrets);
 
     bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
                                                  const std::string& github_token,
@@ -54,7 +60,7 @@ namespace vcpkg
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
+    std::vector<ExpectedL<int>> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
 
     struct DownloadManagerConfig
     {
