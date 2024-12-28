@@ -1690,24 +1690,24 @@ namespace vcpkg
         return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView path)
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
                                "]+Build+error+on+",
                                triplet,
-                               "&body=Copy+issue+body+from+",
-                               Strings::percent_encode(path));
+                               "&body=",
+                               Strings::percent_encode(body));
     }
 
     enum class CIType
     {
         GithubActions,
-        GitlabCi,
+        GitLabCi,
         Azure,
     };
 
-    static Optional<CIType> detectCi()
+    static Optional<CIType> detect_ci_type()
     {
         if (get_environment_variable(EnvironmentVariableGitHubActions).has_value())
         {
@@ -1715,7 +1715,7 @@ namespace vcpkg
         }
         if (get_environment_variable(EnvironmentVariableGitLabCI).has_value())
         {
-            return CIType::GitlabCi;
+            return CIType::GitLabCi;
         }
         if (get_environment_variable(EnvironmentVariableTfBuild).has_value())
         {
@@ -1724,10 +1724,10 @@ namespace vcpkg
         return {};
     }
 
-    static void appendFileCollapsible(LocalizedString& output,
-                                      CIType type,
-                                      const ReadOnlyFilesystem& fs,
-                                      const Path& file)
+    static void append_file_collapsible(LocalizedString& output,
+                                        CIType type,
+                                        const ReadOnlyFilesystem& fs,
+                                        const Path& file)
     {
         auto title = file.filename();
         // starting tag
@@ -1736,7 +1736,7 @@ namespace vcpkg
             // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#grouping-log-lines
             output.append_raw("::group::").append_raw(title).append_raw('\n');
         }
-        else if (type == CIType::GitlabCi)
+        else if (type == CIType::GitLabCi)
         {
             // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
             using namespace std::chrono;
@@ -1760,7 +1760,7 @@ namespace vcpkg
         {
             output.append_raw("::endgroup::\n");
         }
-        else if (type == CIType::GitlabCi)
+        else if (type == CIType::GitLabCi)
         {
             using namespace std::chrono;
             const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
@@ -1785,9 +1785,14 @@ namespace vcpkg
 
         if (issue_body.has_value())
         {
-            auto ci = detectCi();
+            auto ci = detect_ci_type();
             const auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, path)).append_raw('\n');
+            const auto body =
+                ci.map([&](auto _) {
+                      return fmt::format("Copy issue body from collapsed section \"{}\" in the ci log output",
+                                         issue_body.get()->filename());
+                  }).value_or(Strings::concat("Copy issue body from ", path));
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
             if (!ci && !paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
@@ -1800,10 +1805,10 @@ namespace vcpkg
             }
             if (ci)
             {
-                appendFileCollapsible(result, *ci.get(), paths.get_filesystem(), *issue_body.get());
+                append_file_collapsible(result, *ci.get(), paths.get_filesystem(), *issue_body.get());
                 for (Path error_log_path : error_logs)
                 {
-                    appendFileCollapsible(result, *ci.get(), paths.get_filesystem(), error_log_path);
+                    append_file_collapsible(result, *ci.get(), paths.get_filesystem(), error_log_path);
                 }
             }
         }
