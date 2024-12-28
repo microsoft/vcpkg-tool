@@ -95,12 +95,14 @@ namespace vcpkg
     LocalizedString to_string(const BuildResult build_result);
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
+                                                        const std::vector<std::string>& error_logs,
                                                         const Optional<Path>& issue_body);
     inline void print_user_troubleshooting_message(const InstallPlanAction& action,
                                                    const VcpkgPaths& paths,
+                                                   const std::vector<std::string>& error_logs,
                                                    Optional<Path>&& issue_body)
     {
-        msg::println(Color::error, create_user_troubleshooting_message(action, paths, issue_body));
+        msg::println(Color::error, create_user_troubleshooting_message(action, paths, error_logs, issue_body));
     }
 
     /// <summary>

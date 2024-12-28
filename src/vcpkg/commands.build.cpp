@@ -207,7 +207,7 @@ namespace vcpkg
                     msg::print(Color::warning, warnings);
                 }
                 msg::println_error(create_error_message(result, spec));
-                msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
+                msg::print(create_user_troubleshooting_message(*action, paths, {}, nullopt));
                 return 1;
             }
             case BuildResult::Excluded:
@@ -1700,8 +1700,81 @@ namespace vcpkg
                                Strings::percent_encode(path));
     }
 
+    enum class CIType
+    {
+        GithubActions,
+        GitlabCi,
+        Azure,
+    };
+
+    static Optional<CIType> detectCi()
+    {
+        if (get_environment_variable(EnvironmentVariableGitHubActions).has_value())
+        {
+            return CIType::GithubActions;
+        }
+        if (get_environment_variable(EnvironmentVariableGitLabCI).has_value())
+        {
+            return CIType::GitlabCi;
+        }
+        if (get_environment_variable(EnvironmentVariableTfBuild).has_value())
+        {
+            return CIType::Azure;
+        }
+        return {};
+    }
+
+    static void appendFileCollapsible(LocalizedString& output,
+                                      CIType type,
+                                      const ReadOnlyFilesystem& fs,
+                                      const Path& file)
+    {
+        auto title = file.filename();
+        // starting tag
+        if (type == CIType::GithubActions)
+        {
+            // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#grouping-log-lines
+            output.append_raw("::group::").append_raw(title).append_raw('\n');
+        }
+        else if (type == CIType::GitlabCi)
+        {
+            // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
+            using namespace std::chrono;
+            const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+            output.append_raw(fmt::format("\\e[0Ksection_start:{}:SECTION_NAME[collapsed=true]\r\\e[0K", timestamp))
+                .append_raw(title)
+                .append_raw('\n');
+        }
+        else if (type == CIType::Azure)
+        {
+            output.append_raw("##vso[task.uploadfile]").append_raw(fs.absolute(file, VCPKG_LINE_INFO)).append_raw('\n');
+            // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#formatting-commands
+            output.append_raw("##[group]").append_raw(title).append_raw('\n');
+        }
+
+        // output real file
+        output.append_raw(fs.read_contents(file, VCPKG_LINE_INFO));
+
+        // end tag
+        if (type == CIType::GithubActions)
+        {
+            output.append_raw("::endgroup::\n");
+        }
+        else if (type == CIType::GitlabCi)
+        {
+            using namespace std::chrono;
+            const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+            output.append_raw(fmt::format("\\e[0Ksection_end:{}:SECTION_NAME\r\\e[0K\n", timestamp));
+        }
+        else if (type == CIType::Azure)
+        {
+            output.append_raw("##[endgroup]\n");
+        }
+    }
+
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
                                                         const VcpkgPaths& paths,
+                                                        const std::vector<std::string>& error_logs,
                                                         const Optional<Path>& issue_body)
     {
         const auto& spec_name = action.spec.name();
@@ -1709,11 +1782,13 @@ namespace vcpkg
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
+
         if (issue_body.has_value())
         {
+            auto ci = detectCi();
             const auto path = issue_body.get()->generic_u8string();
             result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, path)).append_raw('\n');
-            if (!paths.get_filesystem().find_from_PATH("gh").empty())
+            if (!ci && !paths.get_filesystem().find_from_PATH("gh").empty())
             {
                 Command gh("gh");
                 gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
@@ -1722,6 +1797,14 @@ namespace vcpkg
 
                 result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
                 result.append_indent().append_raw(gh.command_line());
+            }
+            if (ci)
+            {
+                appendFileCollapsible(result, *ci.get(), paths.get_filesystem(), *issue_body.get());
+                for (Path error_log_path : error_logs)
+                {
+                    appendFileCollapsible(result, *ci.get(), paths.get_filesystem(), error_log_path);
+                }
             }
         }
         else
