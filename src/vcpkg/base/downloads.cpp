@@ -372,10 +372,10 @@ namespace vcpkg
         return Unit{};
     }
 
-    static std::vector<int> curl_bulk_operation(View<Command> operation_args,
-                                                StringLiteral prefixArgs,
-                                                View<std::string> headers,
-                                                View<std::string> secrets)
+    static std::vector<ExpectedL<int>> curl_bulk_operation(View<Command> operation_args,
+                                                           StringLiteral prefixArgs,
+                                                           View<std::string> headers,
+                                                           View<std::string> secrets)
     {
 #define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
         static constexpr StringLiteral guid_marker = GUID_MARKER;
@@ -385,20 +385,17 @@ namespace vcpkg
             prefix_cmd.raw_arg(prefixArgs);
         }
 
-        prefix_cmd.string_arg("-L").string_arg("-w").string_arg(GUID_MARKER "%{http_code}\\n");
+        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-w").string_arg(
+            GUID_MARKER "%{http_code} %{exitcode} %{errormsg}\\n");
 #undef GUID_MARKER
 
-        std::vector<int> ret;
+        std::vector<ExpectedL<int>> ret;
         ret.reserve(operation_args.size());
 
         for (auto&& header : headers)
         {
             prefix_cmd.string_arg("-H").string_arg(header);
         }
-
-        static constexpr auto initial_timeout_delay_ms = 100;
-        auto timeout_delay_ms = initial_timeout_delay_ms;
-        static constexpr auto maximum_timeout_delay_ms = 100000;
 
         while (ret.size() != operation_args.size())
         {
@@ -414,51 +411,55 @@ namespace vcpkg
             }
 
             // actually run curl
-            auto this_batch_result = cmd_execute_and_capture_output(batch_cmd).value_or_exit(VCPKG_LINE_INFO);
-            if (this_batch_result.exit_code != 0)
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                            msgCommandFailedCode,
-                                            msg::command_line =
-                                                replace_secrets(std::move(batch_cmd).extract(), secrets),
-                                            msg::exit_code = this_batch_result.exit_code);
-            }
+            std::vector<std::string> debug_lines;
+            auto maybe_this_batch_exit_code = cmd_execute_and_stream_lines(batch_cmd, [&](StringView line) {
+                debug_lines.emplace_back(line.data(), line.size());
+                parse_curl_status_line(ret, guid_marker, line);
+            });
 
-            // extract HTTP response codes
-            for (auto&& line : Strings::split(this_batch_result.output, '\n'))
+            if (auto this_batch_exit_code = maybe_this_batch_exit_code.get())
             {
-                if (Strings::starts_with(line, guid_marker))
+                if (!ret.empty())
                 {
-                    ret.push_back(static_cast<int>(std::strtol(line.data() + guid_marker.size(), nullptr, 10)));
+                    if (auto last_http_code = ret.back().get())
+                    {
+                        if (*last_http_code == 0 && *this_batch_exit_code)
+                        {
+                            // old version of curl, we only have the result code for the last operation
+                            ret.back() = msg::format(msgCurlFailedGeneric, msg::exit_code = *this_batch_exit_code);
+                        }
+                    }
                 }
-            }
 
-            // check if we got a partial response, and, if so, issue a timed delay
-            if (ret.size() == last_try_op)
-            {
-                timeout_delay_ms = initial_timeout_delay_ms;
+                if (ret.size() != last_try_op)
+                {
+                    // curl didn't process everything we asked of it; this usually means curl crashed
+                    auto full_failure =
+                        msg::format_error(msgCurlFailedToReturnExpectedNumberOfExitCodes,
+                                          msg::exit_code = *this_batch_exit_code,
+                                          msg::command_line = replace_secrets(std::move(batch_cmd).extract(), secrets));
+                    for (const auto& debug_line : debug_lines)
+                    {
+                        full_failure.append_raw('\n');
+                        full_failure.append_raw(debug_line);
+                    }
+
+                    ret.emplace_back(std::move(full_failure));
+                    return ret;
+                }
             }
             else
             {
-                // curl stopped before finishing all operations; retry after some time
-                if (timeout_delay_ms >= maximum_timeout_delay_ms)
-                {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                                msgCurlTimeout,
-                                                msg::command_line =
-                                                    replace_secrets(std::move(batch_cmd).extract(), secrets));
-                }
-
-                msg::println_warning(msgCurlResponseTruncatedRetrying, msg::value = timeout_delay_ms);
-                std::this_thread::sleep_for(std::chrono::milliseconds(timeout_delay_ms));
-                timeout_delay_ms *= 10;
+                // couldn't even launch curl, record this as the last fatal error and give up
+                ret.emplace_back(std::move(maybe_this_batch_exit_code).error());
+                return ret;
             }
         }
 
         return ret;
     }
 
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
+    std::vector<ExpectedL<int>> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets)
     {
         return curl_bulk_operation(
             Util::fmap(urls, [](const std::string& url) { return Command{}.string_arg(url_encode_spaces(url)); }),
@@ -467,9 +468,9 @@ namespace vcpkg
             secrets);
     }
 
-    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers,
-                                    View<std::string> secrets)
+    std::vector<ExpectedL<int>> download_files(View<std::pair<std::string, Path>> url_pairs,
+                                               View<std::string> headers,
+                                               View<std::string> secrets)
     {
         return curl_bulk_operation(Util::fmap(url_pairs,
                                               [](const std::pair<std::string, Path>& url_pair) {
@@ -895,6 +896,88 @@ namespace vcpkg
     {
         static std::string s_headers[2] = {"x-ms-version: 2020-04-08", "x-ms-blob-type: BlockBlob"};
         return s_headers;
+    }
+
+    void parse_curl_status_line(std::vector<ExpectedL<int>>& http_codes, StringLiteral prefix, StringView this_line)
+    {
+        if (!Strings::starts_with(this_line, prefix))
+        {
+            return;
+        }
+
+        auto first = this_line.begin();
+        const auto last = this_line.end();
+        first += prefix.size();
+        const auto first_http_code = first;
+
+        int http_code;
+        for (;; ++first)
+        {
+            if (first == last)
+            {
+                // this output is broken, even if we don't know %{exit_code} or ${errormsg}, the spaces in front
+                // of them should still be printed.
+                return;
+            }
+
+            if (!ParserBase::is_ascii_digit(*first))
+            {
+                http_code = Strings::strto<int>(StringView{first_http_code, first}).value_or_exit(VCPKG_LINE_INFO);
+                break;
+            }
+        }
+
+        if (*first != ' ' || ++first == last)
+        {
+            // didn't see the space after the http_code
+            return;
+        }
+
+        if (*first == ' ')
+        {
+            // old curl that doesn't understand %{exit_code}, this is the space after it
+            http_codes.emplace_back(http_code);
+            return;
+        }
+
+        if (!ParserBase::is_ascii_digit(*first))
+        {
+            // not exit_code
+            return;
+        }
+
+        const auto first_exit_code = first;
+        for (;;)
+        {
+            if (++first == last)
+            {
+                // didn't see the space after %{exit_code}
+                return;
+            }
+
+            if (*first == ' ')
+            {
+                // the space after exit_code, everything after this space is the error message if any
+                auto exit_code = Strings::strto<int>(StringView{first_exit_code, first}).value_or_exit(VCPKG_LINE_INFO);
+                if (exit_code == 0)
+                {
+                    // success!
+                    http_codes.emplace_back(http_code);
+                    return;
+                }
+
+                // note that this gets the space out of the output :)
+                http_codes.emplace_back(
+                    msg::format(msgCurlFailedGeneric, msg::exit_code = exit_code).append_raw(StringView{first, last}));
+                return;
+            }
+
+            if (!ParserBase::is_ascii_digit(*first))
+            {
+                // non numeric exit_code?
+                return;
+            }
+        }
     }
 
     bool DownloadManager::get_block_origin() const { return m_config.m_block_origin; }
