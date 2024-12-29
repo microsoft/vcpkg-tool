@@ -522,95 +522,6 @@ namespace vcpkg
         });
     }
 
-    struct CompilerInfoCache
-    {
-        CompilerInfo compiler_info;
-        int64_t c_compiler_last_write_time;
-        int64_t cxx_compiler_last_write_time;
-    };
-
-    struct CompilerInfoCacheDeserializer : Json::IDeserializer<CompilerInfoCache>
-    {
-        LocalizedString type_name() const override { return LocalizedString::from_raw("CompilerInfoCache"); }
-
-        constexpr static StringLiteral ID = "id";
-        constexpr static StringLiteral VERSION = "version";
-        constexpr static StringLiteral HASH = "hash";
-        constexpr static StringLiteral C_COMPILER_PATH = "c_compiler_path";
-        constexpr static StringLiteral CXX_COMPILER_PATH = "cxx_compiler_path";
-        constexpr static StringLiteral C_COMPILER_PATH_LAST_WRITE_TIME = "c_compiler_path_last_write_time";
-        constexpr static StringLiteral CXX_COMPILER_PATH_LAST_WRITE_TIME = "cxx_compiler_path_last_write_time";
-
-        virtual Span<const StringView> valid_fields() const override
-        {
-            static const StringView t[] = {ID,
-                                           VERSION,
-                                           HASH,
-                                           C_COMPILER_PATH,
-                                           CXX_COMPILER_PATH,
-                                           C_COMPILER_PATH_LAST_WRITE_TIME,
-                                           CXX_COMPILER_PATH_LAST_WRITE_TIME};
-            return t;
-        }
-
-        Optional<CompilerInfoCache> visit_object(Json::Reader& r, const Json::Object& obj) const override
-        {
-            CompilerInfoCache cache;
-            // This is an internal structure never written by a user by hand, so we don't need localization.
-            r.required_object_field(LocalizedString::from_raw(ID),
-                                    obj,
-                                    ID,
-                                    cache.compiler_info.id,
-                                    Json::UntypedStringDeserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(VERSION),
-                                    obj,
-                                    VERSION,
-                                    cache.compiler_info.version,
-                                    Json::UntypedStringDeserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(HASH),
-                                    obj,
-                                    HASH,
-                                    cache.compiler_info.hash,
-                                    Json::UntypedStringDeserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH),
-                                    obj,
-                                    C_COMPILER_PATH,
-                                    cache.compiler_info.c_compiler_path,
-                                    Json::PathDeserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH),
-                                    obj,
-                                    CXX_COMPILER_PATH,
-                                    cache.compiler_info.cxx_compiler_path,
-                                    Json::PathDeserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH_LAST_WRITE_TIME),
-                                    obj,
-                                    C_COMPILER_PATH_LAST_WRITE_TIME,
-                                    cache.c_compiler_last_write_time,
-                                    Json::Int64Deserializer::instance);
-            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH_LAST_WRITE_TIME),
-                                    obj,
-                                    CXX_COMPILER_PATH_LAST_WRITE_TIME,
-                                    cache.cxx_compiler_last_write_time,
-                                    Json::Int64Deserializer::instance);
-            return cache;
-        }
-        static CompilerInfoCacheDeserializer instance;
-
-        static Json::Object serialize(const CompilerInfoCache& cache)
-        {
-            Json::Object obj;
-            obj.insert(ID, cache.compiler_info.id);
-            obj.insert(VERSION, cache.compiler_info.version);
-            obj.insert(HASH, cache.compiler_info.hash);
-            obj.insert(C_COMPILER_PATH, cache.compiler_info.c_compiler_path);
-            obj.insert(CXX_COMPILER_PATH, cache.compiler_info.cxx_compiler_path);
-            obj.insert(C_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.c_compiler_last_write_time));
-            obj.insert(CXX_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.cxx_compiler_last_write_time));
-            return obj;
-        }
-    };
-    CompilerInfoCacheDeserializer CompilerInfoCacheDeserializer::instance;
-
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
                                                     const PreBuildInfo& pre_build_info,
                                                     const Toolset& toolset)
@@ -632,34 +543,7 @@ namespace vcpkg
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
             if (m_compiler_tracking)
             {
-                auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
-                auto& fs = paths.get_filesystem();
-                if (fs.exists(cache_file, VCPKG_LINE_INFO))
-                {
-                    auto json_object = Json::parse_object(fs.read_contents(cache_file, VCPKG_LINE_INFO), cache_file)
-                                           .value_or_exit(VCPKG_LINE_INFO);
-                    Json::Reader reader(cache_file);
-                    CompilerInfoCache cache = reader.visit(json_object, CompilerInfoCacheDeserializer::instance)
-                                                  .value_or_exit(VCPKG_LINE_INFO);
-                    auto needs_update = [&](const Path& path, int64_t last_write_time) {
-                        return !fs.exists(path, VCPKG_LINE_INFO) ||
-                               fs.last_write_time(path, VCPKG_LINE_INFO) != last_write_time;
-                    };
-                    if (!needs_update(cache.compiler_info.c_compiler_path, cache.c_compiler_last_write_time) &&
-                        !needs_update(cache.compiler_info.cxx_compiler_path, cache.cxx_compiler_last_write_time))
-                    {
-                        return cache.compiler_info;
-                    }
-                }
-                auto compiler_info = load_compiler_info(paths, pre_build_info, toolset);
-                CompilerInfoCache cache;
-                cache.compiler_info = compiler_info;
-                cache.c_compiler_last_write_time = fs.last_write_time(compiler_info.c_compiler_path, VCPKG_LINE_INFO);
-                cache.cxx_compiler_last_write_time =
-                    fs.last_write_time(compiler_info.cxx_compiler_path, VCPKG_LINE_INFO);
-                fs.write_contents_and_dirs(
-                    cache_file, Json::stringify(CompilerInfoCacheDeserializer::serialize(cache)), VCPKG_LINE_INFO);
-                return compiler_info;
+                return load_compiler_info(paths, pre_build_info, toolset);
             }
             else
             {

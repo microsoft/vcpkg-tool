@@ -23,10 +23,7 @@ namespace vcpkg
         Path vcpkg_dir_updates() const { return vcpkg_dir() / FileUpdates; }
         Path lockfile_path() const { return vcpkg_dir() / FileVcpkgLock; }
         Path triplet_dir(Triplet t) const { return m_root / t.canonical_name(); }
-        Path compiler_info_cache_file(Triplet t) const
-        {
-            return vcpkg_dir() / "compiler_info_cache" / t.canonical_name();
-        }
+        Path compiler_hash_cache_file() const { return vcpkg_dir() / "compiler_hash_cache.json"; }
         Path share_dir(const PackageSpec& p) const { return triplet_dir(p.triplet()) / FileShare / p.name(); }
         Path usage_file(const PackageSpec& p) const { return share_dir(p) / FileUsage; }
         Path spdx_file(const PackageSpec& p) const { return share_dir(p) / FileVcpkgSpdxJson; }

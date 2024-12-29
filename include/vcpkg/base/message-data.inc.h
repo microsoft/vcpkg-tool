@@ -168,7 +168,6 @@ DECLARE_MESSAGE(AndroidHomeDirMissingProps,
                 "source.properties missing in {env_var} directory: {path}")
 DECLARE_MESSAGE(AnExactVersionString, (), "", "an exact version string")
 DECLARE_MESSAGE(AnIdentifer, (), "", "an identifier")
-DECLARE_MESSAGE(AnInt64, (), "", "a 64-bit integer")
 DECLARE_MESSAGE(AnObjectContainingVcpkgArtifactsMetadata,
                 (),
                 "'vcpkg-artifacts' is the name of the product feature and should not be localized",

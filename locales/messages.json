@@ -131,7 +131,6 @@
   "AnArtifactsRegistry": "an artifacts registry",
   "AnExactVersionString": "an exact version string",
   "AnIdentifer": "an identifier",
-  "AnInt64": "a 64-bit integer",
   "AnObjectContainingVcpkgArtifactsMetadata": "an object containing vcpkg-artifacts metadata",
   "_AnObjectContainingVcpkgArtifactsMetadata.comment": "'vcpkg-artifacts' is the name of the product feature and should not be localized",
   "AnOverlayPath": "an overlay path",
