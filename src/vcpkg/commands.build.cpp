@@ -679,6 +679,56 @@ namespace vcpkg
         out_vars.emplace_back(CMakeVariableGit, paths.get_tool_exe(Tools::GIT, out_sink));
     }
 
+    static std::string compute_compiler_hash(const VcpkgPaths& paths,
+                                             const Filesystem& fs,
+                                             const Path& hash_cache,
+                                             const Path& c_compiler,
+                                             const Path& cxx_compiler)
+    {
+        auto root = fs.exists(hash_cache, VCPKG_LINE_INFO)
+                        ? Json::parse_file(VCPKG_LINE_INFO, fs, hash_cache).value.object(VCPKG_LINE_INFO)
+                        : Json::Object();
+        std::string hashes;
+        bool fileUpdated = false;
+        for (const Path& compiler : {c_compiler, cxx_compiler})
+        {
+            auto size = static_cast<int64_t>(fs.file_size(compiler, VCPKG_LINE_INFO));
+            auto last_write_time = fs.last_write_time(compiler, VCPKG_LINE_INFO);
+            auto maybe_value = root.get(compiler.native());
+            std::string hash;
+            if (maybe_value)
+            {
+                auto entry = maybe_value->object(VCPKG_LINE_INFO);
+                if (entry.get("size")->integer(VCPKG_LINE_INFO) == size &&
+                    entry.get("last_write_time")->integer(VCPKG_LINE_INFO) == last_write_time)
+                {
+                    hash = entry.get("hash")->string(VCPKG_LINE_INFO).to_string();
+                }
+            }
+            if (hash.empty())
+            {
+                // "cmake -E sha1sum";
+                Command cmd{paths.get_tool_exe(Tools::CMAKE, out_sink)};
+                cmd.string_arg("-E").string_arg("sha1sum").string_arg(compiler);
+                hash =
+                    Strings::split(cmd_execute_and_capture_output(cmd).value_or_exit(VCPKG_LINE_INFO).output, ' ')[0];
+                Json::Object entry;
+                entry.insert("size", Json::Value::integer(size));
+                entry.insert("last_write_time", Json::Value::integer(last_write_time));
+                entry.insert("hash", Json::Value::string(hash));
+                root.insert_or_replace(compiler, entry);
+                fileUpdated = true;
+            }
+            hashes += hash;
+        }
+        if (fileUpdated)
+        {
+            fs.write_contents(hash_cache, Json::stringify(root), VCPKG_LINE_INFO);
+        }
+
+        return Hash::get_string_sha256(hashes);
+    }
+
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
                                            const PreBuildInfo& pre_build_info,
                                            const Toolset& toolset)
@@ -713,15 +763,13 @@ endif()
 enable_language(C)
 enable_language(CXX)
 
-file(SHA1 "${CMAKE_CXX_COMPILER}" CXX_HASH)
-file(SHA1 "${CMAKE_C_COMPILER}" C_HASH)
-string(SHA1 COMPILER_HASH "${C_HASH}${CXX_HASH}")
+file(TIMESTAMP ${CMAKE_C_COMPILER} CMAKE_C_COMPILER_TIME )
 
-file(WRITE "${PACKAGES_DIR}/abi_info" "${COMPILER_HASH}
-${CMAKE_CXX_COMPILER_VERSION}
+file(WRITE "${PACKAGES_DIR}/abi_info" "${CMAKE_CXX_COMPILER_VERSION}
 ${CMAKE_CXX_COMPILER_ID}
 ${CMAKE_C_COMPILER}
-${CMAKE_CXX_COMPILER}")
+${CMAKE_CXX_COMPILER}
+${CMAKE_C_COMPILER_TIME}")
 )--";
         auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
@@ -753,13 +801,17 @@ ${CMAKE_CXX_COMPILER}")
         if (result.has_value())
         {
             auto lines = fs.read_lines(packagespath / "abi_info").value_or_exit(VCPKG_LINE_INFO);
-            if (lines.size() == 5)
+            if (lines.size() >= 4)
             {
-                compiler_info.hash = lines[0];
-                compiler_info.version = lines[1];
-                compiler_info.id = lines[2];
-                compiler_info.c_compiler_path = lines[3];
-                compiler_info.cxx_compiler_path = lines[4];
+                compiler_info.version = lines[0];
+                compiler_info.id = lines[1];
+                compiler_info.c_compiler_path = lines[2];
+                compiler_info.cxx_compiler_path = lines[3];
+                compiler_info.hash = compute_compiler_hash(paths,
+                                                           fs,
+                                                           paths.installed().compiler_hash_cache_file(),
+                                                           compiler_info.c_compiler_path,
+                                                           compiler_info.cxx_compiler_path);
             }
         }
 
