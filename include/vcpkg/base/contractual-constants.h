@@ -370,6 +370,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableCMakeSystemName = "VCPKG_CMAKE_SYSTEM_NAME";
     inline constexpr StringLiteral CMakeVariableCMakeSystemVersion = "VCPKG_CMAKE_SYSTEM_VERSION";
     inline constexpr StringLiteral CMakeVariableCmd = "CMD";
+    inline constexpr StringLiteral CMakeVariableCompilerCacheFile = "VCPKG_COMPILER_CACHE_FILE";
     inline constexpr StringLiteral CMakeVariableConcurrency = "VCPKG_CONCURRENCY";
     inline constexpr StringLiteral CMakeVariableCurrentBuildtreesDir = "CURRENT_BUILDTREES_DIR";
     inline constexpr StringLiteral CMakeVariableCurrentPackagesDir = "CURRENT_PACKAGES_DIR";
