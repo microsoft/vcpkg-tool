@@ -14,6 +14,7 @@
   "AFeature": "a feature",
   "AFeatureName": "a feature name",
   "AFilesystemRegistry": "a filesystem registry",
+  "AFilesystemRegistryFromGit": "a filesystem registry from git",
   "AGitObjectSha": "a git object SHA",
   "AGitReference": "a git reference (for example, a branch)",
   "AGitRegistry": "a git registry",
