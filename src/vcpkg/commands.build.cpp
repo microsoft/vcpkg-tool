@@ -592,6 +592,7 @@ namespace vcpkg
                                     CXX_COMPILER_PATH_LAST_WRITE_TIME,
                                     cache.cxx_compiler_last_write_time,
                                     Json::Int64Deserializer::instance);
+            cache.compiler_info.from_cache = true;
             return cache;
         }
         static CompilerInfoCacheDeserializer instance;
@@ -613,7 +614,8 @@ namespace vcpkg
 
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
                                                     const PreBuildInfo& pre_build_info,
-                                                    const Toolset& toolset)
+                                                    const Toolset& toolset,
+                                                    UseCompilerInfoCache use_compiler_info_cache)
     {
         if (!m_compiler_tracking || pre_build_info.disable_compiler_tracking)
         {
@@ -629,9 +631,14 @@ namespace vcpkg
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
-        return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
-            if (m_compiler_tracking)
+        if (use_compiler_info_cache == UseCompilerInfoCache::Yes)
+        {
+            auto maybe_entry = triplet_entry.compiler_info.get(toolchain_hash);
+            if (maybe_entry)
             {
+                return *maybe_entry.get();
+            }
+            maybe_entry = triplet_entry.cached_compiler_info.get_lazy(toolchain_hash, [&]() -> Optional<CompilerInfo> {
                 auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
                 auto& fs = paths.get_filesystem();
                 if (fs.exists(cache_file, VCPKG_LINE_INFO))
@@ -651,26 +658,32 @@ namespace vcpkg
                         return cache.compiler_info;
                     }
                 }
-                auto compiler_info = load_compiler_info(paths, pre_build_info, toolset);
-                CompilerInfoCache cache;
-                cache.compiler_info = compiler_info;
-                cache.c_compiler_last_write_time = fs.last_write_time(compiler_info.c_compiler_path, VCPKG_LINE_INFO);
-                cache.cxx_compiler_last_write_time =
-                    fs.last_write_time(compiler_info.cxx_compiler_path, VCPKG_LINE_INFO);
-                fs.write_contents_and_dirs(
-                    cache_file, Json::stringify(CompilerInfoCacheDeserializer::serialize(cache)), VCPKG_LINE_INFO);
-                return compiler_info;
-            }
-            else
+                return nullopt;
+            });
+            if (maybe_entry)
             {
-                return CompilerInfo{};
+                return *maybe_entry.get();
             }
+        }
+
+        return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
+            auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
+            auto& fs = paths.get_filesystem();
+            auto compiler_info = load_compiler_info(paths, pre_build_info, toolset);
+            CompilerInfoCache cache;
+            cache.compiler_info = compiler_info;
+            cache.c_compiler_last_write_time = fs.last_write_time(compiler_info.c_compiler_path, VCPKG_LINE_INFO);
+            cache.cxx_compiler_last_write_time = fs.last_write_time(compiler_info.cxx_compiler_path, VCPKG_LINE_INFO);
+            fs.write_contents_and_dirs(
+                cache_file, Json::stringify(CompilerInfoCacheDeserializer::serialize(cache)), VCPKG_LINE_INFO);
+            return compiler_info;
         });
     }
 
     const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths,
                                                   const PreBuildInfo& pre_build_info,
-                                                  const Toolset& toolset)
+                                                  const Toolset& toolset,
+                                                  UseCompilerInfoCache use_compiler_info_cache)
     {
         const auto& fs = paths.get_filesystem();
         const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
@@ -682,7 +695,7 @@ namespace vcpkg
         if (m_compiler_tracking && !pre_build_info.disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset);
+                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset, use_compiler_info_cache);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -799,60 +812,15 @@ namespace vcpkg
                                            const PreBuildInfo& pre_build_info,
                                            const Toolset& toolset)
     {
-        static constexpr auto vcpkg_json = R"--(
-{
-  "name": "detect-compiler",
-  "version": "0",
-  "description": "None"
-}
-)--";
-        static constexpr auto portfile_cmake = R"--(
-set(VCPKG_BUILD_TYPE release)
-vcpkg_configure_cmake(
-    SOURCE_PATH "${CMAKE_CURRENT_LIST_DIR}"
-    PREFER_NINJA
-    OPTIONS 
-        "-DPACKAGES_DIR=${CURRENT_PACKAGES_DIR}"
-)
-)--";
-        static constexpr auto cmakelists_txt = R"--(
-cmake_minimum_required(VERSION 3.20)
-project(detect_compiler NONE)
-
-if(CMAKE_GENERATOR STREQUAL "Ninja" AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(CMAKE_C_COMPILER_WORKS 1)
-    set(CMAKE_C_COMPILER_FORCED 1)
-    set(CMAKE_CXX_COMPILER_WORKS 1)
-    set(CMAKE_CXX_COMPILER_FORCED 1)
-endif()
-
-enable_language(C)
-enable_language(CXX)
-
-file(SHA1 "${CMAKE_CXX_COMPILER}" CXX_HASH)
-file(SHA1 "${CMAKE_C_COMPILER}" C_HASH)
-string(SHA1 COMPILER_HASH "${C_HASH}${CXX_HASH}")
-
-file(WRITE "${PACKAGES_DIR}/abi_info" "${COMPILER_HASH}
-${CMAKE_CXX_COMPILER_VERSION}
-${CMAKE_CXX_COMPILER_ID}
-${CMAKE_C_COMPILER}
-${CMAKE_CXX_COMPILER}")
-)--";
         auto& triplet = pre_build_info.triplet;
         msg::println(msgDetectCompilerHash, msg::triplet = triplet);
         auto buildpath = paths.buildtrees() / FileDetectCompiler;
-        auto portpath = paths.buildtrees() / "detect_compiler-port";
-        auto packagespath = paths.packages() / ("detect_compiler_" + triplet.canonical_name());
-        auto& fs = paths.get_filesystem();
-        fs.write_contents_and_dirs(portpath / "vcpkg.json", vcpkg_json, VCPKG_LINE_INFO);
-        fs.write_contents_and_dirs(portpath / "portfile.cmake", portfile_cmake, VCPKG_LINE_INFO);
-        fs.write_contents_and_dirs(portpath / "CMakeLists.txt", cmakelists_txt, VCPKG_LINE_INFO);
 
         std::vector<CMakeVariable> cmake_args{
-            {CMakeVariableCurrentPortDir, portpath},
+            {CMakeVariableCurrentPortDir, paths.scripts / FileDetectCompiler},
             {CMakeVariableCurrentBuildtreesDir, buildpath},
-            {CMakeVariableCurrentPackagesDir, packagespath},
+            {CMakeVariableCurrentPackagesDir,
+             paths.packages() / fmt::format("{}_{}", FileDetectCompiler, triplet.canonical_name())},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {CMakeVariableHostTriplet, triplet.canonical_name()},
         };
@@ -861,25 +829,51 @@ ${CMAKE_CXX_COMPILER}")
         auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
         RedirectedProcessLaunchSettings settings;
         settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
+        auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
-
-        auto result = flatten_out(cmd_execute_and_capture_output(cmd, settings), cmd.command_line());
         CompilerInfo compiler_info;
-        if (result.has_value())
-        {
-            auto lines = fs.read_lines(packagespath / "abi_info").value_or_exit(VCPKG_LINE_INFO);
-            if (lines.size() == 5)
-            {
-                compiler_info.hash = lines[0];
-                compiler_info.version = lines[1];
-                compiler_info.id = lines[2];
-                compiler_info.c_compiler_path = lines[3];
-                compiler_info.cxx_compiler_path = lines[4];
-            }
-        }
+        std::string buf;
 
-        if (compiler_info.hash.empty() || !result.has_value())
+        Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
+        auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
+        auto rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
+            if (Strings::starts_with(s, MarkerCompilerHash))
+            {
+                compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxVersion))
+            {
+                compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
+            }
+            if (Strings::starts_with(s, MarkerCompilerCxxId))
+            {
+                compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
+            }
+            static constexpr StringLiteral cxx_path_marker = "#COMPILER_CXX_PATH#";
+            if (Strings::starts_with(s, cxx_path_marker))
+            {
+                const auto compiler_cxx_path = s.substr(cxx_path_marker.size());
+                compiler_info.cxx_compiler_path = compiler_cxx_path;
+            }
+            static constexpr StringLiteral c_path_marker = "#COMPILER_C_PATH#";
+            if (Strings::starts_with(s, c_path_marker))
+            {
+                const auto compiler_c_path = s.substr(c_path_marker.size());
+                compiler_info.c_compiler_path = compiler_c_path;
+            }
+            Debug::println(s);
+            const auto old_buf_size = buf.size();
+            Strings::append(buf, s, '\n');
+            const auto write_size = buf.size() - old_buf_size;
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   out_file.write(buf.c_str() + old_buf_size, 1, write_size) == write_size,
+                                   msgErrorWhileWriting,
+                                   msg::path = stdoutlog);
+        });
+
+        out_file_storage.clear();
+        if (compiler_info.hash.empty() || !succeeded(rc))
         {
             Debug::println("Compiler information tracking can be disabled by passing --",
                            SwitchFeatureFlags,
@@ -887,15 +881,7 @@ ${CMAKE_CXX_COMPILER}")
                            FeatureFlagCompilertracking);
 
             msg::println_error(msgErrorDetectingCompilerInfo, msg::path = stdoutlog);
-            if (result.has_value())
-            {
-                msg::write_unlocalized_text(Color::none, *result.get());
-                msg::write_unlocalized_text(Color::none, fs.read_contents(packagespath / "abi_info", VCPKG_LINE_INFO));
-            }
-            else
-            {
-                msg::println(result.error());
-            }
+            msg::write_unlocalized_text(Color::none, buf);
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorUnableToDetectCompilerInfo);
         }
 
@@ -1309,7 +1295,8 @@ ${CMAKE_CXX_COMPILER}")
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
-                                 Cache<Path, Optional<std::string>>& grdk_cache)
+                                 Cache<Path, Optional<std::string>>& grdk_cache,
+                                 UseCompilerInfoCache use_compiler_info_cache)
     {
         Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
         const auto& pre_build_info = *proto_pre_build_info;
@@ -1329,7 +1316,7 @@ ${CMAKE_CXX_COMPILER}")
             return;
         }
 
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset, use_compiler_info_cache);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1345,7 +1332,7 @@ ${CMAKE_CXX_COMPILER}")
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
+        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset, use_compiler_info_cache);
         abi_info.triplet_abi.emplace(triplet_abi);
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back(AbiTagTriplet, triplet_canonical_name);
@@ -1496,7 +1483,8 @@ ${CMAKE_CXX_COMPILER}")
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db)
+                          const StatusParagraphs& status_db,
+                          UseCompilerInfoCache use_compiler_info_cache)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
@@ -1537,7 +1525,8 @@ ${CMAKE_CXX_COMPILER}")
                                                action.spec.triplet(),
                                                var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
                 dependency_abis,
-                grdk_cache);
+                grdk_cache,
+                use_compiler_info_cache);
         }
     }
 

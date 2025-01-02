@@ -232,6 +232,7 @@ namespace vcpkg
         std::string hash;
         Path c_compiler_path;
         Path cxx_compiler_path;
+        bool from_cache = false;
     };
 
     struct AbiInfo
@@ -252,7 +253,8 @@ namespace vcpkg
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db);
+                          const StatusParagraphs& status_db,
+                          UseCompilerInfoCache use_compiler_info_cache = UseCompilerInfoCache::No);
 
     struct EnvCache
     {
@@ -263,10 +265,12 @@ namespace vcpkg
                                           const Toolset& toolset);
         const std::string& get_triplet_info(const VcpkgPaths& paths,
                                             const PreBuildInfo& pre_build_info,
-                                            const Toolset& toolset);
+                                            const Toolset& toolset,
+                                            UseCompilerInfoCache use_compiler_info_cache);
         const CompilerInfo& get_compiler_info(const VcpkgPaths& paths,
                                               const PreBuildInfo& pre_build_info,
-                                              const Toolset& toolset);
+                                              const Toolset& toolset,
+                                              UseCompilerInfoCache use_compiler_info_cache);
 
     private:
         struct TripletMapEntry
@@ -275,6 +279,7 @@ namespace vcpkg
             Cache<std::string, std::string> triplet_infos;
             Cache<std::string, std::string> triplet_infos_without_compiler;
             Cache<std::string, CompilerInfo> compiler_info;
+            Cache<std::string, Optional<CompilerInfo>> cached_compiler_info;
         };
         Cache<Path, TripletMapEntry> m_triplet_cache;
         Cache<Path, std::string> m_toolchain_cache;
