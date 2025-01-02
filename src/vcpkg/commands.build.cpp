@@ -1788,7 +1788,7 @@ namespace vcpkg
             auto ci = detect_ci_type();
             const auto path = issue_body.get()->generic_u8string();
             const auto body =
-                ci.map([&](auto _) {
+                ci.map([&](auto) {
                       return fmt::format("Copy issue body from collapsed section \"{}\" in the ci log output",
                                          issue_body.get()->filename());
                   }).value_or(Strings::concat("Copy issue body from ", path));
