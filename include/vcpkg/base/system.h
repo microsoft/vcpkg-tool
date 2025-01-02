@@ -48,6 +48,8 @@ namespace vcpkg
 
     ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
 
+    LocalizedString all_comma_separated_cpu_architectures();
+
     CPUArchitecture get_host_processor();
 
     std::string get_host_os_name();

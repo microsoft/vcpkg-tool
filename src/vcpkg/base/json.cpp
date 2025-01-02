@@ -4,6 +4,7 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/unicode.h>
 #include <vcpkg/base/util.h>
 
@@ -1634,35 +1635,21 @@ namespace vcpkg::Json
 
     const FeatureNameDeserializer FeatureNameDeserializer::instance;
 
-    const std::vector<StringLiteral> ArchitectureDeserializer::KNOWN_ARCHITECTURES = {
-        "x86",
-        "x64",
-        "arm",
-        "arm64",
-        "arm64ec",
-        "s390x",
-        "ppc64le",
-        "riscv32",
-        "riscv64",
-        "loongarch32",
-        "loongarch64",
-        "mips64",
-    };
-
     LocalizedString ArchitectureDeserializer::type_name() const { return msg::format(msgACpuArchitecture); }
 
-    Optional<std::string> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    Optional<Optional<CPUArchitecture>> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
-        if (Util::contains(KNOWN_ARCHITECTURES, sv))
+        auto maybe_cpu_architecture = to_cpu_architecture(sv);
+        if (maybe_cpu_architecture.has_value())
         {
-            return sv.to_string();
+            return maybe_cpu_architecture;
         }
 
         r.add_generic_error(type_name(),
                             msg::format(msgInvalidArchitectureValue,
                                         msg::value = sv,
-                                        msg::expected = Strings::join(",", KNOWN_ARCHITECTURES)));
-        return nullopt;
+                                        msg::expected = all_comma_separated_cpu_architectures()));
+        return Optional<CPUArchitecture>{nullopt};
     }
 
     const ArchitectureDeserializer ArchitectureDeserializer::instance;
@@ -1677,7 +1664,7 @@ namespace vcpkg::Json
         }
 
         r.add_generic_error(type_name(), msg::format(msgInvalidSha512, msg::sha = sv));
-        return nullopt;
+        return std::string();
     }
 
     const Sha512Deserializer Sha512Deserializer::instance;

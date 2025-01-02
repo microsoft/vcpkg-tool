@@ -1079,21 +1079,6 @@ namespace vcpkg
 
         virtual Optional<ToolDataEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
-            static const std::map<std::string, CPUArchitecture> arch_map{
-                {"x86", CPUArchitecture::X86},
-                {"x64", CPUArchitecture::X64},
-                {"arm", CPUArchitecture::ARM},
-                {"arm64", CPUArchitecture::ARM64},
-                {"arm64ec", CPUArchitecture::ARM64EC},
-                {"s390x", CPUArchitecture::S390X},
-                {"ppc64le", CPUArchitecture::PPC64LE},
-                {"riscv32", CPUArchitecture::RISCV32},
-                {"riscv64", CPUArchitecture::RISCV64},
-                {"loongarch32", CPUArchitecture::LOONGARCH32},
-                {"loongarch64", CPUArchitecture::LOONGARCH64},
-                {"mips64", CPUArchitecture::MIPS64},
-            };
-
             ToolDataEntry value;
 
             r.required_object_field(type_name(), obj, "name", value.tool, Json::UntypedStringDeserializer::instance);
@@ -1101,15 +1086,7 @@ namespace vcpkg
             r.required_object_field(
                 type_name(), obj, "version", value.version, Json::UntypedStringDeserializer::instance);
 
-            std::string arch_str;
-            if (r.optional_object_field(obj, "arch", arch_str, Json::ArchitectureDeserializer::instance))
-            {
-                auto it = arch_map.find(arch_str);
-                if (it != arch_map.end())
-                {
-                    value.arch = it->second;
-                }
-            }
+            r.optional_object_field(obj, "arch", value.arch, Json::ArchitectureDeserializer::instance);
             r.optional_object_field(
                 obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
             r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);

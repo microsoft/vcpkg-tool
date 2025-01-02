@@ -244,10 +244,8 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
                                         "invalid_arch.json");
     REQUIRE(!invalid_arch.has_value());
     CHECK("invalid_arch.json: error: $.tools[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. "
-          "Expected "
-          "one of: x86,x64,arm,arm64,arm64ec,s390x,ppc64le,riscv32,riscv64,loongarch32,loongarch64,mips64\n"
-          "invalid_arch.json: error: $.tools[0].arch: mismatched type: expected a CPU architecture" ==
-          invalid_arch.error());
+          "Expected one of: x86, x64, amd64, arm, arm64, arm64ec, s390x, ppc64le, riscv32, riscv64, loongarch32, "
+          "loongarch64, mips64" == invalid_arch.error());
 
     auto invalid_sha512 = parse_tool_data(R"(
 {
@@ -264,7 +262,5 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
 
     REQUIRE(!invalid_sha512.has_value());
     CHECK("invalid_sha512.json: error: $.tools[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
-          "SHA-512 hash must be 128 characters long and contain only hexadecimal digits\n"
-          "invalid_sha512.json: error: $.tools[0].sha512: mismatched type: expected a SHA-512 hash" ==
-          invalid_sha512.error());
+          "SHA-512 hash must be 128 characters long and contain only hexadecimal digits" == invalid_sha512.error());
 }

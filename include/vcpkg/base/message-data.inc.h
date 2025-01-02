@@ -1833,10 +1833,6 @@ DECLARE_MESSAGE(
     "Please open an issue at "
     "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
     "with detailed steps to reproduce the problem.")
-DECLARE_MESSAGE(InvalidArchitecture,
-                (msg::value),
-                "{value} is what the user entered that we did not understand",
-                "invalid architecture: {value}")
 DECLARE_MESSAGE(
     InvalidArchitectureValue,
     (msg::value, msg::expected),

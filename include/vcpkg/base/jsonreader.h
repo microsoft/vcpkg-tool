@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/system.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
@@ -362,12 +363,10 @@ namespace vcpkg::Json
         static const FeatureNameDeserializer instance;
     };
 
-    struct ArchitectureDeserializer final : Json::IDeserializer<std::string>
+    struct ArchitectureDeserializer final : Json::IDeserializer<Optional<CPUArchitecture>>
     {
-        static const std::vector<StringLiteral> KNOWN_ARCHITECTURES;
-
         virtual LocalizedString type_name() const override;
-        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        virtual Optional<Optional<CPUArchitecture>> visit_string(Json::Reader&, StringView sv) const override;
         static const ArchitectureDeserializer instance;
     };
 
