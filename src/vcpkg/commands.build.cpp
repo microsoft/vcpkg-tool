@@ -130,7 +130,7 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,

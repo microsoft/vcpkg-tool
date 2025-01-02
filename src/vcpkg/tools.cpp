@@ -336,6 +336,13 @@ namespace vcpkg
         virtual StringView tool_data_name() const override { return Tools::NINJA; }
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::NINJA}; }
         virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
+#if !defined(_WIN32)
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
+        {
+            // This is where Ninja goes by default on Alpine: https://github.com/microsoft/vcpkg/issues/21218
+            out_candidate_paths.emplace_back("/usr/lib/ninja-build/bin");
+        }
+#endif // ^^^ !defined(_WIN32)
 
         virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
