@@ -332,6 +332,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
     inline constexpr StringLiteral FileControl = "CONTROL";
+    inline constexpr StringLiteral FileCompilerFileHashCacheDotJson = "compiler-file-hash-cache.json";
     inline constexpr StringLiteral FileCopying = "COPYING";
     inline constexpr StringLiteral FileCopyright = "copyright";
     inline constexpr StringLiteral FileDebug = "debug";

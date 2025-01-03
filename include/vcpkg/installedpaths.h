@@ -21,7 +21,7 @@ namespace vcpkg
         Path vcpkg_dir_status_file() const { return vcpkg_dir() / FileStatus; }
         Path vcpkg_dir_info() const { return vcpkg_dir() / FileInfo; }
         Path vcpkg_dir_updates() const { return vcpkg_dir() / FileUpdates; }
-        Path compiler_hash_cache_file() const { return vcpkg_dir() / "compiler_file_hash_cache.json"; }
+        Path compiler_hash_cache_file() const { return vcpkg_dir() / FileCompilerFileHashCacheDotJson; }
         Path lockfile_path() const { return vcpkg_dir() / FileVcpkgLock; }
         Path triplet_dir(Triplet t) const { return m_root / t.canonical_name(); }
         Path share_dir(const PackageSpec& p) const { return triplet_dir(p.triplet()) / FileShare / p.name(); }
