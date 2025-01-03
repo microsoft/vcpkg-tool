@@ -1169,10 +1169,6 @@ DECLARE_MESSAGE(ErrorWhileFetchingBaseline,
                 "{value} is a commit sha.",
                 "while fetching baseline `\"{value}\"` from repo {package_name}:")
 DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsing {path}.")
-DECLARE_MESSAGE(ErrorWhileParsingToolData,
-                (msg::path),
-                "",
-                "An unexpected error ocurred while parsing tool data from {path}.")
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
 DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command lines", "Examples:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")

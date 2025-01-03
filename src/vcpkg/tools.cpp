@@ -65,38 +65,24 @@ namespace vcpkg
 
     ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin)
     {
-        auto as_json = Json::parse(contents, origin);
-        if (!as_json)
-        {
-            return as_json.error();
-        }
-        auto as_value = std::move(as_json).value(VCPKG_LINE_INFO).value;
+        return Json::parse_object(contents, origin)
+            .then([&](Json::Object&& as_object) -> ExpectedL<std::vector<ToolDataEntry>> {
+                Json::Reader r(origin);
+                auto maybe_tool_data = r.visit(as_object, ToolDataFileDeserializer::instance);
+                if (!r.errors().empty() || !r.warnings().empty())
+                {
+                    return r.join();
+                }
 
-        Json::Reader r(origin);
-        auto maybe_tool_data = r.visit(as_value, ToolDataFileDeserializer::instance);
-        if (!r.errors().empty() || !r.warnings().empty())
-        {
-            return r.join();
-        }
-
-        if (auto tool_data = maybe_tool_data.get())
-        {
-            return *tool_data;
-        }
-
-        return msg::format(msgErrorWhileParsingToolData, msg::path = origin);
+                return maybe_tool_data.value_or_exit(VCPKG_LINE_INFO);
+            });
     }
 
     static ExpectedL<std::vector<ToolDataEntry>> parse_tool_data_file(const Filesystem& fs, Path path)
     {
-        std::error_code ec;
-        auto contents = fs.read_contents(path, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, __func__, {path});
-        }
-
-        return parse_tool_data(contents, path);
+        return fs.try_read_contents(path).then([](FileContents&& fc) -> ExpectedL<std::vector<ToolDataEntry>> {
+            return parse_tool_data(fc.content, Path{fc.origin});
+        });
     }
 
     const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,

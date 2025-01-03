@@ -675,8 +675,6 @@
   "_ErrorWhileFetchingBaseline.comment": "{value} is a commit sha. An example of {package_name} is zlib.",
   "ErrorWhileParsing": "Errors occurred while parsing {path}.",
   "_ErrorWhileParsing.comment": "An example of {path} is /foo/bar.",
-  "ErrorWhileParsingToolData": "An unexpected error ocurred while parsing tool data from {path}.",
-  "_ErrorWhileParsingToolData.comment": "An example of {path} is /foo/bar.",
   "ErrorWhileWriting": "Error occurred while writing {path}.",
   "_ErrorWhileWriting.comment": "An example of {path} is /foo/bar.",
   "ExamplesHeader": "Examples:",

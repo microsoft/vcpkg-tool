@@ -206,7 +206,7 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
 
     auto top_level_json = parse_tool_data("[]", "top_level.json");
     REQUIRE(!top_level_json.has_value());
-    CHECK("An unexpected error ocurred while parsing tool data from top_level.json." == top_level_json.error());
+    CHECK("Expected \"top_level.json\" to be an object." == top_level_json.error());
 
     auto missing_required =
         parse_tool_data(R"({ "schema-version": 1, "tools": [{ "executable": "git.exe" }]})", "missing_required.json");
