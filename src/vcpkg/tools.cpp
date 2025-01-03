@@ -19,8 +19,6 @@
 #include <vcpkg/tools.test.h>
 #include <vcpkg/versions.h>
 
-#include <regex>
-
 #include <fmt/ranges.h>
 
 namespace
