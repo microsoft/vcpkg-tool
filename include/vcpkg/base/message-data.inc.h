@@ -269,6 +269,8 @@ DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dicti
 DECLARE_MESSAGE(AToolDataObject, (), "", "tool metadata")
 DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
 DECLARE_MESSAGE(AToolDataFile, (), "", "a tool data file")
+DECLARE_MESSAGE(AToolDataOS, (), "", "a tool data operating system")
+DECLARE_MESSAGE(AToolDataVersion, (), "", "a tool data version")
 DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
                 (msg::version),
                 "",
@@ -1301,10 +1303,6 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
-DECLARE_MESSAGE(FailedToParseVersionXML,
-                (msg::tool_name, msg::version),
-                "",
-                "Could not parse version for tool {tool_name}. Version string was: {version}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
@@ -1967,6 +1965,15 @@ DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
                 "{value} is an integer. `\"port-version\":' is JSON syntax and should be unlocalized",
                 "invalid character '#' in version text. Did you mean \"port-version\": {value}?")
 DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)")
+DECLARE_MESSAGE(InvalidToolOSValue,
+                (msg::value, msg::expected),
+                "{value} is an unknown operating system, {expected} is the list of accepted operating system values",
+                "Invalid tool operating system: {value}. Expected one of: {expected}")
+DECLARE_MESSAGE(
+    InvalidToolVersion,
+    (),
+    "",
+    "Invalid tool version; expected a string containing a substring of between 1 and 3 numbers separated by dots.")
 DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}")
 DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
                 (msg::path),

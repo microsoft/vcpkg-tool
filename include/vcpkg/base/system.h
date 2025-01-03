@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
@@ -44,9 +45,9 @@ namespace vcpkg
 
     long get_process_id();
 
-    Optional<CPUArchitecture> to_cpu_architecture(StringView arch);
+    Optional<CPUArchitecture> to_cpu_architecture(StringView arch) noexcept;
 
-    ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
+    StringLiteral to_string_literal(CPUArchitecture arch) noexcept;
 
     LocalizedString all_comma_separated_cpu_architectures();
 
@@ -64,3 +65,5 @@ namespace vcpkg
 
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture();
 }
+
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::CPUArchitecture);

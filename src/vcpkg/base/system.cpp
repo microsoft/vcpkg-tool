@@ -141,6 +141,7 @@ namespace
         CPUArchitecture arch;
     };
 
+    // keep this in sync with vcpkg-tools.schema.json
     static constexpr CPUArchitectureEntry cpu_architecture_table[] = {
         {"x86", CPUArchitecture::X86},
         {"x64", CPUArchitecture::X64},
@@ -169,7 +170,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
+    Optional<CPUArchitecture> to_cpu_architecture(StringView arch) noexcept
     {
         for (auto&& entry : cpu_architecture_table)
         {
@@ -182,7 +183,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    ZStringView to_zstring_view(CPUArchitecture arch) noexcept
+    StringLiteral to_string_literal(CPUArchitecture arch) noexcept
     {
         for (auto&& entry : cpu_architecture_table)
         {
@@ -639,8 +640,7 @@ namespace vcpkg
             case CPUArchitecture::ARM: value = L"ARM"; break;
             case CPUArchitecture::ARM64: value = L"ARM64"; break;
             default:
-                Checks::msg_exit_with_error(
-                    VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = to_zstring_view(proc));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = proc);
                 break;
         }
 

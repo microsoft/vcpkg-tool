@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/json.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
@@ -12,6 +13,12 @@
 
 namespace vcpkg
 {
+    struct ToolVersion
+    {
+        std::array<int, 3> cooked; // e.g. 24.8  or 2.7.4 or 1.0.0
+        std::string raw;           // e.g. 24.08 or 2.7.4 or 1.0
+    };
+
     struct ToolData
     {
         std::string name;
@@ -32,12 +39,25 @@ namespace vcpkg
 
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version);
 
+    enum class ToolOs
+    {
+        Windows,
+        Osx,
+        Linux,
+        FreeBsd,
+        OpenBsd,
+    };
+
+    Optional<ToolOs> to_tool_os(StringView os) noexcept;
+    StringLiteral to_string_literal(ToolOs os) noexcept;
+    LocalizedString all_comma_separated_tool_oses();
+
     struct ToolDataEntry
     {
         std::string tool;
-        std::string os;
-        Optional<vcpkg::CPUArchitecture> arch;
-        std::string version;
+        ToolOs os;
+        Optional<CPUArchitecture> arch;
+        ToolVersion version;
         std::string exeRelativePath;
         std::string url;
         std::string sha512;
@@ -49,17 +69,37 @@ namespace vcpkg
     const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
                                            StringView toolname,
                                            const CPUArchitecture arch,
-                                           StringView os);
+                                           const ToolOs os);
 
     struct ToolDataFileDeserializer final : Json::IDeserializer<std::vector<ToolDataEntry>>
     {
         virtual LocalizedString type_name() const override;
 
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<std::vector<ToolDataEntry>> visit_object(Json::Reader& r,
                                                                   const Json::Object& obj) const override;
 
         static const ToolDataFileDeserializer instance;
     };
+
+    struct ToolOsDeserializer final : Json::IDeserializer<ToolOs>
+    {
+        virtual LocalizedString type_name() const override;
+
+        virtual Optional<ToolOs> visit_string(Json::Reader& r, StringView str) const override;
+
+        static const ToolOsDeserializer instance;
+    };
+
+    struct ToolVersionDeserializer final : Json::IDeserializer<ToolVersion>
+    {
+        virtual LocalizedString type_name() const override;
+
+        virtual Optional<ToolVersion> visit_string(Json::Reader& r, StringView str) const override;
+
+        static const ToolVersionDeserializer instance;
+    };
 }
+
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::ToolOs);

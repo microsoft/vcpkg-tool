@@ -1638,7 +1638,7 @@ namespace vcpkg
         fmt::format_to(std::back_inserter(issue_body),
                        "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
                        action.display_name(),
-                       to_zstring_view(get_host_processor()),
+                       get_host_processor(),
                        get_host_os_name());
 
         if (const auto* abi_info = action.abi_info.get())

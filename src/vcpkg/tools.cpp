@@ -21,9 +21,30 @@
 
 #include <regex>
 
+#include <fmt/ranges.h>
+
+namespace
+{
+    using namespace vcpkg;
+    struct ToolOsEntry
+    {
+        StringLiteral name;
+        ToolOs os;
+    };
+
+    // keep this in sync with vcpkg-tools.schema.json
+    static constexpr ToolOsEntry all_tool_oses[] = {
+        {"windows", ToolOs::Windows},
+        {"osx", ToolOs::Osx},
+        {"linux", ToolOs::Linux},
+        {"freebsd", ToolOs::FreeBsd},
+        {"openbsd", ToolOs::OpenBsd},
+    };
+}
+
 namespace vcpkg
 {
-    // /\d+\.\d+(\.\d+)?/
+    // /\d+(\.\d+(\.\d+)?)?/
     Optional<std::array<int, 3>> parse_tool_version_string(StringView string_version)
     {
         // first, find the beginning of the version
@@ -63,6 +84,38 @@ namespace vcpkg
         return std::array<int, 3>{*d1.get(), *d2.get(), *d3.get()};
     }
 
+    Optional<ToolOs> to_tool_os(StringView os) noexcept
+    {
+        for (auto&& entry : all_tool_oses)
+        {
+            if (os == entry.name)
+            {
+                return entry.os;
+            }
+        }
+
+        return nullopt;
+    }
+
+    StringLiteral to_string_literal(ToolOs os) noexcept
+    {
+        for (auto&& entry : all_tool_oses)
+        {
+            if (os == entry.os)
+            {
+                return entry.name;
+            }
+        }
+
+        Checks::unreachable(VCPKG_LINE_INFO, "Unexpected ToolOs");
+    }
+
+    LocalizedString all_comma_separated_tool_oses()
+    {
+        return LocalizedString::from_raw(
+            Strings::join(", ", all_tool_oses, [](const ToolOsEntry& entry) { return entry.name; }));
+    }
+
     ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin)
     {
         return Json::parse_object(contents, origin)
@@ -88,7 +141,7 @@ namespace vcpkg
     const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
                                            StringView toolname,
                                            const CPUArchitecture arch,
-                                           StringView os)
+                                           const ToolOs os)
     {
         const ToolDataEntry* default_tool = nullptr;
         for (auto&& tool_candidate : tool_data_table)
@@ -115,15 +168,15 @@ namespace vcpkg
     {
         auto hp = get_host_processor();
 #if defined(_WIN32)
-        auto data = get_raw_tool_data(tool_data_table, tool, hp, "windows");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Windows);
 #elif defined(__APPLE__)
-        auto data = get_raw_tool_data(tool_data_table, tool, hp, "osx");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Osx);
 #elif defined(__linux__)
-        auto data = get_raw_tool_data(tool_data_table, tool, hp, "linux");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Linux);
 #elif defined(__FreeBSD__)
-        auto data = get_raw_tool_data(tool_data_table, tool, hp, "freebsd");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::FreeBsd);
 #elif defined(__OpenBSD__)
-        auto data = get_raw_tool_data(tool_data_table, tool, hp, "openbsd");
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::OpenBsd);
 #else
         return nullopt;
 #endif
@@ -131,14 +184,8 @@ namespace vcpkg
         {
             return nullopt;
         }
-        const Optional<std::array<int, 3>> version = parse_tool_version_string(data->version);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               version.has_value(),
-                               msgFailedToParseVersionXML,
-                               msg::tool_name = tool,
-                               msg::version = data->version);
 
-        Path tool_dir_name = fmt::format("{}-{}-{}", tool, data->version, data->os);
+        Path tool_dir_name = fmt::format("{}-{}-{}", tool, data->version.raw, data->os);
         Path download_subpath;
         if (!data->archiveName.empty())
         {
@@ -150,7 +197,7 @@ namespace vcpkg
         }
 
         return ToolData{tool.to_string(),
-                        *version.get(),
+                        data->version.cooked,
                         data->exeRelativePath,
                         data->url,
                         download_subpath,
@@ -1048,36 +1095,36 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAToolDataObject); }
 
-        virtual View<StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView valid_fields[] = {
-                "name",
-                "os",
-                "version",
-                "arch",
-                "executable",
-                "url",
-                "sha512",
-                "archive",
+            static const StringLiteral fields[] = {
+                JsonIdName,
+                JsonIdOS,
+                JsonIdVersion,
+                JsonIdArch,
+                JsonIdExecutable,
+                JsonIdUrl,
+                JsonIdSha512,
+                JsonIdArchive,
             };
-            return valid_fields;
+            return fields;
         }
 
         virtual Optional<ToolDataEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             ToolDataEntry value;
 
-            r.required_object_field(type_name(), obj, "name", value.tool, Json::UntypedStringDeserializer::instance);
-            r.required_object_field(type_name(), obj, "os", value.os, Json::UntypedStringDeserializer::instance);
             r.required_object_field(
-                type_name(), obj, "version", value.version, Json::UntypedStringDeserializer::instance);
+                type_name(), obj, JsonIdName, value.tool, Json::UntypedStringDeserializer::instance);
+            r.required_object_field(type_name(), obj, JsonIdOS, value.os, ToolOsDeserializer::instance);
+            r.required_object_field(type_name(), obj, JsonIdVersion, value.version, ToolVersionDeserializer::instance);
 
-            r.optional_object_field(obj, "arch", value.arch, Json::ArchitectureDeserializer::instance);
+            r.optional_object_field(obj, JsonIdArch, value.arch, Json::ArchitectureDeserializer::instance);
             r.optional_object_field(
-                obj, "executable", value.exeRelativePath, Json::UntypedStringDeserializer::instance);
-            r.optional_object_field(obj, "url", value.url, Json::UntypedStringDeserializer::instance);
-            r.optional_object_field(obj, "sha512", value.sha512, Json::Sha512Deserializer::instance);
-            r.optional_object_field(obj, "archive", value.archiveName, Json::UntypedStringDeserializer::instance);
+                obj, JsonIdExecutable, value.exeRelativePath, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, JsonIdUrl, value.url, Json::UntypedStringDeserializer::instance);
+            r.optional_object_field(obj, JsonIdSha512, value.sha512, Json::Sha512Deserializer::instance);
+            r.optional_object_field(obj, JsonIdArchive, value.archiveName, Json::UntypedStringDeserializer::instance);
             return value;
         }
 
@@ -1095,9 +1142,9 @@ namespace vcpkg
 
     LocalizedString ToolDataFileDeserializer::type_name() const { return msg::format(msgAToolDataFile); }
 
-    View<StringView> ToolDataFileDeserializer::valid_fields() const
+    View<StringLiteral> ToolDataFileDeserializer::valid_fields() const noexcept
     {
-        static const StringView valid_fields[] = {"schema-version", "tools"};
+        static constexpr StringLiteral valid_fields[] = {JsonIdSchemaVersion, JsonIdTools};
         return valid_fields;
     }
 
@@ -1106,19 +1153,55 @@ namespace vcpkg
     {
         int schema_version = -1;
         r.required_object_field(
-            type_name(), obj, "schema-version", schema_version, Json::NaturalNumberDeserializer::instance);
+            type_name(), obj, JsonIdSchemaVersion, schema_version, Json::NaturalNumberDeserializer::instance);
 
-        if (schema_version != 1)
+        std::vector<ToolDataEntry> value;
+        if (schema_version == 1)
+        {
+            r.required_object_field(type_name(), obj, JsonIdTools, value, ToolDataArrayDeserializer::instance);
+        }
+        else
         {
             r.add_generic_error(type_name(),
                                 msg::format(msgToolDataFileSchemaVersionNotSupported, msg::version = schema_version));
-            return nullopt;
         }
 
-        std::vector<ToolDataEntry> value;
-        r.required_object_field(type_name(), obj, "tools", value, ToolDataArrayDeserializer::instance);
         return value;
     }
 
     const ToolDataFileDeserializer ToolDataFileDeserializer::instance;
+
+    LocalizedString ToolOsDeserializer::type_name() const { return msg::format(msgAToolDataOS); }
+
+    Optional<ToolOs> ToolOsDeserializer::visit_string(Json::Reader& r, StringView str) const
+    {
+        auto maybe_tool_os = to_tool_os(str);
+        if (auto tool_os = maybe_tool_os.get())
+        {
+            return *tool_os;
+        }
+
+        r.add_generic_error(
+            type_name(),
+            msg::format(msgInvalidToolOSValue, msg::value = str, msg::expected = all_comma_separated_tool_oses()));
+        return ToolOs::Windows;
+    }
+
+    const ToolOsDeserializer ToolOsDeserializer::instance;
+
+    LocalizedString ToolVersionDeserializer::type_name() const { return msg::format(msgAToolDataVersion); }
+
+    Optional<ToolVersion> ToolVersionDeserializer::visit_string(Json::Reader& r, StringView str) const
+    {
+        auto maybe_parsed = parse_tool_version_string(str);
+        if (auto parsed = maybe_parsed.get())
+        {
+            return ToolVersion{*parsed, str.to_string()};
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidToolVersion));
+        return ToolVersion{};
+    }
+
+    const ToolVersionDeserializer ToolVersionDeserializer::instance;
 }

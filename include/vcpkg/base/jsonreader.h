@@ -31,7 +31,7 @@ namespace vcpkg::Json
         virtual Optional<Type> visit_string(Reader&, StringView) const;
         virtual Optional<Type> visit_array(Reader&, const Array&) const;
         virtual Optional<Type> visit_object(Reader&, const Object&) const;
-        virtual View<StringView> valid_fields() const;
+        virtual View<StringLiteral> valid_fields() const noexcept;
 
         virtual ~IDeserializer() = default;
 
@@ -101,7 +101,7 @@ namespace vcpkg::Json
         // * are not in `valid_fields`
         // if known_fields.empty(), then it's treated as if all field names are valid
         void check_for_unexpected_fields(const Object& obj,
-                                         View<StringView> valid_fields,
+                                         View<StringLiteral> valid_fields,
                                          const LocalizedString& type_name);
 
         template<class Type>
@@ -239,7 +239,7 @@ namespace vcpkg::Json
     }
 
     template<class Type>
-    View<StringView> IDeserializer<Type>::valid_fields() const
+    View<StringLiteral> IDeserializer<Type>::valid_fields() const noexcept
     {
         return {};
     }

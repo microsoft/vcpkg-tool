@@ -1,10 +1,17 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$VcpkgToolsJsonSchemaFile = (Get-Item "$PSScriptRoot/../../docs/vcpkg-tools.schema.json").FullName
+if (-not (Test-Json -ea:0 -LiteralPath "$VcpkgRoot/scripts/vcpkg-tools.json" -SchemaFile $VcpkgToolsJsonSchemaFile)) {
+    throw "real vcpkg-tools.json doesn't conform to schema"
+}
+
 if (-not $IsMacOS -and -not $IsLinux) {
     "" | Out-File -enc ascii $(Join-Path $TestingRoot .vcpkg-root)
 
     $Scripts = Join-Path $TestingRoot "scripts"
     mkdir $Scripts | Out-Null
+     
+    $VcpkgToolsJson = Join-Path $Scripts "vcpkg-tools.json"
 
     $7zip_version = "19.00"
     $ninja_version = "1.10.2"
@@ -76,7 +83,11 @@ if (-not $IsMacOS -and -not $IsLinux) {
         "archive": "cmake-3.20.4.txz"
     }]
 }
-'@ | % { $_ -replace "`r","" } | Out-File -enc ascii $(Join-Path $Scripts "vcpkg-tools.json")
+'@ | % { $_ -replace "`r","" } | Out-File -enc ascii $VcpkgToolsJson
+
+    if (-not (Test-Json -ea:0 -LiteralPath $VcpkgToolsJson -SchemaFile $VcpkgToolsJsonSchemaFile)) {
+        throw "testing vcpkg-tools.json doesn't conform to schema"
+    }
 
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip", "--vcpkg-root=$TestingRoot"))

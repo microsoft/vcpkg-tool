@@ -1427,7 +1427,7 @@ namespace vcpkg::Json
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
-                                                        Span<const StringView> known_fields) noexcept
+                                                        View<StringLiteral> known_fields) noexcept
     {
         const auto field_is_unknown = [known_fields](StringView sv) {
             // allow directives
@@ -1492,7 +1492,7 @@ namespace vcpkg::Json
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
-                                             View<StringView> valid_fields,
+                                             View<StringLiteral> valid_fields,
                                              const LocalizedString& type_name)
     {
         if (valid_fields.size() == 0)
