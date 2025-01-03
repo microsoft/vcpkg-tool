@@ -62,7 +62,7 @@ namespace vcpkg
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
                                               std::shared_ptr<const DownloadManager> downloader,
                                               Path downloads,
-                                              Path xml_config,
+                                              Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling);
 }
