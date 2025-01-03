@@ -165,6 +165,32 @@ namespace vcpkg
         return specs_installed;
     }
 
+    static bool is_action_plan_fulfilled(const ActionPlan& action_plan, const StatusParagraphs& status_db)
+    {
+        std::set<std::string> all_abis;
+        for (const auto& action : action_plan.install_actions)
+        {
+            all_abis.insert(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+        }
+
+        for (auto&& status_pgh : status_db)
+        {
+            if (!status_pgh->is_installed()) continue;
+            if (status_pgh->package.is_feature()) continue;
+
+            const auto& abi = status_pgh->package.abi;
+            if (abi.empty())
+            {
+                return false;
+            }
+            if (all_abis.erase(abi) == 0)
+            {
+                return false;
+            }
+        }
+        return all_abis.empty();
+    }
+
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
                                            Triplet host_triplet,
@@ -179,7 +205,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {});
+        compute_all_abis(paths, action_plan, cmake_vars, {}, UseCompilerInfoCache::Yes);
 
         std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
@@ -217,7 +243,32 @@ namespace vcpkg
 
         // currently (or once) installed specifications
         auto status_db = database_load_collapse(fs, paths.installed());
+
+        bool used_cached_compiler_info =
+            Util::any_of(action_plan.install_actions, [](const InstallPlanAction& install_action) {
+                return install_action.abi_info.value_or_exit(VCPKG_LINE_INFO)
+                    .compiler_info.value_or_exit(VCPKG_LINE_INFO)
+                    .from_cache;
+            });
+
+        if (used_cached_compiler_info)
+        {
+            if (!is_action_plan_fulfilled(action_plan, status_db))
+            {
+                // we have to install something, so get fresh compiler infos
+                for (auto& install_action : action_plan.install_actions)
+                {
+                    install_action.abi_info.clear();
+                }
+                compute_all_abis(paths, action_plan, cmake_vars, {});
+                used_cached_compiler_info = false;
+            }
+        }
         adjust_action_plan_to_status_db(action_plan, status_db);
+        if (used_cached_compiler_info)
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, action_plan.empty());
+        }
 
         print_plan(action_plan, paths.builtin_ports_directory());
 
