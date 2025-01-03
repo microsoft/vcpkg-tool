@@ -214,6 +214,7 @@ namespace vcpkg
             msg::print(summary.format());
         }
 
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
