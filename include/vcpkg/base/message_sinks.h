@@ -21,6 +21,9 @@ namespace vcpkg
         void print(StringView text);
         const std::vector<MessageLineSegment>& get_segments() const noexcept;
 
+        std::string to_string() const;
+        void to_string(std::string& target) const;
+
     private:
         std::vector<MessageLineSegment> segments;
     };

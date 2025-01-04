@@ -187,6 +187,15 @@ namespace vcpkg
     void MessageLine::print(StringView text) { print(Color::none, text); }
     const std::vector<MessageLineSegment>& MessageLine::get_segments() const noexcept { return segments; }
 
+    std::string MessageLine::to_string() const { return adapt_to_string(*this); }
+    void MessageLine::to_string(std::string& target) const
+    {
+        for (const auto& segment : segments)
+        {
+            target.append(segment.text);
+        }
+    }
+
     void MessageSink::println(const LocalizedString& s)
     {
         MessageLine line;
@@ -213,11 +222,7 @@ namespace vcpkg
     void FileSink::println(const MessageLine& line)
     {
         std::string whole_line;
-        for (auto&& segment : line.get_segments())
-        {
-            whole_line.append(segment.text);
-        }
-
+        line.to_string(whole_line);
         whole_line.push_back('\n');
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                m_out_file.write(whole_line.data(), 1, whole_line.size()) == whole_line.size(),
