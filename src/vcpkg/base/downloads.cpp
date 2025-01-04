@@ -7,6 +7,7 @@
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
@@ -46,34 +47,9 @@ namespace
 namespace vcpkg
 {
 #if defined(_WIN32)
-    struct WinHttpHandle
-    {
-        HINTERNET h;
-
-        WinHttpHandle() : h(0) { }
-        explicit WinHttpHandle(HINTERNET h_) : h(h_) { }
-        WinHttpHandle(const WinHttpHandle&) = delete;
-        WinHttpHandle(WinHttpHandle&& other) : h(other.h) { other.h = 0; }
-        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
-        WinHttpHandle& operator=(WinHttpHandle&& other)
-        {
-            auto cpy = std::move(other);
-            std::swap(h, cpy.h);
-            return *this;
-        }
-
-        ~WinHttpHandle()
-        {
-            if (h)
-            {
-                WinHttpCloseHandle(h);
-            }
-        }
-    };
-
     static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, StringView url, DWORD last_error)
     {
-        return msg::format_error(
+        return msg::format(
             msgDownloadWinHttpError, msg::system_api = api_name, msg::exit_code = last_error, msg::url = url);
     }
 
@@ -82,10 +58,10 @@ namespace vcpkg
         return format_winhttp_last_error_message(api_name, url, GetLastError());
     }
 
-    static void maybe_emit_winhttp_progress(const Optional<unsigned long long>& maybe_content_length,
+    static void maybe_emit_winhttp_progress(MessageSink& machine_readable_progress,
+                                            const Optional<unsigned long long>& maybe_content_length,
                                             std::chrono::steady_clock::time_point& last_write,
-                                            unsigned long long total_downloaded_size,
-                                            MessageSink& progress_sink)
+                                            unsigned long long total_downloaded_size)
     {
         if (const auto content_length = maybe_content_length.get())
         {
@@ -94,174 +70,240 @@ namespace vcpkg
             {
                 const double percent =
                     (static_cast<double>(total_downloaded_size) / static_cast<double>(*content_length)) * 100;
-                progress_sink.println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
+                machine_readable_progress.println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
                 last_write = now;
             }
         }
     }
 
-    struct WinHttpRequest
+    struct WinHttpHandle
     {
-        static ExpectedL<WinHttpRequest> make(HINTERNET hConnect,
-                                              StringView url_path,
-                                              StringView sanitized_url,
-                                              bool https,
-                                              const wchar_t* method = L"GET")
+        WinHttpHandle() = default;
+        WinHttpHandle(const WinHttpHandle&) = delete;
+        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
+
+        void require_null_handle() const
         {
-            WinHttpRequest ret;
-            ret.m_sanitized_url.assign(sanitized_url.data(), sanitized_url.size());
-            // Create an HTTP request handle.
+            if (h)
             {
-                auto h = WinHttpOpenRequest(hConnect,
-                                            method,
-                                            Strings::to_utf16(url_path).c_str(),
-                                            nullptr,
-                                            WINHTTP_NO_REFERER,
-                                            WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                            https ? WINHTTP_FLAG_SECURE : 0);
-                if (!h)
-                {
-                    return format_winhttp_last_error_message("WinHttpOpenRequest", sanitized_url);
-                }
-
-                ret.m_hRequest = WinHttpHandle{h};
-            }
-
-            // Send a request.
-            auto bResults = WinHttpSendRequest(
-                ret.m_hRequest.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
-
-            if (!bResults)
-            {
-                return format_winhttp_last_error_message("WinHttpSendRequest", sanitized_url);
-            }
-
-            // End the request.
-            bResults = WinHttpReceiveResponse(ret.m_hRequest.h, NULL);
-            if (!bResults)
-            {
-                return format_winhttp_last_error_message("WinHttpReceiveResponse", sanitized_url);
-            }
-
-            return ret;
-        }
-
-        ExpectedL<int> query_status() const
-        {
-            DWORD status_code;
-            DWORD size = sizeof(status_code);
-
-            auto succeeded = WinHttpQueryHeaders(m_hRequest.h,
-                                                 WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                                 WINHTTP_HEADER_NAME_BY_INDEX,
-                                                 &status_code,
-                                                 &size,
-                                                 WINHTTP_NO_HEADER_INDEX);
-            if (succeeded)
-            {
-                return status_code;
-            }
-
-            return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url);
-        }
-
-        ExpectedL<Optional<unsigned long long>> query_content_length() const
-        {
-            static constexpr DWORD buff_characters = 21; // 18446744073709551615
-            wchar_t buff[buff_characters];
-            DWORD size = sizeof(buff);
-            auto succeeded = WinHttpQueryHeaders(m_hRequest.h,
-                                                 WINHTTP_QUERY_CONTENT_LENGTH,
-                                                 WINHTTP_HEADER_NAME_BY_INDEX,
-                                                 buff,
-                                                 &size,
-                                                 WINHTTP_NO_HEADER_INDEX);
-            if (succeeded)
-            {
-                return Strings::strto<unsigned long long>(Strings::to_utf8(buff, size >> 1));
-            }
-
-            const DWORD last_error = GetLastError();
-            if (last_error == ERROR_WINHTTP_HEADER_NOT_FOUND)
-            {
-                return Optional<unsigned long long>{nullopt};
-            }
-
-            return format_winhttp_last_error_message("WinHttpQueryHeaders", m_sanitized_url, last_error);
-        }
-
-        ExpectedL<Unit> write_response_body(WriteFilePointer& file, MessageSink& progress_sink)
-        {
-            static constexpr DWORD buff_size = 65535;
-            std::unique_ptr<char[]> buff{new char[buff_size]};
-            Optional<unsigned long long> maybe_content_length;
-            auto last_write = std::chrono::steady_clock::now();
-
-            {
-                auto maybe_maybe_content_length = query_content_length();
-                if (const auto p = maybe_maybe_content_length.get())
-                {
-                    maybe_content_length = *p;
-                }
-                else
-                {
-                    return std::move(maybe_maybe_content_length).error();
-                }
-            }
-
-            unsigned long long total_downloaded_size = 0;
-            for (;;)
-            {
-                DWORD this_read;
-                if (!WinHttpReadData(m_hRequest.h, buff.get(), buff_size, &this_read))
-                {
-                    return format_winhttp_last_error_message("WinHttpReadData", m_sanitized_url);
-                }
-
-                if (this_read == 0)
-                {
-                    return Unit{};
-                }
-
-                do
-                {
-                    const auto this_write = static_cast<DWORD>(file.write(buff.get(), 1, this_read));
-                    if (this_write == 0)
-                    {
-                        return format_winhttp_last_error_message("fwrite", m_sanitized_url);
-                    }
-
-                    maybe_emit_winhttp_progress(maybe_content_length, last_write, total_downloaded_size, progress_sink);
-                    this_read -= this_write;
-                    total_downloaded_size += this_write;
-                } while (this_read > 0);
+                Checks::unreachable(VCPKG_LINE_INFO, "WinHTTP handle type confusion");
             }
         }
 
-        WinHttpHandle m_hRequest;
-        std::string m_sanitized_url;
+        void require_created_handle() const
+        {
+            if (!h)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "WinHTTP handle not created");
+            }
+        }
+
+        bool Connect(DiagnosticContext& context,
+                     StringView sanitized_url,
+                     const WinHttpHandle& session,
+                     StringView hostname,
+                     INTERNET_PORT port)
+        {
+            require_null_handle();
+            session.require_created_handle();
+            h = WinHttpConnect(session.h, Strings::to_utf16(hostname).c_str(), port, 0);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpConnect", sanitized_url));
+            return false;
+        }
+
+        bool Open(DiagnosticContext& context,
+                  StringView sanitized_url,
+                  _In_opt_z_ LPCWSTR pszAgentW,
+                  _In_ DWORD dwAccessType,
+                  _In_opt_z_ LPCWSTR pszProxyW,
+                  _In_opt_z_ LPCWSTR pszProxyBypassW,
+                  _In_ DWORD dwFlags)
+        {
+            require_null_handle();
+            h = WinHttpOpen(pszAgentW, dwAccessType, pszProxyW, pszProxyBypassW, dwFlags);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpOpen", sanitized_url));
+            return false;
+        }
+
+        bool OpenRequest(DiagnosticContext& context,
+                         const WinHttpHandle& hConnect,
+                         StringView sanitized_url,
+                         IN LPCWSTR pwszVerb,
+                         StringView path_query_fragment,
+                         IN LPCWSTR pwszVersion,
+                         IN LPCWSTR pwszReferrer OPTIONAL,
+                         IN LPCWSTR FAR* ppwszAcceptTypes OPTIONAL,
+                         IN DWORD dwFlags)
+        {
+            require_null_handle();
+            h = WinHttpOpenRequest(hConnect.h,
+                                   pwszVerb,
+                                   Strings::to_utf16(path_query_fragment).c_str(),
+                                   pwszVersion,
+                                   pwszReferrer,
+                                   ppwszAcceptTypes,
+                                   dwFlags);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpOpenRequest", sanitized_url));
+            return false;
+        }
+
+        bool SendRequest(DiagnosticContext& context,
+                         StringView sanitized_url,
+                         _In_reads_opt_(dwHeadersLength) LPCWSTR lpszHeaders,
+                         IN DWORD dwHeadersLength,
+                         _In_reads_bytes_opt_(dwOptionalLength) LPVOID lpOptional,
+                         IN DWORD dwOptionalLength,
+                         IN DWORD dwTotalLength,
+                         IN DWORD_PTR dwContext) const
+        {
+            require_created_handle();
+            if (WinHttpSendRequest(
+                    h, lpszHeaders, dwHeadersLength, lpOptional, dwOptionalLength, dwTotalLength, dwContext))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSendRequest", sanitized_url));
+            return false;
+        }
+
+        bool ReceiveResponse(DiagnosticContext& context, StringView sanitized_url)
+        {
+            require_created_handle();
+            if (WinHttpReceiveResponse(h, NULL))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpReceiveResponse", sanitized_url));
+            return false;
+        }
+
+        bool SetTimeouts(DiagnosticContext& context,
+                         StringView sanitized_url,
+                         int nResolveTimeout,
+                         int nConnectTimeout,
+                         int nSendTimeout,
+                         int nReceiveTimeout) const
+        {
+            require_created_handle();
+            if (WinHttpSetTimeouts(h, nResolveTimeout, nConnectTimeout, nSendTimeout, nReceiveTimeout))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSetTimeouts", sanitized_url));
+            return false;
+        }
+
+        bool SetOption(DiagnosticContext& context,
+                       StringView sanitized_url,
+                       DWORD dwOption,
+                       LPVOID lpBuffer,
+                       DWORD dwBufferLength) const
+        {
+            require_created_handle();
+            if (WinHttpSetOption(h, dwOption, lpBuffer, dwBufferLength))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSetOption", sanitized_url));
+            return false;
+        }
+
+        DWORD QueryHeaders(DiagnosticContext& context,
+                           StringView sanitized_url,
+                           DWORD dwInfoLevel,
+                           LPWSTR pwszName,
+                           LPVOID lpBuffer,
+                           LPDWORD lpdwBufferLength,
+                           LPDWORD lpdwIndex) const
+        {
+            require_created_handle();
+            if (WinHttpQueryHeaders(h, dwInfoLevel, pwszName, lpBuffer, lpdwBufferLength, lpdwIndex))
+            {
+                return 0;
+            }
+
+            DWORD last_error = GetLastError();
+            context.report_error(format_winhttp_last_error_message("WinHttpQueryHeaders", sanitized_url, last_error));
+            return last_error;
+        }
+
+        bool ReadData(DiagnosticContext& context,
+                      StringView sanitized_url,
+                      LPVOID buffer,
+                      DWORD dwNumberOfBytesToRead,
+                      DWORD* numberOfBytesRead)
+        {
+            require_created_handle();
+            if (WinHttpReadData(h, buffer, dwNumberOfBytesToRead, numberOfBytesRead))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpReadData", sanitized_url));
+            return false;
+        }
+
+        ~WinHttpHandle()
+        {
+            if (h)
+            {
+                // intentionally ignore failures
+                (void)WinHttpCloseHandle(h);
+            }
+        }
+
+    private:
+        HINTERNET h{};
+    };
+
+    enum class WinHttpTrialResult
+    {
+        failed,
+        succeeded,
+        retry
     };
 
     struct WinHttpSession
     {
-        static ExpectedL<WinHttpSession> make(StringView sanitized_url)
+        bool open(DiagnosticContext& context, StringView sanitized_url)
         {
-            WinHttpSession ret;
+            if (!m_hSession.Open(context,
+                                 sanitized_url,
+                                 L"vcpkg/1.0",
+                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
+                                 WINHTTP_NO_PROXY_NAME,
+                                 WINHTTP_NO_PROXY_BYPASS,
+                                 0))
             {
-                auto h = WinHttpOpen(
-                    L"vcpkg/1.0", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-                if (!h)
-                {
-                    return format_winhttp_last_error_message("WinHttpOpen", sanitized_url);
-                }
-
-                ret.m_hSession = WinHttpHandle{h};
+                return false;
             }
 
             // Increase default timeouts to help connections behind proxies
             // WinHttpSetTimeouts(HINTERNET hInternet, int nResolveTimeout, int nConnectTimeout, int nSendTimeout, int
             // nReceiveTimeout);
-            WinHttpSetTimeouts(ret.m_hSession.h, 0, 120000, 120000, 120000);
+            if (!m_hSession.SetTimeouts(context, sanitized_url, 0, 120000, 120000, 120000))
+            {
+                return false;
+            }
 
             // If the environment variable HTTPS_PROXY is set
             // use that variable as proxy. This situation might exist when user is in a company network
@@ -274,8 +316,10 @@ namespace vcpkg
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();
                 proxy.lpszProxyBypass = nullptr;
-
-                WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+                {
+                    return false;
+                }
             }
             // IE Proxy fallback, this works on Windows 10
             else
@@ -289,24 +333,36 @@ namespace vcpkg
                     proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                     proxy.lpszProxy = ieProxy.get()->server.data();
                     proxy.lpszProxyBypass = ieProxy.get()->bypass.data();
-                    WinHttpSetOption(ret.m_hSession.h, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+                    if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+                    {
+                        return false;
+                    }
                 }
             }
 
             // Use Windows 10 defaults on Windows 7
             DWORD secure_protocols(WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
                                    WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2);
-            WinHttpSetOption(
-                ret.m_hSession.h, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(secure_protocols));
+            if (!m_hSession.SetOption(context,
+                                      sanitized_url,
+                                      WINHTTP_OPTION_SECURE_PROTOCOLS,
+                                      &secure_protocols,
+                                      sizeof(secure_protocols)))
+            {
+                return false;
+            }
 
             // Many open source mirrors such as https://download.gnome.org/ will redirect to http mirrors.
             // `curl.exe -L` does follow https -> http redirection.
             // Additionally, vcpkg hash checks the resulting archive.
             DWORD redirect_policy(WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS);
-            WinHttpSetOption(
-                ret.m_hSession.h, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy));
+            if (!m_hSession.SetOption(
+                    context, sanitized_url, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy)))
+            {
+                return false;
+            }
 
-            return ret;
+            return true;
         }
 
         WinHttpHandle m_hSession;
@@ -314,22 +370,154 @@ namespace vcpkg
 
     struct WinHttpConnection
     {
-        static ExpectedL<WinHttpConnection> make(HINTERNET hSession,
-                                                 StringView hostname,
-                                                 INTERNET_PORT port,
-                                                 StringView sanitized_url)
+        bool connect(DiagnosticContext& context,
+                     StringView sanitized_url,
+                     const WinHttpSession& hSession,
+                     StringView hostname,
+                     INTERNET_PORT port)
         {
             // Specify an HTTP server.
-            auto h = WinHttpConnect(hSession, Strings::to_utf16(hostname).c_str(), port, 0);
-            if (!h)
-            {
-                return format_winhttp_last_error_message("WinHttpConnect", sanitized_url);
-            }
-
-            return WinHttpConnection{WinHttpHandle{h}};
+            return m_hConnect.Connect(context, sanitized_url, hSession.m_hSession, hostname, port);
         }
 
         WinHttpHandle m_hConnect;
+    };
+
+    struct WinHttpRequest
+    {
+        bool open(DiagnosticContext& context,
+                  const WinHttpConnection& hConnect,
+                  StringView path_query_fragment,
+                  StringView sanitized_url,
+                  bool https,
+                  const wchar_t* method = L"GET")
+        {
+            m_sanitized_url.assign(sanitized_url.data(), sanitized_url.size());
+            if (!m_hRequest.OpenRequest(context,
+                                        hConnect.m_hConnect,
+                                        sanitized_url,
+                                        method,
+                                        path_query_fragment,
+                                        nullptr,
+                                        WINHTTP_NO_REFERER,
+                                        WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                        https ? WINHTTP_FLAG_SECURE : 0))
+            {
+                return false;
+            }
+
+            // Send a request.
+            if (!m_hRequest.SendRequest(
+                    context, sanitized_url, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
+            {
+                return false;
+            }
+
+            // End the request.
+            if (!m_hRequest.ReceiveResponse(context, sanitized_url))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        Optional<int> query_status(DiagnosticContext& context) const
+        {
+            DWORD status_code;
+            DWORD size = sizeof(status_code);
+            DWORD last_error = m_hRequest.QueryHeaders(context,
+                                                       m_sanitized_url,
+                                                       WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                       WINHTTP_HEADER_NAME_BY_INDEX,
+                                                       &status_code,
+                                                       &size,
+                                                       WINHTTP_NO_HEADER_INDEX);
+            if (last_error)
+            {
+                return nullopt;
+            }
+
+            return status_code;
+        }
+
+        bool query_content_length(DiagnosticContext& context, Optional<unsigned long long>& result) const
+        {
+            static constexpr DWORD buff_characters = 21; // 18446744073709551615
+            wchar_t buff[buff_characters];
+            DWORD size = sizeof(buff);
+            AttemptDiagnosticContext adc{context};
+            DWORD last_error = m_hRequest.QueryHeaders(adc,
+                                                       m_sanitized_url,
+                                                       WINHTTP_QUERY_CONTENT_LENGTH,
+                                                       WINHTTP_HEADER_NAME_BY_INDEX,
+                                                       buff,
+                                                       &size,
+                                                       WINHTTP_NO_HEADER_INDEX);
+            if (!last_error)
+            {
+                adc.commit();
+                result = Strings::strto<unsigned long long>(Strings::to_utf8(buff, size >> 1));
+                return true;
+            }
+
+            if (last_error == ERROR_WINHTTP_HEADER_NOT_FOUND)
+            {
+                adc.handle();
+                return true;
+            }
+
+            adc.commit();
+            return false;
+        }
+
+        WinHttpTrialResult write_response_body(DiagnosticContext& context,
+                                               MessageSink& machine_readable_progress,
+                                               const WriteFilePointer& file)
+        {
+            static constexpr DWORD buff_size = 65535;
+            std::unique_ptr<char[]> buff{new char[buff_size]};
+            Optional<unsigned long long> maybe_content_length;
+            auto last_write = std::chrono::steady_clock::now();
+            if (!query_content_length(context, maybe_content_length))
+            {
+                return WinHttpTrialResult::retry;
+            }
+
+            unsigned long long total_downloaded_size = 0;
+            for (;;)
+            {
+                DWORD this_read;
+                if (!m_hRequest.ReadData(context, m_sanitized_url, buff.get(), buff_size, &this_read))
+                {
+                    return WinHttpTrialResult::retry;
+                }
+
+                if (this_read == 0)
+                {
+                    return WinHttpTrialResult::succeeded;
+                }
+
+                do
+                {
+                    const auto this_write = static_cast<DWORD>(file.write(buff.get(), 1, this_read));
+                    if (this_write == 0)
+                    {
+                        context.report_error(format_filesystem_call_error(
+                            std::error_code{errno, std::generic_category()}, "fwrite", {file.path()}));
+                        return WinHttpTrialResult::failed;
+                    }
+
+                    maybe_emit_winhttp_progress(
+                        machine_readable_progress, maybe_content_length, last_write, total_downloaded_size);
+                    this_read -= this_write;
+                    total_downloaded_size += this_write;
+                } while (this_read > 0);
+            }
+        }
+
+        WinHttpHandle m_hRequest;
+        std::string m_sanitized_url;
     };
 #endif
 
@@ -612,13 +800,12 @@ namespace vcpkg
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
     {
-        auto url = base_url.to_string();
         if (query_params.empty())
         {
-            return url;
+            return base_url.to_string();
         }
 
-        return url + "?" + Strings::join("&", query_params);
+        return fmt::format(FMT_COMPILE("{}?{}"), base_url, fmt::join(query_params, "&"));
     }
 
     ExpectedL<std::string> invoke_http_request(StringView method,
@@ -642,77 +829,55 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
-    enum class WinHttpTrialResult
-    {
-        failed,
-        succeeded,
-        retry
-    };
-
-    static WinHttpTrialResult download_winhttp_trial(const Filesystem& fs,
-                                                     WinHttpSession& s,
+    static WinHttpTrialResult download_winhttp_trial(DiagnosticContext& context,
+                                                     MessageSink& machine_readable_progress,
+                                                     const Filesystem& fs,
+                                                     const WinHttpSession& s,
                                                      const Path& download_path_part_path,
                                                      SplitURIView split_uri,
                                                      StringView hostname,
                                                      INTERNET_PORT port,
-                                                     StringView sanitized_url,
-                                                     std::vector<LocalizedString>& errors,
-                                                     MessageSink& progress_sink)
+                                                     StringView sanitized_url)
     {
-        auto maybe_conn = WinHttpConnection::make(s.m_hSession.h, hostname, port, sanitized_url);
-        const auto conn = maybe_conn.get();
-        if (!conn)
+        WinHttpConnection conn;
+        if (!conn.connect(context, sanitized_url, s, hostname, port))
         {
-            errors.push_back(std::move(maybe_conn).error());
             return WinHttpTrialResult::retry;
         }
 
-        auto maybe_req = WinHttpRequest::make(
-            conn->m_hConnect.h, split_uri.path_query_fragment, sanitized_url, split_uri.scheme == "https");
-        const auto req = maybe_req.get();
-        if (!req)
+        WinHttpRequest req;
+        if (!req.open(context, conn, split_uri.path_query_fragment, sanitized_url, split_uri.scheme == "https"))
         {
-            errors.push_back(std::move(maybe_req).error());
             return WinHttpTrialResult::retry;
         }
 
-        auto maybe_status = req->query_status();
+        auto maybe_status = req.query_status(context);
         const auto status = maybe_status.get();
         if (!status)
         {
-            errors.push_back(std::move(maybe_status).error());
             return WinHttpTrialResult::retry;
         }
 
         if (*status < 200 || *status >= 300)
         {
-            errors.push_back(
-                msg::format_error(msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status));
+            context.report_error(msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status);
             return WinHttpTrialResult::failed;
         }
 
-        auto f = fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO);
-        auto maybe_write = req->write_response_body(f, progress_sink);
-        const auto write = maybe_write.get();
-        if (!write)
-        {
-            errors.push_back(std::move(maybe_write).error());
-            return WinHttpTrialResult::retry;
-        }
-
-        return WinHttpTrialResult::succeeded;
+        return req.write_response_body(
+            context, machine_readable_progress, fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO));
     }
 
     /// <summary>
     /// Download a file using WinHTTP -- only supports HTTP and HTTPS
     /// </summary>
-    static bool download_winhttp(const Filesystem& fs,
+    static bool download_winhttp(DiagnosticContext& context,
+                                 MessageSink& machine_readable_progress,
+                                 const Filesystem& fs,
                                  const Path& download_path_part_path,
                                  SplitURIView split_uri,
                                  const std::string& url,
-                                 const std::vector<std::string>& secrets,
-                                 std::vector<LocalizedString>& errors,
-                                 MessageSink& progress_sink)
+                                 const std::vector<std::string>& secrets)
     {
         // `download_winhttp` does not support user or port syntax in authorities
         auto hostname = split_uri.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
@@ -735,26 +900,52 @@ namespace vcpkg
         fs.create_directories(dir, VCPKG_LINE_INFO);
 
         const auto sanitized_url = replace_secrets(url, secrets);
-        static auto s = WinHttpSession::make(sanitized_url).value_or_exit(VCPKG_LINE_INFO);
-        for (size_t trials = 0; trials < 4; ++trials)
+        WinHttpSession s;
+        if (!s.open(context, sanitized_url))
         {
-            if (trials > 0)
-            {
-                // 1s, 2s, 4s
-                const auto trialMs = 500 << trials;
-                msg::println_warning(msgDownloadFailedRetrying, msg::value = trialMs);
-                std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
-            }
+            return false;
+        }
 
-            switch (download_winhttp_trial(
-                fs, s, download_path_part_path, split_uri, hostname, port, sanitized_url, errors, progress_sink))
+        AttemptDiagnosticContext adc{context};
+        switch (download_winhttp_trial(context,
+                                       machine_readable_progress,
+                                       fs,
+                                       s,
+                                       download_path_part_path,
+                                       split_uri,
+                                       hostname,
+                                       port,
+                                       sanitized_url))
+        {
+            case WinHttpTrialResult::succeeded: adc.commit(); return true;
+            case WinHttpTrialResult::failed: adc.commit(); return false;
+            case WinHttpTrialResult::retry: break;
+        }
+
+        for (size_t trials = 1; trials < 4; ++trials)
+        {
+            // 1s, 2s, 4s
+            const auto trialMs = 500 << trials;
+            adc.handle();
+            adc.statusln(msg::format_warning(msgDownloadFailedRetrying, msg::value = trialMs));
+            std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
+            switch (download_winhttp_trial(context,
+                                           machine_readable_progress,
+                                           fs,
+                                           s,
+                                           download_path_part_path,
+                                           split_uri,
+                                           hostname,
+                                           port,
+                                           sanitized_url))
             {
-                case WinHttpTrialResult::failed: return false;
-                case WinHttpTrialResult::succeeded: return true;
+                case WinHttpTrialResult::succeeded: adc.commit(); return true;
+                case WinHttpTrialResult::failed: adc.commit(); return false;
                 case WinHttpTrialResult::retry: break;
             }
         }
 
+        adc.commit();
         return false;
     }
 #endif
@@ -780,10 +971,9 @@ namespace vcpkg
 #if defined(_WIN32)
         auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
         bool needs_proxy_auth = false;
-        if (maybe_https_proxy_env)
+        if (auto proxy_url = maybe_https_proxy_env.get())
         {
-            const auto& proxy_url = maybe_https_proxy_env.value_or_exit(VCPKG_LINE_INFO);
-            needs_proxy_auth = proxy_url.find('@') != std::string::npos;
+            needs_proxy_auth = proxy_url->find('@') != std::string::npos;
         }
         if (headers.size() == 0 && !needs_proxy_auth)
         {
@@ -800,7 +990,8 @@ namespace vcpkg
                 // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to curl.exe
                 if (Strings::find_first_of(authority, ":@") == authority.end())
                 {
-                    if (download_winhttp(fs, download_path_part_path, split_uri, url, secrets, errors, progress_sink))
+                    BufferedDiagnosticContext bdc{stdout_sink};
+                    if (download_winhttp(bdc, progress_sink, fs, download_path_part_path, split_uri, url, secrets))
                     {
                         auto maybe_hash_check = check_downloaded_file_hash(fs, sha512, url, download_path_part_path);
                         if (maybe_hash_check.has_value())
@@ -813,6 +1004,8 @@ namespace vcpkg
                             errors.push_back(std::move(maybe_hash_check).error());
                         }
                     }
+
+                    errors.push_back(LocalizedString::from_raw(std::move(bdc).to_string()));
                     return false;
                 }
             }
@@ -1035,7 +1228,7 @@ namespace vcpkg
                 }
                 else if (block_origin_enabled)
                 {
-                    msg::println(msgAssetCacheMissBlockOrigin, msg::path = download_path.filename());
+                    msg::println(msgAssetCacheMissBlockOrigin, msg::url = urls[0]);
                 }
                 else
                 {
@@ -1093,7 +1286,7 @@ namespace vcpkg
 
         if (block_origin_enabled)
         {
-            msg::println_error(msgMissingAssetBlockOrigin, msg::path = download_path.filename());
+            msg::println(msgAssetCacheMissBlockOrigin, msg::url = urls[0]);
         }
         else
         {
@@ -1268,8 +1461,8 @@ namespace vcpkg
         const auto last = curl_progress_line.end();
         if (parse_curl_uint_impl(result.total_percent, first, last) ||
             parse_curl_max5_impl(result.total_size, first, last) ||
-            parse_curl_uint_impl(result.recieved_percent, first, last) ||
-            parse_curl_max5_impl(result.recieved_size, first, last) ||
+            parse_curl_uint_impl(result.received_percent, first, last) ||
+            parse_curl_max5_impl(result.received_size, first, last) ||
             parse_curl_uint_impl(result.transfer_percent, first, last) ||
             parse_curl_max5_impl(result.transfer_size, first, last) ||
             parse_curl_max5_impl(result.average_download_speed, first, last) ||

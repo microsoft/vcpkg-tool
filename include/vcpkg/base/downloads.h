@@ -99,8 +99,8 @@ namespace vcpkg
     {
         unsigned int total_percent;
         unsigned long long total_size;
-        unsigned int recieved_percent;
-        unsigned long long recieved_size;
+        unsigned int received_percent;
+        unsigned long long received_size;
         unsigned int transfer_percent;
         unsigned long long transfer_size;
         unsigned long long average_download_speed; // bytes per second

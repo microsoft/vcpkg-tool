@@ -251,11 +251,10 @@ DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Window
 DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
 DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
 DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
-                (msg::path),
+                (msg::url),
                 "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
-DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
-DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
+                "there were no asset cache hits for the content, and fetching the authoritative source {url} is "
+                "blocked by x-block-origin")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
@@ -905,6 +904,10 @@ DECLARE_MESSAGE(ConsideredVersions,
                 "The following executables were considered but discarded because of the version "
                 "requirement of {version}:")
 DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
+DECLARE_MESSAGE(ConsultBinaryCacheStatus,
+                (msg::count, msg::base_url),
+                "",
+                "Checking binary cache {base_url} status for {count} cache entries...")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
@@ -1070,17 +1073,24 @@ DECLARE_MESSAGE(DownloadFailedProxySettings,
                 "If you've tried directly download the link, and believe this is not a temporay download server "
                 "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
                 "to report this upstream download server failure.")
+DECLARE_MESSAGE(DownloadingBulkBinaryCache,
+                (msg::count, msg::base_url),
+                "",
+                "Downloading {count} cache entries from binary cache {base_url} ...")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
                 "A suitable version of {tool_name} was not found (required v{version}).")
+DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "downloading {url}")
+DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "downloading {url} -> {path}")
+DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
+DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
+DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
+DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
                 "{url}: {system_api} failed with exit code {exit_code}")
-DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
-DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
-DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
                 "{value} is a json property/object",
@@ -1256,10 +1266,6 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(MissingAssetBlockOrigin,
-                (msg::path),
-                "x-block-origin is a vcpkg term. Do not translate",
-                "Missing {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(MissingShaVariable,
                 (),
                 "{{sha}} should not be translated",

@@ -96,6 +96,16 @@ namespace vcpkg
             this->report_error(std::move(message));
         }
 
+        template<VCPKG_DECL_MSG_TEMPLATE>
+        void report_error_with_log(StringView log_content, VCPKG_DECL_MSG_ARGS)
+        {
+            LocalizedString message;
+            msg::format_to(message, VCPKG_EXPAND_MSG_ARGS);
+            message.append_raw('\n');
+            message.append_raw(log_content);
+            this->report_error(std::move(message));
+        }
+
         void report_system_error(StringLiteral system_api_name, int error_value);
 
         // The `status` family are used to report status or progress information that callers are expected
@@ -140,7 +150,51 @@ namespace vcpkg
         bool any_errors() const noexcept;
     };
 
+    struct FullyBufferedDiagnosticContext final : DiagnosticContext
+    {
+        virtual void report(const DiagnosticLine& line) override;
+        virtual void report(DiagnosticLine&& line) override;
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        std::vector<DiagnosticLine> lines;
+
+        // Prints all diagnostics to the supplied sink.
+        void print_to(MessageSink& sink) const;
+        // Converts this message into a string
+        // Prefer print() if possible because it applies color
+        std::string to_string() const;
+        void to_string(std::string& target) const;
+
+        bool any_errors() const noexcept;
+    };
+
+    struct AttemptDiagnosticContext final : DiagnosticContext
+    {
+        AttemptDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
+
+        virtual void report(const DiagnosticLine& line) override;
+        virtual void report(DiagnosticLine&& line) override;
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        void commit();
+        void handle();
+
+        ~AttemptDiagnosticContext();
+
+        DiagnosticContext& inner_context;
+        std::vector<DiagnosticLine> lines;
+    };
+
     extern DiagnosticContext& console_diagnostic_context;
+    extern DiagnosticContext& status_only_diagnostic_context;
     extern DiagnosticContext& null_diagnostic_context;
 
     // The following overloads are implementing

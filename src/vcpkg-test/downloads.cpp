@@ -235,8 +235,8 @@ TEST_CASE ("try_parse_curl_progress_data", "[downloads]")
                              .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(out.total_percent == 0);
         REQUIRE(out.total_size == 0);
-        REQUIRE(out.recieved_percent == 0);
-        REQUIRE(out.recieved_size == 0);
+        REQUIRE(out.received_percent == 0);
+        REQUIRE(out.received_size == 0);
         REQUIRE(out.transfer_percent == 0);
         REQUIRE(out.transfer_size == 0);
         REQUIRE(out.average_upload_speed == 0);
@@ -250,8 +250,8 @@ TEST_CASE ("try_parse_curl_progress_data", "[downloads]")
                              .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(out.total_percent == 2);
         REQUIRE(out.total_size == 190 * 1024 * 1024);
-        REQUIRE(out.recieved_percent == 2);
-        REQUIRE(out.recieved_size == 3935 * 1024);
+        REQUIRE(out.received_percent == 2);
+        REQUIRE(out.received_size == 3935 * 1024);
         REQUIRE(out.transfer_percent == 0);
         REQUIRE(out.transfer_size == 0);
         REQUIRE(out.average_upload_speed == 0);
