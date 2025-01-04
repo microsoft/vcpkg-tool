@@ -15,9 +15,23 @@
 
 #include <vcpkg/commands.version.h>
 
-namespace vcpkg
+using namespace vcpkg;
+
+namespace
 {
-    static std::string replace_secrets(std::string input, View<std::string> secrets)
+    constexpr StringLiteral vcpkg_curl_user_agent_header =
+        "User-Agent: vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
+
+    void add_curl_headers(Command& cmd, View<std::string> headers)
+    {
+        cmd.string_arg("-H").string_arg(vcpkg_curl_user_agent_header);
+        for (auto&& header : headers)
+        {
+            cmd.string_arg("-H").string_arg(header);
+        }
+    }
+
+    std::string replace_secrets(std::string input, View<std::string> secrets)
     {
         const auto replacement = msg::format(msgSecretBanner);
         for (const auto& secret : secrets)
@@ -27,7 +41,10 @@ namespace vcpkg
 
         return input;
     }
+}
 
+namespace vcpkg
+{
 #if defined(_WIN32)
     struct WinHttpHandle
     {
@@ -383,12 +400,7 @@ namespace vcpkg
 
         std::vector<ExpectedL<int>> ret;
         ret.reserve(operation_args.size());
-
-        for (auto&& header : headers)
-        {
-            prefix_cmd.string_arg("-H").string_arg(header);
-        }
-
+        add_curl_headers(prefix_cmd, headers);
         while (ret.size() != operation_args.size())
         {
             // there's an edge case that we aren't handling here where not even one operation fits with the configured
@@ -505,11 +517,15 @@ namespace vcpkg
         auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg("-X").string_arg("POST");
-        cmd.string_arg("-H").string_arg("Accept: application/vnd.github+json");
+        {
+            std::string headers[] = {
+                "Accept: application/vnd.github+json",
+                "Authorization: Bearer " + github_token,
+                "X-GitHub-Api-Version: 2022-11-28",
+            };
+            add_curl_headers(cmd, headers);
+        }
 
-        std::string res = "Authorization: Bearer " + github_token;
-        cmd.string_arg("-H").string_arg(res);
-        cmd.string_arg("-H").string_arg("X-GitHub-Api-Version: 2022-11-28");
         cmd.string_arg(uri);
         cmd.string_arg("-d").string_arg("@-");
 
@@ -568,11 +584,7 @@ namespace vcpkg
         }
 
         auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
-        for (auto&& header : headers)
-        {
-            http_cmd.string_arg("-H").string_arg(header);
-        }
-
+        add_curl_headers(http_cmd, headers);
         http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         http_cmd.string_arg(url);
         http_cmd.string_arg("-T").string_arg(file);
@@ -615,13 +627,7 @@ namespace vcpkg
                                                StringView data)
     {
         auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
-        cmd.string_arg("-H").string_arg(
-            fmt::format("User-Agent: vcpkg/{}-{} (curl)", VCPKG_BASE_VERSION_AS_STRING, VCPKG_VERSION_AS_STRING));
-
-        for (auto&& header : headers)
-        {
-            cmd.string_arg("-H").string_arg(header);
-        }
+        add_curl_headers(cmd, headers);
 
         cmd.string_arg("-X").string_arg(method);
 
@@ -819,11 +825,7 @@ namespace vcpkg
                        .string_arg("--create-dirs")
                        .string_arg("--output")
                        .string_arg(download_path_part_path);
-        for (auto&& header : headers)
-        {
-            cmd.string_arg("-H").string_arg(header);
-        }
-
+        add_curl_headers(cmd, headers);
         std::string non_progress_content;
         auto maybe_exit_code = cmd_execute_and_stream_lines(cmd, [&](StringView line) {
             const auto maybe_parsed = try_parse_curl_progress_data(line);
