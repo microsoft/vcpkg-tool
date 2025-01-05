@@ -344,6 +344,14 @@ namespace vcpkg
                 out_candidate_paths.push_back(*pf / "CMake" / "bin" / "cmake.exe");
             }
         }
+
+        virtual bool is_acceptable(const Path& exe_path) const override
+        {
+            // the cmake version from mysys and cygwin can not be used because that version can't handle 'C:' in paths
+            auto path = exe_path.generic_u8string();
+            return !Strings::ends_with(path, "/usr/bin") && !Strings::ends_with(path, "/cygwin64/bin");
+        }
+
 #endif
         virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
         {
@@ -765,6 +773,7 @@ namespace vcpkg
             for (auto&& candidate : candidates)
             {
                 if (!fs.exists(candidate, IgnoreErrors{})) continue;
+                if (!tool_provider.is_acceptable(candidate)) continue;
                 auto maybe_version = tool_provider.get_version(*this, status_sink, candidate);
                 log_candidate(candidate, maybe_version);
                 const auto version = maybe_version.get();
@@ -773,7 +782,6 @@ namespace vcpkg
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
                 if (!accept_version(actual_version)) continue;
-                if (!tool_provider.is_acceptable(candidate)) continue;
 
                 return PathAndVersion{candidate, *version};
             }
