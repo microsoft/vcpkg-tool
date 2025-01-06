@@ -292,6 +292,13 @@ namespace vcpkg
                                                    MessageSink& status_sink,
                                                    const Path& exe_path) const = 0;
 
+        // returns true if and only if `exe_path` is a usable version of this tool, cheap check
+        virtual bool cheap_is_acceptable(const Path& exe_path) const
+        {
+            (void)exe_path;
+            return true;
+        }
+
         // returns true if and only if `exe_path` is a usable version of this tool
         virtual bool is_acceptable(const Path& exe_path) const
         {
@@ -345,7 +352,7 @@ namespace vcpkg
             }
         }
 
-        virtual bool is_acceptable(const Path& exe_path) const override
+        virtual bool cheap_is_acceptable(const Path& exe_path) const override
         {
             // the cmake version from mysys and cygwin can not be used because that version can't handle 'C:' in paths
             auto path = exe_path.generic_u8string();
@@ -773,7 +780,7 @@ namespace vcpkg
             for (auto&& candidate : candidates)
             {
                 if (!fs.exists(candidate, IgnoreErrors{})) continue;
-                if (!tool_provider.is_acceptable(candidate)) continue;
+                if (!tool_provider.cheap_is_acceptable(candidate)) continue;
                 auto maybe_version = tool_provider.get_version(*this, status_sink, candidate);
                 log_candidate(candidate, maybe_version);
                 const auto version = maybe_version.get();
@@ -782,6 +789,7 @@ namespace vcpkg
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
                 if (!accept_version(actual_version)) continue;
+                if (!tool_provider.is_acceptable(candidate)) continue;
 
                 return PathAndVersion{candidate, *version};
             }
