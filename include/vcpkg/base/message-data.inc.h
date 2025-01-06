@@ -1353,7 +1353,7 @@ DECLARE_MESSAGE(FetchingRegistryInfo,
                 (msg::url, msg::value),
                 "{value} is a reference",
                 "Fetching registry information from {url} ({value})...")
-DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found")
+DECLARE_MESSAGE(FileNotFound, (), "", "file not found")
 DECLARE_MESSAGE(FileReadFailed,
                 (msg::path, msg::byte_offset, msg::count),
                 "",
@@ -1428,10 +1428,6 @@ DECLARE_MESSAGE(GraphCycleDetected,
                 (msg::package_name),
                 "A list of package names comprising the cycle will be printed after this message.",
                 "Cycle detected within graph at {package_name}:")
-DECLARE_MESSAGE(HashFileFailureToRead,
-                (msg::path),
-                "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-                "failed to read file \"{path}\" for hashing: ")
 DECLARE_MESSAGE(HashPortManyFiles,
                 (msg::package_name, msg::count),
                 "",

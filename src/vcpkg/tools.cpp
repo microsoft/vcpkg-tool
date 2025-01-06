@@ -800,6 +800,8 @@ namespace vcpkg
 
         Path download_tool(const ToolData& tool_data, MessageSink& status_sink) const
         {
+            using namespace Hash;
+
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
             Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
@@ -813,25 +815,28 @@ namespace vcpkg
                                 msg::version = version_as_string);
 
             const auto download_path = downloads / tool_data.download_subpath;
-            const auto maybe_actual_hash =
-                get_maybe_file_hash(fs, download_path, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
-            if (const auto actual_hash = maybe_actual_hash.get())
+            const auto hash_result = get_file_hash(console_diagnostic_context, fs, download_path, Algorithm::Sha512);
+            switch (hash_result.prognosis)
             {
-                if (!Strings::case_insensitive_ascii_equals(tool_data.sha512, *actual_hash))
-                {
-                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
-                                                  LocalizedString::from_raw(download_path)
-                                                      .append_raw(": ")
-                                                      .append_raw(ErrorPrefix)
-                                                      .append(msgToolHashMismatch,
-                                                              msg::tool_name = tool_data.name,
-                                                              msg::expected = tool_data.sha512,
-                                                              msg::actual = *actual_hash));
-                }
-            }
-            else
-            {
-                download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                case HashPrognosis::Success:
+                    if (!Strings::case_insensitive_ascii_equals(tool_data.sha512, hash_result.hash))
+                    {
+                        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                      LocalizedString::from_raw(download_path)
+                                                          .append_raw(": ")
+                                                          .append_raw(ErrorPrefix)
+                                                          .append(msgToolHashMismatch,
+                                                                  msg::tool_name = tool_data.name,
+                                                                  msg::expected = tool_data.sha512,
+                                                                  msg::actual = hash_result.hash));
+                    }
+
+                    break;
+                case HashPrognosis::FileNotFound:
+                    download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                    break;
+                case HashPrognosis::OtherError: Checks::exit_fail(VCPKG_LINE_INFO);
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             const auto tool_dir_path = tools / tool_data.tool_dir_subpath;
