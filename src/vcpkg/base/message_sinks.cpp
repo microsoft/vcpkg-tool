@@ -173,6 +173,8 @@ namespace
 
 namespace vcpkg
 {
+    MessageLine::MessageLine(const LocalizedString& ls) { segments.push_back({Color::none, ls.data()}); }
+    MessageLine::MessageLine(LocalizedString&& ls) { segments.push_back({Color::none, std::move(ls).extract_data()}); }
     void MessageLine::print(Color color, StringView text)
     {
         if (!segments.empty() && segments.back().color == color)

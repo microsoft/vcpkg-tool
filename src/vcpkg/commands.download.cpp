@@ -118,7 +118,12 @@ namespace vcpkg
                 msg::println_error(msgMismatchedFiles);
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-            put_file_to_mirror(download_settings, fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
+
+            if (!put_file_to_mirror(console_diagnostic_context, download_settings, file, actual_hash))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         else
@@ -138,14 +143,20 @@ namespace vcpkg
                 urls = it_urls->second;
             }
 
-            download_file(download_settings,
-                          fs,
-                          urls,
-                          headers,
-                          file,
-                          sha,
-                          Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink);
-            Checks::exit_success(VCPKG_LINE_INFO);
+            if (download_file(console_diagnostic_context,
+                              Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink
+                                                                                                    : null_sink,
+                              download_settings,
+                              fs,
+                              urls,
+                              headers,
+                              file,
+                              sha))
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }
 } // namespace vcpkg

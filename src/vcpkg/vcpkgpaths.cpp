@@ -670,12 +670,6 @@ namespace vcpkg
         Debug::print("Using vcpkg-root: ", root, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
-        m_pimpl->m_download_manager_settings.m_block_origin
-            ? Debug::println("External asset downloads are blocked (x-block-origin is enabled)..")
-            : Debug::println("External asset downloads are allowed (x-block-origin is disabled)...");
-        m_pimpl->m_download_manager_settings.asset_cache_configured()
-            ? Debug::println("Asset caching is enabled.")
-            : Debug::println("Asset cache is not configured.");
 
         const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
         auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);

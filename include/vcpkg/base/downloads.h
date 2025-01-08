@@ -15,15 +15,27 @@
 
 namespace vcpkg
 {
-    struct SplitURIView
+    struct Url
     {
-        StringView scheme;
-        Optional<StringView> authority;
-        StringView path_query_fragment;
+        Url() = default;
+        Url(StringView url, View<std::string> secrets);
+        StringView get_url() const noexcept { return m_url; }
+        const std::string& get_sanitized_url() const noexcept { return m_sanitized_url; }
+
+    private:
+        std::string m_url;
+        std::string m_sanitized_url;
+    };
+
+    struct SplitUrl
+    {
+        std::string scheme;
+        Optional<std::string> authority;
+        std::string path_query_fragment;
     };
 
     // e.g. {"https","//example.org", "/index.html"}
-    ExpectedL<SplitURIView> split_uri_view(StringView uri);
+    Optional<SplitUrl> split_url_view(DiagnosticContext& context, const Url& url);
 
     View<std::string> azure_blob_headers();
 
@@ -31,31 +43,37 @@ namespace vcpkg
     // -w "PREFIX%{http_code} %{exitcode} %{errormsg}"
     // with specific handling for curl version < 7.75.0 which does not understand %{exitcode} %{errormsg}
     // If the line is malformed for any reason, no entry to http_codes is added.
-    void parse_curl_status_line(std::vector<ExpectedL<int>>& http_codes, StringLiteral prefix, StringView this_line);
+    // Returns: true if the new version of curl's output with exitcode and errormsg was parsed; otherwise, false.
+    bool parse_curl_status_line(DiagnosticContext& context,
+                                std::vector<int>& http_codes,
+                                StringLiteral prefix,
+                                StringView this_line);
 
-    std::vector<ExpectedL<int>> download_files(View<std::pair<std::string, Path>> url_pairs,
-                                               View<std::string> headers,
-                                               View<std::string> secrets);
+    std::vector<int> download_files(DiagnosticContext& context,
+                                    View<std::pair<std::string, Path>> url_pairs,
+                                    View<std::string> headers,
+                                    View<std::string> secrets);
 
-    bool submit_github_dependency_graph_snapshot(const Optional<std::string>& maybe_github_server_url,
+    bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
+                                                 const Optional<std::string>& maybe_github_server_url,
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
-    ExpectedL<int> put_file(const ReadOnlyFilesystem&,
-                            StringView url,
-                            const std::vector<std::string>& secrets,
-                            View<std::string> headers,
-                            const Path& file,
-                            StringView method = "PUT");
+    bool upload_asset_cache_file(
+        DiagnosticContext& context, const Url& url, StringLiteral method, View<std::string> headers, const Path& file);
 
-    ExpectedL<std::string> invoke_http_request(StringView method,
-                                               View<std::string> headers,
-                                               StringView url,
-                                               StringView data = {});
+    Optional<std::string> invoke_http_request(DiagnosticContext& context,
+                                              StringLiteral method,
+                                              View<std::string> headers,
+                                              StringView url,
+                                              StringView data = {});
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 
-    std::vector<ExpectedL<int>> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
+    std::vector<int> url_heads(DiagnosticContext& context,
+                               View<std::string> urls,
+                               View<std::string> headers,
+                               View<std::string> secrets);
 
     struct AssetCachingSettings
     {
@@ -66,32 +84,31 @@ namespace vcpkg
         std::vector<std::string> m_secrets;
         bool m_block_origin = false;
         Optional<std::string> m_script;
-
-        bool asset_cache_configured() const noexcept;
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    void download_file(const AssetCachingSettings& download_settings,
+    bool download_file(DiagnosticContext& context,
+                       MessageSink& machine_readable_progress,
+                       const AssetCachingSettings& download_settings,
                        const Filesystem& fs,
                        const std::string& url,
                        View<std::string> headers,
                        const Path& download_path,
-                       const Optional<std::string>& sha512,
-                       MessageSink& progress_sink);
+                       const Optional<std::string>& sha512);
 
-    // Returns url that was successfully downloaded from
-    std::string download_file(const AssetCachingSettings& download_settings,
-                              const Filesystem& fs,
-                              View<std::string> urls,
-                              View<std::string> headers,
-                              const Path& download_path,
-                              const Optional<std::string>& sha512,
-                              MessageSink& progress_sink);
+    bool download_file(DiagnosticContext& context,
+                       MessageSink& machine_readable_progress,
+                       const AssetCachingSettings& download_settings,
+                       const Filesystem& fs,
+                       View<std::string> urls,
+                       View<std::string> headers,
+                       const Path& download_path,
+                       const Optional<std::string>& sha512);
 
-    ExpectedL<int> put_file_to_mirror(const AssetCachingSettings& download_settings,
-                                      const ReadOnlyFilesystem& fs,
-                                      const Path& file_to_put,
-                                      StringView sha512);
+    bool put_file_to_mirror(DiagnosticContext& context,
+                            const AssetCachingSettings& download_settings,
+                            const Path& file_to_put,
+                            StringView sha512);
 
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 

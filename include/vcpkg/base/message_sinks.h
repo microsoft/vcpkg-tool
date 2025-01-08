@@ -17,6 +17,13 @@ namespace vcpkg
 
     struct MessageLine
     {
+        MessageLine() = default;
+        MessageLine(const MessageLine&) = default;
+        MessageLine(MessageLine&&) = default;
+
+        explicit MessageLine(const LocalizedString& ls);
+        explicit MessageLine(LocalizedString&& ls);
+
         void print(Color color, StringView text);
         void print(StringView text);
         const std::vector<MessageLineSegment>& get_segments() const noexcept;

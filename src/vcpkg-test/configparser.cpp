@@ -617,7 +617,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         AssetCachingSettings empty;
         CHECK(empty.m_write_headers.empty());
         CHECK(empty.m_read_headers.empty());
-        CHECK(!empty.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -625,7 +624,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -634,7 +632,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -643,7 +640,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
         CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -651,7 +647,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -660,7 +655,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>");
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -670,7 +664,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
-        CHECK(dm.asset_cache_configured());
     }
     {
         AssetCachingSettings dm =
@@ -681,7 +674,6 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_write_headers.empty());
         CHECK(dm.m_secrets.empty());
         CHECK(dm.m_script.value_or_exit(VCPKG_LINE_INFO) == "powershell {SHA} {URL}");
-        CHECK(dm.asset_cache_configured());
     }
 }
 

@@ -833,7 +833,17 @@ namespace vcpkg
 
                     break;
                 case HashPrognosis::FileNotFound:
-                    download_file(download_settings, fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
+                    if (!download_file(console_diagnostic_context,
+                                       null_sink,
+                                       download_settings,
+                                       fs,
+                                       tool_data.url,
+                                       {},
+                                       download_path,
+                                       tool_data.sha512))
+                    {
+                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    }
                     break;
                 case HashPrognosis::OtherError: Checks::exit_fail(VCPKG_LINE_INFO);
                 default: Checks::unreachable(VCPKG_LINE_INFO);

@@ -7,6 +7,8 @@
 #include <vcpkg/fwd/vcpkgpaths.h>
 
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -16,9 +18,10 @@
 
 namespace vcpkg
 {
-    ExpectedL<Path> download_vcpkg_standalone_bundle(const AssetCachingSettings& download_settings,
-                                                     const Filesystem& fs,
-                                                     const Path& download_root);
+    Optional<Path> download_vcpkg_standalone_bundle(DiagnosticContext& context,
+                                                    const AssetCachingSettings& download_settings,
+                                                    const Filesystem& fs,
+                                                    const Path& download_root);
 
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args);
 

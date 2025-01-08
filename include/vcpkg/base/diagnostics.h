@@ -67,11 +67,22 @@ namespace vcpkg
         std::string to_string() const;
         void to_string(std::string& target) const;
 
+        MessageLine to_message_line() const;
+
         LocalizedString to_json_reader_string(const std::string& path, const LocalizedString& type) const;
 
         DiagKind kind() const noexcept { return m_kind; }
+        // Returns this DiagnosticLine with kind == Error reduced to Warning.
+        DiagnosticLine reduce_to_warning() const&;
+        DiagnosticLine reduce_to_warning() &&;
 
     private:
+        DiagnosticLine(DiagKind kind,
+                       const Optional<std::string>& origin,
+                       TextRowCol position,
+                       const LocalizedString& message);
+        DiagnosticLine(DiagKind kind, Optional<std::string>&& origin, TextRowCol position, LocalizedString&& message);
+
         DiagKind m_kind;
         Optional<std::string> m_origin;
         TextRowCol m_position;
@@ -84,7 +95,7 @@ namespace vcpkg
         // to do what it is intended to do. Data sent to the `report` family is expected to not be printed
         // to the console if a caller decides to handle an error.
         virtual void report(const DiagnosticLine& line) = 0;
-        virtual void report(DiagnosticLine&& line) { report(line); }
+        virtual void report(DiagnosticLine&& line);
 
         void report_error(const LocalizedString& message) { report(DiagnosticLine{DiagKind::Error, message}); }
         void report_error(LocalizedString&& message) { report(DiagnosticLine{DiagKind::Error, std::move(message)}); }
@@ -125,6 +136,22 @@ namespace vcpkg
         ~DiagnosticContext() = default;
     };
 
+    struct PrintingDiagnosticContext final : DiagnosticContext
+    {
+        PrintingDiagnosticContext(MessageSink& sink) : sink(sink) { }
+
+        virtual void report(const DiagnosticLine& line) override;
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+    private:
+        MessageSink& sink;
+    };
+
+    // Stores all diagnostics into a vector, while passing through status lines to an underlying MessageSink.
     struct BufferedDiagnosticContext final : DiagnosticContext
     {
         BufferedDiagnosticContext(MessageSink& status_sink) : status_sink(status_sink) { }
@@ -148,8 +175,11 @@ namespace vcpkg
         void to_string(std::string& target) const;
 
         bool any_errors() const noexcept;
+        bool empty() const noexcept;
     };
 
+    // Stores all diagnostics and status messages into a vector. This is generally used for background thread or similar
+    // scenarios where even status messages can't be immediately printed.
     struct FullyBufferedDiagnosticContext final : DiagnosticContext
     {
         virtual void report(const DiagnosticLine& line) override;
@@ -160,7 +190,7 @@ namespace vcpkg
         virtual void statusln(const MessageLine& message) override;
         virtual void statusln(MessageLine&& message) override;
 
-        std::vector<DiagnosticLine> lines;
+        std::vector<MessageLine> lines;
 
         // Prints all diagnostics to the supplied sink.
         void print_to(MessageSink& sink) const;
@@ -169,9 +199,12 @@ namespace vcpkg
         std::string to_string() const;
         void to_string(std::string& target) const;
 
-        bool any_errors() const noexcept;
+        bool empty() const noexcept;
     };
 
+    // DiagnosticContext for attempted operations that may be recovered.
+    // Stores all diagnostics and passes through all status messages. Afterwards, call commit() to report all
+    // diagnostics to the outer DiagnosticContext, or handle() to forget them.
     struct AttemptDiagnosticContext final : DiagnosticContext
     {
         AttemptDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
@@ -191,6 +224,22 @@ namespace vcpkg
 
         DiagnosticContext& inner_context;
         std::vector<DiagnosticLine> lines;
+    };
+
+    // Wraps another DiagnosticContext and reduces the severity of any reported diagnostics to warning from error.
+    struct WarningDiagnosticContext final : DiagnosticContext
+    {
+        WarningDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
+
+        virtual void report(const DiagnosticLine& line) override;
+        virtual void report(DiagnosticLine&& line) override;
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        DiagnosticContext& inner_context;
     };
 
     extern DiagnosticContext& console_diagnostic_context;
