@@ -1050,7 +1050,8 @@ namespace vcpkg
                 {
                     const auto download_path_part_path = download_path + fmt::format(".{}.part", get_process_id());
                     const auto escaped_url = Command(urls[0]).extract();
-                    const auto escaped_sha512 = Command(*hash).extract();
+                    auto escaped_sha512 = Command(*hash).extract();
+                    Strings::inplace_ascii_to_lowercase(escaped_sha512);
                     const auto escaped_dpath = Command(download_path_part_path).extract();
                     Command cmd;
                     cmd.raw_arg(api_stable_format(*script, [&](std::string& out, StringView key) {
