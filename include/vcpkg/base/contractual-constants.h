@@ -40,6 +40,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDefaultTriplet = "default-triplet";
     inline constexpr StringLiteral JsonIdDemands = "demands";
     inline constexpr StringLiteral JsonIdDependencies = "dependencies";
+    inline constexpr StringLiteral JsonIdDependDefaults = "depend-defaults";
     inline constexpr StringLiteral JsonIdDescription = "description";
     inline constexpr StringLiteral JsonIdDetectedCIEnvironment = "detected-ci-environment";
     inline constexpr StringLiteral JsonIdDetector = "detector";
