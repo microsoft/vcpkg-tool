@@ -5,6 +5,7 @@
 #include <string.h>
 
 static const char expected_uri[] = "https://example.com/hello-world.txt";
+// Note that this checks that the SHA is properly tolower'd
 static const char expected_sha[] = "09e1e2a84c92b56c8280f4a1203c7cffd61b162cfe987278d4d6be9afbf38c0e8934cdadf83751f4e99"
                                    "d111352bffefc958e5a4852c8a7a29c95742ce59288a8";
 
