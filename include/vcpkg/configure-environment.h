@@ -19,7 +19,7 @@
 namespace vcpkg
 {
     Optional<Path> download_vcpkg_standalone_bundle(DiagnosticContext& context,
-                                                    const AssetCachingSettings& download_settings,
+                                                    const AssetCachingSettings& asset_cache_settings,
                                                     const Filesystem& fs,
                                                     const Path& download_root);
 

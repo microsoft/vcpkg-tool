@@ -91,7 +91,7 @@ namespace vcpkg
     void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandDownloadMetadata);
-        auto download_settings =
+        auto asset_cache_settings =
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO);
         auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
 
@@ -119,7 +119,7 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            if (!put_file_to_mirror(console_diagnostic_context, download_settings, file, actual_hash))
+            if (!put_file_to_mirror(console_diagnostic_context, asset_cache_settings, file, actual_hash))
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -143,15 +143,15 @@ namespace vcpkg
                 urls = it_urls->second;
             }
 
-            if (download_file(console_diagnostic_context,
-                              Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink
-                                                                                                    : null_sink,
-                              download_settings,
-                              fs,
-                              urls,
-                              headers,
-                              file,
-                              sha))
+            if (download_file_asset_cached(
+                    console_diagnostic_context,
+                    Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink,
+                    asset_cache_settings,
+                    fs,
+                    urls,
+                    headers,
+                    file,
+                    sha))
             {
                 Checks::exit_success(VCPKG_LINE_INFO);
             }

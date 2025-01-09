@@ -27,7 +27,7 @@ namespace vcpkg
     {
         (void)args.parse_arguments(CommandBootstrapStandaloneMetadata);
 
-        AssetCachingSettings download_settings;
+        AssetCachingSettings asset_cache_settings;
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
         if (!maybe_vcpkg_root_env)
         {
@@ -37,7 +37,7 @@ namespace vcpkg
         const auto vcpkg_root = fs.almost_canonical(*maybe_vcpkg_root_env, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
         auto maybe_tarball =
-            download_vcpkg_standalone_bundle(console_diagnostic_context, download_settings, fs, vcpkg_root);
+            download_vcpkg_standalone_bundle(console_diagnostic_context, asset_cache_settings, fs, vcpkg_root);
         auto tarball = maybe_tarball.get();
         if (!tarball)
         {

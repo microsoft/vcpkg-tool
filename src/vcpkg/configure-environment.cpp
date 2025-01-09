@@ -106,7 +106,7 @@ namespace
 namespace vcpkg
 {
     Optional<Path> download_vcpkg_standalone_bundle(DiagnosticContext& context,
-                                                    const AssetCachingSettings& download_settings,
+                                                    const AssetCachingSettings& asset_cache_settings,
                                                     const Filesystem& fs,
                                                     const Path& download_root)
     {
@@ -116,14 +116,14 @@ namespace vcpkg
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
             "/vcpkg-standalone-bundle.tar.gz";
-        if (!download_file(context,
-                           null_sink,
-                           download_settings,
-                           fs,
-                           bundle_uri,
-                           {},
-                           bundle_tarball,
-                           MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)))
+        if (!download_file_asset_cached(context,
+                                        null_sink,
+                                        asset_cache_settings,
+                                        fs,
+                                        bundle_uri,
+                                        {},
+                                        bundle_tarball,
+                                        MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)))
         {
             return nullopt;
         }
@@ -140,7 +140,8 @@ namespace vcpkg
 
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
-        if (!download_file(context, null_sink, download_settings, fs, bundle_uri, {}, bundle_tarball, nullopt))
+        if (!download_file_asset_cached(
+                context, null_sink, asset_cache_settings, fs, bundle_uri, {}, bundle_tarball, nullopt))
         {
             return nullopt;
         }
@@ -180,7 +181,7 @@ namespace vcpkg
                 auto temp = get_exe_path_of_current_process();
                 temp.replace_filename("vcpkg-artifacts-temp");
                 auto maybe_tarball = download_vcpkg_standalone_bundle(
-                    console_diagnostic_context, paths.get_download_settings(), fs, paths.downloads);
+                    console_diagnostic_context, paths.get_asset_cache_settings(), fs, paths.downloads);
                 auto tarball = maybe_tarball.get();
                 if (!tarball)
                 {

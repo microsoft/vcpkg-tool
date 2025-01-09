@@ -196,11 +196,11 @@ TEST_CASE ("download_files", "[downloads]")
     FullyBufferedDiagnosticContext bdc;
     std::vector<std::string> headers;
     std::vector<std::string> secrets;
-    auto results =
-        download_files(bdc,
-                       std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
-                       headers,
-                       secrets);
+    auto results = download_files_no_cache(
+        bdc,
+        std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
+        headers,
+        secrets);
     REQUIRE(results == std::vector<int>{0, 0});
     auto all_errors = bdc.to_string();
     if (all_errors == "error: curl operation failed with error code 7.")

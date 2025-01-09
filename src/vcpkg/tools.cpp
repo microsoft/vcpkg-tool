@@ -742,7 +742,7 @@ namespace vcpkg
     struct ToolCacheImpl final : ToolCache
     {
         const Filesystem& fs;
-        AssetCachingSettings download_settings;
+        AssetCachingSettings asset_cache_settings;
         const Path downloads;
         const Path config_path;
         const Path tools;
@@ -752,13 +752,13 @@ namespace vcpkg
         vcpkg::Lazy<std::vector<ToolDataEntry>> m_tool_data_cache;
 
         ToolCacheImpl(const Filesystem& fs,
-                      const AssetCachingSettings& download_settings,
+                      const AssetCachingSettings& asset_cache_settings,
                       Path downloads,
                       Path config_path,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
-            , download_settings(download_settings)
+            , asset_cache_settings(asset_cache_settings)
             , downloads(std::move(downloads))
             , config_path(std::move(config_path))
             , tools(std::move(tools))
@@ -833,14 +833,14 @@ namespace vcpkg
 
                     break;
                 case HashPrognosis::FileNotFound:
-                    if (!download_file(console_diagnostic_context,
-                                       null_sink,
-                                       download_settings,
-                                       fs,
-                                       tool_data.url,
-                                       {},
-                                       download_path,
-                                       tool_data.sha512))
+                    if (!download_file_asset_cached(console_diagnostic_context,
+                                                    null_sink,
+                                                    asset_cache_settings,
+                                                    fs,
+                                                    tool_data.url,
+                                                    {},
+                                                    download_path,
+                                                    tool_data.sha512))
                     {
                         Checks::exit_fail(VCPKG_LINE_INFO);
                     }
@@ -1123,14 +1123,14 @@ namespace vcpkg
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              const AssetCachingSettings& download_settings,
+                                              const AssetCachingSettings& asset_cache_settings,
                                               Path downloads,
                                               Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(
-            fs, download_settings, downloads, config_path, tools, abiToolVersionHandling);
+            fs, asset_cache_settings, downloads, config_path, tools, abiToolVersionHandling);
     }
 
     struct ToolDataEntryDeserializer final : Json::IDeserializer<ToolDataEntry>

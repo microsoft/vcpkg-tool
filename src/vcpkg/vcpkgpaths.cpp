@@ -324,7 +324,7 @@ namespace
             , m_ff_settings(args.feature_flag_settings())
             , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
             , m_bundle(bundle)
-            , m_download_manager_settings(
+            , m_asset_cache_settings(
                   parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO))
             , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
             , m_default_vs_path(args.default_visual_studio_path
@@ -342,7 +342,7 @@ namespace
         const FeatureFlagSettings m_ff_settings;
         const Path m_manifest_dir;
         const BundleSettings m_bundle;
-        const AssetCachingSettings m_download_manager_settings;
+        const AssetCachingSettings m_asset_cache_settings;
         const Path m_builtin_ports;
         const Path m_default_vs_path;
         const Path scripts;
@@ -572,7 +572,7 @@ namespace vcpkg
                                           VCPKG_LINE_INFO))
             , m_tool_cache(get_tool_cache(
                   fs,
-                  m_download_manager_settings,
+                  m_asset_cache_settings,
                   downloads,
                   args.tools_data_file.has_value() ? Path{*args.tools_data_file.get()} : scripts / "vcpkg-tools.json",
                   tools,
@@ -879,10 +879,7 @@ namespace vcpkg
     }
 
     const Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
-    const AssetCachingSettings& VcpkgPaths::get_download_settings() const
-    {
-        return m_pimpl->m_download_manager_settings;
-    }
+    const AssetCachingSettings& VcpkgPaths::get_asset_cache_settings() const { return m_pimpl->m_asset_cache_settings; }
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
     const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {

@@ -19,7 +19,7 @@ namespace vcpkg
     {
         SanitizedUrl() = default;
         SanitizedUrl(StringView raw_url, View<std::string> secrets);
-        const std::string& to_string() const { return m_sanitized_url; }
+        const std::string& to_string() const noexcept { return m_sanitized_url; }
 
     private:
         std::string m_sanitized_url;
@@ -49,16 +49,17 @@ namespace vcpkg
                                 StringLiteral prefix,
                                 StringView this_line);
 
-    std::vector<int> download_files(DiagnosticContext& context,
-                                    View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers,
-                                    View<std::string> secrets);
+    std::vector<int> download_files_no_cache(DiagnosticContext& context,
+                                             View<std::pair<std::string, Path>> url_pairs,
+                                             View<std::string> headers,
+                                             View<std::string> secrets);
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
                                                  const Optional<std::string>& maybe_github_server_url,
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
+
     bool upload_asset_cache_file(DiagnosticContext& context,
                                  StringView raw_url,
                                  const SanitizedUrl& sanitized_url,
@@ -91,26 +92,26 @@ namespace vcpkg
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    bool download_file(DiagnosticContext& context,
-                       MessageSink& machine_readable_progress,
-                       const AssetCachingSettings& download_settings,
-                       const Filesystem& fs,
-                       const std::string& url,
-                       View<std::string> headers,
-                       const Path& download_path,
-                       const Optional<std::string>& sha512);
+    bool download_file_asset_cached(DiagnosticContext& context,
+                                    MessageSink& machine_readable_progress,
+                                    const AssetCachingSettings& asset_cache_settings,
+                                    const Filesystem& fs,
+                                    const std::string& url,
+                                    View<std::string> headers,
+                                    const Path& download_path,
+                                    const Optional<std::string>& maybe_sha512);
 
-    bool download_file(DiagnosticContext& context,
-                       MessageSink& machine_readable_progress,
-                       const AssetCachingSettings& download_settings,
-                       const Filesystem& fs,
-                       View<std::string> urls,
-                       View<std::string> headers,
-                       const Path& download_path,
-                       const Optional<std::string>& sha512);
+    bool download_file_asset_cached(DiagnosticContext& context,
+                                    MessageSink& machine_readable_progress,
+                                    const AssetCachingSettings& asset_cache_settings,
+                                    const Filesystem& fs,
+                                    View<std::string> urls,
+                                    View<std::string> headers,
+                                    const Path& download_path,
+                                    const Optional<std::string>& maybe_sha512);
 
     bool put_file_to_mirror(DiagnosticContext& context,
-                            const AssetCachingSettings& download_settings,
+                            const AssetCachingSettings& asset_cache_settings,
                             const Path& file_to_put,
                             StringView sha512);
 
