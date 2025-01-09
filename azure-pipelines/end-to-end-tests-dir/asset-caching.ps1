@@ -97,7 +97,7 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html"))
 Throw-IfNotFailed
-if (-not ($actual -match "curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: Could not connect to server")) {
+if (-not ($actual -match "curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: (Could not|Couldn't) connect to server")) {
     throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (fail)"
 }
 #azurl (no), x-block-origin (no), asset-cache (n/a), download (sha-mismatch)
@@ -153,7 +153,7 @@ $expected = @(
 "Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
 "error: curl: \(37\) Couldn't open file [^\n]+",
-"error: curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: Could not connect to server",
+"error: curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: (Could not|Couldn't) connect to server",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -272,7 +272,7 @@ $expected = @(
 "^Trying to download example3.html using asset cache script",
 "Script download error",
 "error: the asset cache script returned nonzero exit code 1",
-"note: the full script command line was: pwsh .+/failing-script\.ps1 https://example\.com d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a `"[^`"]+example3\.html\.\d+\.part`"",
+"note: the full script command line was: pwsh .+/failing-script\.ps1 https://example\.com d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a `"?[^`"]+example3\.html\.\d+\.part`"?",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://example\.com",
 "$"
 ) -join "`n"
@@ -288,7 +288,7 @@ $expected = @(
 "^Trying to download example3.html using asset cache script",
 "Not creating a file",
 "[^\n]+example3\.html\.\d+\.part: error: the asset cache script returned success but did not create expected result file",
-"note: the full script command line was: pwsh .+/no-file-script\.ps1 https://example\.com d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a `"[^`"]+example3\.html\.\d+\.part`"",
+"note: the full script command line was: pwsh .+/no-file-script\.ps1 https://example\.com d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a `"?[^`"]+example3\.html\.\d+\.part`"?",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://example\.com",
 "$"
 ) -join "`n"
@@ -304,7 +304,7 @@ $expected = @(
 "^Trying to download example3.html using asset cache script",
 "Creating file with the wrong hash",
 "[^\n]+example3\.html\.\d+\.part: error: the asset cache script returned success but the resulting file has an unexpected hash",
-"note: the full script command line was: pwsh .+/bad-hash-script\.ps1 -File `"[^`"]+example3\.html\.\d+\.part`"",
+"note: the full script command line was: pwsh .+/bad-hash-script\.ps1 -File `"?[^`"]+example3\.html\.\d+\.part`"?",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
 "note: Actual  : cc9c9070d8a54bfc32d6be2eb01b531f22f657d868200fbcdc7c4cc5f31e92909bd7c83971bebefa918c2c34e53d859ed49a79f4a943f36ec521fc0544b30d9e",
 "$"

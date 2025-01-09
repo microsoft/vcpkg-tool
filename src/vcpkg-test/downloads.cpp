@@ -212,9 +212,10 @@ TEST_CASE ("download_files", "[downloads]")
         // new curl
         REQUIRE_THAT(
             all_errors,
-            Catch::Matches("error: curl operation failed with error code 1\\. Protocol \"unknown\" not supported\n"
+            Catch::Matches("error: curl operation failed with error code 1\\. Protocol \"unknown\" not supported( or "
+                           "disabled in libcurl)?\n"
                            "error: curl operation failed with error code 7\\. Failed to connect to localhost port 9 "
-                           "after [0-9]+ ms: Could not connect to server",
+                           "after [0-9]+ ms: (Could not|Couldn't) connect to server",
                            Catch::CaseSensitive::Yes));
     }
 }
