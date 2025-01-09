@@ -8,9 +8,7 @@ using namespace vcpkg;
 TEST_CASE ("parse_split_url_view", "[downloads]")
 {
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "https://github.com/Microsoft/vcpkg", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("https://github.com/Microsoft/vcpkg");
         if (auto v = x.get())
         {
             REQUIRE(v->scheme == "https");
@@ -23,22 +21,11 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "", SanitizedUrl{});
-        REQUIRE(!x.has_value());
-        REQUIRE(bdc.to_string() == "error: unable to parse uri: ");
+        REQUIRE(!parse_split_url_view("").has_value());
+        REQUIRE(!parse_split_url_view("hello").has_value());
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        std::string secrets[] = {"llo"};
-        auto x = parse_split_url_view(bdc, "hello", SanitizedUrl{"hello", secrets});
-        REQUIRE(!x.has_value());
-        REQUIRE(bdc.to_string() == "error: unable to parse uri: he*** SECRET ***");
-    }
-    {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "file:", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("file:");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "file");
@@ -51,9 +38,7 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "file:path", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("file:path");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "file");
@@ -66,9 +51,7 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "file:/path", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("file:/path");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "file");
@@ -81,9 +64,7 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "file://user:pw@host", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("file://user:pw@host");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "file");
@@ -96,9 +77,7 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x = parse_split_url_view(bdc, "ftp://host:port/", SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("ftp://host:port/");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "ftp");
@@ -111,14 +90,9 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
         }
     }
     {
-        FullyBufferedDiagnosticContext bdc;
-        auto x =
-            parse_split_url_view(bdc,
-                                 "file://D:\\work\\testing\\asset-cache/"
-                                 "562de7b577c99fe347b00437d14ce375a8e5a60504909cb67d2f73c372d39a2f76d2b42b69e4aeb31a"
-                                 "4879e1bcf6f7c2d41f2ace12180ea83ba7af48879d40ab",
-                                 SanitizedUrl{});
-        REQUIRE(bdc.empty());
+        auto x = parse_split_url_view("file://D:\\work\\testing\\asset-cache/"
+                                      "562de7b577c99fe347b00437d14ce375a8e5a60504909cb67d2f73c372d39a2f76d2b42b69e4aeb3"
+                                      "1a4879e1bcf6f7c2d41f2ace12180ea83ba7af48879d40ab");
         if (auto y = x.get())
         {
             REQUIRE(y->scheme == "file");

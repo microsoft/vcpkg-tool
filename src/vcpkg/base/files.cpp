@@ -1374,7 +1374,7 @@ namespace vcpkg
     FilePointer::FilePointer(const Path& path) : m_fs(nullptr), m_path(path) { }
     FilePointer::FilePointer() noexcept : m_fs(nullptr), m_path{} { }
 
-    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std ::move(other.m_path))
+    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std::move(other.m_path))
     {
         other.m_fs = nullptr;
         other.m_path = {};

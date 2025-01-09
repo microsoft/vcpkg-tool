@@ -529,14 +529,11 @@ namespace vcpkg
     };
 #endif
 
-    Optional<SplitUrlView> parse_split_url_view(DiagnosticContext& context,
-                                                StringView raw_url,
-                                                const SanitizedUrl& sanitized_url)
+    Optional<SplitUrlView> parse_split_url_view(StringView raw_url)
     {
         auto sep = std::find(raw_url.begin(), raw_url.end(), ':');
         if (sep == raw_url.end())
         {
-            context.report_error(msgInvalidUri, msg::value = sanitized_url);
             return nullopt;
         }
 
@@ -1064,6 +1061,7 @@ namespace vcpkg
             auto split_uri_view = maybe_split_uri_view.get();
             if (!split_uri_view)
             {
+                context.report_error(msgInvalidUri, msg::value = sanitized_url);
                 return DownloadPrognosis::OtherError;
             }
 
@@ -1110,7 +1108,7 @@ namespace vcpkg
                        .string_arg("--output")
                        .string_arg(download_path_part_path);
         add_curl_headers(cmd, headers);
-        std::string non_progress_content;
+        std::string likely_curl_errors;
         auto maybe_exit_code = cmd_execute_and_stream_lines(context, cmd, [&](StringView line) {
             const auto maybe_parsed = try_parse_curl_progress_data(line);
             if (const auto parsed = maybe_parsed.get())
@@ -1120,12 +1118,12 @@ namespace vcpkg
             }
             else if (Strings::starts_with(line, "curl: "))
             {
-                if (!non_progress_content.empty())
+                if (!likely_curl_errors.empty())
                 {
-                    non_progress_content.push_back('\n');
+                    likely_curl_errors.push_back('\n');
                 }
 
-                non_progress_content.append(line.data(), line.size());
+                likely_curl_errors.append(line.data(), line.size());
             }
         });
 
@@ -1137,7 +1135,7 @@ namespace vcpkg
 
         if (*exit_code != 0)
         {
-            context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(std::move(non_progress_content))});
+            context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(std::move(likely_curl_errors))});
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 

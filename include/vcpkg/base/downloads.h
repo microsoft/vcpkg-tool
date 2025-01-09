@@ -33,9 +33,7 @@ namespace vcpkg
     };
 
     // e.g. {"https","//example.org", "/index.html"}
-    Optional<SplitUrlView> parse_split_url_view(DiagnosticContext& context,
-                                                StringView raw_url,
-                                                const SanitizedUrl& sanitized_url);
+    Optional<SplitUrlView> parse_split_url_view(StringView raw_url);
 
     View<std::string> azure_blob_headers();
 

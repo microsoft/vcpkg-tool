@@ -62,10 +62,10 @@ namespace vcpkg::Hash
     // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
     // Otherwise, returns an disengaged optional.
     // Note that the file not existing is interpreted as an error that will be reported to `context`.
-    Optional<std ::string> get_file_hash_required(DiagnosticContext& context,
-                                                  const ReadOnlyFilesystem& fs,
-                                                  const Path& path,
-                                                  Algorithm algo);
+    Optional<std::string> get_file_hash_required(DiagnosticContext& context,
+                                                 const ReadOnlyFilesystem& fs,
+                                                 const Path& path,
+                                                 Algorithm algo);
 
     // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
     // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
