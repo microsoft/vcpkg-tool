@@ -21,6 +21,7 @@
 #include <vcpkg/commands.export.h>
 #include <vcpkg/commands.fetch.h>
 #include <vcpkg/commands.find.h>
+#include <vcpkg/commands.format-feature-baselinet.h>
 #include <vcpkg/commands.format-manifest.h>
 #include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
@@ -38,6 +39,7 @@
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.set-installed.h>
+#include <vcpkg/commands.test-features.h>
 #include <vcpkg/commands.update-baseline.h>
 #include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
@@ -61,6 +63,7 @@ namespace vcpkg
         {CommandBootstrapStandaloneMetadata, command_bootstrap_standalone_and_exit},
         {CommandContactMetadata, command_contact_and_exit},
         {CommandDownloadMetadata, command_download_and_exit},
+        {CommandFormatFeatureBaselineMetadata, command_format_feature_baseline_and_exit},
         {CommandHashMetadata, command_hash_and_exit},
         {CommandInitRegistryMetadata, command_init_registry_and_exit},
         {CommandVersionMetadata, command_version_and_exit},
@@ -121,6 +124,7 @@ namespace vcpkg
         {CommandExportMetadata, command_export_and_exit},
         {CommandInstallMetadata, command_install_and_exit},
         {CommandRemoveMetadata, command_remove_and_exit},
+        {CommandTestFeaturesMetadata, command_test_features_and_exit},
         {CommandSetInstalledMetadata, command_set_installed_and_exit},
         {CommandUpgradeMetadata, command_upgrade_and_exit},
         {CommandZPrintConfigMetadata, command_z_print_config_and_exit},
