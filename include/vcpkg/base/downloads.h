@@ -15,27 +15,27 @@
 
 namespace vcpkg
 {
-    struct Url
+    struct SanitizedUrl
     {
-        Url() = default;
-        Url(StringView url, View<std::string> secrets);
-        StringView get_url() const noexcept { return m_url; }
-        const std::string& get_sanitized_url() const noexcept { return m_sanitized_url; }
+        SanitizedUrl() = default;
+        SanitizedUrl(StringView raw_url, View<std::string> secrets);
+        const std::string& to_string() const { return m_sanitized_url; }
 
     private:
-        std::string m_url;
         std::string m_sanitized_url;
     };
 
-    struct SplitUrl
+    struct SplitUrlView
     {
-        std::string scheme;
-        Optional<std::string> authority;
-        std::string path_query_fragment;
+        StringView scheme;
+        Optional<StringView> authority;
+        StringView path_query_fragment;
     };
 
     // e.g. {"https","//example.org", "/index.html"}
-    Optional<SplitUrl> split_url_view(DiagnosticContext& context, const Url& url);
+    Optional<SplitUrlView> parse_split_url_view(DiagnosticContext& context,
+                                                StringView raw_url,
+                                                const SanitizedUrl& sanitized_url);
 
     View<std::string> azure_blob_headers();
 
@@ -59,8 +59,12 @@ namespace vcpkg
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
-    bool upload_asset_cache_file(
-        DiagnosticContext& context, const Url& url, StringLiteral method, View<std::string> headers, const Path& file);
+    bool upload_asset_cache_file(DiagnosticContext& context,
+                                 StringView raw_url,
+                                 const SanitizedUrl& sanitized_url,
+                                 StringLiteral method,
+                                 View<std::string> headers,
+                                 const Path& file);
 
     Optional<std::string> invoke_http_request(DiagnosticContext& context,
                                               StringLiteral method,
@@ -138,3 +142,5 @@ namespace vcpkg
     // is likely to contain query parameters or similar.
     std::string url_encode_spaces(StringView url);
 }
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::SanitizedUrl);

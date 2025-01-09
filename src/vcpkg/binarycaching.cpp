@@ -397,7 +397,8 @@ namespace
                 auto url = templ.instantiate_variables(request);
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
-                auto maybe_success = upload_asset_cache_file(wdc, Url{url, m_secrets}, "PUT", templ.headers, zip_path);
+                auto maybe_success =
+                    upload_asset_cache_file(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -934,8 +935,8 @@ namespace
 
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
-                const auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (upload_asset_cache_file(wdc, Url{url, {}}, "PATCH", custom_headers, zip_path))
+                const auto raw_url = m_url + "/" + std::to_string(*cacheId.get());
+                if (upload_asset_cache_file(wdc, raw_url, SanitizedUrl{raw_url, {}}, "PATCH", custom_headers, zip_path))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
@@ -945,7 +946,7 @@ namespace
                         m_token_header,
                     };
 
-                    if (invoke_http_request(wdc, "POST", headers, url, stringify(commit)))
+                    if (invoke_http_request(wdc, "POST", headers, raw_url, stringify(commit)))
                     {
                         ++upload_count;
                     }
