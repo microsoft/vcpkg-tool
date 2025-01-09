@@ -2655,7 +2655,9 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
         return *err;
     }
 
-    BinaryConfigParser env_parser(env_string, format_environment_variable("VCPKG_BINARY_SOURCES"), &s);
+    // must live until the end of the function due to StringView in BinaryConfigParser
+    const auto source = format_environment_variable("VCPKG_BINARY_SOURCES");
+    BinaryConfigParser env_parser(env_string, source, &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {
