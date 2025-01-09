@@ -97,7 +97,7 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html"))
 Throw-IfNotFailed
-if (-not ($actual -match "curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: (Could not|Couldn't) connect to server")) {
+if (-not ($actual -match "curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)")) {
     throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (fail)"
 }
 #azurl (no), x-block-origin (no), asset-cache (n/a), download (sha-mismatch)
@@ -153,7 +153,7 @@ $expected = @(
 "Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
 "error: curl: \(37\) Couldn't open file [^\n]+",
-"error: curl: \(7\) Failed to connect to localhost port 1234 after \d+ ms: (Could not|Couldn't) connect to server",
+"error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
