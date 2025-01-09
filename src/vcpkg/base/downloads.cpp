@@ -1057,7 +1057,7 @@ namespace vcpkg
         }
         if (headers.size() == 0 && !needs_proxy_auth)
         {
-            auto maybe_split_uri_view = parse_split_url_view(context, raw_url, sanitized_url);
+            auto maybe_split_uri_view = parse_split_url_view(raw_url);
             auto split_uri_view = maybe_split_uri_view.get();
             if (!split_uri_view)
             {
