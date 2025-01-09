@@ -750,12 +750,12 @@ namespace vcpkg
         return false;
     }
 
-    static bool upload_asset_cache_file_impl(DiagnosticContext& context,
-                                             StringView raw_url,
-                                             const SanitizedUrl& sanitized_url,
-                                             StringLiteral method,
-                                             View<std::string> headers,
-                                             const Path& file)
+    static bool store_to_asset_cache_impl(DiagnosticContext& context,
+                                          StringView raw_url,
+                                          const SanitizedUrl& sanitized_url,
+                                          StringLiteral method,
+                                          View<std::string> headers,
+                                          const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -810,14 +810,14 @@ namespace vcpkg
         return true;
     }
 
-    bool upload_asset_cache_file(DiagnosticContext& context,
-                                 StringView raw_url,
-                                 const SanitizedUrl& sanitized_url,
-                                 StringLiteral method,
-                                 View<std::string> headers,
-                                 const Path& file)
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file)
     {
-        if (upload_asset_cache_file_impl(context, raw_url, sanitized_url, method, headers, file))
+        if (store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file))
         {
             context.statusln(msg::format(msgAssetCacheSuccesfullyStored));
             return true;
@@ -1465,12 +1465,12 @@ namespace vcpkg
             context.statusln(msg::format(
                 msgDownloadSuccesfulUploading, msg::path = target_filename, msg::url = sanitized_upload_url));
             WarningDiagnosticContext wdc{context};
-            if (!upload_asset_cache_file(wdc,
-                                         raw_upload_url,
-                                         sanitized_upload_url,
-                                         "PUT",
-                                         asset_cache_settings.m_write_headers,
-                                         download_path))
+            if (!store_to_asset_cache(wdc,
+                                      raw_upload_url,
+                                      sanitized_upload_url,
+                                      "PUT",
+                                      asset_cache_settings.m_write_headers,
+                                      download_path))
             {
                 context.report(DiagnosticLine{DiagKind::Warning,
                                               msg::format(msgFailedToStoreBackToMirror,
@@ -1705,10 +1705,10 @@ namespace vcpkg
         return false;
     }
 
-    bool put_file_to_mirror(DiagnosticContext& context,
-                            const AssetCachingSettings& asset_cache_settings,
-                            const Path& file_to_put,
-                            StringView sha512)
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              const AssetCachingSettings& asset_cache_settings,
+                              const Path& file_to_put,
+                              StringView sha512)
     {
         if (auto url_template = asset_cache_settings.m_write_url_template.get())
         {
@@ -1719,12 +1719,12 @@ namespace vcpkg
 
             auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
-            return upload_asset_cache_file(context,
-                                           raw_upload_url,
-                                           sanitized_upload_url,
-                                           "PUT",
-                                           asset_cache_settings.m_write_headers,
-                                           file_to_put);
+            return store_to_asset_cache(context,
+                                        raw_upload_url,
+                                        sanitized_upload_url,
+                                        "PUT",
+                                        asset_cache_settings.m_write_headers,
+                                        file_to_put);
         }
 
         return true;

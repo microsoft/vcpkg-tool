@@ -60,13 +60,6 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
 
-    bool upload_asset_cache_file(DiagnosticContext& context,
-                                 StringView raw_url,
-                                 const SanitizedUrl& sanitized_url,
-                                 StringLiteral method,
-                                 View<std::string> headers,
-                                 const Path& file);
-
     Optional<std::string> invoke_http_request(DiagnosticContext& context,
                                               StringLiteral method,
                                               View<std::string> headers,
@@ -110,10 +103,17 @@ namespace vcpkg
                                     const Path& download_path,
                                     const Optional<std::string>& maybe_sha512);
 
-    bool put_file_to_mirror(DiagnosticContext& context,
-                            const AssetCachingSettings& asset_cache_settings,
-                            const Path& file_to_put,
-                            StringView sha512);
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file);
+
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              const AssetCachingSettings& asset_cache_settings,
+                              const Path& file_to_put,
+                              StringView sha512);
 
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 

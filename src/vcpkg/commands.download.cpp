@@ -119,7 +119,7 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            if (!put_file_to_mirror(console_diagnostic_context, asset_cache_settings, file, actual_hash))
+            if (!store_to_asset_cache(console_diagnostic_context, asset_cache_settings, file, actual_hash))
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }

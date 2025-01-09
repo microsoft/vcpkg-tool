@@ -398,7 +398,7 @@ namespace
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
                 auto maybe_success =
-                    upload_asset_cache_file(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -936,7 +936,7 @@ namespace
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
                 const auto raw_url = m_url + "/" + std::to_string(*cacheId.get());
-                if (upload_asset_cache_file(wdc, raw_url, SanitizedUrl{raw_url, {}}, "PATCH", custom_headers, zip_path))
+                if (store_to_asset_cache(wdc, raw_url, SanitizedUrl{raw_url, {}}, "PATCH", custom_headers, zip_path))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
