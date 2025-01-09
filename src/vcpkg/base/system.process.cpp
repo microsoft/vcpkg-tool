@@ -1164,7 +1164,7 @@ namespace
             std::lock_guard<std::mutex> lck{pipe_creation_lock};
             if (pipe(pipefd))
             {
-                context.report_system_error()"pipe", errno);
+                context.report_system_error("pipe", errno);
                 return false;
             }
 
