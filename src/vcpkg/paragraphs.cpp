@@ -362,12 +362,6 @@ namespace vcpkg::Paragraphs
         out_str.append(name.data(), name.size()).append(": ").append(field.data(), field.size()).push_back('\n');
     }
 
-    bool is_port_directory(const ReadOnlyFilesystem& fs, const Path& maybe_directory)
-    {
-        return fs.exists(maybe_directory / "CONTROL", IgnoreErrors{}) ||
-               fs.exists(maybe_directory / "vcpkg.json", IgnoreErrors{});
-    }
-
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
                                                                                  StringView control_path,
                                                                                  MessageSink& warning_sink)
@@ -584,42 +578,6 @@ namespace vcpkg::Paragraphs
     std::vector<SourceControlFileAndLocation> load_all_registry_ports(const RegistrySet& registries)
     {
         auto results = try_load_all_registry_ports(registries);
-        load_results_print_error(results);
-        return std::move(results.paragraphs);
-    }
-
-    LoadResults try_load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
-    {
-        LoadResults ret;
-
-        auto port_dirs = fs.get_directories_non_recursive(directory, VCPKG_LINE_INFO);
-        Util::sort(port_dirs);
-
-        Util::erase_remove_if(port_dirs,
-                              [&](auto&& port_dir_entry) { return port_dir_entry.filename() == FileDotDsStore; });
-
-        for (auto&& path : port_dirs)
-        {
-            auto port_name = path.filename();
-            auto maybe_spgh = try_load_port_required(fs, port_name, PortLocation{path}).maybe_scfl;
-            if (const auto spgh = maybe_spgh.get())
-            {
-                ret.paragraphs.push_back(std::move(*spgh));
-            }
-            else
-            {
-                ret.errors.emplace_back(std::piecewise_construct,
-                                        std::forward_as_tuple(port_name.data(), port_name.size()),
-                                        std::forward_as_tuple(std::move(maybe_spgh).error()));
-            }
-        }
-
-        return ret;
-    }
-
-    std::vector<SourceControlFileAndLocation> load_overlay_ports(const ReadOnlyFilesystem& fs, const Path& directory)
-    {
-        auto results = try_load_overlay_ports(fs, directory);
         load_results_print_error(results);
         return std::move(results.paragraphs);
     }

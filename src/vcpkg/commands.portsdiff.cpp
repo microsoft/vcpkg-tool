@@ -54,16 +54,15 @@ namespace
                     paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"), settings),
                 Tools::GIT)
             .value_or_exit(VCPKG_LINE_INFO);
-        const auto ports_at_commit = Paragraphs::load_overlay_ports(fs, temp_checkout_path / ports_dir_name);
+
+        OverlayPortIndexEntry ports_at_commit_index(OverlayPortKind::Directory, temp_checkout_path / ports_dir_name);
+        std::map<std::string, const SourceControlFileAndLocation*> ports_at_commit;
+        ports_at_commit_index.try_load_all_ports(fs, ports_at_commit).value_or_exit(VCPKG_LINE_INFO);
         fs.remove_all(temp_checkout_path, VCPKG_LINE_INFO);
-
-        auto results = Util::fmap(ports_at_commit, [](const SourceControlFileAndLocation& scfl) {
-            return scfl.source_control_file->to_version_spec();
-        });
-
-        Util::sort(results,
-                   [](const VersionSpec& lhs, const VersionSpec& rhs) { return lhs.port_name < rhs.port_name; });
-        return results;
+        return Util::fmap(ports_at_commit,
+                          [](const std::pair<const std::string, const SourceControlFileAndLocation*>& cache_entry) {
+                              return cache_entry.second->source_control_file->to_version_spec();
+                          });
     }
 
     void check_commit_exists(const VcpkgPaths& paths, StringView git_commit_id)
