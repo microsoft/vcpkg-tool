@@ -90,8 +90,8 @@ namespace vcpkg
     void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandDownloadMetadata);
-        DownloadManager download_manager{
-            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)};
+        auto asset_cache_settings =
+            parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO);
         auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
 
         auto sha = get_sha512_check(parsed);
@@ -117,7 +117,12 @@ namespace vcpkg
                 msg::println_error(msgMismatchedFiles);
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-            download_manager.put_file_to_mirror(fs, file, actual_hash).value_or_exit(VCPKG_LINE_INFO);
+
+            if (!store_to_asset_cache(console_diagnostic_context, asset_cache_settings, file, actual_hash))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
             Checks::exit_success(VCPKG_LINE_INFO);
         }
         else
@@ -137,14 +142,20 @@ namespace vcpkg
                 urls = it_urls->second;
             }
 
-            download_manager.download_file(
-                fs,
-                urls,
-                headers,
-                file,
-                sha,
-                Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink);
-            Checks::exit_success(VCPKG_LINE_INFO);
+            if (download_file_asset_cached(
+                    console_diagnostic_context,
+                    Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink,
+                    asset_cache_settings,
+                    fs,
+                    urls,
+                    headers,
+                    file,
+                    sha))
+            {
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
+
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }
 } // namespace vcpkg

@@ -68,7 +68,11 @@ namespace vcpkg
                 }
                 else
                 {
-                    msg::println_warning(msgFileNotFound, msg::path = target);
+                    msg::println(Color::warning,
+                                 LocalizedString::from_raw(target)
+                                     .append_raw(": ")
+                                     .append_raw(WarningPrefix)
+                                     .append(msgFileNotFound));
                 }
             }
 

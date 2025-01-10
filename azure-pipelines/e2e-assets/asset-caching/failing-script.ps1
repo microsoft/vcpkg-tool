@@ -1,1 +1,2 @@
-throw "Script download error"
+Write-Host "Script download error"
+exit 1
