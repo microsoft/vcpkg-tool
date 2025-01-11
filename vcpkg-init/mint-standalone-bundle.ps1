@@ -47,7 +47,7 @@ $scripts_dependencies = @(
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
-    'vcpkgTools.xml'
+    'vcpkg-tools.json'
 )
 
 $scripts_exclusions = @(
