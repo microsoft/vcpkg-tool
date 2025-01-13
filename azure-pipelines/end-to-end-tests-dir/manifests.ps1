@@ -119,6 +119,23 @@ Write-Trace "test nameless manifest features: default-features, features = []"
 Run-Vcpkg install @manifestDirArgs
 Throw-IfNotFailed
 
+Write-Trace "Checking for manifest_info.json in vcpkg_installed directory"
+# Define the install root based on the actual install path
+$installRoot = "/Users/javiermatos/dev/vcpkg-tool/work/testing/installed"
+$installedDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
+$manifestInfoPath = Join-Path -Path $installedDir -ChildPath "manifest_info.json"
+
+# Check if manifest_info.json exists
+if (Test-Path -Path $manifestInfoPath) {
+    Write-Trace "manifest_info.json found at: $manifestInfoPath"
+    $manifestInfoContent = Get-Content -Path $manifestInfoPath -Raw
+    Write-Trace "Contents of manifest_info.json:"
+    Write-Trace $manifestInfoContent
+} else {
+    Write-Trace "manifest_info.json not found in vcpkg_installed directory!"
+    Throw "manifest_info.json missing from $installedDir"
+}
+
 Write-Trace "test nameless manifest features: no-default-features, features = []"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features
 Throw-IfFailed

@@ -193,23 +193,6 @@ namespace vcpkg
             }
         }
 
-        if (auto manifest = paths.get_manifest().get())
-        {
-            Json::Object manifest_info;
-            manifest_info.insert("manifest_path", Json::Value::string(manifest->path));
-            
-            if (const auto installed_paths = paths.maybe_installed().get())
-            {
-                const auto json_file_path = installed_paths->vcpkg_dir() / "manifest_info.json";
-
-                const auto json_contents = Json::stringify(manifest_info, Json::JsonStyle::with_spaces(4));
-
-                fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
-
-                Debug::print("Manifest JSON written to: ", json_file_path, "\nContents:\n", json_contents);
-            }
-        }
-
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
@@ -293,6 +276,23 @@ namespace vcpkg
                 {
                     install_print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
                 }
+            }
+        }
+
+        if (auto manifest = paths.get_manifest().get())
+        {
+            Json::Object manifest_info;
+            manifest_info.insert("manifest_path", Json::Value::string(manifest->path));
+            
+            if (const auto installed_paths = paths.maybe_installed().get())
+            {
+                const auto json_file_path = installed_paths->vcpkg_dir() / "manifest_info.json";
+
+                const auto json_contents = Json::stringify(manifest_info, Json::JsonStyle::with_spaces(4));
+                
+                fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
+
+                Debug::print("Manifest JSON written to: ", json_file_path, "\nContents:\n", json_contents);
             }
         }
 
