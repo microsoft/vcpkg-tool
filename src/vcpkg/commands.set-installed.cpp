@@ -8,14 +8,13 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
-#include <vcpkg/installedpaths.h>
-
 
 using namespace vcpkg;
 
@@ -283,13 +282,13 @@ namespace vcpkg
         {
             Json::Object manifest_info;
             manifest_info.insert("manifest_path", Json::Value::string(manifest->path));
-            
+
             if (const auto installed_paths = paths.maybe_installed().get())
             {
                 const auto json_file_path = installed_paths->vcpkg_dir() / "manifest_info.json";
 
                 const auto json_contents = Json::stringify(manifest_info, Json::JsonStyle::with_spaces(4));
-                
+
                 fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
 
                 Debug::print("Manifest JSON written to: ", json_file_path, "\nContents:\n", json_contents);
