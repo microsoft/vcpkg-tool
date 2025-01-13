@@ -8,7 +8,7 @@ $manifestDirArgs = $commonArgs + @("--x-manifest-root=$manifestDir")
 $noDefaultFeatureArgs = $manifestDirArgs + @('--x-no-default-features')
 
 $vcpkgDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
-$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest_info.json"
+$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest-info.json"
 function feature {
     @{
         'description' = '';

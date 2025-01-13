@@ -1,7 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 $vcpkgDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
-$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest_info.json"
+$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest-info.json"
 
 # Tests a simple project with overlay ports and triplets configured on a vcpkg-configuration.json file
 Copy-Item -Recurse -LiteralPath @(

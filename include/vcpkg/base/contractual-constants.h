@@ -362,7 +362,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileVcpkgConfigurationDotJson = "vcpkg-configuration.json";
     inline constexpr StringLiteral FileVcpkgDotJson = "vcpkg.json";
     inline constexpr StringLiteral FileVcpkgLock = "vcpkg-lock.json";
-    inline constexpr StringLiteral FileManifestInfo = "manifest_info.json";
+    inline constexpr StringLiteral FileManifestInfo = "manifest-info.json";
     inline constexpr StringLiteral FileVcpkgPathTxt = "vcpkg.path.txt";
     inline constexpr StringLiteral FileVcpkgPortConfig = "vcpkg-port-config.cmake";
     inline constexpr StringLiteral FileVcpkgSpdxJson = "vcpkg.spdx.json";

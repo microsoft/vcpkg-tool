@@ -273,13 +273,13 @@ function Test-ManifestInfo {
     )
 
     if (-not (Test-Path $ManifestInfoPath)) {
-        Throw "manifest_info.json missing from $VcpkgDir"
+        Throw "manifest-info.json missing from $VcpkgDir"
     }
 
     $manifestInfoContent = Get-Content $ManifestInfoPath -Raw | ConvertFrom-Json
 
-    if ($manifestInfoContent.manifest_path -ne (Join-Path -Path $ManifestRoot -ChildPath "vcpkg.json")) {
-        Throw "Mismatch in manifest_path. Expected: $ManifestRoot, Found: $($manifestInfoContent.manifest_path)"
+    if ($manifestInfoContent.'manifest-path' -ne (Join-Path -Path $ManifestRoot -ChildPath "vcpkg.json")) {
+        Throw "Mismatch in manifest-path. Expected: $ManifestRoot, Found: $($manifestInfoContent.'manifest-path')"
     }
 }
 
