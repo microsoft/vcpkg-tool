@@ -282,16 +282,11 @@ namespace vcpkg
         {
             Json::Object manifest_info;
             manifest_info.insert("manifest_path", Json::Value::string(manifest->path));
-
             if (const auto installed_paths = paths.maybe_installed().get())
             {
-                const auto json_file_path = installed_paths->vcpkg_dir() / "manifest_info.json";
-
-                const auto json_contents = Json::stringify(manifest_info, Json::JsonStyle::with_spaces(4));
-
+                const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
+                const auto json_contents = Json::stringify(manifest_info, Json::JsonStyle::with_spaces(2));
                 fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
-
-                Debug::print("Manifest JSON written to: ", json_file_path, "\nContents:\n", json_contents);
             }
         }
 
