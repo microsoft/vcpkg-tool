@@ -1,5 +1,8 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+$vcpkgDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
+$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest_info.json"
+
 # Tests a simple project with overlay ports and triplets configured on a vcpkg-configuration.json file
 Copy-Item -Recurse -LiteralPath @(
     "$PSScriptRoot/../e2e-projects/overlays-project-with-config",
@@ -16,6 +19,7 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --x-install-root=$installRoot `
     --triplet fancy-triplet
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestRoot
 
 # Tests overlays configured in env and cli on a project with configuration embedded on the manifest file
 $manifestRoot = "$TestingRoot/overlays-project-config-embedded"
@@ -26,6 +30,7 @@ Run-Vcpkg install --x-manifest-root=$manifestRoot `
     --x-install-root=$installRoot `
     --triplet fancy-config-embedded-triplet
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestRoot
 
 # Config with bad paths
 $manifestRoot = "$TestingRoot/overlays-bad-paths"

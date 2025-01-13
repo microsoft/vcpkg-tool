@@ -7,6 +7,8 @@ $commonArgs += @("--x-builtin-ports-root=$PSScriptRoot/../e2e-ports")
 $manifestDirArgs = $commonArgs + @("--x-manifest-root=$manifestDir")
 $noDefaultFeatureArgs = $manifestDirArgs + @('--x-no-default-features')
 
+$vcpkgDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
+$manifestInfoPath = Join-Path -Path $vcpkgDir -ChildPath "manifest_info.json"
 function feature {
     @{
         'description' = '';
@@ -53,13 +55,18 @@ Throw-IfNotFailed
 Write-Trace "test manifest features: no-default-features, features = []"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test manifest features: default-features, features = [core]"
 Run-Vcpkg install @manifestDirArgs --x-feature=core
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 # test having both
 Write-Trace "test manifest features: no-default-features, features = [core]"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=core
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test manifest features: no-default-features, features = [default-fail]"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=default-fail
@@ -71,26 +78,38 @@ Throw-IfNotFailed
 Write-Trace "test manifest features: no-default-features, features = [copied-feature]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test manifest features: no-default-features, features = [copied-feature, copied-feature]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature --x-feature=copied-feature
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test manifest features: no-default-features, features = [multiple-dep-1, multiple-dep-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=multiple-dep-1 --x-feature=multiple-dep-2
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-1]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-1,no-default-features-3]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1 --x-feature=no-default-features-3
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test manifest features: no-default-features, features = [no-default-features-3]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-3
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 
 $vcpkgJson = @{
     'default-features' = @( 'default-fail' );
@@ -119,37 +138,26 @@ Write-Trace "test nameless manifest features: default-features, features = []"
 Run-Vcpkg install @manifestDirArgs
 Throw-IfNotFailed
 
-Write-Trace "Checking for manifest_info.json in vcpkg_installed directory"
-# Define the install root based on the actual install path
-$installRoot = "/Users/javiermatos/dev/vcpkg-tool/work/testing/installed"
-$installedDir = Join-Path -Path $installRoot -ChildPath "vcpkg"
-$manifestInfoPath = Join-Path -Path $installedDir -ChildPath "manifest_info.json"
-
-# Check if manifest_info.json exists
-if (Test-Path -Path $manifestInfoPath) {
-    Write-Trace "manifest_info.json found at: $manifestInfoPath"
-    $manifestInfoContent = Get-Content -Path $manifestInfoPath -Raw
-    Write-Trace "Contents of manifest_info.json:"
-    Write-Trace $manifestInfoContent
-} else {
-    Write-Trace "manifest_info.json not found in vcpkg_installed directory!"
-    Throw "manifest_info.json missing from $installedDir"
-}
-
 Write-Trace "test nameless manifest features: no-default-features, features = []"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test nameless manifest features: default-features, features = [core]"
 Run-Vcpkg install @manifestDirArgs --x-feature=core
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 # test having both
 Write-Trace "test nameless manifest features: no-default-features, features = [core]"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=core
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test nameless manifest features: no-default-features, features = [default-fail]"
 Run-Vcpkg install @manifestDirArgs --x-no-default-features --x-feature=default-fail
 Throw-IfNotFailed
+
 Write-Trace "test nameless manifest features: default-features, features = [core, default-fail]"
 Run-Vcpkg install @manifestDirArgs --x-feature=core --x-feature=default-fail
 Throw-IfNotFailed
@@ -157,20 +165,27 @@ Throw-IfNotFailed
 Write-Trace "test nameless manifest features: no-default-features, features = [copied-feature]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test nameless manifest features: no-default-features, features = [copied-feature, copied-feature]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=copied-feature --x-feature=copied-feature
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test nameless manifest features: no-default-features, features = [multiple-dep-1, multiple-dep-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=multiple-dep-1 --x-feature=multiple-dep-2
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test nameless manifest features: no-default-features, features = [no-default-features-1]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-1
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 Write-Trace "test nameless manifest features: no-default-features, features = [no-default-features-2]"
 Run-Vcpkg install @noDefaultFeatureArgs --x-feature=no-default-features-2
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 $vcpkgJson = @{
     'name' = "manifest-test";
@@ -198,10 +213,12 @@ Set-Content -Path "$manifestDir/manifest-test/vcpkg.json" `
 Write-Trace "test manifest features: self-reference, features = [a]"
 Run-Vcpkg install @manifestDirArgs --x-feature=a
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test manifest features: self-reference, features = [a], with overlay"
 Run-Vcpkg install @manifestDirArgs --x-feature=a "--overlay-ports=$manifestDir/manifest-test"
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
 
 Write-Trace "test manifest install with specific package names fails"
 $output = Run-VcpkgAndCaptureOutput install @manifestDirArgs vcpkg-empty-port
@@ -211,6 +228,8 @@ Throw-IfNonContains -Expected 'error: In manifest mode, `vcpkg install` does not
 Write-Trace "test manifest install with specific package names forced to classic mode succeeds"
 $output = Run-VcpkgAndCaptureOutput install @manifestDirArgs --classic vcpkg-empty-port
 Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
+
 $expected = @"
 The following packages will be built and installed:
     vcpkg-empty-port:
