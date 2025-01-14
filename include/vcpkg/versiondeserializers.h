@@ -4,6 +4,7 @@
 
 #include <vcpkg/fwd/versions.h>
 
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/stringview.h>
 
@@ -23,7 +24,8 @@ namespace vcpkg
                                            Json::Reader& r,
                                            const Json::Object& obj);
 
-    View<StringView> schemed_deserializer_fields();
+#define VCPKG_SCHEMED_DESERIALIZER_FIELDS                                                                              \
+    JsonIdVersion, JsonIdVersionSemver, JsonIdVersionString, JsonIdVersionDate, JsonIdPortVersion
 
     void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, const Version& version);
 

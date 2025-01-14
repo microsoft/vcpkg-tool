@@ -46,17 +46,15 @@ namespace
     struct GitVersionDbEntryDeserializer final : Json::IDeserializer<GitVersionDbEntry>
     {
         LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
+        View<StringLiteral> valid_fields() const noexcept override;
         Optional<GitVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
     };
 
     LocalizedString GitVersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
-    View<StringView> GitVersionDbEntryDeserializer::valid_fields() const
+    View<StringLiteral> GitVersionDbEntryDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView u_git[] = {JsonIdGitTree};
-        static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
-
-        return t_git;
+        static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdGitTree};
+        return fields;
     }
 
     Optional<GitVersionDbEntry> GitVersionDbEntryDeserializer::visit_object(Json::Reader& r,
@@ -88,7 +86,7 @@ namespace
     struct FilesystemVersionDbEntryDeserializer final : Json::IDeserializer<FilesystemVersionDbEntry>
     {
         LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
+        View<StringLiteral> valid_fields() const noexcept override;
         Optional<FilesystemVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
         FilesystemVersionDbEntryDeserializer(const Path& root) : registry_root(root) { }
 
@@ -100,11 +98,10 @@ namespace
     {
         return msg::format(msgAVersionDatabaseEntry);
     }
-    View<StringView> FilesystemVersionDbEntryDeserializer::valid_fields() const
+    View<StringLiteral> FilesystemVersionDbEntryDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView u_path[] = {JsonIdPath};
-        static const auto t_path = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
-        return t_path;
+        static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdPath};
+        return fields;
     }
 
     Optional<FilesystemVersionDbEntry> FilesystemVersionDbEntryDeserializer::visit_object(Json::Reader& r,

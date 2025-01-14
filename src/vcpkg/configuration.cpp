@@ -99,7 +99,7 @@ namespace
     struct RegistryConfigDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_null(Json::Reader&) const override;
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
@@ -147,7 +147,7 @@ namespace
     struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
 
@@ -164,9 +164,9 @@ namespace
 
     const RegistriesArrayDeserializer RegistriesArrayDeserializer::instance;
 
-    View<StringView> RegistryConfigDeserializer::valid_fields() const
+    View<StringLiteral> RegistryConfigDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,
@@ -177,20 +177,20 @@ namespace
         };
         return t;
     }
-    static constexpr StringView valid_builtin_fields[] = {
+    static constexpr StringLiteral valid_builtin_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_filesystem_fields[] = {
+    static constexpr StringLiteral valid_filesystem_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPath,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_git_fields[] = {
+    static constexpr StringLiteral valid_git_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdRepository,
@@ -198,7 +198,7 @@ namespace
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_artifact_fields[] = {
+    static constexpr StringLiteral valid_artifact_fields[] = {
         JsonIdKind,
         JsonIdName,
         JsonIdLocation,
@@ -283,9 +283,9 @@ namespace
         return std::move(res); // gcc-7 bug workaround redundant move
     }
 
-    View<StringView> RegistryDeserializer::valid_fields() const
+    View<StringLiteral> RegistryDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,

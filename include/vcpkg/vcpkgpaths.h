@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.h>
@@ -23,7 +24,6 @@
 
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace vcpkg

@@ -324,7 +324,9 @@ namespace vcpkg
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
         if (!maybe_target_arch.has_value())
         {
-            msg::println_error(msgInvalidArchitecture, msg::value = target_architecture);
+            msg::println_error(msgInvalidArchitectureValue,
+                               msg::value = target_architecture,
+                               msg::expected = all_comma_separated_cpu_architectures());
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
         }
 
@@ -541,15 +543,15 @@ namespace vcpkg
         constexpr static StringLiteral C_COMPILER_PATH_LAST_WRITE_TIME = "c_compiler_path_last_write_time";
         constexpr static StringLiteral CXX_COMPILER_PATH_LAST_WRITE_TIME = "cxx_compiler_path_last_write_time";
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView t[] = {ID,
-                                           VERSION,
-                                           HASH,
-                                           C_COMPILER_PATH,
-                                           CXX_COMPILER_PATH,
-                                           C_COMPILER_PATH_LAST_WRITE_TIME,
-                                           CXX_COMPILER_PATH_LAST_WRITE_TIME};
+            static const StringLiteral t[] = {ID,
+                                              VERSION,
+                                              HASH,
+                                              C_COMPILER_PATH,
+                                              CXX_COMPILER_PATH,
+                                              C_COMPILER_PATH_LAST_WRITE_TIME,
+                                              CXX_COMPILER_PATH_LAST_WRITE_TIME};
             return t;
         }
 
@@ -1775,7 +1777,7 @@ namespace vcpkg
         fmt::format_to(std::back_inserter(issue_body),
                        "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
                        action.display_name(),
-                       to_zstring_view(get_host_processor()),
+                       get_host_processor(),
                        get_host_os_name());
 
         if (const auto* abi_info = action.abi_info.get())
