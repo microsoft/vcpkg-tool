@@ -267,11 +267,14 @@ namespace vcpkg
     {
         if (!lines.empty())
         {
-            Debug::println("Uncommitted diagnostics in ~AttemptDiagnosticContext");
+#if defined(NDEBUG)
             for (auto& line : lines)
             {
                 inner_context.report(std::move(line));
             }
+#else  // ^^^ NDEBUG // !NDEBUG vvv
+            Checks::unreachable(VCPKG_LINE_INFO, "Uncommitted diagnostics in ~AttemptDiagnosticContext");
+#endif // ^^^ !NDEBUG
         }
     }
 

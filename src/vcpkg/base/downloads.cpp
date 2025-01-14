@@ -1373,6 +1373,25 @@ namespace vcpkg
             DiagKind::Note, msg::format(msgAssetCacheScriptCommandLine).append_raw(": ").append_raw(raw_command)});
     }
 
+    static void report_asset_cache_authoritative_urls(DiagnosticContext& context,
+                                                      DiagKind first_message_kind,
+                                                      msg::MessageT<msg::url_t> first_message,
+                                                      const std::vector<SanitizedUrl>& sanitized_urls)
+    {
+        auto first_sanitized_url = sanitized_urls.begin();
+        const auto last_sanitized_url = sanitized_urls.end();
+        if (first_sanitized_url != last_sanitized_url)
+        {
+            context.report(
+                DiagnosticLine{first_message_kind, msg::format(first_message, msg::url = *first_sanitized_url)});
+            while (++first_sanitized_url != last_sanitized_url)
+            {
+                context.report(
+                    DiagnosticLine{DiagKind::Note, msg::format(msgDownloadOrUrl, msg::url = *first_sanitized_url)});
+            }
+        }
+    }
+
     static DownloadPrognosis download_file_script_asset_cache(DiagnosticContext& context,
                                                               const AssetCachingSettings& asset_cache_settings,
                                                               const Filesystem& fs,
@@ -1675,10 +1694,7 @@ namespace vcpkg
             overall_url.append_raw(first_sanitized_url->to_string());
             while (++first_sanitized_url != last_sanitized_url)
             {
-                overall_url.append_raw(", ")
-                    .append(msgDownloadOrUrl)
-                    .append_raw(' ')
-                    .append_raw(first_sanitized_url->to_string());
+                overall_url.append_raw(", ").append(msgDownloadOrUrl, msg::url = *first_sanitized_url);
             }
 
             context.statusln(msg::format(msgAssetCacheHitUrl, msg::url = overall_url));
@@ -1687,6 +1703,8 @@ namespace vcpkg
 
         if (prognosis == DownloadPrognosis::HashMismatch)
         {
+            asset_cache_attempt_context.commit();
+            report_asset_cache_authoritative_urls(context, DiagKind::Note, msgAssetCacheShaMismatch, sanitized_urls);
             return false;
         }
 
@@ -1702,15 +1720,8 @@ namespace vcpkg
         if (asset_cache_settings.m_block_origin)
         {
             asset_cache_attempt_context.commit();
-            auto first_sanitized_url = sanitized_urls.begin();
-            context.report_error(msg::format(msgAssetCacheMissBlockOrigin, msg::url = *first_sanitized_url));
-            while (++first_sanitized_url != last_sanitized_url)
-            {
-                context.report(DiagnosticLine{
-                    DiagKind::Note,
-                    msg::format(msgDownloadOrUrl).append_raw(' ').append_raw(first_sanitized_url->to_string())});
-            }
-
+            report_asset_cache_authoritative_urls(
+                context, DiagKind::Error, msgAssetCacheMissBlockOrigin, sanitized_urls);
             maybe_report_proxy_might_help(context, prognosis);
             return false;
         }

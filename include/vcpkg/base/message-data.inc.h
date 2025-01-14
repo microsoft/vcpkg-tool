@@ -297,6 +297,7 @@ DECLARE_MESSAGE(AssetCacheScriptFailedToWriteCorrectHash,
                 (),
                 "",
                 "the asset cache script returned success but the resulting file has an unexpected hash")
+DECLARE_MESSAGE(AssetCacheShaMismatch, (msg::url), "", "Fatal asset cache miss, did not try authoritative source {url}")
 DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Store success")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
@@ -1112,7 +1113,7 @@ DECLARE_MESSAGE(DownloadingFileFirstAuthoritativeSource, (msg::path, msg::url), 
 DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "Downloading {url} -> {path}")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
-DECLARE_MESSAGE(DownloadOrUrl, (), "", "or")
+DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
 DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}")
