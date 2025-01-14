@@ -1075,9 +1075,9 @@ DECLARE_MESSAGE(DownloadFailedHashMismatch, (msg::url), "", "download from {url}
 DECLARE_MESSAGE(DownloadFailedHashMismatchExpectedHash, (msg::sha), "", "Expected: {sha}")
 DECLARE_MESSAGE(DownloadFailedHashMismatchActualHash, (msg::sha), "", "Actual  : {sha}")
 DECLARE_MESSAGE(DownloadFailedRetrying,
-                (msg::value),
+                (msg::value, msg::url),
                 "{value} is a number of milliseconds",
-                "Download failed -- retrying after {value}ms")
+                "Download {url} failed -- retrying after {value}ms")
 DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
@@ -1113,7 +1113,7 @@ DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "Downloading {u
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
 DECLARE_MESSAGE(DownloadOrUrl, (), "", "or")
-DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying authoritative source {url}")
+DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}")
 DECLARE_MESSAGE(DownloadSuccesfulUploading,
@@ -1123,7 +1123,7 @@ DECLARE_MESSAGE(DownloadSuccesfulUploading,
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
-                "{url}: {system_api} failed with exit code {exit_code}")
+                "{url}: {system_api} failed with exit code {exit_code}.")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
                 "{value} is a json property/object",

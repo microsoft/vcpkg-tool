@@ -17,6 +17,8 @@
 
 #include <vcpkg/commands.version.h>
 
+#include <set>
+
 using namespace vcpkg;
 
 namespace
@@ -52,12 +54,55 @@ namespace vcpkg
     }
 
 #if defined(_WIN32)
+    struct FormatMessageHLocalAlloc
+    {
+        LPWSTR buffer = nullptr;
+
+        ~FormatMessageHLocalAlloc()
+        {
+            if (buffer)
+            {
+                LocalFree(buffer);
+            }
+        }
+    };
+
     static LocalizedString format_winhttp_last_error_message(StringLiteral api_name,
                                                              const SanitizedUrl& sanitized_url,
                                                              DWORD last_error)
     {
-        return msg::format(
+        const HMODULE winhttp_module = GetModuleHandleW(L"winhttp.dll");
+        FormatMessageHLocalAlloc alloc;
+        DWORD tchars_excluding_terminating_null = 0;
+        if (winhttp_module)
+        {
+            tchars_excluding_terminating_null =
+                FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_HMODULE,
+                               winhttp_module,
+                               last_error,
+                               0,
+                               reinterpret_cast<LPWSTR>(&alloc.buffer),
+                               0,
+                               nullptr);
+        }
+
+        auto result = msg::format(
             msgDownloadWinHttpError, msg::system_api = api_name, msg::exit_code = last_error, msg::url = sanitized_url);
+        if (tchars_excluding_terminating_null && alloc.buffer)
+        {
+            while (tchars_excluding_terminating_null != 0 &&
+                   (alloc.buffer[tchars_excluding_terminating_null - 1] == L'\r' ||
+                    alloc.buffer[tchars_excluding_terminating_null - 1] == L'\n'))
+            {
+                --tchars_excluding_terminating_null;
+            }
+
+            tchars_excluding_terminating_null = static_cast<DWORD>(
+                std::remove(alloc.buffer, alloc.buffer + tchars_excluding_terminating_null, L'\r') - alloc.buffer);
+            result.append_raw(' ').append_raw(Strings::to_utf8(alloc.buffer, tchars_excluding_terminating_null));
+        }
+
+        return result;
     }
 
     static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, const SanitizedUrl& sanitized_url)
@@ -940,7 +985,7 @@ namespace vcpkg
         }
 
         AttemptDiagnosticContext adc{context};
-        switch (download_winhttp_trial(context,
+        switch (download_winhttp_trial(adc,
                                        machine_readable_progress,
                                        fs,
                                        s,
@@ -960,9 +1005,12 @@ namespace vcpkg
             // 1s, 2s, 4s
             const auto trialMs = 500 << trials;
             adc.handle();
-            adc.statusln(msg::format_warning(msgDownloadFailedRetrying, msg::value = trialMs));
+            context.statusln(
+                DiagnosticLine(DiagKind::Warning,
+                               msg::format(msgDownloadFailedRetrying, msg::value = trialMs, msg::url = sanitized_url))
+                    .to_message_line());
             std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
-            switch (download_winhttp_trial(context,
+            switch (download_winhttp_trial(adc,
                                            machine_readable_progress,
                                            fs,
                                            s,
@@ -1102,29 +1150,61 @@ namespace vcpkg
 #endif
         auto cmd = Command{"curl"}
                        .string_arg("--fail")
+                       .string_arg("--retry")
+                       .string_arg("3")
                        .string_arg("-L")
                        .string_arg(url_encode_spaces(raw_url))
                        .string_arg("--create-dirs")
                        .string_arg("--output")
                        .string_arg(download_path_part_path);
         add_curl_headers(cmd, headers);
-        std::string likely_curl_errors;
+        bool seen_any_curl_errors = false;
+        // if seen_any_curl_errors, contains the curl error lines starting with "curl:"
+        // otherwise, contains all curl's output unless it is the machine readable output
+        std::vector<std::string> likely_curl_errors;
         auto maybe_exit_code = cmd_execute_and_stream_lines(context, cmd, [&](StringView line) {
             const auto maybe_parsed = try_parse_curl_progress_data(line);
             if (const auto parsed = maybe_parsed.get())
             {
                 machine_readable_progress.println(Color::none,
                                                   LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
+                return;
             }
-            else if (Strings::starts_with(line, "curl: "))
+
+            static constexpr StringLiteral WarningColon = "warning: ";
+            if (Strings::case_insensitive_ascii_starts_with(line, WarningColon))
             {
-                if (!likely_curl_errors.empty())
+                context.statusln(
+                    DiagnosticLine{DiagKind::Warning, LocalizedString::from_raw(line.substr(WarningColon.size()))}
+                        .to_message_line());
+                return;
+            }
+
+            // clang-format off
+            // example:
+            //   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: nonexistent.example.com
+            // clang-format on
+            static constexpr StringLiteral CurlColon = "curl:";
+            auto curl_start = std::search(line.begin(), line.end(), CurlColon.begin(), CurlColon.end());
+            if (curl_start == line.end())
+            {
+                if (seen_any_curl_errors)
                 {
-                    likely_curl_errors.push_back('\n');
+                    return;
                 }
 
-                likely_curl_errors.append(line.data(), line.size());
+                curl_start = line.begin();
             }
+            else
+            {
+                if (!seen_any_curl_errors)
+                {
+                    seen_any_curl_errors = true;
+                    likely_curl_errors.clear();
+                }
+            }
+
+            likely_curl_errors.emplace_back(curl_start, line.end());
         });
 
         const auto exit_code = maybe_exit_code.get();
@@ -1135,7 +1215,17 @@ namespace vcpkg
 
         if (*exit_code != 0)
         {
-            context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(std::move(likely_curl_errors))});
+            std::set<StringView> seen_errors;
+            for (StringView likely_curl_error : likely_curl_errors)
+            {
+                auto seen_position = seen_errors.lower_bound(likely_curl_error);
+                if (seen_position == seen_errors.end() || *seen_position != likely_curl_error)
+                {
+                    seen_errors.emplace_hint(seen_position, likely_curl_error);
+                    context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(likely_curl_error)});
+                }
+            }
+
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
@@ -1585,7 +1675,7 @@ namespace vcpkg
             overall_url.append_raw(first_sanitized_url->to_string());
             while (++first_sanitized_url != last_sanitized_url)
             {
-                overall_url.append_raw(' ')
+                overall_url.append_raw(", ")
                     .append(msgDownloadOrUrl)
                     .append_raw(' ')
                     .append_raw(first_sanitized_url->to_string());
