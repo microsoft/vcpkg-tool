@@ -223,6 +223,7 @@ namespace vcpkg
         Optional<std::string> builtin_ports_root_dir;
         Optional<std::string> builtin_registry_versions_dir;
         Optional<std::string> registries_cache_dir;
+        Optional<std::string> tools_data_file;
 
         Optional<std::string> default_visual_studio_path;
 

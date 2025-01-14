@@ -78,7 +78,7 @@ TEST_CASE ("from_cpu_architecture", "[system]")
 
     for (auto&& instance : test_cases)
     {
-        CHECK(to_zstring_view(instance.input) == instance.expected);
+        CHECK(to_string_literal(instance.input) == instance.expected);
     }
 }
 

@@ -12,9 +12,11 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdAcquiredArtifacts = "acquired-artifacts";
     inline constexpr StringLiteral JsonIdActivatedArtifacts = "activated-artifacts";
     inline constexpr StringLiteral JsonIdAlgorithm = "algorithm";
+    inline constexpr StringLiteral JsonIdArchive = "archive";
     inline constexpr StringLiteral JsonIdAllCapsSHA256 = "SHA256";
     inline constexpr StringLiteral JsonIdAllCapsSHA512 = "SHA512";
     inline constexpr StringLiteral JsonIdApply = "apply";
+    inline constexpr StringLiteral JsonIdArch = "arch";
     inline constexpr StringLiteral JsonIdArchiveCapitalLocation = "archiveLocation";
     inline constexpr StringLiteral JsonIdArtifact = "artifact";
     inline constexpr StringLiteral JsonIdBaseline = "baseline";
@@ -46,6 +48,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDollarSchema = "$schema";
     inline constexpr StringLiteral JsonIdDownloads = "downloads";
     inline constexpr StringLiteral JsonIdError = "error";
+    inline constexpr StringLiteral JsonIdExecutable = "executable";
     inline constexpr StringLiteral JsonIdFeatures = "features";
     inline constexpr StringLiteral JsonIdFiles = "files";
     inline constexpr StringLiteral JsonIdFilesystem = "filesystem";
@@ -68,6 +71,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdMessage = "message";
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
     inline constexpr StringLiteral JsonIdName = "name";
+    inline constexpr StringLiteral JsonIdOS = "os";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
@@ -87,8 +91,10 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdRequires = "requires";
     inline constexpr StringLiteral JsonIdResolved = "resolved";
     inline constexpr StringLiteral JsonIdScanned = "scanned";
+    inline constexpr StringLiteral JsonIdSchemaVersion = "schema-version";
     inline constexpr StringLiteral JsonIdSettings = "settings";
     inline constexpr StringLiteral JsonIdSha = "sha";
+    inline constexpr StringLiteral JsonIdSha512 = "sha512";
     inline constexpr StringLiteral JsonIdState = "state";
     inline constexpr StringLiteral JsonIdSummary = "summary";
     inline constexpr StringLiteral JsonIdSupports = "supports";
@@ -290,6 +296,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchTargetX86 = "target:x86";
     inline constexpr StringLiteral SwitchTLogFile = "tlog-file";
     inline constexpr StringLiteral SwitchTools = "tools";
+    inline constexpr StringLiteral SwitchToolDataFile = "tool-data-file";
     inline constexpr StringLiteral SwitchTriplet = "triplet";
     inline constexpr StringLiteral SwitchUrl = "url";
     inline constexpr StringLiteral SwitchVcpkgRoot = "vcpkg-root";

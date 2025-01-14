@@ -261,13 +261,6 @@ namespace vcpkg
         return Version(std::move(proto_version.first), port_version);
     }
 
-    View<StringView> schemed_deserializer_fields()
-    {
-        static constexpr StringView t[] = {
-            JsonIdVersion, JsonIdVersionSemver, JsonIdVersionString, JsonIdVersionDate, JsonIdPortVersion};
-        return t;
-    }
-
     void serialize_schemed_version(Json::Object& out_obj, VersionScheme scheme, const Version& version)
     {
         auto version_field = [](VersionScheme version_scheme) {
