@@ -1035,8 +1035,7 @@ namespace vcpkg
     {
         Success,
         OtherError,
-        NetworkErrorProxyMightHelp,
-        HashMismatch
+        NetworkErrorProxyMightHelp
     };
 
     static bool check_combine_download_prognosis(DownloadPrognosis& target, DownloadPrognosis individual_call)
@@ -1055,14 +1054,6 @@ namespace vcpkg
                 if (target == DownloadPrognosis::Success || target == DownloadPrognosis::OtherError)
                 {
                     target = DownloadPrognosis::NetworkErrorProxyMightHelp;
-                }
-
-                return false;
-            case DownloadPrognosis::HashMismatch:
-                if (target == DownloadPrognosis::Success || target == DownloadPrognosis::OtherError ||
-                    target == DownloadPrognosis::NetworkErrorProxyMightHelp)
-                {
-                    target = DownloadPrognosis::HashMismatch;
                 }
 
                 return false;
@@ -1139,7 +1130,7 @@ namespace vcpkg
 
                     if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512))
                     {
-                        return DownloadPrognosis::HashMismatch;
+                        return DownloadPrognosis::OtherError;
                     }
 
                     fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
@@ -1231,7 +1222,7 @@ namespace vcpkg
 
         if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512))
         {
-            return DownloadPrognosis::HashMismatch;
+            return DownloadPrognosis::OtherError;
         }
 
         fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
@@ -1508,7 +1499,7 @@ namespace vcpkg
                     context.report(DiagnosticLine{
                         DiagKind::Note,
                         msg::format(msgDownloadFailedHashMismatchActualHash, msg::sha = hash_result.hash)});
-                    return DownloadPrognosis::HashMismatch;
+                    return DownloadPrognosis::OtherError;
                 case HashPrognosis::FileNotFound:
                     report_script_failed_to_make_file(context, *raw_command, download_path_part_path);
                     return DownloadPrognosis::OtherError;
@@ -1553,7 +1544,6 @@ namespace vcpkg
                                                         target_filename,
                                                         maybe_sha512);
             case DownloadPrognosis::NetworkErrorProxyMightHelp: return DownloadPrognosis::NetworkErrorProxyMightHelp;
-            case DownloadPrognosis::HashMismatch: return DownloadPrognosis::HashMismatch;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -1668,10 +1658,10 @@ namespace vcpkg
             context.statusln(msg::format(msgDownloadingFile, msg::path = target_filename));
         }
 
-        DownloadPrognosis prognosis = DownloadPrognosis::Success;
+        DownloadPrognosis asset_cache_prognosis = DownloadPrognosis::Success;
         // the asset cache downloads might fail, but that's OK if we can download the file from an authoritative source
         AttemptDiagnosticContext asset_cache_attempt_context{context};
-        if (check_combine_download_prognosis(prognosis,
+        if (check_combine_download_prognosis(asset_cache_prognosis,
                                              download_file_asset_cache(asset_cache_attempt_context,
                                                                        machine_readable_progress,
                                                                        asset_cache_settings,
@@ -1701,19 +1691,12 @@ namespace vcpkg
             return true;
         }
 
-        if (prognosis == DownloadPrognosis::HashMismatch)
-        {
-            asset_cache_attempt_context.commit();
-            report_asset_cache_authoritative_urls(context, DiagKind::Note, msgAssetCacheShaMismatch, sanitized_urls);
-            return false;
-        }
-
         if (raw_urls.empty())
         {
             asset_cache_attempt_context.commit();
             context.report_error(
                 msg::format(msgAssetCacheMissNoUrls, msg::sha = maybe_sha512.value_or_exit(VCPKG_LINE_INFO)));
-            maybe_report_proxy_might_help(context, prognosis);
+            maybe_report_proxy_might_help(context, asset_cache_prognosis);
             return false;
         }
 
@@ -1722,7 +1705,7 @@ namespace vcpkg
             asset_cache_attempt_context.commit();
             report_asset_cache_authoritative_urls(
                 context, DiagKind::Error, msgAssetCacheMissBlockOrigin, sanitized_urls);
-            maybe_report_proxy_might_help(context, prognosis);
+            maybe_report_proxy_might_help(context, asset_cache_prognosis);
             return false;
         }
 
@@ -1730,6 +1713,7 @@ namespace vcpkg
         const auto last_raw_url = raw_urls.end();
         auto first_sanitized_url = sanitized_urls.begin();
         AttemptDiagnosticContext authoritative_attempt_context{context};
+        DownloadPrognosis authoritative_prognosis = DownloadPrognosis::Success;
         if (can_read_asset_cache)
         {
             context.statusln(msg::format(msgAssetCacheMiss, msg::url = *first_sanitized_url));
@@ -1746,7 +1730,7 @@ namespace vcpkg
                                          msg::url = *first_sanitized_url));
         }
 
-        if (check_combine_download_prognosis(prognosis,
+        if (check_combine_download_prognosis(authoritative_prognosis,
                                              try_download_file(authoritative_attempt_context,
                                                                machine_readable_progress,
                                                                fs,
@@ -1763,17 +1747,10 @@ namespace vcpkg
             return true;
         }
 
-        if (prognosis == DownloadPrognosis::HashMismatch)
-        {
-            asset_cache_attempt_context.handle();
-            authoritative_attempt_context.commit();
-            return false;
-        }
-
         while (++first_sanitized_url, ++first_raw_url != last_raw_url)
         {
             context.statusln(msg::format(msgDownloadTryingAuthoritativeSource, msg::url = *first_sanitized_url));
-            if (check_combine_download_prognosis(prognosis,
+            if (check_combine_download_prognosis(authoritative_prognosis,
                                                  try_download_file(authoritative_attempt_context,
                                                                    machine_readable_progress,
                                                                    fs,
@@ -1789,18 +1766,22 @@ namespace vcpkg
                     context, download_path, target_filename, asset_cache_settings, maybe_sha512);
                 return true;
             }
-
-            if (prognosis == DownloadPrognosis::HashMismatch)
-            {
-                asset_cache_attempt_context.handle();
-                authoritative_attempt_context.commit();
-                return false;
-            }
         }
 
+        if (asset_cache_prognosis == DownloadPrognosis::NetworkErrorProxyMightHelp &&
+            authoritative_prognosis != DownloadPrognosis::NetworkErrorProxyMightHelp)
+        {
+            // reorder the proxy warning up to the asset cache prognosis if that's where it comes from
+            asset_cache_attempt_context.commit();
+            maybe_report_proxy_might_help(context, asset_cache_prognosis);
+            authoritative_attempt_context.commit();
+            return false;
+        }
+
+        check_combine_download_prognosis(authoritative_prognosis, asset_cache_prognosis);
         asset_cache_attempt_context.commit();
         authoritative_attempt_context.commit();
-        maybe_report_proxy_might_help(context, prognosis);
+        maybe_report_proxy_might_help(context, authoritative_prognosis);
         return false;
     }
 

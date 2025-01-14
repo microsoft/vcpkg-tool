@@ -274,31 +274,40 @@ if (-not ($actual -match $expected)) {
     throw "Success: azurl (yes), x-block-origin (no), asset-cache (hit), download (n/a)"
 }
 
-# azurl (yes), x-block-origin (no), asset-cache (hash mismatch), download (n/a)
-# Expected: Hash mismatch message, asset cache named, nothing about x-block-origin
+# azurl (yes), x-block-origin (no), asset-cache (hash mismatch), download (success)
+# Expected: Asset cache named, nothing about x-block-origin
 Remove-Item "$downloadsRoot/example3.html"
-Copy-Item "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a" "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b"
+Set-Content -Path "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a" -Encoding Ascii -NoNewline -Value "The wrong hash content"
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"[^\n]+example3\.html\.\d+\.part: error: download from file://$assetCacheRegex/[0-9a-z]+ had an unexpected hash",
-"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
-"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
-"note: Fatal asset cache miss, did not try authoritative source https://example\.com",
+"Asset cache miss; trying authoritative source https://example\.com",
+"Successfully downloaded example3\.html, storing to file://$assetCacheRegex/[0-9a-f]+",
+"Store success",
 "$"
 ) -join "`n"
 
-$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,read"))
-Throw-IfNotFailed
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
+Throw-IfFailed
 if (-not ($actual -match $expected)) {
     throw "Success: azurl (yes), x-block-origin (no), asset-cache (hit), download (n/a)"
 }
 
 # azurl (yes), x-block-origin (no), asset-cache (miss), download (sha-mismatch)
-# Expected: Hash check failed message expected/actual sha
-Refresh-TestRoot
+# Expected: File read failure from the asset cache, hash check mismatch for the download. Proxy message emitted due to the asset cache miss even though it doesn't apply to the cache miss.
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://example\.com",
+"error: curl: \(37\) Couldn't open file [^\n]+",
+"note: If you are using a proxy, please ensure your proxy settings are correct\.",
+"Possible causes are:",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
+"Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
+"2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
+"The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
+"3\. Your proxy's remote server is our of service\.",
+"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
+"to report this upstream download server failure\."
 "[^\n]+example3\.html\.\d+\.part: error: download from https://example\.com had an unexpected hash",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
 "note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
@@ -307,7 +316,27 @@ $expected = @(
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 Throw-IfNotFailed
 if (-not ($actual -match $expected)) {
-    throw "Failure: azurl (yes), x-block-origin (no), asset-cache (miss), download (sha-mismatch)"
+    throw "Failure: azurl (yes), x-block-origin (no), asset-cache (sha-mismatch), download (sha-mismatch)"
+}
+
+# azurl (yes), x-block-origin (no), asset-cache (sha-mismatch), download (sha-mismatch)
+# Expected: Hash check failed message expected/actual sha
+Copy-Item "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a" "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b"
+$expected = @(
+"^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
+"Asset cache miss; trying authoritative source https://example\.com",
+"[^\n]+example3\.html\.\d+\.part: error: download from file://$assetCacheRegex/[0-9a-z]+ had an unexpected hash",
+"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
+"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
+"[^\n]+example3\.html\.\d+\.part: error: download from https://example\.com had an unexpected hash",
+"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
+"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
+"$"
+) -join "`n"
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
+Throw-IfNotFailed
+if (-not ($actual -match $expected)) {
+    throw "Failure: azurl (yes), x-block-origin (no), asset-cache (sha-mismatch), download (sha-mismatch)"
 }
 
 # azurl (yes), x-block-origin (no), asset-cache (miss), download (succeed)
@@ -412,7 +441,7 @@ $expected = @(
 "note: the full script command line was: pwsh .+/bad-hash-script\.ps1 -File `"?[^`"]+example3\.html\.\d+\.part`"?",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
 "note: Actual  : cc9c9070d8a54bfc32d6be2eb01b531f22f657d868200fbcdc7c4cc5f31e92909bd7c83971bebefa918c2c34e53d859ed49a79f4a943f36ec521fc0544b30d9e",
-"note: Fatal asset cache miss, did not try authoritative source https://example\.com",
+"error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://example\.com",
 "$"
 ) -join "`n"
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
