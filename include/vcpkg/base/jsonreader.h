@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/json.h>
+#include <vcpkg/base/fwd/system.h>
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/json.h>
@@ -30,7 +31,7 @@ namespace vcpkg::Json
         virtual Optional<Type> visit_string(Reader&, StringView) const;
         virtual Optional<Type> visit_array(Reader&, const Array&) const;
         virtual Optional<Type> visit_object(Reader&, const Object&) const;
-        virtual View<StringView> valid_fields() const;
+        virtual View<StringLiteral> valid_fields() const noexcept;
 
         virtual ~IDeserializer() = default;
 
@@ -100,7 +101,7 @@ namespace vcpkg::Json
         // * are not in `valid_fields`
         // if known_fields.empty(), then it's treated as if all field names are valid
         void check_for_unexpected_fields(const Object& obj,
-                                         View<StringView> valid_fields,
+                                         View<StringLiteral> valid_fields,
                                          const LocalizedString& type_name);
 
         template<class Type>
@@ -238,7 +239,7 @@ namespace vcpkg::Json
     }
 
     template<class Type>
-    View<StringView> IDeserializer<Type>::valid_fields() const
+    View<StringLiteral> IDeserializer<Type>::valid_fields() const noexcept
     {
         return {};
     }
@@ -360,5 +361,19 @@ namespace vcpkg::Json
         virtual LocalizedString type_name() const override;
         virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
         static const FeatureNameDeserializer instance;
+    };
+
+    struct ArchitectureDeserializer final : Json::IDeserializer<Optional<CPUArchitecture>>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<Optional<CPUArchitecture>> visit_string(Json::Reader&, StringView sv) const override;
+        static const ArchitectureDeserializer instance;
+    };
+
+    struct Sha512Deserializer final : Json::IDeserializer<std::string>
+    {
+        virtual LocalizedString type_name() const override;
+        virtual Optional<std::string> visit_string(Json::Reader&, StringView sv) const override;
+        static const Sha512Deserializer instance;
     };
 }

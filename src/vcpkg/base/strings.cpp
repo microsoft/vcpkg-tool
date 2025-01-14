@@ -173,7 +173,7 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
     return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
-bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
+bool Strings::case_insensitive_ascii_equals(StringView left, StringView right) noexcept
 {
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }

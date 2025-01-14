@@ -1318,9 +1318,7 @@ namespace vcpkg
                     const auto vs_prompt = maybe_vs_prompt.value_or_exit(VCPKG_LINE_INFO);
                     if (common_arch != vs_prompt)
                     {
-                        const auto vs_prompt_view = to_zstring_view(vs_prompt);
-                        msg::println_warning(
-                            msgVcpkgInVsPrompt, msg::value = vs_prompt_view, msg::triplet = common_triplet);
+                        msg::println_warning(msgVcpkgInVsPrompt, msg::value = vs_prompt, msg::triplet = common_triplet);
                     }
                 }
             }
