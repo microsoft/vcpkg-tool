@@ -96,7 +96,7 @@ if (-not ($actual -match $expected)) {
 # Expected: Download failure message, nothing about asset caching
 Refresh-TestRoot
 $expected = @(
-"Downloading https://localhost:1234/foobar\.html -> example3\.html",
+"^Downloading https://localhost:1234/foobar\.html -> example3\.html",
 "error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
@@ -107,7 +107,8 @@ $expected = @(
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
 "If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"to report this upstream download server failure\.",
+"$"
 ) -join "`n"
 
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html"))
@@ -119,7 +120,7 @@ if (-not ($actual -match $expected)) {
 # Also with multiple URLs
 Refresh-TestRoot
 $expected = @(
-"Downloading example3\.html, trying https://localhost:1234/foobar\.html",
+"^Downloading example3\.html, trying https://localhost:1234/foobar\.html",
 "Trying https://localhost:1235/baz\.html",
 "error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
 "error: curl: \(7\) Failed to connect to localhost port 1235( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
@@ -132,7 +133,8 @@ $expected = @(
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
 "If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"to report this upstream download server failure\.",
+"$"
 ) -join "`n"
 
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html", "--url", "https://localhost:1235/baz.html"))
@@ -145,10 +147,11 @@ if (-not ($actual -match $expected)) {
 #Expected: Hash check failed message expected/actual sha
 Refresh-TestRoot
 $expected = @(
-"Downloading https://example\.com -> example3\.html",
+"^Downloading https://example\.com -> example3\.html",
 "[^\n]+example3\.html\.\d+\.part: error: download from https://example\.com had an unexpected hash",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
-"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"
+"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
+"$"
 ) -join "`n"
 
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com"))
@@ -230,7 +233,7 @@ Throw-IfNotFailed
 # Expected: Download failure message, asset cache named, nothing about x-block-origin
 Refresh-TestRoot
 $expected = @(
-"Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
+"^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
 "error: curl: \(37\) Couldn't open file [^\n]+",
 "error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
@@ -243,7 +246,8 @@ $expected = @(
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
 "If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"to report this upstream download server failure\.",
+"$"
 ) -join "`n"
 
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://localhost:1234/foobar.html", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
@@ -259,12 +263,31 @@ Run-Vcpkg -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html
 Throw-IfFailed
 Remove-Item "$downloadsRoot/example3.html"
 $expected = @(
-"Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"Download successful! Asset cache hit, did not try authoritative source https://example\.com"
+"^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
+"Download successful! Asset cache hit, did not try authoritative source https://example\.com",
+"$"
 ) -join "`n"
 
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"))
 Throw-IfFailed
+if (-not ($actual -match $expected)) {
+    throw "Success: azurl (yes), x-block-origin (no), asset-cache (hit), download (n/a)"
+}
+
+# azurl (yes), x-block-origin (no), asset-cache (hash mismatch), download (n/a)
+# Expected: Hash mismatch message, asset cache named, nothing about x-block-origin
+Remove-Item "$downloadsRoot/example3.html"
+Copy-Item "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a" "$AssetCache/d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b"
+$expected = @(
+"^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
+"[^\n]+example3\.html\.\d+\.part: error: download from file://$assetCacheRegex/[0-9a-z]+ had an unexpected hash",
+"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
+"note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
+"$"
+) -join "`n"
+
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b", "--url", "https://example.com", "--x-asset-sources=x-azurl,file://$AssetCache,,read"))
+Throw-IfNotFailed
 if (-not ($actual -match $expected)) {
     throw "Success: azurl (yes), x-block-origin (no), asset-cache (hit), download (n/a)"
 }
@@ -360,7 +383,7 @@ $expected = @(
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
 Throw-IfNotFailed
 if (-not ($actual -match $expected)) {
-    throw "Failure: azurl (yes), x-block-origin (yes), asset-cache (hit), download (n/a)"
+    throw "Failure: azurl (no), x-block-origin (yes), asset-cache (hit), download (n/a)"
 }
 
 Refresh-TestRoot
@@ -376,7 +399,7 @@ $expected = @(
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
 Throw-IfNotFailed
 if (-not ($actual -match $expected)) {
-    throw "Failure: azurl (yes), x-block-origin (yes), asset-cache (hit), download (n/a)"
+    throw "Failure: azurl (no), x-block-origin (yes), asset-cache (hit), download (n/a)"
 }
 
 Refresh-TestRoot
@@ -393,7 +416,7 @@ $expected = @(
 $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/example3.html", "--url", "https://example.com", "--sha512", "d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a"))
 Throw-IfNotFailed
 if (-not ($actual -match $expected)) {
-    throw "Failure: azurl (yes), x-block-origin (yes), asset-cache (hit), download (n/a)"
+    throw "Failure: azurl (no), x-block-origin (yes), asset-cache (hit), download (n/a)"
 }
 
 # Testing x-download success with asset cache (x-script) and x-block-origin settings
