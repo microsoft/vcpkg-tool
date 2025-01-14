@@ -140,6 +140,17 @@ namespace
                 ::SetInformationJobObject(m_global_job, JobObjectExtendedLimitInformation, &info, sizeof(info));
                 ::AssignProcessToJobObject(m_global_job, ::GetCurrentProcess());
             }
+
+            // Tell Windows that we shouldn't be power throttled.
+            // https://learn.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-setprocessinformation#remarks
+            PROCESS_POWER_THROTTLING_STATE power_throtting_state{};
+            power_throtting_state.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+
+            power_throtting_state.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+            power_throtting_state.StateMask = 0;
+
+            SetProcessInformation(
+                ::GetCurrentProcess(), ProcessPowerThrottling, &power_throtting_state, sizeof(power_throtting_state));
         }
 
         void enter_interactive() { ++m_in_interactive; }
