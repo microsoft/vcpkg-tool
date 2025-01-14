@@ -59,6 +59,101 @@ TEST_CASE ("split_uri_view", "[downloads]")
     }
 }
 
+TEST_CASE ("parse_curl_status_line", "[downloads]")
+{
+    std::vector<ExpectedL<int>> http_codes;
+    StringLiteral malformed_examples[] = {
+        "asdfasdf",                                       // wrong prefix
+        "curl: unknown --write-out variable: 'exitcode'", // wrong prefixes, and also what old curl does
+        "curl: unknown --write-out variable: 'errormsg'",
+        "prefix",      // missing spaces
+        "prefix42",    // missing spaces
+        "prefix42 2",  // missing space
+        "prefix42 2a", // non numeric exitcode
+    };
+
+    for (auto&& malformed : malformed_examples)
+    {
+        parse_curl_status_line(http_codes, "prefix", malformed);
+        REQUIRE(http_codes.empty());
+    }
+
+    // old curl output
+    parse_curl_status_line(http_codes, "prefix", "prefix200  ");
+    REQUIRE(http_codes.size() == 1);
+    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 200);
+    http_codes.clear();
+
+    parse_curl_status_line(http_codes, "prefix", "prefix404  ");
+    REQUIRE(http_codes.size() == 1);
+    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 404);
+    http_codes.clear();
+
+    parse_curl_status_line(http_codes, "prefix", "prefix0  "); // a failure, but we don't know that yet
+    REQUIRE(http_codes.size() == 1);
+    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 0);
+    http_codes.clear();
+
+    // current curl output
+    parse_curl_status_line(http_codes, "prefix", "prefix200 0 ");
+    REQUIRE(http_codes.size() == 1);
+    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 200);
+    http_codes.clear();
+
+    parse_curl_status_line(http_codes,
+                           "prefix",
+                           "prefix0 60 schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) "
+                           "- The target principal name is incorrect.");
+    REQUIRE(http_codes.size() == 1);
+    REQUIRE(http_codes[0].error().data() ==
+            "curl operation failed with error code 60. schannel: SNI or certificate check failed: "
+            "SEC_E_WRONG_PRINCIPAL (0x80090322) - The target principal name is incorrect.");
+    http_codes.clear();
+}
+
+TEST_CASE ("download_files", "[downloads]")
+{
+    auto const dst = Test::base_temporary_directory() / "download_files";
+    auto const url = [&](std::string l) -> auto { return std::pair(l, dst); };
+
+    std::vector<std::string> headers;
+    std::vector<std::string> secrets;
+    auto results =
+        download_files(std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
+                       headers,
+                       secrets);
+    REQUIRE(results.size() == 2);
+    if (auto first_result = results[0].get())
+    {
+        // old curl
+        REQUIRE(*first_result == 0);
+    }
+    else
+    {
+        // current curl
+        REQUIRE(results[0].error().data() ==
+                "curl operation failed with error code 1. Protocol \"unknown\" not supported");
+    }
+
+    auto&& second_error = results[1].error().data();
+    std::puts(second_error.c_str());
+    // curl operation failed with error code 7. Failed to connect to localhost port 9 after 2241 ms: Could not connect
+    // to server
+    if (second_error == "curl operation failed with error code 7.")
+    {
+        // old curl
+    }
+    else
+    {
+        // new curl
+        REQUIRE_THAT(
+            second_error,
+            Catch::Matches("curl operation failed with error code 7. Failed to connect to localhost port 9 after "
+                           "[0-9]+ ms: Could not connect to server",
+                           Catch::CaseSensitive::Yes));
+    }
+}
+
 TEST_CASE ("try_parse_curl_max5_size", "[downloads]")
 {
     REQUIRE(!try_parse_curl_max5_size("").has_value());

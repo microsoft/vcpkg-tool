@@ -41,6 +41,10 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     Write-Error "vcpkg end to end tests must use pwsh rather than Windows PowerShell"
 }
 
+# If you get an error on the next line, install Pester from an administrative command prompt with:
+# Install-Module -Name Pester -Force -MinimumVersion '5.6.1' -MaximumVersion '5.99' -Scope AllUsers
+Import-Module Pester -Force -MinimumVersion '5.6.1' -MaximumVersion '5.99'
+
 if ($IsLinux) {
     $Triplet = 'x64-linux'
 } elseif ($IsMacOS) {

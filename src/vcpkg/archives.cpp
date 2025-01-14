@@ -260,7 +260,7 @@ namespace vcpkg
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
                                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissingExtension, msg::extension = ".7.exe"));
+                                   .append(msgMissingExtension, msg::extension = ".7z.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
 
