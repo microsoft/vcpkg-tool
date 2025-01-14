@@ -130,7 +130,7 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,
@@ -323,7 +323,9 @@ namespace vcpkg
         auto maybe_target_arch = to_cpu_architecture(target_architecture);
         if (!maybe_target_arch.has_value())
         {
-            msg::println_error(msgInvalidArchitecture, msg::value = target_architecture);
+            msg::println_error(msgInvalidArchitectureValue,
+                               msg::value = target_architecture,
+                               msg::expected = all_comma_separated_cpu_architectures());
             Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
         }
 
@@ -1661,7 +1663,7 @@ namespace vcpkg
         fmt::format_to(std::back_inserter(issue_body),
                        "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
                        action.display_name(),
-                       to_zstring_view(get_host_processor()),
+                       get_host_processor(),
                        get_host_os_name());
 
         if (const auto* abi_info = action.abi_info.get())

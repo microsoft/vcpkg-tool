@@ -516,9 +516,9 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADefaultFeature); }
 
-        Span<const StringView> valid_fields() const override
+        View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView t[] = {
+            static const StringLiteral t[] = {
                 JsonIdName,
                 JsonIdPlatform,
             };
@@ -580,9 +580,9 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADependencyFeature); }
 
-        Span<const StringView> valid_fields() const override
+        View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView t[] = {
+            static const StringLiteral t[] = {
                 JsonIdName,
                 JsonIdPlatform,
             };
@@ -620,9 +620,9 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADependency); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView t[] = {
+            static constexpr StringLiteral t[] = {
                 JsonIdName,
                 JsonIdHost,
                 JsonIdFeatures,
@@ -701,11 +701,10 @@ namespace vcpkg
     struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAnOverride); }
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView u[] = {JsonIdName};
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
-            return t;
+            static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdName};
+            return fields;
         }
 
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
@@ -753,7 +752,7 @@ namespace vcpkg
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin, {0, 0}) { }
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
@@ -1004,9 +1003,9 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView t[] = {JsonIdDescription, JsonIdDependencies, JsonIdSupports, JsonIdLicense};
+            static constexpr StringLiteral t[] = {JsonIdDescription, JsonIdDependencies, JsonIdSupports, JsonIdLicense};
             return t;
         }
 
@@ -1051,8 +1050,6 @@ namespace vcpkg
     struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
-
-        virtual Span<const StringView> valid_fields() const override { return {}; }
 
         virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
@@ -1122,9 +1119,10 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAManifest); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView u[] = {
+            static constexpr StringLiteral fields[] = {
+                VCPKG_SCHEMED_DESERIALIZER_FIELDS,
                 JsonIdName,
                 JsonIdMaintainers,
                 JsonIdContacts,
@@ -1141,9 +1139,8 @@ namespace vcpkg
                 JsonIdBuiltinBaseline,
                 JsonIdVcpkgConfiguration,
             };
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
-            return t;
+            return fields;
         }
 
         vcpkg::Optional<std::unique_ptr<vcpkg::SourceControlFile>> visit_object_common(

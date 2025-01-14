@@ -439,13 +439,20 @@ namespace
                                        make_temp_archive_path(m_buildtrees, action.spec));
             }
 
-            auto codes = download_files(url_paths, m_url_template.headers, m_secrets);
-
-            for (size_t i = 0; i < codes.size(); ++i)
+            auto codes_maybe = download_files(url_paths, m_url_template.headers, m_secrets);
+            for (size_t i = 0; i < codes_maybe.size(); ++i)
             {
-                if (codes[i] == 200)
+                auto const& maybe_code = codes_maybe[i];
+                if (auto code = maybe_code.get())
                 {
-                    out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
+                    if (*code == 200)
+                    {
+                        out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
+                    }
+                }
+                else
+                {
+                    msg::println_warning(maybe_code.error());
                 }
             }
         }
@@ -458,10 +465,24 @@ namespace
                 urls.push_back(m_url_template.instantiate_variables(BinaryPackageReadInfo{*actions[idx]}));
             }
 
-            auto codes = url_heads(urls, {}, m_secrets);
-            for (size_t i = 0; i < codes.size(); ++i)
+            auto codes_maybe = url_heads(urls, {}, m_secrets);
+            for (size_t i = 0; i < codes_maybe.size(); ++i)
             {
-                out_status[i] = codes[i] == 200 ? CacheAvailability::available : CacheAvailability::unavailable;
+                auto result_availability = CacheAvailability::unavailable;
+                if (const auto code = codes_maybe[i].get())
+                {
+                    if (*code == 200)
+                    {
+                        result_availability = CacheAvailability::available;
+                    }
+                }
+
+                out_status[i] = result_availability;
+            }
+
+            for (size_t i = codes_maybe.size(); i < out_status.size(); ++i)
+            {
+                out_status[i] = CacheAvailability::unavailable;
             }
         }
 
@@ -840,13 +861,21 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            const auto codes = download_files(url_paths, {}, m_secrets);
-
-            for (size_t i = 0; i < codes.size(); ++i)
+            const auto codes_maybe = download_files(url_paths, {}, m_secrets);
+            for (size_t i = 0; i < codes_maybe.size(); ++i)
             {
-                if (codes[i] == 200)
+                auto const& maybe_code = codes_maybe[i];
+                if (auto code = maybe_code.get())
                 {
-                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
+                    if (*code == 200)
+                    {
+                        out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
+                    }
+                }
+                else
+                {
+                    msg::println(maybe_code.error());
+                    continue;
                 }
             }
         }
@@ -1455,7 +1484,7 @@ namespace
     struct BinaryConfigParser : ConfigSegmentsParser
     {
         BinaryConfigParser(StringView text, Optional<StringView> origin, BinaryConfigParserState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 
@@ -1907,7 +1936,7 @@ namespace
     struct AssetSourcesParser : ConfigSegmentsParser
     {
         AssetSourcesParser(StringView text, StringView origin, AssetSourcesState* state)
-            : ConfigSegmentsParser(text, origin), state(state)
+            : ConfigSegmentsParser(text, origin, {0, 0}), state(state)
         {
         }
 

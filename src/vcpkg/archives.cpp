@@ -156,7 +156,16 @@ namespace vcpkg
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            return ExtractionType::Exe;
+            // Special case to differentiate between self-extracting 7z archives and other exe files
+            const auto stem = archive.stem();
+            if (Strings::case_insensitive_ascii_equals(Path(stem).extension(), ".7z"))
+            {
+                return ExtractionType::SelfExtracting7z;
+            }
+            else
+            {
+                return ExtractionType::Exe;
+            }
         }
         else
         {
@@ -188,6 +197,9 @@ namespace vcpkg
                 extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
                 break;
             case ExtractionType::Exe:
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                break;
+            case ExtractionType::SelfExtracting7z:
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
@@ -248,7 +260,7 @@ namespace vcpkg
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
                                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissingExtension, msg::extension = ".7.exe"));
+                                   .append(msgMissingExtension, msg::extension = ".7z.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
 

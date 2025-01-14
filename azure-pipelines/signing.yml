@@ -524,39 +524,33 @@ extends:
               SymbolsFeatureName: 'vcpkg'
               SymbolsProject: 'VS'
               SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
-        # Publish everything to a GitHub Release
-        - ${{ if eq(parameters.PublishTo, 'GitHub and NuGet') }}:
-          - task: DownloadSecureFile@1
-            displayName: Download Deploy Key
-            name: githubDeployKey
-            condition: and(eq(variables.SignType, 'real'), succeeded())
-            inputs:
-              secureFile: id_vcpkg_tool
-          # GitHub has a large, regularly changing set of IP address, so ignore the
-          # hostname and allow anything with the right key.
-          # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/about-githubs-ip-addresses
-          # This public key should have the well-known fingerprint documented below.
-          # SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s
-          # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
-          - script: mkdir %USERPROFILE%\.ssh && echo github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=>>%USERPROFILE%\.ssh\known_hosts
-            displayName: Store GitHub Public Key
-            condition: and(eq(variables.SignType, 'real'), succeeded())
-          - script: git -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot" push git@github.com:microsoft/vcpkg-tool HEAD:refs/tags/%VCPKG_BASE_VERSION%
-            condition: and(eq(variables.SignType, 'real'), succeeded())
-            env:
-              GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
-            displayName: Push Release Tag
-          - task: GitHubRelease@0
-            displayName: Publish GitHub Release
-            condition: and(eq(variables.SignType, 'real'), succeeded())
-            inputs:
-              gitHubConnection: embeddedbot
-              repositoryName: microsoft/vcpkg-tool
-              isPreRelease: true
-              isDraft: true
-              title: $(VCPKG_BASE_VERSION) Release
-              tagSource: manual
-              tag: $(VCPKG_BASE_VERSION)
-              assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
-              addChangeLog: false
-              compareWith: 'lastFullRelease'
+      - job: github_release
+        displayName: 'Publish GitHub Release'
+        condition: and(succeeded(), eq(variables.SignType, 'real'), ${{ eq(parameters.PublishTo, 'GitHub and NuGet') }})
+        dependsOn:
+        - arch_independent
+        - windows_and_sign
+        pool:
+          name: 'VSEngSS-MicroBuild2022-1ES'
+        variables:
+          VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+        templateContext:
+          type: releaseJob
+          isProduction: true
+          inputs:
+          - input: pipelineArtifact
+            artifactName: Drop
+            targetPath: $(Build.ArtifactStagingDirectory)/drop
+        steps:
+        - task: GitHubRelease@1
+          displayName: Publish GitHub Release
+          inputs:
+            gitHubConnection: embeddedbot
+            repositoryName: microsoft/vcpkg-tool
+            isPreRelease: true
+            isDraft: true
+            title: $(VCPKG_BASE_VERSION) Release
+            tagSource: userSpecifiedTag
+            tag: $(VCPKG_BASE_VERSION)
+            assets: "$(Build.ArtifactStagingDirectory)\\drop\\*"
+            addChangeLog: false

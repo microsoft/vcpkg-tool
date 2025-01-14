@@ -4,6 +4,7 @@ DECLARE_MESSAGE(ADefaultFeature, (), "", "a default feature")
 DECLARE_MESSAGE(ABoolean, (), "", "a boolean")
 DECLARE_MESSAGE(ABuiltinRegistry, (), "", "a builtin registry")
 DECLARE_MESSAGE(AConfigurationObject, (), "", "a configuration object")
+DECLARE_MESSAGE(ACpuArchitecture, (), "", "a CPU architecture")
 DECLARE_MESSAGE(ADependency, (), "", "a dependency")
 DECLARE_MESSAGE(ADependencyFeature, (), "", "a feature of a dependency")
 DECLARE_MESSAGE(ADemandObject,
@@ -11,6 +12,7 @@ DECLARE_MESSAGE(ADemandObject,
                 "'demands' are a concept in the schema of a JSON file the user can edit",
                 "a demand object")
 DECLARE_MESSAGE(AString, (), "", "a string")
+DECLARE_MESSAGE(ASha512, (), "", "a SHA-512 hash")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
 DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
 DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
@@ -265,6 +267,15 @@ DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
 DECLARE_MESSAGE(AStringOrArrayOfStrings, (), "", "a string or array of strings")
 DECLARE_MESSAGE(AStringStringDictionary, (), "", "a \"string\": \"string\" dictionary")
+DECLARE_MESSAGE(AToolDataObject, (), "", "tool metadata")
+DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
+DECLARE_MESSAGE(AToolDataFile, (), "", "a tool data file")
+DECLARE_MESSAGE(AToolDataOS, (), "", "a tool data operating system")
+DECLARE_MESSAGE(AToolDataVersion, (), "", "a tool data version")
+DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
+                (msg::version),
+                "",
+                "document schema version {version} is not supported by this version of vcpkg")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",
@@ -880,12 +891,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "command:\n"
                 "{command_line}\n"
                 "failed with the following output:")
-DECLARE_MESSAGE(CommandFailedCode,
-                (msg::command_line, msg::exit_code),
-                "",
-                "command:\n"
-                "{command_line}\n"
-                "failed with exit code {exit_code} and the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
 DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
@@ -942,10 +947,6 @@ DECLARE_MESSAGE(CouldNotFindGitTreeAtCommit,
                 (msg::package_name, msg::commit_sha),
                 "",
                 "could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}")
-DECLARE_MESSAGE(CouldNotFindToolVersion,
-                (msg::version, msg::path),
-                "",
-                "Could not find <tools version=\"{version}\"> in {path}")
 DECLARE_MESSAGE(CouldNotFindVersionDatabaseFile, (msg::path), "", "Couldn't find the versions database file: {path}")
 DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}")
 DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.")
@@ -953,6 +954,10 @@ DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...")
 DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
+DECLARE_MESSAGE(CurlFailedGeneric,
+                (msg::exit_code),
+                "curl is the name of a program, see curl.se.",
+                "curl operation failed with error code {exit_code}.")
 DECLARE_MESSAGE(CurlFailedToPut,
                 (msg::exit_code, msg::url),
                 "curl is the name of a program, see curl.se",
@@ -961,15 +966,13 @@ DECLARE_MESSAGE(CurlFailedToPutHttp,
                 (msg::exit_code, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
                 "curl failed to put file to {url} with exit code {exit_code} and http code {value}.")
-DECLARE_MESSAGE(CurlResponseTruncatedRetrying,
-                (msg::value),
-                "{value} is the number of milliseconds for which we are waiting this time",
-                "curl returned a partial response; waiting {value} milliseconds and trying again")
-DECLARE_MESSAGE(CurlTimeout,
-                (msg::command_line),
-                "",
-                "curl was unable to perform all requested HTTP operations, even after timeout and retries. The last "
-                "command line was: {command_line}")
+DECLARE_MESSAGE(
+    CurlFailedToReturnExpectedNumberOfExitCodes,
+    (msg::exit_code, msg::command_line),
+    "",
+    "curl failed to return the expected number of exit codes; this can happen if something terminates curl "
+    "before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, "
+    "but may be the result of a crash. The command line was {command_line}, and all output is below:")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",
@@ -1317,10 +1320,6 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
-DECLARE_MESSAGE(FailedToParseVersionXML,
-                (msg::tool_name, msg::version),
-                "",
-                "Could not parse version for tool {tool_name}. Version string was: {version}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
@@ -1855,10 +1854,11 @@ DECLARE_MESSAGE(
     "Please open an issue at "
     "https://github.com/microsoft/vcpkg/issues/new?template=other-type-of-bug-report.md&labels=category:vcpkg-bug "
     "with detailed steps to reproduce the problem.")
-DECLARE_MESSAGE(InvalidArchitecture,
-                (msg::value),
-                "{value} is what the user entered that we did not understand",
-                "invalid architecture: {value}")
+DECLARE_MESSAGE(
+    InvalidArchitectureValue,
+    (msg::value, msg::expected),
+    "{value} is an unknown CPU architecture type, {expected} is the list of accepted CPU architecture values",
+    "Invalid architecture: {value}. Expected one of: {expected}")
 DECLARE_MESSAGE(InvalidArgument, (), "", "invalid argument")
 DECLARE_MESSAGE(
     InvalidArgumentRequiresAbsolutePath,
@@ -1981,12 +1981,26 @@ DECLARE_MESSAGE(InvalidOptionForRemove,
                 "'remove' is a command that should not be changed.",
                 "'remove' accepts either libraries or '--outdated'")
 DECLARE_MESSAGE(InvalidPortVersonName, (msg::path), "", "Found invalid port version file name: `{path}`.")
+DECLARE_MESSAGE(InvalidSha512,
+                (msg::sha),
+                "",
+                "invalid SHA-512 hash: {sha}\n"
+                "SHA-512 hash must be 128 characters long and contain only hexadecimal digits")
 DECLARE_MESSAGE(InvalidSharpInVersion, (), "", "invalid character '#' in version text")
 DECLARE_MESSAGE(InvalidSharpInVersionDidYouMean,
                 (msg::value),
                 "{value} is an integer. `\"port-version\":' is JSON syntax and should be unlocalized",
                 "invalid character '#' in version text. Did you mean \"port-version\": {value}?")
 DECLARE_MESSAGE(InvalidString, (), "", "Invalid utf8 passed to Value::string(std::string)")
+DECLARE_MESSAGE(InvalidToolOSValue,
+                (msg::value, msg::expected),
+                "{value} is an unknown operating system, {expected} is the list of accepted operating system values",
+                "Invalid tool operating system: {value}. Expected one of: {expected}")
+DECLARE_MESSAGE(
+    InvalidToolVersion,
+    (),
+    "",
+    "Invalid tool version; expected a string containing a substring of between 1 and 3 numbers separated by dots.")
 DECLARE_MESSAGE(InvalidTriplet, (msg::triplet), "", "Invalid triplet: {triplet}")
 DECLARE_MESSAGE(InvalidValueHashAdditionalFiles,
                 (msg::path),
@@ -3068,11 +3082,6 @@ DECLARE_MESSAGE(VersionCommandHeader,
                 (msg::version),
                 "",
                 "vcpkg package management program version {version}\n\nSee LICENSE.txt for license information.")
-DECLARE_MESSAGE(
-    VersionConflictXML,
-    (msg::path, msg::expected_version, msg::actual_version),
-    "",
-    "Expected {path} version: [{expected_version}], but was [{actual_version}]. Please re-run bootstrap-vcpkg.")
 DECLARE_MESSAGE(VersionConstraintNotInDatabase1,
                 (msg::package_name, msg::version),
                 "",
