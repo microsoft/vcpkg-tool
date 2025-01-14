@@ -1123,6 +1123,15 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in manifest mode.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlay,
+                (msg::path),
+                "",
+                "The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlayDot,
+                (),
+                "",
+                "The manifest directory cannot be the same as a directory configured in overlay-ports, so "
+                "\"overlay-ports\" values cannot be \".\".")
 DECLARE_MESSAGE(
     ErrorMissingVcpkgRoot,
     (),
@@ -2104,7 +2113,8 @@ DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
 DECLARE_MESSAGE(MismatchedNames,
                 (msg::package_name, msg::actual),
                 "{actual} is the port name found",
-                "names did not match: '{package_name}' != '{actual}'")
+                "the port name declared in the metadata file did not match the directory. Expected the port to be "
+                "named {package_name}, but the file declares {actual}.")
 DECLARE_MESSAGE(MismatchedSpec,
                 (msg::path, msg::expected, msg::actual),
                 "{expected} and {actual} are package specs like 'zlib:x64-windows'",
@@ -2238,8 +2248,11 @@ DECLARE_MESSAGE(OptionRequiresOption,
 DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options")
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
-DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
-DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of overlay ports (also: {env_var})")
+DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must be an existing directory.")
+DECLARE_MESSAGE(OverlayPortsHelp,
+                (msg::env_var),
+                "",
+                "Overlay-port directories, or directories containing overlay-port directories (also: {env_var})")
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
