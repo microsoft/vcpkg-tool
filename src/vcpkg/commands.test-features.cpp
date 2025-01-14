@@ -306,7 +306,7 @@ namespace vcpkg
         });
         msg::println(msgComputeAllAbis);
         var_provider.load_tag_vars(specs, port_locations, host_triplet);
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         PortAbiCache cache;
         for (auto& [spec, install_plan] : install_plans)
         {

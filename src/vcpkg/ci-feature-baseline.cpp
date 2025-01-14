@@ -37,7 +37,7 @@ namespace vcpkg
                                                 CMakeVars::CMakeVarProvider& var_provider)
     {
         CiFeatureBaseline result;
-        ParserBase parser(text, origin);
+        ParserBase parser(text, origin, {});
         for (;;)
         {
             parser.skip_whitespace();
