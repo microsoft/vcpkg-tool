@@ -1609,6 +1609,24 @@ namespace vcpkg
                                     const Path& download_path,
                                     const Optional<std::string>& maybe_sha512)
     {
+        // Design goals:
+        // * We want it to be clear when asset cache(s) are used. This means not printing the authoritative URL in a
+        //   'downloading' message when we aren't looking at it.
+        // * We don't want to say that something is an error / failure unless it actually is. This means asset cache
+        //   failures followed by authoritative success must print only success. This also means that we can't print
+        //   asset cache errors immediately, since they might be 'eaten' by a subsequent authoritative success.
+        // * We want to print something before 'going to sleep' for network access ever, so if the machine where that
+        //   network access is is being slow or whatever the user understands.
+        // * We want to print errors and warnings as close to when they happen as possible notwithstanding other goals.
+        // * We want to print the proxy warning if and only if a failure looks like it might be something a proxy could
+        //   fix. For example, successful network access with the wrong SHA is not proxy-fixable.
+        // * If we are printing the proxy message, we want to take some effort to only print it once, and put it on the
+        //   *last* HTTP failure we print. This avoids a ton of console spew and makes it likely to be near the end of
+        //   failure output and thus not scrolled off the top of the console buffer.
+        // * We consider hash check failure the same as a network I/O failure, and let other sources 'fix' the problem.
+        //
+        // See examples of console output in asset-caching.ps1
+
         // Note: no secrets for the input URLs
         std::vector<SanitizedUrl> sanitized_urls =
             Util::fmap(raw_urls, [&](const std::string& url) { return SanitizedUrl{url, {}}; });
