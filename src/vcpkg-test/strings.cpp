@@ -212,36 +212,62 @@ TEST_CASE ("inplace_replace_all(char)", "[strings]")
 
 TEST_CASE ("api_stable_format(sv,append_f)", "[strings]")
 {
-    std::string target;
-    auto res = api_stable_format("{", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(!res.has_value());
-    res = api_stable_format("}", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(!res.has_value());
-    res = api_stable_format("{ {", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(!res.has_value());
-    res = api_stable_format("{ {}", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(!res.has_value());
+    for (auto&& invalid_format_string : {"{", "}", "{ {", "{ {}"})
+    {
+        FullyBufferedDiagnosticContext bdc_invalid{};
+        auto res = api_stable_format(bdc_invalid, invalid_format_string, [](std::string&, StringView) {
+            CHECK(false);
+            return true;
+        });
+        REQUIRE(bdc_invalid.to_string() == fmt::format("error: invalid format string: {}", invalid_format_string));
+    }
 
-    res = api_stable_format("}}", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(*res.get() == "}");
-    res = api_stable_format("{{", [](std::string&, StringView) { CHECK(false); });
-    REQUIRE(*res.get() == "{");
+    FullyBufferedDiagnosticContext bdc{};
+    {
+        auto res = api_stable_format(bdc, "}}", [](std::string&, StringView) {
+            CHECK(false);
+            return true;
+        });
+        REQUIRE(bdc.empty());
+        REQUIRE(res.value_or_exit(VCPKG_LINE_INFO) == "}");
+    }
+    {
+        auto res = api_stable_format(bdc, "{{", [](std::string&, StringView) {
+            CHECK(false);
+            return true;
+        });
+        REQUIRE(bdc.empty());
+        REQUIRE(res.value_or_exit(VCPKG_LINE_INFO) == "{");
+    }
+    {
+        auto res = api_stable_format(bdc, "{x}{y}{z}", [](std::string& out, StringView t) {
+            CHECK((t == "x" || t == "y" || t == "z"));
+            Strings::append(out, t, t);
+            return true;
+        });
+        REQUIRE(bdc.empty());
+        REQUIRE(res.value_or_exit(VCPKG_LINE_INFO) == "xxyyzz");
+    }
+    {
+        auto res = api_stable_format(bdc, "{x}}}", [](std::string& out, StringView t) {
+            CHECK(t == "x");
+            Strings::append(out, "hello");
+            return true;
+        });
 
-    res = api_stable_format("{x}{y}{z}", [](std::string& out, StringView t) {
-        CHECK((t == "x" || t == "y" || t == "z"));
-        Strings::append(out, t, t);
-    });
-    REQUIRE(*res.get() == "xxyyzz");
-    res = api_stable_format("{x}}}", [](std::string& out, StringView t) {
-        CHECK(t == "x");
-        Strings::append(out, "hello");
-    });
-    REQUIRE(*res.get() == "hello}");
-    res = api_stable_format("123{x}456", [](std::string& out, StringView t) {
-        CHECK(t == "x");
-        Strings::append(out, "hello");
-    });
-    REQUIRE(*res.get() == "123hello456");
+        REQUIRE(bdc.empty());
+        REQUIRE(res.value_or_exit(VCPKG_LINE_INFO) == "hello}");
+    }
+    {
+        auto res = api_stable_format(bdc, "123{x}456", [](std::string& out, StringView t) {
+            CHECK(t == "x");
+            Strings::append(out, "hello");
+            return true;
+        });
+
+        REQUIRE(bdc.empty());
+        REQUIRE(res.value_or_exit(VCPKG_LINE_INFO) == "123hello456");
+    }
 }
 
 TEST_CASE ("lex compare less", "[strings]")

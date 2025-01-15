@@ -24,9 +24,10 @@ namespace vcpkg::Strings::details
     void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
 }
 
-vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
-                                                                     void (*cb)(void*, std::string&, StringView),
-                                                                     void* user)
+Optional<std::string> vcpkg::details::api_stable_format_impl(DiagnosticContext& context,
+                                                             StringView sv,
+                                                             bool (*cb)(void*, std::string&, StringView),
+                                                             void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
@@ -46,7 +47,8 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last)
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             else if (*p == '{')
             {
@@ -60,10 +62,15 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
                 p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
                 if (p == last || p[0] != '}')
                 {
-                    return msg::format(msgInvalidFormatString, msg::actual = sv);
+                    context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                    return nullopt;
                 }
                 // p[0] == '}'
-                cb(user, out, {seq_start, p});
+                if (!cb(user, out, {seq_start, p}))
+                {
+                    return nullopt;
+                }
+
                 prev = ++p;
             }
         }
@@ -71,14 +78,16 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last || p[0] != '}')
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             out.push_back('}');
             prev = ++p;
         }
     }
+
     out.append(prev, last);
-    return {std::move(out), expected_left_tag};
+    return out;
 }
 
 namespace
@@ -193,7 +202,7 @@ void Strings::inplace_ascii_to_lowercase(std::string& s)
 std::string Strings::ascii_to_lowercase(StringView s)
 {
     std::string result;
-    std::transform(s.begin(), s.end(), std::back_inserter(result), tolower_char);
+    append_ascii_lowercase(result, s);
     return result;
 }
 
@@ -202,6 +211,11 @@ std::string Strings::ascii_to_uppercase(StringView s)
     std::string result;
     std::transform(s.begin(), s.end(), std::back_inserter(result), to_upper_char);
     return result;
+}
+
+void Strings::append_ascii_lowercase(std::string& target, StringView s)
+{
+    std::transform(s.begin(), s.end(), std::back_inserter(target), tolower_char);
 }
 
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)

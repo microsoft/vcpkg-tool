@@ -380,7 +380,7 @@ namespace vcpkg
             SwitchOverlayPorts,
             StabilityTag::Standard,
             args.cli_overlay_ports,
-            msg::format(msgOverlayPortsDirectoriesHelp,
+            msg::format(msgOverlayPortsHelp,
                         msg::env_var = format_environment_variable(EnvironmentVariableVcpkgOverlayPorts)));
         args.parser.parse_multi_option(
             SwitchOverlayTriplets,

@@ -2,6 +2,8 @@
 
 namespace vcpkg
 {
+    struct MessageLineSegment;
+    struct MessageLine;
     struct MessageSink;
 
     extern MessageSink& null_sink;
@@ -10,6 +12,6 @@ namespace vcpkg
     extern MessageSink& stderr_sink;
 
     struct FileSink;
-    struct CombiningSink;
+    struct TeeSink;
     struct BGMessageSink;
 }

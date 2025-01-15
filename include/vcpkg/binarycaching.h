@@ -262,7 +262,7 @@ namespace vcpkg
         std::unique_ptr<BinaryCacheData> bc_data;
     };
 
-    ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedL<AssetCachingSettings> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action, StringView prefix);
 
