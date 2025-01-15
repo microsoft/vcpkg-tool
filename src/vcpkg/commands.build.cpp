@@ -1062,7 +1062,7 @@ namespace vcpkg
         size_t error_count = 0;
         {
             FileSink file_sink{fs, stdoutlog, Append::YES};
-            CombiningSink combo_sink{out_sink, file_sink};
+            TeeSink combo_sink{out_sink, file_sink};
             error_count = perform_post_build_lint_checks(
                 action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
         };

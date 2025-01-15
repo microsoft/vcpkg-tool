@@ -225,7 +225,7 @@ namespace vcpkg
         bool m_needs_zip_file = false;
     };
 
-    ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedL<AssetCachingSettings> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action, StringView prefix);
 

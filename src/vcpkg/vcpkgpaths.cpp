@@ -341,8 +341,8 @@ namespace
             , m_ff_settings(args.feature_flag_settings())
             , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
             , m_bundle(bundle)
-            , m_download_manager(std::make_shared<DownloadManager>(
-                  parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
+            , m_asset_cache_settings(
+                  parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO))
             , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
             , m_default_vs_path(args.default_visual_studio_path
                                     .map([&fs](const std::string& default_visual_studio_path) {
@@ -359,7 +359,7 @@ namespace
         const FeatureFlagSettings m_ff_settings;
         const Path m_manifest_dir;
         const BundleSettings m_bundle;
-        const std::shared_ptr<const DownloadManager> m_download_manager;
+        const AssetCachingSettings m_asset_cache_settings;
         const Path m_builtin_ports;
         const Path m_default_vs_path;
         const Path scripts;
@@ -589,7 +589,7 @@ namespace vcpkg
                                           VCPKG_LINE_INFO))
             , m_tool_cache(get_tool_cache(
                   fs,
-                  m_download_manager,
+                  m_asset_cache_settings,
                   downloads,
                   args.tools_data_file.has_value() ? Path{*args.tools_data_file.get()} : scripts / "vcpkg-tools.json",
                   tools,
@@ -687,11 +687,6 @@ namespace vcpkg
         Debug::print("Using vcpkg-root: ", root, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
-        m_pimpl->m_download_manager->get_block_origin()
-            ? Debug::println("External asset downloads are blocked (x-block-origin is enabled)..")
-            : Debug::println("External asset downloads are allowed (x-block-origin is disabled)...");
-        m_pimpl->m_download_manager->asset_cache_configured() ? Debug::println("Asset caching is enabled.")
-                                                              : Debug::println("Asset cache is not configured.");
 
         const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
         auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
@@ -905,7 +900,7 @@ namespace vcpkg
     }
 
     const Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
+    const AssetCachingSettings& VcpkgPaths::get_asset_cache_settings() const { return m_pimpl->m_asset_cache_settings; }
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
     const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {
