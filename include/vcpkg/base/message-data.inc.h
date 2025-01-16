@@ -1124,6 +1124,7 @@ DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
                 "{url}: {system_api} failed with exit code {exit_code}.")
+DECLARE_MESSAGE(DuplicateDependencyOverride, (msg::package_name), "", "{package_name} already has a declared override")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
                 "{value} is a json property/object",
