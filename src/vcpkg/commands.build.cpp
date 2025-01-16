@@ -207,7 +207,7 @@ namespace vcpkg
                     msg::print(Color::warning, warnings);
                 }
                 msg::println_error(create_error_message(result, spec));
-                msg::print(create_user_troubleshooting_message(*action, paths, {}, nullopt));
+                msg::print(create_user_troubleshooting_message(*action, args.detected_ci(), paths, {}, nullopt));
                 return 1;
             }
             case BuildResult::Excluded:
@@ -1702,82 +1702,76 @@ namespace vcpkg
                                Strings::percent_encode(body));
     }
 
-    enum class CIType
+    static bool is_collapsible_ci_kind(CIKind kind)
     {
-        GithubActions,
-        GitLabCi,
-        Azure,
-    };
-
-    static Optional<CIType> detect_ci_type()
-    {
-        if (get_environment_variable(EnvironmentVariableGitHubActions).has_value())
+        switch (kind)
         {
-            return CIType::GithubActions;
+            case CIKind::GithubActions:
+            case CIKind::GitLabCI:
+            case CIKind::AzurePipelines: return true;
+            default: return false;
         }
-        if (get_environment_variable(EnvironmentVariableGitLabCI).has_value())
-        {
-            return CIType::GitLabCi;
-        }
-        if (get_environment_variable(EnvironmentVariableTfBuild).has_value())
-        {
-            return CIType::Azure;
-        }
-        return {};
     }
 
     static void append_file_collapsible(LocalizedString& output,
-                                        CIType type,
+                                        CIKind kind,
                                         const ReadOnlyFilesystem& fs,
                                         const Path& file)
     {
+        if (!is_collapsible_ci_kind(kind))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
         auto title = file.filename();
-        // starting tag
-        if (type == CIType::GithubActions)
+        auto contents = fs.read_contents(file, VCPKG_LINE_INFO);
+        switch (kind)
         {
-            // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#grouping-log-lines
-            output.append_raw("::group::").append_raw(title).append_raw('\n');
-        }
-        else if (type == CIType::GitLabCi)
-        {
-            // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
-            using namespace std::chrono;
-            const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
-            output.append_raw(fmt::format("\\e[0Ksection_start:{}:SECTION_NAME[collapsed=true]\r\\e[0K", timestamp))
-                .append_raw(title)
-                .append_raw('\n');
-        }
-        else if (type == CIType::Azure)
-        {
-            output.append_raw("##vso[task.uploadfile]").append_raw(fs.absolute(file, VCPKG_LINE_INFO)).append_raw('\n');
-            // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#formatting-commands
-            output.append_raw("##[group]").append_raw(title).append_raw('\n');
-        }
-
-        // output real file
-        output.append_raw(fs.read_contents(file, VCPKG_LINE_INFO));
-
-        // end tag
-        if (type == CIType::GithubActions)
-        {
-            output.append_raw("::endgroup::\n");
-        }
-        else if (type == CIType::GitLabCi)
-        {
-            using namespace std::chrono;
-            const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
-            output.append_raw(fmt::format("\\e[0Ksection_end:{}:SECTION_NAME\r\\e[0K\n", timestamp));
-        }
-        else if (type == CIType::Azure)
-        {
-            output.append_raw("##[endgroup]\n");
+            case CIKind::GithubActions:
+                // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#grouping-log-lines
+                output.append_raw("::group::")
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw("::endgroup::\n");
+                break;
+            case CIKind::GitLabCI:
+            {
+                // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
+                using namespace std::chrono;
+                std::string section_name;
+                std::copy_if(title.begin(), title.end(), std::back_inserter(section_name), [](char c) {
+                    return c == '.' || ParserBase::is_alphanum(c);
+                });
+                const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+                output
+                    .append_raw(
+                        fmt::format("\\e[0Ksection_start:{}:{}[collapsed=true]\r\\e[0K", timestamp, section_name))
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw(fmt::format("\\e[0Ksection_end:{}:{}\r\\e[0K\n", timestamp, section_name));
+            }
+            break;
+            case CIKind::AzurePipelines:
+                // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#formatting-commands
+                output.append_raw("##vso[task.uploadfile]")
+                    .append_raw(file)
+                    .append_raw('\n')
+                    .append_raw("##[group]")
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw("##[endgroup]\n");
+                break;
         }
     }
 
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        CIKind detected_ci,
                                                         const VcpkgPaths& paths,
                                                         const std::vector<std::string>& error_logs,
-                                                        const Optional<Path>& issue_body)
+                                                        const Optional<Path>& maybe_issue_body)
     {
         const auto& spec_name = action.spec.name();
         const auto& triplet_name = action.spec.triplet().to_string();
@@ -1785,32 +1779,36 @@ namespace vcpkg
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
         result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
 
-        if (issue_body.has_value())
+        if (auto issue_body = maybe_issue_body.get())
         {
-            auto ci = detect_ci_type();
-            const auto path = issue_body.get()->generic_u8string();
+            auto& fs = paths.get_filesystem();
+            const auto path = issue_body->generic_u8string();
+            const bool collapsible = is_collapsible_ci_kind(detected_ci);
             const auto body =
-                ci.map([&](auto) {
-                      return fmt::format("Copy issue body from collapsed section \"{}\" in the ci log output",
-                                         issue_body.get()->filename());
-                  }).value_or(Strings::concat("Copy issue body from ", path));
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
-            if (!ci && !paths.get_filesystem().find_from_PATH("gh").empty())
-            {
-                Command gh("gh");
-                gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
-                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure on {}", spec_name, triplet_name));
-                gh.string_arg("--body-file").string_arg(path);
+                collapsible ? msg::format(msgCopyIssueBodyFromCollapsibleSection, msg::path = issue_body->filename())
+                            : msg::format(msgCopyIssueBodyFromFile, msg::path = path);
 
-                result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
-                result.append_indent().append_raw(gh.command_line());
-            }
-            if (ci)
+            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
+            if (collapsible)
             {
-                append_file_collapsible(result, *ci.get(), paths.get_filesystem(), *issue_body.get());
+                append_file_collapsible(result, detected_ci, fs, *issue_body);
                 for (Path error_log_path : error_logs)
                 {
-                    append_file_collapsible(result, *ci.get(), paths.get_filesystem(), error_log_path);
+                    append_file_collapsible(result, detected_ci, fs, error_log_path);
+                }
+            }
+            else
+            {
+                auto gh_path = fs.find_from_PATH("gh");
+                if (!gh_path.empty())
+                {
+                    Command gh(gh_path[0]);
+                    gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
+                    gh.string_arg("--title").string_arg(
+                        fmt::format("[{}] Build failure on {}", spec_name, triplet_name));
+                    gh.string_arg("--body-file").string_arg(path);
+                    result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+                    result.append_indent().append_raw(gh.command_line());
                 }
             }
         }

@@ -604,8 +604,12 @@ namespace vcpkg
             {
                 this_install.print_elapsed_time();
                 print_user_troubleshooting_message(
-                    action, paths, result.error_logs, result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                        auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
+                    action,
+                    args.detected_ci(),
+                    paths,
+                    result.error_logs,
+                    result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                        auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
                         paths.get_filesystem().write_contents(
                             issue_body_path,
                             create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
