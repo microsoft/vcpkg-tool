@@ -339,6 +339,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
     inline constexpr StringLiteral FileControl = "CONTROL";
+    inline constexpr StringLiteral FileCompilerFileHashCacheDotJson = "compiler-file-hash-cache.json";
     inline constexpr StringLiteral FileCopying = "COPYING";
     inline constexpr StringLiteral FileCopyright = "copyright";
     inline constexpr StringLiteral FileDebug = "debug";
@@ -377,6 +378,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableCMakeSystemName = "VCPKG_CMAKE_SYSTEM_NAME";
     inline constexpr StringLiteral CMakeVariableCMakeSystemVersion = "VCPKG_CMAKE_SYSTEM_VERSION";
     inline constexpr StringLiteral CMakeVariableCmd = "CMD";
+    inline constexpr StringLiteral CMakeVariableCompilerCacheFile = "VCPKG_COMPILER_CACHE_FILE";
     inline constexpr StringLiteral CMakeVariableConcurrency = "VCPKG_CONCURRENCY";
     inline constexpr StringLiteral CMakeVariableCurrentBuildtreesDir = "CURRENT_BUILDTREES_DIR";
     inline constexpr StringLiteral CMakeVariableCurrentPackagesDir = "CURRENT_PACKAGES_DIR";
