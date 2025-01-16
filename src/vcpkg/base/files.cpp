@@ -1374,7 +1374,7 @@ namespace vcpkg
     FilePointer::FilePointer(const Path& path) : m_fs(nullptr), m_path(path) { }
     FilePointer::FilePointer() noexcept : m_fs(nullptr), m_path{} { }
 
-    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std ::move(other.m_path))
+    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std::move(other.m_path))
     {
         other.m_fs = nullptr;
         other.m_path = {};
@@ -3912,8 +3912,7 @@ namespace vcpkg
             ls.append_indent().append_raw(as_preferred).append_raw('\n');
         }
 
-        ls.append_raw('\n');
-        msg_sink.print(ls);
+        msg_sink.println(ls);
     }
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
