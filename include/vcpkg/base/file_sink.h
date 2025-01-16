@@ -14,6 +14,7 @@ namespace vcpkg
             : m_log_file(log_file), m_out_file(fs.open_for_write(m_log_file, append_to_file, VCPKG_LINE_INFO))
         {
         }
-        void print(Color c, StringView sv) override;
+        void println(const MessageLine& line) override;
+        void println(MessageLine&& line) override;
     };
 }

@@ -2,6 +2,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
@@ -381,10 +382,8 @@ namespace
 
     struct HTTPPutBinaryProvider : IWriteBinaryProvider
     {
-        HTTPPutBinaryProvider(const Filesystem& fs,
-                              std::vector<UrlTemplate>&& urls,
-                              const std::vector<std::string>& secrets)
-            : m_fs(fs), m_urls(std::move(urls)), m_secrets(secrets)
+        HTTPPutBinaryProvider(std::vector<UrlTemplate>&& urls, const std::vector<std::string>& secrets)
+            : m_urls(std::move(urls)), m_secrets(secrets)
         {
         }
 
@@ -396,11 +395,14 @@ namespace
             for (auto&& templ : m_urls)
             {
                 auto url = templ.instantiate_variables(request);
-                auto maybe_success = put_file(m_fs, url, m_secrets, templ.headers, zip_path);
+                PrintingDiagnosticContext pdc{msg_sink};
+                WarningDiagnosticContext wdc{pdc};
+                auto maybe_success =
+                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
                 if (maybe_success)
+                {
                     count_stored++;
-                else
-                    msg_sink.println(Color::warning, maybe_success.error());
+                }
             }
             return count_stored;
         }
@@ -409,7 +411,6 @@ namespace
         bool needs_zip_file() const override { return true; }
 
     private:
-        const Filesystem& m_fs;
         std::vector<UrlTemplate> m_urls;
         std::vector<std::string> m_secrets;
     };
@@ -439,20 +440,13 @@ namespace
                                        make_temp_archive_path(m_buildtrees, action.spec));
             }
 
-            auto codes_maybe = download_files(url_paths, m_url_template.headers, m_secrets);
-            for (size_t i = 0; i < codes_maybe.size(); ++i)
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers, m_secrets);
+            for (size_t i = 0; i < codes.size(); ++i)
             {
-                auto const& maybe_code = codes_maybe[i];
-                if (auto code = maybe_code.get())
+                if (codes[i] == 200)
                 {
-                    if (*code == 200)
-                    {
-                        out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
-                    }
-                }
-                else
-                {
-                    msg::println_warning(maybe_code.error());
+                    out_zip_paths[i].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
             }
         }
@@ -465,22 +459,14 @@ namespace
                 urls.push_back(m_url_template.instantiate_variables(BinaryPackageReadInfo{*actions[idx]}));
             }
 
-            auto codes_maybe = url_heads(urls, {}, m_secrets);
-            for (size_t i = 0; i < codes_maybe.size(); ++i)
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            auto codes = url_heads(wdc, urls, {}, m_secrets);
+            for (size_t i = 0; i < codes.size(); ++i)
             {
-                auto result_availability = CacheAvailability::unavailable;
-                if (const auto code = codes_maybe[i].get())
-                {
-                    if (*code == 200)
-                    {
-                        result_availability = CacheAvailability::available;
-                    }
-                }
-
-                out_status[i] = result_availability;
+                out_status[i] = codes[i] == 200 ? CacheAvailability::available : CacheAvailability::unavailable;
             }
 
-            for (size_t i = codes_maybe.size(); i < out_status.size(); ++i)
+            for (size_t i = codes.size(); i < out_status.size(); ++i)
             {
                 out_status[i] = CacheAvailability::unavailable;
             }
@@ -827,7 +813,9 @@ namespace
                 m_token_header,
                 m_accept_header.to_string(),
             };
-            auto res = invoke_http_request("GET", headers, url);
+
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            auto res = invoke_http_request(wdc, "GET", headers, url);
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -861,21 +849,13 @@ namespace
                 url_indices.push_back(idx);
             }
 
-            const auto codes_maybe = download_files(url_paths, {}, m_secrets);
-            for (size_t i = 0; i < codes_maybe.size(); ++i)
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            const auto codes = download_files_no_cache(wdc, url_paths, {}, m_secrets);
+            for (size_t i = 0; i < codes.size(); ++i)
             {
-                auto const& maybe_code = codes_maybe[i];
-                if (auto code = maybe_code.get())
+                if (codes[i] == 200)
                 {
-                    if (*code == 200)
-                    {
-                        out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
-                    }
-                }
-                else
-                {
-                    msg::println(maybe_code.error());
-                    continue;
+                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
                 }
             }
         }
@@ -916,7 +896,8 @@ namespace
                 m_token_header,
             };
 
-            auto res = invoke_http_request("POST", headers, m_url, stringify(payload));
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            auto res = invoke_http_request(wdc, "POST", headers, m_url, stringify(payload));
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -932,7 +913,7 @@ namespace
             return {};
         }
 
-        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink&) override
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
             if (!request.zip_path) return 0;
 
@@ -942,6 +923,7 @@ namespace
 
             size_t upload_count = 0;
             auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+            if (cache_size == 0) return upload_count;
 
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
@@ -949,11 +931,13 @@ namespace
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
-                    "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
+                    fmt::format("Content-Range: bytes 0-{}/{}", cache_size - 1, cache_size),
                 };
 
-                const auto url = m_url + "/" + std::to_string(*cacheId.get());
-                if (put_file(m_fs, url, {}, custom_headers, zip_path, "PATCH"))
+                PrintingDiagnosticContext pdc{msg_sink};
+                WarningDiagnosticContext wdc{pdc};
+                const auto raw_url = m_url + "/" + std::to_string(*cacheId.get());
+                if (store_to_asset_cache(wdc, raw_url, SanitizedUrl{raw_url, {}}, "PATCH", custom_headers, zip_path))
                 {
                     Json::Object commit;
                     commit.insert("size", std::to_string(cache_size));
@@ -963,14 +947,9 @@ namespace
                         m_token_header,
                     };
 
-                    auto res = invoke_http_request("POST", headers, url, stringify(commit));
-                    if (res)
+                    if (invoke_http_request(wdc, "POST", headers, raw_url, stringify(commit)))
                     {
                         ++upload_count;
-                    }
-                    else
-                    {
-                        msg::println(res.error());
                     }
                 }
             }
@@ -1058,7 +1037,7 @@ namespace
                 }
                 else
                 {
-                    out_sink.println_warning(res.error());
+                    msg::println_warning(res.error());
                 }
             }
         }
@@ -1117,7 +1096,7 @@ namespace
                 }
                 else
                 {
-                    msg_sink.println_warning(res.error());
+                    msg_sink.println(warning_prefix().append(std::move(res).error()));
                 }
             }
             return upload_count;
@@ -1857,16 +1836,19 @@ namespace
                 }
                 bool has_sha = false;
                 bool has_other = false;
-                api_stable_format(url_template.url_template, [&](std::string&, StringView key) {
-                    if (key == "sha")
-                    {
-                        has_sha = true;
-                    }
-                    else
-                    {
-                        has_other = true;
-                    }
-                });
+                api_stable_format(
+                    null_diagnostic_context, url_template.url_template, [&](std::string&, StringView key) {
+                        if (key == "sha")
+                        {
+                            has_sha = true;
+                        }
+                        else
+                        {
+                            has_other = true;
+                        }
+
+                        return true;
+                    });
                 if (!has_sha)
                 {
                     if (has_other)
@@ -2037,30 +2019,38 @@ namespace vcpkg
 {
     LocalizedString UrlTemplate::valid() const
     {
+        BufferedDiagnosticContext bdc{out_sink};
         std::vector<std::string> invalid_keys;
-        auto result = api_stable_format(url_template, [&](std::string&, StringView key) {
+        auto result = api_stable_format(bdc, url_template, [&](std::string&, StringView key) {
             static constexpr StringLiteral valid_keys[] = {"name", "version", "sha", "triplet"};
             if (!Util::Vectors::contains(valid_keys, key))
             {
                 invalid_keys.push_back(key.to_string());
             }
+
+            return true;
         });
-        if (!result)
-        {
-            return std::move(result).error();
-        }
+
         if (!invalid_keys.empty())
         {
-            return msg::format(msgUnknownVariablesInTemplate,
-                               msg::value = url_template,
-                               msg::list = Strings::join(", ", invalid_keys));
+            bdc.report_error(msg::format(msgUnknownVariablesInTemplate,
+                                         msg::value = url_template,
+                                         msg::list = Strings::join(", ", invalid_keys)));
+            result.clear();
         }
-        return {};
+
+        if (result.has_value())
+        {
+            return {};
+        }
+
+        return LocalizedString::from_raw(std::move(bdc).to_string());
     }
 
     std::string UrlTemplate::instantiate_variables(const BinaryPackageReadInfo& info) const
     {
-        return api_stable_format(url_template,
+        return api_stable_format(console_diagnostic_context,
+                                 url_template,
                                  [&](std::string& out, StringView key) {
                                      if (key == "version")
                                      {
@@ -2080,10 +2070,12 @@ namespace vcpkg
                                      }
                                      else
                                      {
-                                         Debug::println("Unknown key: ", key);
-                                         // We do a input validation while parsing the config
-                                         Checks::unreachable(VCPKG_LINE_INFO);
+                                         Checks::unreachable(
+                                             VCPKG_LINE_INFO,
+                                             "used instantiate_variables without checking valid() first");
                                      };
+
+                                     return true;
                                  })
             .value_or_exit(VCPKG_LINE_INFO);
     }
@@ -2263,7 +2255,7 @@ namespace vcpkg
             if (!s.url_templates_to_put.empty())
             {
                 ret.write.push_back(
-                    std::make_unique<HTTPPutBinaryProvider>(fs, std::move(s.url_templates_to_put), s.secrets));
+                    std::make_unique<HTTPPutBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
             }
             if (!s.gcs_write_prefixes.empty())
             {
@@ -2601,14 +2593,15 @@ namespace vcpkg
     }
 }
 
-ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
+ExpectedL<AssetCachingSettings> vcpkg::parse_download_configuration(const Optional<std::string>& arg)
 {
-    if (!arg || arg.get()->empty()) return DownloadManagerConfig{};
+    AssetCachingSettings result;
+    if (!arg || arg.get()->empty()) return result;
 
     get_global_metrics_collector().track_define(DefineMetric::AssetSource);
 
     AssetSourcesState s;
-    const auto source = Strings::concat("$", EnvironmentVariableXVcpkgAssetSources);
+    const auto source = format_environment_variable(EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
     if (auto err = parser.get_error())
@@ -2634,27 +2627,22 @@ ExpectedL<DownloadManagerConfig> vcpkg::parse_download_configuration(const Optio
             .append(msgSeeURL, msg::url = docs::assetcaching_url);
     }
 
-    Optional<std::string> get_url;
     if (!s.url_templates_to_get.empty())
     {
-        get_url = std::move(s.url_templates_to_get.back());
-    }
-    Optional<std::string> put_url;
-    std::vector<std::string> put_headers;
-    if (!s.azblob_templates_to_put.empty())
-    {
-        put_url = std::move(s.azblob_templates_to_put.back());
-        auto v = azure_blob_headers();
-        put_headers.assign(v.begin(), v.end());
+        result.m_read_url_template = std::move(s.url_templates_to_get.back());
     }
 
-    return DownloadManagerConfig{std::move(get_url),
-                                 std::vector<std::string>{},
-                                 std::move(put_url),
-                                 std::move(put_headers),
-                                 std::move(s.secrets),
-                                 s.block_origin,
-                                 s.script};
+    if (!s.azblob_templates_to_put.empty())
+    {
+        result.m_write_url_template = std::move(s.azblob_templates_to_put.back());
+        auto v = azure_blob_headers();
+        result.m_write_headers.assign(v.begin(), v.end());
+    }
+
+    result.m_secrets = std::move(s.secrets);
+    result.m_block_origin = s.block_origin;
+    result.m_script = std::move(s.script);
+    return result;
 }
 
 ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const std::string& env_string,
@@ -2669,7 +2657,9 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
         return *err;
     }
 
-    BinaryConfigParser env_parser(env_string, "VCPKG_BINARY_SOURCES", &s);
+    // must live until the end of the function due to StringView in BinaryConfigParser
+    const auto source = format_environment_variable("VCPKG_BINARY_SOURCES");
+    BinaryConfigParser env_parser(env_string, source, &s);
     env_parser.parse();
     if (auto err = env_parser.get_error())
     {

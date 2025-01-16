@@ -3,6 +3,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/lazy.h>
 #include <vcpkg/base/message_sinks.h>
@@ -738,10 +739,44 @@ namespace vcpkg
         }
     };
 
+    struct SevenZipProvider : ToolProvider
+    {
+        virtual bool is_abi_sensitive() const override { return false; }
+        virtual StringView tool_data_name() const override { return Tools::SEVEN_ZIP; }
+        virtual std::vector<StringView> system_exe_stems() const override { return {"7z"}; }
+        virtual std::array<int, 3> default_min_version() const override { return {24, 9}; }
+
+#if defined(_WIN32)
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
+        {
+            const auto& program_files = get_program_files_platform_bitness();
+            if (const auto pf = program_files.get())
+            {
+                out_candidate_paths.push_back(*pf / "7-Zip" / "7z.exe");
+            }
+
+            const auto& program_files_32_bit = get_program_files_32_bit();
+            if (const auto pf = program_files_32_bit.get())
+            {
+                out_candidate_paths.push_back(*pf / "7-Zip" / "7z.exe");
+            }
+        }
+#endif
+
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        {
+            return run_to_extract_version(Tools::SEVEN_ZIP, exe_path, Command(exe_path))
+                .then([&](std::string&& output) {
+                    // Sample output: 7-Zip 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-29
+                    return extract_prefixed_nonwhitespace("7-Zip ", Tools::SEVEN_ZIP, std::move(output), exe_path);
+                });
+        }
+    };
+
     struct ToolCacheImpl final : ToolCache
     {
         const Filesystem& fs;
-        const std::shared_ptr<const DownloadManager> downloader;
+        AssetCachingSettings asset_cache_settings;
         const Path downloads;
         const Path config_path;
         const Path tools;
@@ -751,13 +786,13 @@ namespace vcpkg
         vcpkg::Lazy<std::vector<ToolDataEntry>> m_tool_data_cache;
 
         ToolCacheImpl(const Filesystem& fs,
-                      const std::shared_ptr<const DownloadManager>& downloader,
+                      const AssetCachingSettings& asset_cache_settings,
                       Path downloads,
                       Path config_path,
                       Path tools,
                       RequireExactVersions abiToolVersionHandling)
             : fs(fs)
-            , downloader(downloader)
+            , asset_cache_settings(asset_cache_settings)
             , downloads(std::move(downloads))
             , config_path(std::move(config_path))
             , tools(std::move(tools))
@@ -799,6 +834,8 @@ namespace vcpkg
 
         Path download_tool(const ToolData& tool_data, MessageSink& status_sink) const
         {
+            using namespace Hash;
+
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
             Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
@@ -812,13 +849,38 @@ namespace vcpkg
                                 msg::version = version_as_string);
 
             const auto download_path = downloads / tool_data.download_subpath;
-            if (!fs.exists(download_path, IgnoreErrors{}))
+            const auto hash_result = get_file_hash(console_diagnostic_context, fs, download_path, Algorithm::Sha512);
+            switch (hash_result.prognosis)
             {
-                downloader->download_file(fs, tool_data.url, {}, download_path, tool_data.sha512, null_sink);
-            }
-            else
-            {
-                verify_downloaded_file_hash(fs, tool_data.url, download_path, tool_data.sha512);
+                case HashPrognosis::Success:
+                    if (!Strings::case_insensitive_ascii_equals(tool_data.sha512, hash_result.hash))
+                    {
+                        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                      LocalizedString::from_raw(download_path)
+                                                          .append_raw(": ")
+                                                          .append_raw(ErrorPrefix)
+                                                          .append(msgToolHashMismatch,
+                                                                  msg::tool_name = tool_data.name,
+                                                                  msg::expected = tool_data.sha512,
+                                                                  msg::actual = hash_result.hash));
+                    }
+
+                    break;
+                case HashPrognosis::FileNotFound:
+                    if (!download_file_asset_cached(console_diagnostic_context,
+                                                    null_sink,
+                                                    asset_cache_settings,
+                                                    fs,
+                                                    tool_data.url,
+                                                    {},
+                                                    download_path,
+                                                    tool_data.sha512))
+                    {
+                        Checks::exit_fail(VCPKG_LINE_INFO);
+                    }
+                    break;
+                case HashPrognosis::OtherError: Checks::exit_fail(VCPKG_LINE_INFO);
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             const auto tool_dir_path = tools / tool_data.tool_dir_subpath;
@@ -996,6 +1058,10 @@ namespace vcpkg
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);
                 if (tool == Tools::PYTHON3_WITH_VENV) return get_path(Python3WithVEnvProvider(), status_sink);
+                if (tool == Tools::SEVEN_ZIP || tool == Tools::SEVEN_ZIP_ALT)
+                {
+                    return get_path(SevenZipProvider(), status_sink);
+                }
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};
@@ -1095,14 +1161,14 @@ namespace vcpkg
     }
 
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              std::shared_ptr<const DownloadManager> downloader,
+                                              const AssetCachingSettings& asset_cache_settings,
                                               Path downloads,
                                               Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling)
     {
         return std::make_unique<ToolCacheImpl>(
-            fs, std::move(downloader), downloads, config_path, tools, abiToolVersionHandling);
+            fs, asset_cache_settings, downloads, config_path, tools, abiToolVersionHandling);
     }
 
     struct ToolDataEntryDeserializer final : Json::IDeserializer<ToolDataEntry>

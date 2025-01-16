@@ -20,7 +20,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
 {
     "schema-version": 1,
     "tools": [{
-        "name": "7zip",
+        "name": "7zip_msi",
         "os": "windows",
         "version": "19.00",
         "executable": "Files\\7-Zip\\7z.exe",
@@ -90,9 +90,9 @@ if (-not $IsMacOS -and -not $IsLinux) {
     }
 
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
-    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip", "--vcpkg-root=$TestingRoot"))
+    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip_msi", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
-    Require-FileExists "$env:VCPKG_DOWNLOADS/tools/7zip-19.00-windows/Files/7-Zip/7z.exe"
+    Require-FileExists "$env:VCPKG_DOWNLOADS/tools/7zip_msi-19.00-windows/Files/7-Zip/7z.exe"
 
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
