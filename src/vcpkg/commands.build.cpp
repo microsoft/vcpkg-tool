@@ -1709,7 +1709,16 @@ namespace vcpkg
             case CIKind::GithubActions:
             case CIKind::GitLabCI:
             case CIKind::AzurePipelines: return true;
-            default: return false;
+            case CIKind::None:
+            case CIKind::AppVeyor:
+            case CIKind::AwsCodeBuild:
+            case CIKind::CircleCI:
+            case CIKind::HerokuCI:
+            case CIKind::JenkinsCI:
+            case CIKind::TeamCityCI:
+            case CIKind::TravisCI:
+            case CIKind::Generic: return false;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
@@ -1718,11 +1727,6 @@ namespace vcpkg
                                         const ReadOnlyFilesystem& fs,
                                         const Path& file)
     {
-        if (!is_collapsible_ci_kind(kind))
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
         auto title = file.filename();
         auto contents = fs.read_contents(file, VCPKG_LINE_INFO);
         switch (kind)
@@ -1764,6 +1768,16 @@ namespace vcpkg
                     .append_raw(contents)
                     .append_raw("##[endgroup]\n");
                 break;
+            case CIKind::None:
+            case CIKind::AppVeyor:
+            case CIKind::AwsCodeBuild:
+            case CIKind::CircleCI:
+            case CIKind::HerokuCI:
+            case CIKind::JenkinsCI:
+            case CIKind::TeamCityCI:
+            case CIKind::TravisCI:
+            case CIKind::Generic: Checks::unreachable(VCPKG_LINE_INFO, "CIKind not collapsible");
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
