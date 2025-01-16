@@ -30,7 +30,7 @@ Throw-IfFailed
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-duplicate-overrides
 Throw-IfNotFailed
-if ($output -notmatch "vcpkg\.json: error: \$\.overrides\[1\] \(an override\): zlib already has a declared override") {
+if ($output -notmatch "vcpkg\.json: error: \$\.overrides\[1\] \(an override\): zlib already has an override") {
     throw 'Did not detect duplicate override'
 }
 
