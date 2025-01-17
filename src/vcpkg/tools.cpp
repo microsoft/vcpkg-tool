@@ -120,7 +120,7 @@ namespace vcpkg
         return Json::parse_object(contents, origin)
             .then([&](Json::Object&& as_object) -> ExpectedL<std::vector<ToolDataEntry>> {
                 Json::Reader r(origin);
-                auto maybe_tool_data = r.visit(as_object, ToolDataFileDeserializer::instance);
+                auto maybe_tool_data = ToolDataFileDeserializer::instance.visit(r, as_object);
                 if (!r.errors().empty() || !r.warnings().empty())
                 {
                     return r.join();
