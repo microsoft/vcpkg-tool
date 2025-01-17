@@ -1791,20 +1791,18 @@ namespace vcpkg
         const auto& triplet_name = action.spec.triplet().to_string();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
-        result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
+        result.append(msgBuildTroubleshootingMessage2).append_raw('\n').append_indent();
 
         if (auto issue_body = maybe_issue_body.get())
         {
             auto& fs = paths.get_filesystem();
-            const auto path = issue_body->generic_u8string();
-            const bool collapsible = is_collapsible_ci_kind(detected_ci);
-            const auto body =
-                collapsible ? msg::format(msgCopyIssueBodyFromCollapsibleSection, msg::path = issue_body->filename())
-                            : msg::format(msgCopyIssueBodyFromFile, msg::path = path);
-
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
-            if (collapsible)
+            // The 'body' content is not localized because it becomes part of the posted GitHub issue
+            // rather than instructions for the current user of vcpkg.
+            if (is_collapsible_ci_kind(detected_ci))
             {
+                auto body = fmt::format("Copy issue body from collapsed section \"{}\" in the ci log output",
+                                        issue_body->filename());
+                result.append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
                 append_file_collapsible(result, detected_ci, fs, *issue_body);
                 for (Path error_log_path : error_logs)
                 {
@@ -1813,6 +1811,9 @@ namespace vcpkg
             }
             else
             {
+                const auto path = issue_body->generic_u8string();
+                auto body = fmt::format("Copy issue body from {}", path);
+                result.append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
                 auto gh_path = fs.find_from_PATH("gh");
                 if (!gh_path.empty())
                 {
@@ -1828,7 +1829,7 @@ namespace vcpkg
         }
         else
         {
-            result.append_indent()
+            result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[")
                 .append_raw(spec_name)

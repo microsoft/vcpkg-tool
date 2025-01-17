@@ -945,11 +945,6 @@ DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")
-DECLARE_MESSAGE(CopyIssueBodyFromFile, (msg::path), "", "Copy issue body from {path}")
-DECLARE_MESSAGE(CopyIssueBodyFromCollapsibleSection,
-                (msg::path),
-                "",
-                "Copy issue body from collapsed section \"{path}\" in the ci log output")
 DECLARE_MESSAGE(CopyrightIsDir,
                 (),
                 "",
