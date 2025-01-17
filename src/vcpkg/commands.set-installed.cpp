@@ -55,83 +55,82 @@ namespace vcpkg
         const auto github_job = args.github_job.get();
         const auto github_workflow = args.github_workflow.get();
         const auto github_run_id = args.github_run_id.get();
-        if (!github_ref || !github_sha || !github_job || !github_workflow || !github_run_id)
+        if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
-            return nullopt;
-        }
-
-        Json::Object snapshot;
-        {
-            Json::Object job;
-            job.insert(JsonIdId, Json::Value::string(*github_run_id));
-            job.insert(JsonIdCorrelator, Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
-            snapshot.insert(JsonIdJob, std::move(job));
-        } // destroy job
-
-        snapshot.insert(JsonIdVersion, Json::Value::integer(0));
-        snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
-        snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
-        snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
-
-        {
-            Json::Object detector;
-            detector.insert(JsonIdName, Json::Value::string("vcpkg"));
-            detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-            detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
-            snapshot.insert(JsonIdDetector, std::move(detector));
-        } // destroy detector
-
-        std::unordered_map<std::string, std::string> map;
-        for (auto&& action : action_plan.install_actions)
-        {
-            const auto scfl = action.source_control_file_and_location.get();
-            if (!scfl)
+            Json::Object snapshot;
             {
-                return nullopt;
+                Json::Object job;
+                job.insert(JsonIdId, Json::Value::string(*github_run_id));
+                job.insert(JsonIdCorrelator,
+                           Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+                snapshot.insert(JsonIdJob, std::move(job));
+            } // destroy job
+
+            snapshot.insert(JsonIdVersion, Json::Value::integer(0));
+            snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
+            snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
+            snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
+
+            {
+                Json::Object detector;
+                detector.insert(JsonIdName, Json::Value::string("vcpkg"));
+                detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
+                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                snapshot.insert(JsonIdDetector, std::move(detector));
+            } // destroy detector
+
+            std::unordered_map<std::string, std::string> map;
+            for (auto&& action : action_plan.install_actions)
+            {
+                const auto scfl = action.source_control_file_and_location.get();
+                if (!scfl)
+                {
+                    return nullopt;
+                }
+                auto spec = action.spec.to_string();
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
             }
-            auto spec = action.spec.to_string();
-            map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
-        }
 
-        Json::Object manifest;
-        manifest.insert(JsonIdName, FileVcpkgDotJson);
+            Json::Object manifest;
+            manifest.insert(JsonIdName, FileVcpkgDotJson);
 
-        {
             Json::Object resolved;
             for (auto&& action : action_plan.install_actions)
             {
-                Json::Object resolved_item;
-                const auto pkg_it = map.find(action.spec.to_string());
-                if (pkg_it == map.end())
+                const auto found = map.find(action.spec.to_string());
+                if (found == map.end())
                 {
                     continue;
                 }
 
-                const auto& pkg_url = pkg_it->second;
+                const auto& pkg_url = found->second;
+                Json::Object resolved_item;
                 resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                resolved_item.insert(JsonIdRelationship, Json::Value::string("direct"));
-                Json::Array deps_list;
+                resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
 
+                Json::Array deps_list;
                 for (auto&& dep : action.package_dependencies)
                 {
-                    const auto dep_pkg_it = map.find(dep.to_string());
-                    if (dep_pkg_it != map.end())
+                    const auto found_dep = map.find(dep.to_string());
+                    if (found_dep != map.end())
                     {
-                        deps_list.push_back(dep_pkg_it->second);
+                        deps_list.push_back(found_dep->second);
                     }
                 }
+
                 resolved_item.insert(JsonIdDependencies, std::move(deps_list));
                 resolved.insert(pkg_url, std::move(resolved_item));
             }
+
             manifest.insert(JsonIdResolved, std::move(resolved));
-        } // destroy resolved
+            Json::Object manifests;
+            manifests.insert(JsonIdVcpkgDotJson, manifest);
+            snapshot.insert(JsonIdManifests, manifests);
+            Debug::print(Json::stringify(snapshot));
+            return snapshot;
+        }
 
-        Json::Object manifests;
-        manifests.insert(JsonIdVcpkgDotJson, std::move(manifest));
-        snapshot.insert(JsonIdManifests, std::move(manifests));
-
-        Debug::print(Json::stringify(snapshot));
-        return snapshot;
+        return nullopt;
     }
 
     std::set<PackageSpec> adjust_action_plan_to_status_db(ActionPlan& action_plan, const StatusParagraphs& status_db)

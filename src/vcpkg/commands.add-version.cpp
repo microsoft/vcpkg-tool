@@ -85,11 +85,11 @@ namespace
     Json::Object serialize_baseline(const std::map<std::string, Version, std::less<>>& baseline)
     {
         Json::Object port_entries_obj;
-        for (auto&& [key, value] : baseline)
+        for (auto&& kv_pair : baseline)
         {
             Json::Object baseline_version_obj;
-            insert_version_to_json_object(baseline_version_obj, value, JsonIdBaseline);
-            port_entries_obj.insert(key, std::move(baseline_version_obj));
+            insert_version_to_json_object(baseline_version_obj, kv_pair.second, JsonIdBaseline);
+            port_entries_obj.insert(kv_pair.first, std::move(baseline_version_obj));
         }
 
         Json::Object baseline_obj;
@@ -453,8 +453,7 @@ namespace vcpkg
                 return std::map<std::string, vcpkg::Version, std::less<>>{};
             }
 
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
-            return std::move(maybe_baseline_map).value_or_exit(VCPKG_LINE_INFO);
+            return vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
@@ -462,14 +461,9 @@ namespace vcpkg
         auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommitted changes
-        std::set<std::string> changed_ports;
         auto git_config = paths.git_builtin_config();
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
-        if (auto changes = maybe_changes.get())
-        {
-            changed_ports = std::move(*changes);
-        }
-        else if (verbose)
+        if (!maybe_changes.has_value() && verbose)
         {
             msg::println_warning(msgAddVersionDetectLocalChangesError);
         }
@@ -521,9 +515,12 @@ namespace vcpkg
             }
 
             // find local uncommitted changes on port
-            if (Util::Sets::contains(changed_ports, port_name))
+            if (auto changed_ports = maybe_changes.get())
             {
-                msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+                if (Util::Sets::contains(*changed_ports, port_name))
+                {
+                    msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+                }
             }
 
             auto schemed_version = scfl->source_control_file->to_schemed_version();
@@ -543,7 +540,6 @@ namespace vcpkg
             }
 
             const auto& git_tree = git_tree_it->second;
-
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,
