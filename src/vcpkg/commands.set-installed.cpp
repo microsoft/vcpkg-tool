@@ -8,6 +8,7 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -276,6 +277,18 @@ namespace vcpkg
                     install_print_usage_information(it->get()->package, printed_usages, fs, paths.installed());
                 }
             }
+        }
+
+        const auto manifest = paths.get_manifest().get();
+        const auto installed_paths = paths.maybe_installed().get();
+        if (manifest && installed_paths)
+        {
+            // See docs/manifest-info.schema.json
+            Json::Object manifest_info;
+            manifest_info.insert("manifest-path", Json::Value::string(manifest->path));
+            const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
+            const auto json_contents = Json::stringify(manifest_info);
+            fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

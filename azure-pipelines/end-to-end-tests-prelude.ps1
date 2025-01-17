@@ -265,4 +265,22 @@ function Throw-IfNonContains {
     }
 }
 
+function Test-ManifestInfo {
+    param (
+        [string]$ManifestInfoPath,
+        [string]$VcpkgDir,
+        [string]$ManifestRoot
+    )
+
+    if (-not (Test-Path $ManifestInfoPath)) {
+        Throw "manifest-info.json missing from $VcpkgDir"
+    }
+
+    $manifestInfoContent = Get-Content $ManifestInfoPath -Raw | ConvertFrom-Json
+
+    if ($manifestInfoContent.'manifest-path' -ne (Join-Path -Path $ManifestRoot -ChildPath "vcpkg.json")) {
+        Throw "Mismatch in manifest-path. Expected: $ManifestRoot, Found: $($manifestInfoContent.'manifest-path')"
+    }
+}
+
 Refresh-TestRoot
