@@ -348,6 +348,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileInclude = "include";
     inline constexpr StringLiteral FileIncomplete = "incomplete";
     inline constexpr StringLiteral FileInfo = "info";
+    inline constexpr StringLiteral FileIssueBodyMD = "issue_body.md";
     inline constexpr StringLiteral FileLicense = "LICENSE";
     inline constexpr StringLiteral FileLicenseDotTxt = "LICENSE.txt";
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
