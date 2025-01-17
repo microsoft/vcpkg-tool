@@ -278,16 +278,16 @@ namespace vcpkg
             }
         }
 
-        if (auto manifest = paths.get_manifest().get())
+        const auto manifest = paths.get_manifest().get();
+        const auto installed_paths = paths.maybe_installed().get();
+        if (manifest && installed_paths)
         {
+            // See docs/manifest-info.schema.json
             Json::Object manifest_info;
             manifest_info.insert("manifest-path", Json::Value::string(manifest->path));
-            if (const auto installed_paths = paths.maybe_installed().get())
-            {
-                const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
-                const auto json_contents = Json::stringify(manifest_info);
-                fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
-            }
+            const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
+            const auto json_contents = Json::stringify(manifest_info);
+            fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
