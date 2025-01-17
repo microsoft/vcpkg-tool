@@ -224,7 +224,7 @@ namespace vcpkg
         const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
         const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
-            get_installed_files(fs, installed, *status_db);
+            get_installed_files_and_upgrade(fs, installed, *status_db);
 
         const SortedVector<std::string> package_files = build_list_of_package_files(fs, package_dir);
         const SortedVector<file_pack> installed_files = build_list_of_installed_files(pgh_and_files, triplet);
@@ -603,20 +603,26 @@ namespace vcpkg
             if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
             {
                 this_install.print_elapsed_time();
-                print_user_troubleshooting_message(action, paths, result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                    auto issue_body_path = paths.installed().root() / "vcpkg" / "issue_body.md";
-                    paths.get_filesystem().write_contents(
-                        issue_body_path,
-                        create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
-                        VCPKG_LINE_INFO);
-                    return issue_body_path;
-                }));
+                print_user_troubleshooting_message(
+                    action,
+                    args.detected_ci(),
+                    paths,
+                    result.error_logs,
+                    result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                        auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
+                        paths.get_filesystem().write_contents(
+                            issue_body_path,
+                            create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
+                            VCPKG_LINE_INFO);
+                        return issue_body_path;
+                    }));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             this_install.current_summary.build_result.emplace(std::move(result));
         }
 
+        database_load_collapse(fs, paths.installed());
         msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
         return InstallSummary{std::move(results)};
     }
@@ -1236,16 +1242,14 @@ namespace vcpkg
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
-            std::vector<Path> extended_overlay_ports;
-            extended_overlay_ports.reserve(paths.overlay_ports.size() + add_builtin_ports_directory_as_overlay);
-            extended_overlay_ports = paths.overlay_ports;
+            auto extended_overlay_port_directories = paths.overlay_ports;
             if (add_builtin_ports_directory_as_overlay)
             {
-                extended_overlay_ports.emplace_back(paths.builtin_ports_directory());
+                extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
             }
 
             auto oprovider =
-                make_manifest_provider(fs, extended_overlay_ports, manifest->path, std::move(manifest_scf));
+                make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
                                                               *baseprovider,
                                                               *oprovider,
@@ -1284,7 +1288,7 @@ namespace vcpkg
 
         // create the plan
         msg::println(msgComputingInstallPlan);
-        StatusParagraphs status_db = database_load_check(fs, paths.installed());
+        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
@@ -1315,9 +1319,7 @@ namespace vcpkg
                     const auto vs_prompt = maybe_vs_prompt.value_or_exit(VCPKG_LINE_INFO);
                     if (common_arch != vs_prompt)
                     {
-                        const auto vs_prompt_view = to_zstring_view(vs_prompt);
-                        msg::println_warning(
-                            msgVcpkgInVsPrompt, msg::value = vs_prompt_view, msg::triplet = common_triplet);
+                        msg::println_warning(msgVcpkgInVsPrompt, msg::value = vs_prompt, msg::triplet = common_triplet);
                     }
                 }
             }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.h>
@@ -21,9 +22,10 @@
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
+#include <vcpkg/portfileprovider.h>
+
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace vcpkg
@@ -101,12 +103,12 @@ namespace vcpkg
         std::vector<Path> overlay_triplets;
 
     public:
-        std::vector<Path> overlay_ports;
+        OverlayPortPaths overlay_ports;
 
         std::string get_toolver_diagnostics() const;
 
         const Filesystem& get_filesystem() const;
-        const DownloadManager& get_download_manager() const;
+        const AssetCachingSettings& get_asset_cache_settings() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;

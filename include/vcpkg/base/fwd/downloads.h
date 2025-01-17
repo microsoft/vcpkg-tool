@@ -2,8 +2,8 @@
 
 namespace vcpkg
 {
-    struct SplitURIView;
-    struct DownloadManager;
-    struct DownloadManagerConfig;
+    struct SanitizedUrl;
+    struct SplitUrlView;
+    struct AssetCachingSettings;
     struct CurlProgressData;
 }

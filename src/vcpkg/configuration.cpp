@@ -99,7 +99,7 @@ namespace
     struct RegistryConfigDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_null(Json::Reader&) const override;
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
@@ -147,7 +147,7 @@ namespace
     struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
 
@@ -164,9 +164,9 @@ namespace
 
     const RegistriesArrayDeserializer RegistriesArrayDeserializer::instance;
 
-    View<StringView> RegistryConfigDeserializer::valid_fields() const
+    View<StringLiteral> RegistryConfigDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,
@@ -177,20 +177,20 @@ namespace
         };
         return t;
     }
-    static constexpr StringView valid_builtin_fields[] = {
+    static constexpr StringLiteral valid_builtin_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_filesystem_fields[] = {
+    static constexpr StringLiteral valid_filesystem_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPath,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_git_fields[] = {
+    static constexpr StringLiteral valid_git_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdRepository,
@@ -198,7 +198,7 @@ namespace
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_artifact_fields[] = {
+    static constexpr StringLiteral valid_artifact_fields[] = {
         JsonIdKind,
         JsonIdName,
         JsonIdLocation,
@@ -283,9 +283,9 @@ namespace
         return std::move(res); // gcc-7 bug workaround redundant move
     }
 
-    View<StringView> RegistryDeserializer::valid_fields() const
+    View<StringLiteral> RegistryDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,
@@ -454,10 +454,10 @@ namespace
                                     msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
             }
 
-            auto maybe_demand = r.visit(*maybe_demand_obj, CeMetadataDeserializer::instance);
-            if (maybe_demand.has_value())
+            auto maybe_demand = CeMetadataDeserializer::instance.visit(r, *maybe_demand_obj);
+            if (auto demand = maybe_demand.get())
             {
-                ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
+                ret.insert_or_replace(key, *demand);
             }
         }
         return ret;
@@ -569,10 +569,10 @@ namespace
         }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
-        auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
-        if (maybe_ce_metadata.has_value())
+        auto maybe_ce_metadata = CeMetadataDeserializer::instance.visit(r, obj);
+        if (auto ce_metadata = maybe_ce_metadata.get())
         {
-            ce_metadata_obj = maybe_ce_metadata.value_or_exit(VCPKG_LINE_INFO);
+            ce_metadata_obj = *ce_metadata;
         }
 
         Json::Object demands_obj;
@@ -828,7 +828,8 @@ namespace vcpkg
         return std::any_of(registries.begin(), registries.end(), registry_config_requests_ce);
     }
 
-    Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+    constexpr const Json::IDeserializer<Configuration>& configuration_deserializer =
+        ConfigurationDeserializer::instance;
 
     Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
@@ -854,7 +855,7 @@ namespace vcpkg
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
     {
         Json::Reader reader(origin);
-        auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
+        auto maybe_configuration = ConfigurationDeserializer::instance.visit(reader, obj);
         bool has_warnings = !reader.warnings().empty();
         bool has_errors = !reader.errors().empty();
         if (has_warnings || has_errors)

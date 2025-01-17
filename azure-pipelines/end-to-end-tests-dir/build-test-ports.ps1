@@ -28,6 +28,12 @@ Throw-IfFailed
 Run-Vcpkg @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install control-file
 Throw-IfFailed
 
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-duplicate-overrides
+Throw-IfNotFailed
+if ($output -notmatch "vcpkg\.json: error: \$\.overrides\[1\] \(an override\): zlib already has an override") {
+    throw 'Did not detect duplicate override'
+}
+
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/broken-manifests" install broken-no-name
 Throw-IfNotFailed
 if ($output -notmatch "missing required field 'name'") {
