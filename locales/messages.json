@@ -676,6 +676,8 @@
   "EndOfStringInCodeUnit": "found end of string in middle of code point",
   "EnvInvalidMaxConcurrency": "{env_var} is {value}, must be > 0",
   "_EnvInvalidMaxConcurrency.comment": "{value} is the invalid value of an environment variable An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
+  "EnvInvalidPriority": "invalid value \"{value}\" for {env_var}.Valid values are '', 'IDLE', 'BELOW_NORMAL', 'NORMAL', 'ABOVE_NORMAL', 'HIGH' and 'REALTIME'",
+  "_EnvInvalidPriority.comment": "'{value} is a user-supplied value for {env_var} environment variable.' An example of {env_var} is VCPKG_DEFAULT_TRIPLET.",
   "EnvPlatformNotSupported": "Build environment commands are not supported on this platform",
   "EnvStrFailedToExtract": "could not expand the environment string:",
   "EnvVarMustBeAbsolutePath": "{env_var} ({path}) was not an absolute path",
