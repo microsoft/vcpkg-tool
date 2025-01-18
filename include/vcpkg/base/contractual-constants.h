@@ -546,6 +546,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgForceSystemBinaries = "VCPKG_FORCE_SYSTEM_BINARIES";
     inline constexpr StringLiteral EnvironmentVariableVcpkgKeepEnvVars = "VCPKG_KEEP_ENV_VARS";
     inline constexpr StringLiteral EnvironmentVariableVcpkgMaxConcurrency = "VCPKG_MAX_CONCURRENCY";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgSubprocessPriority = "VCPKG_SUBPROCESS_PRIORITY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgNoCi = "VCPKG_NO_CI";
     inline constexpr StringLiteral EnvironmentVariableVcpkgNuGetRepository = "VCPKG_NUGET_REPOSITORY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgOverlayPorts = "VCPKG_OVERLAY_PORTS";

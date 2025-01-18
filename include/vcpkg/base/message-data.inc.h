@@ -1147,6 +1147,11 @@ DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
                 (msg::env_var, msg::value),
                 "{value} is the invalid value of an environment variable",
                 "{env_var} is {value}, must be > 0")
+DECLARE_MESSAGE(EnvInvalidPriority,
+                (msg::env_var, msg::value),
+                "'{value} is a user-supplied value for {env_var} environment variable.'",
+                "invalid value \"{value}\" for {env_var}."
+                "Valid values are '', 'IDLE', 'BELOW_NORMAL', 'NORMAL', 'ABOVE_NORMAL', 'HIGH' and 'REALTIME'")
 DECLARE_MESSAGE(EnvStrFailedToExtract, (), "", "could not expand the environment string:")
 DECLARE_MESSAGE(EnvPlatformNotSupported, (), "", "Build environment commands are not supported on this platform")
 DECLARE_MESSAGE(EnvVarMustBeAbsolutePath, (msg::path, msg::env_var), "", "{env_var} ({path}) was not an absolute path")

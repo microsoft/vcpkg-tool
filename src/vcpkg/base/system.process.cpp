@@ -818,6 +818,8 @@ namespace
             call_environment = environment_block.data();
         }
 
+        DWORD dwPriority = get_subprocess_priority();
+
         // Leaking process information handle 'process_info.proc_info.hProcess'
         // /analyze can't tell that we transferred ownership here
         VCPKG_MSVC_WARNING(suppress : 6335)
@@ -826,7 +828,7 @@ namespace
                             nullptr,
                             nullptr,
                             bInheritHandles,
-                            IDLE_PRIORITY_CLASS | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
+                            dwPriority | CREATE_UNICODE_ENVIRONMENT | EXTENDED_STARTUPINFO_PRESENT |
                                 dwCreationFlags,
                             call_environment,
                             working_directory_arg,
