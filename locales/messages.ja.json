@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "スタンドアロン バンドル {version} をダウンロードしています。",
   "DownloadingVcpkgStandaloneBundleLatest": "最新のスタンドアロン バンドルをダウンロードしています。",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "パッケージ \"{package_name}\" が重複しています。",
   "DuplicatePackagePatternFirstOcurrence": "最初の宣言:",
   "DuplicatePackagePatternIgnoredLocations": "次の再宣言は無視されます:",

@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "Téléchargement de l’offre groupée autonome {version}.",
   "DownloadingVcpkgStandaloneBundleLatest": "Téléchargement de la dernière offre groupée autonome.",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "Le package « {package_name} » est dupliqué.",
   "DuplicatePackagePatternFirstOcurrence": "Première déclaration dans :",
   "DuplicatePackagePatternIgnoredLocations": "Les redéclarations suivantes seront ignorées :",

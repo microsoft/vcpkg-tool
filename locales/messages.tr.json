@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "Tek başına paket {version} indiriliyor.",
   "DownloadingVcpkgStandaloneBundleLatest": "En son tek başına paket indiriliyor.",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "Paket \"{package_name}\" yineleniyor.",
   "DuplicatePackagePatternFirstOcurrence": "İlk bildirildiği yer:",
   "DuplicatePackagePatternIgnoredLocations": "Şu yeniden bildirimler yok sayılacak:",

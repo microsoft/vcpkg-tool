@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "Скачивание изолированного пакета {version}.",
   "DownloadingVcpkgStandaloneBundleLatest": "Скачивание новейшего изолированного пакета.",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "Пакет \"{package_name}\" дублируется.",
   "DuplicatePackagePatternFirstOcurrence": "Первое объявление в:",
   "DuplicatePackagePatternIgnoredLocations": "Следующие повторные объявления будут пропущены.",

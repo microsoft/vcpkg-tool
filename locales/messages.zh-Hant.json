@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "正在下載獨立搭售方案 {version}。",
   "DownloadingVcpkgStandaloneBundleLatest": "正在下載最新的獨立搭售方案。",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "套件 \"{package_name}\" 已複製。",
   "DuplicatePackagePatternFirstOcurrence": "第一次宣告於:",
   "DuplicatePackagePatternIgnoredLocations": "會略過下列重新宣告:",

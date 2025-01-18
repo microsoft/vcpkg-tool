@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "Stahuje se samostatná sada {version}.",
   "DownloadingVcpkgStandaloneBundleLatest": "Stahuje se nejnovější samostatná sada.",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "{package_name} balíčku je duplicitní.",
   "DuplicatePackagePatternFirstOcurrence": "První deklarované v:",
   "DuplicatePackagePatternIgnoredLocations": "Následující změny deklarace budou ignorovány:",

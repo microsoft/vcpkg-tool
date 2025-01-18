@@ -461,6 +461,7 @@
   "DownloadingUrlToFile": "Downloading {url} -> {path}",
   "DownloadingVcpkgStandaloneBundle": "독립 실행형 번들 {version}을(를) 다운로드하는 중입니다.",
   "DownloadingVcpkgStandaloneBundleLatest": "최신 독립 실행형 번들을 다운로드하는 중입니다.",
+  "DuplicateDependencyOverride": "{package_name} already has an override",
   "DuplicatePackagePattern": "패키지 \"{package_name}\"이(가) 중복되었습니다.",
   "DuplicatePackagePatternFirstOcurrence": "첫 번째 선언 위치:",
   "DuplicatePackagePatternIgnoredLocations": "다음 다시 선언은 무시됩니다.",
