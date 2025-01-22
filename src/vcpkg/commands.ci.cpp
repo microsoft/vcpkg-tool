@@ -325,7 +325,6 @@ namespace vcpkg
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             BackcompatFeatures::Prohibit,
             KeepGoing::Yes,
         };
