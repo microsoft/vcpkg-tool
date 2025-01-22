@@ -335,7 +335,7 @@ namespace vcpkg
         std::string command;
 
         Optional<StringLiteral> m_detected_ci_environment_name;
-        CIKind m_detected_ci_environment_type;
+        CIKind m_detected_ci_environment_type = CIKind::None;
 
         friend LocalizedString usage_for_command(const CommandMetadata& command_metadata);
         CmdParser parser;

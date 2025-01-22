@@ -56,8 +56,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -109,8 +108,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\.",
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
 
@@ -135,8 +133,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\.",
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
 
@@ -248,8 +245,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\.",
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
 
@@ -309,8 +305,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "[^\n]+example3\.html\.\d+\.part: error: download from https://example\.com had an unexpected hash",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
 "note: Actual  : d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a",
@@ -375,8 +370,7 @@ $expected = @(
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is our of service\.",
-"If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github\.com/Microsoft/vcpkg/issues",
-"to report this upstream download server failure\."
+"If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
 
@@ -465,5 +459,57 @@ $actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$d
 Throw-IfFailed
 if (-not ($actual -match $expected)) {
     throw "Success: x-script download success message"
+}
+
+# Testing zero SHA does not try subsequent URLs and emits its special message
+Remove-Item env:X_VCPKG_ASSET_SOURCES
+Refresh-TestRoot
+$testFile = Join-Path $TestingRoot 'download-this.txt'
+Set-Content -Path $testFile -Value "This is some content to download" -Encoding Ascii -NoNewline
+$downloadTargetUrl = "file://" + $testFile.Replace("\", "/")
+$downloadTargetUrlRegex = [regex]::Escape($downloadTargetUrl)
+$expected = @(
+"^Downloading $downloadTargetUrlRegex -> download-result\.txt",
+"Successfully downloaded download-result\.txt",
+"error: failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: b3b907ef86c0389954e2a4c85a4ac3d9228129cbe52202fc979873e03089bab448d6c9ae48f1a4925df3b496e3f6fdefbd997b925f3fc93f9418f24a3421e97d",
+"$"
+) -join "`n"
+
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/download-result.txt", "--sha512", "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "--url", $downloadTargetUrl))
+Throw-IfNotFailed
+if (-not ($actual -match $expected)) {
+    throw "Failure: zero sha"
+}
+
+# Testing zero SHA but with x-script that wants SHA
+# Note that this prints the 'unknown SHA' message for the x-script even though a SHA was supplied; we don't want to ever ask the script for all zeroes
+$env:X_VCPKG_ASSET_SOURCES = "clear;x-script,some-script.ps1 {sha512};x-block-origin"
+$expected = @(
+"^Trying to download download-result\.txt using asset cache script",
+"error: the script template some-script\.ps1 {sha512} requires a SHA, but no SHA is known for attempted download of $downloadTargetUrlRegex",
+"error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source $downloadTargetUrlRegex",
+"$"
+) -join "`n"
+
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/download-result.txt", "--sha512", "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "--url", $downloadTargetUrl))
+Throw-IfNotFailed
+if (-not ($actual -match $expected)) {
+    throw "Failure: zero sha + x-script"
+}
+
+# Testing unknown replacement in x-script
+$env:X_VCPKG_ASSET_SOURCES = "clear;x-script,some-script.ps1 {sha};x-block-origin"
+$expected = @(
+"^Trying to download download-result\.txt using asset cache script",
+"error: the script template some-script.ps1 {sha} contains unknown replacement sha",
+"note: if you want this on the literal command line, use {{sha}}",
+"error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source $downloadTargetUrlRegex",
+"$"
+) -join "`n"
+
+$actual = Run-VcpkgAndCaptureOutput -TestArgs ($commonArgs + @("x-download", "$downloadsRoot/download-result.txt", "--sha512", "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", "--url", $downloadTargetUrl))
+Throw-IfNotFailed
+if (-not ($actual -match $expected)) {
+    throw "Failure: bad replacement"
 }
 
