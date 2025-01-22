@@ -1314,11 +1314,14 @@ namespace vcpkg
                 const auto maybe_vs_prompt = guess_visual_studio_prompt_target_architecture();
                 if (auto vs_prompt = maybe_vs_prompt.get())
                 {
+                    // There is no "Developer Command Prompt for ARM64EC". ARM64EC and ARM64 use the same developer
+                    // command prompt, and compiler toolset version. The only difference is adding a /arm64ec switch to
+                    // the build
                     if (*common_arch != *vs_prompt &&
                         !(*common_arch == CPUArchitecture::ARM64EC && *vs_prompt == CPUArchitecture::ARM64))
                     {
                         msg::println_warning(
-                            msgVcpkgInVsPrompt, msg::value = *vs_prompt, msg::triplet = common_triplet);
+                            msgVcpkgInVsPrompt, msg::value = *vs_prompt, msg::triplet = *common_triplet);
                     }
                 }
             }
