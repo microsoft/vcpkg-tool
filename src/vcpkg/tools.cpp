@@ -20,6 +20,8 @@
 #include <vcpkg/tools.test.h>
 #include <vcpkg/versions.h>
 
+#include <regex>
+
 #include <fmt/ranges.h>
 
 namespace
@@ -184,7 +186,10 @@ namespace vcpkg
             return nullopt;
         }
 
-        Path tool_dir_name = fmt::format("{}-{}-{}", tool, data->version.raw, data->os);
+        std::regex version_regex(R"(\d+\.\d+\.\d+)");
+        std::smatch download_version;
+        std::regex_search(data->archiveName, download_version, version_regex);
+        Path tool_dir_name = fmt::format("{}-{}-{}", tool, download_version.str(), data->os);
         Path download_subpath;
         if (!data->archiveName.empty())
         {
