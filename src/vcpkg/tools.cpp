@@ -120,7 +120,7 @@ namespace vcpkg
         return Json::parse_object(contents, origin)
             .then([&](Json::Object&& as_object) -> ExpectedL<std::vector<ToolDataEntry>> {
                 Json::Reader r(origin);
-                auto maybe_tool_data = r.visit(as_object, ToolDataFileDeserializer::instance);
+                auto maybe_tool_data = ToolDataFileDeserializer::instance.visit(r, as_object);
                 if (!r.errors().empty() || !r.warnings().empty())
                 {
                     return r.join();
@@ -739,6 +739,40 @@ namespace vcpkg
         }
     };
 
+    struct SevenZipProvider : ToolProvider
+    {
+        virtual bool is_abi_sensitive() const override { return false; }
+        virtual StringView tool_data_name() const override { return Tools::SEVEN_ZIP; }
+        virtual std::vector<StringView> system_exe_stems() const override { return {"7z"}; }
+        virtual std::array<int, 3> default_min_version() const override { return {24, 9}; }
+
+#if defined(_WIN32)
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
+        {
+            const auto& program_files = get_program_files_platform_bitness();
+            if (const auto pf = program_files.get())
+            {
+                out_candidate_paths.push_back(*pf / "7-Zip" / "7z.exe");
+            }
+
+            const auto& program_files_32_bit = get_program_files_32_bit();
+            if (const auto pf = program_files_32_bit.get())
+            {
+                out_candidate_paths.push_back(*pf / "7-Zip" / "7z.exe");
+            }
+        }
+#endif
+
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        {
+            return run_to_extract_version(Tools::SEVEN_ZIP, exe_path, Command(exe_path))
+                .then([&](std::string&& output) {
+                    // Sample output: 7-Zip 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-29
+                    return extract_prefixed_nonwhitespace("7-Zip ", Tools::SEVEN_ZIP, std::move(output), exe_path);
+                });
+        }
+    };
+
     struct ToolCacheImpl final : ToolCache
     {
         const Filesystem& fs;
@@ -1024,6 +1058,10 @@ namespace vcpkg
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);
                 if (tool == Tools::PYTHON3_WITH_VENV) return get_path(Python3WithVEnvProvider(), status_sink);
+                if (tool == Tools::SEVEN_ZIP || tool == Tools::SEVEN_ZIP_ALT)
+                {
+                    return get_path(SevenZipProvider(), status_sink);
+                }
                 if (tool == Tools::TAR)
                 {
                     return {find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), {}};

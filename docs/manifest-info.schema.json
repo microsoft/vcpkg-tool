@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-manifest-info.schema.json",
+  "type": "object",
+  "properties": {
+    "manifest-path": {
+      "description": "Identifies the path of the vcpkg manifest file that produced this installed tree.",
+      "type": "string"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "manifest-path"
+  ]
+}

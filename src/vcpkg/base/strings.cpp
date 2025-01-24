@@ -202,7 +202,7 @@ void Strings::inplace_ascii_to_lowercase(std::string& s)
 std::string Strings::ascii_to_lowercase(StringView s)
 {
     std::string result;
-    append_ascii_lowercase(result, s);
+    std::transform(s.begin(), s.end(), std::back_inserter(result), tolower_char);
     return result;
 }
 
@@ -211,11 +211,6 @@ std::string Strings::ascii_to_uppercase(StringView s)
     std::string result;
     std::transform(s.begin(), s.end(), std::back_inserter(result), to_upper_char);
     return result;
-}
-
-void Strings::append_ascii_lowercase(std::string& target, StringView s)
-{
-    std::transform(s.begin(), s.end(), std::back_inserter(target), tolower_char);
 }
 
 bool Strings::case_insensitive_ascii_starts_with(StringView s, StringView pattern)

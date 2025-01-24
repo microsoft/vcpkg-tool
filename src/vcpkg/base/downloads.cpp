@@ -599,11 +599,16 @@ namespace vcpkg
                                            const Path& downloaded_path,
                                            StringView sha512)
     {
+        if (!std::all_of(sha512.begin(), sha512.end(), ParserBase::is_hex_digit_lower))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
         auto maybe_actual_hash =
             vcpkg::Hash::get_file_hash_required(context, fs, downloaded_path, Hash::Algorithm::Sha512);
         if (auto actual_hash = maybe_actual_hash.get())
         {
-            if (Strings::case_insensitive_ascii_equals(sha512, *actual_hash))
+            if (sha512 == *actual_hash)
             {
                 return true;
             }
@@ -1427,7 +1432,7 @@ namespace vcpkg
             {
                 if (auto sha512 = maybe_sha512.get())
                 {
-                    Strings::append_ascii_lowercase(out, *sha512);
+                    out.append(*sha512);
                     return true;
                 }
 
@@ -1607,7 +1612,7 @@ namespace vcpkg
                                     View<std::string> raw_urls,
                                     View<std::string> headers,
                                     const Path& download_path,
-                                    const Optional<std::string>& maybe_sha512)
+                                    const Optional<std::string>& maybe_sha512_mixed_case)
     {
         // Design goals:
         // * We want it to be clear when asset cache(s) are used. This means not printing the authoritative URL in a
@@ -1627,6 +1632,8 @@ namespace vcpkg
         //
         // See examples of console output in asset-caching.ps1
 
+        auto maybe_sha512 =
+            maybe_sha512_mixed_case.map([](const std::string& sha512) { return Strings::ascii_to_lowercase(sha512); });
         // Note: no secrets for the input URLs
         std::vector<SanitizedUrl> sanitized_urls =
             Util::fmap(raw_urls, [&](const std::string& url) { return SanitizedUrl{url, {}}; });

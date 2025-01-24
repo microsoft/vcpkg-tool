@@ -298,7 +298,8 @@ namespace vcpkg
             f.dependency_graph = dependency_graph_enabled();
             return f;
         }
-        const Optional<StringLiteral>& detected_ci_environment() const { return m_detected_ci_environment; }
+        const Optional<StringLiteral>& detected_ci_environment_name() const { return m_detected_ci_environment_name; }
+        CIKind detected_ci() const { return m_detected_ci_environment_type; }
 
         const std::string& get_command() const noexcept { return command; }
 
@@ -333,7 +334,8 @@ namespace vcpkg
 
         std::string command;
 
-        Optional<StringLiteral> m_detected_ci_environment;
+        Optional<StringLiteral> m_detected_ci_environment_name;
+        CIKind m_detected_ci_environment_type;
 
         friend LocalizedString usage_for_command(const CommandMetadata& command_metadata);
         CmdParser parser;

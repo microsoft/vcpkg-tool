@@ -207,7 +207,7 @@ namespace vcpkg
                     msg::print(Color::warning, warnings);
                 }
                 msg::println_error(create_error_message(result, spec));
-                msg::print(create_user_troubleshooting_message(*action, paths, nullopt));
+                msg::print(create_user_troubleshooting_message(*action, args.detected_ci(), paths, {}, nullopt));
                 return 1;
             }
             case BuildResult::Excluded:
@@ -695,7 +695,9 @@ namespace vcpkg
              paths.packages() / fmt::format("{}_{}", FileDetectCompiler, triplet.canonical_name())},
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {CMakeVariableHostTriplet, triplet.canonical_name()},
+            {CMakeVariableCompilerCacheFile, paths.installed().compiler_hash_cache_file()},
         };
+
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
 
         auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
@@ -1692,43 +1694,144 @@ namespace vcpkg
         return "https://github.com/microsoft/vcpkg/issues?q=is%3Aissue+is%3Aopen+in%3Atitle+" + spec_name;
     }
 
-    static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView path)
+    static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
         return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
                                spec_name,
                                "]+Build+error+on+",
                                triplet,
-                               "&body=Copy+issue+body+from+",
-                               Strings::percent_encode(path));
+                               "&body=",
+                               Strings::percent_encode(body));
+    }
+
+    static bool is_collapsible_ci_kind(CIKind kind)
+    {
+        switch (kind)
+        {
+            case CIKind::GithubActions:
+            case CIKind::GitLabCI:
+            case CIKind::AzurePipelines: return true;
+            case CIKind::None:
+            case CIKind::AppVeyor:
+            case CIKind::AwsCodeBuild:
+            case CIKind::CircleCI:
+            case CIKind::HerokuCI:
+            case CIKind::JenkinsCI:
+            case CIKind::TeamCityCI:
+            case CIKind::TravisCI:
+            case CIKind::Generic: return false;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    static void append_file_collapsible(LocalizedString& output,
+                                        CIKind kind,
+                                        const ReadOnlyFilesystem& fs,
+                                        const Path& file)
+    {
+        auto title = file.filename();
+        auto contents = fs.read_contents(file, VCPKG_LINE_INFO);
+        switch (kind)
+        {
+            case CIKind::GithubActions:
+                // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#grouping-log-lines
+                output.append_raw("::group::")
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw("::endgroup::\n");
+                break;
+            case CIKind::GitLabCI:
+            {
+                // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
+                using namespace std::chrono;
+                std::string section_name;
+                std::copy_if(title.begin(), title.end(), std::back_inserter(section_name), [](char c) {
+                    return c == '.' || ParserBase::is_alphanum(c);
+                });
+                const auto timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
+                output
+                    .append_raw(
+                        fmt::format("\\e[0Ksection_start:{}:{}[collapsed=true]\r\\e[0K", timestamp, section_name))
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw(fmt::format("\\e[0Ksection_end:{}:{}\r\\e[0K\n", timestamp, section_name));
+            }
+            break;
+            case CIKind::AzurePipelines:
+                // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#formatting-commands
+                output.append_raw("##vso[task.uploadfile]")
+                    .append_raw(file)
+                    .append_raw('\n')
+                    .append_raw("##[group]")
+                    .append_raw(title)
+                    .append_raw('\n')
+                    .append_raw(contents)
+                    .append_raw("##[endgroup]\n");
+                break;
+            case CIKind::None:
+            case CIKind::AppVeyor:
+            case CIKind::AwsCodeBuild:
+            case CIKind::CircleCI:
+            case CIKind::HerokuCI:
+            case CIKind::JenkinsCI:
+            case CIKind::TeamCityCI:
+            case CIKind::TravisCI:
+            case CIKind::Generic: Checks::unreachable(VCPKG_LINE_INFO, "CIKind not collapsible");
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
     }
 
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        CIKind detected_ci,
                                                         const VcpkgPaths& paths,
-                                                        const Optional<Path>& issue_body)
+                                                        const std::vector<std::string>& error_logs,
+                                                        const Optional<Path>& maybe_issue_body)
     {
         const auto& spec_name = action.spec.name();
         const auto& triplet_name = action.spec.triplet().to_string();
         LocalizedString result = msg::format(msgBuildTroubleshootingMessage1).append_raw('\n');
         result.append_indent().append_raw(make_gh_issue_search_url(spec_name)).append_raw('\n');
-        result.append(msgBuildTroubleshootingMessage2).append_raw('\n');
-        if (issue_body.has_value())
-        {
-            const auto path = issue_body.get()->generic_u8string();
-            result.append_indent().append_raw(make_gh_issue_open_url(spec_name, triplet_name, path)).append_raw('\n');
-            if (!paths.get_filesystem().find_from_PATH("gh").empty())
-            {
-                Command gh("gh");
-                gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
-                gh.string_arg("--title").string_arg(fmt::format("[{}] Build failure on {}", spec_name, triplet_name));
-                gh.string_arg("--body-file").string_arg(path);
+        result.append(msgBuildTroubleshootingMessage2).append_raw('\n').append_indent();
 
-                result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
-                result.append_indent().append_raw(gh.command_line());
+        if (auto issue_body = maybe_issue_body.get())
+        {
+            auto& fs = paths.get_filesystem();
+            // The 'body' content is not localized because it becomes part of the posted GitHub issue
+            // rather than instructions for the current user of vcpkg.
+            if (is_collapsible_ci_kind(detected_ci))
+            {
+                auto body = fmt::format("Copy issue body from collapsed section \"{}\" in the ci log output",
+                                        issue_body->filename());
+                result.append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
+                append_file_collapsible(result, detected_ci, fs, *issue_body);
+                for (Path error_log_path : error_logs)
+                {
+                    append_file_collapsible(result, detected_ci, fs, error_log_path);
+                }
+            }
+            else
+            {
+                const auto path = issue_body->generic_u8string();
+                auto body = fmt::format("Copy issue body from {}", path);
+                result.append_raw(make_gh_issue_open_url(spec_name, triplet_name, body)).append_raw('\n');
+                auto gh_path = fs.find_from_PATH("gh");
+                if (!gh_path.empty())
+                {
+                    Command gh(gh_path[0]);
+                    gh.string_arg("issue").string_arg("create").string_arg("-R").string_arg("microsoft/vcpkg");
+                    gh.string_arg("--title").string_arg(
+                        fmt::format("[{}] Build failure on {}", spec_name, triplet_name));
+                    gh.string_arg("--body-file").string_arg(path);
+                    result.append(msgBuildTroubleshootingMessageGH).append_raw('\n');
+                    result.append_indent().append_raw(gh.command_line());
+                }
             }
         }
         else
         {
-            result.append_indent()
+            result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
                             "new?template=report-package-build-failure.md&title=[")
                 .append_raw(spec_name)

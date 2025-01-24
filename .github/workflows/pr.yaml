@@ -65,7 +65,7 @@ jobs:
             exit 1
           }
       - name: 'Publish Format and Messages File Diff'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure() && steps.diff.outcome == 'failure'
         with:
           name: format.patch

@@ -923,6 +923,7 @@ namespace
 
             size_t upload_count = 0;
             auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+            if (cache_size == 0) return upload_count;
 
             if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
             {
@@ -930,7 +931,7 @@ namespace
                     m_token_header,
                     m_accept_header.to_string(),
                     "Content-Type: application/octet-stream",
-                    "Content-Range: bytes 0-" + std::to_string(cache_size) + "/*",
+                    fmt::format("Content-Range: bytes 0-{}/{}", cache_size - 1, cache_size),
                 };
 
                 PrintingDiagnosticContext pdc{msg_sink};
