@@ -257,14 +257,14 @@ namespace vcpkg
 
         OverlayPortIndex(const OverlayPortPaths& paths)
         {
-            if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
-            {
-                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
-            }
-
             for (auto&& overlay_port : paths.overlay_ports)
             {
                 m_entries.emplace_back(OverlayPortKind::Unknown, overlay_port);
+            }
+
+            if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
+            {
+                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
             }
         }
 
