@@ -1033,8 +1033,9 @@ namespace vcpkg
                                   Triplet default_triplet,
                                   Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(
-            paths.manifest_mode_enabled() ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
+        auto manifest = paths.get_manifest().get();
+        const ParsedArguments options =
+            args.parse_arguments(manifest == nullptr ? CommandInstallMetadataClassic : CommandInstallMetadataManifest);
 
         const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         const bool use_head_version = Util::Sets::contains(options.switches, (SwitchHead));
@@ -1061,9 +1062,9 @@ namespace vcpkg
                                                  : UnsupportedPortAction::Error;
         const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
 
-        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
+        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest != nullptr);
 
-        if (auto p = paths.get_manifest().get())
+        if (manifest != nullptr)
         {
             bool failure = false;
             if (!options.command_arguments.empty())
@@ -1084,7 +1085,7 @@ namespace vcpkg
             }
             if (failure)
             {
-                msg::println(msgUsingManifestAt, msg::path = p->path);
+                msg::println(msgUsingManifestAt, msg::path = manifest->path);
                 msg::print(usage_for_command(CommandInstallMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
