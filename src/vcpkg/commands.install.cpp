@@ -1035,7 +1035,7 @@ namespace vcpkg
     {
         auto manifest = paths.get_manifest().get();
         const ParsedArguments options =
-            args.parse_arguments(manifest == nullptr ? CommandInstallMetadataClassic : CommandInstallMetadataManifest);
+            args.parse_arguments(manifest ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 
         const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         const bool use_head_version = Util::Sets::contains(options.switches, (SwitchHead));
@@ -1062,9 +1062,9 @@ namespace vcpkg
                                                  : UnsupportedPortAction::Error;
         const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
 
-        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest != nullptr);
+        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
-        if (manifest != nullptr)
+        if (manifest)
         {
             bool failure = false;
             if (!options.command_arguments.empty())
@@ -1142,7 +1142,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        if (auto manifest = paths.get_manifest().get())
+        if (manifest)
         {
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
