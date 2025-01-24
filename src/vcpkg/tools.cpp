@@ -186,10 +186,18 @@ namespace vcpkg
             return nullopt;
         }
 
-        std::regex version_regex(R"(\d+\.\d+\.\d+)");
-        std::smatch download_version;
-        std::regex_search(data->archiveName, download_version, version_regex);
-        Path tool_dir_name = fmt::format("{}-{}-{}", tool, download_version.str(), data->os);
+        Path tool_dir_name;
+        if (tool == Tools::GIT)
+        {
+            std::regex version_regex(R"(\d+\.\d+\.\d+)");
+            std::smatch download_version;
+            std::regex_search(data->archiveName, download_version, version_regex);
+            tool_dir_name = fmt::format("{}-{}-{}", tool, download_version.str(), data->os);
+        }
+        else
+        {
+            tool_dir_name = fmt::format("{}-{}-{}", tool, data->version.raw, data->os);
+        }
         Path download_subpath;
         if (!data->archiveName.empty())
         {
