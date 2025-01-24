@@ -86,7 +86,6 @@ namespace vcpkg
 
     struct IVersionedPortfileProvider
     {
-        virtual View<Version> get_port_versions(StringView port_name) const = 0;
         virtual ~IVersionedPortfileProvider() = default;
 
         virtual ExpectedL<const SourceControlFileAndLocation&> get_control_file(
