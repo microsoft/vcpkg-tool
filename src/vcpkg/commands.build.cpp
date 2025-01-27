@@ -96,7 +96,6 @@ namespace vcpkg
             CleanBuildtrees::No,
             CleanPackages::No,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             BackcompatFeatures::Allow,
         };
 
@@ -288,18 +287,6 @@ namespace vcpkg
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
-
-    StringLiteral to_string_view(DownloadTool tool)
-    {
-        switch (tool)
-        {
-            case DownloadTool::Builtin: return "BUILT_IN";
-            case DownloadTool::Aria2: return "ARIA2";
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
-    std::string to_string(DownloadTool tool) { return to_string_view(tool).to_string(); }
 
     Optional<LinkageType> to_linkage_type(StringView str)
     {
@@ -789,17 +776,11 @@ namespace vcpkg
             {CMakeVariablePort, port_name},
             {CMakeVariableVersion, scf.to_version().text},
             {CMakeVariableUseHeadVersion, Util::Enum::to_bool(action.use_head_version) ? "1" : "0"},
-            {CMakeVariableDownloadTool, to_string_view(build_options.download_tool)},
             {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
             {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes},
         };
-
-        if (build_options.download_tool == DownloadTool::Aria2)
-        {
-            variables.emplace_back("ARIA2", paths.get_tool_exe(Tools::ARIA2, out_sink));
-        }
 
         if (auto cmake_debug = args.cmake_debug.get())
         {

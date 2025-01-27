@@ -433,24 +433,6 @@ namespace vcpkg
         }
     };
 
-    struct Aria2Provider : ToolProvider
-    {
-        virtual bool is_abi_sensitive() const override { return false; }
-        virtual StringView tool_data_name() const override { return Tools::ARIA2; }
-        virtual std::vector<StringView> system_exe_stems() const override { return {"aria2c"}; }
-        virtual std::array<int, 3> default_min_version() const override { return {1, 33, 1}; }
-        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
-        {
-            return run_to_extract_version(Tools::ARIA2, exe_path, Command(exe_path).string_arg("--version"))
-                .then([&](std::string&& output) {
-                    // Sample output:
-                    // aria2 version 1.35.0
-                    // Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa
-                    return extract_prefixed_nonwhitespace("aria2 version ", Tools::ARIA2, std::move(output), exe_path);
-                });
-        }
-    };
-
     struct NodeProvider : ToolProvider
     {
         virtual bool is_abi_sensitive() const override { return false; }
@@ -1048,7 +1030,6 @@ namespace vcpkg
                 if (tool == Tools::NINJA) return get_path(NinjaProvider(), status_sink);
                 if (tool == Tools::POWERSHELL_CORE) return get_path(PowerShellCoreProvider(), status_sink);
                 if (tool == Tools::NUGET) return get_path(NuGetProvider(), status_sink);
-                if (tool == Tools::ARIA2) return get_path(Aria2Provider(), status_sink);
                 if (tool == Tools::NODE) return get_path(NodeProvider(), status_sink);
                 if (tool == Tools::IFW_INSTALLER_BASE) return get_path(IfwInstallerBaseProvider(), status_sink);
                 if (tool == Tools::MONO) return get_path(MonoProvider(), status_sink);

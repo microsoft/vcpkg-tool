@@ -59,9 +59,6 @@ namespace vcpkg
                                 Triplet default_triplet,
                                 Triplet host_triplet);
 
-    StringLiteral to_string_view(DownloadTool tool);
-    std::string to_string(DownloadTool tool);
-
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -70,7 +67,6 @@ namespace vcpkg
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
-        DownloadTool download_tool;
         BackcompatFeatures backcompat_features;
         KeepGoing keep_going;
     };

@@ -321,7 +321,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchXProhibitBackcompatFeatures = "x-prohibit-backcompat-features";
     inline constexpr StringLiteral SwitchXRandomize = "x-randomize";
     inline constexpr StringLiteral SwitchXTransitive = "x-transitive";
-    inline constexpr StringLiteral SwitchXUseAria2 = "x-use-aria2";
     inline constexpr StringLiteral SwitchXVersionSuffix = "x-version-suffix";
     inline constexpr StringLiteral SwitchXWriteNuGetPackagesConfig = "x-write-nuget-packages-config";
     inline constexpr StringLiteral SwitchXXUnit = "x-xunit";
@@ -388,7 +387,6 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableDisableCompilerTracking = "VCPKG_DISABLE_COMPILER_TRACKING";
     inline constexpr StringLiteral CMakeVariableDownloadMode = "VCPKG_DOWNLOAD_MODE";
     inline constexpr StringLiteral CMakeVariableDownloads = "DOWNLOADS";
-    inline constexpr StringLiteral CMakeVariableDownloadTool = "_VCPKG_DOWNLOAD_TOOL";
     inline constexpr StringLiteral CMakeVariableEditable = "_VCPKG_EDITABLE";
     inline constexpr StringLiteral CMakeVariableEnvPassthrough = "VCPKG_ENV_PASSTHROUGH";
     inline constexpr StringLiteral CMakeVariableEnvPassthroughUntracked = "VCPKG_ENV_PASSTHROUGH_UNTRACKED";

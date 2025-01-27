@@ -636,7 +636,6 @@ namespace vcpkg
         {SwitchRecurse, msgHelpTxtOptRecurse},
         {SwitchKeepGoing, msgHelpTxtOptKeepGoing},
         {SwitchEditable, msgHelpTxtOptEditable},
-        {SwitchXUseAria2, msgHelpTxtOptUseAria2},
         {SwitchCleanAfterBuild, msgHelpTxtOptCleanAfterBuild},
         {SwitchCleanBuildtreesAfterBuild, msgHelpTxtOptCleanBuildTreesAfterBuild},
         {SwitchCleanPackagesAfterBuild, msgHelpTxtOptCleanPkgAfterBuild},
@@ -1045,7 +1044,6 @@ namespace vcpkg
         const bool is_recursive = Util::Sets::contains(options.switches, (SwitchRecurse));
         const bool is_editable =
             Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
-        const bool use_aria2 = Util::Sets::contains(options.switches, (SwitchXUseAria2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
@@ -1117,9 +1115,6 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
 
-        DownloadTool download_tool = DownloadTool::Builtin;
-        if (use_aria2) download_tool = DownloadTool::Aria2;
-
         const BuildPackageOptions build_package_options = {
             Util::Enum::to_enum<BuildMissing>(!no_build_missing),
             Util::Enum::to_enum<AllowDownloads>(!no_downloads),
@@ -1127,7 +1122,6 @@ namespace vcpkg
             Util::Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
             Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
-            download_tool,
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
             keep_going,
         };
