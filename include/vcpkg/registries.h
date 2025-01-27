@@ -56,8 +56,6 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual ExpectedL<View<Version>> get_port_versions() const = 0;
-
         virtual ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;

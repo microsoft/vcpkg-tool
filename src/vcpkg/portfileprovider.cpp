@@ -431,14 +431,6 @@ namespace vcpkg
                 return entry_it->second;
             }
 
-            virtual View<Version> get_port_versions(StringView port_name) const override
-            {
-                return entry(port_name)
-                    .value_or_exit(VCPKG_LINE_INFO)
-                    ->get_port_versions()
-                    .value_or_exit(VCPKG_LINE_INFO);
-            }
-
             ExpectedL<SourceControlFileAndLocation> load_control_file(const VersionSpec& version_spec) const
             {
                 const auto& maybe_ent = entry(version_spec.port_name);
