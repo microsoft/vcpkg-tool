@@ -1720,8 +1720,8 @@ namespace vcpkg
             case CIKind::TeamCityCI:
             case CIKind::TravisCI:
             case CIKind::Generic: return false;
-            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
+        Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     static void append_file_collapsible(LocalizedString& output,
@@ -1740,7 +1740,7 @@ namespace vcpkg
                     .append_raw('\n')
                     .append_raw(contents)
                     .append_raw("::endgroup::\n");
-                break;
+                return;
             case CIKind::GitLabCI:
             {
                 // https://docs.gitlab.com/ee/ci/jobs/job_logs.html#custom-collapsible-sections
@@ -1758,7 +1758,7 @@ namespace vcpkg
                     .append_raw(contents)
                     .append_raw(fmt::format("\\e[0Ksection_end:{}:{}\r\\e[0K\n", timestamp, section_name));
             }
-            break;
+                return;
             case CIKind::AzurePipelines:
                 // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#formatting-commands
                 output.append_raw("##vso[task.uploadfile]")
@@ -1769,7 +1769,7 @@ namespace vcpkg
                     .append_raw('\n')
                     .append_raw(contents)
                     .append_raw("##[endgroup]\n");
-                break;
+                return;
             case CIKind::None:
             case CIKind::AppVeyor:
             case CIKind::AwsCodeBuild:
@@ -1778,9 +1778,9 @@ namespace vcpkg
             case CIKind::JenkinsCI:
             case CIKind::TeamCityCI:
             case CIKind::TravisCI:
-            case CIKind::Generic: Checks::unreachable(VCPKG_LINE_INFO, "CIKind not collapsible");
-            default: Checks::unreachable(VCPKG_LINE_INFO);
+            case CIKind::Generic: Checks::unreachable(VCPKG_LINE_INFO, "CIKind not collapsible"); return;
         }
+        Checks::unreachable(VCPKG_LINE_INFO);
     }
 
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
