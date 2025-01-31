@@ -211,6 +211,41 @@ namespace vcpkg
         std::unordered_map<std::string, CacheStatus> m_status;
     };
 
+    struct BinaryCacheSyncState;
+    struct BinaryCacheSynchronizer
+    {
+        using backing_uint_t = std::conditional_t<sizeof(size_t) == 4, uint32_t, uint64_t>;
+        using counter_uint_t = std::conditional_t<sizeof(size_t) == 4, uint16_t, uint32_t>;
+        static constexpr backing_uint_t SubmissionCompleteBit = static_cast<backing_uint_t>(1)
+                                                                << (sizeof(backing_uint_t) * 8 - 1);
+        static constexpr backing_uint_t UpperShift = sizeof(counter_uint_t) * 8;
+        static constexpr backing_uint_t SubmittedMask =
+            static_cast<backing_uint_t>(static_cast<counter_uint_t>(-1) >> 1u);
+        static constexpr backing_uint_t CompletedMask = SubmittedMask << UpperShift;
+        static constexpr backing_uint_t OneCompleted = static_cast<backing_uint_t>(1) << UpperShift;
+
+        void add_submitted() noexcept;
+        BinaryCacheSyncState fetch_add_completed() noexcept;
+        counter_uint_t fetch_incomplete_mark_submission_complete() noexcept;
+
+    private:
+        // This is morally:
+        // struct State {
+        //    counter_uint_t jobs_submitted;
+        //    bool unused;
+        //    counter_uint_t_minus_one_bit jobs_completed;
+        //    bool submission_complete;
+        // };
+        std::atomic<backing_uint_t> m_state = 0;
+    };
+
+    struct BinaryCacheSyncState
+    {
+        BinaryCacheSynchronizer::counter_uint_t jobs_submitted;
+        BinaryCacheSynchronizer::counter_uint_t jobs_completed;
+        bool submission_complete;
+    };
+
     // compression and upload of binary cache entries happens on a single 'background' thread, `m_push_thread`
     // Thread safety is achieved within the binary cache providers by:
     //   1. Only using one thread in the background for this work.
@@ -249,8 +284,7 @@ namespace vcpkg
 
         BGMessageSink m_bg_msg_sink;
         BackgroundWorkQueue<ActionToPush> m_actions_to_push;
-        std::atomic<int> m_total_packages_to_push = 0;
-        std::atomic<int> m_total_packages_pushed = 0;
+        BinaryCacheSynchronizer m_synchronizer;
         std::thread m_push_thread;
 
         void push_thread_main();

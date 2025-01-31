@@ -2213,6 +2213,44 @@ namespace vcpkg
         });
     }
 
+    void BinaryCacheSynchronizer::add_submitted() noexcept
+    {
+        // This can set the unused bit but if that happens we are terminating anyway.
+        if ((m_state.fetch_add(1, std::memory_order_acq_rel) & SubmittedMask) == SubmittedMask)
+        {
+            Checks::unreachable(VCPKG_LINE_INFO, "Maximum job count exceeded");
+        }
+    }
+
+    BinaryCacheSyncState BinaryCacheSynchronizer::fetch_add_completed() noexcept
+    {
+        auto old = m_state.load(std::memory_order_acquire);
+        backing_uint_t local;
+        do
+        {
+            local = old;
+            if ((local & CompletedMask) == CompletedMask)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "Maximum job count exceeded");
+            }
+
+            local += OneCompleted;
+        } while (m_state.compare_exchange_weak(old, local, std::memory_order_acq_rel));
+
+        BinaryCacheSyncState result;
+        result.jobs_submitted = local & SubmittedMask;
+        result.jobs_completed = (local & CompletedMask) >> UpperShift;
+        result.submission_complete = (local & SubmissionCompleteBit) != 0;
+        return result;
+    }
+
+    BinaryCacheSynchronizer::counter_uint_t BinaryCacheSynchronizer::
+        fetch_incomplete_mark_submission_complete() noexcept
+    {
+        auto state = m_state.fetch_or(SubmissionCompleteBit, std::memory_order_acq_rel);
+        return (state & SubmittedMask) - ((state & CompletedMask) >> UpperShift);
+    }
+
     bool BinaryCache::install_providers(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         MessageSink& status_sink)
@@ -2468,7 +2506,9 @@ namespace vcpkg
                         generate_nuspec(request.package_dir, action, m_config.nuget_prefix, m_config.nuget_repo);
                 }
 
-                m_total_packages_to_push++;
+                m_synchronizer.add_submitted();
+                msg::println(msg::format(
+                    msgSubmittingBinaryCacheBackground, msg::spec = action.spec, msg::count = m_config.write.size()));
                 m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
                 return;
             }
@@ -2485,10 +2525,12 @@ namespace vcpkg
     void BinaryCache::wait_for_async_complete_and_join()
     {
         m_bg_msg_sink.print_published();
-        if (m_total_packages_pushed.load() < m_total_packages_to_push.load())
+        auto incomplete_count = m_synchronizer.fetch_incomplete_mark_submission_complete();
+        if (incomplete_count != 0)
         {
-            msg::println(msgWaitUntilPackagesUploaded, msg::count = m_total_packages_to_push.load());
+            msg::println(msgWaitUntilPackagesUploaded, msg::count = incomplete_count);
         }
+
         m_bg_msg_sink.publish_directly_to_out_sink();
         m_actions_to_push.stop();
         if (m_push_thread.joinable())
@@ -2534,11 +2576,17 @@ namespace vcpkg
                     m_fs.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
 
-                m_bg_msg_sink.println(
-                    msg::format(
-                        msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed())
-                        .append_raw(
-                            fmt::format(" ({}/{})", ++(m_total_packages_pushed), m_total_packages_to_push.load())));
+                auto sync_state = m_synchronizer.fetch_add_completed();
+                auto message = msg::format(msgSubmittingBinaryCacheComplete,
+                                           msg::spec = action_to_push.request.spec,
+                                           msg::count = num_destinations,
+                                           msg::elapsed = timer.elapsed());
+                if (sync_state.submission_complete)
+                {
+                    message.append_raw(fmt::format(" ({}/{})", sync_state.jobs_completed, sync_state.jobs_submitted));
+                }
+
+                m_bg_msg_sink.println(message);
             }
         }
     }

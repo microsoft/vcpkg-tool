@@ -2768,11 +2768,15 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "'vcpkg help triplet' is a command line that should not be localized",
                 "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
-DECLARE_MESSAGE(StoredBinariesToDestinations,
-                (msg::count, msg::elapsed),
-                "",
-                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
+                (msg::spec, msg::count),
+                "",
+                "Starting submission of {spec} to {count} binary cache(s) in the background")
+DECLARE_MESSAGE(SubmittingBinaryCacheComplete,
+                (msg::spec, msg::count, msg::elapsed),
+                "",
+                "Completed submission of {spec} to {count} binary cache(s) in {elapsed}")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestStartingBashShell,
@@ -3018,7 +3022,7 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
-                "Uploading binaries for '{spec}' to '{vendor}' source \"{path}\".")
+                "Uploading binaries for {spec} to {vendor} from {path}")
 DECLARE_MESSAGE(UsageTextHere, (), "", "the usage file is here")
 DECLARE_MESSAGE(UsageInstallInstructions, (), "", "you can install the usage file with the following CMake")
 DECLARE_MESSAGE(UseEnvVar,

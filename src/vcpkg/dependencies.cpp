@@ -661,7 +661,7 @@ namespace vcpkg
     bool RemovePlan::has_non_user_requested() const
     {
         return Util::any_of(remove,
-                             [](const RemovePlanAction& a) { return a.request_type != RequestType::USER_REQUESTED; });
+                            [](const RemovePlanAction& a) { return a.request_type != RequestType::USER_REQUESTED; });
     }
 
     RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)

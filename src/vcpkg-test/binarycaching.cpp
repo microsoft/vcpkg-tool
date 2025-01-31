@@ -469,3 +469,36 @@ Description: a spiffy compression library wrapper
 </packages>
 )");
 }
+
+TEST_CASE ("Synchronizer operations", "[BinaryCache]")
+{
+    {
+        BinaryCacheSynchronizer sync;
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 0);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 1);
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+    }
+}
