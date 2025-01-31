@@ -275,7 +275,7 @@ DECLARE_MESSAGE(AssetCacheScriptBadVariable,
 DECLARE_MESSAGE(AssetCacheScriptBadVariableHint,
                 (msg::list),
                 "{list} is the name of the unknown replacement",
-                "if you want this on the literal command line, use {{{list}}}")
+                "if you want this on the literal command line, use {{{{{list}}}}}")
 DECLARE_MESSAGE(AssetCacheScriptCommandLine, (), "", "the full script command line was")
 DECLARE_MESSAGE(AssetCacheScriptNeedsSha,
                 (msg::value, msg::url),
@@ -919,7 +919,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
-DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),
@@ -1072,8 +1071,13 @@ DECLARE_MESSAGE(DownloadAvailable,
                 "A downloadable copy of this tool is available and can be used by unsetting {env_var}.")
 DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}")
 DECLARE_MESSAGE(DownloadFailedHashMismatch, (msg::url), "", "download from {url} had an unexpected hash")
-DECLARE_MESSAGE(DownloadFailedHashMismatchExpectedHash, (msg::sha), "", "Expected: {sha}")
 DECLARE_MESSAGE(DownloadFailedHashMismatchActualHash, (msg::sha), "", "Actual  : {sha}")
+DECLARE_MESSAGE(DownloadFailedHashMismatchExpectedHash, (msg::sha), "", "Expected: {sha}")
+DECLARE_MESSAGE(
+    DownloadFailedHashMismatchZero,
+    (msg::sha),
+    "",
+    "failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}")
 DECLARE_MESSAGE(DownloadFailedRetrying,
                 (msg::value, msg::url),
                 "{value} is a number of milliseconds",
@@ -1082,22 +1086,22 @@ DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
                 "{url}: failed: status code {value}")
-DECLARE_MESSAGE(DownloadFailedProxySettings,
-                (),
-                "",
-                "If you are using a proxy, please ensure your proxy settings are correct.\n"
-                "Possible causes are:\n"
-                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to "
-                "`https//address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
-                "proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
-                "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
-                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "
-                "proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77\n"
-                "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
-                "3. Your proxy's remote server is our of service.\n"
-                "If you've tried directly download the link, and believe this is not a temporary download server "
-                "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
-                "to report this upstream download server failure.")
+DECLARE_MESSAGE(
+    DownloadFailedProxySettings,
+    (),
+    "",
+    "If you are using a proxy, please ensure your proxy settings are correct.\n"
+    "Possible causes are:\n"
+    "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to "
+    "`https//address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
+    "proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
+    "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
+    "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "
+    "proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77\n"
+    "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
+    "3. Your proxy's remote server is our of service.\n"
+    "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this "
+    "file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
@@ -1735,7 +1739,6 @@ DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Does not print CMake usage informati
 DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fails if cached binaries are not available")
 DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Makes best-effort attempt to download sources without building")
 DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allows removal of packages as part of installation")
-DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Uses aria2 to perform download tasks")
 DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                 (),
                 "",

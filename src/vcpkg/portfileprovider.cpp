@@ -257,14 +257,14 @@ namespace vcpkg
 
         OverlayPortIndex(const OverlayPortPaths& paths)
         {
-            if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
-            {
-                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
-            }
-
             for (auto&& overlay_port : paths.overlay_ports)
             {
                 m_entries.emplace_back(OverlayPortKind::Unknown, overlay_port);
+            }
+
+            if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
+            {
+                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
             }
         }
 
@@ -429,14 +429,6 @@ namespace vcpkg
                     }
                 }
                 return entry_it->second;
-            }
-
-            virtual View<Version> get_port_versions(StringView port_name) const override
-            {
-                return entry(port_name)
-                    .value_or_exit(VCPKG_LINE_INFO)
-                    ->get_port_versions()
-                    .value_or_exit(VCPKG_LINE_INFO);
             }
 
             ExpectedL<SourceControlFileAndLocation> load_control_file(const VersionSpec& version_spec) const

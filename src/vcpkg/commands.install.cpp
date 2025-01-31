@@ -396,7 +396,7 @@ namespace vcpkg
                     case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                binary_cache.push_success(build_options.clean_packages, action);
+                binary_cache.push_success(fs, build_options.clean_packages, action);
             }
             else
             {
@@ -638,7 +638,6 @@ namespace vcpkg
         {SwitchRecurse, msgHelpTxtOptRecurse},
         {SwitchKeepGoing, msgHelpTxtOptKeepGoing},
         {SwitchEditable, msgHelpTxtOptEditable},
-        {SwitchXUseAria2, msgHelpTxtOptUseAria2},
         {SwitchCleanAfterBuild, msgHelpTxtOptCleanAfterBuild},
         {SwitchCleanBuildtreesAfterBuild, msgHelpTxtOptCleanBuildTreesAfterBuild},
         {SwitchCleanPackagesAfterBuild, msgHelpTxtOptCleanPkgAfterBuild},
@@ -1035,8 +1034,9 @@ namespace vcpkg
                                   Triplet default_triplet,
                                   Triplet host_triplet)
     {
-        const ParsedArguments options = args.parse_arguments(
-            paths.manifest_mode_enabled() ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
+        auto manifest = paths.get_manifest().get();
+        const ParsedArguments options =
+            args.parse_arguments(manifest ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 
         const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         const bool use_head_version = Util::Sets::contains(options.switches, (SwitchHead));
@@ -1046,7 +1046,6 @@ namespace vcpkg
         const bool is_recursive = Util::Sets::contains(options.switches, (SwitchRecurse));
         const bool is_editable =
             Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
-        const bool use_aria2 = Util::Sets::contains(options.switches, (SwitchXUseAria2));
         const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
         const bool clean_buildtrees_after_build =
             Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
@@ -1063,9 +1062,9 @@ namespace vcpkg
                                                  : UnsupportedPortAction::Error;
         const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
 
-        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, paths.manifest_mode_enabled());
+        get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
-        if (auto p = paths.get_manifest().get())
+        if (manifest)
         {
             bool failure = false;
             if (!options.command_arguments.empty())
@@ -1086,7 +1085,7 @@ namespace vcpkg
             }
             if (failure)
             {
-                msg::println(msgUsingManifestAt, msg::path = p->path);
+                msg::println(msgUsingManifestAt, msg::path = manifest->path);
                 msg::print(usage_for_command(CommandInstallMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
@@ -1118,9 +1117,6 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
 
-        DownloadTool download_tool = DownloadTool::Builtin;
-        if (use_aria2) download_tool = DownloadTool::Aria2;
-
         const BuildPackageOptions build_package_options = {
             Util::Enum::to_enum<BuildMissing>(!no_build_missing),
             Util::Enum::to_enum<AllowDownloads>(!no_downloads),
@@ -1128,7 +1124,6 @@ namespace vcpkg
             Util::Enum::to_enum<CleanBuildtrees>(clean_after_build || clean_buildtrees_after_build),
             Util::Enum::to_enum<CleanPackages>(clean_after_build || clean_packages_after_build),
             Util::Enum::to_enum<CleanDownloads>(clean_after_build || clean_downloads_after_build),
-            download_tool,
             prohibit_backcompat_features ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow,
             keep_going,
         };
@@ -1143,7 +1138,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
-        if (auto manifest = paths.get_manifest().get())
+        if (manifest)
         {
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
@@ -1308,20 +1303,22 @@ namespace vcpkg
 #if defined(_WIN32)
         const auto maybe_common_triplet = Util::common_projection(
             action_plan.install_actions, [](const InstallPlanAction& to_install) { return to_install.spec.triplet(); });
-        if (maybe_common_triplet)
+        if (auto common_triplet = maybe_common_triplet.get())
         {
-            const auto& common_triplet = maybe_common_triplet.value_or_exit(VCPKG_LINE_INFO);
-            const auto maybe_common_arch = common_triplet.guess_architecture();
-            if (maybe_common_arch)
+            const auto maybe_common_arch = common_triplet->guess_architecture();
+            if (auto common_arch = maybe_common_arch.get())
             {
                 const auto maybe_vs_prompt = guess_visual_studio_prompt_target_architecture();
-                if (maybe_vs_prompt)
+                if (auto vs_prompt = maybe_vs_prompt.get())
                 {
-                    const auto common_arch = maybe_common_arch.value_or_exit(VCPKG_LINE_INFO);
-                    const auto vs_prompt = maybe_vs_prompt.value_or_exit(VCPKG_LINE_INFO);
-                    if (common_arch != vs_prompt)
+                    // There is no "Developer Command Prompt for ARM64EC". ARM64EC and ARM64 use the same developer
+                    // command prompt, and compiler toolset version. The only difference is adding a /arm64ec switch to
+                    // the build
+                    if (*common_arch != *vs_prompt &&
+                        !(*common_arch == CPUArchitecture::ARM64EC && *vs_prompt == CPUArchitecture::ARM64))
                     {
-                        msg::println_warning(msgVcpkgInVsPrompt, msg::value = vs_prompt, msg::triplet = common_triplet);
+                        msg::println_warning(
+                            msgVcpkgInVsPrompt, msg::value = *vs_prompt, msg::triplet = *common_triplet);
                     }
                 }
             }
@@ -1361,8 +1358,15 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache;
+        if (!only_downloads)
+        {
+            if (!binary_cache.install_providers(args, paths, out_sink))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(args,
                                                             paths,

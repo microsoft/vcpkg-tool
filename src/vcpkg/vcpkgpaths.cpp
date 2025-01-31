@@ -563,8 +563,6 @@ namespace vcpkg
             , m_global_config(bundle.read_only ? get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO) /
                                                      "vcpkg-configuration.json"
                                                : root / "vcpkg-configuration.json")
-            , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
-            , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
             , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
             , m_registries_git_trees(m_registries_cache / "git-trees")
@@ -645,8 +643,6 @@ namespace vcpkg
         }
 
         const Path m_global_config;
-        const Path m_config_dir;
-        const Path m_manifest_path;
         const Path m_registries_work_tree_dir;
         const Path m_registries_dot_git_dir;
         const Path m_registries_git_trees;
@@ -688,18 +684,16 @@ namespace vcpkg
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
 
-        const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
+        auto config_dir = m_pimpl->m_manifest_dir.empty() ? root : m_pimpl->m_manifest_dir;
+        const auto config_path = config_dir / "vcpkg-configuration.json";
         auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
         auto maybe_json_config =
             filesystem.exists(config_path, IgnoreErrors{})
                 ? parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, out_sink)
                 : nullopt;
 
-        m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
-                                                   m_pimpl->m_manifest_dir,
-                                                   std::move(maybe_json_config),
-                                                   m_pimpl->m_config_dir,
-                                                   *this);
+        m_pimpl->m_config = merge_validate_configs(
+            std::move(maybe_manifest_config), m_pimpl->m_manifest_dir, std::move(maybe_json_config), config_dir, *this);
         overlay_ports.overlay_ports = merge_overlays(m_pimpl->m_fs,
                                                      args.cli_overlay_ports,
                                                      args.env_overlay_ports,
@@ -1275,7 +1269,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
+    bool VcpkgPaths::manifest_mode_enabled() const { return m_pimpl->m_manifest_doc.has_value(); }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 

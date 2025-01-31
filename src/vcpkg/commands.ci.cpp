@@ -325,7 +325,6 @@ namespace vcpkg
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             BackcompatFeatures::Prohibit,
             KeepGoing::Yes,
         };
@@ -410,7 +409,12 @@ namespace vcpkg
             randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan =
             compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
-        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache;
+        if (!binary_cache.install_providers(args, paths, out_sink))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
         LocalizedString not_supported_regressions;

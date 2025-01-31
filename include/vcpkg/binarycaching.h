@@ -189,7 +189,8 @@ namespace vcpkg
     struct ReadOnlyBinaryCache
     {
         ReadOnlyBinaryCache() = default;
-        ReadOnlyBinaryCache(BinaryProviders&& providers);
+        ReadOnlyBinaryCache(const ReadOnlyBinaryCache&) = delete;
+        ReadOnlyBinaryCache& operator=(const ReadOnlyBinaryCache&) = delete;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
@@ -197,19 +198,17 @@ namespace vcpkg
 
         bool is_restored(const InstallPlanAction& ipa) const;
 
+        void install_read_provider(std::unique_ptr<IReadBinaryProvider>&& provider);
+
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(View<InstallPlanAction> actions);
 
     protected:
-        struct ReadOnlyBinaryCacheData
-        {
-            BinaryProviders m_config;
+        BinaryProviders m_config;
 
-            std::unordered_map<std::string, CacheStatus> m_status;
-        };
-        std::unique_ptr<ReadOnlyBinaryCacheData> data = std::make_unique<ReadOnlyBinaryCacheData>();
+        std::unordered_map<std::string, CacheStatus> m_status;
     };
 
     // compression and upload of binary cache entries happens on a single 'background' thread, `m_push_thread`
@@ -223,43 +222,36 @@ namespace vcpkg
     //   upload is no longer being actively touched by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
+        bool install_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& status_sink);
 
-        BinaryCache(const Filesystem& fs);
+        BinaryCache();
         BinaryCache(const BinaryCache&) = delete;
-        BinaryCache(BinaryCache&&) = default;
+        BinaryCache& operator=(const BinaryCache&) = delete;
         ~BinaryCache();
-
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
+        void push_success(const Filesystem& fs, CleanPackages clean_packages, const InstallPlanAction& action);
 
         void print_push_success_messages();
         void wait_for_async_complete_and_join();
 
     private:
-        BinaryCache(BinaryProviders&& providers, const Filesystem& fs);
         struct ActionToPush
         {
             BinaryPackageWriteInfo request;
             CleanPackages clean_after_push;
+            const Filesystem* fs;
         };
-        struct BinaryCacheData
-        {
-            BinaryCacheData(const Filesystem& fs, ReadOnlyBinaryCacheData* data);
-            const Filesystem& m_fs;
-            Optional<ZipTool> m_zip_tool;
-            bool m_needs_nuspec_data = false;
-            bool m_needs_zip_file = false;
 
-            BGMessageSink m_bg_msg_sink;
-            BackgroundWorkQueue<ActionToPush> m_actions_to_push;
-            std::atomic_int m_remaining_packages_to_push = 0;
-            std::thread m_push_thread;
+        ZipTool m_zip_tool;
+        bool m_needs_nuspec_data = false;
+        bool m_needs_zip_file = false;
 
-            void push_thread_main(ReadOnlyBinaryCacheData* ro_data);
-            void wait_for_async_complete_and_join();
-        };
-        std::unique_ptr<BinaryCacheData> bc_data;
+        BGMessageSink m_bg_msg_sink;
+        BackgroundWorkQueue<ActionToPush> m_actions_to_push;
+        std::atomic<int> m_remaining_packages_to_push = 0;
+        std::thread m_push_thread;
+
+        static void push_thread_main(BinaryCache* this_);
     };
 
     ExpectedL<AssetCachingSettings> parse_download_configuration(const Optional<std::string>& arg);

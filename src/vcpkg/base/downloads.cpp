@@ -597,7 +597,8 @@ namespace vcpkg
                                            const ReadOnlyFilesystem& fs,
                                            const SanitizedUrl& sanitized_url,
                                            const Path& downloaded_path,
-                                           StringView sha512)
+                                           StringView sha512,
+                                           std::string* out_sha512)
     {
         if (!std::all_of(sha512.begin(), sha512.end(), ParserBase::is_hex_digit_lower))
         {
@@ -610,6 +611,11 @@ namespace vcpkg
         {
             if (sha512 == *actual_hash)
             {
+                if (out_sha512)
+                {
+                    *out_sha512 = std::move(*actual_hash);
+                }
+
                 return true;
             }
 
@@ -620,6 +626,11 @@ namespace vcpkg
                                           msg::format(msgDownloadFailedHashMismatchExpectedHash, msg::sha = sha512)});
             context.report(DiagnosticLine{
                 DiagKind::Note, msg::format(msgDownloadFailedHashMismatchActualHash, msg::sha = *actual_hash)});
+
+            if (out_sha512)
+            {
+                *out_sha512 = std::move(*actual_hash);
+            }
         }
 
         return false;
@@ -629,11 +640,22 @@ namespace vcpkg
                                            const ReadOnlyFilesystem& fs,
                                            const SanitizedUrl& sanitized_url,
                                            const Path& downloaded_path,
-                                           Optional<StringView> maybe_sha512)
+                                           const StringView* maybe_sha512,
+                                           std::string* out_sha512)
     {
-        if (auto sha512 = maybe_sha512.get())
+        if (maybe_sha512)
         {
-            return check_downloaded_file_hash(context, fs, sanitized_url, downloaded_path, *sha512);
+            return check_downloaded_file_hash(context, fs, sanitized_url, downloaded_path, *maybe_sha512, out_sha512);
+        }
+
+        if (out_sha512)
+        {
+            auto maybe_actual_hash =
+                vcpkg::Hash::get_file_hash_required(context, fs, downloaded_path, Hash::Algorithm::Sha512);
+            if (auto actual_hash = maybe_actual_hash.get())
+            {
+                *out_sha512 = std::move(*actual_hash);
+            }
         }
 
         return true;
@@ -1081,7 +1103,8 @@ namespace vcpkg
                                                const SanitizedUrl& sanitized_url,
                                                View<std::string> headers,
                                                const Path& download_path,
-                                               const Optional<std::string>& maybe_sha512)
+                                               const StringView* maybe_sha512,
+                                               std::string* out_sha512)
     {
         auto download_path_part_path = download_path;
         download_path_part_path += ".";
@@ -1133,7 +1156,8 @@ namespace vcpkg
                         return DownloadPrognosis::NetworkErrorProxyMightHelp;
                     }
 
-                    if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512))
+                    if (!check_downloaded_file_hash(
+                            context, fs, sanitized_url, download_path_part_path, maybe_sha512, out_sha512))
                     {
                         return DownloadPrognosis::OtherError;
                     }
@@ -1225,7 +1249,7 @@ namespace vcpkg
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
-        if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512))
+        if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512, out_sha512))
         {
             return DownloadPrognosis::OtherError;
         }
@@ -1329,17 +1353,17 @@ namespace vcpkg
                                                              const Filesystem& fs,
                                                              const Path& download_path,
                                                              StringView target_filename,
-                                                             const Optional<std::string>& maybe_sha512)
+                                                             const StringView* maybe_sha512,
+                                                             std::string* out_sha512)
     {
         auto read_template = asset_cache_settings.m_read_url_template.get();
-        auto sha512 = maybe_sha512.get();
-        if (!read_template || !sha512)
+        if (!read_template || !maybe_sha512)
         {
             // can't use http asset caches when none are configured or we don't have a SHA
             return DownloadPrognosis::OtherError;
         }
 
-        auto raw_read_url = Strings::replace_all(*read_template, "<SHA>", *sha512);
+        auto raw_read_url = Strings::replace_all(*read_template, "<SHA>", *maybe_sha512);
         SanitizedUrl sanitized_read_url{raw_read_url, asset_cache_settings.m_secrets};
         context.statusln(msg::format(msgAssetCacheConsult, msg::path = target_filename, msg::url = sanitized_read_url));
         return try_download_file(context,
@@ -1349,7 +1373,8 @@ namespace vcpkg
                                  sanitized_read_url,
                                  asset_cache_settings.m_read_headers,
                                  download_path,
-                                 maybe_sha512);
+                                 maybe_sha512,
+                                 out_sha512);
     }
 
     static void report_script_while_command_line(DiagnosticContext& context, const std::string& raw_command)
@@ -1395,7 +1420,8 @@ namespace vcpkg
                                                               const std::vector<SanitizedUrl>& sanitized_urls,
                                                               const Path& download_path,
                                                               StringView target_filename,
-                                                              const Optional<std::string>& maybe_sha512)
+                                                              const StringView* maybe_sha512,
+                                                              std::string* out_sha512)
     {
         using Hash::HashPrognosis;
         auto script = asset_cache_settings.m_script.get();
@@ -1404,7 +1430,7 @@ namespace vcpkg
             return DownloadPrognosis::OtherError;
         }
 
-        if (raw_urls.empty() && !maybe_sha512.has_value())
+        if (raw_urls.empty() && !maybe_sha512)
         {
             Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -1418,9 +1444,13 @@ namespace vcpkg
             {
                 if (raw_urls.empty())
                 {
-                    context.report_error(msg::format(msgAssetCacheScriptNeedsUrl,
-                                                     msg::value = *script,
-                                                     msg::sha = maybe_sha512.value_or_exit(VCPKG_LINE_INFO)));
+                    if (!maybe_sha512)
+                    {
+                        Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
+                    context.report_error(
+                        msg::format(msgAssetCacheScriptNeedsUrl, msg::value = *script, msg::sha = *maybe_sha512));
                     return false;
                 }
 
@@ -1430,9 +1460,9 @@ namespace vcpkg
 
             if (key == "sha512")
             {
-                if (auto sha512 = maybe_sha512.get())
+                if (maybe_sha512)
                 {
-                    out.append(*sha512);
+                    out.append(maybe_sha512->data(), maybe_sha512->size());
                     return true;
                 }
 
@@ -1480,15 +1510,19 @@ namespace vcpkg
             return DownloadPrognosis::OtherError;
         }
 
-        auto sha512 = maybe_sha512.get();
-        if (sha512)
+        if (maybe_sha512)
         {
             auto hash_result = Hash::get_file_hash(context, fs, download_path_part_path, Hash::Algorithm::Sha512);
             switch (hash_result.prognosis)
             {
                 case HashPrognosis::Success:
-                    if (Strings::case_insensitive_ascii_equals(*sha512, hash_result.hash))
+                    if (Strings::case_insensitive_ascii_equals(*maybe_sha512, hash_result.hash))
                     {
+                        if (out_sha512)
+                        {
+                            *out_sha512 = std::move(hash_result.hash);
+                        }
+
                         fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
                         return DownloadPrognosis::Success;
                     }
@@ -1500,10 +1534,16 @@ namespace vcpkg
                         DiagKind::Note,
                         msg::format(msgAssetCacheScriptCommandLine).append_raw(": ").append_raw(*raw_command)});
                     context.report(DiagnosticLine{
-                        DiagKind::Note, msg::format(msgDownloadFailedHashMismatchExpectedHash, msg::sha = *sha512)});
+                        DiagKind::Note,
+                        msg::format(msgDownloadFailedHashMismatchExpectedHash, msg::sha = *maybe_sha512)});
                     context.report(DiagnosticLine{
                         DiagKind::Note,
                         msg::format(msgDownloadFailedHashMismatchActualHash, msg::sha = hash_result.hash)});
+                    if (out_sha512)
+                    {
+                        *out_sha512 = std::move(hash_result.hash);
+                    }
+
                     return DownloadPrognosis::OtherError;
                 case HashPrognosis::FileNotFound:
                     report_script_failed_to_make_file(context, *raw_command, download_path_part_path);
@@ -1533,10 +1573,17 @@ namespace vcpkg
                                                        const std::vector<SanitizedUrl>& sanitized_urls,
                                                        const Path& download_path,
                                                        StringView target_filename,
-                                                       const Optional<std::string>& maybe_sha512)
+                                                       const StringView* maybe_sha512,
+                                                       std::string* out_sha512)
     {
-        switch (download_file_azurl_asset_cache(
-            context, machine_readable_progress, asset_cache_settings, fs, download_path, target_filename, maybe_sha512))
+        switch (download_file_azurl_asset_cache(context,
+                                                machine_readable_progress,
+                                                asset_cache_settings,
+                                                fs,
+                                                download_path,
+                                                target_filename,
+                                                maybe_sha512,
+                                                out_sha512))
         {
             case DownloadPrognosis::Success: return DownloadPrognosis::Success;
             case DownloadPrognosis::OtherError:
@@ -1547,7 +1594,8 @@ namespace vcpkg
                                                         sanitized_urls,
                                                         download_path,
                                                         target_filename,
-                                                        maybe_sha512);
+                                                        maybe_sha512,
+                                                        out_sha512);
             case DownloadPrognosis::NetworkErrorProxyMightHelp: return DownloadPrognosis::NetworkErrorProxyMightHelp;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -1556,13 +1604,12 @@ namespace vcpkg
                                                          const Path& download_path,
                                                          StringView target_filename,
                                                          const AssetCachingSettings& asset_cache_settings,
-                                                         const Optional<std::string>& maybe_sha512)
+                                                         const StringView* maybe_sha512)
     {
-        auto hash = maybe_sha512.get();
         auto url_template = asset_cache_settings.m_write_url_template.get();
-        if (hash && url_template && !url_template->empty())
+        if (maybe_sha512 && url_template && !url_template->empty())
         {
-            auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", *hash);
+            auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", *maybe_sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
             context.statusln(msg::format(
                 msgDownloadSuccesfulUploading, msg::path = target_filename, msg::url = sanitized_upload_url));
@@ -1605,14 +1652,15 @@ namespace vcpkg
                                           maybe_sha512);
     }
 
-    bool download_file_asset_cached(DiagnosticContext& context,
-                                    MessageSink& machine_readable_progress,
-                                    const AssetCachingSettings& asset_cache_settings,
-                                    const Filesystem& fs,
-                                    View<std::string> raw_urls,
-                                    View<std::string> headers,
-                                    const Path& download_path,
-                                    const Optional<std::string>& maybe_sha512_mixed_case)
+    static bool download_file_asset_cached_sanitized_sha(DiagnosticContext& context,
+                                                         MessageSink& machine_readable_progress,
+                                                         const AssetCachingSettings& asset_cache_settings,
+                                                         const Filesystem& fs,
+                                                         View<std::string> raw_urls,
+                                                         View<std::string> headers,
+                                                         const Path& download_path,
+                                                         const StringView* maybe_sha512,
+                                                         std::string* out_sha512)
     {
         // Design goals:
         // * We want it to be clear when asset cache(s) are used. This means not printing the authoritative URL in a
@@ -1632,21 +1680,19 @@ namespace vcpkg
         //
         // See examples of console output in asset-caching.ps1
 
-        auto maybe_sha512 =
-            maybe_sha512_mixed_case.map([](const std::string& sha512) { return Strings::ascii_to_lowercase(sha512); });
         // Note: no secrets for the input URLs
         std::vector<SanitizedUrl> sanitized_urls =
             Util::fmap(raw_urls, [&](const std::string& url) { return SanitizedUrl{url, {}}; });
         const auto last_sanitized_url = sanitized_urls.end();
         const auto target_filename = download_path.filename();
         bool can_read_asset_cache = false;
-        if (asset_cache_settings.m_read_url_template.has_value() && maybe_sha512.has_value())
+        if (asset_cache_settings.m_read_url_template.has_value() && maybe_sha512)
         {
             // url asset cache reads need a hash
             can_read_asset_cache = true;
         }
 
-        if (asset_cache_settings.m_script.has_value() && (maybe_sha512.has_value() || !raw_urls.empty()))
+        if (asset_cache_settings.m_script.has_value() && (maybe_sha512 || !raw_urls.empty()))
         {
             // script asset cache reads need either a hash or a URL
             can_read_asset_cache = true;
@@ -1655,17 +1701,17 @@ namespace vcpkg
         if (raw_urls.empty())
         {
             // try to fetch from asset cache only without a known URL
-            if (auto sha512 = maybe_sha512.get())
+            if (maybe_sha512)
             {
                 if (can_read_asset_cache)
                 {
                     context.statusln(
-                        msg::format(msgDownloadingAssetShaToFile, msg::sha = *sha512, msg::path = download_path));
+                        msg::format(msgDownloadingAssetShaToFile, msg::sha = *maybe_sha512, msg::path = download_path));
                 }
                 else
                 {
                     context.report_error(msg::format(
-                        msgDownloadingAssetShaWithoutAssetCache, msg::sha = *sha512, msg::path = download_path));
+                        msgDownloadingAssetShaWithoutAssetCache, msg::sha = *maybe_sha512, msg::path = download_path));
                     return false;
                 }
             }
@@ -1695,7 +1741,8 @@ namespace vcpkg
                                                                        sanitized_urls,
                                                                        download_path,
                                                                        target_filename,
-                                                                       maybe_sha512)))
+                                                                       maybe_sha512,
+                                                                       out_sha512)))
         {
             asset_cache_attempt_context.commit();
             if (raw_urls.empty())
@@ -1719,8 +1766,12 @@ namespace vcpkg
         if (raw_urls.empty())
         {
             asset_cache_attempt_context.commit();
-            context.report_error(
-                msg::format(msgAssetCacheMissNoUrls, msg::sha = maybe_sha512.value_or_exit(VCPKG_LINE_INFO)));
+            if (!maybe_sha512)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            context.report_error(msg::format(msgAssetCacheMissNoUrls, msg::sha = *maybe_sha512));
             maybe_report_proxy_might_help(context, asset_cache_prognosis);
             return false;
         }
@@ -1763,7 +1814,8 @@ namespace vcpkg
                                                                *first_sanitized_url,
                                                                headers,
                                                                download_path,
-                                                               maybe_sha512)))
+                                                               maybe_sha512,
+                                                               out_sha512)))
         {
             asset_cache_attempt_context.handle();
             authoritative_attempt_context.handle();
@@ -1783,7 +1835,8 @@ namespace vcpkg
                                                                    *first_sanitized_url,
                                                                    headers,
                                                                    download_path,
-                                                                   maybe_sha512)))
+                                                                   maybe_sha512,
+                                                                   out_sha512)))
             {
                 asset_cache_attempt_context.handle();
                 authoritative_attempt_context.handle();
@@ -1808,6 +1861,63 @@ namespace vcpkg
         authoritative_attempt_context.commit();
         maybe_report_proxy_might_help(context, authoritative_prognosis);
         return false;
+    }
+
+    bool download_file_asset_cached(DiagnosticContext& context,
+                                    MessageSink& machine_readable_progress,
+                                    const AssetCachingSettings& asset_cache_settings,
+                                    const Filesystem& fs,
+                                    View<std::string> raw_urls,
+                                    View<std::string> headers,
+                                    const Path& download_path,
+                                    const Optional<std::string>& maybe_sha512_mixed_case)
+    {
+        if (auto sha512_mixed_case = maybe_sha512_mixed_case.get())
+        {
+            static constexpr StringLiteral all_zero_sha =
+                "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+                "00000000000000000000000000";
+            if (*sha512_mixed_case == all_zero_sha)
+            {
+                std::string actual_sha512;
+                if (download_file_asset_cached_sanitized_sha(context,
+                                                             machine_readable_progress,
+                                                             asset_cache_settings,
+                                                             fs,
+                                                             raw_urls,
+                                                             headers,
+                                                             download_path,
+                                                             nullptr,
+                                                             &actual_sha512))
+                {
+                    context.report_error(msg::format(msgDownloadFailedHashMismatchZero, msg::sha = actual_sha512));
+                }
+
+                return false;
+            }
+
+            auto sha512 = Strings::ascii_to_lowercase(*sha512_mixed_case);
+            StringView sha512sv = sha512;
+            return download_file_asset_cached_sanitized_sha(context,
+                                                            machine_readable_progress,
+                                                            asset_cache_settings,
+                                                            fs,
+                                                            raw_urls,
+                                                            headers,
+                                                            download_path,
+                                                            &sha512sv,
+                                                            nullptr);
+        }
+
+        return download_file_asset_cached_sanitized_sha(context,
+                                                        machine_readable_progress,
+                                                        asset_cache_settings,
+                                                        fs,
+                                                        raw_urls,
+                                                        headers,
+                                                        download_path,
+                                                        nullptr,
+                                                        nullptr);
     }
 
     bool store_to_asset_cache(DiagnosticContext& context,
