@@ -172,7 +172,7 @@ namespace vcpkg
                                         msg::path = spec_name);
         }
 
-        BinaryCache binary_cache;
+        BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
@@ -184,7 +184,7 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         switch (result.code)
         {
-            case BuildResult::Succeeded: binary_cache.push_success(fs, build_options.clean_packages, *action); return 0;
+            case BuildResult::Succeeded: binary_cache.push_success(build_options.clean_packages, *action); return 0;
             case BuildResult::CascadedDueToMissingDependencies:
             {
                 LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);

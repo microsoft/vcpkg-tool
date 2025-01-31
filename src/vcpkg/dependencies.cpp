@@ -660,12 +660,8 @@ namespace vcpkg
 
     bool RemovePlan::has_non_user_requested() const
     {
-        constexpr struct
-        {
-            bool operator()(const RemovePlanAction& a) const { return a.request_type != RequestType::USER_REQUESTED; }
-        } non_user_requested;
-
-        return Util::find_if(remove, non_user_requested) != remove.end();
+        return Util::any_of(remove,
+                             [](const RemovePlanAction& a) { return a.request_type != RequestType::USER_REQUESTED; });
     }
 
     RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)
@@ -1244,9 +1240,9 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
-            Util::find_if(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
+            Util::any_of(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
                 return action.request_type != RequestType::USER_REQUESTED;
-            }) != action_plan.install_actions.cend();
+            });
 
         for (auto&& remove_action : action_plan.remove_actions)
         {

@@ -249,7 +249,7 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        BinaryCache binary_cache;
+        BinaryCache binary_cache(fs);
         if (build_options.only_downloads == OnlyDownloads::No)
         {
             if (!binary_cache.install_providers(args, paths, out_sink))

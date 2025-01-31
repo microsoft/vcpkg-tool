@@ -219,19 +219,19 @@ namespace vcpkg
     //   3. Sending any replies from the background thread through `m_bg_msg_sink`
     //   4. Ensuring any supporting data, such as tool exes, is provided before the background thread is started.
     //   5. Ensuring that work is not submitted to the background thread until the corresponding `packages` directory to
-    //   upload is no longer being actively touched by the foreground thread.
+    //   upload is no longer being actively written by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
         bool install_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& status_sink);
 
-        BinaryCache();
+        explicit BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
         BinaryCache& operator=(const BinaryCache&) = delete;
         ~BinaryCache();
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(const Filesystem& fs, CleanPackages clean_packages, const InstallPlanAction& action);
+        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
-        void print_push_success_messages();
+        void print_updates();
         void wait_for_async_complete_and_join();
 
     private:
@@ -239,19 +239,21 @@ namespace vcpkg
         {
             BinaryPackageWriteInfo request;
             CleanPackages clean_after_push;
-            const Filesystem* fs;
         };
 
         ZipTool m_zip_tool;
         bool m_needs_nuspec_data = false;
         bool m_needs_zip_file = false;
 
+        const Filesystem& m_fs;
+
         BGMessageSink m_bg_msg_sink;
         BackgroundWorkQueue<ActionToPush> m_actions_to_push;
-        std::atomic<int> m_remaining_packages_to_push = 0;
+        std::atomic<int> m_total_packages_to_push = 0;
+        std::atomic<int> m_total_packages_pushed = 0;
         std::thread m_push_thread;
 
-        static void push_thread_main(BinaryCache* this_);
+        void push_thread_main();
     };
 
     ExpectedL<AssetCachingSettings> parse_download_configuration(const Optional<std::string>& arg);

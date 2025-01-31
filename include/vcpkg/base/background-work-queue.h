@@ -20,16 +20,16 @@ struct BackgroundWorkQueue
         std::unique_lock<std::mutex> lock(m_mtx);
         for (;;)
         {
-            if (!m_running)
-            {
-                return false;
-            }
-
             if (!m_tasks.empty())
             {
                 out.clear();
                 swap(out, m_tasks);
                 return true;
+            }
+
+            if (!m_running)
+            {
+                return false;
             }
 
             m_cv.wait(lock);
@@ -41,12 +41,6 @@ struct BackgroundWorkQueue
         std::lock_guard<std::mutex> lock(m_mtx);
         m_running = false;
         m_cv.notify_all();
-    }
-
-    bool stopped()
-    {
-        std::lock_guard<std::mutex> lock(m_mtx);
-        return !m_running;
     }
 
 private:

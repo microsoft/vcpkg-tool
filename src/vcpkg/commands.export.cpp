@@ -617,9 +617,9 @@ namespace vcpkg
         print_export_plan(group_by_plan_type);
 
         const bool has_non_user_requested_packages =
-            Util::find_if(export_plan, [](const ExportPlanAction& package) -> bool {
+            Util::any_of(export_plan, [](const ExportPlanAction& package) -> bool {
                 return package.request_type != RequestType::USER_REQUESTED;
-            }) != export_plan.cend();
+            });
 
         if (has_non_user_requested_packages)
         {

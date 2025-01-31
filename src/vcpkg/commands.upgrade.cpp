@@ -202,7 +202,7 @@ namespace vcpkg
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
-        BinaryCache binary_cache;
+        BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);

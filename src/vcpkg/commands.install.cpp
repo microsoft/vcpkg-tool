@@ -396,7 +396,7 @@ namespace vcpkg
                     case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                binary_cache.push_success(fs, build_options.clean_packages, action);
+                binary_cache.push_success(build_options.clean_packages, action);
             }
             else
             {
@@ -597,7 +597,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.install_actions)
         {
-            binary_cache.print_push_success_messages();
+            binary_cache.print_updates();
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
@@ -1358,7 +1358,7 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        BinaryCache binary_cache;
+        BinaryCache binary_cache(fs);
         if (!only_downloads)
         {
             if (!binary_cache.install_providers(args, paths, out_sink))

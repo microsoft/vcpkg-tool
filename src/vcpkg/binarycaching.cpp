@@ -2431,18 +2431,32 @@ namespace vcpkg
 
         return true;
     }
-    BinaryCache::BinaryCache() : m_bg_msg_sink(stdout_sink), m_push_thread(push_thread_main, this) { }
+    BinaryCache::BinaryCache(const Filesystem& fs)
+        : m_fs(fs), m_bg_msg_sink(stdout_sink), m_push_thread(&BinaryCache::push_thread_main, this)
+    {
+    }
     BinaryCache::~BinaryCache() { wait_for_async_complete_and_join(); }
 
-    void BinaryCache::push_success(const Filesystem& fs, CleanPackages clean_packages, const InstallPlanAction& action)
+    void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
         if (auto abi = action.package_abi().get())
         {
-            bool restored = m_status[*abi].is_restored();
-            // Purge all status information on push_success (cache invalidation)
-            // - push_success may delete packages/ (invalidate restore)
-            // - push_success may make the package available from providers (invalidate unavailable)
-            m_status.erase(*abi);
+            bool restored;
+            auto it = m_status.find(*abi);
+            if (it == m_status.end())
+            {
+                restored = false;
+            }
+            else
+            {
+                restored = it->second.is_restored();
+
+                // Purge all status information on push_success (cache invalidation)
+                // - push_success may delete packages/ (invalidate restore)
+                // - push_success may make the package available from providers (invalidate unavailable)
+                m_status.erase(it);
+            }
+
             if (!restored && !m_config.write.empty())
             {
                 ElapsedTimer timer;
@@ -2454,27 +2468,26 @@ namespace vcpkg
                         generate_nuspec(request.package_dir, action, m_config.nuget_prefix, m_config.nuget_repo);
                 }
 
-                m_remaining_packages_to_push++;
-                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages, &fs});
+                m_total_packages_to_push++;
+                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
                 return;
             }
         }
 
         if (clean_packages == CleanPackages::Yes)
         {
-            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+            m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
     }
 
-    void BinaryCache::print_push_success_messages() { m_bg_msg_sink.print_published(); }
+    void BinaryCache::print_updates() { m_bg_msg_sink.print_published(); }
 
     void BinaryCache::wait_for_async_complete_and_join()
     {
-        bool have_remaining_packages = m_remaining_packages_to_push > 0;
-        if (have_remaining_packages)
+        m_bg_msg_sink.print_published();
+        if (m_total_packages_pushed.load() < m_total_packages_to_push.load())
         {
-            m_bg_msg_sink.print_published();
-            msg::println(msgWaitUntilPackagesUploaded, msg::count = m_remaining_packages_to_push.load());
+            msg::println(msgWaitUntilPackagesUploaded, msg::count = m_total_packages_to_push.load());
         }
         m_bg_msg_sink.publish_directly_to_out_sink();
         m_actions_to_push.stop();
@@ -2484,54 +2497,48 @@ namespace vcpkg
         }
     }
 
-    void BinaryCache::push_thread_main(BinaryCache* this_)
+    void BinaryCache::push_thread_main()
     {
         std::vector<ActionToPush> my_tasks;
-        int count_pushed = 0;
-        while (this_->m_actions_to_push.get_work(my_tasks))
+        while (m_actions_to_push.get_work(my_tasks))
         {
             for (auto& action_to_push : my_tasks)
             {
                 ElapsedTimer timer;
-                if (this_->m_needs_zip_file)
+                if (m_needs_zip_file)
                 {
                     Path zip_path = action_to_push.request.package_dir + ".zip";
-                    PrintingDiagnosticContext pdc{this_->m_bg_msg_sink};
-                    if (this_->m_zip_tool.compress_directory_to_zip(
-                            pdc, *action_to_push.fs, action_to_push.request.package_dir, zip_path))
+                    PrintingDiagnosticContext pdc{m_bg_msg_sink};
+                    if (m_zip_tool.compress_directory_to_zip(pdc, m_fs, action_to_push.request.package_dir, zip_path))
                     {
                         action_to_push.request.zip_path = std::move(zip_path);
                     }
                 }
 
                 size_t num_destinations = 0;
-                for (auto&& provider : this_->m_config.write)
+                for (auto&& provider : m_config.write)
                 {
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
                         num_destinations += provider->push_success(action_to_push.request, m_bg_msg_sink);
                     }
                 }
+
                 if (action_to_push.request.zip_path)
                 {
-                    action_to_push.fs->remove(*action_to_push.request.zip_path.get(), IgnoreErrors{});
+                    m_fs.remove(*action_to_push.request.zip_path.get(), IgnoreErrors{});
                 }
 
-                auto status_line = msg::format(
-                    msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
-                this_->m_remaining_packages_to_push.fetch_sub(1);
-                if (this_->m_actions_to_push.stopped())
-                {
-                    count_pushed++;
-                    status_line.append_raw(fmt::format(
-                        " ({}/{})", count_pushed, count_pushed + this_->m_remaining_packages_to_push.load()));
-                }
-
-                this_->m_bg_msg_sink.println(std::move(status_line));
                 if (action_to_push.clean_after_push == CleanPackages::Yes)
                 {
-                    action_to_push.fs->remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
+                    m_fs.remove_all(action_to_push.request.package_dir, VCPKG_LINE_INFO);
                 }
+
+                m_bg_msg_sink.println(
+                    msg::format(
+                        msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed())
+                        .append_raw(
+                            fmt::format(" ({}/{})", ++(m_total_packages_pushed), m_total_packages_to_push.load())));
             }
         }
     }
