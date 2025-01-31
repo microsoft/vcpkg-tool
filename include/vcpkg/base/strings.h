@@ -198,6 +198,8 @@ namespace vcpkg::Strings
 
     const char* find_first_of(StringView searched, StringView candidates);
 
+    [[nodiscard]] std::string::size_type find_last(StringView searched, char c);
+
     [[nodiscard]] std::vector<StringView> find_all_enclosed(StringView input,
                                                             StringView left_delim,
                                                             StringView right_delim);

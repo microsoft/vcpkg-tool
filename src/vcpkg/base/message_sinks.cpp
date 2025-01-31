@@ -1,5 +1,6 @@
 #include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/message_sinks.h>
+#include <vcpkg/base/strings.h>
 
 namespace
 {
@@ -278,5 +279,66 @@ namespace vcpkg
     {
         m_first.println(color, line);
         m_second.println(color, std::move(line));
+    }
+
+    void BGMessageSink::println(const MessageLine& line)
+    {
+        std::lock_guard<std::mutex> lk(m_published_lock);
+        if (m_print_directly_to_out_sink)
+        {
+            out_sink.println(line);
+            return;
+        }
+
+        m_published.push_back(line);
+    }
+
+    void BGMessageSink::println(MessageLine&& line)
+    {
+        std::lock_guard<std::mutex> lk(m_published_lock);
+        if (m_print_directly_to_out_sink)
+        {
+            out_sink.println(std::move(line));
+            return;
+        }
+
+        m_published.push_back(std::move(line));
+    }
+
+    void BGMessageSink::print_published()
+    {
+        std::vector<MessageLine> tmp;
+        for (;;)
+        {
+            {
+                std::lock_guard<std::mutex> lk(m_published_lock);
+                swap(tmp, m_published);
+            }
+
+            if (tmp.empty())
+            {
+                return;
+            }
+
+            for (auto&& line : tmp)
+            {
+                out_sink.println(std::move(line));
+            }
+
+            tmp.clear();
+        }
+    }
+
+    void BGMessageSink::publish_directly_to_out_sink()
+    {
+        std::lock_guard<std::mutex> lk(m_published_lock);
+
+        m_print_directly_to_out_sink = true;
+        for (auto&& msg : m_published)
+        {
+            out_sink.println(std::move(msg));
+        }
+
+        m_published.clear();
     }
 }

@@ -4,6 +4,7 @@
 
 #include <vcpkg/base/messages.h>
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -78,5 +79,27 @@ namespace vcpkg
         virtual void println(LocalizedString&& line) override;
         virtual void println(Color color, const LocalizedString& line) override;
         virtual void println(Color color, LocalizedString&& line) override;
+    };
+
+    struct BGMessageSink final : MessageSink
+    {
+        BGMessageSink(MessageSink& out_sink) : out_sink(out_sink) { }
+        ~BGMessageSink() { publish_directly_to_out_sink(); }
+        // must be called from producer
+        virtual void println(const MessageLine& line) override;
+        virtual void println(MessageLine&& line) override;
+        using MessageSink::println;
+
+        // must be called from consumer (synchronizer of out)
+        void print_published();
+
+        void publish_directly_to_out_sink();
+
+    private:
+        MessageSink& out_sink;
+
+        std::mutex m_published_lock;
+        std::vector<MessageLine> m_published;
+        bool m_print_directly_to_out_sink = false;
     };
 }

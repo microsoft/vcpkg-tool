@@ -268,6 +268,7 @@ namespace vcpkg
             summary.print_failed();
             if (build_options.only_downloads == OnlyDownloads::No)
             {
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -299,6 +300,7 @@ namespace vcpkg
             fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
         }
 
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
