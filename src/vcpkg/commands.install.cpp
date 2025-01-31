@@ -396,7 +396,7 @@ namespace vcpkg
                     case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                binary_cache.push_success(build_options.clean_packages, action);
+                binary_cache.push_success(fs, build_options.clean_packages, action);
             }
             else
             {
@@ -1356,8 +1356,15 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache;
+        if (!only_downloads)
+        {
+            if (!binary_cache.install_providers(args, paths, out_sink))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(args,
                                                             paths,

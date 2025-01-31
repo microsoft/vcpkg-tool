@@ -185,14 +185,13 @@ namespace vcpkg
 
     struct ReadOnlyBinaryCache
     {
-        ReadOnlyBinaryCache() = default;
-        ReadOnlyBinaryCache(BinaryProviders&& providers);
-
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
         void fetch(View<InstallPlanAction> actions);
 
         bool is_restored(const InstallPlanAction& ipa) const;
+
+        void install_read_provider(std::unique_ptr<IReadBinaryProvider>&& provider);
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
@@ -207,20 +206,13 @@ namespace vcpkg
 
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
-
-        BinaryCache(const Filesystem& fs);
-        BinaryCache(const BinaryCache&) = delete;
-        BinaryCache(BinaryCache&&) = default;
+        bool install_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& status_sink);
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
-        void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
+        void push_success(const Filesystem& fs, CleanPackages clean_packages, const InstallPlanAction& action);
 
     private:
-        BinaryCache(BinaryProviders&& providers, const Filesystem& fs);
-
-        const Filesystem& m_fs;
-        Optional<ZipTool> m_zip_tool;
+        ZipTool m_zip_tool;
         bool m_needs_nuspec_data = false;
         bool m_needs_zip_file = false;
     };

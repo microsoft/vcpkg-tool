@@ -919,7 +919,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
-DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),

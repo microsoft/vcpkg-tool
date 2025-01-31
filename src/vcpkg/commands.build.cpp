@@ -129,7 +129,8 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
-        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+        auto& fs = paths.get_filesystem();
+        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,
@@ -171,14 +172,19 @@ namespace vcpkg
                                         msg::path = spec_name);
         }
 
-        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache;
+        if (!binary_cache.install_providers(args, paths, out_sink))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         const ElapsedTimer build_timer;
         const auto result =
             build_package(args, paths, host_triplet, build_options, *action, build_logs_recorder, status_db);
         msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
         switch (result.code)
         {
-            case BuildResult::Succeeded: binary_cache.push_success(build_options.clean_packages, *action); return 0;
+            case BuildResult::Succeeded: binary_cache.push_success(fs, build_options.clean_packages, *action); return 0;
             case BuildResult::CascadedDueToMissingDependencies:
             {
                 LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);

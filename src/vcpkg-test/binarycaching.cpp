@@ -327,9 +327,8 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryProviders providers;
-    providers.read.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
-    ReadOnlyBinaryCache uut(std::move(providers));
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(std::make_unique<KnowNothingBinaryProvider>());
 
     // create an action plan with an action without a package ABI set
     auto pghs = Paragraphs::parse_paragraphs(R"(

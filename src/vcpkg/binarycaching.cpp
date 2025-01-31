@@ -2106,215 +2106,6 @@ namespace vcpkg
                 get_environment_variable(EnvironmentVariableGitHubSha).value_or("")};
     }
 
-    static ExpectedL<BinaryProviders> make_binary_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
-    {
-        BinaryProviders ret;
-        if (args.binary_caching_enabled())
-        {
-            if (Debug::g_debugging)
-            {
-                const auto& maybe_cachepath = default_cache_path();
-                if (const auto cachepath = maybe_cachepath.get())
-                {
-                    Debug::print("Default binary cache path is: ", *cachepath, '\n');
-                }
-                else
-                {
-                    Debug::print("No binary cache path. Reason: ", maybe_cachepath.error(), '\n');
-                }
-            }
-
-            if (args.env_binary_sources.has_value())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::VcpkgBinarySources);
-            }
-
-            if (args.cli_binary_sources.size() != 0)
-            {
-                get_global_metrics_collector().track_define(DefineMetric::BinaryCachingSource);
-            }
-
-            auto sRawHolder =
-                parse_binary_provider_configs(args.env_binary_sources.value_or(""), args.cli_binary_sources);
-            if (!sRawHolder)
-            {
-                return std::move(sRawHolder).error();
-            }
-            auto& s = *sRawHolder.get();
-
-            static const std::map<StringLiteral, DefineMetric> metric_names{
-                {"aws", DefineMetric::BinaryCachingAws},
-                {"azblob", DefineMetric::BinaryCachingAzBlob},
-                {"cos", DefineMetric::BinaryCachingCos},
-                {"default", DefineMetric::BinaryCachingDefault},
-                {"files", DefineMetric::BinaryCachingFiles},
-                {"gcs", DefineMetric::BinaryCachingGcs},
-                {"http", DefineMetric::BinaryCachingHttp},
-                {"nuget", DefineMetric::BinaryCachingNuget},
-                {"upkg", DefineMetric::BinaryCachingUpkg},
-            };
-
-            MetricsSubmission metrics;
-            for (const auto& cache_provider : s.binary_cache_providers)
-            {
-                auto it = metric_names.find(cache_provider);
-                if (it != metric_names.end())
-                {
-                    metrics.track_define(it->second);
-                }
-            }
-
-            get_global_metrics_collector().track_submission(std::move(metrics));
-
-            s.nuget_prefix = args.nuget_id_prefix.value_or("");
-            if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
-            ret.nuget_prefix = s.nuget_prefix;
-
-            s.use_nuget_cache = args.use_nuget_cache.value_or(false);
-
-            ret.nuget_repo = get_nuget_repo_info_from_env(args);
-
-            auto& fs = paths.get_filesystem();
-            auto& tools = paths.get_tool_cache();
-            const auto& buildtrees = paths.buildtrees();
-
-            ret.nuget_prefix = s.nuget_prefix;
-
-            std::shared_ptr<const GcsStorageTool> gcs_tool;
-            if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
-            {
-                gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
-            }
-            std::shared_ptr<const AwsStorageTool> aws_tool;
-            if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
-            {
-                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
-            }
-            std::shared_ptr<const CosStorageTool> cos_tool;
-            if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
-            {
-                cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
-            }
-
-            if (s.gha_read || s.gha_write)
-            {
-                if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
-                    return msg::format_error(msgGHAParametersMissing, msg::url = docs::binarycaching_gha_url);
-            }
-
-            if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
-            {
-                auto maybe_zip_tool = ZipTool::make(tools, out_sink);
-                if (!maybe_zip_tool.has_value())
-                {
-                    return std::move(maybe_zip_tool).error();
-                }
-                const auto& zip_tool = *maybe_zip_tool.get();
-
-                for (auto&& dir : s.archives_to_read)
-                {
-                    ret.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
-                }
-
-                for (auto&& url : s.url_templates_to_get)
-                {
-                    ret.read.push_back(
-                        std::make_unique<HttpGetBinaryProvider>(zip_tool, fs, buildtrees, std::move(url), s.secrets));
-                }
-
-                for (auto&& prefix : s.gcs_read_prefixes)
-                {
-                    ret.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
-                }
-
-                for (auto&& prefix : s.aws_read_prefixes)
-                {
-                    ret.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
-                }
-
-                for (auto&& prefix : s.cos_read_prefixes)
-                {
-                    ret.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
-                }
-
-                if (s.gha_read)
-                {
-                    const auto& url = *args.actions_cache_url.get();
-                    const auto& token = *args.actions_runtime_token.get();
-                    ret.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
-                }
-            }
-            if (!s.archives_to_write.empty())
-            {
-                ret.write.push_back(std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
-            }
-            if (!s.url_templates_to_put.empty())
-            {
-                ret.write.push_back(
-                    std::make_unique<HTTPPutBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
-            }
-            if (!s.gcs_write_prefixes.empty())
-            {
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.gcs_write_prefixes), gcs_tool));
-            }
-            if (!s.aws_write_prefixes.empty())
-            {
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.aws_write_prefixes), aws_tool));
-            }
-            if (!s.cos_write_prefixes.empty())
-            {
-                ret.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
-            }
-            if (s.gha_write)
-            {
-                const auto& url = *args.actions_cache_url.get();
-                const auto& token = *args.actions_runtime_token.get();
-                ret.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
-            }
-
-            if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
-                !s.configs_to_write.empty())
-            {
-                NugetBaseBinaryProvider nuget_base(
-                    fs, NuGetTool(tools, out_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
-                if (!s.sources_to_read.empty())
-                    ret.read.push_back(
-                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
-                for (auto&& config : s.configs_to_read)
-                    ret.read.push_back(
-                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_configfile_arg(config)));
-                if (!s.sources_to_write.empty() || !s.configs_to_write.empty())
-                {
-                    ret.write.push_back(std::make_unique<NugetBinaryPushProvider>(
-                        nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
-                }
-            }
-
-            if (!s.upkg_templates_to_get.empty())
-            {
-                for (auto&& src : s.upkg_templates_to_get)
-                {
-                    ret.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
-                }
-            }
-            if (!s.upkg_templates_to_put.empty())
-            {
-                ret.write.push_back(
-                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
-            }
-        }
-        return std::move(ret);
-    }
-
-    ReadOnlyBinaryCache::ReadOnlyBinaryCache(BinaryProviders&& providers) : m_config(std::move(providers)) { }
-
     void ReadOnlyBinaryCache::fetch(View<InstallPlanAction> actions)
     {
         std::vector<const InstallPlanAction*> action_ptrs;
@@ -2370,6 +2161,11 @@ namespace vcpkg
         return false;
     }
 
+    void ReadOnlyBinaryCache::install_read_provider(std::unique_ptr<IReadBinaryProvider>&& provider)
+    {
+        m_config.read.push_back(std::move(provider));
+    }
+
     std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<InstallPlanAction> actions)
     {
         std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const auto& action) {
@@ -2417,36 +2213,226 @@ namespace vcpkg
         });
     }
 
-    BinaryCache::BinaryCache(const Filesystem& fs) : m_fs(fs) { }
-
-    ExpectedL<BinaryCache> BinaryCache::make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink)
+    bool BinaryCache::install_providers(const VcpkgCmdArguments& args,
+                                        const VcpkgPaths& paths,
+                                        MessageSink& status_sink)
     {
-        return make_binary_providers(args, paths).then([&](BinaryProviders&& p) -> ExpectedL<BinaryCache> {
-            BinaryCache b(std::move(p), paths.get_filesystem());
-            b.m_needs_nuspec_data = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
-            b.m_needs_zip_file = Util::any_of(b.m_config.write, [](auto&& p) { return p->needs_zip_file(); });
-            if (b.m_needs_zip_file)
+        if (args.binary_caching_enabled())
+        {
+            if (Debug::g_debugging)
             {
-                auto maybe_zt = ZipTool::make(paths.get_tool_cache(), sink);
-                if (auto z = maybe_zt.get())
+                const auto& maybe_cachepath = default_cache_path();
+                if (const auto cachepath = maybe_cachepath.get())
                 {
-                    b.m_zip_tool.emplace(std::move(*z));
+                    Debug::print("Default binary cache path is: ", *cachepath, '\n');
                 }
                 else
                 {
-                    return std::move(maybe_zt).error();
+                    Debug::print("No binary cache path. Reason: ", maybe_cachepath.error(), '\n');
                 }
             }
-            return std::move(b);
-        });
+
+            if (args.env_binary_sources.has_value())
+            {
+                get_global_metrics_collector().track_define(DefineMetric::VcpkgBinarySources);
+            }
+
+            if (args.cli_binary_sources.size() != 0)
+            {
+                get_global_metrics_collector().track_define(DefineMetric::BinaryCachingSource);
+            }
+
+            auto sRawHolder =
+                parse_binary_provider_configs(args.env_binary_sources.value_or(""), args.cli_binary_sources);
+            if (!sRawHolder)
+            {
+                status_sink.println(Color::error, std::move(sRawHolder).error());
+                return false;
+            }
+            auto& s = *sRawHolder.get();
+
+            static const std::map<StringLiteral, DefineMetric> metric_names{
+                {"aws", DefineMetric::BinaryCachingAws},
+                {"azblob", DefineMetric::BinaryCachingAzBlob},
+                {"cos", DefineMetric::BinaryCachingCos},
+                {"default", DefineMetric::BinaryCachingDefault},
+                {"files", DefineMetric::BinaryCachingFiles},
+                {"gcs", DefineMetric::BinaryCachingGcs},
+                {"http", DefineMetric::BinaryCachingHttp},
+                {"nuget", DefineMetric::BinaryCachingNuget},
+                {"upkg", DefineMetric::BinaryCachingUpkg},
+            };
+
+            MetricsSubmission metrics;
+            for (const auto& cache_provider : s.binary_cache_providers)
+            {
+                auto it = metric_names.find(cache_provider);
+                if (it != metric_names.end())
+                {
+                    metrics.track_define(it->second);
+                }
+            }
+
+            get_global_metrics_collector().track_submission(std::move(metrics));
+
+            s.nuget_prefix = args.nuget_id_prefix.value_or("");
+            if (!s.nuget_prefix.empty()) s.nuget_prefix.push_back('_');
+            m_config.nuget_prefix = s.nuget_prefix;
+
+            s.use_nuget_cache = args.use_nuget_cache.value_or(false);
+
+            m_config.nuget_repo = get_nuget_repo_info_from_env(args);
+
+            auto& fs = paths.get_filesystem();
+            auto& tools = paths.get_tool_cache();
+            const auto& buildtrees = paths.buildtrees();
+
+            m_config.nuget_prefix = s.nuget_prefix;
+
+            std::shared_ptr<const GcsStorageTool> gcs_tool;
+            if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
+            {
+                gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
+            }
+            std::shared_ptr<const AwsStorageTool> aws_tool;
+            if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
+            {
+                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
+            }
+            std::shared_ptr<const CosStorageTool> cos_tool;
+            if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
+            {
+                cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
+            }
+
+            if (s.gha_read || s.gha_write)
+            {
+                if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
+                {
+                    status_sink.println(
+                        Color::error,
+                        msg::format_error(msgGHAParametersMissing, msg::url = docs::binarycaching_gha_url));
+                    return false;
+                }
+            }
+
+            if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
+            {
+                ZipTool zip_tool;
+                zip_tool.setup(tools, out_sink);
+                for (auto&& dir : s.archives_to_read)
+                {
+                    m_config.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
+                }
+
+                for (auto&& url : s.url_templates_to_get)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<HttpGetBinaryProvider>(zip_tool, fs, buildtrees, std::move(url), s.secrets));
+                }
+
+                for (auto&& prefix : s.gcs_read_prefixes)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
+                }
+
+                for (auto&& prefix : s.aws_read_prefixes)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
+                }
+
+                for (auto&& prefix : s.cos_read_prefixes)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
+                }
+
+                if (s.gha_read)
+                {
+                    const auto& url = *args.actions_cache_url.get();
+                    const auto& token = *args.actions_runtime_token.get();
+                    m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
+                }
+            }
+            if (!s.archives_to_write.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
+            }
+            if (!s.url_templates_to_put.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<HTTPPutBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
+            }
+            if (!s.gcs_write_prefixes.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.gcs_write_prefixes), gcs_tool));
+            }
+            if (!s.aws_write_prefixes.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.aws_write_prefixes), aws_tool));
+            }
+            if (!s.cos_write_prefixes.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
+            }
+            if (s.gha_write)
+            {
+                const auto& url = *args.actions_cache_url.get();
+                const auto& token = *args.actions_runtime_token.get();
+                m_config.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
+            }
+
+            if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
+                !s.configs_to_write.empty())
+            {
+                NugetBaseBinaryProvider nuget_base(
+                    fs, NuGetTool(tools, out_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
+                if (!s.sources_to_read.empty())
+                    m_config.read.push_back(
+                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
+                for (auto&& config : s.configs_to_read)
+                    m_config.read.push_back(
+                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_configfile_arg(config)));
+                if (!s.sources_to_write.empty() || !s.configs_to_write.empty())
+                {
+                    m_config.write.push_back(std::make_unique<NugetBinaryPushProvider>(
+                        nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
+                }
+            }
+
+            if (!s.upkg_templates_to_get.empty())
+            {
+                for (auto&& src : s.upkg_templates_to_get)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
+                }
+            }
+            if (!s.upkg_templates_to_put.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
+            }
+        }
+
+        m_needs_nuspec_data = Util::any_of(m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
+        m_needs_zip_file = Util::any_of(m_config.write, [](auto&& p) { return p->needs_zip_file(); });
+        if (m_needs_zip_file)
+        {
+            m_zip_tool.setup(paths.get_tool_cache(), status_sink);
+        }
+
+        return true;
     }
 
-    BinaryCache::BinaryCache(BinaryProviders&& providers, const Filesystem& fs)
-        : ReadOnlyBinaryCache(std::move(providers)), m_fs(fs)
-    {
-    }
-
-    void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
+    void BinaryCache::push_success(const Filesystem& fs, CleanPackages clean_packages, const InstallPlanAction& action)
     {
         if (auto abi = action.package_abi().get())
         {
@@ -2468,18 +2454,10 @@ namespace vcpkg
                 if (m_needs_zip_file)
                 {
                     Path zip_path = request.package_dir + ".zip";
-                    auto compress_result = m_zip_tool.value_or_exit(VCPKG_LINE_INFO)
-                                               .compress_directory_to_zip(m_fs, request.package_dir, zip_path);
-                    if (compress_result)
+                    PrintingDiagnosticContext pdc{out_sink};
+                    if (m_zip_tool.compress_directory_to_zip(pdc, fs, request.package_dir, zip_path))
                     {
                         request.zip_path = std::move(zip_path);
-                    }
-                    else
-                    {
-                        out_sink.println(Color::warning,
-                                         msg::format_warning(msgCompressFolderFailed, msg::path = request.package_dir)
-                                             .append_raw(' ')
-                                             .append_raw(compress_result.error()));
                     }
                 }
 
@@ -2493,7 +2471,7 @@ namespace vcpkg
                 }
                 if (request.zip_path)
                 {
-                    m_fs.remove(*request.zip_path.get(), IgnoreErrors{});
+                    fs.remove(*request.zip_path.get(), IgnoreErrors{});
                 }
                 out_sink.println(
                     msgStoredBinariesToDestinations, msg::count = num_destinations, msg::elapsed = timer.elapsed());
@@ -2502,7 +2480,7 @@ namespace vcpkg
 
         if (clean_packages == CleanPackages::Yes)
         {
-            m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
     }
 
