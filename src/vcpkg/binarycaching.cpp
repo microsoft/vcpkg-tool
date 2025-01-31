@@ -2509,7 +2509,7 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(action_to_push.request, stdout_sink);
+                        num_destinations += provider->push_success(action_to_push.request, m_bg_msg_sink);
                     }
                 }
                 if (action_to_push.request.zip_path)
