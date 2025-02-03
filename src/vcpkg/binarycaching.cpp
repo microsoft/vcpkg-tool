@@ -1365,7 +1365,7 @@ namespace
                 }
                 else
                 {
-                    msg::println(res.error());
+                    msg_sink.println(res.error());
                 }
             }
 

@@ -3270,7 +3270,10 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
-DECLARE_MESSAGE(WaitUntilPackagesUploaded, (msg::count), "", "Wait until the remaining packages ({count}) are uploaded")
+DECLARE_MESSAGE(WaitUntilPackagesUploaded,
+                (msg::count),
+                "",
+                "Waiting for {count} remaining binary cache submissions...")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")

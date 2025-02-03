@@ -1721,7 +1721,7 @@
   "_VersionSpecMismatch.comment": "An example of {path} is /foo/bar. An example of {expected_version} is 1.3.8. An example of {actual_version} is 1.3.8.",
   "VersionVerifiedOK": "{version_spec} is correctly in the version database ({git_tree_sha})",
   "_VersionVerifiedOK.comment": "An example of {version_spec} is zlib:x64-windows@1.0.0. An example of {git_tree_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
-  "WaitUntilPackagesUploaded": "Wait until the remaining packages ({count}) are uploaded",
+  "WaitUntilPackagesUploaded": "Waiting for {count} remaining binary cache submissions...",
   "_WaitUntilPackagesUploaded.comment": "An example of {count} is 42.",
   "WaitingForChildrenToExit": "Waiting for child processes to exit...",
   "WaitingToTakeFilesystemLock": "waiting to take filesystem lock on {path}...",
