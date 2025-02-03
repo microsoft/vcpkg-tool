@@ -500,5 +500,29 @@ TEST_CASE ("Synchronizer operations", "[BinaryCache]")
         REQUIRE(result.jobs_submitted == 2);
         REQUIRE(result.jobs_completed == 1);
         REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 3);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
     }
 }

@@ -2235,7 +2235,7 @@ namespace vcpkg
             }
 
             local += OneCompleted;
-        } while (m_state.compare_exchange_weak(old, local, std::memory_order_acq_rel));
+        } while (!m_state.compare_exchange_weak(old, local, std::memory_order_acq_rel));
 
         BinaryCacheSyncState result;
         result.jobs_submitted = local & SubmittedMask;
@@ -2247,7 +2247,28 @@ namespace vcpkg
     BinaryCacheSynchronizer::counter_uint_t BinaryCacheSynchronizer::
         fetch_incomplete_mark_submission_complete() noexcept
     {
+        auto old = m_state.load(std::memory_order_acquire);
+        backing_uint_t local;
+        BinaryCacheSynchronizer::counter_uint_t submitted;
+        do
+        {
+            local = old;
+
+            // Remove completions from the submission counter so that the (X/Y) console
+            // output is prettier.
+            submitted = local & SubmittedMask;
+            auto completed = (local & CompletedMask) >> UpperShift;
+            if (completed >= submitted)
+            {
+                local = SubmissionCompleteBit;
+            }
+            else
+            {
+                local = (submitted - completed) | SubmissionCompleteBit;
+            }
+        } while (!m_state.compare_exchange_weak(old, local, std::memory_order_acq_rel));
         auto state = m_state.fetch_or(SubmissionCompleteBit, std::memory_order_acq_rel);
+
         return (state & SubmittedMask) - ((state & CompletedMask) >> UpperShift);
     }
 
