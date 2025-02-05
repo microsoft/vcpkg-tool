@@ -597,6 +597,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.install_actions)
         {
+            binary_cache.print_updates();
             TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
@@ -616,6 +617,7 @@ namespace vcpkg
                             VCPKG_LINE_INFO);
                         return issue_body_path;
                     }));
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
@@ -1356,8 +1358,15 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        auto binary_cache = only_downloads ? BinaryCache(paths.get_filesystem())
-                                           : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache(fs);
+        if (!only_downloads)
+        {
+            if (!binary_cache.install_providers(args, paths, out_sink))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(args,
                                                             paths,
@@ -1406,7 +1415,7 @@ namespace vcpkg
                 install_print_usage_information(*bpgh, printed_usages, fs, paths.installed());
             }
         }
-
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
     }
 

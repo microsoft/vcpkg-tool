@@ -919,7 +919,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
-DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),
@@ -2769,11 +2768,15 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "'vcpkg help triplet' is a command line that should not be localized",
                 "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
-DECLARE_MESSAGE(StoredBinariesToDestinations,
-                (msg::count, msg::elapsed),
-                "",
-                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
+                (msg::spec, msg::count),
+                "",
+                "Starting submission of {spec} to {count} binary cache(s) in the background")
+DECLARE_MESSAGE(SubmittingBinaryCacheComplete,
+                (msg::spec, msg::count, msg::elapsed),
+                "",
+                "Completed submission of {spec} to {count} binary cache(s) in {elapsed}")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestStartingBashShell,
@@ -3019,7 +3022,7 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
-                "Uploading binaries for '{spec}' to '{vendor}' source \"{path}\".")
+                "Uploading binaries for {spec} to {vendor} from {path}")
 DECLARE_MESSAGE(UsageTextHere, (), "", "the usage file is here")
 DECLARE_MESSAGE(UsageInstallInstructions, (), "", "you can install the usage file with the following CMake")
 DECLARE_MESSAGE(UseEnvVar,
@@ -3267,6 +3270,10 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitUntilPackagesUploaded,
+                (msg::count),
+                "",
+                "Waiting for {count} remaining binary cache submissions...")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")

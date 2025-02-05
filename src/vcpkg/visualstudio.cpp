@@ -196,9 +196,8 @@ namespace vcpkg::VisualStudio
         const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
             get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
 
-        const bool v140_is_available = Util::find_if(sorted, [&](const VisualStudioInstance& vs_instance) {
-                                           return vs_instance.major_version() == "14";
-                                       }) != sorted.end();
+        const bool v140_is_available = Util::any_of(
+            sorted, [&](const VisualStudioInstance& vs_instance) { return vs_instance.major_version() == "14"; });
 
         for (const VisualStudioInstance& vs_instance : sorted)
         {
