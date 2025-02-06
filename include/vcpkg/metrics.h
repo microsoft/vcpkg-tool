@@ -96,6 +96,7 @@ namespace vcpkg
         FeatureFlagVersions,
         InstallManifestMode,
         OptionOverlayPorts,
+        TestLibcurlSuccess,
         COUNT // always keep COUNT last
     };
 

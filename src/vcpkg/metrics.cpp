@@ -160,6 +160,7 @@ namespace vcpkg
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
+        {BoolMetric::TestLibcurlSuccess, "test_libcurl_success"},
     };
 
     void MetricsSubmission::track_elapsed_us(double value)

@@ -31,6 +31,10 @@
 #pragma comment(lib, "shell32")
 #endif
 
+#if defined(__linux__)
+#include <dlfcn.h>
+#endif
+
 using namespace vcpkg;
 
 namespace
@@ -50,6 +54,21 @@ namespace
                 .append_raw('\n'));
         msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    Optional<bool> detect_libcurl()
+    {
+        // Determine if libcurl is installed in the system by attempting to load it
+        // At the moment we don't do anything with it, but we're tracking availability
+        // of libcurl to replace the current download/upload implementation
+#if defined(__linux__)
+        if (auto handle = dlopen("libcurl.so", RTLD_LAZY | RTLD_NOLOAD))
+        {
+            dlclose(handle);
+            return true;
+        }
+#endif
+        return nullopt;
     }
 
     bool detect_container(const Filesystem& fs)
@@ -120,6 +139,12 @@ namespace
         }
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+
+        auto maybe_test_curl = detect_libcurl();
+        if (auto test_curl = maybe_test_curl.get())
+        {
+            get_global_metrics_collector().track_bool(BoolMetric::TestLibcurlSuccess, *test_curl);
+        }
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
