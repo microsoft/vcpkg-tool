@@ -618,6 +618,8 @@ namespace vcpkg
 
     struct DependencyDeserializer final : Json::IDeserializer<Dependency>
     {
+        explicit DependencyDeserializer(bool depends_defaults) : depends_defaults(depends_defaults) { }
+        bool depends_defaults;
         virtual LocalizedString type_name() const override { return msg::format(msgADependency); }
 
         virtual View<StringLiteral> valid_fields() const noexcept override
@@ -636,13 +638,17 @@ namespace vcpkg
 
         virtual Optional<Dependency> visit_string(Json::Reader& r, StringView sv) const override
         {
-            return Json::PackageNameDeserializer::instance.visit_string(r, sv).map(
-                [](std::string&& name) { return Dependency{std::move(name)}; });
+            return Json::PackageNameDeserializer::instance.visit_string(r, sv).map([this](std::string&& name) {
+                Dependency dep{std::move(name)};
+                dep.default_features = depends_defaults;
+                return dep;
+            });
         }
 
         virtual Optional<Dependency> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
             Dependency dep;
+            dep.default_features = depends_defaults;
 
             for (const auto& el : obj)
             {
@@ -679,24 +685,19 @@ namespace vcpkg
 
             return dep;
         }
-
-        static DependencyDeserializer instance;
     };
-    DependencyDeserializer DependencyDeserializer::instance;
 
     struct DependencyArrayDeserializer final : Json::IDeserializer<std::vector<Dependency>>
     {
+        explicit DependencyArrayDeserializer(bool depends_defaults) : depends_defaults(depends_defaults) { }
+        bool depends_defaults;
         virtual LocalizedString type_name() const override { return msg::format(msgAnArrayOfDependencies); }
 
         virtual Optional<std::vector<Dependency>> visit_array(Json::Reader& r, const Json::Array& arr) const override
         {
-            return r.array_elements(arr, DependencyDeserializer::instance);
+            return r.array_elements(arr, DependencyDeserializer{depends_defaults});
         }
-
-        static const DependencyArrayDeserializer instance;
     };
-
-    const DependencyArrayDeserializer DependencyArrayDeserializer::instance;
 
     struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
@@ -1024,6 +1025,8 @@ namespace vcpkg
     // `ArrayFeatureDeserializer` is used for the former, `FeatureDeserializer` is used for the latter.
     struct FeatureDeserializer final : Json::IDeserializer<std::unique_ptr<FeatureParagraph>>
     {
+        explicit FeatureDeserializer(bool depends_defaults) : depends_defaults(depends_defaults) { }
+        bool depends_defaults;
         virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
 
         virtual View<StringLiteral> valid_fields() const noexcept override
@@ -1047,7 +1050,7 @@ namespace vcpkg
             r.required_object_field(
                 type_name(), obj, JsonIdDescription, feature->description, Json::ParagraphDeserializer::instance);
             r.optional_object_field(
-                obj, JsonIdDependencies, feature->dependencies, DependencyArrayDeserializer::instance);
+                obj, JsonIdDependencies, feature->dependencies, DependencyArrayDeserializer{depends_defaults});
             r.optional_object_field(
                 obj, JsonIdSupports, feature->supports_expression, PlatformExprDeserializer::instance);
             std::string license;
@@ -1058,11 +1061,7 @@ namespace vcpkg
 
             return std::move(feature); // gcc-7 bug workaround redundant move
         }
-
-        static const FeatureDeserializer instance;
     };
-
-    const FeatureDeserializer FeatureDeserializer::instance;
 
     struct FeaturesObject
     {
@@ -1072,6 +1071,8 @@ namespace vcpkg
 
     struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
     {
+        explicit FeaturesFieldDeserializer(bool depends_defaults) : depends_defaults(depends_defaults) { }
+        bool depends_defaults;
         virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
 
         virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
@@ -1092,7 +1093,7 @@ namespace vcpkg
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
-                r.visit_in_key(pr.second, pr.first, v, FeatureDeserializer::instance);
+                r.visit_in_key(pr.second, pr.first, v, FeatureDeserializer{depends_defaults});
                 if (v)
                 {
                     v->name = pr.first.to_string();
@@ -1102,11 +1103,7 @@ namespace vcpkg
 
             return std::move(res); // gcc-7 bug workaround redundant move
         }
-
-        static const FeaturesFieldDeserializer instance;
     };
-
-    const FeaturesFieldDeserializer FeaturesFieldDeserializer::instance;
 
     struct ContactsDeserializer final : Json::IDeserializer<Json::Object>
     {
@@ -1155,6 +1152,7 @@ namespace vcpkg
                 JsonIdDocumentation,
                 JsonIdLicense,
                 JsonIdDependencies,
+                JsonIdDependDefaults,
                 JsonIdFeatures,
                 JsonIdDefaultFeatures,
                 JsonIdSupports,
@@ -1180,6 +1178,8 @@ namespace vcpkg
                 }
             }
 
+            r.optional_object_field(
+                obj, JsonIdDependDefaults, spgh.depend_defaults, Json::BooleanDeserializer::instance);
             r.optional_object_field(obj, JsonIdMaintainers, spgh.maintainers, Json::ParagraphDeserializer::instance);
             r.optional_object_field(obj, JsonIdContacts, spgh.contacts, ContactsDeserializer::instance);
             r.optional_object_field(obj, JsonIdSummary, spgh.summary, Json::ParagraphDeserializer::instance);
@@ -1193,7 +1193,8 @@ namespace vcpkg
                 spgh.license = {std::move(license)};
             }
 
-            r.optional_object_field(obj, JsonIdDependencies, spgh.dependencies, DependencyArrayDeserializer::instance);
+            r.optional_object_field(
+                obj, JsonIdDependencies, spgh.dependencies, DependencyArrayDeserializer{spgh.depend_defaults});
             r.optional_object_field(
                 obj, JsonIdOverrides, spgh.overrides, DependencyOverrideArrayDeserializer::instance);
 
@@ -1208,7 +1209,7 @@ namespace vcpkg
                 obj, JsonIdDefaultFeatures, spgh.default_features, DefaultFeatureArrayDeserializer::instance);
 
             FeaturesObject features_tmp;
-            r.optional_object_field(obj, JsonIdFeatures, features_tmp, FeaturesFieldDeserializer::instance);
+            r.optional_object_field(obj, JsonIdFeatures, features_tmp, FeaturesFieldDeserializer{spgh.depend_defaults});
             control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
             control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
@@ -1607,10 +1608,10 @@ namespace vcpkg
         return ret;
     }
 
-    static bool is_dependency_trivial(const Dependency& dep)
+    static bool is_dependency_trivial(const Dependency& dep, bool depend_defaults)
     {
-        return dep.features.empty() && dep.default_features && dep.platform.is_empty() && dep.extra_info.is_empty() &&
-               dep.constraint.type == VersionConstraintKind::None && !dep.host;
+        return dep.features.empty() && dep.default_features == depend_defaults && dep.platform.is_empty() &&
+               dep.extra_info.is_empty() && dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
     Json::Object serialize_manifest(const SourceControlFile& scf)
@@ -1664,7 +1665,7 @@ namespace vcpkg
             }
         };
         auto serialize_dependency = [&](Json::Array& arr, const Dependency& dep) {
-            if (is_dependency_trivial(dep))
+            if (is_dependency_trivial(dep, scf.core_paragraph->depend_defaults))
             {
                 arr.push_back(Json::Value::string(dep.name));
             }
@@ -1679,9 +1680,9 @@ namespace vcpkg
                 dep_obj.insert(JsonIdName, dep.name);
                 if (dep.host) dep_obj.insert(JsonIdHost, Json::Value::boolean(true));
 
-                if (!dep.default_features)
+                if (dep.default_features != scf.core_paragraph->depend_defaults)
                 {
-                    dep_obj.insert(JsonIdDefaultFeatures, Json::Value::boolean(false));
+                    dep_obj.insert(JsonIdDefaultFeatures, Json::Value::boolean(dep.default_features));
                 }
                 serialize_dependency_features(dep_obj, JsonIdFeatures, dep.features);
                 serialize_optional_string(dep_obj, JsonIdPlatform, to_string(dep.platform));
@@ -1745,6 +1746,11 @@ namespace vcpkg
         {
             obj.insert(JsonIdBuiltinBaseline,
                        Json::Value::string(scf.core_paragraph->builtin_baseline.value_or_exit(VCPKG_LINE_INFO)));
+        }
+
+        if (!scf.core_paragraph->depend_defaults)
+        {
+            obj.insert(JsonIdDependDefaults, Json::Value::boolean(false));
         }
 
         if (!scf.core_paragraph->dependencies.empty())
