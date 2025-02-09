@@ -44,4 +44,34 @@ namespace vcpkg
         perform_find_port_and_exit(
             paths, full_description, Util::Sets::contains(options.switches, SwitchXJson), filter, paths.overlay_ports);
     }
+
+    void display_results(const std::vector<PackageMetrics>& results) {
+        System::print2("\nSearch Results:\n");
+        
+        Table output;
+        output.format()
+            .line_format("| {0,-20} | {1,10} | {2,-12} | {3,10} |")
+            .header_format("| {0,-20} | {1,-10} | {2,-12} | {3,-10} |")
+            .format_cells()
+            .column("Package")
+            .column("Size")
+            .column("Last Update")
+            .column("Popularity");
+
+        for (const auto& pkg : results) {
+            std::string size_str = format_bytes(pkg.size);
+            std::string date_str = format_time(pkg.last_update);
+            
+            output.format()
+                .line_format("| {0,-20} | {1,10} | {2,-12} | {3,10} |")
+                .add_row({
+                    pkg.name,
+                    size_str,
+                    date_str,
+                    std::to_string(pkg.popularity)
+                });
+        }
+
+        System::print2(output.to_string());
+    }
 } // namespace vcpkg
