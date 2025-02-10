@@ -1,0 +1,1 @@
+This file exists only to ensure that git creates the directory containing it, so that ./hello/.. is a valid path.

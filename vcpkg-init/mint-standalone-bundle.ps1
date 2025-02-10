@@ -47,7 +47,7 @@ $scripts_dependencies = @(
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
-    'vcpkgTools.xml'
+    'vcpkg-tools.json'
 )
 
 $scripts_exclusions = @(
@@ -75,7 +75,9 @@ try {
         Move-Item 'LICENSE.txt' '../out/LICENSE.txt'
         Move-Item 'triplets' '../out/triplets'
         foreach ($exclusion in $scripts_exclusions) {
-            Remove-Item "scripts/$exclusion" -Recurse -Force
+            if (Test-Path "scripts/$exclusion") {
+                Remove-Item "scripts/$exclusion" -Recurse -Force
+            }
         }
         foreach ($dep in $scripts_dependencies) {
             Move-Item "scripts/$dep" "../out/scripts/$dep"

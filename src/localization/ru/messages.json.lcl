@@ -1444,29 +1444,74 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AssetCacheConsult" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          <Val><![CDATA[Trying to download {path} using asset cache {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Попадание в кэше для ресурса по пути {path}; скачано с адреса {url}.]]></Val>
+            <Val><![CDATA[Попытка скачать {path} с помощью кэша ресурсов {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheConsultScript" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache script]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Попытка скачать {path} с помощью сценария кэша ресурсов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание выполнено успешно! Попадание в кэш ресурсов.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHitUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit, did not try authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание выполнено успешно! Попадание в кэш ресурсов, не выполнена попытка авторизованного исходного {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AssetCacheMiss" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          <Val><![CDATA[Asset cache miss; trying authoritative source {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Промах кэша для ресурса; выполняется скачивание с адреса {url}.]]></Val>
+            <Val><![CDATA[Промах кэша ресурсов; выполняется попытка принудительного {url}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AssetCacheMissBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          <Val><![CDATA[there were no asset cache hits, and x-block-origin blocks trying the authoritative source {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Промах кэша для ресурса по пути {path}, и загрузки заблокированы x-block-origin.]]></Val>
+            <Val><![CDATA[не обнаружено попаданий в кэш ресурсов, а блоки X-block-origin пытается использовать заслуживающий доверия источник {url}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissNoUrls" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache missed looking for {sha} and no authoritative URL is known]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Кэш ресурсов пропущен при поиске {sha} и неизвестен заслуживающий доверия URL-адрес]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1480,12 +1525,90 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AssetCacheSuccesfullyStored" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AssetCacheScriptBadVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Successfully stored {path} to {url}.]]></Val>
+          <Val><![CDATA[the script template {value} contains unknown replacement {list}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь {path} для URL-адреса {url} сохранен.]]></Val>
+            <Val><![CDATA[шаблон скрипта {value} содержит неизвестные заменяемые {list}]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariableHint" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if you want this on the literal command line, use {{{{{list}}}}}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[если это необходимо в командной строке литерала, используйте {{{{{list}}}}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[if you want this on the literal command line, use {{{list}}}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the full script command line was]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[командная строка полного сценария:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned nonzero exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[сценарий кэша ресурсов вернул ненулевой код завершения {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteCorrectHash" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but the resulting file has an unexpected hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[скрипт кэша ресурсов вернул успешное выполнение, но полученный файл имеет непредвиденный хэш]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but did not create expected result file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[скрипт кэша ресурсов вернул успешное выполнение, но не вернул ожидаемый файл результатов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a SHA, but no SHA is known for attempted download of {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[для шаблона {value} требуется SHA, но sha не известен для попытки скачивания {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a URL, but no URL is known for attempted download of {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[для шаблона {value} требуется URL-адрес, но ни один URL-адрес неизвестен для попытки скачивания {sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheSuccesfullyStored" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Store success]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Магазин успешно сохранен]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Successfully stored {path} to {url}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3904,18 +4027,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Сбой сжатия папки "{path}":]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ComputingInstallPlan" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Computing installation plan...]]></Val>
@@ -4444,39 +4555,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedCurl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{url}: curl failed to download with exit code {exit_code}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: не удалось скачать curl с кодом завершения {exit_code}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          <Val><![CDATA[download from {url} had an unexpected hash]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Файл не содержит ожидаемого хэша:]A;URL-адрес: {url}]A;Файл: {path}]A;Ожидаемый хэш: {expected}]A;Фактический хэш: {actual}]]></Val>
+            <Val><![CDATA[скачивание из {url} имеет непредвиденный хэш]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchActualHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Actual  : {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически: {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatchExpectedHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to download {path}.]A;If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See, {url}]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          <Val><![CDATA[Expected: {sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось скачать {path}.]A;Если вы используете прокси-сервер, проверьте правильность его настроек.]A;Возможные причины:]A;1. Фактически вы используете HTTP-прокси, но устанавливаете переменную HTTPS_PROXY на `https//address:port`.]A;Это неправильно, поскольку префикс `https://` утверждает, что прокси-сервер является HTTPS-прокси, в то время как этот прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте вместо "http://address:port" задать значение HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически будет использовать настройки прокси-сервера Windows IE, установленные программным обеспечением прокси-сервера. См. {url}]A;Значение, установленное прокси-сервером, может быть неправильным или содержать тот же префикс "https://".]A;3. Удаленный сервер этого прокси-сервера не обслуживается.]A;Если вы попытались напрямую скачать ссылку и считаете, что это не временный сбой сервера загрузки, отправьте сообщение о проблеме по адресу https://github.com/Microsoft/vcpkg/issues]A;чтобы сообщить об этом сбое сервера загрузки восходящего потока данных.]]></Val>
+            <Val><![CDATA[Ожидается: {sha}]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchZero" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[не удалось скачать, так как ожидаемый SHA512 был нулевым. Измените ожидаемое значение SHA512 на: {sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность параметров прокси-сервера.]A;Возможные причины:]A;1. Вы действительно используете HTTP-прокси, но HTTPS_PROXY переменную "https//address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является HTTPS-прокси, а прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте задатьhttp://address:port` для HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически использует параметры прокси-сервера Windows IE, заданные программным обеспечением прокси-сервера. Просмотреть: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, заданное прокси-сервером, может быть неправильным или иметь одну и ту же https:// префикса "https://".]A;3. Удаленный сервер вашего прокси-сервера является нашим службой.]A;Если вы считаете, что это не временная ошибка сервера загрузки и необходимо изменить VCPKG для скачивания этого файла из другого расположения, отправьте проблему в https://github.com/Microsoft/vcpkg/issues]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Сбой скачивания — повторная попытка через {value} мс]]></Val>
+            <Val><![CDATA[Сбой скачивания {url} — повторная попытка через {value} мс]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4485,6 +4623,15 @@
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: сбой: код состояния {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadOrUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[or {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[или {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4503,19 +4650,43 @@
       </Item>
       <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          <Val><![CDATA[Successfully downloaded {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Скачан {path}.]]></Val>
+            <Val><![CDATA[Успешно загружено {path}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesfulUploading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}, storing to {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Успешно загружена {path}, сохранена в {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Попытка {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: сбой {system_api} с кодом завершения {exit_code}]]></Val>
+            <Val><![CDATA[{url}: сбой {system_api} с кодом завершения {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4546,6 +4717,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingAssetShaToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading asset cache entry {sha} -> {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание записи кэша ресурсов {sha} -> {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingAssetShaWithoutAssetCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[requested download of asset cache entry {sha} -> {path}, but no asset caches are configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[запрошено скачивание записи кэша ресурсов {sha} -> {path}, но кэши ресурсов не настроены]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFileFirstAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}, trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание {path}, попытка {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}).]]></Val>
@@ -4558,11 +4765,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading {url}]]></Val>
+          <Val><![CDATA[Downloading {url} -> {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Выполняется скачивание {url}]]></Val>
+            <Val><![CDATA[Скачивание {url} -> {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4608,6 +4815,15 @@
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Дублировать определение ${p0} во время активации. Новое значение заменит старое.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicateDependencyOverride" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} already has an override]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} уже имеет переопределение]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4843,6 +5059,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error: The option --{option} is not supported in manifest mode.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlay" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог манифеста ({path}) не может совпадать с каталогом, настроенным в наложенных портах.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlayDot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory cannot be the same as a directory configured in overlay-ports, so "overlay-ports" values cannot be ".".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог манифеста не может совпадать с каталогом, настроенным в наложенных портах, поэтому значения "overlay-ports" не могут иметь значение ".".]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5773,12 +6007,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}: file not found]]></Val>
+          <Val><![CDATA[file not found]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}: файл не найден]]></Val>
+            <Val><![CDATA[файл не найден]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}: file not found]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6142,18 +6379,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Обнаружен цикл в графе в {package_name}:]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HashFileFailureToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to read file "{path}" for hashing: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[сбой при чтении файла "{path}" для хеширования: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6807,18 +7032,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uses aria2 to perform download tasks]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Использует aria2 для выполнения задач скачивания]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -8271,10 +8484,13 @@
       </Item>
       <Item ItemId=";MismatchedNames" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          <Val><![CDATA[the port name declared in the metadata file did not match the directory. Expected the port to be named {package_name}, but the file declares {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[имена не совпадают: "{package_name}" != "{actual}"]]></Val>
+            <Val><![CDATA[имя порта, объявленное в файле метаданных, не соответствует каталогу. Ожидался порт с именем {package_name}, но файл объявляет {actual}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8328,15 +8544,6 @@
           <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[манифест формата был передан --convert-control без '--all'.]A;Это ничего не делает: явно переданные управляющие файлы преобразуются автоматически.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAssetBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Missing {path} and downloads are blocked by x-block-origin.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь {path} отсутствует, и загрузки заблокированы x-block-origin.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8626,15 +8833,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoUrlsAndHashSpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No urls specified to download SHA: {sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не указаны URL-адреса для скачивания SHA: {sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoUrlsAndNoHashSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No urls specified and no hash specified.]]></Val>
@@ -8808,18 +9006,21 @@
       </Item>
       <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          <Val><![CDATA[Overlay path "{path}" must be an existing directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь наложения "{path}" должен существовать и быть каталогом.]]></Val>
+            <Val><![CDATA[Путь наложения "{path}" должен быть существующим каталогом.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";OverlayPortsDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";OverlayPortsHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Directories of overlay ports (also: {env_var})]]></Val>
+          <Val><![CDATA[Overlay-port directories, or directories containing overlay-port directories (also: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Каталоги портов наложения (также: {env_var})]]></Val>
+            <Val><![CDATA[Каталоги наложения портов или каталоги, содержащие каталоги наложения портов (также: {env_var})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9799,6 +10000,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed with exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[сбой с кодом завершения {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ProgramReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{tool_name} failed with exit code: ({exit_code}).]]></Val>
@@ -10198,15 +10408,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheBackground" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
+          <Val><![CDATA[Starting submission of {spec} to {count} binary cache(s) in the background]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Двоичные файлы сохранены в нескольких ({count}) назначениях за {elapsed}.]]></Val>
+            <Val><![CDATA[Начинается отправка {spec} в {count} двоичных кэшах в фоновом режиме]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SubmittingBinaryCacheComplete" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Completed submission of {spec} to {count} binary cache(s) in {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Завершена отправка {spec} в {count} двоичных кэшах в {elapsed}]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10341,6 +10557,15 @@
           <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Не удалось получить {tool_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} уже скачан, но имеет неправильный хэш. Ожидалось {expected}, но {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11244,12 +11469,12 @@
       </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
+          <Val><![CDATA[Uploading binaries for {spec} to {vendor} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Загрузка двоичных файлов для "{spec}" в источник "{vendor}" "{path}".]]></Val>
+            <Val><![CDATA[Отправка двоичных файлов для {spec} в {vendor} из {path}]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
+            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -11995,6 +12220,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WaitUntilPackagesUploaded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for {count} remaining binary cache submissions...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ожидание {count} отправки двоичного кэша...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WaitingForChildrenToExit" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Waiting for child processes to exit...]]></Val>
@@ -12111,6 +12345,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Когда выполнялось разрешение зависимостей файла проекта ${p0}, ${p1} не указал реестр.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileRunningAssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while running asset cache script command line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[при выполнении командной строки сценария кэша ресурсов]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

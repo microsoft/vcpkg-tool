@@ -454,10 +454,10 @@ namespace
                                     msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
             }
 
-            auto maybe_demand = r.visit(*maybe_demand_obj, CeMetadataDeserializer::instance);
-            if (maybe_demand.has_value())
+            auto maybe_demand = CeMetadataDeserializer::instance.visit(r, *maybe_demand_obj);
+            if (auto demand = maybe_demand.get())
             {
-                ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
+                ret.insert_or_replace(key, *demand);
             }
         }
         return ret;
@@ -569,10 +569,10 @@ namespace
         }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
-        auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
-        if (maybe_ce_metadata.has_value())
+        auto maybe_ce_metadata = CeMetadataDeserializer::instance.visit(r, obj);
+        if (auto ce_metadata = maybe_ce_metadata.get())
         {
-            ce_metadata_obj = maybe_ce_metadata.value_or_exit(VCPKG_LINE_INFO);
+            ce_metadata_obj = *ce_metadata;
         }
 
         Json::Object demands_obj;
@@ -828,7 +828,8 @@ namespace vcpkg
         return std::any_of(registries.begin(), registries.end(), registry_config_requests_ce);
     }
 
-    Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+    constexpr const Json::IDeserializer<Configuration>& configuration_deserializer =
+        ConfigurationDeserializer::instance;
 
     Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
@@ -854,7 +855,7 @@ namespace vcpkg
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
     {
         Json::Reader reader(origin);
-        auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
+        auto maybe_configuration = ConfigurationDeserializer::instance.visit(reader, obj);
         bool has_warnings = !reader.warnings().empty();
         bool has_errors = !reader.errors().empty();
         if (has_warnings || has_errors)

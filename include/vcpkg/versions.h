@@ -28,8 +28,8 @@ namespace vcpkg
         // If the port-version can't be parsed as a nonnegative integer, returns nullopt.
         static Optional<Version> parse(StringView content);
 
-        friend bool operator==(const Version& left, const Version& right);
-        friend bool operator!=(const Version& left, const Version& right);
+        friend bool operator==(const Version& left, const Version& right) noexcept;
+        friend bool operator!=(const Version& left, const Version& right) noexcept;
 
         // Version has no operator< because without a scheme it is not necessarily semantically comparable;
         // VersionMapLess is provided as a less than comparison for use in std::map.
@@ -70,8 +70,8 @@ namespace vcpkg
         SchemedVersion(VersionScheme scheme, std::string&& value, int port_version) noexcept;
         SchemedVersion(VersionScheme scheme, StringView value, int port_version);
 
-        friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs);
-        friend bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs);
+        friend bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept;
+        friend bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept;
     };
 
     StringLiteral to_string_literal(VersionScheme scheme);

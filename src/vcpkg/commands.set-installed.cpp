@@ -8,6 +8,7 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -57,25 +58,27 @@ namespace vcpkg
         const auto github_run_id = args.github_run_id.get();
         if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
-            Json::Object detector;
-            detector.insert(JsonIdName, Json::Value::string("vcpkg"));
-            detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-            detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
-
-            Json::Object job;
-            job.insert(JsonIdId, Json::Value::string(*github_run_id));
-            job.insert(JsonIdCorrelator, Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
-
             Json::Object snapshot;
-            snapshot.insert(JsonIdJob, job);
+            {
+                Json::Object job;
+                job.insert(JsonIdId, Json::Value::string(*github_run_id));
+                job.insert(JsonIdCorrelator,
+                           Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+                snapshot.insert(JsonIdJob, std::move(job));
+            } // destroy job
+
             snapshot.insert(JsonIdVersion, Json::Value::integer(0));
             snapshot.insert(JsonIdSha, Json::Value::string(*github_sha));
             snapshot.insert(JsonIdRef, Json::Value::string(*github_ref));
             snapshot.insert(JsonIdScanned, Json::Value::string(CTime::now_string()));
-            snapshot.insert(JsonIdDetector, detector);
 
-            Json::Object manifest;
-            manifest.insert(JsonIdName, FileVcpkgDotJson);
+            {
+                Json::Object detector;
+                detector.insert(JsonIdName, Json::Value::string("vcpkg"));
+                detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
+                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                snapshot.insert(JsonIdDetector, std::move(detector));
+            } // destroy detector
 
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
@@ -86,42 +89,48 @@ namespace vcpkg
                     return nullopt;
                 }
                 auto spec = action.spec.to_string();
-                map.insert(
-                    {spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version())});
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
             }
+
+            Json::Object manifest;
+            manifest.insert(JsonIdName, FileVcpkgDotJson);
 
             Json::Object resolved;
             for (auto&& action : action_plan.install_actions)
             {
-                Json::Object resolved_item;
-                auto spec = action.spec.to_string();
-                const auto found = map.find(spec);
-                if (found != map.end())
+                const auto found = map.find(action.spec.to_string());
+                if (found == map.end())
                 {
-                    const auto& pkg_url = found->second;
-                    resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                    resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
-                    Json::Array deps_list;
-                    for (auto&& dep : action.package_dependencies)
-                    {
-                        const auto found_dep = map.find(dep.to_string());
-                        if (found_dep != map.end())
-                        {
-                            deps_list.push_back(found_dep->second);
-                        }
-                    }
-                    resolved_item.insert(JsonIdDependencies, deps_list);
-                    resolved.insert(pkg_url, resolved_item);
+                    continue;
                 }
+
+                const auto& pkg_url = found->second;
+                Json::Object resolved_item;
+                resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
+                resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
+
+                Json::Array deps_list;
+                for (auto&& dep : action.package_dependencies)
+                {
+                    const auto found_dep = map.find(dep.to_string());
+                    if (found_dep != map.end())
+                    {
+                        deps_list.push_back(found_dep->second);
+                    }
+                }
+
+                resolved_item.insert(JsonIdDependencies, std::move(deps_list));
+                resolved.insert(pkg_url, std::move(resolved_item));
             }
 
-            manifest.insert(JsonIdResolved, resolved);
+            manifest.insert(JsonIdResolved, std::move(resolved));
             Json::Object manifests;
             manifests.insert(JsonIdVcpkgDotJson, manifest);
             snapshot.insert(JsonIdManifests, manifests);
             Debug::print(Json::stringify(snapshot));
             return snapshot;
         }
+
         return nullopt;
     }
 
@@ -201,8 +210,9 @@ namespace vcpkg
             bool dependency_graph_success = false;
             if (snapshot && github_token && github_repository)
             {
+                WarningDiagnosticContext wdc{console_diagnostic_context};
                 dependency_graph_success = submit_github_dependency_graph_snapshot(
-                    args.github_server_url, *github_token, *github_repository, *snapshot);
+                    wdc, args.github_server_url, *github_token, *github_repository, *snapshot);
                 if (dependency_graph_success)
                 {
                     msg::println(msgDependencyGraphSuccess);
@@ -239,9 +249,15 @@ namespace vcpkg
         track_install_plan(action_plan);
         install_preclear_packages(paths, action_plan);
 
-        auto binary_cache = build_options.only_downloads == OnlyDownloads::Yes
-                                ? BinaryCache(paths.get_filesystem())
-                                : BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache(fs);
+        if (build_options.only_downloads == OnlyDownloads::No)
+        {
+            if (!binary_cache.install_providers(args, paths, out_sink))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+
         binary_cache.fetch(action_plan.install_actions);
         const auto summary = install_execute_plan(args,
                                                   paths,
@@ -258,6 +274,7 @@ namespace vcpkg
             summary.print_failed();
             if (build_options.only_downloads == OnlyDownloads::No)
             {
+                binary_cache.wait_for_async_complete_and_join();
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
@@ -277,6 +294,19 @@ namespace vcpkg
             }
         }
 
+        const auto manifest = paths.get_manifest().get();
+        const auto installed_paths = paths.maybe_installed().get();
+        if (manifest && installed_paths)
+        {
+            // See docs/manifest-info.schema.json
+            Json::Object manifest_info;
+            manifest_info.insert("manifest-path", Json::Value::string(manifest->path));
+            const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
+            const auto json_contents = Json::stringify(manifest_info);
+            fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
+        }
+
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 
@@ -312,7 +342,6 @@ namespace vcpkg
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             prohibit_backcompat_features,
             keep_going,
         };

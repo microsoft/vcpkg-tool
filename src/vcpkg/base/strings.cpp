@@ -24,9 +24,10 @@ namespace vcpkg::Strings::details
     void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
 }
 
-vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
-                                                                     void (*cb)(void*, std::string&, StringView),
-                                                                     void* user)
+Optional<std::string> vcpkg::details::api_stable_format_impl(DiagnosticContext& context,
+                                                             StringView sv,
+                                                             bool (*cb)(void*, std::string&, StringView),
+                                                             void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
@@ -46,7 +47,8 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last)
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             else if (*p == '{')
             {
@@ -60,10 +62,15 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
                 p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
                 if (p == last || p[0] != '}')
                 {
-                    return msg::format(msgInvalidFormatString, msg::actual = sv);
+                    context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                    return nullopt;
                 }
                 // p[0] == '}'
-                cb(user, out, {seq_start, p});
+                if (!cb(user, out, {seq_start, p}))
+                {
+                    return nullopt;
+                }
+
                 prev = ++p;
             }
         }
@@ -71,14 +78,16 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last || p[0] != '}')
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             out.push_back('}');
             prev = ++p;
         }
     }
+
     out.append(prev, last);
-    return {std::move(out), expected_left_tag};
+    return out;
 }
 
 namespace
@@ -328,6 +337,12 @@ std::vector<std::string> Strings::split_paths(StringView s)
 const char* Strings::find_first_of(StringView input, StringView chars)
 {
     return std::find_first_of(input.begin(), input.end(), chars.begin(), chars.end());
+}
+
+std::string::size_type Strings::find_last(StringView searched, char c)
+{
+    auto iter = std::find(searched.rbegin(), searched.rend(), c);
+    return iter == searched.rend() ? std::string::npos : (&*iter - searched.begin());
 }
 
 std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView left_delim, StringView right_delim)
