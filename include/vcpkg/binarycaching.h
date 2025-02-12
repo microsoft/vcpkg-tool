@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace vcpkg
@@ -131,42 +132,77 @@ namespace vcpkg
         std::string feed;
     };
 
-    struct BinaryConfigParserState
+    struct FilesBinaryProviderConfig
     {
-        bool nuget_interactive = false;
-        std::set<StringLiteral> binary_cache_providers;
-
-        std::string nugettimeout = "100";
-
         std::vector<Path> archives_to_read;
         std::vector<Path> archives_to_write;
+    };
 
+    struct HttpBinaryProviderConfig
+    {
+        std::vector<std::string> secrets;
         std::vector<UrlTemplate> url_templates_to_get;
         std::vector<UrlTemplate> url_templates_to_put;
+    };
 
+    struct GcsBinaryProviderConfig
+    {
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
+    };
 
+    struct AwsBinaryProviderConfig
+    {
         std::vector<std::string> aws_read_prefixes;
         std::vector<std::string> aws_write_prefixes;
-        bool aws_no_sign_request = false;
+    };
 
+    struct CosBinaryProviderConfig
+    {
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
+    };
 
+    struct GhaBinaryProviderConfig
+    {
         bool gha_write = false;
         bool gha_read = false;
+    };
 
-        std::vector<AzureUpkgSource> upkg_templates_to_get;
-        std::vector<AzureUpkgSource> upkg_templates_to_put;
-
+    struct NugetBinaryProviderConfig
+    {
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
+    };
 
-        std::vector<std::string> secrets;
+    struct AzureUpkgBinaryProviderConfig
+    {
+        std::vector<AzureUpkgSource> upkg_templates_to_get;
+        std::vector<AzureUpkgSource> upkg_templates_to_put;
+    };
+
+    using BinaryProviderConfig = std::variant<FilesBinaryProviderConfig,
+                                              HttpBinaryProviderConfig,
+                                              GcsBinaryProviderConfig,
+                                              AwsBinaryProviderConfig,
+                                              CosBinaryProviderConfig,
+                                              GhaBinaryProviderConfig,
+                                              NugetBinaryProviderConfig,
+                                              AzureUpkgBinaryProviderConfig>;
+
+    struct BinaryConfigParserState
+    {
+        bool nuget_interactive = false;
+        std::set<StringLiteral> binary_cache_providers;
+
+        std::vector<BinaryProviderConfig> binary_providers;
+
+        std::string nugettimeout = "100";
+
+        bool aws_no_sign_request = false;
 
         // These are filled in after construction by reading from args and environment
         std::string nuget_prefix;
