@@ -82,3 +82,10 @@ if ($firstMatch -lt 0) {
 } elseif ($output.IndexOf($expected, $firstMatch + 1) -ge 0) {
     throw 'Duplicated bad license'
 }
+
+Refresh-TestRoot
+$output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports/overlays" install vcpkg-hello-world-1:x64-no-vcvars
+Throw-IfNotFailed
+if ($output -notmatch 'Error code: 1') {
+    throw 'VCPKG_LOAD_VCVARS_ENV disables calling vcvars'
+}
