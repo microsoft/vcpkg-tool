@@ -95,6 +95,7 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
+    INFO("spec.name: " << name);
     CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
@@ -218,15 +219,20 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(
-        provider,
-        bprovider,
-        s_empty_mock_overlay,
-        var_provider,
-        deps,
-        overrides,
-        toplevel,
-        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
+    return create_versioned_install_plan(provider,
+                                         bprovider,
+                                         s_empty_mock_overlay,
+                                         var_provider,
+                                         deps,
+                                         overrides,
+                                         toplevel,
+                                         {nullptr,
+                                          Test::ARM_UWP,
+                                          "pkgs",
+                                          UnsupportedPortAction::Error,
+                                          UseHeadVersion::No,
+                                          Editable::No,
+                                          ImplicitDefault::Yes});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -237,15 +243,45 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
-    return create_versioned_install_plan(
-        provider,
-        bprovider,
-        oprovider,
-        var_provider,
-        deps,
-        overrides,
-        toplevel,
-        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
+    return create_versioned_install_plan(provider,
+                                         bprovider,
+                                         oprovider,
+                                         var_provider,
+                                         deps,
+                                         overrides,
+                                         toplevel,
+                                         {nullptr,
+                                          Test::ARM_UWP,
+                                          "pkgs",
+                                          UnsupportedPortAction::Error,
+                                          UseHeadVersion::No,
+                                          Editable::No,
+                                          ImplicitDefault::Yes});
+}
+
+static ExpectedL<ActionPlan> create_versioned_install_plan(const IOverlayProvider& oprovider,
+                                                           const std::vector<Dependency>& deps,
+                                                           const PackageSpec& toplevel,
+                                                           ImplicitDefault implicit_default)
+{
+    MockVersionedPortfileProvider vp;
+    MockCMakeVarProvider var_provider;
+    MockBaselineProvider bp;
+
+    return vcpkg::create_versioned_install_plan(vp,
+                                                bp,
+                                                oprovider,
+                                                var_provider,
+                                                deps,
+                                                {},
+                                                toplevel,
+                                                {nullptr,
+                                                 Test::ARM_UWP,
+                                                 "pkgs",
+                                                 UnsupportedPortAction::Error,
+                                                 UseHeadVersion::No,
+                                                 Editable::No,
+                                                 implicit_default});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -1628,11 +1664,85 @@ TEST_CASE ("version install default features", "[versionplan]")
     MockBaselineProvider bp;
     bp.v["a"] = {"1", 0};
 
-    WITH_EXPECTED(install_plan,
-                  create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec()));
+    SECTION ("toplevel requires defaults")
+    {
+        WITH_EXPECTED(install_plan,
+                      create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec()));
 
-    REQUIRE(install_plan.size() == 1);
-    check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+
+    SECTION ("default-features false")
+    {
+        auto install_plan =
+            create_versioned_install_plan(vp, bp, var_provider, {CoreDependency{"a"}}, {}, toplevel_spec())
+                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {});
+    }
+
+    SECTION ("default-features true")
+    {
+        auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+
+    SECTION ("default-features true 2")
+    {
+        auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {Dependency{"a"}}, {}, toplevel_spec())
+                                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(install_plan.install_actions[0], "a", {"1", 0}, {"x"});
+    }
+}
+
+TEST_CASE ("version install depend-defaults", "[versionplan]")
+{
+    // Dependencies:
+    // b has default feature '0'
+    // a -> b[core]
+    // c -> b[default]
+
+    MockOverlayProvider op;
+    auto& a_scf = op.emplace("a");
+    a_scf.source_control_file->core_paragraph->dependencies.push_back(CoreDependency{"b"});
+    auto& b_scf = op.emplace("b");
+    b_scf.source_control_file->core_paragraph->default_features.push_back({"0"});
+    b_scf.source_control_file->feature_paragraphs.emplace_back(make_fpgh("0"));
+    auto& d_scf = op.emplace("c");
+    d_scf.source_control_file->core_paragraph->dependencies.push_back(Dependency{"b"});
+
+    SECTION ("toplevel ImplicitDefault::Yes")
+    {
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::Yes)
+                                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_features(install_plan.install_actions[0], "b", {"0"});
+        check_name_and_features(install_plan.install_actions[1], "a", {});
+    }
+
+    SECTION ("toplevel ImplicitDefault::No")
+    {
+        auto install_plan = create_versioned_install_plan(op, {Dependency{"a"}}, toplevel_spec(), ImplicitDefault::No)
+                                .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 2);
+
+        check_name_and_features(install_plan.install_actions[0], "b", {});
+        check_name_and_features(install_plan.install_actions[1], "a", {});
+
+        // c -> b[default], so depend-defaults should not suppress it
+        install_plan = create_versioned_install_plan(op, {Dependency{"c"}}, toplevel_spec(), ImplicitDefault::No)
+                           .value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(install_plan.size() == 2);
+        check_name_and_features(install_plan.install_actions[0], "b", {"0"});
+        check_name_and_features(install_plan.install_actions[1], "c", {});
+    }
 }
 
 TEST_CASE ("version dont install default features", "[versionplan]")

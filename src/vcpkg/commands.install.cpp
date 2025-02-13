@@ -1128,12 +1128,12 @@ namespace vcpkg
             keep_going,
         };
 
-        const CreateInstallPlanOptions create_options{nullptr,
-                                                      host_triplet,
-                                                      paths.packages(),
-                                                      unsupported_port_action,
-                                                      Util::Enum::to_enum<UseHeadVersion>(use_head_version),
-                                                      Util::Enum::to_enum<Editable>(is_editable)};
+        CreateInstallPlanOptions create_options{nullptr,
+                                                host_triplet,
+                                                paths.packages(),
+                                                unsupported_port_action,
+                                                Util::Enum::to_enum<UseHeadVersion>(use_head_version),
+                                                Util::Enum::to_enum<Editable>(is_editable)};
 
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
@@ -1245,6 +1245,8 @@ namespace vcpkg
                 extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
             }
 
+            create_options.implicit_default =
+                (manifest_scf->core_paragraph->depend_defaults ? ImplicitDefault::Yes : ImplicitDefault::No);
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
             auto install_plan = create_versioned_install_plan(*verprovider,
