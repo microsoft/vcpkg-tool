@@ -56,8 +56,8 @@ namespace vcpkg
         Path m_listfile;
 
     public:
-        const Path& destination() const;
-        const Path& listfile() const;
+        const Path& destination() const noexcept { return this->m_destination; }
+        const Path& listfile() const noexcept { return this->m_listfile; }
     };
 
     void install_package_and_write_listfile(const Filesystem& fs,
@@ -66,7 +66,7 @@ namespace vcpkg
 
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
+                                          std::vector<Path>&& files,
                                           const InstallDir& destination_dir);
 
     InstallResult install_package(const VcpkgPaths& paths,
