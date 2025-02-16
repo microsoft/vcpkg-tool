@@ -52,10 +52,10 @@ namespace vcpkg
         }
     };
 
-    constexpr bool is_symlink(FileType s) noexcept { return s == FileType::symlink || s == FileType::junction; }
-    constexpr bool is_regular_file(FileType s) noexcept { return s == FileType::regular; }
-    constexpr bool is_directory(FileType s) noexcept { return s == FileType::directory; }
-    constexpr bool exists(FileType s) noexcept { return s != FileType::not_found && s != FileType::none; }
+    bool is_symlink(FileType s);
+    bool is_regular_file(FileType s);
+    bool is_directory(FileType s);
+    bool exists(FileType s);
 
     struct FilePointer
     {
