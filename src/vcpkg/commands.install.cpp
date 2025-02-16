@@ -31,9 +31,6 @@
 
 #include <future>
 #include <iterator>
-#ifdef _WIN32
-#include <execution>
-#endif
 
 namespace vcpkg
 {
@@ -55,7 +52,7 @@ namespace vcpkg
         bool operator<(const PathAndType& other) const noexcept { return path < other.path; }
     };
 
-    static std::vector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
+    static SortedVector<PathAndType> filter_files_to_install(const Filesystem& fs, std::vector<Path>&& files)
     {
         std::vector<PathAndType> output(files.size());
 
@@ -86,21 +83,15 @@ namespace vcpkg
             }
             return false;
         });
-#ifdef _WIN32
-        std::sort(std::execution::par_unseq, output.begin(), output.end());
-#else
-        std::sort(output.begin(), output.end());
-#endif
-        return output;
+        return SortedVector(std::move(output));
     }
 
-    // PRE: files is sorted
     // install_dest_dir: The directory where files are installed, without final '/'
     static void install_listfile(const Filesystem& fs,
                                  size_t prefix_length,
                                  const Path& install_dest_dir,
                                  const Path& listfile,
-                                 View<PathAndType> files)
+                                 const SortedVector<PathAndType>& files)
     {
         auto install_dest_subdir = install_dest_dir.filename().to_string();
         install_dest_subdir.push_back('/');
