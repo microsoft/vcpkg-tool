@@ -114,8 +114,8 @@ namespace vcpkg
             }
         }
 
-        fs.create_directories(listfile.parent_path(), VCPKG_LINE_INFO);
-        fs.write_lines(listfile, output, VCPKG_LINE_INFO);
+        const std::string file_list_str = Strings::join("\n", output);
+        fs.write_contents_and_dirs(listfile, file_list_str, VCPKG_LINE_INFO);
     }
 
     void install_package_and_write_listfile(const Filesystem& fs,
