@@ -74,7 +74,11 @@ namespace vcpkg
             // not found
             else if (!exists(file_and_status.type))
             {
-                msg::println_error(msgFileNotFound, msg::path = file_and_status.path);
+                msg::println(Color::error,
+                    LocalizedString::from_raw(file_and_status.path)
+                        .append_raw(": ")
+                        .append_raw(ErrorPrefix)
+                        .append(msgFileNotFound));
                 return true;
             }
             // invalid file type
