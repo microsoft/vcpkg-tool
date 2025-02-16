@@ -156,7 +156,16 @@ namespace vcpkg
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".exe"))
         {
-            return ExtractionType::Exe;
+            // Special case to differentiate between self-extracting 7z archives and other exe files
+            const auto stem = archive.stem();
+            if (Strings::case_insensitive_ascii_equals(Path(stem).extension(), ".7z"))
+            {
+                return ExtractionType::SelfExtracting7z;
+            }
+            else
+            {
+                return ExtractionType::Exe;
+            }
         }
         else
         {
@@ -188,6 +197,9 @@ namespace vcpkg
                 extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
                 break;
             case ExtractionType::Exe:
+                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
+                break;
+            case ExtractionType::SelfExtracting7z:
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
@@ -248,7 +260,7 @@ namespace vcpkg
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                Strings::case_insensitive_ascii_equals(subext, ".7z"),
                                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissingExtension, msg::extension = ".7.exe"));
+                                   .append(msgMissingExtension, msg::extension = ".7z.exe"));
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
 
@@ -310,50 +322,51 @@ namespace vcpkg
         fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
     }
 
-    ExpectedL<Unit> ZipTool::compress_directory_to_zip(const Filesystem& fs,
-                                                       const Path& source,
-                                                       const Path& destination) const
+    bool ZipTool::compress_directory_to_zip(DiagnosticContext& context,
+                                            const Filesystem& fs,
+                                            const Path& source,
+                                            const Path& destination) const
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
         RedirectedProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        return flatten(cmd_execute_and_capture_output(
-                           Command{seven_zip}.string_arg("a").string_arg(destination).string_arg(source / "*")),
-                       Tools::SEVEN_ZIP);
+        auto& seven_zip_path = seven_zip.value_or_exit(VCPKG_LINE_INFO);
+        auto output = cmd_execute_and_capture_output(
+            context, Command{seven_zip_path}.string_arg("a").string_arg(destination).string_arg(source / "*"));
+        return check_zero_exit_code(context, output, seven_zip_path) != nullptr;
 #else
         RedirectedProcessLaunchSettings settings;
         settings.working_directory = source;
-        return flatten(cmd_execute_and_capture_output(Command{"zip"}
-                                                          .string_arg("--quiet")
-                                                          .string_arg("-y")
-                                                          .string_arg("-r")
-                                                          .string_arg(destination)
-                                                          .string_arg("*")
-                                                          .string_arg("--exclude")
-                                                          .string_arg(FileDotDsStore),
-                                                      settings),
-                       "zip");
+        auto output = cmd_execute_and_capture_output(context,
+                                                     Command{"zip"}
+                                                         .string_arg("--quiet")
+                                                         .string_arg("-y")
+                                                         .string_arg("-r")
+                                                         .string_arg(destination)
+                                                         .string_arg("*")
+                                                         .string_arg("--exclude")
+                                                         .string_arg(FileDotDsStore),
+                                                     settings);
+        return check_zero_exit_code(context, output, "zip") != nullptr;
 #endif
     }
 
-    ExpectedL<ZipTool> ZipTool::make(const ToolCache& cache, MessageSink& status_sink)
+    void ZipTool::setup(const ToolCache& cache, MessageSink& status_sink)
     {
-        ZipTool ret;
 #if defined(_WIN32)
-        ret.seven_zip = cache.get_tool_path(Tools::SEVEN_ZIP, status_sink);
+        seven_zip.emplace(cache.get_tool_path(Tools::SEVEN_ZIP, status_sink));
 #endif
         // Unused on non-Windows
         (void)cache;
         (void)status_sink;
-        return std::move(ret);
     }
 
     Command ZipTool::decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const
     {
         Command cmd;
 #if defined(_WIN32)
-        cmd.string_arg(seven_zip)
+        cmd.string_arg(seven_zip.value_or_exit(VCPKG_LINE_INFO))
             .string_arg("x")
             .string_arg(archive_path)
             .string_arg("-o" + dst.native())

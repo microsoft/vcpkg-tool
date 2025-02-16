@@ -615,17 +615,12 @@ namespace vcpkg::Prefab
             Debug::print(
                 fmt::format("Exporting AAR and POM\n\tAAR path {}\n\tPOM path {}", exported_archive_path, pom_path));
 
-            auto zip = ZipTool::make(paths.get_tool_cache(), out_sink).value_or_exit(VCPKG_LINE_INFO);
-
-            auto compress_result =
-                zip.compress_directory_to_zip(paths.get_filesystem(), package_directory, exported_archive_path);
-            if (!compress_result)
+            ZipTool zip;
+            zip.setup(paths.get_tool_cache(), out_sink);
+            PrintingDiagnosticContext pdc{out_sink};
+            if (!zip.compress_directory_to_zip(pdc, paths.get_filesystem(), package_directory, exported_archive_path))
             {
-                Checks::msg_exit_with_message(
-                    VCPKG_LINE_INFO,
-                    std::move(compress_result)
-                        .error()
-                        .append(msgCompressFolderFailed, msg::path = package_directory.native()));
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
             std::string POM = R"(<?xml version="1.0" encoding="UTF-8"?>

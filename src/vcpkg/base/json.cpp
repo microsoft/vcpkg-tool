@@ -4,7 +4,9 @@
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/unicode.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
 
@@ -1425,7 +1427,7 @@ namespace vcpkg::Json
     uint64_t get_json_parsing_stats() { return g_json_parsing_stats.load(); }
 
     static std::vector<std::string> invalid_json_fields(const Json::Object& obj,
-                                                        Span<const StringView> known_fields) noexcept
+                                                        View<StringLiteral> known_fields) noexcept
     {
         const auto field_is_unknown = [known_fields](StringView sv) {
             // allow directives
@@ -1490,7 +1492,7 @@ namespace vcpkg::Json
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
-                                             View<StringView> valid_fields,
+                                             View<StringLiteral> valid_fields,
                                              const LocalizedString& type_name)
     {
         if (valid_fields.size() == 0)
@@ -1632,4 +1634,38 @@ namespace vcpkg::Json
     }
 
     const FeatureNameDeserializer FeatureNameDeserializer::instance;
+
+    LocalizedString ArchitectureDeserializer::type_name() const { return msg::format(msgACpuArchitecture); }
+
+    Optional<Optional<CPUArchitecture>> ArchitectureDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        auto maybe_cpu_architecture = to_cpu_architecture(sv);
+        if (maybe_cpu_architecture.has_value())
+        {
+            return maybe_cpu_architecture;
+        }
+
+        r.add_generic_error(type_name(),
+                            msg::format(msgInvalidArchitectureValue,
+                                        msg::value = sv,
+                                        msg::expected = all_comma_separated_cpu_architectures()));
+        return Optional<CPUArchitecture>{nullopt};
+    }
+
+    const ArchitectureDeserializer ArchitectureDeserializer::instance;
+
+    LocalizedString Sha512Deserializer::type_name() const { return msg::format(msgASha512); }
+
+    Optional<std::string> Sha512Deserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (sv.size() == 128 && std::all_of(sv.begin(), sv.end(), ParserBase::is_hex_digit))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidSha512, msg::sha = sv));
+        return std::string();
+    }
+
+    const Sha512Deserializer Sha512Deserializer::instance;
 }

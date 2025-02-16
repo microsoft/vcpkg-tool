@@ -52,11 +52,11 @@ namespace vcpkg
         return Version{StringView{content.begin(), hash}, port_version};
     }
 
-    bool operator==(const Version& left, const Version& right)
+    bool operator==(const Version& left, const Version& right) noexcept
     {
         return left.text == right.text && left.port_version == right.port_version;
     }
-    bool operator!=(const Version& left, const Version& right) { return !(left == right); }
+    bool operator!=(const Version& left, const Version& right) noexcept { return !(left == right); }
 
     bool VersionMapLess::operator()(const Version& left, const Version& right) const
     {
@@ -384,12 +384,12 @@ namespace vcpkg
     {
     }
 
-    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)
+    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept
     {
         return lhs.scheme == rhs.scheme && lhs.version == rhs.version;
     }
 
-    bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs) { return !(lhs == rhs); }
+    bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept { return !(lhs == rhs); }
 
     StringLiteral to_string_literal(VersionScheme scheme)
     {

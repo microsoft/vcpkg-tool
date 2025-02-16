@@ -12,9 +12,11 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdAcquiredArtifacts = "acquired-artifacts";
     inline constexpr StringLiteral JsonIdActivatedArtifacts = "activated-artifacts";
     inline constexpr StringLiteral JsonIdAlgorithm = "algorithm";
+    inline constexpr StringLiteral JsonIdArchive = "archive";
     inline constexpr StringLiteral JsonIdAllCapsSHA256 = "SHA256";
     inline constexpr StringLiteral JsonIdAllCapsSHA512 = "SHA512";
     inline constexpr StringLiteral JsonIdApply = "apply";
+    inline constexpr StringLiteral JsonIdArch = "arch";
     inline constexpr StringLiteral JsonIdArchiveCapitalLocation = "archiveLocation";
     inline constexpr StringLiteral JsonIdArtifact = "artifact";
     inline constexpr StringLiteral JsonIdBaseline = "baseline";
@@ -46,6 +48,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDollarSchema = "$schema";
     inline constexpr StringLiteral JsonIdDownloads = "downloads";
     inline constexpr StringLiteral JsonIdError = "error";
+    inline constexpr StringLiteral JsonIdExecutable = "executable";
     inline constexpr StringLiteral JsonIdFeatures = "features";
     inline constexpr StringLiteral JsonIdFiles = "files";
     inline constexpr StringLiteral JsonIdFilesystem = "filesystem";
@@ -68,6 +71,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdMessage = "message";
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
     inline constexpr StringLiteral JsonIdName = "name";
+    inline constexpr StringLiteral JsonIdOS = "os";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
@@ -87,8 +91,10 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdRequires = "requires";
     inline constexpr StringLiteral JsonIdResolved = "resolved";
     inline constexpr StringLiteral JsonIdScanned = "scanned";
+    inline constexpr StringLiteral JsonIdSchemaVersion = "schema-version";
     inline constexpr StringLiteral JsonIdSettings = "settings";
     inline constexpr StringLiteral JsonIdSha = "sha";
+    inline constexpr StringLiteral JsonIdSha512 = "sha512";
     inline constexpr StringLiteral JsonIdState = "state";
     inline constexpr StringLiteral JsonIdSummary = "summary";
     inline constexpr StringLiteral JsonIdSupports = "supports";
@@ -290,6 +296,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchTargetX86 = "target:x86";
     inline constexpr StringLiteral SwitchTLogFile = "tlog-file";
     inline constexpr StringLiteral SwitchTools = "tools";
+    inline constexpr StringLiteral SwitchToolDataFile = "tool-data-file";
     inline constexpr StringLiteral SwitchTriplet = "triplet";
     inline constexpr StringLiteral SwitchUrl = "url";
     inline constexpr StringLiteral SwitchVcpkgRoot = "vcpkg-root";
@@ -314,7 +321,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchXProhibitBackcompatFeatures = "x-prohibit-backcompat-features";
     inline constexpr StringLiteral SwitchXRandomize = "x-randomize";
     inline constexpr StringLiteral SwitchXTransitive = "x-transitive";
-    inline constexpr StringLiteral SwitchXUseAria2 = "x-use-aria2";
     inline constexpr StringLiteral SwitchXVersionSuffix = "x-version-suffix";
     inline constexpr StringLiteral SwitchXWriteNuGetPackagesConfig = "x-write-nuget-packages-config";
     inline constexpr StringLiteral SwitchXXUnit = "x-xunit";
@@ -332,6 +338,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
     inline constexpr StringLiteral FileControl = "CONTROL";
+    inline constexpr StringLiteral FileCompilerFileHashCacheDotJson = "compiler-file-hash-cache.json";
     inline constexpr StringLiteral FileCopying = "COPYING";
     inline constexpr StringLiteral FileCopyright = "copyright";
     inline constexpr StringLiteral FileDebug = "debug";
@@ -340,11 +347,13 @@ namespace vcpkg
     inline constexpr StringLiteral FileInclude = "include";
     inline constexpr StringLiteral FileIncomplete = "incomplete";
     inline constexpr StringLiteral FileInfo = "info";
+    inline constexpr StringLiteral FileIssueBodyMD = "issue_body.md";
     inline constexpr StringLiteral FileLicense = "LICENSE";
     inline constexpr StringLiteral FileLicenseDotTxt = "LICENSE.txt";
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
     inline constexpr StringLiteral FileShare = "share";
     inline constexpr StringLiteral FileStatus = "status";
+    inline constexpr StringLiteral FileStatusNew = "status-new";
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";
@@ -354,6 +363,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileVcpkgConfigurationDotJson = "vcpkg-configuration.json";
     inline constexpr StringLiteral FileVcpkgDotJson = "vcpkg.json";
     inline constexpr StringLiteral FileVcpkgLock = "vcpkg-lock.json";
+    inline constexpr StringLiteral FileManifestInfo = "manifest-info.json";
     inline constexpr StringLiteral FileVcpkgPathTxt = "vcpkg.path.txt";
     inline constexpr StringLiteral FileVcpkgPortConfig = "vcpkg-port-config.cmake";
     inline constexpr StringLiteral FileVcpkgSpdxJson = "vcpkg.spdx.json";
@@ -369,6 +379,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableCMakeSystemName = "VCPKG_CMAKE_SYSTEM_NAME";
     inline constexpr StringLiteral CMakeVariableCMakeSystemVersion = "VCPKG_CMAKE_SYSTEM_VERSION";
     inline constexpr StringLiteral CMakeVariableCmd = "CMD";
+    inline constexpr StringLiteral CMakeVariableCompilerCacheFile = "VCPKG_COMPILER_CACHE_FILE";
     inline constexpr StringLiteral CMakeVariableConcurrency = "VCPKG_CONCURRENCY";
     inline constexpr StringLiteral CMakeVariableCurrentBuildtreesDir = "CURRENT_BUILDTREES_DIR";
     inline constexpr StringLiteral CMakeVariableCurrentPackagesDir = "CURRENT_PACKAGES_DIR";
@@ -376,7 +387,6 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableDisableCompilerTracking = "VCPKG_DISABLE_COMPILER_TRACKING";
     inline constexpr StringLiteral CMakeVariableDownloadMode = "VCPKG_DOWNLOAD_MODE";
     inline constexpr StringLiteral CMakeVariableDownloads = "DOWNLOADS";
-    inline constexpr StringLiteral CMakeVariableDownloadTool = "_VCPKG_DOWNLOAD_TOOL";
     inline constexpr StringLiteral CMakeVariableEditable = "_VCPKG_EDITABLE";
     inline constexpr StringLiteral CMakeVariableEnvPassthrough = "VCPKG_ENV_PASSTHROUGH";
     inline constexpr StringLiteral CMakeVariableEnvPassthroughUntracked = "VCPKG_ENV_PASSTHROUGH_UNTRACKED";

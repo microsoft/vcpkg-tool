@@ -29,7 +29,6 @@ namespace vcpkg
         static constexpr StringLiteral NINJA = "ninja";
         static constexpr StringLiteral POWERSHELL_CORE = "powershell-core";
         static constexpr StringLiteral NUGET = "nuget";
-        static constexpr StringLiteral ARIA2 = "aria2";
         static constexpr StringLiteral NODE = "node";
         static constexpr StringLiteral IFW_INSTALLER_BASE = "ifw_installerbase";
         // This duplicate of CMake should only be used as a fallback to unpack
@@ -60,9 +59,9 @@ namespace vcpkg
     ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs);
 
     std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              std::shared_ptr<const DownloadManager> downloader,
+                                              const AssetCachingSettings& asset_cache_settings,
                                               Path downloads,
-                                              Path xml_config,
+                                              Path config_path,
                                               Path tools,
                                               RequireExactVersions abiToolVersionHandling);
 }

@@ -597,7 +597,7 @@ namespace vcpkg
                                  Triplet host_triplet)
     {
         (void)host_triplet;
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs
@@ -618,9 +618,9 @@ namespace vcpkg
         print_export_plan(group_by_plan_type);
 
         const bool has_non_user_requested_packages =
-            Util::find_if(export_plan, [](const ExportPlanAction& package) -> bool {
+            Util::any_of(export_plan, [](const ExportPlanAction& package) -> bool {
                 return package.request_type != RequestType::USER_REQUESTED;
-            }) != export_plan.cend();
+            });
 
         if (has_non_user_requested_packages)
         {
