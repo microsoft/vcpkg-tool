@@ -43,6 +43,8 @@ namespace vcpkg
         dirs.m_listfile = ip.listfile_path(pgh);
         return dirs;
     }
+    const Path& InstallDir::destination() const noexcept { return this->m_destination; }
+    const Path& InstallDir::listfile() const noexcept { return this->m_listfile; }
 
     struct PathAndType
     {
