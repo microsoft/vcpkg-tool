@@ -75,10 +75,10 @@ namespace vcpkg
             else if (!exists(file_and_status.type))
             {
                 msg::println(Color::error,
-                    LocalizedString::from_raw(file_and_status.path)
-                        .append_raw(": ")
-                        .append_raw(ErrorPrefix)
-                        .append(msgFileNotFound));
+                             LocalizedString::from_raw(file_and_status.path)
+                                 .append_raw(": ")
+                                 .append_raw(ErrorPrefix)
+                                 .append(msgFileNotFound));
                 return true;
             }
             // invalid file type
