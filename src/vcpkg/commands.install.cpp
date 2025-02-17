@@ -29,7 +29,6 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
-#include <future>
 #include <iterator>
 
 namespace vcpkg
@@ -146,10 +145,6 @@ namespace vcpkg
 
         const auto filtered_files = filter_files_to_install(fs, std::move(files));
 
-        auto list_file_future = std::async(std::launch::async | std::launch::deferred, [&]() {
-            install_listfile(fs, prefix_length, destination, destination_dir.listfile(), filtered_files);
-        });
-
         // Copy directories
         for (const auto& file : filtered_files)
         {
@@ -232,7 +227,7 @@ namespace vcpkg
                 }
             }
         });
-        list_file_future.get();
+        install_listfile(fs, prefix_length, destination, destination_dir.listfile(), filtered_files);
     }
 
     static std::vector<file_pack> extract_files_in_triplet(
