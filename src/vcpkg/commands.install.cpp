@@ -118,7 +118,8 @@ namespace vcpkg
             }
         }
 
-        const std::string file_list_str = Strings::join("\n", output);
+        std::string file_list_str = Strings::join("\n", output);
+        file_list_str.push_back('\n');
         fs.write_contents_and_dirs(listfile, file_list_str, VCPKG_LINE_INFO);
     }
 
