@@ -169,6 +169,7 @@ namespace vcpkg
 
             if (!is_regular_file(status) && !is_symlink(status))
             {
+                std::lock_guard lck(mtx);
                 Checks::unreachable(VCPKG_LINE_INFO);
                 return;
             }
