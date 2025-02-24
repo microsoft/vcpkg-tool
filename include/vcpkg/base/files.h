@@ -246,6 +246,16 @@ namespace vcpkg
         void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec) const;
         void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li) const;
 
+        // Rename old_path -> new_path, but consider new_path already existing as acceptable.
+        // Traditionally used to interact with downloads, or git tree cache, where multiple
+        // instances of vcpkg may be trying to do the same action at the same time.
+        //
+        // Returns whether the rename actually happened.
+        //
+        // If `old_path` and `new_path` resolve to the same file, the behavior is undefined.
+        bool rename_cas_like(const Path& old_path, const Path& new_path, std::error_code& ec) const;
+        bool rename_cas_like(const Path& old_path, const Path& new_path, LineInfo li) const;
+
         virtual void rename_or_copy(const Path& old_path,
                                     const Path& new_path,
                                     StringLiteral temp_suffix,
