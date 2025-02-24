@@ -155,7 +155,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         // if artifacts is deployed in development, with Visual Studio, or with the One Liner, it will be deployed here
-        Path vcpkg_artifacts_path = get_exe_path_of_current_process();
+        const Path exe_path = get_exe_path_of_current_process();
+        Path vcpkg_artifacts_path = exe_path;
         vcpkg_artifacts_path.replace_filename("vcpkg-artifacts");
         vcpkg_artifacts_path.make_preferred();
         Path vcpkg_artifacts_main_path = vcpkg_artifacts_path / "main.js";
@@ -177,8 +178,11 @@ namespace vcpkg
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
             if (out_of_date)
             {
+                // This is racy; the reason for the temp-path-then-rename dance is to get only the
+                // 'vcpkg-artifacts' directory out of the standalone bundle, while extracting
+                // the standalone bundle over VCPKG_ROOT would overwrite scripts/triplets/etc.
                 fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
-                auto temp = get_exe_path_of_current_process();
+                auto temp = exe_path;
                 temp.replace_filename("vcpkg-artifacts-temp");
                 auto maybe_tarball = download_vcpkg_standalone_bundle(
                     console_diagnostic_context, paths.get_asset_cache_settings(), fs, paths.downloads);
@@ -233,7 +237,7 @@ namespace vcpkg
         }
 
         cmd.string_arg("--vcpkg-root").string_arg(paths.root);
-        cmd.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
+        cmd.string_arg("--z-vcpkg-command").string_arg(exe_path);
 
         cmd.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
         cmd.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);
