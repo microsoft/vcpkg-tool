@@ -914,7 +914,7 @@ TEST_CASE ("copy_file", "[files]")
     CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
-TEST_CASE("rename", "[files]")
+TEST_CASE ("rename", "[files]")
 {
     urbg_t urbg;
 
