@@ -16,7 +16,7 @@ jobs:
             preset: windows-ci
           - os: ubuntu-20.04
             preset: linux-ci
-          - os: ubuntu-20.04-arm
+          - os: ubuntu-24.04-arm
             preset: linux-arm64-ci
           - os: macos-13
             preset: macos-ci
