@@ -181,9 +181,6 @@ namespace vcpkg
                 // This is racy; the reason for the temp-path-then-rename dance is to get only the
                 // 'vcpkg-artifacts' directory out of the standalone bundle, while extracting
                 // the standalone bundle over VCPKG_ROOT would overwrite scripts/triplets/etc.
-                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
-                auto temp = exe_path;
-                temp.replace_filename("vcpkg-artifacts-temp");
                 auto maybe_tarball = download_vcpkg_standalone_bundle(
                     console_diagnostic_context, paths.get_asset_cache_settings(), fs, paths.downloads);
                 auto tarball = maybe_tarball.get();
@@ -192,10 +189,12 @@ namespace vcpkg
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                set_directory_to_archive_contents(fs, paths.get_tool_cache(), null_sink, *tarball, temp);
+                Path temp = extract_archive_to_temp_subdirectory(
+                    fs, paths.get_tool_cache(), null_sink, *tarball, vcpkg_artifacts_path);
+                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
                 fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);
-                fs.remove(*tarball, VCPKG_LINE_INFO);
                 fs.remove_all(temp, VCPKG_LINE_INFO);
+                fs.remove(*tarball, VCPKG_LINE_INFO);
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)
                 fs.write_contents(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING, VCPKG_LINE_INFO);
 #endif // ^^^ VCPKG_STANDALONE_BUNDLE_SHA
