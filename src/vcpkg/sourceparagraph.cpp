@@ -730,9 +730,32 @@ namespace vcpkg
 
     const DependencyOverrideDeserializer DependencyOverrideDeserializer::instance;
 
-    struct DependencyOverrideArrayDeserializer : Json::ArrayDeserializer<DependencyOverrideDeserializer>
+    struct DependencyOverrideArrayDeserializer : Json::IDeserializer<std::vector<DependencyOverride>>
     {
         LocalizedString type_name() const override { return msg::format(msgAnArrayOfDependencyOverrides); }
+
+        virtual Optional<std::vector<DependencyOverride>> visit_array(Json::Reader& r,
+                                                                      const Json::Array& arr) const override
+        {
+            std::set<std::string> seen;
+            return r.array_elements_fn(
+                arr,
+                DependencyOverrideDeserializer::instance,
+                [&](Json::Reader& r, const IDeserializer<DependencyOverride>& visitor, const Json::Value& value) {
+                    auto maybe_dependency_override = visitor.visit(r, value);
+                    if (auto dependency_override = maybe_dependency_override.get())
+                    {
+                        if (!seen.insert(dependency_override->name).second)
+                        {
+                            r.add_generic_error(visitor.type_name(),
+                                                msg::format(msgDuplicateDependencyOverride,
+                                                            msg::package_name = dependency_override->name));
+                        }
+                    }
+
+                    return maybe_dependency_override;
+                });
+        }
 
         static const DependencyOverrideArrayDeserializer instance;
     };
@@ -1275,7 +1298,7 @@ namespace vcpkg
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
             if (!r.optional_object_field(
-                    obj, JsonIdVcpkgConfiguration, ret.config.emplace(), get_configuration_deserializer()))
+                    obj, JsonIdVcpkgConfiguration, ret.config.emplace(), configuration_deserializer))
             {
                 ret.config = nullopt;
             }
@@ -1296,7 +1319,7 @@ namespace vcpkg
                                                                   MessageSink& warningsSink)
     {
         Json::Reader reader(origin);
-        auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+        auto res = ManifestConfigurationDeserializer::instance.visit(reader, manifest);
 
         if (!reader.warnings().empty())
         {
@@ -1348,7 +1371,7 @@ namespace vcpkg
     {
         Json::Reader reader(control_path);
 
-        auto res = reader.visit(manifest, ManifestDeserializerType::instance);
+        auto res = ManifestDeserializerType::instance.visit(reader, manifest);
 
         for (auto&& w : reader.warnings())
         {

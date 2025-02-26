@@ -59,9 +59,6 @@ namespace vcpkg
                                 Triplet default_triplet,
                                 Triplet host_triplet);
 
-    StringLiteral to_string_view(DownloadTool tool);
-    std::string to_string(DownloadTool tool);
-
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -70,7 +67,6 @@ namespace vcpkg
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
-        DownloadTool download_tool;
         BackcompatFeatures backcompat_features;
         KeepGoing keep_going;
     };
@@ -94,13 +90,18 @@ namespace vcpkg
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        CIKind detected_ci,
                                                         const VcpkgPaths& paths,
-                                                        const Optional<Path>& issue_body);
+                                                        const std::vector<std::string>& error_logs,
+                                                        const Optional<Path>& maybe_issue_body);
     inline void print_user_troubleshooting_message(const InstallPlanAction& action,
+                                                   CIKind detected_ci,
                                                    const VcpkgPaths& paths,
-                                                   Optional<Path>&& issue_body)
+                                                   const std::vector<std::string>& error_logs,
+                                                   Optional<Path>&& maybe_issue_body)
     {
-        msg::println(Color::error, create_user_troubleshooting_message(action, paths, issue_body));
+        msg::println(Color::error,
+                     create_user_troubleshooting_message(action, detected_ci, paths, error_logs, maybe_issue_body));
     }
 
     /// <summary>

@@ -614,19 +614,19 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
     CHECK(parse_download_configuration("x-azurl,ftp://magic,none"));
 
     {
-        DownloadManagerConfig empty;
+        AssetCachingSettings empty;
         CHECK(empty.m_write_headers.empty());
         CHECK(empty.m_read_headers.empty());
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123/,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
@@ -634,7 +634,7 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,?foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
@@ -642,14 +642,14 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
@@ -657,13 +657,23 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,foo,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
+    }
+    {
+        AssetCachingSettings dm =
+            parse_download_configuration("x-script,powershell {SHA} {URL}").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(!dm.m_read_url_template.has_value());
+        CHECK(dm.m_read_headers.empty());
+        CHECK(!dm.m_write_url_template.has_value());
+        CHECK(dm.m_write_headers.empty());
+        CHECK(dm.m_secrets.empty());
+        CHECK(dm.m_script.value_or_exit(VCPKG_LINE_INFO) == "powershell {SHA} {URL}");
     }
 }
 
@@ -679,7 +689,7 @@ TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    DownloadManagerConfig empty;
+    AssetCachingSettings empty;
 
     CHECK(value_or(parse_download_configuration("x-azurl,https://abc/123,foo;clear"), empty).m_read_url_template ==
           nullopt);
@@ -698,7 +708,7 @@ TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    DownloadManagerConfig empty;
+    AssetCachingSettings empty;
 
     CHECK(!value_or(parse_download_configuration({}), empty).m_block_origin);
     CHECK(value_or(parse_download_configuration("x-block-origin"), empty).m_block_origin);

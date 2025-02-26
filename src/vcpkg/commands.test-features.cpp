@@ -154,6 +154,7 @@ namespace vcpkg
                                         Triplet target_triplet,
                                         Triplet host_triplet)
     {
+        auto& fs = paths.get_filesystem();
         const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
@@ -164,9 +165,12 @@ namespace vcpkg
         const auto test_features_seperatly =
             !Util::Sets::contains(options.switches, OPTION_NO_FEATURES_SEPARATED_TESTS);
 
-        auto binary_cache = BinaryCache::make(args, paths, stdout_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache(fs);
+        if (!binary_cache.install_providers(args, paths, out_sink))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
-        auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
             auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
@@ -174,13 +178,13 @@ namespace vcpkg
             {
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
-                filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
+                fs.create_directories(raw_path, VCPKG_LINE_INFO);
+                build_logs_recorder_storage = fs.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set, make_overlay_provider(filesystem, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -420,7 +424,7 @@ namespace vcpkg
             }
             Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage =
                 build_logs_recorder_storage.map([&, &spec = spec](const CiBuildLogsRecorder& recorder) {
-                    return recorder.create_for_feature_test(spec, filesystem);
+                    return recorder.create_for_feature_test(spec, fs);
                 });
             Optional<Path> logs_dir = feature_build_logs_recorder_storage.map(
                 [](const CiBuildLogsRecorder& recorder) { return recorder.base_path; });
@@ -437,7 +441,6 @@ namespace vcpkg
                 CleanBuildtrees::Yes,
                 CleanPackages::Yes,
                 CleanDownloads::No,
-                DownloadTool::Builtin,
                 BackcompatFeatures::Prohibit,
                 KeepGoing::Yes,
             };
@@ -551,7 +554,7 @@ namespace vcpkg
             Path raw_path = it_output_file->second;
             auto content = Strings::join("\n", known_failures);
             content += '\n';
-            filesystem.write_contents_and_dirs(raw_path, content, VCPKG_LINE_INFO);
+            fs.write_contents_and_dirs(raw_path, content, VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

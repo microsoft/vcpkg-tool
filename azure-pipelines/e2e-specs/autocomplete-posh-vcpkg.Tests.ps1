@@ -39,7 +39,7 @@ BeforeAll {
                 '--clean-downloads-after-build', '--clean-packages-after-build', '--dry-run', '--editable'
                 '--enforce-port-checks', '--head', '--keep-going', '--no-downloads', '--no-print-usage'
                 '--only-binarycaching', '--only-downloads', '--recurse', '--x-feature', '--x-no-default-features'
-                '--x-prohibit-backcompat-features', '--x-use-aria2', '--x-write-nuget-packages-config', '--x-xunit'
+                '--x-prohibit-backcompat-features', '--x-write-nuget-packages-config', '--x-xunit'
             )
             remove  = @(
                 '--dry-run', '--outdated', '--purge', '--recurse'

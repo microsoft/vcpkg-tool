@@ -9,6 +9,8 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/diagnostics.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
 namespace vcpkg
@@ -54,22 +56,20 @@ namespace vcpkg
 
     struct ZipTool
     {
-        static ExpectedL<ZipTool> make(const ToolCache& tools, MessageSink& status_sink);
+        void setup(const ToolCache& tools, MessageSink& status_sink);
 
-    private:
-        ZipTool() = default;
-
-#if defined _WIN32
-        Path seven_zip;
-#endif
-
-    public:
         // Compress the source directory into the destination file.
-        ExpectedL<Unit> compress_directory_to_zip(const Filesystem& fs,
-                                                  const Path& source,
-                                                  const Path& destination) const;
+        bool compress_directory_to_zip(DiagnosticContext& context,
+                                       const Filesystem& fs,
+                                       const Path& source,
+                                       const Path& destination) const;
 
         Command decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const;
+
+    private:
+#if defined _WIN32
+        Optional<Path> seven_zip;
+#endif
     };
 
     std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);

@@ -4,12 +4,26 @@
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/optional.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/stringview.h>
 
 #include <string>
 
 namespace vcpkg::Hash
 {
+    enum class HashPrognosis
+    {
+        Success,
+        FileNotFound,
+        OtherError,
+    };
+
+    struct HashResult
+    {
+        HashPrognosis prognosis = HashPrognosis::Success;
+        std::string hash;
+    };
+
     enum class Algorithm
     {
         Sha256,
@@ -33,5 +47,28 @@ namespace vcpkg::Hash
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo);
     std::string get_string_hash(StringView s, Algorithm algo);
     std::string get_string_sha256(StringView s);
-    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& target, Algorithm algo);
+
+    // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
+    // Returns a HashResult with the following outcomes:
+    // HashPrognosis::Success: The entire file was read and hashed. The result hash is stored in `hash`.
+    // HashPrognosis::FileNotFound: The file does not exist. `hash` is empty string.
+    // HashPrognosis::OtherError: An error occurred while reading the file. `hash` is empty string.
+    HashResult get_file_hash(DiagnosticContext& context,
+                             const ReadOnlyFilesystem& fs,
+                             const Path& path,
+                             Algorithm algo);
+
+    // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
+    // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
+    // Otherwise, returns an disengaged optional.
+    // Note that the file not existing is interpreted as an error that will be reported to `context`.
+    Optional<std::string> get_file_hash_required(DiagnosticContext& context,
+                                                 const ReadOnlyFilesystem& fs,
+                                                 const Path& path,
+                                                 Algorithm algo);
+
+    // Tries to open `path` for reading, and hashes the contents using the requested algorithm.
+    // If the file exists and could be completely read, returns an engaged optional with the stringized hash.
+    // Otherwise, returns the read operation error.
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo);
 }
