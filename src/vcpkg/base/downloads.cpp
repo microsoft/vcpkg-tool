@@ -341,7 +341,7 @@ namespace vcpkg
             if (!m_hSession.Open(context,
                                  sanitized_url,
                                  L"vcpkg/1.0",
-                                 WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
                                  WINHTTP_NO_PROXY_NAME,
                                  WINHTTP_NO_PROXY_BYPASS,
                                  0))
@@ -367,7 +367,17 @@ namespace vcpkg
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();
-                proxy.lpszProxyBypass = nullptr;
+
+                // Try to get bypass list from environment variable
+                auto maybe_no_proxy_env = get_environment_variable(EnvironmentVariableNoProxy);
+                std::wstring env_noproxy_settings;
+                if (auto p_no_proxy = maybe_no_proxy_env.get())
+                {
+                    env_noproxy_settings = Strings::to_utf16(*p_no_proxy);
+                    proxy.lpszProxyBypass = env_noproxy_settings.data();
+                }
+                else
+                    proxy.lpszProxyBypass = nullptr;
                 if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
                 {
                     return false;

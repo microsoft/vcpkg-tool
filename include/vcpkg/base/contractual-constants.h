@@ -515,6 +515,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableHome = "HOME";
     inline constexpr StringLiteral EnvironmentVariableHttpProxy = "HTTP_PROXY";
     inline constexpr StringLiteral EnvironmentVariableHttpsProxy = "HTTPS_PROXY";
+    inline constexpr StringLiteral EnvironmentVariableNoProxy = "NO_PROXY";
     inline constexpr StringLiteral EnvironmentVariableInclude = "INCLUDE";
     inline constexpr StringLiteral EnvironmentVariableJenkinsHome = "JENKINS_HOME";
     inline constexpr StringLiteral EnvironmentVariableJenkinsUrl = "JENKINS_URL";
