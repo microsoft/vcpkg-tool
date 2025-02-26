@@ -1,39 +1,41 @@
-param()
+Register-ArgumentCompleter -Native -CommandName vcpkg -ScriptBlock {
+    param(
+        [string]$wordToComplete,
+        [System.Management.Automation.Language.CommandAst]$commandAst,
+        [int]$cursorPosition
+    )
 
-if (Get-Module posh-vcpkg) { return }
+    if ($cursorPosition -lt $commandAst.CommandElements[0].Extent.EndOffset) {
+        return
+    }
 
-if ($PSVersionTable.PSVersion.Major -lt 5) {
-    Write-Warning ("posh-vcpkg does not support PowerShell versions before 5.0.")
-    return
-}
+    [string]$commandText = $commandAst.CommandElements[0].Value
 
-if (Test-Path Function:\TabExpansion) {
-    Rename-Item Function:\TabExpansion VcpkgTabExpansionBackup
-}
-
-function TabExpansion($line, $lastWord) {
-    $lastBlock = [regex]::Split($line, '[|;]')[-1].TrimStart()
-
-    switch -regex ($lastBlock) {
-        "^(?<vcpkgexe>(\./|\.\\|)vcpkg(\.exe|)) (?<remaining>.*)$"
-        {
-            & $matches['vcpkgexe'] autocomplete $matches['remaining']
-            return
-        }
-
-        # Fall back on existing tab expansion
-        default {
-            if (Test-Path Function:\VcpkgTabExpansionBackup) {
-                VcpkgTabExpansionBackup $line $lastWord
+    [string[]]$textsBeforeCursor = $commandAst.CommandElements |
+        Select-Object -Skip 1 | ForEach-Object {
+            if ($_.Extent.EndOffset -le $cursorPosition) {
+                $_.Extent.Text
+            }
+            elseif ($_.Extent.StartOffset -lt $cursorPosition) {
+                $_.Extent.Text.Substring(0, $cursorPosition - $_.Extent.StartOffset)
             }
         }
+
+    $spaceToComplete = if ($wordToComplete -ne '') { $null }
+    elseif ($PSNativeCommandArgumentPassing -in 'Standard', 'Windows') { '' }
+    else { '""' }
+
+    [PowerShell]$cmd = [PowerShell]::Create().AddScript{
+        Set-Location $args[0]
+        & $args[1] autocomplete @($args[2])
+    }.AddParameters(($PWD, $commandText, @($textsBeforeCursor + $spaceToComplete)))
+
+    [string[]]$completions = $cmd.Invoke()
+
+    if ($cmd.HadErrors -or $completions.Count -eq 0) {
+        return
+    }
+    else {
+        return $completions
     }
 }
-
-$exportModuleMemberParams = @{
-    Function = @(
-        'TabExpansion'
-    )
-}
-
-Export-ModuleMember @exportModuleMemberParams

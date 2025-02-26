@@ -119,7 +119,7 @@ namespace vcpkg::PlatformExpression
         struct ExpressionParser : ParserBase
         {
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
-                : ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
+                : ParserBase(str, "CONTROL", {0, 0}), multiple_binary_operators(multiple_binary_operators)
             {
             }
 

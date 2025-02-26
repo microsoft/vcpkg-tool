@@ -106,7 +106,7 @@ namespace vcpkg
 
             for (auto&& arg : options.command_arguments)
             {
-                ParserBase parser(arg, nullopt);
+                ParserBase parser(arg, nullopt, {0, 0});
                 auto maybe_pkg = parse_package_name(parser);
                 if (!parser.at_eof() || !maybe_pkg)
                 {

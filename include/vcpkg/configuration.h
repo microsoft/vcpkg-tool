@@ -89,7 +89,7 @@ namespace vcpkg
         Optional<Configuration> config;
     };
 
-    Json::IDeserializer<Configuration>& get_configuration_deserializer();
+    extern const Json::IDeserializer<Configuration>& configuration_deserializer;
     // Parse configuration from a file containing a valid vcpkg-configuration.json file
     Optional<Configuration> parse_configuration(StringView contents,
                                                 StringView origin,

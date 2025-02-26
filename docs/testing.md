@@ -7,6 +7,8 @@ the line when someone complains!
 
 ## Running end to end (e2e) tests
 
+Before running the tests you must have installed the `Pester` module.
+This can be done by running `Install-Module -Name Pester -MinimumVersion 5.6.1 -MaximumVersion 5.99 -Force` in a PowerShell session.  
 To run the e2e test run the following command:  
 `pwsh azure-pipelines/end-to-end-tests.ps1`  
 **Parameters**:  

@@ -47,62 +47,19 @@ namespace vcpkg
 
     Optional<CPUArchitecture> Triplet::guess_architecture() const noexcept
     {
-        if (Strings::starts_with(this->canonical_name(), "x86-"))
+        StringView canonical = this->canonical_name();
+        auto dash = std::find(canonical.begin(), canonical.end(), '-');
+        if (dash != canonical.end())
         {
-            return CPUArchitecture::X86;
-        }
-        if (Strings::starts_with(this->canonical_name(), "x64-"))
-        {
-            return CPUArchitecture::X64;
-        }
-        if (Strings::starts_with(this->canonical_name(), "arm-"))
-        {
-            return CPUArchitecture::ARM;
-        }
-        if (Strings::starts_with(this->canonical_name(), "arm64-"))
-        {
-            return CPUArchitecture::ARM64;
-        }
-        if (Strings::starts_with(this->canonical_name(), "arm64ec-"))
-        {
-            return CPUArchitecture::ARM64EC;
-        }
-        if (Strings::starts_with(this->canonical_name(), "s390x-"))
-        {
-            return CPUArchitecture::S390X;
-        }
-        if (Strings::starts_with(this->canonical_name(), "ppc64le-"))
-        {
-            return CPUArchitecture::PPC64LE;
-        }
-        if (Strings::starts_with(this->canonical_name(), "riscv32-"))
-        {
-            return CPUArchitecture::RISCV32;
-        }
-        if (Strings::starts_with(this->canonical_name(), "riscv64-"))
-        {
-            return CPUArchitecture::RISCV64;
-        }
-        if (Strings::starts_with(this->canonical_name(), "loongarch32-"))
-        {
-            return CPUArchitecture::LOONGARCH32;
-        }
-        if (Strings::starts_with(this->canonical_name(), "loongarch64-"))
-        {
-            return CPUArchitecture::LOONGARCH64;
-        }
-        if (Strings::starts_with(this->canonical_name(), "mips64-"))
-        {
-            return CPUArchitecture::MIPS64;
+            canonical = StringView{canonical.begin(), dash};
         }
 
-        return nullopt;
+        return to_cpu_architecture(canonical);
     }
 
     static std::string system_triplet_canonical_name()
     {
-        auto host_proc = get_host_processor();
-        return fmt::format("{}-{}", to_zstring_view(host_proc), get_host_os_name());
+        return fmt::format("{}-{}", get_host_processor(), get_host_os_name());
     }
 
     Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)

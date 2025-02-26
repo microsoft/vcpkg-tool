@@ -122,7 +122,7 @@ namespace vcpkg::Strings
 
     const char* case_insensitive_ascii_search(StringView s, StringView pattern);
     bool case_insensitive_ascii_contains(StringView s, StringView pattern);
-    bool case_insensitive_ascii_equals(StringView left, StringView right);
+    bool case_insensitive_ascii_equals(StringView left, StringView right) noexcept;
     bool case_insensitive_ascii_less(StringView left, StringView right);
 
     void inplace_ascii_to_lowercase(char* first, char* last);
@@ -197,6 +197,8 @@ namespace vcpkg::Strings
     [[nodiscard]] std::vector<std::string> split_paths(StringView s);
 
     const char* find_first_of(StringView searched, StringView candidates);
+
+    [[nodiscard]] std::string::size_type find_last(StringView searched, char c);
 
     [[nodiscard]] std::vector<StringView> find_all_enclosed(StringView input,
                                                             StringView left_delim,

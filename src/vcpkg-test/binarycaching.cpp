@@ -327,9 +327,8 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryProviders providers;
-    providers.read.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
-    ReadOnlyBinaryCache uut(std::move(providers));
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(std::make_unique<KnowNothingBinaryProvider>());
 
     // create an action plan with an action without a package ABI set
     auto pghs = Paragraphs::parse_paragraphs(R"(
@@ -469,4 +468,61 @@ Description: a spiffy compression library wrapper
   <package id="zlib2_x64-android" version="1.52.0-vcpkgpackageabi2"/>
 </packages>
 )");
+}
+
+TEST_CASE ("Synchronizer operations", "[BinaryCache]")
+{
+    {
+        BinaryCacheSynchronizer sync;
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 0);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 1);
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 3);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
 }

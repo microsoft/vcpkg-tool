@@ -59,7 +59,7 @@ namespace vcpkg
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages)
     {
         std::vector<CiBaselineLine> result;
-        ParserBase parser(text, origin);
+        ParserBase parser(text, origin, {1, 1});
         for (;;)
         {
             parser.skip_whitespace();

@@ -89,11 +89,11 @@ namespace
         {
             Json::Object baseline_version_obj;
             insert_version_to_json_object(baseline_version_obj, kv_pair.second, JsonIdBaseline);
-            port_entries_obj.insert(kv_pair.first, baseline_version_obj);
+            port_entries_obj.insert(kv_pair.first, std::move(baseline_version_obj));
         }
 
         Json::Object baseline_obj;
-        baseline_obj.insert("default", port_entries_obj);
+        baseline_obj.insert(JsonIdDefault, std::move(port_entries_obj));
         return baseline_obj;
     }
 
@@ -109,7 +109,7 @@ namespace
         }
 
         Json::Object output_object;
-        output_object.insert(JsonIdVersions, versions_array);
+        output_object.insert(JsonIdVersions, std::move(versions_array));
         return output_object;
     }
 
@@ -128,15 +128,13 @@ namespace
         write_json_file(fs, serialize_versions(versions), output_path);
     }
 
-    UpdateResult update_baseline_version(const VcpkgPaths& paths,
+    UpdateResult update_baseline_version(const Filesystem& fs,
                                          const std::string& port_name,
                                          const Version& version,
                                          const Path& baseline_path,
                                          std::map<std::string, vcpkg::Version, std::less<>>& baseline_map,
                                          bool print_success)
     {
-        auto& fs = paths.get_filesystem();
-
         auto it = baseline_map.find(port_name);
         if (it != baseline_map.end())
         {
@@ -452,12 +450,10 @@ namespace vcpkg
         auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
             if (!fs.exists(baseline_path, IgnoreErrors{}))
             {
-                std::map<std::string, vcpkg::Version, std::less<>> ret;
-                return ret;
+                return std::map<std::string, vcpkg::Version, std::less<>>{};
             }
 
-            auto maybe_baseline_map = vcpkg::get_builtin_baseline(paths);
-            return maybe_baseline_map.value_or_exit(VCPKG_LINE_INFO);
+            return vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         }();
 
         // Get tree-ish from local repository state.
@@ -465,14 +461,9 @@ namespace vcpkg
         auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommitted changes
-        std::set<std::string> changed_ports;
         auto git_config = paths.git_builtin_config();
         auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
-        if (auto changes = maybe_changes.get())
-        {
-            changed_ports.insert(changes->begin(), changes->end());
-        }
-        else if (verbose)
+        if (!maybe_changes.has_value() && verbose)
         {
             msg::println_warning(msgAddVersionDetectLocalChangesError);
         }
@@ -524,9 +515,12 @@ namespace vcpkg
             }
 
             // find local uncommitted changes on port
-            if (Util::Sets::contains(changed_ports, port_name))
+            if (auto changed_ports = maybe_changes.get())
             {
-                msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+                if (Util::Sets::contains(*changed_ports, port_name))
+                {
+                    msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
+                }
             }
 
             auto schemed_version = scfl->source_control_file->to_schemed_version();
@@ -555,7 +549,7 @@ namespace vcpkg
                                                                 add_all,
                                                                 skip_version_format_check);
             auto updated_baseline_file = update_baseline_version(
-                paths, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
+                paths.get_filesystem(), port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&
                 updated_baseline_file == UpdateResult::NotUpdated)
             {

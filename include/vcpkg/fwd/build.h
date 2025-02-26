@@ -57,12 +57,6 @@ namespace vcpkg
         Release,
     };
 
-    enum class DownloadTool
-    {
-        Builtin,
-        Aria2,
-    };
-
     enum class Editable
     {
         No = 0,

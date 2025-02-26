@@ -27,7 +27,7 @@ namespace vcpkg
     {
         (void)args.parse_arguments(CommandBootstrapStandaloneMetadata);
 
-        DownloadManager download_manager{{}};
+        AssetCachingSettings asset_cache_settings;
         const auto maybe_vcpkg_root_env = args.vcpkg_root_dir_env.get();
         if (!maybe_vcpkg_root_env)
         {
@@ -36,11 +36,17 @@ namespace vcpkg
 
         const auto vcpkg_root = fs.almost_canonical(*maybe_vcpkg_root_env, VCPKG_LINE_INFO);
         fs.create_directories(vcpkg_root, VCPKG_LINE_INFO);
-        auto tarball =
-            download_vcpkg_standalone_bundle(download_manager, fs, vcpkg_root).value_or_exit(VCPKG_LINE_INFO);
+        auto maybe_tarball =
+            download_vcpkg_standalone_bundle(console_diagnostic_context, asset_cache_settings, fs, vcpkg_root);
+        auto tarball = maybe_tarball.get();
+        if (!tarball)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         fs.remove_all(vcpkg_root / "vcpkg-artifacts", VCPKG_LINE_INFO);
-        extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), tarball, vcpkg_root);
-        fs.remove(tarball, VCPKG_LINE_INFO);
+        extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), *tarball, vcpkg_root);
+        fs.remove(*tarball, VCPKG_LINE_INFO);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

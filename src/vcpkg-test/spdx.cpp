@@ -5,6 +5,99 @@
 
 using namespace vcpkg;
 
+TEST_CASE ("replace CMake variable", "[spdx]")
+{
+    static constexpr StringLiteral str{"lorem ip${VERSION}"};
+    {
+        auto res = replace_cmake_var(str, "VERSION", "sum");
+        REQUIRE(res == "lorem ipsum");
+    }
+    {
+        auto res = replace_cmake_var(str, "VERSiON", "sum");
+        REQUIRE(res == "lorem ip${VERSION}");
+    }
+}
+
+TEST_CASE ("extract first cmake invocation args", "[spdx]")
+{
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum()", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsummmmm() lorem_ipsum(asdf)", "lorem_ipsum");
+        REQUIRE(res == "asdf");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc)", "lorem_ipsu");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum    (abc)    ", "lorem_ipsum");
+        REQUIRE(res == "abc");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum   x (abc)    ", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipum(abc)", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum( )", "lorem_ipsum");
+        REQUIRE(res == " ");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum_", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+}
+
+TEST_CASE ("extract arg from cmake invocation args", "[spdx]")
+{
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value", "lorem");
+        REQUIRE(res == "value");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value       ", "lorem");
+        REQUIRE(res == "value");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem   ", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem ipsum", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum\"", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+}
+
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackageSpec spec{"zlib", Test::ARM_UWP};

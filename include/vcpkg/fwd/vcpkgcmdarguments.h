@@ -20,4 +20,20 @@ namespace vcpkg
     struct VcpkgCmdArguments;
     struct FeatureFlagSettings;
     struct PortApplicableSetting;
+
+    enum class CIKind
+    {
+        None,
+        GithubActions,
+        GitLabCI,
+        AzurePipelines,
+        AppVeyor,
+        AwsCodeBuild,
+        CircleCI,
+        HerokuCI,
+        JenkinsCI,
+        TeamCityCI,
+        TravisCI,
+        Generic
+    };
 }
