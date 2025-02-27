@@ -29,7 +29,10 @@ namespace
 {
     using urbg_t = std::mt19937_64;
 
-    std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
+    std::string get_random_filename(urbg_t& urbg, StringLiteral tag)
+    {
+        return Strings::b32_encode(urbg()).append(tag.data(), tag.size());
+    }
 
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
@@ -131,7 +134,7 @@ namespace
             CHECK_EC_ON_FILE(base, ec);
             for (unsigned int i = 0; i < 5; ++i)
             {
-                create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
+                create_directory_tree(urbg, fs, base / get_random_filename(urbg, "_tree"), remaining_depth - 1);
             }
 
 #if !defined(_WIN32)
@@ -177,7 +180,7 @@ namespace
 
         auto& fs = setup();
 
-        auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+        auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_enum");
         INFO("temp dir is: " << temp_dir.native());
 
         const auto target_root = temp_dir / "target";
@@ -619,7 +622,7 @@ TEST_CASE ("remove readonly", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_readonly");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -672,7 +675,7 @@ TEST_CASE ("remove all", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all");
     INFO("temp dir is: " << temp_dir.native());
 
     create_directory_tree(urbg, fs, temp_dir);
@@ -692,7 +695,7 @@ TEST_CASE ("remove all symlinks", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all_symlinks");
     INFO("temp dir is: " << temp_dir.native());
 
     const auto target_root = temp_dir / "target";
@@ -840,7 +843,7 @@ TEST_CASE ("copy_file", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_copy_file");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -920,7 +923,7 @@ TEST_CASE ("rename", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_rename");
     INFO("temp dir is: " << temp_dir.native());
 
     static constexpr StringLiteral FileTxt = "file.txt";
@@ -1014,7 +1017,7 @@ TEST_CASE ("copy_symlink", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_copy_symlink");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -1174,7 +1177,7 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
             temp_dirs.resize(meter.runs());
 
             std::generate(begin(temp_dirs), end(temp_dirs), [&] {
-                Path temp_dir = base_temporary_directory() / get_random_filename(urbg);
+                Path temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all_bench");
                 create_directory_tree(urbg, fs, temp_dir, max_depth);
                 return temp_dir;
             });
