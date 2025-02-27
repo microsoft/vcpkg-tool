@@ -2008,10 +2008,10 @@ namespace vcpkg
         }
     }
 
-    bool Filesystem::rename_cas_like(const Path& old_path, const Path& new_path, LineInfo li) const
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const
     {
         std::error_code ec;
-        bool result = this->rename_cas_like(old_path, new_path, ec);
+        bool result = this->rename_or_delete(old_path, new_path, ec);
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
@@ -2020,7 +2020,7 @@ namespace vcpkg
         return result;
     }
 
-    bool Filesystem::rename_cas_like(const Path& old_path, const Path& new_path, std::error_code& ec) const
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;

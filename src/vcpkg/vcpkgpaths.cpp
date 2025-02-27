@@ -1226,11 +1226,11 @@ namespace vcpkg
             return error;
         }
 
-        fs.rename_cas_like(git_tree_temp, destination, ec);
+        fs.rename_or_delete(git_tree_temp, destination, ec);
         if (ec)
         {
             return error_prefix().append(
-                format_filesystem_call_error(ec, "rename_cas_like", {git_tree_temp, destination}));
+                format_filesystem_call_error(ec, "rename_or_delete", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});

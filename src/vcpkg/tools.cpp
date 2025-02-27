@@ -873,12 +873,12 @@ namespace vcpkg
                 status_sink.println(Color::none, msgExtractingTool, msg::tool_name = tool_data.name);
                 Path to_path_partial =
                     extract_archive_to_temp_subdirectory(fs, *this, status_sink, download_path, tool_dir_path);
-                fs.rename_cas_like(to_path_partial, tool_dir_path, IgnoreErrors{});
+                fs.rename_or_delete(to_path_partial, tool_dir_path, IgnoreErrors{});
             }
             else
             {
                 fs.create_directories(exe_path.parent_path(), IgnoreErrors{});
-                fs.rename_cas_like(download_path, exe_path, IgnoreErrors{});
+                fs.rename_or_delete(download_path, exe_path, IgnoreErrors{});
             }
 
             if (!fs.exists(exe_path, IgnoreErrors{}))

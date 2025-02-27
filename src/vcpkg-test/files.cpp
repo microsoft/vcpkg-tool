@@ -947,9 +947,9 @@ TEST_CASE ("rename", "[files]")
         REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
     }
 
-    // try rename_cas_like directory, target does not exist
+    // try rename_or_delete directory, target does not exist
     {
-        REQUIRE(fs.rename_cas_like(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
+        REQUIRE(fs.rename_or_delete(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
         REQUIRE(!fs.exists(temp_dir_a, VCPKG_LINE_INFO));
         REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
 
@@ -959,13 +959,13 @@ TEST_CASE ("rename", "[files]")
         REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
     }
 
-    // try rename_cas_like directory, target exists
+    // try rename_or_delete directory, target exists
     {
         fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
         fs.write_contents(temp_dir_b_file, text_file_contents, VCPKG_LINE_INFO);
 
         // Note that the VCPKG_LINE_INFO overload implicitly tests that ec got cleared
-        REQUIRE(!fs.rename_cas_like(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
+        REQUIRE(!fs.rename_or_delete(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
         REQUIRE(!fs.exists(temp_dir_a, VCPKG_LINE_INFO));
         REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
 
@@ -975,10 +975,10 @@ TEST_CASE ("rename", "[files]")
         REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
     }
 
-    // try rename_cas_like file, target does not exist
+    // try rename_or_delete file, target does not exist
     {
         fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
-        REQUIRE(fs.rename_cas_like(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
+        REQUIRE(fs.rename_or_delete(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
         REQUIRE(!fs.exists(temp_dir_a_file, VCPKG_LINE_INFO));
         REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
 
@@ -989,14 +989,14 @@ TEST_CASE ("rename", "[files]")
         fs.remove(temp_dir_b, VCPKG_LINE_INFO);
     }
 
-    // try rename_cas_like file, target exists
+    // try rename_or_delete file, target exists
     {
         fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
         fs.write_contents(temp_dir_b_file, text_file_contents, VCPKG_LINE_INFO);
         // Note that the VCPKG_LINE_INFO overload implicitly tests that ec got cleared
         // Also note that POSIX rename() will just delete the target like we want by itself so
         // this returns true.
-        REQUIRE(fs.rename_cas_like(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
+        REQUIRE(fs.rename_or_delete(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
         REQUIRE(!fs.exists(temp_dir_a_file, VCPKG_LINE_INFO));
         REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
 
