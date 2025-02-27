@@ -310,18 +310,6 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void set_directory_to_archive_contents(const Filesystem& fs,
-                                           const ToolCache& tools,
-                                           MessageSink& status_sink,
-                                           const Path& archive,
-                                           const Path& to_path)
-
-    {
-        fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
-        fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
-    }
-
     bool ZipTool::compress_directory_to_zip(DiagnosticContext& context,
                                             const Filesystem& fs,
                                             const Path& source,
