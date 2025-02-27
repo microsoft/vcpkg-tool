@@ -1,6 +1,6 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$IsArm64 = $env:PROCESSOR_ARCHITECTURE -eq "ARM64"
+$IsArm64 = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64
 
 $manifestPath = "$PSScriptRoot/../e2e-projects/export-project"
 $outputDir = "$manifestPath/output"
