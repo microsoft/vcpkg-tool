@@ -2536,6 +2536,15 @@ namespace vcpkg
                         generate_nuspec(request.package_dir, action, m_config.nuget_prefix, m_config.nuget_repo);
                 }
 
+                // With x-test-features ports gets build multiple times and the packages folder gets deleted
+                // when building a package, so we "save" the folder from this deletion so we can upload its content
+                const auto& package_dir = request.package_dir;
+                static int counter = 0;
+                Path new_packaged_dir = package_dir + "_push_" + std::to_string(++counter);
+                m_fs.remove_all(new_packaged_dir, VCPKG_LINE_INFO);
+                m_fs.rename(package_dir, new_packaged_dir, VCPKG_LINE_INFO);
+                request.package_dir = new_packaged_dir;
+
                 m_synchronizer.add_submitted();
                 msg::println(msg::format(
                     msgSubmittingBinaryCacheBackground, msg::spec = action.spec, msg::count = m_config.write.size()));
