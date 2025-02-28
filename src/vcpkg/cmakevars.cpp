@@ -55,8 +55,8 @@ namespace vcpkg::CMakeVars
 
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
-            void load_tag_vars(Span<const FullPackageSpec> specs,
-                               Span<Path> port_locations,
+            void load_tag_vars(View<FullPackageSpec> specs,
+                               View<Path> port_locations,
                                Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
@@ -376,8 +376,8 @@ endfunction()
         }
     }
 
-    void TripletCMakeVarProvider::load_tag_vars(Span<const FullPackageSpec> specs,
-                                                Span<Path> port_locations,
+    void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
+                                                View<Path> port_locations,
                                                 Triplet host_triplet) const
     {
         if (specs.empty()) return;
