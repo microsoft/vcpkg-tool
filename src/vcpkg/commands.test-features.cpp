@@ -280,7 +280,7 @@ namespace vcpkg
                     }
                 }
             }
-            // if test_features_seperatly == true and there is only one feature test_features_combined is not needed
+            // if test_features_separately == true and there is only one feature test_features_combined is not needed
             if (test_features_combined && all_features.size() > (test_features_seperatly ? size_t{2} : size_t{1}))
             {
                 specs_to_test.emplace_back(package_spec, all_features);
@@ -323,7 +323,7 @@ namespace vcpkg
         msg::println(msgPrecheckBinaryCache);
         binary_cache.precheck(actions_to_check);
 
-        Util::stable_sort(install_plans, [](const auto& left, const auto& right) {
+        Util::stable_sort(install_plans, [](const InstallPlanAction& left, const InstallPlanAction& right) noexcept {
             return left.second.install_actions.size() < right.second.install_actions.size();
         });
 
