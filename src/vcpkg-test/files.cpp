@@ -1054,7 +1054,7 @@ TEST_CASE ("file times", "[files]")
 
     auto& fs = setup();
 
-    auto temp_file = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_file = base_temporary_directory() / get_random_filename(urbg, "_file_times");
     INFO("temp file is: " << temp_file.native());
     std::error_code ec;
     fs.write_contents(temp_file, "some file contents", VCPKG_LINE_INFO);

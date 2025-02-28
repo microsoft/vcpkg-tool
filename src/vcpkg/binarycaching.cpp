@@ -530,26 +530,27 @@ namespace
                 auto obj = Json::parse_file(fs, settings_path, ec);
                 if (ec)
                 {
-                    msg_sink.println_error(
-                        msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec.message());
+                    msg_sink.println(
+                        Color::error, msgFailedToReadFile, msg::path = settings_path, msg::error_msg = ec.message());
                 }
                 else if (!obj.has_value())
                 {
-                    msg_sink.println_error(msg::format(msgFailedToParseJson, msg::path = settings_path)
-                                               .append_raw('\n')
-                                               .append_raw(obj.error().to_string()));
+                    msg_sink.println(Color::error,
+                                     msg::format(msgFailedToParseJson, msg::path = settings_path)
+                                         .append_raw('\n')
+                                         .append_raw(obj.error().to_string()));
                 }
                 else
                 {
                     FolderSettingsDeserializer instance;
                     Json::Reader reader(settings_path);
-                    maybe_settings = reader.visit(obj.get()->value, instance);
+                    maybe_settings = instance.visit(reader, obj.get()->value);
                     if (!reader.warnings().empty())
                     {
                         auto warning_message = msg::format(msgParserWarnings, msg::path = settings_path);
                         for (auto&& warning : reader.warnings())
                             warning_message.append_raw('\n').append(warning);
-                        msg_sink.println_warning(warning_message);
+                        msg_sink.println(Color::warning, warning_message);
                     }
                     if (maybe_settings.has_value())
                     {
@@ -560,7 +561,7 @@ namespace
                         auto error_msg = msg::format(msgFailedToParseFileCacheSettings, msg::path = settings_path);
                         for (auto&& error : reader.errors())
                             error_msg.append_raw('\n').append(error);
-                        msg_sink.println_error(error_msg);
+                        msg_sink.println(Color::error, error_msg);
                     }
                 }
             }
