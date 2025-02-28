@@ -453,7 +453,7 @@ namespace vcpkg
                                                       binary_cache,
                                                       build_logs_recorder,
                                                       false);
-            binary_cache.clear_cache();
+            binary_cache.mark_all_unrestored();
 
             std::string failed_dependencies;
             for (const auto& result : summary.results)

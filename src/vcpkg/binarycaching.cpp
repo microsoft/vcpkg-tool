@@ -2166,7 +2166,7 @@ namespace vcpkg
         m_config.read.push_back(std::move(provider));
     }
 
-    void ReadOnlyBinaryCache::clear_cache()
+    void ReadOnlyBinaryCache::mark_all_unrestored()
     {
         for (auto& entry : m_status)
         {

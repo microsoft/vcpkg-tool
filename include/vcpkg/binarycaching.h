@@ -206,7 +206,9 @@ namespace vcpkg
         /// Returns a vector where each index corresponds to the matching index in `actions`.
         std::vector<CacheAvailability> precheck(View<const InstallPlanAction*> actions);
 
-        void clear_cache();
+        // Informs the binary cache that the packages directory has been reset. Used when the same port-name is built
+        // more than once in a single invocation of vcpkg.
+        void mark_all_unrestored();
 
     protected:
         BinaryProviders m_config;
