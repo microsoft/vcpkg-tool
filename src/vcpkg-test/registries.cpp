@@ -5,7 +5,7 @@
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
-#include <vcpkg/registries.h>
+#include <vcpkg/registries-parsing.h>
 
 using namespace vcpkg;
 
@@ -276,7 +276,7 @@ static vcpkg::Optional<Configuration> visit_default_registry(Json::Reader& r, Js
 {
     Json::Object config;
     config.insert("default-registry", std::move(reg));
-    return r.visit(config, get_configuration_deserializer());
+    return configuration_deserializer.visit(r, config);
 }
 
 TEST_CASE ("registry_parsing", "[registries]")
@@ -428,7 +428,7 @@ TEST_CASE ("registries report pattern errors", "[registries]")
 })json");
 
     Json::Reader r{"test"};
-    auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
+    auto maybe_conf = configuration_deserializer.visit(r, test_json);
     const auto& errors = r.errors();
     CHECK(!errors.empty());
     REQUIRE(errors.size() == 3);
@@ -474,7 +474,7 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 })json");
 
     Json::Reader r{"test"};
-    auto maybe_conf = r.visit(test_json, get_configuration_deserializer());
+    auto maybe_conf = configuration_deserializer.visit(r, test_json);
 
     auto conf = maybe_conf.get();
     REQUIRE(conf);
@@ -550,7 +550,6 @@ TEST_CASE ("registries ignored patterns warning", "[registries]")
 
 TEST_CASE ("git_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_git_version_db_deserializer();
     Json::Reader r{"test"};
     auto test_json = parse_json(R"json(
 [
@@ -572,7 +571,7 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 ]
 )json");
 
-    auto results_opt = r.visit(test_json, *filesystem_version_db);
+    auto results_opt = GitVersionDbEntryArrayDeserializer().visit(r, test_json);
     auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
     CHECK(results[0].version == SchemedVersion{VersionScheme::Date, {"2021-06-26", 0}});
     CHECK(results[0].git_tree == "9b07f8a38bbc4d13f8411921e6734753e15f8d50");
@@ -585,7 +584,7 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
 
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
-    auto filesystem_version_db = make_filesystem_version_db_deserializer("a/b");
+    FilesystemVersionDbEntryArrayDeserializer filesystem_version_db("a/b");
 
     {
         Json::Reader r{"test"};
@@ -608,7 +607,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        auto results_opt = r.visit(test_json, *filesystem_version_db);
+        auto results_opt = filesystem_version_db.visit(r, test_json);
         auto& results = results_opt.value_or_exit(VCPKG_LINE_INFO);
         CHECK(results[0].version == SchemedVersion{VersionScheme::String, {"puppies", 0}});
         CHECK(results[0].p == "a/b" VCPKG_PREFERRED_SEPARATOR "c/d");
@@ -630,7 +629,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -645,7 +644,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -660,7 +659,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -675,7 +674,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -690,7 +689,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -705,7 +704,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -720,7 +719,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -735,7 +734,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 
@@ -750,7 +749,7 @@ TEST_CASE ("filesystem_version_db_parsing", "[registries]")
     }
 ]
     )json");
-        CHECK(r.visit(test_json, *filesystem_version_db).value_or_exit(VCPKG_LINE_INFO).empty());
+        CHECK(filesystem_version_db.visit(r, test_json).value_or_exit(VCPKG_LINE_INFO).empty());
         CHECK(!r.errors().empty());
     }
 }

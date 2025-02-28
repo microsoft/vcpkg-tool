@@ -99,29 +99,46 @@ namespace
     }
 
     static void append_overlays(std::vector<Path>& result,
+                                const ReadOnlyFilesystem& fs,
                                 const std::vector<std::string>& overlay_entries,
-                                const Path& relative_root)
+                                const Path& relative_root,
+                                const Path& config_directory,
+                                bool forbid_dot)
     {
         for (auto&& entry : overlay_entries)
         {
-            result.push_back(relative_root / entry);
+            if (forbid_dot && entry == ".")
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlayDot);
+            }
+
+            auto full_entry = relative_root / entry;
+            if (forbid_dot && (fs.almost_canonical(full_entry, VCPKG_LINE_INFO) / "") == (config_directory / ""))
+            {
+                Checks::msg_exit_with_error(
+                    VCPKG_LINE_INFO, msgErrorManifestMustDifferFromOverlay, msg::path = config_directory);
+            }
+
+            result.push_back(std::move(full_entry));
         }
     }
 
     // Merges overlay settings from the 3 major sources in the usual priority order, where command line wins first, then
     // manifest, then environment. The parameter order is specifically chosen to group information that comes from the
     // manifest together and make parameter order confusion less likely to compile.
-    static std::vector<Path> merge_overlays(const std::vector<std::string>& cli_overlays,
+    static std::vector<Path> merge_overlays(const ReadOnlyFilesystem& fs,
+                                            const std::vector<std::string>& cli_overlays,
                                             const std::vector<std::string>& env_overlays,
                                             const Path& original_cwd,
+                                            bool forbid_config_dot,
                                             const std::vector<std::string>& config_overlays,
                                             const Path& config_directory)
     {
         std::vector<Path> result;
         result.reserve(cli_overlays.size() + config_overlays.size() + env_overlays.size());
-        append_overlays(result, cli_overlays, original_cwd);
-        append_overlays(result, config_overlays, config_directory);
-        append_overlays(result, env_overlays, original_cwd);
+        append_overlays(result, fs, cli_overlays, original_cwd, config_directory, false);
+        append_overlays(result, fs, config_overlays, config_directory, config_directory, forbid_config_dot);
+        append_overlays(result, fs, env_overlays, original_cwd, config_directory, false);
         return result;
     }
 
@@ -324,8 +341,8 @@ namespace
             , m_ff_settings(args.feature_flag_settings())
             , m_manifest_dir(compute_manifest_dir(fs, args, original_cwd))
             , m_bundle(bundle)
-            , m_download_manager(std::make_shared<DownloadManager>(
-                  parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO)))
+            , m_asset_cache_settings(
+                  parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO))
             , m_builtin_ports(process_output_directory(fs, args.builtin_ports_root_dir.get(), root / "ports"))
             , m_default_vs_path(args.default_visual_studio_path
                                     .map([&fs](const std::string& default_visual_studio_path) {
@@ -342,7 +359,7 @@ namespace
         const FeatureFlagSettings m_ff_settings;
         const Path m_manifest_dir;
         const BundleSettings m_bundle;
-        const std::shared_ptr<const DownloadManager> m_download_manager;
+        const AssetCachingSettings m_asset_cache_settings;
         const Path m_builtin_ports;
         const Path m_default_vs_path;
         const Path scripts;
@@ -546,8 +563,6 @@ namespace vcpkg
             , m_global_config(bundle.read_only ? get_user_configuration_home().value_or_exit(VCPKG_LINE_INFO) /
                                                      "vcpkg-configuration.json"
                                                : root / "vcpkg-configuration.json")
-            , m_config_dir(m_manifest_dir.empty() ? root : m_manifest_dir)
-            , m_manifest_path(m_manifest_dir.empty() ? Path{} : m_manifest_dir / "vcpkg.json")
             , m_registries_work_tree_dir(m_registries_cache / "git")
             , m_registries_dot_git_dir(m_registries_cache / "git" / ".git")
             , m_registries_git_trees(m_registries_cache / "git-trees")
@@ -572,7 +587,7 @@ namespace vcpkg
                                           VCPKG_LINE_INFO))
             , m_tool_cache(get_tool_cache(
                   fs,
-                  m_download_manager,
+                  m_asset_cache_settings,
                   downloads,
                   args.tools_data_file.has_value() ? Path{*args.tools_data_file.get()} : scripts / "vcpkg-tools.json",
                   tools,
@@ -628,8 +643,6 @@ namespace vcpkg
         }
 
         const Path m_global_config;
-        const Path m_config_dir;
-        const Path m_manifest_path;
         const Path m_registries_work_tree_dir;
         const Path m_registries_dot_git_dir;
         const Path m_registries_git_trees;
@@ -670,32 +683,29 @@ namespace vcpkg
         Debug::print("Using vcpkg-root: ", root, '\n');
         Debug::print("Using builtin-registry: ", builtin_registry_versions, '\n');
         Debug::print("Using downloads-root: ", downloads, '\n');
-        m_pimpl->m_download_manager->get_block_origin()
-            ? Debug::println("External asset downloads are blocked (x-block-origin is enabled)..")
-            : Debug::println("External asset downloads are allowed (x-block-origin is disabled)...");
-        m_pimpl->m_download_manager->asset_cache_configured() ? Debug::println("Asset caching is enabled.")
-                                                              : Debug::println("Asset cache is not configured.");
 
-        const auto config_path = m_pimpl->m_config_dir / "vcpkg-configuration.json";
+        auto config_dir = m_pimpl->m_manifest_dir.empty() ? root : m_pimpl->m_manifest_dir;
+        const auto config_path = config_dir / "vcpkg-configuration.json";
         auto maybe_manifest_config = config_from_manifest(m_pimpl->m_manifest_doc);
         auto maybe_json_config =
             filesystem.exists(config_path, IgnoreErrors{})
                 ? parse_configuration(filesystem.read_contents(config_path, IgnoreErrors{}), config_path, out_sink)
                 : nullopt;
 
-        m_pimpl->m_config = merge_validate_configs(std::move(maybe_manifest_config),
-                                                   m_pimpl->m_manifest_dir,
-                                                   std::move(maybe_json_config),
-                                                   m_pimpl->m_config_dir,
-                                                   *this);
-        overlay_ports = merge_overlays(args.cli_overlay_ports,
-                                       args.env_overlay_ports,
-                                       original_cwd,
-                                       m_pimpl->m_config.config.overlay_ports,
-                                       m_pimpl->m_config.directory);
-        overlay_triplets = merge_overlays(args.cli_overlay_triplets,
+        m_pimpl->m_config = merge_validate_configs(
+            std::move(maybe_manifest_config), m_pimpl->m_manifest_dir, std::move(maybe_json_config), config_dir, *this);
+        overlay_ports.overlay_ports = merge_overlays(m_pimpl->m_fs,
+                                                     args.cli_overlay_ports,
+                                                     args.env_overlay_ports,
+                                                     original_cwd,
+                                                     true,
+                                                     m_pimpl->m_config.config.overlay_ports,
+                                                     m_pimpl->m_config.directory);
+        overlay_triplets = merge_overlays(m_pimpl->m_fs,
+                                          args.cli_overlay_triplets,
                                           args.env_overlay_triplets,
                                           original_cwd,
+                                          false,
                                           m_pimpl->m_config.config.overlay_triplets,
                                           m_pimpl->m_config.directory);
         for (const auto& triplet : this->overlay_triplets)
@@ -884,7 +894,7 @@ namespace vcpkg
     }
 
     const Filesystem& VcpkgPaths::get_filesystem() const { return m_pimpl->m_fs; }
-    const DownloadManager& VcpkgPaths::get_download_manager() const { return *m_pimpl->m_download_manager; }
+    const AssetCachingSettings& VcpkgPaths::get_asset_cache_settings() const { return m_pimpl->m_asset_cache_settings; }
     const ToolCache& VcpkgPaths::get_tool_cache() const { return *m_pimpl->m_tool_cache; }
     const Path& VcpkgPaths::get_tool_exe(StringView tool, MessageSink& status_messages) const
     {
@@ -1189,12 +1199,6 @@ namespace vcpkg
             return format_filesystem_call_error(ec, "create_directory", {git_tree_temp});
         }
 
-        fs.remove_all(destination, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, "remove_all", {destination});
-        }
-
         auto git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
                                .string_arg("read-tree")
                                .string_arg("-m")
@@ -1222,11 +1226,11 @@ namespace vcpkg
             return error;
         }
 
-        fs.rename_with_retry(git_tree_temp, destination, ec);
+        fs.rename_or_delete(git_tree_temp, destination, ec);
         if (ec)
         {
             return error_prefix().append(
-                format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
+                format_filesystem_call_error(ec, "rename_or_delete", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});
@@ -1259,7 +1263,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    bool VcpkgPaths::manifest_mode_enabled() const { return !m_pimpl->m_manifest_dir.empty(); }
+    bool VcpkgPaths::manifest_mode_enabled() const { return m_pimpl->m_manifest_doc.has_value(); }
 
     const ConfigurationAndSource& VcpkgPaths::get_configuration() const { return m_pimpl->m_config; }
 

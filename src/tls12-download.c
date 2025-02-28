@@ -373,6 +373,17 @@ int __stdcall entry()
     wtfi.hFile = out_file;
     wtfi.pgKnownSubject = 0;
 
+    // CERT_STRONG_SIGN_PARA + WINTRUST_SIGNATURE_SETTINGS tell WinVerifyTrust that only SHA-2 certificates are
+    // acceptable.
+    CERT_STRONG_SIGN_PARA cssp = {0};
+    cssp.cbSize = sizeof(cssp);
+    cssp.dwInfoChoice = CERT_STRONG_SIGN_OID_INFO_CHOICE;
+    cssp.pszOID = szOID_CERT_STRONG_SIGN_OS_1;
+
+    WINTRUST_SIGNATURE_SETTINGS wtss = {0};
+    wtss.cbStruct = sizeof(wtss);
+    wtss.pCryptoPolicy = &cssp;
+
     WINTRUST_DATA wtd = {0};
     wtd.cbStruct = sizeof(wtd);
     wtd.dwUIChoice = WTD_UI_NONE;
@@ -381,6 +392,7 @@ int __stdcall entry()
     wtd.pFile = &wtfi;
     wtd.dwStateAction = WTD_STATEACTION_VERIFY;
     wtd.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+    wtd.pSignatureSettings = &wtss;
 
     GUID wt_policy_guid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 

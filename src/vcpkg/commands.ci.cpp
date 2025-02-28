@@ -316,6 +316,7 @@ namespace vcpkg
     {
         msg::println_warning(msgInternalCICommand);
         const ParsedArguments options = args.parse_arguments(CommandCiMetadata);
+        auto& fs = paths.get_filesystem();
         const auto& settings = options.settings;
 
         static constexpr BuildPackageOptions build_options{
@@ -325,7 +326,6 @@ namespace vcpkg
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             BackcompatFeatures::Prohibit,
             KeepGoing::Yes,
         };
@@ -348,8 +348,7 @@ namespace vcpkg
             auto skip_failures =
                 Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
             const auto& ci_baseline_file_name = baseline_iter->second;
-            const auto ci_baseline_file_contents =
-                paths.get_filesystem().read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
+            const auto ci_baseline_file_contents = fs.read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
@@ -358,7 +357,6 @@ namespace vcpkg
 
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
-        auto& filesystem = paths.get_filesystem();
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
             auto it_failure_logs = settings.find(SwitchFailureLogs);
@@ -366,8 +364,8 @@ namespace vcpkg
             {
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
-                filesystem.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = filesystem.almost_canonical(raw_path, VCPKG_LINE_INFO);
+                fs.create_directories(raw_path, VCPKG_LINE_INFO);
+                build_logs_recorder_storage = fs.almost_canonical(raw_path, VCPKG_LINE_INFO);
             }
         }
 
@@ -375,7 +373,7 @@ namespace vcpkg
             build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set, make_overlay_provider(filesystem, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -410,7 +408,12 @@ namespace vcpkg
             randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan =
             compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
-        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache(fs);
+        if (!binary_cache.install_providers(args, paths, out_sink))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
         auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
         LocalizedString not_supported_regressions;
@@ -462,7 +465,7 @@ namespace vcpkg
                                Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
                     arr.push_back(std::move(obj));
                 }
-                filesystem.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
+                fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
             }
         }
 
@@ -472,7 +475,7 @@ namespace vcpkg
         if (it_parent_hashes != settings.end())
         {
             const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
-            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, filesystem, parent_hashes_path).value;
+            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, fs, parent_hashes_path).value;
             parent_hashes = Util::fmap(parsed_json.array(VCPKG_LINE_INFO), [](const auto& json_object) {
                 auto abi = json_object.object(VCPKG_LINE_INFO).get(JsonIdAbi);
                 Checks::check_exit(VCPKG_LINE_INFO, abi);
@@ -500,7 +503,7 @@ namespace vcpkg
         }
         else
         {
-            StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+            StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
                            [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
@@ -569,8 +572,7 @@ namespace vcpkg
                     }
                 }
 
-                filesystem.write_contents(
-                    it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+                fs.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
             }
 
             if (any_regressions)
@@ -578,7 +580,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
-
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
