@@ -168,9 +168,19 @@ namespace vcpkg
             specs_installed.erase(action.spec);
         }
 
-        Util::erase_remove_if(action_plan.install_actions, [&](const InstallPlanAction& ipa) {
-            return Util::Sets::contains(specs_installed, ipa.spec);
+        Util::erase_remove_if(action_plan.install_actions, [&](InstallPlanAction& ipa) {
+            if (Util::Sets::contains(specs_installed, ipa.spec))
+            {
+                // convert the 'to install' entry to an already installed entry
+                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
+                ipa.plan_type = InstallPlanType::ALREADY_INSTALLED;
+                action_plan.already_installed.push_back(std::move(ipa));
+                return true;
+            }
+
+            return false;
         });
+
         return specs_installed;
     }
 
@@ -269,7 +279,7 @@ namespace vcpkg
                                                   null_build_logs_recorder(),
                                                   include_manifest_in_github_issue);
 
-        if (build_options.keep_going == KeepGoing::Yes && summary.failed())
+        if (build_options.keep_going == KeepGoing::Yes && summary.failed)
         {
             summary.print_failed();
             if (build_options.only_downloads == OnlyDownloads::No)
@@ -278,6 +288,8 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
+
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
 
         if (print_usage == PrintUsage::Yes)
         {
@@ -306,6 +318,7 @@ namespace vcpkg
             fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
         }
 
+        summary.print_complete_message();
         binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }

@@ -315,6 +315,27 @@ namespace vcpkg
         return InstallResult::SUCCESS;
     }
 
+    void LicenseReport::print_license_report(const msg::MessageT<>& named_license_heading) const
+    {
+        if (any_unknown_licenses || !named_licenses.empty())
+        {
+            msg::println(msgPackageLicenseWarning);
+            if (any_unknown_licenses)
+            {
+                msg::println(msgPackageLicenseUnknown);
+            }
+
+            if (!named_licenses.empty())
+            {
+                msg::println(named_license_heading);
+                for (auto&& license : named_licenses)
+                {
+                    msg::print(LocalizedString::from_raw(license).append_raw('\n'));
+                }
+            }
+        }
+    }
+
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
                                                            Triplet host_triplet,
@@ -328,10 +349,6 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
-            if (action.use_head_version == UseHeadVersion::Yes)
-                msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
-            else
-                msg::println(Color::success, msgAlreadyInstalled, msg::spec = action.spec);
             return ExtendedBuildResult{BuildResult::Succeeded};
         }
 
@@ -435,7 +452,7 @@ namespace vcpkg
             .append_raw(result.timing.to_string());
     }
 
-    LocalizedString InstallSummary::format() const
+    LocalizedString InstallSummary::format_results() const
     {
         LocalizedString to_print;
         to_print.append(msgResultsHeader).append_raw('\n');
@@ -475,26 +492,16 @@ namespace vcpkg
         msg::print(output);
     }
 
-    bool InstallSummary::failed() const
+    void InstallSummary::print_complete_message() const
     {
-        for (const auto& result : this->results)
+        if (failed)
         {
-            switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
-            {
-                case BuildResult::Succeeded:
-                case BuildResult::Removed:
-                case BuildResult::Downloaded:
-                case BuildResult::Excluded: continue;
-                case BuildResult::BuildFailed:
-                case BuildResult::PostBuildChecksFailed:
-                case BuildResult::FileConflicts:
-                case BuildResult::CascadedDueToMissingDependencies:
-                case BuildResult::CacheMissing: return true;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
+            msg::println(msgTotalInstallTime, msg::elapsed = timing);
         }
-
-        return false;
+        else
+        {
+            msg::println(Color::success, msgTotalInstallTimeSuccess, msg::elapsed = timing);
+        }
     }
 
     struct TrackedPackageInstallGuard
@@ -566,6 +573,32 @@ namespace vcpkg
         }
     }
 
+    static void add_licenses(LicenseReport& report, const SourceControlFileAndLocation* scfl)
+    {
+        if (!scfl)
+        {
+            return;
+        }
+
+        auto scf = scfl->source_control_file.get();
+        if (auto license = scf->core_paragraph->license.get())
+        {
+            report.named_licenses.insert(*license);
+        }
+        else
+        {
+            report.any_unknown_licenses = true;
+        }
+
+        for (auto&& feature : scf->feature_paragraphs)
+        {
+            if (auto license = feature->license.get())
+            {
+                report.named_licenses.insert(*license);
+            }
+        }
+    }
+
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
@@ -576,57 +609,78 @@ namespace vcpkg
                                         const IBuildLogsRecorder& build_logs_recorder,
                                         bool include_manifest_in_github_issue)
     {
-        const ElapsedTimer timer;
-        std::vector<SpecSummary> results;
+        ElapsedTimer timer;
+        InstallSummary summary;
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
         auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, summary.results, action);
             remove_package(fs, paths.installed(), action.spec, status_db);
-            results.back().build_result.emplace(BuildResult::Removed);
+            summary.results.back().build_result.emplace(BuildResult::Removed);
         }
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action).build_result.emplace(perform_install_plan_action(
+            summary.results.emplace_back(action).build_result.emplace(perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
         }
 
         for (auto&& action : action_plan.install_actions)
         {
             binary_cache.print_updates();
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, summary.results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
+            if (result.code == BuildResult::Succeeded)
             {
-                this_install.print_elapsed_time();
-                print_user_troubleshooting_message(
-                    action,
-                    args.detected_ci(),
-                    paths,
-                    result.error_logs,
-                    result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                        auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
-                        paths.get_filesystem().write_contents(
-                            issue_body_path,
-                            create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
-                            VCPKG_LINE_INFO);
-                        return issue_body_path;
-                    }));
-                binary_cache.wait_for_async_complete_and_join();
-                Checks::exit_fail(VCPKG_LINE_INFO);
+                add_licenses(summary.license_report, action.source_control_file_and_location.get());
+            }
+            else
+            {
+                if (build_options.keep_going == KeepGoing::No)
+                {
+                    this_install.print_elapsed_time();
+                    print_user_troubleshooting_message(
+                        action,
+                        args.detected_ci(),
+                        paths,
+                        result.error_logs,
+                        result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                            auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
+                            paths.get_filesystem().write_contents(
+                                issue_body_path,
+                                create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
+                                VCPKG_LINE_INFO);
+                            return issue_body_path;
+                        }));
+                    binary_cache.wait_for_async_complete_and_join();
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                switch (result.code)
+                {
+                    case BuildResult::Succeeded:
+                    case BuildResult::Removed:
+                    case BuildResult::Downloaded:
+                    case BuildResult::Excluded: break;
+                    case BuildResult::BuildFailed:
+                    case BuildResult::PostBuildChecksFailed:
+                    case BuildResult::FileConflicts:
+                    case BuildResult::CascadedDueToMissingDependencies:
+                    case BuildResult::CacheMissing: summary.failed = true; break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
             }
 
             this_install.current_summary.build_result.emplace(std::move(result));
         }
 
         database_load_collapse(fs, paths.installed());
-        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
-        return InstallSummary{std::move(results)};
+        summary.timing = timer.elapsed();
+        return summary;
     }
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -1381,7 +1435,7 @@ namespace vcpkg
         // success.
         if (keep_going == KeepGoing::Yes)
         {
-            msg::print(summary.format());
+            msg::print(summary.format_results());
         }
 
         auto it_xunit = options.settings.find(SwitchXXUnit);
@@ -1402,6 +1456,8 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
 
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
+
         if (print_cmake_usage)
         {
             std::set<std::string> printed_usages;
@@ -1416,7 +1472,8 @@ namespace vcpkg
             }
         }
         binary_cache.wait_for_async_complete_and_join();
-        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
+        summary.print_complete_message();
+        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed);
     }
 
     SpecSummary::SpecSummary(const InstallPlanAction& action)

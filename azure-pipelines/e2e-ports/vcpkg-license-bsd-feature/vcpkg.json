@@ -1,0 +1,10 @@
+{
+  "name": "vcpkg-license-bsd-feature",
+  "version": "0",
+  "features": {
+    "enable-license": {
+      "description": "Enable license",
+      "license": "BSD-3-Clause"
+    }
+  }
+}

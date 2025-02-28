@@ -1,0 +1,10 @@
+{
+  "name": "vcpkg-license-mit-feature",
+  "version": "0",
+  "features": {
+    "enable-license": {
+      "description": "Enable license",
+      "license": "MIT"
+    }
+  }
+}
