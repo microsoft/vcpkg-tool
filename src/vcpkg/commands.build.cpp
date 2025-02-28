@@ -641,7 +641,7 @@ namespace vcpkg
                     auto json_object = Json::parse_object(fs.read_contents(cache_file, VCPKG_LINE_INFO), cache_file)
                                            .value_or_exit(VCPKG_LINE_INFO);
                     Json::Reader reader(cache_file);
-                    CompilerInfoCache cache = reader.visit(json_object, CompilerInfoCacheDeserializer::instance)
+                    CompilerInfoCache cache = CompilerInfoCacheDeserializer::instance.visit(reader, json_object)
                                                   .value_or_exit(VCPKG_LINE_INFO);
                     auto needs_update = [&](const Path& path, int64_t last_write_time) {
                         return !fs.exists(path, VCPKG_LINE_INFO) ||
