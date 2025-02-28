@@ -152,7 +152,7 @@ namespace
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, StatusParagraphs{});
         return action_plan;
     }
 

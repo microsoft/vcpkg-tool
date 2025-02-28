@@ -311,12 +311,12 @@ namespace vcpkg
         msg::println(msgComputeAllAbis);
         var_provider.load_tag_vars(specs, port_locations, host_triplet);
         StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
-        PortAbiCache cache;
+        PortDirAbiInfoCache port_dir_abi_info_cache;
         for (auto& [spec, install_plan] : install_plans)
         {
             if (install_plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, install_plan, var_provider, status_db, cache);
+                compute_all_abis(paths, install_plan, var_provider, status_db, port_dir_abi_info_cache);
             }
         }
 

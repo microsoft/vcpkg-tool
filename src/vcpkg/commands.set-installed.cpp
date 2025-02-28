@@ -188,7 +188,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         cmake_vars.load_tag_vars(action_plan, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {});
+        compute_all_abis(paths, action_plan, cmake_vars, StatusParagraphs{});
 
         std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
