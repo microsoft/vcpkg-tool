@@ -142,10 +142,14 @@ namespace vcpkg::Hash
 
             virtual std::string get_hash() override
             {
+                static constexpr unsigned long static_max_hash_size = 64; // SHA512, 512/8 = 64
                 const auto hash_size = get_hash_buffer_size();
-                const auto buffer = std::make_unique<uchar[]>(hash_size);
-                const auto hash = buffer.get();
+                if (hash_size > static_max_hash_size)
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO, "hash buffer too small");
+                }
 
+                uchar hash[static_max_hash_size];
                 const NTSTATUS error_code = BCryptFinishHash(hash_handle, hash, hash_size, 0);
                 Checks::check_exit(VCPKG_LINE_INFO, NT_SUCCESS(error_code), "Failed to finalize the hash");
                 return to_hex(hash, hash + hash_size);
@@ -518,20 +522,17 @@ namespace vcpkg::Hash
     static ReturnType do_hash(Algorithm algo, const F& f)
     {
 #if defined(_WIN32)
-        auto hasher = BCryptHasher(algo);
-        return f(hasher);
+        return f(BCryptHasher(algo));
 #else
         switch (algo)
         {
             case Algorithm::Sha256:
             {
-                auto hasher = ShaHasher<Sha256Algorithm>();
-                return f(hasher);
+                return f(ShaHasher<Sha256Algorithm>());
             }
             case Algorithm::Sha512:
             {
-                auto hasher = ShaHasher<Sha512Algorithm>();
-                return f(hasher);
+                return f(ShaHasher<Sha512Algorithm>());
             }
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -540,7 +541,7 @@ namespace vcpkg::Hash
 
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo)
     {
-        return do_hash<std::string>(algo, [first, last](Hasher& hasher) {
+        return do_hash<std::string>(algo, [first, last](Hasher&& hasher) {
             hasher.add_bytes(first, last);
             return hasher.get_hash();
         });
@@ -553,17 +554,25 @@ namespace vcpkg::Hash
 
     std::string get_string_sha256(StringView s) { return get_string_hash(s, Hash::Algorithm::Sha256); }
 
-    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
+    HashResult get_file_hash(DiagnosticContext& context, const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
     {
-        Debug::println("Trying to hash ", path);
+        HashResult result;
         std::error_code ec;
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
+            if (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory)
+            {
+                result.prognosis = HashPrognosis::FileNotFound;
+                return result;
+            }
+
+            context.report_error(format_filesystem_call_error(ec, "open_for_read", {path}));
+            result.prognosis = HashPrognosis::OtherError;
+            return result;
         }
 
-        return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
+        result.hash = do_hash<std::string>(algo, [&](Hasher&& hasher) {
             constexpr std::size_t buffer_size = 1024 * 32;
             char buffer[buffer_size];
             do
@@ -575,13 +584,37 @@ namespace vcpkg::Hash
                 }
                 else if ((ec = file.error()))
                 {
-                    return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
+                    result.prognosis = HashPrognosis::OtherError;
+                    context.report_error(format_filesystem_call_error(ec, "read", {path}));
+                    return std::string();
                 }
             } while (!file.eof());
 
-            auto result_hash = hasher.get_hash();
-            Debug::print(fmt::format("{} has hash {}\n", path, result_hash));
-            return result_hash;
+            return std::move(hasher).get_hash();
         });
+
+        return result;
+    }
+
+    Optional<std::string> get_file_hash_required(DiagnosticContext& context,
+                                                 const ReadOnlyFilesystem& fs,
+                                                 const Path& path,
+                                                 Algorithm algo)
+    {
+        auto result = get_file_hash(context, fs, path, algo);
+        switch (result.prognosis)
+        {
+            case HashPrognosis::Success: return result.hash;
+            case HashPrognosis::FileNotFound:
+                context.report(DiagnosticLine{DiagKind::Error, path, msg::format(msgFileNotFound)});
+                return nullopt;
+            case HashPrognosis::OtherError: return nullopt;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
+    {
+        return adapt_context_to_expected(get_file_hash_required, fs, path, algo);
     }
 }

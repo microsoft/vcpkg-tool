@@ -5,63 +5,111 @@
 
 using namespace vcpkg;
 
-TEST_CASE ("split_uri_view", "[downloads]")
+TEST_CASE ("parse_split_url_view", "[downloads]")
 {
     {
-        auto x = split_uri_view("https://github.com/Microsoft/vcpkg");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "https");
-        REQUIRE(x.get()->authority.value_or("") == "//github.com");
-        REQUIRE(x.get()->path_query_fragment == "/Microsoft/vcpkg");
+        auto x = parse_split_url_view("https://github.com/Microsoft/vcpkg");
+        if (auto v = x.get())
+        {
+            REQUIRE(v->scheme == "https");
+            REQUIRE(v->authority.value_or("") == "//github.com");
+            REQUIRE(v->path_query_fragment == "/Microsoft/vcpkg");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("");
-        REQUIRE(!x.has_value());
+        REQUIRE(!parse_split_url_view("").has_value());
+        REQUIRE(!parse_split_url_view("hello").has_value());
     }
     {
-        auto x = split_uri_view("hello");
-        REQUIRE(!x.has_value());
+        auto x = parse_split_url_view("file:");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "file");
+            REQUIRE(!y->authority.has_value());
+            REQUIRE(y->path_query_fragment == "");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("file:");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "file");
-        REQUIRE(!x.get()->authority.has_value());
-        REQUIRE(x.get()->path_query_fragment == "");
+        auto x = parse_split_url_view("file:path");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "file");
+            REQUIRE(!y->authority.has_value());
+            REQUIRE(y->path_query_fragment == "path");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("file:path");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "file");
-        REQUIRE(!x.get()->authority.has_value());
-        REQUIRE(x.get()->path_query_fragment == "path");
+        auto x = parse_split_url_view("file:/path");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "file");
+            REQUIRE(!y->authority.has_value());
+            REQUIRE(y->path_query_fragment == "/path");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("file:/path");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "file");
-        REQUIRE(!x.get()->authority.has_value());
-        REQUIRE(x.get()->path_query_fragment == "/path");
+        auto x = parse_split_url_view("file://user:pw@host");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "file");
+            REQUIRE(y->authority.value_or("") == "//user:pw@host");
+            REQUIRE(y->path_query_fragment == "");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("file://user:pw@host");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "file");
-        REQUIRE(x.get()->authority.value_or({}) == "//user:pw@host");
-        REQUIRE(x.get()->path_query_fragment == "");
+        auto x = parse_split_url_view("ftp://host:port/");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "ftp");
+            REQUIRE(y->authority.value_or("") == "//host:port");
+            REQUIRE(y->path_query_fragment == "/");
+        }
+        else
+        {
+            FAIL();
+        }
     }
     {
-        auto x = split_uri_view("ftp://host:port/");
-        REQUIRE(x.has_value());
-        REQUIRE(x.get()->scheme == "ftp");
-        REQUIRE(x.get()->authority.value_or({}) == "//host:port");
-        REQUIRE(x.get()->path_query_fragment == "/");
+        auto x = parse_split_url_view("file://D:\\work\\testing\\asset-cache/"
+                                      "562de7b577c99fe347b00437d14ce375a8e5a60504909cb67d2f73c372d39a2f76d2b42b69e4aeb3"
+                                      "1a4879e1bcf6f7c2d41f2ace12180ea83ba7af48879d40ab");
+        if (auto y = x.get())
+        {
+            REQUIRE(y->scheme == "file");
+            REQUIRE(y->authority.value_or("") == "//D:\\work\\testing\\asset-cache");
+            REQUIRE(y->path_query_fragment == "/562de7b577c99fe347b00437d14ce375a8e5a60504909cb67d2f73c372d39a2f76d2b42"
+                                              "b69e4aeb31a4879e1bcf6f7c2d41f2ace12180ea83ba7af48879d40ab");
+        }
+        else
+        {
+            FAIL();
+        }
     }
 }
 
 TEST_CASE ("parse_curl_status_line", "[downloads]")
 {
-    std::vector<ExpectedL<int>> http_codes;
+    std::vector<int> http_codes;
     StringLiteral malformed_examples[] = {
         "asdfasdf",                                       // wrong prefix
         "curl: unknown --write-out variable: 'exitcode'", // wrong prefixes, and also what old curl does
@@ -72,43 +120,46 @@ TEST_CASE ("parse_curl_status_line", "[downloads]")
         "prefix42 2a", // non numeric exitcode
     };
 
+    FullyBufferedDiagnosticContext bdc;
     for (auto&& malformed : malformed_examples)
     {
-        parse_curl_status_line(http_codes, "prefix", malformed);
+        REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", malformed));
         REQUIRE(http_codes.empty());
+        REQUIRE(bdc.empty());
     }
 
     // old curl output
-    parse_curl_status_line(http_codes, "prefix", "prefix200  ");
-    REQUIRE(http_codes.size() == 1);
-    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 200);
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix200  "));
+    REQUIRE(http_codes == std::vector<int>{200});
+    REQUIRE(bdc.empty());
     http_codes.clear();
 
-    parse_curl_status_line(http_codes, "prefix", "prefix404  ");
-    REQUIRE(http_codes.size() == 1);
-    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 404);
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix404  "));
+    REQUIRE(http_codes == std::vector<int>{404});
+    REQUIRE(bdc.empty());
     http_codes.clear();
 
-    parse_curl_status_line(http_codes, "prefix", "prefix0  "); // a failure, but we don't know that yet
-    REQUIRE(http_codes.size() == 1);
-    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 0);
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix0  ")); // a failure, but we don't know that yet
+    REQUIRE(http_codes == std::vector<int>{0});
+    REQUIRE(bdc.empty());
     http_codes.clear();
 
     // current curl output
-    parse_curl_status_line(http_codes, "prefix", "prefix200 0 ");
-    REQUIRE(http_codes.size() == 1);
-    REQUIRE(http_codes[0].value_or_exit(VCPKG_LINE_INFO) == 200);
+    REQUIRE(parse_curl_status_line(bdc, http_codes, "prefix", "prefix200 0 "));
+    REQUIRE(http_codes == std::vector<int>{200});
+    REQUIRE(bdc.empty());
     http_codes.clear();
 
-    parse_curl_status_line(http_codes,
-                           "prefix",
-                           "prefix0 60 schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) "
-                           "- The target principal name is incorrect.");
-    REQUIRE(http_codes.size() == 1);
-    REQUIRE(http_codes[0].error().data() ==
-            "curl operation failed with error code 60. schannel: SNI or certificate check failed: "
+    REQUIRE(parse_curl_status_line(
+        bdc,
+        http_codes,
+        "prefix",
+        "prefix0 60 schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) "
+        "- The target principal name is incorrect."));
+    REQUIRE(http_codes == std::vector<int>{0});
+    REQUIRE(bdc.to_string() ==
+            "error: curl operation failed with error code 60. schannel: SNI or certificate check failed: "
             "SEC_E_WRONG_PRINCIPAL (0x80090322) - The target principal name is incorrect.");
-    http_codes.clear();
 }
 
 TEST_CASE ("download_files", "[downloads]")
@@ -116,40 +167,29 @@ TEST_CASE ("download_files", "[downloads]")
     auto const dst = Test::base_temporary_directory() / "download_files";
     auto const url = [&](std::string l) -> auto { return std::pair(l, dst); };
 
+    FullyBufferedDiagnosticContext bdc;
     std::vector<std::string> headers;
     std::vector<std::string> secrets;
-    auto results =
-        download_files(std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
-                       headers,
-                       secrets);
-    REQUIRE(results.size() == 2);
-    if (auto first_result = results[0].get())
+    auto results = download_files_no_cache(
+        bdc,
+        std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
+        headers,
+        secrets);
+    REQUIRE(results == std::vector<int>{0, 0});
+    auto all_errors = bdc.to_string();
+    if (all_errors == "error: curl operation failed with error code 7.")
     {
-        // old curl
-        REQUIRE(*first_result == 0);
-    }
-    else
-    {
-        // current curl
-        REQUIRE(results[0].error().data() ==
-                "curl operation failed with error code 1. Protocol \"unknown\" not supported");
-    }
-
-    auto&& second_error = results[1].error().data();
-    std::puts(second_error.c_str());
-    // curl operation failed with error code 7. Failed to connect to localhost port 9 after 2241 ms: Could not connect
-    // to server
-    if (second_error == "curl operation failed with error code 7.")
-    {
-        // old curl
+        // old curl, this is OK!
     }
     else
     {
         // new curl
         REQUIRE_THAT(
-            second_error,
-            Catch::Matches("curl operation failed with error code 7. Failed to connect to localhost port 9 after "
-                           "[0-9]+ ms: Could not connect to server",
+            all_errors,
+            Catch::Matches("error: curl operation failed with error code 1\\. Protocol \"unknown\" not supported( or "
+                           "disabled in libcurl)?\n"
+                           "error: curl operation failed with error code 7\\. Failed to connect to localhost port 9 "
+                           "after [0-9]+ ms: (Could not|Couldn't) connect to server",
                            Catch::CaseSensitive::Yes));
     }
 }
@@ -235,8 +275,8 @@ TEST_CASE ("try_parse_curl_progress_data", "[downloads]")
                              .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(out.total_percent == 0);
         REQUIRE(out.total_size == 0);
-        REQUIRE(out.recieved_percent == 0);
-        REQUIRE(out.recieved_size == 0);
+        REQUIRE(out.received_percent == 0);
+        REQUIRE(out.received_size == 0);
         REQUIRE(out.transfer_percent == 0);
         REQUIRE(out.transfer_size == 0);
         REQUIRE(out.average_upload_speed == 0);
@@ -250,8 +290,8 @@ TEST_CASE ("try_parse_curl_progress_data", "[downloads]")
                              .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(out.total_percent == 2);
         REQUIRE(out.total_size == 190 * 1024 * 1024);
-        REQUIRE(out.recieved_percent == 2);
-        REQUIRE(out.recieved_size == 3935 * 1024);
+        REQUIRE(out.received_percent == 2);
+        REQUIRE(out.received_size == 3935 * 1024);
         REQUIRE(out.transfer_percent == 0);
         REQUIRE(out.transfer_size == 0);
         REQUIRE(out.average_upload_speed == 0);

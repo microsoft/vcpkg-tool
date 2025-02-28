@@ -42,21 +42,16 @@ namespace vcpkg
                                      const Path& relative_dir,
                                      const std::vector<Path>& relative_paths)
     {
-        auto ls = LocalizedString()
-                      .append_raw('\n')
-                      .append_raw(relative_dir)
-                      .append_raw(": ")
-                      .append_raw(NotePrefix)
-                      .append(kind_prefix)
-                      .append_raw('\n');
+        auto ls =
+            LocalizedString().append_raw(relative_dir).append_raw(": ").append_raw(NotePrefix).append(kind_prefix);
         for (const Path& package_relative_path : relative_paths)
         {
             auto as_generic = package_relative_path;
             as_generic.make_generic();
-            ls.append_raw(NotePrefix).append_raw(as_generic).append_raw('\n');
+            ls.append_raw('\n').append_raw(NotePrefix).append_raw(as_generic);
         }
 
-        msg_sink.print(ls);
+        msg_sink.println(ls);
     }
 
     // clang-format off
@@ -113,12 +108,11 @@ namespace vcpkg
         const auto include_dir = package_dir / "include";
         if (!fs.exists(include_dir, IgnoreErrors{}) || fs.is_empty(include_dir, IgnoreErrors{}))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMissingIncludeDir)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMissingIncludeDir));
 
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -134,12 +128,11 @@ namespace vcpkg
         const auto include_dir = package_dir / "include";
         if (fs.exists(include_dir, IgnoreErrors{}))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugIncludeDirInCMakeHelperPort)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugIncludeDirInCMakeHelperPort));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -228,20 +221,18 @@ namespace vcpkg
         if (!violations.empty())
         {
             Util::sort(violations);
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugRestrictedHeaderPaths)
-                               .append_raw('\n'));
-            msg_sink.print(LocalizedString::from_raw(include_dir)
-                               .append_raw(": ")
-                               .append_raw(NotePrefix)
-                               .append(msgPortBugRestrictedHeaderPathsNote)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugRestrictedHeaderPaths));
+            msg_sink.println(LocalizedString::from_raw(include_dir)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgPortBugRestrictedHeaderPathsNote));
             for (auto&& violation : violations)
             {
-                msg_sink.print(LocalizedString::from_raw(NotePrefix).append_raw(violation).append_raw('\n'));
+                msg_sink.println(LocalizedString::from_raw(NotePrefix).append_raw(violation));
             }
 
             return LintStatus::PROBLEM_DETECTED;
@@ -263,14 +254,12 @@ namespace vcpkg
 
         if (!files_found.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugDuplicateIncludeFiles)
-                               .append_raw('\n'));
-            msg_sink.print(
-                LocalizedString::from_raw(NotePrefix).append(msgPortBugDuplicateIncludeFilesFixIt).append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugDuplicateIncludeFiles));
+            msg_sink.println(LocalizedString::from_raw(NotePrefix).append(msgPortBugDuplicateIncludeFilesFixIt));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -285,12 +274,11 @@ namespace vcpkg
         const auto debug_share = package_dir / FileDebug / FileShare;
         if (fs.exists(debug_share, IgnoreErrors{}))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugDebugShareDir)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugDebugShareDir));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -305,12 +293,11 @@ namespace vcpkg
     {
         if (!fs.exists(package_dir / FileShare / package_name / FileVcpkgPortConfig, IgnoreErrors{}))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMissingCMakeHelperPortFile)
-                               .append_raw("\n"));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMissingCMakeHelperPortFile));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -332,23 +319,21 @@ namespace vcpkg
 
         if (fs.is_regular_file(usage_path_from) && !fs.is_regular_file(usage_path_to))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMissingProvidedUsage)
-                               .append_raw('\n'));
-            msg_sink.print(LocalizedString::from_raw(usage_path_from)
-                               .append_raw(": ")
-                               .append_raw(NotePrefix)
-                               .append(msgUsageTextHere)
-                               .append_raw('\n')
-                               .append_raw(NotePrefix)
-                               .append(msgUsageInstallInstructions)
-                               .append_raw('\n')
-                               .append_raw(NotePrefix)
-                               .append_raw(STANDARD_INSTALL_USAGE)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMissingProvidedUsage));
+            msg_sink.println(LocalizedString::from_raw(usage_path_from)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgUsageTextHere)
+                                 .append_raw('\n')
+                                 .append_raw(NotePrefix)
+                                 .append(msgUsageInstallInstructions)
+                                 .append_raw('\n')
+                                 .append_raw(NotePrefix)
+                                 .append_raw(STANDARD_INSTALL_USAGE));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -382,11 +367,11 @@ namespace vcpkg
 
         if (!misplaced_cmake_files.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMisplacedCMakeFiles));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMisplacedCMakeFiles));
             print_relative_paths(
                 msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, misplaced_cmake_files);
             return LintStatus::PROBLEM_DETECTED;
@@ -404,12 +389,11 @@ namespace vcpkg
             fs.exists(package_dir / "debug" VCPKG_PREFERRED_SEPARATOR "lib" VCPKG_PREFERRED_SEPARATOR "cmake",
                       IgnoreErrors{}))
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMergeLibCMakeDir)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMergeLibCMakeDir));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -448,11 +432,11 @@ namespace vcpkg
 
         if (!bad_dlls.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugDllInLibDir));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugDllInLibDir));
             print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, bad_dlls);
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -474,22 +458,20 @@ namespace vcpkg
         {
             case FileType::regular: return LintStatus::SUCCESS; break;
             case FileType::directory:
-                msg_sink.print(Color::warning,
-                               LocalizedString::from_raw(portfile_cmake)
-                                   .append_raw(": ")
-                                   .append_raw(WarningPrefix)
-                                   .append(msgCopyrightIsDir)
-                                   .append_raw('\n'));
+                msg_sink.println(Color::warning,
+                                 LocalizedString::from_raw(portfile_cmake)
+                                     .append_raw(": ")
+                                     .append_raw(WarningPrefix)
+                                     .append(msgCopyrightIsDir));
                 return LintStatus::PROBLEM_DETECTED;
             default: break;
         }
 
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgPortBugMissingLicense)
-                           .append_raw('\n'));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgPortBugMissingLicense));
 
         // We only search in the root of each unpacked source archive to reduce false positives
         auto src_relative_dirs = Util::fmap(fs.get_directories_non_recursive(build_dir / "src", IgnoreErrors{}),
@@ -512,14 +494,13 @@ namespace vcpkg
                 auto args = Util::fmap(src_dir_relative_copyright_files, [](StringLiteral copyright_file) {
                     return fmt::format(FMT_COMPILE("\"${{SOURCE_PATH}}/{}\""), copyright_file);
                 });
-                msg_sink.print(
+                msg_sink.println(
                     LocalizedString::from_raw(portfile_cmake)
                         .append_raw(": ")
                         .append_raw(NotePrefix)
                         .append(msgPortBugMissingLicenseFixIt,
                                 msg::value = fmt::format(FMT_COMPILE("vcpkg_install_copyright(FILE_LIST {})"),
-                                                         fmt::join(args, " ")))
-                        .append_raw('\n'));
+                                                         fmt::join(args, " "))));
             }
 
             return LintStatus::PROBLEM_DETECTED;
@@ -542,10 +523,10 @@ namespace vcpkg
 
         if (!build_dir_relative_copyright_files.empty())
         {
-            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(NotePrefix)
-                               .append(msgPortBugFoundCopyrightFiles));
+            msg_sink.println(LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgPortBugFoundCopyrightFiles));
             print_relative_paths(
                 msg_sink, msgFilesRelativeToTheBuildDirectoryHere, build_dir, build_dir_relative_copyright_files);
         }
@@ -570,11 +551,11 @@ namespace vcpkg
 
         if (!exes.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugFoundExeInBinDir));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugFoundExeInBinDir));
 
             print_relative_paths(msg_sink, msgExecutablesRelativeToThePackageDirectoryHere, package_dir, exes);
             return LintStatus::PROBLEM_DETECTED;
@@ -662,11 +643,11 @@ namespace vcpkg
 
         if (!dlls_with_no_exports.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugSetDllsWithoutExports));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugSetDllsWithoutExports));
             print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, dlls_with_no_exports);
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -696,11 +677,11 @@ namespace vcpkg
 
         if (!dlls_with_improper_uwp_bit.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugDllAppContainerBitNotSet));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugDllAppContainerBitNotSet));
             print_relative_paths(
                 msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, dlls_with_improper_uwp_bit);
             return LintStatus::PROBLEM_DETECTED;
@@ -759,28 +740,26 @@ namespace vcpkg
                                                  std::vector<FileAndArch> binaries_with_invalid_architecture,
                                                  MessageSink& msg_sink)
     {
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgBuiltWithIncorrectArchitecture, msg::arch = expected_architecture)
-                           .append_raw('\n'));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgBuiltWithIncorrectArchitecture, msg::arch = expected_architecture));
 
         auto msg = LocalizedString::from_raw(package_dir)
                        .append_raw(": ")
                        .append_raw(NotePrefix)
-                       .append(msgBinariesRelativeToThePackageDirectoryHere)
-                       .append_raw('\n');
+                       .append(msgBinariesRelativeToThePackageDirectoryHere);
         for (const FileAndArch& b : binaries_with_invalid_architecture)
         {
-            msg.append_raw(NotePrefix)
+            msg.append_raw('\n')
+                .append_raw(NotePrefix)
                 .append(msgBinaryWithInvalidArchitecture,
                         msg::path = b.relative_file.generic_u8string(),
-                        msg::arch = b.actual_arch)
-                .append_raw('\n');
+                        msg::arch = b.actual_arch);
         }
 
-        msg_sink.print(msg);
+        msg_sink.println(msg);
     }
 
     static void check_dll_architecture(const std::string& expected_architecture,
@@ -879,11 +858,11 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgPortBugFoundDllInStaticBuild));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgPortBugFoundDllInStaticBuild));
         print_relative_paths(msg_sink, msgDllsRelativeToThePackageDirectoryHere, package_dir, relative_dlls);
         return LintStatus::PROBLEM_DETECTED;
     }
@@ -906,7 +885,7 @@ namespace vcpkg
             {
                 auto as_generic = binary;
                 as_generic.make_generic();
-                ls.append_raw(NotePrefix).append_raw(as_generic).append_raw('\n');
+                ls.append_raw('\n').append_raw(NotePrefix).append_raw(as_generic);
             }
         }
     }
@@ -924,38 +903,36 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgPortBugMismatchingNumberOfBinaries)
-                           .append_raw('\n'));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgPortBugMismatchingNumberOfBinaries));
         LocalizedString ls = LocalizedString::from_raw(package_dir)
                                  .append_raw(": ")
                                  .append_raw(NotePrefix)
-                                 .append(msgBinariesRelativeToThePackageDirectoryHere)
-                                 .append_raw('\n');
+                                 .append(msgBinariesRelativeToThePackageDirectoryHere);
         if (debug_count == 0)
         {
-            ls.append_raw(NotePrefix).append(msgPortBugMissingDebugBinaries).append_raw('\n');
+            ls.append_raw('\n').append_raw(NotePrefix).append(msgPortBugMissingDebugBinaries);
         }
         else
         {
-            ls.append_raw(NotePrefix).append(msgPortBugFoundDebugBinaries).append_raw('\n');
+            ls.append_raw('\n').append_raw(NotePrefix).append(msgPortBugFoundDebugBinaries);
             append_binary_set(ls, relative_debug_binary_sets);
         }
 
         if (release_count == 0)
         {
-            ls.append_raw(NotePrefix).append(msgPortBugMissingReleaseBinaries).append_raw('\n');
+            ls.append_raw('\n').append_raw(NotePrefix).append(msgPortBugMissingReleaseBinaries);
         }
         else
         {
-            ls.append_raw(NotePrefix).append(msgPortBugFoundReleaseBinaries).append_raw('\n');
+            ls.append_raw('\n').append_raw(NotePrefix).append(msgPortBugFoundReleaseBinaries);
             append_binary_set(ls, relative_release_binary_sets);
         }
 
-        msg_sink.print(ls);
+        msg_sink.println(ls);
         return LintStatus::PROBLEM_DETECTED;
     }
 
@@ -966,11 +943,10 @@ namespace vcpkg
     {
         if (lib_count == 0 && dll_count != 0)
         {
-            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMissingImportedLibs)
-                               .append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMissingImportedLibs));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -998,24 +974,23 @@ namespace vcpkg
 
         for (auto&& bad_dir : bad_dirs)
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugBinDirExists, msg::path = bad_dir)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugBinDirExists, msg::path = bad_dir));
         }
 
         auto args = Util::fmap(bad_dirs, [](const Path& bad_dir) {
             return fmt::format(FMT_COMPILE("\"${{CURRENT_PACKAGES_DIR}}/{}\""), bad_dir);
         });
-        msg_sink.print(
+        msg_sink.println(
             LocalizedString::from_raw(NotePrefix)
                 .append(msgPortBugRemoveBinDir)
                 .append_raw('\n')
                 .append_raw("if(VCPKG_LIBRARY_LINKAGE STREQUAL \"static\")\n")
                 .append_indent()
-                .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})\nendif()\n"), fmt::join(args, " "))));
+                .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})\nendif()"), fmt::join(args, " "))));
         return bad_dirs.size();
     }
 
@@ -1031,24 +1006,23 @@ namespace vcpkg
         if (!relative_empty_directories.empty())
         {
             Util::sort(relative_empty_directories);
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugFoundEmptyDirectories)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugFoundEmptyDirectories));
 
             auto args = Util::fmap(relative_empty_directories, [](const Path& empty_dir) {
                 return fmt::format(FMT_COMPILE("\"${{CURRENT_PACKAGES_DIR}}/{}\""), empty_dir.generic_u8string());
             });
-            msg_sink.print(
+            msg_sink.println(
                 LocalizedString::from_raw(package_dir)
                     .append_raw(": ")
                     .append_raw(NotePrefix)
                     .append(msgDirectoriesRelativeToThePackageDirectoryHere)
                     .append_raw('\n')
                     .append_raw(NotePrefix)
-                    .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})\n"), fmt::join(args, " "))));
+                    .append_raw(fmt::format(FMT_COMPILE("file(REMOVE_RECURSE {})"), fmt::join(args, " "))));
             return LintStatus::PROBLEM_DETECTED;
         }
 
@@ -1126,18 +1100,18 @@ namespace vcpkg
 
         if (!misplaced_pkgconfig_files.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMisplacedPkgConfigFiles));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMisplacedPkgConfigFiles));
             print_relative_paths(msg_sink,
                                  msgFilesRelativeToThePackageDirectoryHere,
                                  package_dir,
                                  Util::fmap(misplaced_pkgconfig_files,
                                             [](const MisplacedFile& mf) -> Path { return mf.relative_path; }));
 
-            msg_sink.print(LocalizedString::from_raw(NotePrefix).append(msgPortBugMovePkgConfigFiles).append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(NotePrefix).append(msgPortBugMovePkgConfigFiles));
             {
                 auto create_directory_line = LocalizedString::from_raw("file(MAKE_DIRECTORY");
                 std::vector<StringLiteral> directories;
@@ -1162,8 +1136,8 @@ namespace vcpkg
                         fmt::format(FMT_COMPILE(R"###( "${{CURRENT_PACKAGES_DIR}}/{}")###"), directory));
                 }
 
-                create_directory_line.append_raw(")\n");
-                msg_sink.print(create_directory_line);
+                create_directory_line.append_raw(")");
+                msg_sink.println(create_directory_line);
             } // destroy create_directory_line
 
             for (const auto& item : misplaced_pkgconfig_files)
@@ -1177,15 +1151,15 @@ namespace vcpkg
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
-                msg_sink.print(LocalizedString::from_raw(fmt::format(
-                    FMT_COMPILE(R"###(file(RENAME "${{CURRENT_PACKAGES_DIR}}/{}" "${{CURRENT_PACKAGES_DIR}}/{}/{}"))###"
-                                "\n"),
+                msg_sink.println(LocalizedString::from_raw(fmt::format(
+                    FMT_COMPILE(
+                        R"###(file(RENAME "${{CURRENT_PACKAGES_DIR}}/{}" "${{CURRENT_PACKAGES_DIR}}/{}/{}"))###"),
                     item.relative_path.generic_u8string(),
                     *dir,
                     item.relative_path.filename())));
             }
 
-            msg_sink.print(LocalizedString::from_raw("vcpkg_fixup_pkgconfig()\n"));
+            msg_sink.println(LocalizedString::from_raw("vcpkg_fixup_pkgconfig()"));
             msg_sink.println(msgPortBugRemoveEmptyDirs);
 
             return LintStatus::PROBLEM_DETECTED;
@@ -1327,32 +1301,28 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgPortBugInvalidCrtLinkageHeader)
-                           .append_raw('\n'));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgPortBugInvalidCrtLinkageHeader));
 
-        msg_sink.print(LocalizedString::from_raw(package_dir)
-                           .append_raw(": ")
-                           .append_raw(NotePrefix)
-                           .append(msgBinariesRelativeToThePackageDirectoryHere)
-                           .append_raw('\n'));
+        msg_sink.println(LocalizedString::from_raw(package_dir)
+                             .append_raw(": ")
+                             .append_raw(NotePrefix)
+                             .append(msgBinariesRelativeToThePackageDirectoryHere));
         for (auto&& group : groups_of_invalid_crt)
         {
-            msg_sink.print(LocalizedString::from_raw(NotePrefix)
-                               .append(msgPortBugInvalidCrtLinkageCrtGroup, msg::expected = to_string(group.first))
-                               .append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(NotePrefix)
+                                 .append(msgPortBugInvalidCrtLinkageCrtGroup, msg::expected = to_string(group.first)));
             for (auto&& file : group.second)
             {
                 for (auto&& linkage : file.linkages)
                 {
-                    msg_sink.print(LocalizedString::from_raw(NotePrefix)
-                                       .append(msgPortBugInvalidCrtLinkageEntry,
-                                               msg::path = file.relative_file.generic_u8string(),
-                                               msg::actual = to_string(linkage))
-                                       .append_raw('\n'));
+                    msg_sink.println(LocalizedString::from_raw(NotePrefix)
+                                         .append(msgPortBugInvalidCrtLinkageEntry,
+                                                 msg::path = file.relative_file.generic_u8string(),
+                                                 msg::actual = to_string(linkage)));
                 }
             }
         }
@@ -1390,11 +1360,11 @@ namespace vcpkg
 
         if (!dlls_with_outdated_crt.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugOutdatedCRT));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugOutdatedCRT));
 
             print_relative_paths(
                 msg_sink,
@@ -1437,11 +1407,11 @@ namespace vcpkg
             return LintStatus::SUCCESS;
         }
 
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgPortBugKernel32FromXbox));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgPortBugKernel32FromXbox));
         print_relative_paths(
             msg_sink,
             msgDllsRelativeToThePackageDirectoryHere,
@@ -1487,11 +1457,11 @@ namespace vcpkg
 
         if (!misplaced_files.empty())
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgPortBugMisplacedFiles));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgPortBugMisplacedFiles));
             print_relative_paths(msg_sink, msgFilesRelativeToThePackageDirectoryHere, package_dir, misplaced_files);
             return LintStatus::PROBLEM_DETECTED;
         }
@@ -1586,34 +1556,31 @@ namespace vcpkg
         }
 
         Util::sort(failing_files);
-        msg_sink.print(Color::warning,
-                       LocalizedString::from_raw(portfile_cmake)
-                           .append_raw(": ")
-                           .append_raw(WarningPrefix)
-                           .append(msgFilesContainAbsolutePath1)
-                           .append_raw('\n'));
+        msg_sink.println(Color::warning,
+                         LocalizedString::from_raw(portfile_cmake)
+                             .append_raw(": ")
+                             .append_raw(WarningPrefix)
+                             .append(msgFilesContainAbsolutePath1));
         for (auto&& absolute_path : prohibited_absolute_paths)
         {
-            msg_sink.print(LocalizedString::from_raw(NotePrefix).append_raw(absolute_path).append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(NotePrefix).append_raw(absolute_path));
         }
 
         if (any_pc_file_fails)
         {
-            msg_sink.print(LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(NotePrefix)
-                               .append(msgFilesContainAbsolutePathPkgconfigNote)
-                               .append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgFilesContainAbsolutePathPkgconfigNote));
         }
 
         for (auto&& failing_file : failing_files)
         {
             failing_file.make_preferred();
-            msg_sink.print(LocalizedString::from_raw(package_dir / failing_file)
-                               .append_raw(": ")
-                               .append_raw(NotePrefix)
-                               .append(msgFilesContainAbsolutePath2)
-                               .append_raw('\n'));
+            msg_sink.println(LocalizedString::from_raw(package_dir / failing_file)
+                                 .append_raw(": ")
+                                 .append_raw(NotePrefix)
+                                 .append(msgFilesContainAbsolutePath2));
         }
 
         return LintStatus::PROBLEM_DETECTED;
@@ -1937,12 +1904,11 @@ namespace vcpkg
             spec, paths, pre_build_info, build_info, port_dir, portfile_cmake, msg_sink);
         if (error_count != 0)
         {
-            msg_sink.print(Color::warning,
-                           LocalizedString::from_raw(portfile_cmake)
-                               .append_raw(": ")
-                               .append_raw(WarningPrefix)
-                               .append(msgFailedPostBuildChecks, msg::count = error_count)
-                               .append_raw('\n'));
+            msg_sink.println(Color::warning,
+                             LocalizedString::from_raw(portfile_cmake)
+                                 .append_raw(": ")
+                                 .append_raw(WarningPrefix)
+                                 .append(msgFailedPostBuildChecks, msg::count = error_count));
         }
 
         return error_count;

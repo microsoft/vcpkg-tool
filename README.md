@@ -1,9 +1,9 @@
 # Vcpkg: Overview
 
-[中文总览](https://github.com/microsoft/vcpkg/blob/master/README_zh_CN.md)
-[Español](https://github.com/microsoft/vcpkg/blob/master/README_es.md)
-[한국어](https://github.com/microsoft/vcpkg/blob/master/README_ko_KR.md)
-[Français](https://github.com/microsoft/vcpkg/blob/master/README_fr.md)
+[中文总览](https://learn.microsoft.com/zh-cn/vcpkg/get_started/overview)
+[Español](https://learn.microsoft.com/es/vcpkg/get_started/overview)
+[한국어](https://learn.microsoft.com/ko-kr/vcpkg/get_started/overview)
+[Français](https://learn.microsoft.com/fr/vcpkg/get_started/overview)
 
 Vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS.
 This tool and ecosystem are constantly evolving, and we always appreciate contributions!

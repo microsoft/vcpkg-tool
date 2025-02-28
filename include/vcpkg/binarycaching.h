@@ -8,8 +8,10 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/background-work-queue.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/path.h>
 
 #include <vcpkg/archives.h>
@@ -20,6 +22,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -186,13 +189,16 @@ namespace vcpkg
     struct ReadOnlyBinaryCache
     {
         ReadOnlyBinaryCache() = default;
-        ReadOnlyBinaryCache(BinaryProviders&& providers);
+        ReadOnlyBinaryCache(const ReadOnlyBinaryCache&) = delete;
+        ReadOnlyBinaryCache& operator=(const ReadOnlyBinaryCache&) = delete;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
         void fetch(View<InstallPlanAction> actions);
 
         bool is_restored(const InstallPlanAction& ipa) const;
+
+        void install_read_provider(std::unique_ptr<IReadBinaryProvider>&& provider);
 
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
@@ -205,27 +211,86 @@ namespace vcpkg
         std::unordered_map<std::string, CacheStatus> m_status;
     };
 
+    struct BinaryCacheSyncState;
+    struct BinaryCacheSynchronizer
+    {
+        using backing_uint_t = std::conditional_t<sizeof(size_t) == 4, uint32_t, uint64_t>;
+        using counter_uint_t = std::conditional_t<sizeof(size_t) == 4, uint16_t, uint32_t>;
+        static constexpr backing_uint_t SubmissionCompleteBit = static_cast<backing_uint_t>(1)
+                                                                << (sizeof(backing_uint_t) * 8 - 1);
+        static constexpr backing_uint_t UpperShift = sizeof(counter_uint_t) * 8;
+        static constexpr backing_uint_t SubmittedMask =
+            static_cast<backing_uint_t>(static_cast<counter_uint_t>(-1) >> 1u);
+        static constexpr backing_uint_t CompletedMask = SubmittedMask << UpperShift;
+        static constexpr backing_uint_t OneCompleted = static_cast<backing_uint_t>(1) << UpperShift;
+
+        void add_submitted() noexcept;
+        BinaryCacheSyncState fetch_add_completed() noexcept;
+        counter_uint_t fetch_incomplete_mark_submission_complete() noexcept;
+
+    private:
+        // This is morally:
+        // struct State {
+        //    counter_uint_t jobs_submitted;
+        //    bool unused;
+        //    counter_uint_t_minus_one_bit jobs_completed;
+        //    bool submission_complete;
+        // };
+        std::atomic<backing_uint_t> m_state = 0;
+    };
+
+    struct BinaryCacheSyncState
+    {
+        BinaryCacheSynchronizer::counter_uint_t jobs_submitted;
+        BinaryCacheSynchronizer::counter_uint_t jobs_completed;
+        bool submission_complete;
+    };
+
+    // compression and upload of binary cache entries happens on a single 'background' thread, `m_push_thread`
+    // Thread safety is achieved within the binary cache providers by:
+    //   1. Only using one thread in the background for this work.
+    //   2. Forming a queue of work for that thread to consume in `m_actions_to_push`, which maintains its own thread
+    //   safety
+    //   3. Sending any replies from the background thread through `m_bg_msg_sink`
+    //   4. Ensuring any supporting data, such as tool exes, is provided before the background thread is started.
+    //   5. Ensuring that work is not submitted to the background thread until the corresponding `packages` directory to
+    //   upload is no longer being actively written by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        static ExpectedL<BinaryCache> make(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& sink);
+        bool install_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& status_sink);
 
-        BinaryCache(const Filesystem& fs);
+        explicit BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
-        BinaryCache(BinaryCache&&) = default;
-
+        BinaryCache& operator=(const BinaryCache&) = delete;
+        ~BinaryCache();
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
-    private:
-        BinaryCache(BinaryProviders&& providers, const Filesystem& fs);
+        void print_updates();
+        void wait_for_async_complete_and_join();
 
-        const Filesystem& m_fs;
-        Optional<ZipTool> m_zip_tool;
+    private:
+        struct ActionToPush
+        {
+            BinaryPackageWriteInfo request;
+            CleanPackages clean_after_push;
+        };
+
+        ZipTool m_zip_tool;
         bool m_needs_nuspec_data = false;
         bool m_needs_zip_file = false;
+
+        const Filesystem& m_fs;
+
+        BGMessageSink m_bg_msg_sink;
+        BackgroundWorkQueue<ActionToPush> m_actions_to_push;
+        BinaryCacheSynchronizer m_synchronizer;
+        std::thread m_push_thread;
+
+        void push_thread_main();
     };
 
-    ExpectedL<DownloadManagerConfig> parse_download_configuration(const Optional<std::string>& arg);
+    ExpectedL<AssetCachingSettings> parse_download_configuration(const Optional<std::string>& arg);
 
     std::string generate_nuget_packages_config(const ActionPlan& action, StringView prefix);
 

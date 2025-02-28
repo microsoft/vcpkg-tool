@@ -248,19 +248,56 @@ DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when
 DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
 DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
-DECLARE_MESSAGE(AssetCacheHit, (msg::path, msg::url), "", "Asset cache hit for {path}; downloaded from: {url}")
-DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; downloading from {url}")
+DECLARE_MESSAGE(AssetCacheConsult, (msg::path, msg::url), "", "Trying to download {path} using asset cache {url}")
+DECLARE_MESSAGE(AssetCacheConsultScript, (msg::path), "", "Trying to download {path} using asset cache script")
+DECLARE_MESSAGE(AssetCacheHit, (), "", "Download successful! Asset cache hit.")
+DECLARE_MESSAGE(AssetCacheHitUrl,
+                (msg::url),
+                "",
+                "Download successful! Asset cache hit, did not try authoritative source {url}")
+DECLARE_MESSAGE(AssetCacheMiss, (msg::url), "", "Asset cache miss; trying authoritative source {url}")
 DECLARE_MESSAGE(AssetCacheMissBlockOrigin,
-                (msg::path),
+                (msg::url),
                 "x-block-origin is a vcpkg term. Do not translate",
-                "Asset cache miss for {path} and downloads are blocked by x-block-origin.")
-DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}.")
-DECLARE_MESSAGE(DownloadingUrl, (msg::url), "", "Downloading {url}")
+                "there were no asset cache hits, and x-block-origin blocks trying the authoritative source {url}")
+DECLARE_MESSAGE(AssetCacheMissNoUrls,
+                (msg::sha),
+                "",
+                "Asset cache missed looking for {sha} and no authoritative URL is known")
 DECLARE_MESSAGE(AssetCacheProviderAcceptsNoArguments,
                 (msg::value),
                 "{value} is a asset caching provider name such as azurl, clear, or x-block-origin",
                 "unexpected arguments: '{value}' does not accept arguments")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (msg::path, msg::url), "", "Successfully stored {path} to {url}.")
+DECLARE_MESSAGE(AssetCacheScriptBadVariable,
+                (msg::value, msg::list),
+                "{value} is the script template passed to x-script, {list} is the name of the unknown replacement",
+                "the script template {value} contains unknown replacement {list}")
+DECLARE_MESSAGE(AssetCacheScriptBadVariableHint,
+                (msg::list),
+                "{list} is the name of the unknown replacement",
+                "if you want this on the literal command line, use {{{{{list}}}}}")
+DECLARE_MESSAGE(AssetCacheScriptCommandLine, (), "", "the full script command line was")
+DECLARE_MESSAGE(AssetCacheScriptNeedsSha,
+                (msg::value, msg::url),
+                "{value} is the script template the user supplied to x-script",
+                "the script template {value} requires a SHA, but no SHA is known for attempted download of {url}")
+DECLARE_MESSAGE(AssetCacheScriptNeedsUrl,
+                (msg::value, msg::sha),
+                "{value} is the script template the user supplied to x-script",
+                "the script template {value} requires a URL, but no URL is known for attempted download of {sha}")
+DECLARE_MESSAGE(AssetCacheScriptFailed,
+                (msg::exit_code),
+                "",
+                "the asset cache script returned nonzero exit code {exit_code}")
+DECLARE_MESSAGE(AssetCacheScriptFailedToWriteFile,
+                (),
+                "",
+                "the asset cache script returned success but did not create expected result file")
+DECLARE_MESSAGE(AssetCacheScriptFailedToWriteCorrectHash,
+                (),
+                "",
+                "the asset cache script returned success but the resulting file has an unexpected hash")
+DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Store success")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
@@ -882,7 +919,6 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
-DECLARE_MESSAGE(CompressFolderFailed, (msg::path), "", "Failed to compress folder \"{path}\":")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),
@@ -1034,53 +1070,65 @@ DECLARE_MESSAGE(DownloadAvailable,
                 "",
                 "A downloadable copy of this tool is available and can be used by unsetting {env_var}.")
 DECLARE_MESSAGE(DownloadedSources, (msg::spec), "", "Downloaded sources for {spec}")
-DECLARE_MESSAGE(DownloadFailedCurl,
-                (msg::url, msg::exit_code),
-                "",
-                "{url}: curl failed to download with exit code {exit_code}")
-DECLARE_MESSAGE(DownloadFailedHashMismatch,
-                (msg::url, msg::path, msg::expected, msg::actual),
-                "{expected} and {actual} are SHA512 hashes in hex format.",
-                "File does not have the expected hash:\n"
-                "url: {url}\n"
-                "File: {path}\n"
-                "Expected hash: {expected}\n"
-                "Actual hash: {actual}")
+DECLARE_MESSAGE(DownloadFailedHashMismatch, (msg::url), "", "download from {url} had an unexpected hash")
+DECLARE_MESSAGE(DownloadFailedHashMismatchActualHash, (msg::sha), "", "Actual  : {sha}")
+DECLARE_MESSAGE(DownloadFailedHashMismatchExpectedHash, (msg::sha), "", "Expected: {sha}")
+DECLARE_MESSAGE(
+    DownloadFailedHashMismatchZero,
+    (msg::sha),
+    "",
+    "failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}")
 DECLARE_MESSAGE(DownloadFailedRetrying,
-                (msg::value),
+                (msg::value, msg::url),
                 "{value} is a number of milliseconds",
-                "Download failed -- retrying after {value}ms")
+                "Download {url} failed -- retrying after {value}ms")
 DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
                 "{url}: failed: status code {value}")
-DECLARE_MESSAGE(DownloadFailedProxySettings,
-                (msg::path, msg::url),
-                "",
-                "Failed to download {path}.\nIf you are using a proxy, please ensure your proxy settings are "
-                "correct.\nPossible causes are:\n"
-                "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable "
-                "to `https//address:port`.\nThis is not correct, because `https://` prefix "
-                "claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
-                "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
-                "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings "
-                "set by your proxy software. See, {url}\n"
-                "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
-                "3. Your proxy's remote server is our of service.\n"
-                "If you've tried directly download the link, and believe this is not a temporay download server "
-                "failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues\n"
-                "to report this upstream download server failure.")
+DECLARE_MESSAGE(
+    DownloadFailedProxySettings,
+    (),
+    "",
+    "If you are using a proxy, please ensure your proxy settings are correct.\n"
+    "Possible causes are:\n"
+    "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to "
+    "`https//address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
+    "proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
+    "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
+    "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "
+    "proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77\n"
+    "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
+    "3. Your proxy's remote server is our of service.\n"
+    "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this "
+    "file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
                 (msg::tool_name, msg::version),
                 "",
                 "A suitable version of {tool_name} was not found (required v{version}).")
+DECLARE_MESSAGE(DownloadingAssetShaToFile, (msg::sha, msg::path), "", "Downloading asset cache entry {sha} -> {path}")
+DECLARE_MESSAGE(DownloadingAssetShaWithoutAssetCache,
+                (msg::sha, msg::path),
+                "",
+                "requested download of asset cache entry {sha} -> {path}, but no asset caches are configured")
+DECLARE_MESSAGE(DownloadingFile, (msg::path), "", "Downloading {path}")
+DECLARE_MESSAGE(DownloadingFileFirstAuthoritativeSource, (msg::path, msg::url), "", "Downloading {path}, trying {url}")
+DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "Downloading {url} -> {path}")
+DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
+DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
+DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
+DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
+DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
+DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}")
+DECLARE_MESSAGE(DownloadSuccesfulUploading,
+                (msg::path, msg::url),
+                "",
+                "Successfully downloaded {path}, storing to {url}")
 DECLARE_MESSAGE(DownloadWinHttpError,
                 (msg::system_api, msg::exit_code, msg::url),
                 "",
-                "{url}: {system_api} failed with exit code {exit_code}")
-DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
-DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
-DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
+                "{url}: {system_api} failed with exit code {exit_code}.")
+DECLARE_MESSAGE(DuplicateDependencyOverride, (msg::package_name), "", "{package_name} already has an override")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
                 "{value} is a json property/object",
@@ -1123,6 +1171,15 @@ DECLARE_MESSAGE(ErrorInvalidManifestModeOption,
                 (msg::option),
                 "",
                 "The option --{option} is not supported in manifest mode.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlay,
+                (msg::path),
+                "",
+                "The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.")
+DECLARE_MESSAGE(ErrorManifestMustDifferFromOverlayDot,
+                (),
+                "",
+                "The manifest directory cannot be the same as a directory configured in overlay-ports, so "
+                "\"overlay-ports\" values cannot be \".\".")
 DECLARE_MESSAGE(
     ErrorMissingVcpkgRoot,
     (),
@@ -1256,10 +1313,6 @@ DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 "printed after this",
                 "failed to remove_all_inside({value}) due to {path}: ")
 DECLARE_MESSAGE(FailedToDetermineCurrentCommit, (), "", "Failed to determine the current commit:")
-DECLARE_MESSAGE(MissingAssetBlockOrigin,
-                (msg::path),
-                "x-block-origin is a vcpkg term. Do not translate",
-                "Missing {path} and downloads are blocked by x-block-origin.")
 DECLARE_MESSAGE(MissingShaVariable,
                 (),
                 "{{sha}} should not be translated",
@@ -1351,7 +1404,7 @@ DECLARE_MESSAGE(FetchingRegistryInfo,
                 (msg::url, msg::value),
                 "{value} is a reference",
                 "Fetching registry information from {url} ({value})...")
-DECLARE_MESSAGE(FileNotFound, (msg::path), "", "{path}: file not found")
+DECLARE_MESSAGE(FileNotFound, (), "", "file not found")
 DECLARE_MESSAGE(FileReadFailed,
                 (msg::path, msg::byte_offset, msg::count),
                 "",
@@ -1426,10 +1479,6 @@ DECLARE_MESSAGE(GraphCycleDetected,
                 (msg::package_name),
                 "A list of package names comprising the cycle will be printed after this message.",
                 "Cycle detected within graph at {package_name}:")
-DECLARE_MESSAGE(HashFileFailureToRead,
-                (msg::path),
-                "Printed after ErrorMessage and before the specific failing filesystem operation (like file not found)",
-                "failed to read file \"{path}\" for hashing: ")
 DECLARE_MESSAGE(HashPortManyFiles,
                 (msg::package_name, msg::count),
                 "",
@@ -1694,7 +1743,6 @@ DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Does not print CMake usage informati
 DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fails if cached binaries are not available")
 DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Makes best-effort attempt to download sources without building")
 DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allows removal of packages as part of installation")
-DECLARE_MESSAGE(HelpTxtOptUseAria2, (), "", "Uses aria2 to perform download tasks")
 DECLARE_MESSAGE(HelpTxtOptUseHeadVersion,
                 (),
                 "",
@@ -2108,7 +2156,8 @@ DECLARE_MESSAGE(MismatchedManifestAfterReserialize,
 DECLARE_MESSAGE(MismatchedNames,
                 (msg::package_name, msg::actual),
                 "{actual} is the port name found",
-                "names did not match: '{package_name}' != '{actual}'")
+                "the port name declared in the metadata file did not match the directory. Expected the port to be "
+                "named {package_name}, but the file declares {actual}.")
 DECLARE_MESSAGE(MismatchedSpec,
                 (msg::path, msg::expected, msg::actual),
                 "{expected} and {actual} are package specs like 'zlib:x64-windows'",
@@ -2210,7 +2259,6 @@ DECLARE_MESSAGE(NonZeroRemainingArgs,
                 "the command '{command_name}' does not accept any additional arguments")
 DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.")
 DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}")
-DECLARE_MESSAGE(NoUrlsAndHashSpecified, (msg::sha), "", "No urls specified to download SHA: {sha}")
 DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.")
 DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
                 (),
@@ -2242,8 +2290,11 @@ DECLARE_MESSAGE(OptionRequiresOption,
 DECLARE_MESSAGE(Options, (), "Printed just before a list of options for a command", "Options")
 DECLARE_MESSAGE(OriginalBinParagraphHeader, (), "", "\nOriginal Binary Paragraph")
 DECLARE_MESSAGE(OtherCommandsHeader, (), "", "Other")
-DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must exist and must be a directory.")
-DECLARE_MESSAGE(OverlayPortsDirectoriesHelp, (msg::env_var), "", "Directories of overlay ports (also: {env_var})")
+DECLARE_MESSAGE(OverlayPatchDir, (msg::path), "", "Overlay path \"{path}\" must be an existing directory.")
+DECLARE_MESSAGE(OverlayPortsHelp,
+                (msg::env_var),
+                "",
+                "Overlay-port directories, or directories containing overlay-port directories (also: {env_var})")
 DECLARE_MESSAGE(OverlayTripletDirectoriesHelp, (msg::env_var), "", "Directories of overlay triplets (also: {env_var})")
 DECLARE_MESSAGE(OverlayTriplets, (msg::path), "", "Overlay Triplets from \"{path}\":")
 DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already present and will be overwritten")
@@ -2605,6 +2656,7 @@ DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
                 "{tool_name} failed with exit code: ({exit_code}).")
+DECLARE_MESSAGE(ProgramPathReturnedNonzeroExitCode, (msg::exit_code), "", "failed with exit code {exit_code}")
 DECLARE_MESSAGE(
     ProvideExportType,
     (),
@@ -2721,11 +2773,15 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "'vcpkg help triplet' is a command line that should not be localized",
                 "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
-DECLARE_MESSAGE(StoredBinariesToDestinations,
-                (msg::count, msg::elapsed),
-                "",
-                "Stored binaries in {count} destinations in {elapsed}.")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
+                (msg::spec, msg::count),
+                "",
+                "Starting submission of {spec} to {count} binary cache(s) in the background")
+DECLARE_MESSAGE(SubmittingBinaryCacheComplete,
+                (msg::spec, msg::count, msg::elapsed),
+                "",
+                "Completed submission of {spec} to {count} binary cache(s) in {elapsed}")
 DECLARE_MESSAGE(SuccessfulyExported, (msg::package_name, msg::path), "", "Exported {package_name} to {path}")
 DECLARE_MESSAGE(SuggestGitPull, (), "", "The result may be outdated. Run `git pull` to get the latest results.")
 DECLARE_MESSAGE(SuggestStartingBashShell,
@@ -2744,6 +2800,11 @@ DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
                 "",
                 "Expected the SystemRoot environment variable to be always set on Windows.")
 DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}")
+DECLARE_MESSAGE(
+    ToolHashMismatch,
+    (msg::tool_name, msg::expected, msg::actual),
+    "{expected} and {actual} are SHA512 hashes in hex format.",
+    "{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}")
 DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.")
 DECLARE_MESSAGE(ToolOfVersionXNotFound,
@@ -2966,7 +3027,7 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(UploadingBinariesToVendor,
                 (msg::spec, msg::vendor, msg::path),
                 "",
-                "Uploading binaries for '{spec}' to '{vendor}' source \"{path}\".")
+                "Uploading binaries for {spec} to {vendor} from {path}")
 DECLARE_MESSAGE(UsageTextHere, (), "", "the usage file is here")
 DECLARE_MESSAGE(UsageInstallInstructions, (), "", "you can install the usage file with the following CMake")
 DECLARE_MESSAGE(UseEnvVar,
@@ -3214,6 +3275,10 @@ DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for 
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
 DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitUntilPackagesUploaded,
+                (msg::count),
+                "",
+                "Waiting for {count} remaining binary cache submissions...")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
 DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
@@ -3232,6 +3297,7 @@ DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),
                 "",
                 "while parsing versions for {package_name} from {path}")
+DECLARE_MESSAGE(WhileRunningAssetCacheScriptCommandLine, (), "", "while running asset cache script command line")
 DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}")
 DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.")
 DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}")
