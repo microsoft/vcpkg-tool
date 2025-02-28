@@ -323,9 +323,11 @@ namespace vcpkg
         msg::println(msgPrecheckBinaryCache);
         binary_cache.precheck(actions_to_check);
 
-        Util::stable_sort(install_plans, [](const InstallPlanAction& left, const InstallPlanAction& right) noexcept {
-            return left.second.install_actions.size() < right.second.install_actions.size();
-        });
+        Util::stable_sort(install_plans,
+                          [](const std::pair<FullPackageSpec, ActionPlan>& left,
+                             const std::pair<FullPackageSpec, ActionPlan>& right) noexcept {
+                              return left.second.install_actions.size() < right.second.install_actions.size();
+                          });
 
         // test port features
         std::unordered_set<std::string> known_failures;
