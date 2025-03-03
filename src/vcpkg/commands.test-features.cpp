@@ -520,6 +520,8 @@ namespace vcpkg
                         std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, logs_dir, time_to_install);
                     break;
             }
+
+            binary_cache.wait_for_async_quiescent();
         }
 
         msg::println();

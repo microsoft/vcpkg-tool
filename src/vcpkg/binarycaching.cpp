@@ -2552,6 +2552,13 @@ namespace vcpkg
 
     void BinaryCache::print_updates() { m_bg_msg_sink.print_published(); }
 
+    void BinaryCache::wait_for_async_quiescent()
+    {
+        m_bg_msg_sink.print_published();
+        m_actions_to_push.wait_quiescent();
+        m_bg_msg_sink.print_published();
+    }
+
     void BinaryCache::wait_for_async_complete_and_join()
     {
         m_bg_msg_sink.print_published();
