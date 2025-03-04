@@ -1,10 +1,13 @@
-   Was sorted by the "Sort Lines Ascending" command in VSCode (# was excluded because it is a comment)
+#   Was sorted by the "Sort Lines Ascending" command in VSCode (# was excluded because it is a comment)
+#   with ':', '[', and ']' ordered first so that cmake[features]:blah < cmake-user[features]:blah
   | 32      | 20          | 00100000
+: | 58      | 3A          | 00111010
+[ | 91      | 5B          | 01011011
+] | 93      | 5D          | 01011101
 _ | 95      | 5F          | 01011111
 - | 45      | 2D          | 00101101
 , | 44      | 2C          | 00101100
 ; | 59      | 3B          | 00111011
-: | 58      | 3A          | 00111010
 ! | 33      | 21          | 00100001
 ? | 63      | 3F          | 00111111
 . | 46      | 2E          | 00101110
@@ -12,8 +15,6 @@ _ | 95      | 5F          | 01011111
 " | 34      | 22          | 00100010
 ( | 40      | 28          | 00101000
 ) | 41      | 29          | 00101001
-[ | 91      | 5B          | 01011011
-] | 93      | 5D          | 01011101
 { | 123     | 7B          | 01111011
 } | 125     | 7D          | 01111101
 @ | 64      | 40          | 01000000

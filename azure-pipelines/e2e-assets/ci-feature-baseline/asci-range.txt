@@ -1,4 +1,5 @@
-   Was sorted by the "Sort Lines Ascending" command in VSCode (# was excluded because it is a comment)
+#   Was sorted by the "Sort Lines Ascending" command in VSCode (# was excluded because it is a comment)
+#   with ':', '[', and ']' ordered first so that cmake[features]:blah < cmake-user[features]:blah
   | 32      | 20          | 00100000
 ! | 33      | 21          | 00100001
 " | 34      | 22          | 00100010
