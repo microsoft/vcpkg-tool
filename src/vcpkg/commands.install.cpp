@@ -217,11 +217,13 @@ namespace vcpkg
         return SortedVector<file_pack>(std::move(installed_files));
     }
 
-    InstallResult install_package(const VcpkgPaths& paths, const BinaryControlFile& bcf, StatusParagraphs* status_db)
+    static InstallResult install_package(const VcpkgPaths& paths,
+                                         const Path& package_dir,
+                                         const BinaryControlFile& bcf,
+                                         StatusParagraphs* status_db)
     {
         auto& fs = paths.get_filesystem();
         const auto& installed = paths.installed();
-        const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
         const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
             get_installed_files_and_upgrade(fs, installed, *status_db);
@@ -389,7 +391,8 @@ namespace vcpkg
             BuildResult code;
             if (all_dependencies_satisfied)
             {
-                const auto install_result = install_package(paths, *bcf, &status_db);
+                const auto install_result =
+                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, &status_db);
                 switch (install_result)
                 {
                     case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;

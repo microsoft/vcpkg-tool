@@ -1378,7 +1378,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const PackageSpec& m_toplevel;
             const Triplet m_host_triplet;
-            const Path m_packages_dir;
+            const Path& m_packages_dir;
 
             struct DepSpec
             {

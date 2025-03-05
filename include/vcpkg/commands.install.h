@@ -73,10 +73,6 @@ namespace vcpkg
                                           const std::vector<Path>& files,
                                           const InstallDir& destination_dir);
 
-    InstallResult install_package(const VcpkgPaths& paths,
-                                  const BinaryControlFile& binary_paragraph,
-                                  StatusParagraphs* status_db);
-
     struct CMakeUsageInfo
     {
         std::string message;
