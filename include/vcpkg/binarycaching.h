@@ -272,7 +272,6 @@ namespace vcpkg
         void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
         void print_updates();
-        void wait_for_async_quiescent();
         void wait_for_async_complete_and_join();
 
     private:
