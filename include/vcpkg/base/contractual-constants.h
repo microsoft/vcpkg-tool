@@ -223,12 +223,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostExclude = "host-exclude";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
-    inline constexpr StringLiteral SwitchIfw = "ifw";
-    inline constexpr StringLiteral SwitchIfwConfigFilePath = "ifw-configuration-file-path";
-    inline constexpr StringLiteral SwitchIfwInstallerFilePath = "ifw-installer-file-path";
-    inline constexpr StringLiteral SwitchIfwPackagesDirPath = "ifw-packages-directory-path";
-    inline constexpr StringLiteral SwitchIfwRepositoryUrl = "ifw-repository-url";
-    inline constexpr StringLiteral SwitchIfwRepostitoryDirPath = "ifw-repository-directory-path";
     inline constexpr StringLiteral SwitchIgnoreLockFailures = "ignore-lock-failures";
     inline constexpr StringLiteral SwitchInclude = "include";
     inline constexpr StringLiteral SwitchInstalledBinDir = "installed-bin-dir";
@@ -262,14 +256,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchOverwriteVersion = "overwrite-version";
     inline constexpr StringLiteral SwitchPackagesRoot = "packages-root";
     inline constexpr StringLiteral SwitchParentHashes = "parent-hashes";
-    inline constexpr StringLiteral SwitchPrefab = "prefab";
-    inline constexpr StringLiteral SwitchPrefabArtifactId = "prefab-artifact-id";
-    inline constexpr StringLiteral SwitchPrefabDebug = "prefab-debug";
-    inline constexpr StringLiteral SwitchPrefabGroupId = "prefab-group-id";
-    inline constexpr StringLiteral SwitchPrefabMaven = "prefab-maven";
-    inline constexpr StringLiteral SwitchPrefabMinSdk = "prefab-min-sdk";
-    inline constexpr StringLiteral SwitchPrefabTargetSdk = "prefab-target-sdk";
-    inline constexpr StringLiteral SwitchPrefabVersion = "prefab-version";
     inline constexpr StringLiteral SwitchPrintmetrics = "printmetrics";
     inline constexpr StringLiteral SwitchPurge = "purge";
     inline constexpr StringLiteral SwitchPython = "python";
@@ -311,17 +297,14 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchX64 = "x64";
     inline constexpr StringLiteral SwitchX86 = "x86";
     inline constexpr StringLiteral SwitchXAllInstalled = "x-all-installed";
-    inline constexpr StringLiteral SwitchXChocolatey = "x-chocolatey";
     inline constexpr StringLiteral SwitchXFeature = "x-feature";
     inline constexpr StringLiteral SwitchXFullDesc = "x-full-desc";
     inline constexpr StringLiteral SwitchXInstalled = "x-installed";
     inline constexpr StringLiteral SwitchXJson = "x-json";
-    inline constexpr StringLiteral SwitchXMaintainer = "x-maintainer";
     inline constexpr StringLiteral SwitchXNoDefaultFeatures = "x-no-default-features";
     inline constexpr StringLiteral SwitchXProhibitBackcompatFeatures = "x-prohibit-backcompat-features";
     inline constexpr StringLiteral SwitchXRandomize = "x-randomize";
     inline constexpr StringLiteral SwitchXTransitive = "x-transitive";
-    inline constexpr StringLiteral SwitchXVersionSuffix = "x-version-suffix";
     inline constexpr StringLiteral SwitchXWriteNuGetPackagesConfig = "x-write-nuget-packages-config";
     inline constexpr StringLiteral SwitchXXUnit = "x-xunit";
     inline constexpr StringLiteral SwitchXXUnitAll = "x-xunit-all";
@@ -337,6 +320,7 @@ namespace vcpkg
     // File names
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
+    inline constexpr StringLiteral FileBuildInfo = "BUILD_INFO";
     inline constexpr StringLiteral FileControl = "CONTROL";
     inline constexpr StringLiteral FileCompilerFileHashCacheDotJson = "compiler-file-hash-cache.json";
     inline constexpr StringLiteral FileCopying = "COPYING";

@@ -1047,7 +1047,7 @@ namespace vcpkg
             return ExtendedBuildResult{BuildResult::BuildFailed, stdoutlog, std::move(error_logs)};
         }
 
-        const BuildInfo build_info = read_build_info(fs, paths.build_info_file_path(action.spec));
+        const BuildInfo build_info = read_build_info(fs, paths.package_dir(action.spec) / FileBuildInfo);
         size_t error_count = 0;
         {
             FileSink file_sink{fs, stdoutlog, Append::YES};

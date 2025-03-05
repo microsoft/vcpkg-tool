@@ -1439,7 +1439,7 @@ namespace vcpkg
             for (auto&& absolute_path : fs.get_regular_files_non_recursive(start_in, IgnoreErrors{}))
             {
                 auto filename = absolute_path.filename();
-                if (filename == "CONTROL" || filename == "BUILD_INFO" || filename == FileDotDsStore)
+                if (filename == FileControl || filename == FileBuildInfo || filename == FileDotDsStore)
                 {
                     continue;
                 }

@@ -722,10 +722,6 @@ namespace vcpkg
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
     Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.to_string(); }
-    Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
-    {
-        return this->package_dir(spec) / "BUILD_INFO";
-    }
 
     const TripletDatabase& VcpkgPaths::get_triplet_db() const
     {
