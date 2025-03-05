@@ -205,12 +205,13 @@ namespace
         }
     }
 
-    Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec)
+    Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec, const std::string& abi)
     {
-        return buildtrees / spec.name() / (spec.triplet().to_string() + ".zip");
+        return buildtrees / fmt::format("{}_{}.zip", spec.name(), abi);
     }
 
-    Path files_archive_subpath(const std::string& abi) { return Path(abi.substr(0, 2)) / (abi + ".zip"); }
+    Path files_archive_parent_path(const std::string& abi) { return Path(abi.substr(0, 2)); }
+    Path files_archive_subpath(const std::string& abi) { return files_archive_parent_path(abi) / (abi + ".zip"); }
 
     struct FilesWriteBinaryProvider : IWriteBinaryProvider
     {
@@ -219,15 +220,33 @@ namespace
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
             const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
-            const auto archive_subpath = files_archive_subpath(request.package_abi);
-
             size_t count_stored = 0;
+            const bool can_attempt_rename = m_dirs.size() == 1 && request.unique_write_provider;
             for (const auto& archives_root_dir : m_dirs)
             {
-                const auto archive_path = archives_root_dir / archive_subpath;
+                const auto archive_parent_path = archives_root_dir / files_archive_parent_path(request.package_abi);
+                m_fs.create_directories(archive_parent_path, IgnoreErrors{});
+                const auto archive_path = archive_parent_path / (request.package_abi + ".zip");
+                const auto archive_temp_path = Path(fmt::format("{}.{}", archive_path.native(), get_process_id()));
                 std::error_code ec;
-                m_fs.create_directories(archive_path.parent_path(), IgnoreErrors{});
-                m_fs.copy_file(zip_path, archive_path, CopyOptions::overwrite_existing, ec);
+                if (can_attempt_rename)
+                {
+                    // if we are already on the same filesystem we can just rename into place
+                    m_fs.rename_or_delete(zip_path, archive_path, ec);
+                }
+
+                if (!can_attempt_rename || (ec && ec == std::make_error_condition(std::errc::cross_device_link)))
+                {
+                    // either we need to make a copy or the rename failed because because buildtrees and the binary
+                    // cache write target are on different filesystems, copy to a sibling in that directory and rename
+                    // into place
+                    m_fs.copy_file(zip_path, archive_temp_path, CopyOptions::overwrite_existing, ec);
+                    if (!ec)
+                    {
+                        m_fs.rename_or_delete(archive_temp_path, archive_path, ec);
+                    }
+                }
+
                 if (ec)
                 {
                     msg_sink.println(Color::warning,
@@ -436,8 +455,9 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                url_paths.emplace_back(m_url_template.instantiate_variables(BinaryPackageReadInfo{action}),
-                                       make_temp_archive_path(m_buildtrees, action.spec));
+                auto read_info = BinaryPackageReadInfo{action};
+                url_paths.emplace_back(m_url_template.instantiate_variables(read_info),
+                                       make_temp_archive_path(m_buildtrees, read_info.spec, read_info.package_abi));
             }
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
@@ -842,10 +862,11 @@ namespace
             {
                 auto&& action = *actions[idx];
                 const auto& package_name = action.spec.name();
-                auto url = lookup_cache_entry(package_name, action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                auto url = lookup_cache_entry(package_name, abi);
                 if (url.empty()) continue;
 
-                url_paths.emplace_back(std::move(url), make_temp_archive_path(m_buildtrees, action.spec));
+                url_paths.emplace_back(std::move(url), make_temp_archive_path(m_buildtrees, action.spec, abi));
                 url_indices.push_back(idx);
             }
 
@@ -1026,7 +1047,7 @@ namespace
             {
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                auto tmp = make_temp_archive_path(m_buildtrees, action.spec);
+                auto tmp = make_temp_archive_path(m_buildtrees, action.spec, abi);
                 auto res = m_tool->download_file(make_object_path(m_prefix, abi), tmp);
                 if (auto cache_result = res.get())
                 {
@@ -2118,9 +2139,9 @@ namespace vcpkg
             statuses.clear();
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                if (actions[i].package_abi())
+                if (auto abi = actions[i].package_abi().get())
                 {
-                    CacheStatus& status = m_status[*actions[i].package_abi().get()];
+                    CacheStatus& status = m_status[*abi];
                     if (status.should_attempt_restore(provider.get()))
                     {
                         action_ptrs.push_back(&actions[i]);
@@ -2534,6 +2555,11 @@ namespace vcpkg
                 {
                     request.nuspec =
                         generate_nuspec(request.package_dir, action, m_config.nuget_prefix, m_config.nuget_repo);
+                }
+
+                if (m_config.write.size() == 1)
+                {
+                    request.unique_write_provider = true;
                 }
 
                 m_synchronizer.add_submitted();

@@ -68,6 +68,8 @@ namespace vcpkg
 
         // Filled if BinaryCache has a provider that returns true for needs_nuspec_data()
         Optional<std::string> nuspec;
+        // Set to true if there is only one write provider, meaning that one provider can take ownership of the zip file
+        bool unique_write_provider = false;
         // Filled if BinaryCache has a provider that returns true for needs_zip_file()
         // Note: this can be empty if an error occurred while compressing.
         Optional<Path> zip_path;
