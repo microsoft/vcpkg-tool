@@ -320,6 +320,7 @@ namespace vcpkg
     // File names
     inline constexpr StringLiteral FileBaselineDotJson = "baseline.json";
     inline constexpr StringLiteral FileBin = "bin";
+    inline constexpr StringLiteral FileBuildInfo = "BUILD_INFO";
     inline constexpr StringLiteral FileControl = "CONTROL";
     inline constexpr StringLiteral FileCompilerFileHashCacheDotJson = "compiler-file-hash-cache.json";
     inline constexpr StringLiteral FileCopying = "COPYING";
