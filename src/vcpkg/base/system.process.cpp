@@ -1227,7 +1227,11 @@ namespace
             if (pid != -1)
             {
                 int status;
-                const auto child = waitpid(pid, &status, 0);
+                pid_t child;
+                do
+                {
+                    child = waitpid(pid, &status, 0);
+                } while (child == -1 && errno == EINTR);
                 if (child != pid)
                 {
                     context.report_system_error("waitpid", errno);
