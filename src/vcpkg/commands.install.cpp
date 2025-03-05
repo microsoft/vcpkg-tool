@@ -46,7 +46,7 @@ namespace vcpkg
 
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(const Filesystem& fs,
+    static void install_package_and_write_listfile(const Filesystem& fs,
                                             const Path& source_dir,
                                             const InstallDir& destination_dir)
     {

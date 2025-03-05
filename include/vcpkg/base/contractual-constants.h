@@ -297,17 +297,14 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchX64 = "x64";
     inline constexpr StringLiteral SwitchX86 = "x86";
     inline constexpr StringLiteral SwitchXAllInstalled = "x-all-installed";
-    inline constexpr StringLiteral SwitchXChocolatey = "x-chocolatey";
     inline constexpr StringLiteral SwitchXFeature = "x-feature";
     inline constexpr StringLiteral SwitchXFullDesc = "x-full-desc";
     inline constexpr StringLiteral SwitchXInstalled = "x-installed";
     inline constexpr StringLiteral SwitchXJson = "x-json";
-    inline constexpr StringLiteral SwitchXMaintainer = "x-maintainer";
     inline constexpr StringLiteral SwitchXNoDefaultFeatures = "x-no-default-features";
     inline constexpr StringLiteral SwitchXProhibitBackcompatFeatures = "x-prohibit-backcompat-features";
     inline constexpr StringLiteral SwitchXRandomize = "x-randomize";
     inline constexpr StringLiteral SwitchXTransitive = "x-transitive";
-    inline constexpr StringLiteral SwitchXVersionSuffix = "x-version-suffix";
     inline constexpr StringLiteral SwitchXWriteNuGetPackagesConfig = "x-write-nuget-packages-config";
     inline constexpr StringLiteral SwitchXXUnit = "x-xunit";
     inline constexpr StringLiteral SwitchXXUnitAll = "x-xunit-all";

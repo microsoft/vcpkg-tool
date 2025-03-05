@@ -9,7 +9,6 @@
 #include <vcpkg/commands.export.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/export.chocolatey.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
@@ -250,7 +249,6 @@ namespace
         bool nuget = false;
         bool zip = false;
         bool seven_zip = false;
-        bool chocolatey = false;
         bool all_installed = false;
 
         Optional<std::string> maybe_output;
@@ -260,7 +258,6 @@ namespace
         Optional<std::string> maybe_nuget_version;
         Optional<std::string> maybe_nuget_description;
 
-        Chocolatey::Options chocolatey_options;
         std::vector<PackageSpec> specs;
     };
 
@@ -270,7 +267,6 @@ namespace
         {SwitchNuGet, msgCmdExportOptNuget},
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
-        {SwitchXChocolatey, msgCmdExportOptChocolatey},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
     };
 
@@ -280,8 +276,6 @@ namespace
         {SwitchNuGetId, msgCmdExportSettingNugetID},
         {SwitchNuGetDescription, msgCmdExportSettingNugetDesc},
         {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
-        {SwitchXMaintainer, msgCmdExportSettingChocolateyMaint},
-        {SwitchXVersionSuffix, msgCmdExportSettingChocolateyVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -298,7 +292,6 @@ namespace
         ret.nuget = Util::Sets::contains(options.switches, SwitchNuGet);
         ret.zip = Util::Sets::contains(options.switches, SwitchZip);
         ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
-        ret.chocolatey = Util::Sets::contains(options.switches, SwitchXChocolatey);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
         ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
 
@@ -349,7 +342,7 @@ namespace
             });
         }
 
-        if (!ret.raw && !ret.nuget && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey)
+        if (!ret.raw && !ret.nuget && !ret.zip && !ret.seven_zip && !ret.dry_run)
         {
             msg::println_error(msgProvideExportType);
             msg::write_unlocalized_text(Color::none, CommandExportMetadata.get_example_text());
@@ -386,13 +379,6 @@ namespace
                             {SwitchNuGetId, ret.maybe_nuget_id},
                             {SwitchNuGetVersion, ret.maybe_nuget_version},
                             {SwitchNuGetDescription, ret.maybe_nuget_description},
-                        });
-
-        options_implies(SwitchXChocolatey,
-                        ret.chocolatey,
-                        {
-                            {SwitchXMaintainer, ret.chocolatey_options.maybe_maintainer},
-                            {SwitchXVersionSuffix, ret.chocolatey_options.maybe_version_suffix},
                         });
 
         return ret;
@@ -604,11 +590,6 @@ namespace vcpkg
         if (opts.raw || opts.nuget || opts.zip || opts.seven_zip)
         {
             handle_raw_based_export(export_plan, opts, export_id, paths);
-        }
-
-        if (opts.chocolatey)
-        {
-            Chocolatey::do_export(export_plan, paths, opts.chocolatey_options);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

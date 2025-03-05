@@ -681,20 +681,11 @@ DECLARE_MESSAGE(CmdExportExample1,
                 "This is a command line, only <port names> and the out_dir part should be localized",
                 "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
-DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
 DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
 DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")
 DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Exports to an uncompressed directory")
 DECLARE_MESSAGE(CmdExportOptZip, (), "", "Exports to a zip file")
-DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
-                (),
-                "",
-                "The maintainer for the exported Chocolatey package (experimental)")
-DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
-                (),
-                "",
-                "The version suffix to add for the exported Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Description for the exported NuGet package")
 DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Id for the exported NuGet package (overrides --output)")
 DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "The version for the exported NuGet package")
@@ -2626,7 +2617,7 @@ DECLARE_MESSAGE(
     ProvideExportType,
     (),
     "",
-    "At least one of the following options are required: --raw --nuget --zip --7zip --chocolatey.")
+    "At least one of the following options are required: --raw --nuget --zip --7zip.")
 DECLARE_MESSAGE(PushingVendorFailed,
                 (msg::vendor, msg::path),
                 "",
