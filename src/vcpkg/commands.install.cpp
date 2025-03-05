@@ -46,9 +46,9 @@ namespace vcpkg
 
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(const Filesystem& fs,
-                                            const Path& source_dir,
-                                            const InstallDir& destination_dir)
+    static void install_package_and_write_listfile(const Filesystem& fs,
+                                                   const Path& source_dir,
+                                                   const InstallDir& destination_dir)
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
@@ -86,7 +86,7 @@ namespace vcpkg
 
             const auto filename = file.filename();
             if (vcpkg::is_regular_file(status) &&
-                (filename == "CONTROL" || filename == "vcpkg.json" || filename == "BUILD_INFO"))
+                (filename == FileControl || filename == FileVcpkgDotJson || filename == FileBuildInfo))
             {
                 // Do not copy the control file or manifest file
                 continue;

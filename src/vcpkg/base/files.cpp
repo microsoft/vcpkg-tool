@@ -2008,6 +2008,44 @@ namespace vcpkg
         }
     }
 
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const
+    {
+        std::error_code ec;
+        bool result = this->rename_or_delete(old_path, new_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
+        }
+
+        return result;
+    }
+
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const
+    {
+        this->rename(old_path, new_path, ec);
+        using namespace std::chrono_literals;
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
+        {
+            if (!ec)
+            {
+                return true;
+            }
+            else if (ec == std::make_error_condition(std::errc::directory_not_empty) ||
+                     ec == std::make_error_condition(std::errc::file_exists) || this->exists(new_path, ec))
+            {
+                // either the rename failed with a target already exists error, or the target explicitly exists,
+                // assume another process 'won' the 'CAS'.
+                this->remove_all(old_path, ec);
+                return false;
+            }
+
+            std::this_thread::sleep_for(delay);
+            this->rename(old_path, new_path, ec);
+        }
+
+        return false;
+    }
+
     bool Filesystem::remove(const Path& target, LineInfo li) const
     {
         std::error_code ec;
