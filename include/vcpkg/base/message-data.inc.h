@@ -684,7 +684,6 @@ DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
 DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
 DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
-DECLARE_MESSAGE(CmdExportOptIFW, (), "", "Exports to an IFW-based installer")
 DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
 DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enables Maven")
 DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")
@@ -699,14 +698,11 @@ DECLARE_MESSAGE(CmdExportSettingChocolateyVersion,
                 (),
                 "",
                 "The version suffix to add for the exported Chocolatey package (experimental)")
-DECLARE_MESSAGE(CmdExportSettingConfigFile, (), "", "The temporary file path for the installer configuration")
-DECLARE_MESSAGE(CmdExportSettingInstallerPath, (), "", "The file path for the exported installer")
 DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Description for the exported NuGet package")
 DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Id for the exported NuGet package (overrides --output)")
 DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "The version for the exported NuGet package")
 DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "The output name (used to construct filename)")
 DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "The output directory for produced artifacts")
-DECLARE_MESSAGE(CmdExportSettingPkgDir, (), "", "The temporary directory path for the repacked packages")
 DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
                 (),
                 "",
@@ -719,8 +715,6 @@ DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
                 (),
                 "",
                 "Version is the name of the project according Maven specifications")
-DECLARE_MESSAGE(CmdExportSettingRepoDir, (), "", "The directory path for the exported repository")
-DECLARE_MESSAGE(CmdExportSettingRepoURL, (), "", "The remote repository URL for the online installer")
 DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "The Android minimum supported SDK version")
 DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "The Android target sdk version")
 DECLARE_MESSAGE(CmdExportSynopsis, (), "", "Creates a standalone deployment of installed ports")

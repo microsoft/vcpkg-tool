@@ -599,20 +599,6 @@ namespace vcpkg
         }
     };
 
-    struct IfwInstallerBaseProvider : ToolProvider
-    {
-        virtual bool is_abi_sensitive() const override { return false; }
-        virtual StringView tool_data_name() const override { return "installerbase"; }
-        virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
-
-        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
-        {
-            // Sample output: 3.1.81
-            return run_to_extract_version(
-                Tools::IFW_INSTALLER_BASE, exe_path, Command(exe_path).string_arg("--framework-version"));
-        }
-    };
-
     struct PowerShellCoreProvider : ToolProvider
     {
         virtual bool is_abi_sensitive() const override
@@ -1033,7 +1019,6 @@ namespace vcpkg
                 if (tool == Tools::POWERSHELL_CORE) return get_path(PowerShellCoreProvider(), status_sink);
                 if (tool == Tools::NUGET) return get_path(NuGetProvider(), status_sink);
                 if (tool == Tools::NODE) return get_path(NodeProvider(), status_sink);
-                if (tool == Tools::IFW_INSTALLER_BASE) return get_path(IfwInstallerBaseProvider(), status_sink);
                 if (tool == Tools::MONO) return get_path(MonoProvider(), status_sink);
                 if (tool == Tools::GSUTIL) return get_path(GsutilProvider(), status_sink);
                 if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);

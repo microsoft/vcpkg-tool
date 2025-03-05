@@ -223,12 +223,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostExclude = "host-exclude";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
-    inline constexpr StringLiteral SwitchIfw = "ifw";
-    inline constexpr StringLiteral SwitchIfwConfigFilePath = "ifw-configuration-file-path";
-    inline constexpr StringLiteral SwitchIfwInstallerFilePath = "ifw-installer-file-path";
-    inline constexpr StringLiteral SwitchIfwPackagesDirPath = "ifw-packages-directory-path";
-    inline constexpr StringLiteral SwitchIfwRepositoryUrl = "ifw-repository-url";
-    inline constexpr StringLiteral SwitchIfwRepostitoryDirPath = "ifw-repository-directory-path";
     inline constexpr StringLiteral SwitchIgnoreLockFailures = "ignore-lock-failures";
     inline constexpr StringLiteral SwitchInclude = "include";
     inline constexpr StringLiteral SwitchInstalledBinDir = "installed-bin-dir";
