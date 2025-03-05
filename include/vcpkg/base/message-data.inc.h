@@ -682,12 +682,9 @@ DECLARE_MESSAGE(CmdExportExample1,
                 "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
 DECLARE_MESSAGE(CmdExportOptChocolatey, (), "", "Exports a Chocolatey package (experimental)")
-DECLARE_MESSAGE(CmdExportOptDebug, (), "", "Enables prefab debug")
 DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
 DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
-DECLARE_MESSAGE(CmdExportOptMaven, (), "", "Enables Maven")
 DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")
-DECLARE_MESSAGE(CmdExportOptPrefab, (), "", "Exports to Prefab format")
 DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Exports to an uncompressed directory")
 DECLARE_MESSAGE(CmdExportOptZip, (), "", "Exports to a zip file")
 DECLARE_MESSAGE(CmdExportSettingChocolateyMaint,
@@ -703,20 +700,6 @@ DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Id for the exported NuGet pack
 DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "The version for the exported NuGet package")
 DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "The output name (used to construct filename)")
 DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "The output directory for produced artifacts")
-DECLARE_MESSAGE(CmdExportSettingPrefabArtifactID,
-                (),
-                "",
-                "Artifact Id is the name of the project according Maven specifications")
-DECLARE_MESSAGE(CmdExportSettingPrefabGroupID,
-                (),
-                "",
-                "GroupId uniquely identifies your project according Maven specifications")
-DECLARE_MESSAGE(CmdExportSettingPrefabVersion,
-                (),
-                "",
-                "Version is the name of the project according Maven specifications")
-DECLARE_MESSAGE(CmdExportSettingSDKMinVersion, (), "", "The Android minimum supported SDK version")
-DECLARE_MESSAGE(CmdExportSettingSDKTargetVersion, (), "", "The Android target sdk version")
 DECLARE_MESSAGE(CmdExportSynopsis, (), "", "Creates a standalone deployment of installed ports")
 DECLARE_MESSAGE(CmdFetchOptXStderrStatus,
                 (),
@@ -1045,7 +1028,6 @@ DECLARE_MESSAGE(DependencyNotInVersionDatabase,
                 (msg::package_name),
                 "",
                 "the dependency {package_name} does not exist in the version database; does that port exist?")
-DECLARE_MESSAGE(DeprecatedPrefabDebugOption, (), "", "--prefab-debug is now deprecated.")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
                 (),
@@ -1269,17 +1251,11 @@ DECLARE_MESSAGE(ExpectedWantField,
                 (),
                 "The values in ''s are locale-invariant",
                 "expected one of 'install', 'hold', 'deinstall', or 'purge' here")
-DECLARE_MESSAGE(ExportArchitectureReq,
-                (),
-                "",
-                "Export prefab requires targeting at least one of the following architectures arm64-v8a, "
-                "armeabi-v7a, x86_64, x86 to be present.")
 DECLARE_MESSAGE(Exported7zipArchive, (msg::path), "", "7zip archive exported at: {path}")
 DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {path}")
 DECLARE_MESSAGE(ExportingAlreadyBuiltPackages, (), "", "The following packages are already built and will be exported:")
 DECLARE_MESSAGE(ExportingMaintenanceTool, (), "", "Exporting maintenance tool...")
 DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...")
-DECLARE_MESSAGE(ExportPrefabRequiresAndroidTriplet, (), "", "export prefab requires an Android triplet.")
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
 DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
@@ -2650,7 +2626,7 @@ DECLARE_MESSAGE(
     ProvideExportType,
     (),
     "",
-    "At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.")
+    "At least one of the following options are required: --raw --nuget --zip --7zip --chocolatey.")
 DECLARE_MESSAGE(PushingVendorFailed,
                 (msg::vendor, msg::path),
                 "",

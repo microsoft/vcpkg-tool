@@ -256,14 +256,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchOverwriteVersion = "overwrite-version";
     inline constexpr StringLiteral SwitchPackagesRoot = "packages-root";
     inline constexpr StringLiteral SwitchParentHashes = "parent-hashes";
-    inline constexpr StringLiteral SwitchPrefab = "prefab";
-    inline constexpr StringLiteral SwitchPrefabArtifactId = "prefab-artifact-id";
-    inline constexpr StringLiteral SwitchPrefabDebug = "prefab-debug";
-    inline constexpr StringLiteral SwitchPrefabGroupId = "prefab-group-id";
-    inline constexpr StringLiteral SwitchPrefabMaven = "prefab-maven";
-    inline constexpr StringLiteral SwitchPrefabMinSdk = "prefab-min-sdk";
-    inline constexpr StringLiteral SwitchPrefabTargetSdk = "prefab-target-sdk";
-    inline constexpr StringLiteral SwitchPrefabVersion = "prefab-version";
     inline constexpr StringLiteral SwitchPrintmetrics = "printmetrics";
     inline constexpr StringLiteral SwitchPurge = "purge";
     inline constexpr StringLiteral SwitchPython = "python";

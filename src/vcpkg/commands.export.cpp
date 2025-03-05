@@ -10,7 +10,6 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/export.chocolatey.h>
-#include <vcpkg/export.prefab.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
@@ -252,7 +251,6 @@ namespace
         bool zip = false;
         bool seven_zip = false;
         bool chocolatey = false;
-        bool prefab = false;
         bool all_installed = false;
 
         Optional<std::string> maybe_output;
@@ -262,7 +260,6 @@ namespace
         Optional<std::string> maybe_nuget_version;
         Optional<std::string> maybe_nuget_description;
 
-        Prefab::Options prefab_options;
         Chocolatey::Options chocolatey_options;
         std::vector<PackageSpec> specs;
     };
@@ -274,9 +271,6 @@ namespace
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
         {SwitchXChocolatey, msgCmdExportOptChocolatey},
-        {SwitchPrefab, msgCmdExportOptPrefab},
-        {SwitchPrefabMaven, msgCmdExportOptMaven},
-        {SwitchPrefabDebug, msgCmdExportOptDebug},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
     };
 
@@ -288,11 +282,6 @@ namespace
         {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
         {SwitchXMaintainer, msgCmdExportSettingChocolateyMaint},
         {SwitchXVersionSuffix, msgCmdExportSettingChocolateyVersion},
-        {SwitchPrefabGroupId, msgCmdExportSettingPrefabGroupID},
-        {SwitchPrefabArtifactId, msgCmdExportSettingPrefabArtifactID},
-        {SwitchPrefabVersion, msgCmdExportSettingPrefabVersion},
-        {SwitchPrefabMinSdk, msgCmdExportSettingSDKMinVersion},
-        {SwitchPrefabTargetSdk, msgCmdExportSettingSDKTargetVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -310,9 +299,6 @@ namespace
         ret.zip = Util::Sets::contains(options.switches, SwitchZip);
         ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
         ret.chocolatey = Util::Sets::contains(options.switches, SwitchXChocolatey);
-        ret.prefab = Util::Sets::contains(options.switches, SwitchPrefab);
-        ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, SwitchPrefabMaven);
-        ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, SwitchPrefabDebug);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
         ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
 
@@ -363,8 +349,7 @@ namespace
             });
         }
 
-        if (!ret.raw && !ret.nuget && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&
-            !ret.prefab)
+        if (!ret.raw && !ret.nuget && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey)
         {
             msg::println_error(msgProvideExportType);
             msg::write_unlocalized_text(Color::none, CommandExportMetadata.get_example_text());
@@ -401,16 +386,6 @@ namespace
                             {SwitchNuGetId, ret.maybe_nuget_id},
                             {SwitchNuGetVersion, ret.maybe_nuget_version},
                             {SwitchNuGetDescription, ret.maybe_nuget_description},
-                        });
-
-        options_implies(SwitchPrefab,
-                        ret.prefab,
-                        {
-                            {SwitchPrefabArtifactId, ret.prefab_options.maybe_artifact_id},
-                            {SwitchPrefabGroupId, ret.prefab_options.maybe_group_id},
-                            {SwitchPrefabMinSdk, ret.prefab_options.maybe_min_sdk},
-                            {SwitchPrefabTargetSdk, ret.prefab_options.maybe_target_sdk},
-                            {SwitchPrefabVersion, ret.prefab_options.maybe_version},
                         });
 
         options_implies(SwitchXChocolatey,
@@ -634,11 +609,6 @@ namespace vcpkg
         if (opts.chocolatey)
         {
             Chocolatey::do_export(export_plan, paths, opts.chocolatey_options);
-        }
-
-        if (opts.prefab)
-        {
-            Prefab::do_export(export_plan, paths, opts.prefab_options, default_triplet);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
