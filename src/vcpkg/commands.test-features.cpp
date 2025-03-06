@@ -1,13 +1,13 @@
 #include <vcpkg/base/cache.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/span.h>
+#include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
-#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
-#include <vcpkg/base/xmlserializer.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/ci-feature-baseline.h>
@@ -33,109 +33,57 @@ using namespace vcpkg;
 
 namespace
 {
-    const Path readme_dot_log = "readme.log";
-
-    struct CiBuildLogsRecorder final : IBuildLogsRecorder
+    Path ci_build_log_feature_test_base_path(const Path& base_path, std::size_t& counter, const FullPackageSpec& spec)
     {
-        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
-
-        void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override
+        std::string feature_dir = spec.package_spec.name();
+        feature_dir.push_back('_');
+        if (spec.features.size() == 1)
         {
-            if (result == BuildResult::Succeeded)
-            {
-                return;
-            }
-
-            auto& filesystem = paths.get_filesystem();
-            const auto source_path = paths.build_dir(spec);
-            auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
-            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
-            const auto target_path = base_path / spec.name();
-            (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
-            if (children.empty())
-            {
-                std::string message =
-                    "There are no build logs for " + spec.to_string() +
-                    " build.\n"
-                    "This is usually because the build failed early and outside of a task that is logged.\n"
-                    "See the console output logs from vcpkg for more information on the failure.\n";
-                filesystem.write_contents(target_path / readme_dot_log, message, VCPKG_LINE_INFO);
-            }
-            else
-            {
-                for (const Path& p : children)
-                {
-                    filesystem.copy_file(
-                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-                }
-            }
+            feature_dir.append(FeatureNameCore.data(), FeatureNameCore.size());
+        }
+        else if (spec.features.size() == 2)
+        {
+            feature_dir.append(spec.features.back());
+        }
+        else
+        {
+            fmt::format_to(std::back_inserter(feature_dir), "all_{}", ++counter);
         }
 
-        CiBuildLogsRecorder create_for_feature_test(const FullPackageSpec& spec, const Filesystem& filesystem) const
-        {
-            static int counter = 0;
-            std::string feature;
-            if (spec.features.size() == 1)
-            {
-                feature = "core";
-            }
-            else if (spec.features.size() == 2)
-            {
-                feature = spec.features.back();
-            }
-            else
-            {
-                feature = fmt::format("all_{}", ++counter);
-            }
-            auto new_base_path = base_path / Strings::concat(spec.package_spec.name(), '_', feature);
-            filesystem.create_directory(new_base_path, VCPKG_LINE_INFO);
-            filesystem.write_contents(new_base_path / "tested_spec.txt", spec.to_string(), VCPKG_LINE_INFO);
-            return {new_base_path};
-        }
-
-        Path base_path;
-    };
+        return base_path / feature_dir;
+    }
 }
 
 namespace vcpkg
 {
-    static constexpr StringLiteral OPTION_FAILURE_LOGS = "failure-logs";
-    static constexpr StringLiteral OPTION_CI_FEATURE_BASELINE = "ci-feature-baseline";
-    static constexpr StringLiteral OPTION_NO_FEATURE_CORE_TEST = "no-feature-core-test";
-    static constexpr StringLiteral OPTION_NO_FEATURES_COMBINED_TEST = "no-features-combined-test";
-    static constexpr StringLiteral OPTION_NO_FEATURES_SEPARATED_TESTS = "no-features-separated-tests";
-    static constexpr StringLiteral OPTION_OUTPUT_FAILURE_ABIS = "write-failure-abis-to";
-    static constexpr StringLiteral OPTION_ALL_PORTS = "all";
+    static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
 
-    static constexpr std::array<CommandSetting, 3> CI_SETTINGS = {{
-        {OPTION_CI_FEATURE_BASELINE,
+        {SwitchAll, []() { return LocalizedString::from_raw("Runs the specified tests for all ports"); }},
+        {SwitchNoCore, []() { return LocalizedString::from_raw("Tests the 'core' feature for every specified port"); }},
+        {SwitchNoSeparated,
          []() {
-             return LocalizedString::from_raw(
-                 "Path to the ci.feature.baseline.txt file. Used to skip ports and detect regressions.");
+             return LocalizedString::from_raw("Tests every feature of a port separately for every specified port");
          }},
-        {OPTION_OUTPUT_FAILURE_ABIS,
-         []() {
-             return LocalizedString::from_raw(
-                 "Path to a file to which abis from ports that failed to build are written.");
-         }},
-        {OPTION_FAILURE_LOGS, []() { return msg::format(msgCISettingsOptFailureLogs); }},
-    }};
-
-    static constexpr std::array<CommandSwitch, 4> CI_SWITCHES = {{
-
-        {OPTION_ALL_PORTS, []() { return LocalizedString::from_raw("Runs the specified tests for all ports"); }},
-        {OPTION_NO_FEATURE_CORE_TEST,
-         []() { return LocalizedString::from_raw("Tests the 'core' feature for every specified port"); }},
-        {OPTION_NO_FEATURES_SEPARATED_TESTS,
-         []() {
-             return LocalizedString::from_raw("Tests every feature of a port seperatly for every specified port");
-         }},
-        {OPTION_NO_FEATURES_COMBINED_TEST,
+        {SwitchNoCombined,
          []() {
              return LocalizedString::from_raw(
                  "Tests the combination of every feature of a port for every specified port");
          }},
-    }};
+    };
+
+    static constexpr CommandSetting TEST_FEAUTRES_SETTINGS[] = {
+        {SwitchCIFeatureBaseline,
+         []() {
+             return LocalizedString::from_raw(
+                 "Path to the ci.feature.baseline.txt file. Used to skip ports and detect regressions.");
+         }},
+        {SwitchFailingAbiLog,
+         []() {
+             return LocalizedString::from_raw(
+                 "Path to a file to which abis from ports that failed to build are written.");
+         }},
+        {SwitchFailureLogs, []() { return msg::format(msgCISettingsOptFailureLogs); }},
+    };
 
     constexpr CommandMetadata CommandTestFeaturesMetadata = {
         "x-test-features",
@@ -145,7 +93,7 @@ namespace vcpkg
         AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {CI_SWITCHES, CI_SETTINGS, {}},
+        {TEST_FEATURES_SWITCHES, TEST_FEAUTRES_SETTINGS, {}},
         nullptr,
     };
 
@@ -158,12 +106,11 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
-        const auto all_ports = Util::Sets::contains(options.switches, OPTION_ALL_PORTS);
+        const auto all_ports = Util::Sets::contains(options.switches, SwitchAll);
 
-        const auto test_feature_core = !Util::Sets::contains(options.switches, OPTION_NO_FEATURE_CORE_TEST);
-        const auto test_features_combined = !Util::Sets::contains(options.switches, OPTION_NO_FEATURES_COMBINED_TEST);
-        const auto test_features_seperatly =
-            !Util::Sets::contains(options.switches, OPTION_NO_FEATURES_SEPARATED_TESTS);
+        const auto test_feature_core = !Util::Sets::contains(options.switches, SwitchNoCore);
+        const auto test_features_combined = !Util::Sets::contains(options.switches, SwitchNoCombined);
+        const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
 
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
@@ -171,15 +118,15 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
+        Optional<Path> maybe_build_logs_base_path;
         {
-            auto it_failure_logs = settings.find(OPTION_FAILURE_LOGS);
+            auto it_failure_logs = settings.find(SwitchFailureLogs);
             if (it_failure_logs != settings.end())
             {
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 fs.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = fs.almost_canonical(raw_path, VCPKG_LINE_INFO);
+                maybe_build_logs_base_path.emplace(fs.almost_canonical(raw_path, VCPKG_LINE_INFO));
             }
         }
 
@@ -201,13 +148,13 @@ namespace vcpkg
             });
         }
 
-        auto feature_baseline_iter = settings.find(OPTION_CI_FEATURE_BASELINE);
+        auto feature_baseline_iter = settings.find(SwitchCIFeatureBaseline);
         CiFeatureBaseline feature_baseline;
         if (feature_baseline_iter != settings.end())
         {
             const auto ci_feature_baseline_file_name = feature_baseline_iter->second;
             const auto ci_feature_baseline_file_contents =
-                paths.get_filesystem().read_contents(ci_feature_baseline_file_name, VCPKG_LINE_INFO);
+                fs.read_contents(ci_feature_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             feature_baseline = parse_ci_feature_baseline(ci_feature_baseline_file_contents,
                                                          ci_feature_baseline_file_name,
@@ -236,7 +183,7 @@ namespace vcpkg
             BackcompatFeatures::Prohibit,
             KeepGoing::Yes,
         };
-        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
         PortDirAbiInfoCache port_dir_abi_info_cache;
 
         // check what should be tested
@@ -253,18 +200,18 @@ namespace vcpkg
                     msgPortNotSupported, msg::package_name = port->core_paragraph->name, msg::triplet = target_triplet);
                 continue;
             }
-            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, "core"))
+            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, FeatureNameCore))
             {
-                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core"}});
+                specs_to_test.emplace_back(package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}});
                 for (const auto& option_set : baseline.options)
                 {
-                    if (option_set.front() != "core")
+                    if (option_set.front() != FeatureNameCore)
                     {
                         specs_to_test.back().features.push_back(option_set.front());
                     }
                 }
             }
-            InternalFeatureSet all_features{{"core"}};
+            InternalFeatureSet all_features{{FeatureNameCore.to_string()}};
             for (const auto& feature : port->feature_paragraphs)
             {
                 if (feature->supports_expression.evaluate(dep_info_vars) &&
@@ -282,13 +229,14 @@ namespace vcpkg
                             all_features.push_back(feature->name);
                         }
                     }
-                    if (test_features_seperatly &&
+                    if (test_features_separately &&
                         !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
                     {
-                        specs_to_test.emplace_back(package_spec, InternalFeatureSet{{"core", feature->name}});
+                        specs_to_test.emplace_back(package_spec,
+                                                   InternalFeatureSet{{FeatureNameCore.to_string(), feature->name}});
                         for (const auto& option_set : baseline.options)
                         {
-                            if (option_set.front() != "core" && !Util::contains(option_set, feature->name))
+                            if (option_set.front() != FeatureNameCore && !Util::contains(option_set, feature->name))
                             {
                                 specs_to_test.back().features.push_back(option_set.front());
                             }
@@ -297,11 +245,12 @@ namespace vcpkg
                 }
             }
             // if test_features_separately == true and there is only one feature test_features_combined is not needed
-            if (test_features_combined && all_features.size() > (test_features_seperatly ? size_t{2} : size_t{1}))
+            if (test_features_combined && all_features.size() > (test_features_separately ? size_t{2} : size_t{1}))
             {
                 specs_to_test.emplace_back(package_spec, all_features);
             }
         }
+
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
         std::vector<FullPackageSpec> specs;
@@ -383,11 +332,12 @@ namespace vcpkg
             }
         };
 
-        int i = 0;
-        for (auto&& [spec, install_plan] : std::move(install_plans))
+        std::size_t i = 0;
+        std::size_t feature_logs_counter = 0;
+        for (auto&& [spec, install_plan] : install_plans)
         {
             ++i;
-            fmt::print("\n{}/{} {}\n", i, install_plans.size(), spec.to_string());
+            msg::println(LocalizedString::from_raw(fmt::format("{}/{} {}", i, install_plans.size(), spec)));
             const auto& baseline = feature_baseline.get_port(spec.package_spec.name());
 
             if (!install_plan.unsupported_features.empty())
@@ -440,15 +390,19 @@ namespace vcpkg
                     continue;
                 }
             }
-            Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage =
-                build_logs_recorder_storage.map([&, &spec = spec](const CiBuildLogsRecorder& recorder) {
-                    return recorder.create_for_feature_test(spec, fs);
-                });
-            Optional<Path> logs_dir = feature_build_logs_recorder_storage.map(
-                [](const CiBuildLogsRecorder& recorder) { return recorder.base_path; });
-            const IBuildLogsRecorder& build_logs_recorder = feature_build_logs_recorder_storage
-                                                                ? *(feature_build_logs_recorder_storage.get())
-                                                                : null_build_logs_recorder();
+
+            const IBuildLogsRecorder* build_logs_recorder = &null_build_logs_recorder;
+            Optional<Path> maybe_logs_dir;
+            Optional<CiBuildLogsRecorder> feature_build_logs_recorder_storage;
+            if (auto build_logs_base_path = maybe_build_logs_base_path.get())
+            {
+                auto& logs_dir = maybe_logs_dir.emplace(
+                    ci_build_log_feature_test_base_path(*build_logs_base_path, feature_logs_counter, spec));
+                fs.create_directory(logs_dir, VCPKG_LINE_INFO);
+                fs.write_contents(logs_dir / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
+                build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir));
+            }
+
             ElapsedTimer install_timer;
             install_clear_installed_packages(paths, install_plan.install_actions);
             binary_cache.fetch(install_plan.install_actions);
@@ -459,7 +413,7 @@ namespace vcpkg
                                                       install_plan,
                                                       status_db,
                                                       binary_cache,
-                                                      build_logs_recorder,
+                                                      *build_logs_recorder,
                                                       false);
             binary_cache.mark_all_unrestored();
 
@@ -469,10 +423,10 @@ namespace vcpkg
                 switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
                 {
                     case BuildResult::BuildFailed:
-                        if (Path* dir = logs_dir.get())
+                        if (Path* logs_dir = maybe_logs_dir.get())
                         {
-                            auto issue_body_path = *dir / "issue_body.md";
-                            paths.get_filesystem().write_contents(
+                            auto issue_body_path = *logs_dir / FileIssueBodyMD;
+                            fs.write_contents(
                                 issue_body_path,
                                 create_github_issue(args,
                                                     result.build_result.value_or_exit(VCPKG_LINE_INFO),
@@ -502,14 +456,14 @@ namespace vcpkg
                 case BuildResult::Downloaded:
                 case vcpkg::BuildResult::Succeeded:
                     handle_result(
-                        std::move(spec), CiFeatureBaselineState::Pass, baseline, {}, logs_dir, time_to_install);
+                        std::move(spec), CiFeatureBaselineState::Pass, baseline, {}, maybe_logs_dir, time_to_install);
                     break;
                 case vcpkg::BuildResult::CascadedDueToMissingDependencies:
                     handle_result(std::move(spec),
                                   CiFeatureBaselineState::Cascade,
                                   baseline,
                                   std::move(failed_dependencies),
-                                  logs_dir,
+                                  maybe_logs_dir,
                                   time_to_install);
                     break;
                 case BuildResult::BuildFailed:
@@ -523,7 +477,7 @@ namespace vcpkg
                         known_failures.insert(*abi);
                     }
                     handle_result(
-                        std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, logs_dir, time_to_install);
+                        std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, maybe_logs_dir, time_to_install);
                     break;
             }
         }
@@ -556,7 +510,7 @@ namespace vcpkg
             msg::println(msgAllFeatureTestsPassed);
         }
 
-        auto it_output_file = settings.find(OPTION_OUTPUT_FAILURE_ABIS);
+        auto it_output_file = settings.find(SwitchFailingAbiLog);
         if (it_output_file != settings.end())
         {
             Path raw_path = it_output_file->second;

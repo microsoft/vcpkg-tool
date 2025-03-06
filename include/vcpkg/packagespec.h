@@ -189,3 +189,4 @@ struct std::hash<vcpkg::FeatureSpec>
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::PackageSpec);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FeatureSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FullPackageSpec);

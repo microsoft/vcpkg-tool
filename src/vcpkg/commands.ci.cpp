@@ -31,48 +31,6 @@ using namespace vcpkg;
 
 namespace
 {
-    struct CiBuildLogsRecorder final : IBuildLogsRecorder
-    {
-        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
-
-        virtual void record_build_result(const VcpkgPaths& paths,
-                                         const PackageSpec& spec,
-                                         BuildResult result) const override
-        {
-            if (result == BuildResult::Succeeded)
-            {
-                return;
-            }
-
-            auto& filesystem = paths.get_filesystem();
-            const auto source_path = paths.build_dir(spec);
-            auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
-            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
-            auto target_path = base_path / spec.name();
-            (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
-            if (children.empty())
-            {
-                auto message =
-                    fmt::format("There are no build logs for {} build.\n"
-                                "This is usually because the build failed early and outside of a task that is logged.\n"
-                                "See the console output logs from vcpkg for more information on the failure.\n",
-                                spec);
-                filesystem.write_contents(std::move(target_path) / "readme.log", message, VCPKG_LINE_INFO);
-            }
-            else
-            {
-                for (const Path& p : children)
-                {
-                    filesystem.copy_file(
-                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-                }
-            }
-        }
-
-    private:
-        Path base_path;
-    };
-
     constexpr CommandSetting CI_SETTINGS[] = {
         {SwitchExclude, msgCISettingsOptExclude},
         {SwitchHostExclude, msgCISettingsOptHostExclude},
@@ -378,6 +336,7 @@ namespace vcpkg
 
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
+        const IBuildLogsRecorder* build_logs_recorder = &null_build_logs_recorder;
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
             auto it_failure_logs = settings.find(SwitchFailureLogs);
@@ -386,12 +345,10 @@ namespace vcpkg
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 fs.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = fs.almost_canonical(raw_path, VCPKG_LINE_INFO);
+                build_logs_recorder =
+                    &(build_logs_recorder_storage.emplace(fs.almost_canonical(raw_path, VCPKG_LINE_INFO)));
             }
         }
-
-        const IBuildLogsRecorder& build_logs_recorder =
-            build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
@@ -544,7 +501,7 @@ namespace vcpkg
             binary_cache.fetch(action_plan.install_actions);
 
             auto summary = install_execute_plan(
-                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
 
             for (auto&& result : summary.results)
             {

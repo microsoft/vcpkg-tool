@@ -25,6 +25,7 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -37,7 +38,20 @@ namespace vcpkg
                                          BuildResult result) const = 0;
     };
 
-    const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
+    extern const IBuildLogsRecorder& null_build_logs_recorder;
+
+    struct CiBuildLogsRecorder final : IBuildLogsRecorder
+    {
+        explicit CiBuildLogsRecorder(const Path& base_path_);
+
+        CiBuildLogsRecorder(const CiBuildLogsRecorder&) = delete;
+        CiBuildLogsRecorder& operator=(const CiBuildLogsRecorder&) = delete;
+
+        void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override;
+
+    private:
+        Path base_path;
+    };
 
     struct PackagesDirAssigner
     {

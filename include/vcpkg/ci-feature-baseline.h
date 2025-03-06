@@ -23,10 +23,10 @@ namespace vcpkg
     struct CiFeatureBaselineEntry
     {
         CiFeatureBaselineState state = CiFeatureBaselineState::Pass;
-        std::set<std::string> skip_features;
-        std::set<std::string> no_separate_feature_test;
-        std::set<std::string> cascade_features;
-        std::set<std::string> failing_features;
+        std::set<std::string, std::less<>> skip_features;
+        std::set<std::string, std::less<>> no_separate_feature_test;
+        std::set<std::string, std::less<>> cascade_features;
+        std::set<std::string, std::less<>> failing_features;
         std::vector<std::vector<std::string>> fail_configurations;
         // A list of sets of features of which excatly one must be selected
         std::vector<std::vector<std::string>> options;

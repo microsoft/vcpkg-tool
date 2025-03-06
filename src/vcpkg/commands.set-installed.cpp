@@ -266,7 +266,7 @@ namespace vcpkg
                                                   action_plan,
                                                   status_db,
                                                   binary_cache,
-                                                  null_build_logs_recorder(),
+                                                  null_build_logs_recorder,
                                                   include_manifest_in_github_issue);
 
         if (build_options.keep_going == KeepGoing::Yes && summary.failed())

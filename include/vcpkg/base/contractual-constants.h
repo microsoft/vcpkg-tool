@@ -193,6 +193,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchBuiltinPortsRoot = "builtin-ports-root";
     inline constexpr StringLiteral SwitchBuiltinRegistryVersionsDir = "builtin-registry-versions-dir";
     inline constexpr StringLiteral SwitchCIBaseline = "ci-baseline";
+    inline constexpr StringLiteral SwitchCIFeatureBaseline = "ci-feature-baseline";
     inline constexpr StringLiteral SwitchClassic = "classic";
     inline constexpr StringLiteral SwitchCleanAfterBuild = "clean-after-build";
     inline constexpr StringLiteral SwitchCleanBuildtreesAfterBuild = "clean-buildtrees-after-build";
@@ -214,6 +215,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchEditable = "editable";
     inline constexpr StringLiteral SwitchEnforcePortChecks = "enforce-port-checks";
     inline constexpr StringLiteral SwitchExclude = "exclude";
+    inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
     inline constexpr StringLiteral SwitchForce = "force";
@@ -235,11 +237,14 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchMaxRecurse = "max-recurse";
     inline constexpr StringLiteral SwitchMSBuildProps = "msbuild-props";
     inline constexpr StringLiteral SwitchName = "name";
+    inline constexpr StringLiteral SwitchNoCombined = "no-combined";
+    inline constexpr StringLiteral SwitchNoCore = "no-core";
     inline constexpr StringLiteral SwitchNoDownloads = "no-downloads";
     inline constexpr StringLiteral SwitchNoDryRun = "no-dry-run";
     inline constexpr StringLiteral SwitchNoKeepGoing = "no-keep-going";
     inline constexpr StringLiteral SwitchNoOutputComments = "no-output-comments";
     inline constexpr StringLiteral SwitchNoPrintUsage = "no-print-usage";
+    inline constexpr StringLiteral SwitchNoSeparated = "no-separated";
     inline constexpr StringLiteral SwitchNormalize = "normalize";
     inline constexpr StringLiteral SwitchNuGet = "nuget";
     inline constexpr StringLiteral SwitchNuGetDescription = "nuget-description";
@@ -336,9 +341,11 @@ namespace vcpkg
     inline constexpr StringLiteral FileLicense = "LICENSE";
     inline constexpr StringLiteral FileLicenseDotTxt = "LICENSE.txt";
     inline constexpr StringLiteral FilePortfileDotCMake = "portfile.cmake";
+    inline constexpr StringLiteral FileReadmeDotLog = "readme.log";
     inline constexpr StringLiteral FileShare = "share";
     inline constexpr StringLiteral FileStatus = "status";
     inline constexpr StringLiteral FileStatusNew = "status-new";
+    inline constexpr StringLiteral FileTestedSpecDotTxt = "tested-spec.txt";
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";

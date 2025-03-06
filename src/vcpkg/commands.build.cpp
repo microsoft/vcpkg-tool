@@ -57,7 +57,42 @@ namespace
 
 namespace vcpkg
 {
-    const IBuildLogsRecorder& null_build_logs_recorder() noexcept { return null_build_logs_recorder_instance; }
+    constexpr const IBuildLogsRecorder& null_build_logs_recorder = null_build_logs_recorder_instance;
+
+    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
+
+    void CiBuildLogsRecorder::record_build_result(const VcpkgPaths& paths,
+                                                  const PackageSpec& spec,
+                                                  BuildResult result) const
+    {
+        if (result == BuildResult::Succeeded)
+        {
+            return;
+        }
+
+        auto& filesystem = paths.get_filesystem();
+        const auto source_path = paths.build_dir(spec);
+        auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
+        Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+        auto target_path = base_path / spec.name();
+        (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
+        if (children.empty())
+        {
+            auto message =
+                fmt::format("There are no build logs for {} build.\n"
+                            "This is usually because the build failed early and outside of a task that is logged.\n"
+                            "See the console output logs from vcpkg for more information on the failure.\n",
+                            spec);
+            filesystem.write_contents(target_path / FileReadmeDotLog, message, VCPKG_LINE_INFO);
+        }
+        else
+        {
+            for (const Path& p : children)
+            {
+                filesystem.copy_file(p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
+            }
+        }
+    }
 
     PackagesDirAssigner::PackagesDirAssigner(const Path& packages_dir) : m_packages_dir(packages_dir) { }
 
@@ -183,7 +218,7 @@ namespace vcpkg
                                                 build_command_build_package_options,
                                                 spec,
                                                 provider,
-                                                null_build_logs_recorder()));
+                                                null_build_logs_recorder));
     }
 
     int command_build_ex(const VcpkgCmdArguments& args,
