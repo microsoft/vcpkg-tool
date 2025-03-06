@@ -247,7 +247,7 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
-        install_preclear_packages(paths, action_plan);
+        install_preclear_plan_packages(paths, action_plan);
 
         BinaryCache binary_cache(fs);
         if (build_options.only_downloads == OnlyDownloads::No)
@@ -359,6 +359,8 @@ namespace vcpkg
             pkgsconfig = it_pkgsconfig->second;
         }
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
+
         // We have a set of user-requested specs.
         // We need to know all the specs which are required to fulfill dependencies for those specs.
         // Therefore, we see what we would install into an empty installed tree, so we can use the existing code.
@@ -367,7 +369,8 @@ namespace vcpkg
             *cmake_vars,
             specs,
             {},
-            {nullptr, host_triplet, paths.packages(), unsupported_port_action, UseHeadVersion::No, Editable::No});
+            packages_dir_assigner,
+            {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
 
         command_set_installed_and_exit_ex(
             args,

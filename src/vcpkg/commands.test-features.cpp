@@ -223,6 +223,22 @@ namespace vcpkg
                                     [&](auto scf) { return PackageSpec(scf->core_paragraph->name, target_triplet); });
         var_provider.load_dep_info_vars(all_specs, host_triplet);
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
+        CreateInstallPlanOptions install_plan_options{
+            nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No};
+        static constexpr BuildPackageOptions build_options{
+            BuildMissing::Yes,
+            AllowDownloads::Yes,
+            OnlyDownloads::No,
+            CleanBuildtrees::Yes,
+            CleanPackages::Yes,
+            CleanDownloads::No,
+            BackcompatFeatures::Prohibit,
+            KeepGoing::Yes,
+        };
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+        PortDirAbiInfoCache port_dir_abi_info_cache;
+
         // check what should be tested
         std::vector<FullPackageSpec> specs_to_test;
         for (const auto port : feature_test_ports)
@@ -291,11 +307,13 @@ namespace vcpkg
         std::vector<FullPackageSpec> specs;
         std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
-        CreateInstallPlanOptions install_plan_options{
-            nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No};
         auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
-            auto install_plan = create_feature_install_plan(
-                provider, var_provider, Span<FullPackageSpec>(&spec, 1), {}, install_plan_options);
+            auto install_plan = create_feature_install_plan(provider,
+                                                            var_provider,
+                                                            Span<FullPackageSpec>(&spec, 1),
+                                                            {},
+                                                            packages_dir_assigner,
+                                                            install_plan_options);
             if (install_plan.unsupported_features.empty())
             {
                 for (auto& actions : install_plan.install_actions)
@@ -310,8 +328,6 @@ namespace vcpkg
         });
         msg::println(msgComputeAllAbis);
         var_provider.load_tag_vars(specs, port_locations, host_triplet);
-        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
-        PortDirAbiInfoCache port_dir_abi_info_cache;
         for (auto& [spec, install_plan] : install_plans)
         {
             if (install_plan.unsupported_features.empty())
@@ -434,18 +450,8 @@ namespace vcpkg
                                                                 ? *(feature_build_logs_recorder_storage.get())
                                                                 : null_build_logs_recorder();
             ElapsedTimer install_timer;
-            install_preclear_packages(paths, install_plan);
+            install_clear_installed_packages(paths, install_plan.install_actions);
             binary_cache.fetch(install_plan.install_actions);
-            static constexpr BuildPackageOptions build_options{
-                BuildMissing::Yes,
-                AllowDownloads::Yes,
-                OnlyDownloads::No,
-                CleanBuildtrees::Yes,
-                CleanPackages::Yes,
-                CleanDownloads::No,
-                BackcompatFeatures::Prohibit,
-                KeepGoing::Yes,
-            };
             const auto summary = install_execute_plan(args,
                                                       paths,
                                                       host_triplet,

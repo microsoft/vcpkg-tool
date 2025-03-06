@@ -94,7 +94,8 @@ namespace vcpkg
                                          const ReadOnlyFilesystem& fs,
                                          const InstalledPaths& installed);
 
-    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
+    void install_preclear_plan_packages(const VcpkgPaths& paths, const ActionPlan& action_plan);
+    void install_clear_installed_packages(const VcpkgPaths& paths, View<InstallPlanAction> install_actions);
 
     InstallSummary install_execute_plan(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,

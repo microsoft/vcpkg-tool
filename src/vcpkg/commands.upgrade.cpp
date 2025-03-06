@@ -71,8 +71,7 @@ namespace vcpkg
             keep_going,
         };
 
-        const CreateUpgradePlanOptions create_upgrade_plan_options{
-            nullptr, host_triplet, paths.packages(), unsupported_port_action};
+        const CreateUpgradePlanOptions create_upgrade_plan_options{nullptr, host_triplet, unsupported_port_action};
 
         StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
 
@@ -83,6 +82,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         ActionPlan action_plan;
         if (options.command_arguments.empty())
         {
@@ -100,6 +100,7 @@ namespace vcpkg
                 var_provider,
                 Util::fmap(outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
                 status_db,
+                packages_dir_assigner,
                 create_upgrade_plan_options);
         }
         else
@@ -186,8 +187,8 @@ namespace vcpkg
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
-            action_plan =
-                create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
+            action_plan = create_upgrade_plan(
+                provider, var_provider, to_upgrade, status_db, packages_dir_assigner, create_upgrade_plan_options);
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());

@@ -57,6 +57,76 @@ namespace
 
 namespace vcpkg
 {
+    const IBuildLogsRecorder& null_build_logs_recorder() noexcept { return null_build_logs_recorder_instance; }
+
+    PackagesDirAssigner::PackagesDirAssigner(const Path& packages_dir) : m_packages_dir(packages_dir) { }
+
+    Path PackagesDirAssigner::generate(const PackageSpec& spec)
+    {
+        auto dir = spec.dir();
+        auto& next_count = m_next_dir_count[dir];
+        if (next_count != 0)
+        {
+            dir += fmt::format("_{}", next_count);
+        }
+
+        ++next_count;
+        return m_packages_dir / dir;
+    }
+
+    bool is_package_dir_match(StringView filename, StringView spec_dir)
+    {
+        if (filename.size() < spec_dir.size() || StringView{filename.data(), spec_dir.size()} != spec_dir)
+        {
+            return false;
+        }
+
+        auto first = filename.begin() + spec_dir.size();
+        const auto last = filename.end();
+        if (first == last)
+        {
+            // exact match is a match
+            return true;
+        }
+
+        if (*first != '_')
+        {
+            // no _ means no match
+            return false;
+        }
+
+        ++first;
+        if (first == last)
+        {
+            // there must be at least one number if we saw _, so no match
+            return false;
+        }
+
+        do
+        {
+            if (!ParserBase::is_ascii_digit(*first))
+            {
+                // anything that isn't a number means no match
+                return false;
+            }
+        } while (++first != last);
+        return true;
+    }
+
+    void purge_packages_dirs(const VcpkgPaths& paths, View<std::string> spec_dirs)
+    {
+        auto& fs = paths.get_filesystem();
+        for (const auto& package_dir : fs.get_directories_non_recursive(paths.packages(), VCPKG_LINE_INFO))
+        {
+            auto filename = package_dir.filename();
+            if (Util::any_of(spec_dirs,
+                             [&](const std::string& spec_dir) { return is_package_dir_match(filename, spec_dir); }))
+            {
+                fs.remove_all(package_dir, VCPKG_LINE_INFO);
+            }
+        }
+    }
+
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
@@ -131,12 +201,14 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,
             {&full_spec, 1},
             status_db,
-            {nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Error, UseHeadVersion::No, Editable::Yes});
+            packages_dir_assigner,
+            {nullptr, host_triplet, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::Yes});
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
@@ -776,6 +848,8 @@ namespace vcpkg
 
         std::vector<CMakeVariable> variables{
             {CMakeVariableAllFeatures, all_features},
+            {CMakeVariableCurrentBuildtreesDir, paths.build_dir(port_name)},
+            {CMakeVariableCurrentPackagesDir, action.package_dir.value_or_exit(VCPKG_LINE_INFO)},
             {CMakeVariableCurrentPortDir, scfl.port_directory()},
             {CMakeVariableHostTriplet, host_triplet.canonical_name()},
             {CMakeVariableFeatures, Strings::join(";", action.feature_list)},
@@ -2051,6 +2125,4 @@ namespace vcpkg
         : code(code), unmet_dependencies(std::move(unmet_deps))
     {
     }
-
-    const IBuildLogsRecorder& null_build_logs_recorder() noexcept { return null_build_logs_recorder_instance; }
 }

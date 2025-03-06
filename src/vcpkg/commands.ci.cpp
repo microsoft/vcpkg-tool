@@ -126,6 +126,7 @@ namespace
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
                                  const std::vector<FullPackageSpec>& specs,
+                                 PackagesDirAssigner& packages_dir_assigner,
                                  const CreateInstallPlanOptions& serialize_options)
     {
         std::vector<PackageSpec> packages_with_qualified_deps;
@@ -142,11 +143,14 @@ namespace
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
 
         const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
-            return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
+            PackagesDirAssigner this_packages_dir_not_used{""};
+            return create_feature_install_plan(
+                       provider, var_provider, {&spec, 1}, {}, this_packages_dir_not_used, serialize_options)
                 .unsupported_features.empty();
         });
 
-        auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, applicable_specs, {}, packages_dir_assigner, serialize_options);
         var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
@@ -420,10 +424,12 @@ namespace vcpkg
         {
             randomizer = &randomizer_instance;
         }
+
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
-            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto action_plan =
-            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
+            randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan = compute_full_plan(
+            paths, provider, var_provider, all_default_full_specs, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -534,7 +540,7 @@ namespace vcpkg
                 msg::println_warning(warning);
             }
 
-            install_preclear_packages(paths, action_plan);
+            install_preclear_plan_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
 
             auto summary = install_execute_plan(
