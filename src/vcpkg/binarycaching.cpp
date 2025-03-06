@@ -2534,11 +2534,6 @@ namespace vcpkg
                 return;
             }
         }
-
-        if (clean_packages == CleanPackages::Yes)
-        {
-            m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
-        }
     }
 
     void BinaryCache::print_updates() { m_bg_msg_sink.print_published(); }
