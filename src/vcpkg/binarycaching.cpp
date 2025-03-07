@@ -41,6 +41,52 @@ namespace
         std::vector<std::vector<std::pair<SourceLoc, std::string>>> parse_all_segments();
 
         template<class T>
+        void handle_readwriteback(std::vector<T>& read,
+                                  std::vector<T>& write,
+                                  bool& writeback,
+                                  T&& t,
+                                  const std::vector<std::pair<SourceLoc, std::string>>& segments,
+                                  size_t segment_idx)
+        {
+            if (segment_idx >= segments.size())
+            {
+                read.push_back(std::move(t));
+                return;
+            }
+
+            auto& mode = segments[segment_idx].second;
+
+            if (mode == "read")
+            {
+                read.push_back(std::move(t));
+            }
+            else if (mode == "write")
+            {
+                write.push_back(std::move(t));
+            }
+            else if (mode == "writeback")
+            {
+                write.push_back(t);
+                writeback = true;
+            }
+            else if (mode == "readwrite")
+            {
+                read.push_back(t);
+                write.push_back(std::move(t));
+            }
+            else if (mode == "readwriteback")
+            {
+                read.push_back(t);
+                write.push_back(t);
+                writeback = true;
+            }
+            else
+            {
+                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+            }
+        }
+
+        template<class T>
         void handle_readwrite(std::vector<T>& read,
                               std::vector<T>& write,
                               T&& t,
@@ -74,10 +120,11 @@ namespace
             }
         }
 
-        void handle_readwrite(bool& read,
-                              bool& write,
-                              const std::vector<std::pair<SourceLoc, std::string>>& segments,
-                              size_t segment_idx)
+        void handle_readwriteback(bool& read,
+                                  bool& write,
+                                  bool& writeback,
+                                  const std::vector<std::pair<SourceLoc, std::string>>& segments,
+                                  size_t segment_idx)
         {
             if (segment_idx >= segments.size())
             {
@@ -95,10 +142,21 @@ namespace
             {
                 write = true;
             }
+            else if (mode == "writeback")
+            {
+                write = true;
+                writeback = true;
+            }
             else if (mode == "readwrite")
             {
                 read = true;
                 write = true;
+            }
+            else if (mode == "readwriteback")
+            {
+                read = true;
+                write = true;
+                writeback = true;
             }
             else
             {
@@ -1507,13 +1565,16 @@ namespace
                                      segments[1].first);
                 }
 
-                handle_readwrite(state->archives_to_read, state->archives_to_write, std::move(p), segments, 2);
+                FilesBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.archives_to_read, config.archives_to_write, config.write_back, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
                     return add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
                         segments[3].first);
                 }
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("files");
             }
             else if (segments[0].second == "interactive")
@@ -1544,13 +1605,16 @@ namespace
                         segments[1].first);
                 }
 
-                handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
+                NugetBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.configs_to_read, config.configs_to_write, config.write_back, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
                     return add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
                         segments[3].first);
                 }
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nuget")
@@ -1569,13 +1633,16 @@ namespace
                         msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
                 }
 
-                handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
+                NugetBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.sources_to_read, config.sources_to_write, config.write_back, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
                     return add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
                         segments[3].first);
                 }
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("nuget");
             }
             else if (segments[0].second == "nugettimeout")
@@ -1609,8 +1676,14 @@ namespace
                     return add_error(LocalizedString{maybe_home.error()}, segments[0].first);
                 }
 
-                handle_readwrite(
-                    state->archives_to_read, state->archives_to_write, Path(*maybe_home.get()), segments, 1);
+                FilesBinaryProviderConfig config;
+                handle_readwriteback(config.archives_to_read,
+                                     config.archives_to_write,
+                                     config.write_back,
+                                     Path(*maybe_home.get()),
+                                     segments,
+                                     1);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("default");
             }
             else if (segments[0].second == "x-azblob")
@@ -1657,15 +1730,18 @@ namespace
                 }
 
                 p.append(segments[2].second);
-                state->secrets.push_back(segments[2].second);
+
+                HttpBinaryProviderConfig config;
+                config.secrets.push_back(segments[2].second);
                 UrlTemplate url_template = {p};
                 bool read = false, write = false;
-                handle_readwrite(read, write, segments, 3);
-                if (read) state->url_templates_to_get.push_back(url_template);
+                handle_readwriteback(read, write, config.write_back, segments, 3);
+                if (read) config.url_templates_to_get.push_back(url_template);
                 auto headers = azure_blob_headers();
                 url_template.headers.assign(headers.begin(), headers.end());
-                if (write) state->url_templates_to_put.push_back(url_template);
+                if (write) config.url_templates_to_put.push_back(url_template);
 
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("azblob");
             }
             else if (segments[0].second == "x-gcs")
@@ -1698,8 +1774,10 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->gcs_read_prefixes, state->gcs_write_prefixes, std::move(p), segments, 2);
-
+                GcsBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.gcs_read_prefixes, config.gcs_write_prefixes, config.write_back, std::move(p), segments, 2);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("gcs");
             }
             else if (segments[0].second == "x-aws")
@@ -1732,8 +1810,10 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->aws_read_prefixes, state->aws_write_prefixes, std::move(p), segments, 2);
-
+                AwsBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.aws_read_prefixes, config.aws_write_prefixes, config.write_back, std::move(p), segments, 2);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-aws-config")
@@ -1787,7 +1867,10 @@ namespace
                     p.push_back('/');
                 }
 
-                handle_readwrite(state->cos_read_prefixes, state->cos_write_prefixes, std::move(p), segments, 2);
+                CosBinaryProviderConfig config;
+                handle_readwriteback(
+                    config.cos_read_prefixes, config.cos_write_prefixes, config.write_back, std::move(p), segments, 2);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("cos");
             }
             else if (segments[0].second == "x-gha")
@@ -1800,8 +1883,9 @@ namespace
                         segments[2].first);
                 }
 
-                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
-
+                GhaBinaryProviderConfig config;
+                handle_readwriteback(config.gha_read, config.gha_write, config.write_back, segments, 1);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("gha");
             }
             else if (segments[0].second == "http")
@@ -1866,8 +1950,14 @@ namespace
                     url_template.headers.push_back(segments[3].second);
                 }
 
-                handle_readwrite(
-                    state->url_templates_to_get, state->url_templates_to_put, std::move(url_template), segments, 2);
+                HttpBinaryProviderConfig config;
+                handle_readwriteback(config.url_templates_to_get,
+                                     config.url_templates_to_put,
+                                     config.write_back,
+                                     std::move(url_template),
+                                     segments,
+                                     2);
+                state->binary_providers.emplace_back(config);
                 state->binary_cache_providers.insert("http");
             }
             else if (segments[0].second == "x-az-universal")
@@ -1885,8 +1975,14 @@ namespace
                 };
 
                 state->binary_cache_providers.insert("upkg");
-                handle_readwrite(
-                    state->upkg_templates_to_get, state->upkg_templates_to_put, std::move(upkg_template), segments, 4);
+                AzureUpkgBinaryProviderConfig config;
+                handle_readwriteback(config.upkg_templates_to_get,
+                                     config.upkg_templates_to_put,
+                                     config.write_back,
+                                     std::move(upkg_template),
+                                     segments,
+                                     4);
+                state->binary_providers.emplace_back(config);
             }
             else
             {
@@ -2111,43 +2207,46 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> action_ptrs;
         std::vector<RestoreResult> restores;
         std::vector<CacheStatus*> statuses;
-        for (auto&& provider : m_config.read)
+        for (const auto& container : m_config.containers)
         {
-            action_ptrs.clear();
-            restores.clear();
-            statuses.clear();
-            for (size_t i = 0; i < actions.size(); ++i)
+            for (const auto& provider : container->read)
             {
-                if (actions[i].package_abi())
+                action_ptrs.clear();
+                restores.clear();
+                statuses.clear();
+                for (size_t i = 0; i < actions.size(); ++i)
                 {
-                    CacheStatus& status = m_status[*actions[i].package_abi().get()];
-                    if (status.should_attempt_restore(provider.get()))
+                    if (actions[i].package_abi())
                     {
-                        action_ptrs.push_back(&actions[i]);
-                        restores.push_back(RestoreResult::unavailable);
-                        statuses.push_back(&status);
+                        CacheStatus& status = m_status[*actions[i].package_abi().get()];
+                        if (status.should_attempt_restore(provider.get()))
+                        {
+                            action_ptrs.push_back(&actions[i]);
+                            restores.push_back(RestoreResult::unavailable);
+                            statuses.push_back(&status);
+                        }
                     }
                 }
-            }
-            if (action_ptrs.empty()) continue;
+                if (action_ptrs.empty()) continue;
 
-            ElapsedTimer timer;
-            provider->fetch(action_ptrs, restores);
-            size_t num_restored = 0;
-            for (size_t i = 0; i < restores.size(); ++i)
-            {
-                if (restores[i] == RestoreResult::unavailable)
+                ElapsedTimer timer;
+                provider->fetch(action_ptrs, restores);
+                size_t num_restored = 0;
+                for (size_t i = 0; i < restores.size(); ++i)
                 {
-                    statuses[i]->mark_unavailable(provider.get());
+                    if (restores[i] == RestoreResult::unavailable)
+                    {
+                        statuses[i]->mark_unavailable(provider.get());
+                    }
+                    else
+                    {
+                        statuses[i]->mark_restored(container.get());
+                        ++num_restored;
+                    }
                 }
-                else
-                {
-                    statuses[i]->mark_restored();
-                    ++num_restored;
-                }
+                msg::println(provider->restored_message(
+                    num_restored, timer.elapsed().as<std::chrono::high_resolution_clock::duration>()));
             }
-            msg::println(provider->restored_message(
-                num_restored, timer.elapsed().as<std::chrono::high_resolution_clock::duration>()));
         }
     }
 
@@ -2163,7 +2262,8 @@ namespace vcpkg
 
     void ReadOnlyBinaryCache::install_read_provider(std::unique_ptr<IReadBinaryProvider>&& provider)
     {
-        m_config.read.push_back(std::move(provider));
+        auto& container = m_config.containers.emplace_back(std::make_unique<BinaryProviderContainer>());
+        container->read.push_back(std::move(provider));
     }
 
     std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<InstallPlanAction> actions)
@@ -2176,34 +2276,37 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> action_ptrs;
         std::vector<CacheAvailability> cache_result;
         std::vector<size_t> indexes;
-        for (auto&& provider : m_config.read)
+        for (const auto& container : m_config.containers)
         {
-            action_ptrs.clear();
-            cache_result.clear();
-            indexes.clear();
-            for (size_t i = 0; i < actions.size(); ++i)
+            for (const auto& provider : container->read)
             {
-                if (statuses[i]->should_attempt_precheck(provider.get()))
+                action_ptrs.clear();
+                cache_result.clear();
+                indexes.clear();
+                for (size_t i = 0; i < actions.size(); ++i)
                 {
-                    action_ptrs.push_back(&actions[i]);
-                    cache_result.push_back(CacheAvailability::unknown);
-                    indexes.push_back(i);
+                    if (statuses[i]->should_attempt_precheck(provider.get()))
+                    {
+                        action_ptrs.push_back(&actions[i]);
+                        cache_result.push_back(CacheAvailability::unknown);
+                        indexes.push_back(i);
+                    }
                 }
-            }
-            if (action_ptrs.empty()) continue;
+                if (action_ptrs.empty()) continue;
 
-            provider->precheck(action_ptrs, cache_result);
+                provider->precheck(action_ptrs, cache_result);
 
-            for (size_t i = 0; i < action_ptrs.size(); ++i)
-            {
-                auto&& this_status = m_status[*action_ptrs[i]->package_abi().get()];
-                if (cache_result[i] == CacheAvailability::available)
+                for (size_t i = 0; i < action_ptrs.size(); ++i)
                 {
-                    this_status.mark_available(provider.get());
-                }
-                else if (cache_result[i] == CacheAvailability::unavailable)
-                {
-                    this_status.mark_unavailable(provider.get());
+                    auto&& this_status = m_status[*action_ptrs[i]->package_abi().get()];
+                    if (cache_result[i] == CacheAvailability::available)
+                    {
+                        this_status.mark_available(provider.get());
+                    }
+                    else if (cache_result[i] == CacheAvailability::unavailable)
+                    {
+                        this_status.mark_unavailable(provider.get());
+                    }
                 }
             }
         }
@@ -2348,141 +2451,192 @@ namespace vcpkg
 
             m_config.nuget_prefix = s.nuget_prefix;
 
-            std::shared_ptr<const GcsStorageTool> gcs_tool;
-            if (!s.gcs_read_prefixes.empty() || !s.gcs_write_prefixes.empty())
+            if (!s.binary_providers.empty())
             {
-                gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
-            }
-            std::shared_ptr<const AwsStorageTool> aws_tool;
-            if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
-            {
-                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
-            }
-            std::shared_ptr<const CosStorageTool> cos_tool;
-            if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
-            {
-                cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
-            }
+                std::shared_ptr<const GcsStorageTool> gcs_tool;
+                std::shared_ptr<const AwsStorageTool> aws_tool;
+                std::shared_ptr<const CosStorageTool> cos_tool;
 
-            if (s.gha_read || s.gha_write)
-            {
-                if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
-                {
-                    status_sink.println(
-                        Color::error,
-                        msg::format_error(msgGHAParametersMissing, msg::url = docs::binarycaching_gha_url));
-                    return false;
-                }
-            }
-
-            if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
-            {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
-                for (auto&& dir : s.archives_to_read)
+                for (auto& config : s.binary_providers)
                 {
-                    m_config.read.push_back(std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
-                }
+                    auto ok = std::visit(
+                        [&](auto&& c) {
+                            auto& container =
+                                m_config.containers.emplace_back(std::make_unique<BinaryProviderContainer>());
+                            container->write_back = c.write_back;
 
-                for (auto&& url : s.url_templates_to_get)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<HttpGetBinaryProvider>(zip_tool, fs, buildtrees, std::move(url), s.secrets));
-                }
+                            using T = std::decay_t<decltype(c)>;
+                            if constexpr (std::is_same_v<T, FilesBinaryProviderConfig>)
+                            {
+                                for (auto&& dir : c.archives_to_read)
+                                {
+                                    container->read.push_back(
+                                        std::make_unique<FilesReadBinaryProvider>(zip_tool, fs, std::move(dir)));
+                                }
+                                if (!c.archives_to_write.empty())
+                                {
+                                    container->write =
+                                        std::make_unique<FilesWriteBinaryProvider>(fs, std::move(c.archives_to_write));
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, HttpBinaryProviderConfig>)
+                            {
+                                for (auto&& url : c.url_templates_to_get)
+                                {
+                                    container->read.push_back(std::make_unique<HttpGetBinaryProvider>(
+                                        zip_tool, fs, buildtrees, std::move(url), c.secrets));
+                                }
+                                if (!c.url_templates_to_put.empty())
+                                {
+                                    container->write = std::make_unique<HTTPPutBinaryProvider>(
+                                        std::move(c.url_templates_to_put), c.secrets);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, GcsBinaryProviderConfig>)
+                            {
+                                if (!gcs_tool)
+                                {
+                                    gcs_tool = std::make_shared<GcsStorageTool>(tools, out_sink);
+                                }
 
-                for (auto&& prefix : s.gcs_read_prefixes)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
-                }
+                                for (auto&& prefix : c.gcs_read_prefixes)
+                                {
+                                    container->read.push_back(std::make_unique<ObjectStorageProvider>(
+                                        zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
+                                }
+                                if (!c.gcs_write_prefixes.empty())
+                                {
+                                    container->write = std::make_unique<ObjectStoragePushProvider>(
+                                        std::move(c.gcs_write_prefixes), gcs_tool);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, AwsBinaryProviderConfig>)
+                            {
+                                if (!aws_tool)
+                                {
+                                    aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
+                                }
 
-                for (auto&& prefix : s.aws_read_prefixes)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
-                }
+                                for (auto&& prefix : c.aws_read_prefixes)
+                                {
+                                    container->read.push_back(std::make_unique<ObjectStorageProvider>(
+                                        zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
+                                }
 
-                for (auto&& prefix : s.cos_read_prefixes)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
-                }
+                                if (!c.aws_write_prefixes.empty())
+                                {
+                                    container->write = std::make_unique<ObjectStoragePushProvider>(
+                                        std::move(c.aws_write_prefixes), aws_tool);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, CosBinaryProviderConfig>)
+                            {
+                                if (!cos_tool)
+                                {
+                                    cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
+                                }
 
-                if (s.gha_read)
-                {
-                    const auto& url = *args.actions_cache_url.get();
-                    const auto& token = *args.actions_runtime_token.get();
-                    m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
-                }
-            }
-            if (!s.archives_to_write.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
-            }
-            if (!s.url_templates_to_put.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<HTTPPutBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
-            }
-            if (!s.gcs_write_prefixes.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.gcs_write_prefixes), gcs_tool));
-            }
-            if (!s.aws_write_prefixes.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.aws_write_prefixes), aws_tool));
-            }
-            if (!s.cos_write_prefixes.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
-            }
-            if (s.gha_write)
-            {
-                const auto& url = *args.actions_cache_url.get();
-                const auto& token = *args.actions_runtime_token.get();
-                m_config.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
-            }
+                                for (auto&& prefix : c.cos_read_prefixes)
+                                {
+                                    container->read.push_back(std::make_unique<ObjectStorageProvider>(
+                                        zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
+                                }
 
-            if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
-                !s.configs_to_write.empty())
-            {
-                NugetBaseBinaryProvider nuget_base(
-                    fs, NuGetTool(tools, out_sink, s), paths.packages(), buildtrees, s.nuget_prefix);
-                if (!s.sources_to_read.empty())
-                    m_config.read.push_back(
-                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_sources_arg(s.sources_to_read)));
-                for (auto&& config : s.configs_to_read)
-                    m_config.read.push_back(
-                        std::make_unique<NugetReadBinaryProvider>(nuget_base, nuget_configfile_arg(config)));
-                if (!s.sources_to_write.empty() || !s.configs_to_write.empty())
-                {
-                    m_config.write.push_back(std::make_unique<NugetBinaryPushProvider>(
-                        nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
-                }
-            }
+                                if (!c.cos_write_prefixes.empty())
+                                {
+                                    container->write = std::make_unique<ObjectStoragePushProvider>(
+                                        std::move(c.cos_write_prefixes), cos_tool);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, GhaBinaryProviderConfig>)
+                            {
+                                if (c.gha_read || c.gha_write)
+                                {
+                                    if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
+                                    {
+                                        status_sink.println(Color::error,
+                                                            msg::format_error(msgGHAParametersMissing,
+                                                                              msg::url = docs::binarycaching_gha_url));
+                                        return false;
+                                    }
+                                }
 
-            if (!s.upkg_templates_to_get.empty())
-            {
-                for (auto&& src : s.upkg_templates_to_get)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
+                                if (c.gha_read)
+                                {
+                                    const auto& url = *args.actions_cache_url.get();
+                                    const auto& token = *args.actions_runtime_token.get();
+                                    container->read.push_back(
+                                        std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
+                                }
+                                if (c.gha_write)
+                                {
+                                    const auto& url = *args.actions_cache_url.get();
+                                    const auto& token = *args.actions_runtime_token.get();
+                                    container->write = std::make_unique<GHABinaryPushProvider>(fs, url, token);
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, NugetBinaryProviderConfig>)
+                            {
+                                if (!c.sources_to_read.empty() || !c.configs_to_read.empty() ||
+                                    !c.sources_to_write.empty() || !c.configs_to_write.empty())
+                                {
+                                    NugetBaseBinaryProvider nuget_base(fs,
+                                                                       NuGetTool(tools, out_sink, s),
+                                                                       paths.packages(),
+                                                                       buildtrees,
+                                                                       s.nuget_prefix);
+                                    if (!c.sources_to_read.empty())
+                                        container->read.push_back(std::make_unique<NugetReadBinaryProvider>(
+                                            nuget_base, nuget_sources_arg(c.sources_to_read)));
+                                    for (auto&& config : c.configs_to_read)
+                                        container->read.push_back(std::make_unique<NugetReadBinaryProvider>(
+                                            nuget_base, nuget_configfile_arg(config)));
+                                    if (!c.sources_to_write.empty() || !c.configs_to_write.empty())
+                                    {
+                                        container->write = std::make_unique<NugetBinaryPushProvider>(
+                                            nuget_base, std::move(c.sources_to_write), std::move(c.configs_to_write));
+                                    }
+                                }
+                            }
+                            else if constexpr (std::is_same_v<T, AzureUpkgBinaryProviderConfig>)
+                            {
+                                if (!c.upkg_templates_to_get.empty())
+                                {
+                                    for (auto&& src : c.upkg_templates_to_get)
+                                    {
+                                        container->read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
+                                            tools, out_sink, std::move(src)));
+                                    }
+                                }
+                                if (!c.upkg_templates_to_put.empty())
+                                {
+                                    container->write = std::make_unique<AzureUpkgPutBinaryProvider>(
+                                        tools, out_sink, std::move(c.upkg_templates_to_put));
+                                }
+                            }
+                            else
+                            {
+                                static_assert(!std::is_same_v<T, T>, "non-exhaustive visitor!");
+                            }
+
+                            return true;
+                        },
+                        config);
+
+                    if (!ok)
+                    {
+                        return false;
+                    }
                 }
-            }
-            if (!s.upkg_templates_to_put.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
             }
         }
 
-        m_needs_nuspec_data = Util::any_of(m_config.write, [](auto&& p) { return p->needs_nuspec_data(); });
-        m_needs_zip_file = Util::any_of(m_config.write, [](auto&& p) { return p->needs_zip_file(); });
+        m_needs_nuspec_data =
+            Util::any_of(m_config.containers, [](auto&& c) { return c->write && c->write->needs_nuspec_data(); });
+        m_needs_zip_file =
+            Util::any_of(m_config.containers, [](auto&& c) { return c->write && c->write->needs_zip_file(); });
         if (m_needs_zip_file)
         {
             m_zip_tool.setup(paths.get_tool_cache(), status_sink);
@@ -2501,6 +2655,7 @@ namespace vcpkg
         if (auto abi = action.package_abi().get())
         {
             bool restored;
+            const BinaryProviderContainer* restored_container = nullptr;
             auto it = m_status.find(*abi);
             if (it == m_status.end())
             {
@@ -2509,6 +2664,7 @@ namespace vcpkg
             else
             {
                 restored = it->second.is_restored();
+                restored_container = it->second.get_restored_container();
 
                 // Purge all status information on push_success (cache invalidation)
                 // - push_success may delete packages/ (invalidate restore)
@@ -2516,7 +2672,22 @@ namespace vcpkg
                 m_status.erase(it);
             }
 
-            if (!restored && !m_config.write.empty())
+            size_t count = 0;
+            if (!restored)
+            {
+                count = std::count_if(m_config.containers.begin(), m_config.containers.end(), [](const auto& c) {
+                    return c->write != nullptr;
+                });
+            }
+            else
+            {
+                count = std::count_if(
+                    m_config.containers.begin(), m_config.containers.end(), [restored_container](const auto& c) {
+                        return c->write && restored_container != c.get() && c->write_back;
+                    });
+            }
+
+            if (count > 0)
             {
                 ElapsedTimer timer;
                 BinaryPackageWriteInfo request{action};
@@ -2528,9 +2699,9 @@ namespace vcpkg
                 }
 
                 m_synchronizer.add_submitted();
-                msg::println(msg::format(
-                    msgSubmittingBinaryCacheBackground, msg::spec = action.spec, msg::count = m_config.write.size()));
-                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
+                msg::println(
+                    msg::format(msgSubmittingBinaryCacheBackground, msg::spec = action.spec, msg::count = count));
+                m_actions_to_push.push(ActionToPush{std::move(request), clean_packages, restored, restored_container});
                 return;
             }
         }
@@ -2579,8 +2750,15 @@ namespace vcpkg
                 }
 
                 size_t num_destinations = 0;
-                for (auto&& provider : m_config.write)
+                for (auto&& container : m_config.containers)
                 {
+                    if (!container->write) continue;
+
+                    if (action_to_push.write_back &&
+                        (!container->write_back || container.get() == action_to_push.restored_container))
+                        continue;
+
+                    const auto& provider = container->write;
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
                         num_destinations += provider->push_success(action_to_push.request, m_bg_msg_sink);
@@ -2662,12 +2840,15 @@ namespace vcpkg
         }
     }
 
-    void CacheStatus::mark_restored() noexcept
+    void CacheStatus::mark_restored(const BinaryProviderContainer* container) noexcept
     {
         switch (m_status)
         {
             case CacheStatusState::unknown: m_known_unavailable_providers.clear(); [[fallthrough]];
-            case CacheStatusState::available: m_status = CacheStatusState::restored; break;
+            case CacheStatusState::available:
+                m_status = CacheStatusState::restored;
+                m_restored_container = container;
+                break;
             case CacheStatusState::restored: break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -2680,6 +2861,17 @@ namespace vcpkg
             case CacheStatusState::available: return m_available_provider;
             case CacheStatusState::unknown:
             case CacheStatusState::restored: return nullptr;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    const BinaryProviderContainer* CacheStatus::get_restored_container() const noexcept
+    {
+        switch (m_status)
+        {
+            case CacheStatusState::restored: return m_restored_container;
+            case CacheStatusState::unknown:
+            case CacheStatusState::available: return nullptr;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -2756,7 +2948,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 {
     BinaryConfigParserState s;
 
-    BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
+    BinaryConfigParser default_parser("default,readwriteback", "<defaults>", &s);
     default_parser.parse();
     if (auto err = default_parser.get_error())
     {

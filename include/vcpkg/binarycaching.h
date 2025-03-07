@@ -24,10 +24,18 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 namespace vcpkg
 {
+    struct BinaryProviderContainer
+    {
+        std::vector<std::unique_ptr<IReadBinaryProvider>> read = {};
+        std::unique_ptr<IWriteBinaryProvider> write = nullptr;
+        bool write_back = false;
+    };
+
     struct CacheStatus
     {
         bool should_attempt_precheck(const IReadBinaryProvider* sender) const noexcept;
@@ -35,11 +43,12 @@ namespace vcpkg
 
         bool is_unavailable(const IReadBinaryProvider* sender) const noexcept;
         const IReadBinaryProvider* get_available_provider() const noexcept;
+        const BinaryProviderContainer* get_restored_container() const noexcept;
         bool is_restored() const noexcept;
 
         void mark_unavailable(const IReadBinaryProvider* sender);
         void mark_available(const IReadBinaryProvider* sender) noexcept;
-        void mark_restored() noexcept;
+        void mark_restored(const BinaryProviderContainer* container) noexcept;
 
     private:
         CacheStatusState m_status = CacheStatusState::unknown;
@@ -50,6 +59,9 @@ namespace vcpkg
 
         // The provider who affirmatively has the associated cache entry.
         const IReadBinaryProvider* m_available_provider = nullptr; // meaningful iff m_status == available
+
+        // The provider who restored the associated cache entry.
+        const BinaryProviderContainer* m_restored_container = nullptr; // meaningful iff m_status == restored
     };
 
     struct BinaryPackageReadInfo
@@ -131,42 +143,87 @@ namespace vcpkg
         std::string feed;
     };
 
-    struct BinaryConfigParserState
+    struct FilesBinaryProviderConfig
     {
-        bool nuget_interactive = false;
-        std::set<StringLiteral> binary_cache_providers;
-
-        std::string nugettimeout = "100";
-
         std::vector<Path> archives_to_read;
         std::vector<Path> archives_to_write;
+        bool write_back = false;
+    };
 
+    struct HttpBinaryProviderConfig
+    {
+        std::vector<std::string> secrets;
         std::vector<UrlTemplate> url_templates_to_get;
         std::vector<UrlTemplate> url_templates_to_put;
+        bool write_back = false;
+    };
 
+    struct GcsBinaryProviderConfig
+    {
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
+        bool write_back = false;
+    };
 
+    struct AwsBinaryProviderConfig
+    {
         std::vector<std::string> aws_read_prefixes;
         std::vector<std::string> aws_write_prefixes;
-        bool aws_no_sign_request = false;
+        bool write_back = false;
+    };
 
+    struct CosBinaryProviderConfig
+    {
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
+        bool write_back = false;
+    };
 
+    struct GhaBinaryProviderConfig
+    {
         bool gha_write = false;
         bool gha_read = false;
+        bool write_back = false;
+    };
 
-        std::vector<AzureUpkgSource> upkg_templates_to_get;
-        std::vector<AzureUpkgSource> upkg_templates_to_put;
-
+    struct NugetBinaryProviderConfig
+    {
         std::vector<std::string> sources_to_read;
         std::vector<std::string> sources_to_write;
 
         std::vector<Path> configs_to_read;
         std::vector<Path> configs_to_write;
 
-        std::vector<std::string> secrets;
+        bool write_back = false;
+    };
+
+    struct AzureUpkgBinaryProviderConfig
+    {
+        std::vector<AzureUpkgSource> upkg_templates_to_get;
+        std::vector<AzureUpkgSource> upkg_templates_to_put;
+
+        bool write_back = false;
+    };
+
+    using BinaryProviderConfig = std::variant<FilesBinaryProviderConfig,
+                                              HttpBinaryProviderConfig,
+                                              GcsBinaryProviderConfig,
+                                              AwsBinaryProviderConfig,
+                                              CosBinaryProviderConfig,
+                                              GhaBinaryProviderConfig,
+                                              NugetBinaryProviderConfig,
+                                              AzureUpkgBinaryProviderConfig>;
+
+    struct BinaryConfigParserState
+    {
+        bool nuget_interactive = false;
+        std::set<StringLiteral> binary_cache_providers;
+
+        std::vector<BinaryProviderConfig> binary_providers;
+
+        std::string nugettimeout = "100";
+
+        bool aws_no_sign_request = false;
 
         // These are filled in after construction by reading from args and environment
         std::string nuget_prefix;
@@ -180,8 +237,7 @@ namespace vcpkg
 
     struct BinaryProviders
     {
-        std::vector<std::unique_ptr<IReadBinaryProvider>> read;
-        std::vector<std::unique_ptr<IWriteBinaryProvider>> write;
+        std::vector<std::unique_ptr<BinaryProviderContainer>> containers;
         std::string nuget_prefix;
         NuGetRepoInfo nuget_repo;
     };
@@ -274,6 +330,8 @@ namespace vcpkg
         {
             BinaryPackageWriteInfo request;
             CleanPackages clean_after_push;
+            bool write_back = false;
+            const BinaryProviderContainer* restored_container = nullptr;
         };
 
         ZipTool m_zip_tool;

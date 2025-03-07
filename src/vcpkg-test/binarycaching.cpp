@@ -67,7 +67,7 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(!available.is_restored());
 
     CacheStatus restored;
-    restored.mark_restored();
+    restored.mark_restored(nullptr);
     REQUIRE(!restored.should_attempt_precheck(&know_nothing));
     REQUIRE(!restored.should_attempt_restore(&know_nothing));
     REQUIRE(!restored.is_unavailable(&know_nothing));
