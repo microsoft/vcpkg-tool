@@ -319,7 +319,7 @@ namespace vcpkg
             auto& spec = plan_record.first;
             auto& install_plan = plan_record.second;
             msg::println(msgStartingFeatureTest,
-                         msg::value = fmt::format("{}/{}", i, install_plans.size()),
+                         msg::value = fmt::format("{}/{}", i + 1, install_plans.size()),
                          msg::feature_spec = spec);
             const auto& baseline = feature_baseline.get_port(spec.package_spec.name());
 
