@@ -48,6 +48,7 @@ namespace vcpkg
     struct InstallSummary
     {
         std::vector<SpecSummary> results;
+        ElapsedTime elapsed;
 
         LocalizedString format() const;
         void print_failed() const;

@@ -629,8 +629,7 @@ namespace vcpkg
         }
 
         database_load_collapse(fs, paths.installed());
-        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
-        return InstallSummary{std::move(results)};
+        return InstallSummary{std::move(results), timer.elapsed()};
     }
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -1382,7 +1381,7 @@ namespace vcpkg
                                                             status_db,
                                                             binary_cache,
                                                             null_build_logs_recorder);
-
+        msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
         // success.
         if (keep_going == KeepGoing::Yes)

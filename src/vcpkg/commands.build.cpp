@@ -288,7 +288,7 @@ namespace vcpkg
         const ElapsedTimer build_timer;
         const auto result =
             build_package(args, paths, host_triplet, build_options, *action, build_logs_recorder, status_db);
-        msg::print(msgElapsedForPackage, msg::spec = spec, msg::elapsed = build_timer);
+        msg::print(msgElapsedForPackage, msg::spec = full_spec, msg::elapsed = build_timer);
         switch (result.code)
         {
             case BuildResult::Succeeded: binary_cache.push_success(build_options.clean_packages, *action); return 0;

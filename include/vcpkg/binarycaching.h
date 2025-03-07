@@ -58,6 +58,7 @@ namespace vcpkg
         explicit BinaryPackageReadInfo(const InstallPlanAction& action);
         std::string package_abi;
         PackageSpec spec;
+        std::string display_name;
         Version version;
         Path package_dir;
     };

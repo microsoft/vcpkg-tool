@@ -1,4 +1,6 @@
 #pragma once
+#include <vcpkg/base/fwd/fmt.h>
+
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/triplet.h>
 
@@ -39,8 +41,7 @@ namespace vcpkg
         const CiFeatureBaselineEntry& get_port(const std::string& port_name) const;
     };
 
-    void to_string(std::string& out, CiFeatureBaselineState state);
-    std::string to_string(CiFeatureBaselineState state);
+    StringLiteral to_string_literal(CiFeatureBaselineState state);
 
     CiFeatureBaseline parse_ci_feature_baseline(StringView text,
                                                 StringView origin,
@@ -49,3 +50,5 @@ namespace vcpkg
                                                 Triplet host_triplet,
                                                 CMakeVars::CMakeVarProvider& var_provider);
 }
+
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::CiFeatureBaselineState);

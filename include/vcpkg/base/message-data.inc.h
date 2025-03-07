@@ -834,6 +834,16 @@ DECLARE_MESSAGE(CmdSetInstalledSynopsis,
                 (),
                 "",
                 "Installs, upgrades, or removes packages such that that installed matches exactly those supplied")
+DECLARE_MESSAGE(CmdTestFeaturesAll, (), "", "Runs tests for all ports")
+DECLARE_MESSAGE(
+    CmdTestCIFeatureBaseline,
+    (),
+    "",
+    "Path to the ci.feature.baseline.txt file. Used to skip known failing tests ports and detect regressions")
+DECLARE_MESSAGE(CmdTestFeaturesFailingAbis, (), "", "Path to file to which all failing ABI hashes will be written")
+DECLARE_MESSAGE(CmdTestFeaturesNoCombined, (), "", "Skips testing every feature turned on")
+DECLARE_MESSAGE(CmdTestFeaturesNoCore, (), "", "Skips testing only the 'core' feature turned on")
+DECLARE_MESSAGE(CmdTestFeaturesNoSeparated, (), "", "Skips testing every feature separately")
 DECLARE_MESSAGE(CmdTestFeaturesSynopsis, (), "", "Tests the features of a port")
 DECLARE_MESSAGE(CmdUpdateBaselineOptDryRun, (), "", "Prints out plan without execution")
 DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
@@ -894,8 +904,8 @@ DECLARE_MESSAGE(CommandFailed,
                 "failed with the following output:")
 DECLARE_MESSAGE(CommunityTriplets, (), "", "Community Triplets:")
 DECLARE_MESSAGE(CompilerPath, (msg::path), "", "Compiler found: {path}")
-DECLARE_MESSAGE(ComputeAllAbis, (), "", "Compute all abis ...")
-DECLARE_MESSAGE(ComputeInstallPlans, (msg::count), "", "Compute {count} install plans ...")
+DECLARE_MESSAGE(ComputeAllAbis, (), "", "Computing all ABI hashes...")
+DECLARE_MESSAGE(ComputeInstallPlans, (msg::count), "", "Computing {count} install plans...")
 DECLARE_MESSAGE(ComputingInstallPlan, (), "", "Computing installation plan...")
 DECLARE_MESSAGE(ConfigurationErrorRegistriesWithoutBaseline,
                 (msg::path, msg::url),
@@ -2623,7 +2633,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
                 "\"port_version\" cannot be combined with an embedded '#' in the version")
 DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
-DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Check the binary cache")
+DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
@@ -2730,6 +2740,10 @@ DECLARE_MESSAGE(SkipTestingOfPort,
                 (msg::feature_spec, msg::triplet),
                 "",
                 "Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:")
+DECLARE_MESSAGE(SkipTestingOfPortAlreadyInBinaryCache,
+                (msg::sha),
+                "",
+                "Skipping testing because the ABI hash {sha} is already in the binary cache.")
 DECLARE_MESSAGE(SourceFieldPortNameMismatch,
                 (msg::package_name, msg::path),
                 "{package_name} and \"{path}\" are both names of installable ports/packages. 'Source', "
@@ -2749,6 +2763,10 @@ DECLARE_MESSAGE(SpecifyTargetArch,
                 "'vcpkg help triplet' is a command line that should not be localized",
                 "Target triplet. See 'vcpkg help triplet' (default: {env_var})")
 DECLARE_MESSAGE(StartCodeUnitInContinue, (), "", "found start code unit in continue position")
+DECLARE_MESSAGE(StartingFeatureTest,
+                (msg::value, msg::feature_spec),
+                "{value} is the position in the run, for example '1/4'",
+                "Feature Test [{value}] {feature_spec}")
 DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
 DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
                 (msg::spec, msg::count),
@@ -2871,7 +2889,7 @@ DECLARE_MESSAGE(UnexpectedState,
                 (msg::feature_spec, msg::actual, msg::elapsed),
                 "{actual} is the actual state, e.g. 'pass', 'skip', ...",
                 "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
-DECLARE_MESSAGE(UnexpectedStateCascase,
+DECLARE_MESSAGE(UnexpectedStateCascade,
                 (msg::feature_spec, msg::actual),
                 "{actual} is the actual state, e.g. 'pass', 'skip', ...",
                 "{feature_spec} resulted in the unexpected state {actual} because the following "

@@ -213,7 +213,7 @@ namespace vcpkg
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
             args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder);
-
+        msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());

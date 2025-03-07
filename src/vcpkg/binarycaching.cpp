@@ -773,8 +773,10 @@ namespace
             auto nupkg_path = m_buildtrees / make_feedref(request, m_nuget_prefix).nupkg_filename();
             for (auto&& write_src : m_sources)
             {
-                msg_sink.println(
-                    msgUploadingBinariesToVendor, msg::spec = spec, msg::vendor = "NuGet", msg::path = write_src);
+                msg_sink.println(msgUploadingBinariesToVendor,
+                                 msg::spec = request.display_name,
+                                 msg::vendor = "NuGet",
+                                 msg::path = write_src);
                 if (!m_cmd.push(msg_sink, nupkg_path, nuget_sources_arg({&write_src, 1})))
                 {
                     msg_sink.println(Color::error,
@@ -2563,8 +2565,9 @@ namespace vcpkg
                 }
 
                 m_synchronizer.add_submitted();
-                msg::println(msg::format(
-                    msgSubmittingBinaryCacheBackground, msg::spec = action.spec, msg::count = m_config.write.size()));
+                msg::println(msg::format(msgSubmittingBinaryCacheBackground,
+                                         msg::spec = action.display_name(),
+                                         msg::count = m_config.write.size()));
                 m_actions_to_push.push(ActionToPush{std::move(request), clean_packages});
                 return;
             }
@@ -2634,7 +2637,7 @@ namespace vcpkg
 
                 auto sync_state = m_synchronizer.fetch_add_completed();
                 auto message = msg::format(msgSubmittingBinaryCacheComplete,
-                                           msg::spec = action_to_push.request.spec,
+                                           msg::spec = action_to_push.request.display_name,
                                            msg::count = num_destinations,
                                            msg::elapsed = timer.elapsed());
                 if (sync_state.submission_complete)
@@ -2736,6 +2739,7 @@ namespace vcpkg
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
         : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
+        , display_name(action.display_name())
         , version(action.version())
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {

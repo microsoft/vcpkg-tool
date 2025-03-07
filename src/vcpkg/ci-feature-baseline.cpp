@@ -27,6 +27,11 @@ namespace vcpkg
             }
             return true;
         }
+
+        static constexpr StringLiteral FAIL = "fail";
+        static constexpr StringLiteral SKIP = "skip";
+        static constexpr StringLiteral CASCADE = "cascade";
+        static constexpr StringLiteral PASS = "pass";
     }
 
     CiFeatureBaseline parse_ci_feature_baseline(StringView text,
@@ -73,10 +78,6 @@ namespace vcpkg
             parser.skip_tabs_spaces();
 
             auto cur_loc = parser.cur_loc();
-            static constexpr StringLiteral FAIL = "fail";
-            static constexpr StringLiteral SKIP = "skip";
-            static constexpr StringLiteral CASCADE = "cascade";
-            static constexpr StringLiteral PASS = "pass";
             static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
             static constexpr StringLiteral OPTIONS = "options";
             static constexpr StringLiteral FEATURE_FAIL = "feature-fails";
@@ -246,7 +247,7 @@ namespace vcpkg
 
     bool CiFeatureBaselineEntry::will_fail(const InternalFeatureSet& internal_feature_set) const
     {
-        if (!failing_features.empty() && Util::any_of(internal_feature_set, [&](const auto& feature) {
+        if (!failing_features.empty() && Util::any_of(internal_feature_set, [&](const std::string& feature) {
                 return Util::Sets::contains(failing_features, feature);
             }))
         {
@@ -256,31 +257,24 @@ namespace vcpkg
         {
             return Util::Vectors::contains(fail_configurations, internal_feature_set);
         }
-        return Util::any_of(fail_configurations, [&](auto& fail_configuration) {
+        return Util::any_of(fail_configurations, [&](const std::vector<std::string>& fail_configuration) {
             return fail_configuration.size() == internal_feature_set.size() &&
-                   Util::all_of(internal_feature_set,
-                                [&](auto& feature) { return Util::contains(fail_configuration, feature); });
+                   Util::all_of(internal_feature_set, [&](const std::string& feature) {
+                       return Util::contains(fail_configuration, feature);
+                   });
         });
     }
 
-    std::string to_string(CiFeatureBaselineState state)
-    {
-        std::string s;
-        to_string(s, state);
-        return s;
-    }
-
-    void to_string(std::string& out, CiFeatureBaselineState state)
+    StringLiteral to_string_literal(CiFeatureBaselineState state)
     {
         switch (state)
         {
-            case CiFeatureBaselineState::Fail: out += "fail"; return;
-            case CiFeatureBaselineState::Pass: out += "pass"; return;
-            case CiFeatureBaselineState::Cascade: out += "cascade"; return;
-            case CiFeatureBaselineState::Skip: out += "skip"; return;
-            case CiFeatureBaselineState::FirstFree:;
+            case CiFeatureBaselineState::Fail: return FAIL;
+            case CiFeatureBaselineState::Pass: return PASS;
+            case CiFeatureBaselineState::Cascade: return CASCADE;
+            case CiFeatureBaselineState::Skip: return SKIP;
+            case CiFeatureBaselineState::FirstFree:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-        Checks::unreachable(VCPKG_LINE_INFO);
     }
-
 }

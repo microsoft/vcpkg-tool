@@ -502,7 +502,7 @@ namespace vcpkg
 
             auto summary = install_execute_plan(
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
-
+            msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
             for (auto&& result : summary.results)
             {
                 split_specs->known.erase(result.get_spec());
