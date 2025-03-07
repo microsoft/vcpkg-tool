@@ -372,7 +372,8 @@ namespace vcpkg
 
             {
                 const InstallPlanAction* action = &install_plan.install_actions.back();
-                if (binary_cache.precheck(View<const InstallPlanAction*>(&action, 1)).front() == CacheAvailability::available)
+                if (binary_cache.precheck(View<const InstallPlanAction*>(&action, 1)).front() ==
+                    CacheAvailability::available)
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
                                  msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
