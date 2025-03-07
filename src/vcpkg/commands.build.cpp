@@ -1047,13 +1047,13 @@ namespace vcpkg
             return ExtendedBuildResult{BuildResult::BuildFailed, stdoutlog, std::move(error_logs)};
         }
 
-        const BuildInfo build_info = read_build_info(fs, paths.package_dir(action.spec) / FileBuildInfo);
+        const BuildInfo build_info =
+            read_build_info(fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileBuildInfo);
         size_t error_count = 0;
         {
             FileSink file_sink{fs, stdoutlog, Append::YES};
             TeeSink combo_sink{out_sink, file_sink};
-            error_count = perform_post_build_lint_checks(
-                action.spec, paths, pre_build_info, build_info, scfl.port_directory(), combo_sink);
+            error_count = perform_post_build_lint_checks(action, paths, pre_build_info, build_info, combo_sink);
         };
         if (error_count != 0 && build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
