@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "以前の統合ファイルは削除されませんでした。",
   "ProgramPathReturnedNonzeroExitCode": "終了コード ({exit_code}) で失敗しました",
   "ProgramReturnedNonzeroExitCode": "{tool_name} が終了コード: ({exit_code}) で失敗しました。",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "次のオプションのうち少なくとも 1 つが必要です: --raw --nuget --zip --7zip。",
   "PushingVendorFailed": "{vendor} を \"{path}\" にプッシュできませんでした。詳細については、--debug を使用してください。",
   "RegeneratesArtifactRegistry": "成果物レジストリを再生成します",
   "RegistryCreated": "{path} にレジストリが正常に作成されました",

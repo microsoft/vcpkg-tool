@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "Önceki integral alma dosyası kaldırılamadı.",
   "ProgramPathReturnedNonzeroExitCode": "{exit_code} çıkış koduyla başarısız oldu",
   "ProgramReturnedNonzeroExitCode": "{tool_name}, şu çıkış koduyla başarısız oldu: ({exit_code}).",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "Aşağıdaki seçeneklerden en az biri gereklidir: --raw --nuget --zip --7zip.",
   "PushingVendorFailed": "\"{path}\" yoluna {vendor} gönderimi yapılamadı. Daha fazla bilgi için --debug kullanın.",
   "RegeneratesArtifactRegistry": "Bir yapıt kayıt defterini yeniden üretir",
   "RegistryCreated": "Kayıt defteri {path} yolunda başarıyla oluşturuldu",

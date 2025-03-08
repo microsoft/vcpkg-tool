@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "Предыдущий файл интеграции не был удален.",
   "ProgramPathReturnedNonzeroExitCode": "сбой с кодом завершения {exit_code}",
   "ProgramReturnedNonzeroExitCode": "Сбой средства {tool_name} с кодом завершения {exit_code}.",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "Требуется хотя бы один из следующих параметров: --raw --nuget --zip --7zip.",
   "PushingVendorFailed": "Сбой отправки {vendor} в \"{path}\". Для получения дополнительных сведений, используйте --debug.",
   "RegeneratesArtifactRegistry": "Повторно создает реестр артефактов",
   "RegistryCreated": "Реестр успешно создан в {path}",

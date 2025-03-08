@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "이전 통합 파일이 제거되지 않았습니다.",
   "ProgramPathReturnedNonzeroExitCode": "종료 코드 {exit_code}(으)로 실패했습니다.",
   "ProgramReturnedNonzeroExitCode": "{tool_name}이(가) 종료 코드 ({exit_code})과(와) 함께 실패했습니다.",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "--raw --nuget --zip --7zip 옵션 중 하나 이상이 필요합니다.",
   "PushingVendorFailed": "{vendor}를 \"{path}\"(으)로 푸시하지 못했습니다. 자세한 내용은 --debug를 사용하세요.",
   "RegeneratesArtifactRegistry": "아티팩트 레지스트리를 다시 생성",
   "RegistryCreated": "{path}에 레지스트리를 만들었습니다.",

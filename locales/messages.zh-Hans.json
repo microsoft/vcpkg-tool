@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "未删除以前的集成文件。",
   "ProgramPathReturnedNonzeroExitCode": "失败，退出代码为 {exit_code}",
   "ProgramReturnedNonzeroExitCode": "{tool_name} 失败，退出代码: {exit_code}。",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "至少需要以下其中一个选项: --raw --nuget --zip --7zip。",
   "PushingVendorFailed": "将 {vendor} 推送到“{path}”失败。请使用 --debug 获取详细信息。",
   "RegeneratesArtifactRegistry": "重新生成项目注册表",
   "RegistryCreated": "已在 {path} 下成功创建注册表",

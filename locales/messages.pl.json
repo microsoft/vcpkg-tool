@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "Poprzedni plik integracji nie został usunięty.",
   "ProgramPathReturnedNonzeroExitCode": "nie powiodło się z kodem wyjścia {exit_code}",
   "ProgramReturnedNonzeroExitCode": "Operacja {tool_name} nie powiodła się. Kod zakończenia: ({exit_code}).",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "Wymagana jest co najmniej jedna z następujących opcji: --raw --nuget --zip --7zip.",
   "PushingVendorFailed": "Wypychanie dostawcy {vendor} do lokalizacji \"{path}\" nie powiodło się. Aby uzyskać więcej informacji, użyj parametru --debug.",
   "RegeneratesArtifactRegistry": "Ponownie generuje rejestr artefaktów",
   "RegistryCreated": "Pomyślnie utworzono rejestr w lokalizacji {path}",

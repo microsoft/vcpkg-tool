@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "Předchozí integrační soubor nebyl odebrán.",
   "ProgramPathReturnedNonzeroExitCode": "selhalo s ukončovacím kódem {exit_code}",
   "ProgramReturnedNonzeroExitCode": "Nástroj {tool_name} selhal s ukončovacím kódem {exit_code}.",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "Vyžaduje se aspoň jedna z následujících možností: --raw --nuget --zip --7zip.",
   "PushingVendorFailed": "Nepodařilo se nasdílet změny {vendor} do cesty {path}. Pro další informace použijte --debug.",
   "RegeneratesArtifactRegistry": "Znovu vygeneruje registr artefaktů",
   "RegistryCreated": "Registr na cestě {path} se úspěšně vytvořil.",

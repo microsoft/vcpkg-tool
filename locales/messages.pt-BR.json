@@ -921,7 +921,7 @@
   "PreviousIntegrationFileRemains": "O arquivo de integração anterior não foi removido.",
   "ProgramPathReturnedNonzeroExitCode": "falhou com o código de saída {exit_code}",
   "ProgramReturnedNonzeroExitCode": "{tool_name} falhou com o código de saída: ({exit_code}).",
-  "ProvideExportType": "At least one of the following options are required: --raw --nuget --zip --7zip.",
+  "ProvideExportType": "Pelo menos uma das seguintes opções é necessária: --raw --nuget --zip --7zip.",
   "PushingVendorFailed": "Falha ao enviar {vendor} para \"{path}\". Use --debug para mais informações.",
   "RegeneratesArtifactRegistry": "Regenera um registro de artefato",
   "RegistryCreated": "Registro criado com êxito em {path}",
