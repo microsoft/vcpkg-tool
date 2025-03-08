@@ -157,8 +157,6 @@ namespace vcpkg
         return fmt::format("{}[{}]:{}", this->spec.name(), this->feature, this->spec.triplet());
     }
 
-    std::string BinaryParagraph::dir() const { return this->spec.dir(); }
-
     std::string BinaryParagraph::fullstem() const
     {
         return fmt::format("{}_{}_{}", this->spec.name(), this->version.text, this->spec.triplet());

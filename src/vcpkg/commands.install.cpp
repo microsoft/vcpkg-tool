@@ -555,15 +555,16 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    void install_preclear_plan_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    {
+        purge_packages_dirs(paths, action_plan.remove_actions);
+        install_clear_installed_packages(paths, action_plan.install_actions);
+    }
+
+    void install_clear_installed_packages(const VcpkgPaths& paths, View<InstallPlanAction> install_actions)
     {
         auto& fs = paths.get_filesystem();
-        for (auto&& action : action_plan.remove_actions)
-        {
-            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
-        }
-
-        for (auto&& action : action_plan.install_actions)
+        for (auto&& action : install_actions)
         {
             fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
@@ -628,8 +629,7 @@ namespace vcpkg
         }
 
         database_load_collapse(fs, paths.installed());
-        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
-        return InstallSummary{std::move(results)};
+        return InstallSummary{std::move(results), timer.elapsed()};
     }
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -1131,9 +1131,9 @@ namespace vcpkg
             keep_going,
         };
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         const CreateInstallPlanOptions create_options{nullptr,
                                                       host_triplet,
-                                                      paths.packages(),
                                                       unsupported_port_action,
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
                                                       Util::Enum::to_enum<Editable>(is_editable)};
@@ -1257,6 +1257,7 @@ namespace vcpkg
                                                               dependencies,
                                                               manifest_core.overrides,
                                                               toplevel,
+                                                              packages_dir_assigner,
                                                               create_options)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
@@ -1291,7 +1292,8 @@ namespace vcpkg
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 
         action_plan.print_unsupported_warnings();
         var_provider.load_tag_vars(action_plan, host_triplet);
@@ -1359,7 +1361,7 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
-        install_preclear_packages(paths, action_plan);
+        install_preclear_plan_packages(paths, action_plan);
 
         BinaryCache binary_cache(fs);
         if (!only_downloads)
@@ -1378,8 +1380,8 @@ namespace vcpkg
                                                             action_plan,
                                                             status_db,
                                                             binary_cache,
-                                                            null_build_logs_recorder());
-
+                                                            null_build_logs_recorder);
+        msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
         // success.
         if (keep_going == KeepGoing::Yes)

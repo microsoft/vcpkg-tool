@@ -26,8 +26,6 @@ namespace vcpkg
 
         std::string fullstem() const;
 
-        std::string dir() const;
-
         bool is_feature() const { return !feature.empty(); }
 
         PackageSpec spec;

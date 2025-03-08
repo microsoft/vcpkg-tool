@@ -47,6 +47,6 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, overlays));
-        command_build_and_exit_ex(args, paths, host_triplet, build_options, spec, provider, null_build_logs_recorder());
+        command_build_and_exit_ex(args, paths, host_triplet, build_options, spec, provider, null_build_logs_recorder);
     }
 }

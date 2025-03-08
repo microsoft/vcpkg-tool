@@ -14,6 +14,23 @@
 using namespace vcpkg;
 namespace vcpkg::CMakeVars
 {
+
+    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
+    {
+        std::vector<FullPackageSpec> install_package_specs;
+        std::vector<Path> port_locations;
+        install_package_specs.reserve(action_plan.install_actions.size());
+        port_locations.reserve(action_plan.install_actions.size());
+        for (auto&& action : action_plan.install_actions)
+        {
+            install_package_specs.emplace_back(action.spec, action.feature_list);
+            port_locations.emplace_back(
+                action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
+        }
+
+        load_tag_vars(install_package_specs, port_locations, host_triplet);
+    }
+
     const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
         const PackageSpec& spec, Triplet host_triplet) const
     {
@@ -38,7 +55,9 @@ namespace vcpkg::CMakeVars
 
             void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const override;
 
-            void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const override;
+            void load_tag_vars(View<FullPackageSpec> specs,
+                               View<Path> port_locations,
+                               Triplet host_triplet) const override;
 
             Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
                 Triplet triplet) const override;
@@ -357,18 +376,19 @@ endfunction()
         }
     }
 
-    void TripletCMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
+    void TripletCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
+                                                View<Path> port_locations,
+                                                Triplet host_triplet) const
     {
-        if (action_plan.install_actions.empty()) return;
+        if (specs.empty()) return;
         std::vector<std::pair<FullPackageSpec, std::string>> spec_abi_settings;
-        spec_abi_settings.reserve(action_plan.install_actions.size());
+        spec_abi_settings.reserve(specs.size());
+        Checks::check_exit(VCPKG_LINE_INFO, specs.size() == port_locations.size());
 
-        for (const auto& install_action : action_plan.install_actions)
+        for (size_t i = 0; i < specs.size(); ++i)
         {
-            auto& scfl = install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-            const auto override_path = scfl.port_directory() / "vcpkg-abi-settings.cmake";
-            spec_abi_settings.emplace_back(FullPackageSpec{install_action.spec, install_action.feature_list},
-                                           override_path.generic_u8string());
+            const auto override_path = port_locations[i] / "vcpkg-abi-settings.cmake";
+            spec_abi_settings.emplace_back(specs[i], override_path.generic_u8string());
         }
 
         std::vector<std::vector<std::pair<std::string, std::string>>> vars(spec_abi_settings.size());

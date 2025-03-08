@@ -100,6 +100,7 @@ TEST_CASE ("extract arg from cmake invocation args", "[spdx]")
 
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     scfl.spdx_location = "git://some-vcs-url";
@@ -114,7 +115,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version = Version{"1.0", 5};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -260,6 +261,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -269,7 +271,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -389,6 +391,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
 TEST_CASE ("spdx concat resources", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -398,7 +401,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 

@@ -62,10 +62,12 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               View<FullPackageSpec> specs,
                                               const StatusParagraphs& status_db)
 {
+    PackagesDirAssigner packages_dir_assigner{"pkg"};
     const CreateInstallPlanOptions create_options{
-        nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+        nullptr, Test::X64_ANDROID, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
 
-    return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
+    return create_feature_install_plan(
+        port_provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 }
 
 static ActionPlan create_feature_install_plan(const PortFileProvider& port_provider,
@@ -74,9 +76,11 @@ static ActionPlan create_feature_install_plan(const PortFileProvider& port_provi
                                               const StatusParagraphs& status_db,
                                               Triplet host_triplet)
 {
+    PackagesDirAssigner packages_dir_assigner{"pkg"};
     const CreateInstallPlanOptions create_options{
-        nullptr, host_triplet, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
-    return create_feature_install_plan(port_provider, var_provider, specs, status_db, create_options);
+        nullptr, host_triplet, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+    return create_feature_install_plan(
+        port_provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 }
 
 static ActionPlan create_upgrade_plan(const PortFileProvider& provider,
@@ -84,8 +88,9 @@ static ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                       const std::vector<PackageSpec>& specs,
                                       const StatusParagraphs& status_db)
 {
-    const CreateUpgradePlanOptions create_options{nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error};
-    return create_upgrade_plan(provider, var_provider, specs, status_db, create_options);
+    PackagesDirAssigner packages_dir_assigner{"pkg"};
+    const CreateUpgradePlanOptions create_options{nullptr, Test::X64_ANDROID, UnsupportedPortAction::Error};
+    return create_upgrade_plan(provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 }
 
 TEST_CASE ("basic install scheme", "[plan]")

@@ -46,7 +46,7 @@ namespace vcpkg
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
-                          const Path& packages_dir,
+                          PackagesDirAssigner& packages_dir_assigner,
                           RequestType request_type,
                           UseHeadVersion use_head_version,
                           Editable editable,
@@ -92,6 +92,12 @@ namespace vcpkg
 
     struct ActionPlan
     {
+        ActionPlan() = default;
+        ActionPlan& operator=(const ActionPlan&) = default;
+        ActionPlan(const ActionPlan&) = default;
+        ActionPlan& operator=(ActionPlan&&) = default;
+        ActionPlan(ActionPlan&&) noexcept = default;
+
         bool empty() const { return remove_actions.empty() && already_installed.empty() && install_actions.empty(); }
         size_t size() const { return remove_actions.size() + already_installed.size() + install_actions.size(); }
         void print_unsupported_warnings();
@@ -127,13 +133,11 @@ namespace vcpkg
     {
         CreateInstallPlanOptions(GraphRandomizer* randomizer,
                                  Triplet host_triplet,
-                                 const Path& packages_dir,
                                  UnsupportedPortAction action,
                                  UseHeadVersion use_head_version_if_user_requested,
                                  Editable editable_if_user_requested)
             : randomizer(randomizer)
             , host_triplet(host_triplet)
-            , packages_dir(packages_dir)
             , unsupported_port_action(action)
             , use_head_version_if_user_requested(use_head_version_if_user_requested)
             , editable_if_user_requested(editable_if_user_requested)
@@ -142,7 +146,6 @@ namespace vcpkg
 
         GraphRandomizer* randomizer;
         Triplet host_triplet;
-        Path packages_dir;
         UnsupportedPortAction unsupported_port_action;
         UseHeadVersion use_head_version_if_user_requested;
         Editable editable_if_user_requested;
@@ -150,20 +153,13 @@ namespace vcpkg
 
     struct CreateUpgradePlanOptions
     {
-        CreateUpgradePlanOptions(GraphRandomizer* randomizer,
-                                 Triplet host_triplet,
-                                 const Path& packages_dir,
-                                 UnsupportedPortAction action)
-            : randomizer(randomizer)
-            , host_triplet(host_triplet)
-            , packages_dir(packages_dir)
-            , unsupported_port_action(action)
+        CreateUpgradePlanOptions(GraphRandomizer* randomizer, Triplet host_triplet, UnsupportedPortAction action)
+            : randomizer(randomizer), host_triplet(host_triplet), unsupported_port_action(action)
         {
         }
 
         GraphRandomizer* randomizer;
         Triplet host_triplet;
-        Path packages_dir;
         UnsupportedPortAction unsupported_port_action;
     };
 
@@ -189,12 +185,14 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
+                                           PackagesDirAssigner& packages_dir_assigner,
                                            const CreateInstallPlanOptions& options);
 
     ActionPlan create_upgrade_plan(const PortFileProvider& provider,
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
+                                   PackagesDirAssigner& packages_dir_assigner,
                                    const CreateUpgradePlanOptions& options);
 
     ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& vprovider,
@@ -204,6 +202,7 @@ namespace vcpkg
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
+                                                        PackagesDirAssigner& packages_dir_assigner,
                                                         const CreateInstallPlanOptions& options);
 
     struct FormattedPlan

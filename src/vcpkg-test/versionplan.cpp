@@ -87,17 +87,18 @@ TEST_CASE ("qualified dependency", "[dependencies]")
     MockCMakeVarProvider var_provider;
     var_provider.dep_info_vars[{"a", Test::X64_LINUX}].emplace("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
 
+    PackagesDirAssigner packages_dir_assigner{"pkg"};
     const CreateInstallPlanOptions create_options{
-        nullptr, Test::X64_ANDROID, "pkg", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+        nullptr, Test::X64_ANDROID, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
 
-    auto plan =
-        vcpkg::create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, create_options);
+    auto plan = vcpkg::create_feature_install_plan(
+        map_port, var_provider, Test::parse_test_fspecs("a"), {}, packages_dir_assigner, create_options);
     REQUIRE(plan.install_actions.size() == 2);
     REQUIRE(plan.install_actions.at(0).feature_list == std::vector<std::string>{"core"});
     REQUIRE(plan.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x86-windows");
 
     auto plan2 = vcpkg::create_feature_install_plan(
-        map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {}, create_options);
+        map_port, var_provider, Test::parse_test_fspecs("a:x64-linux"), {}, packages_dir_assigner, create_options);
     REQUIRE(plan2.install_actions.size() == 2);
     REQUIRE(plan2.install_actions[0].feature_list == std::vector<std::string>{"b1", "core"});
     REQUIRE(plan2.install_actions[0].package_dir == "pkg" VCPKG_PREFERRED_SEPARATOR "b_x64-linux");
