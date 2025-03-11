@@ -31,48 +31,6 @@ using namespace vcpkg;
 
 namespace
 {
-    struct CiBuildLogsRecorder final : IBuildLogsRecorder
-    {
-        CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
-
-        virtual void record_build_result(const VcpkgPaths& paths,
-                                         const PackageSpec& spec,
-                                         BuildResult result) const override
-        {
-            if (result == BuildResult::Succeeded)
-            {
-                return;
-            }
-
-            auto& filesystem = paths.get_filesystem();
-            const auto source_path = paths.build_dir(spec);
-            auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
-            Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
-            auto target_path = base_path / spec.name();
-            (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
-            if (children.empty())
-            {
-                auto message =
-                    fmt::format("There are no build logs for {} build.\n"
-                                "This is usually because the build failed early and outside of a task that is logged.\n"
-                                "See the console output logs from vcpkg for more information on the failure.\n",
-                                spec);
-                filesystem.write_contents(std::move(target_path) / "readme.log", message, VCPKG_LINE_INFO);
-            }
-            else
-            {
-                for (const Path& p : children)
-                {
-                    filesystem.copy_file(
-                        p, target_path / p.filename(), CopyOptions::overwrite_existing, VCPKG_LINE_INFO);
-                }
-            }
-        }
-
-    private:
-        Path base_path;
-    };
-
     constexpr CommandSetting CI_SETTINGS[] = {
         {SwitchExclude, msgCISettingsOptExclude},
         {SwitchHostExclude, msgCISettingsOptHostExclude},
@@ -81,7 +39,8 @@ namespace
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
         {SwitchOutputHashes, msgCISettingsOptOutputHashes},
         {SwitchParentHashes, msgCISettingsOptParentHashes},
-    };
+        {SwitchKnownFailuresFrom,
+         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }}};
 
     constexpr CommandSwitch CI_SWITCHES[] = {
         {SwitchDryRun, msgCISwitchOptDryRun},
@@ -125,6 +84,7 @@ namespace
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
                                  const std::vector<FullPackageSpec>& specs,
+                                 PackagesDirAssigner& packages_dir_assigner,
                                  const CreateInstallPlanOptions& serialize_options)
     {
         std::vector<PackageSpec> packages_with_qualified_deps;
@@ -141,23 +101,27 @@ namespace
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
 
         const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
-            return create_feature_install_plan(provider, var_provider, {&spec, 1}, {}, serialize_options)
+            PackagesDirAssigner this_packages_dir_not_used{""};
+            return create_feature_install_plan(
+                       provider, var_provider, {&spec, 1}, {}, this_packages_dir_not_used, serialize_options)
                 .unsupported_features.empty();
         });
 
-        auto action_plan = create_feature_install_plan(provider, var_provider, applicable_specs, {}, serialize_options);
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, applicable_specs, {}, packages_dir_assigner, serialize_options);
         var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, action_plan, var_provider, {});
+        compute_all_abis(paths, action_plan, var_provider, StatusParagraphs{});
         return action_plan;
     }
 
     std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
         ExclusionPredicate is_excluded,
         const std::vector<CacheAvailability>& precheck_results,
+        const std::unordered_set<std::string>& known_failures,
         const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
@@ -176,6 +140,12 @@ namespace
             {
                 ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::Excluded);
+                will_fail.emplace(p->spec);
+            }
+            else if (Util::Sets::contains(known_failures, p->public_abi()))
+            {
+                ret->action_state_string.emplace_back("will fail");
+                ret->known.emplace(p->spec, BuildResult::BuildFailed);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
@@ -355,8 +325,18 @@ namespace vcpkg
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
+        std::unordered_set<std::string> known_failures;
+        auto it_known_failures = settings.find(SwitchKnownFailuresFrom);
+        if (it_known_failures != settings.end())
+        {
+            Path raw_path = it_known_failures->second;
+            auto lines = paths.get_filesystem().read_lines(raw_path).value_or_exit(VCPKG_LINE_INFO);
+            known_failures.insert(lines.begin(), lines.end());
+        }
+
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
 
+        const IBuildLogsRecorder* build_logs_recorder = &null_build_logs_recorder;
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
             auto it_failure_logs = settings.find(SwitchFailureLogs);
@@ -365,12 +345,10 @@ namespace vcpkg
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 fs.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder_storage = fs.almost_canonical(raw_path, VCPKG_LINE_INFO);
+                build_logs_recorder =
+                    &(build_logs_recorder_storage.emplace(fs.almost_canonical(raw_path, VCPKG_LINE_INFO)));
             }
         }
-
-        const IBuildLogsRecorder& build_logs_recorder =
-            build_logs_recorder_storage ? *(build_logs_recorder_storage.get()) : null_build_logs_recorder();
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
@@ -404,18 +382,20 @@ namespace vcpkg
             randomizer = &randomizer_instance;
         }
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
-            randomizer, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto action_plan =
-            compute_full_plan(paths, provider, var_provider, all_default_full_specs, create_install_plan_options);
+            randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto action_plan = compute_full_plan(
+            paths, provider, var_provider, all_default_full_specs, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        const auto precheck_results = binary_cache.precheck(action_plan.install_actions);
-        auto split_specs = compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, action_plan);
+        auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
+        const auto precheck_results = binary_cache.precheck(install_actions);
+        auto split_specs =
+            compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, known_failures, action_plan);
         LocalizedString not_supported_regressions;
         {
             std::string msg;
@@ -517,12 +497,12 @@ namespace vcpkg
                 msg::println_warning(warning);
             }
 
-            install_preclear_packages(paths, action_plan);
+            install_preclear_plan_packages(paths, action_plan);
             binary_cache.fetch(action_plan.install_actions);
 
             auto summary = install_execute_plan(
-                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, build_logs_recorder);
-
+                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
+            msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
             for (auto&& result : summary.results)
             {
                 split_specs->known.erase(result.get_spec());

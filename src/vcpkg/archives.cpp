@@ -321,7 +321,9 @@ namespace vcpkg
         settings.environment = get_clean_environment();
         auto& seven_zip_path = seven_zip.value_or_exit(VCPKG_LINE_INFO);
         auto output = cmd_execute_and_capture_output(
-            context, Command{seven_zip_path}.string_arg("a").string_arg(destination).string_arg(source / "*"));
+            context,
+            Command{seven_zip_path}.string_arg("a").string_arg(destination).string_arg(source / "*"),
+            settings);
         return check_zero_exit_code(context, output, seven_zip_path) != nullptr;
 #else
         RedirectedProcessLaunchSettings settings;
