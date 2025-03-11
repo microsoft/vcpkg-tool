@@ -205,7 +205,6 @@
   "_AssetCacheScriptNeedsSha.comment": "{value} is the script template the user supplied to x-script An example of {url} is https://github.com/microsoft/vcpkg.",
   "AssetCacheScriptNeedsUrl": "the script template {value} requires a URL, but no URL is known for attempted download of {sha}",
   "_AssetCacheScriptNeedsUrl.comment": "{value} is the script template the user supplied to x-script An example of {sha} is eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2d3b3827a3928f0bff7c29f7662293e.",
-  "AssetCacheSuccesfullyStored": "Store success",
   "AssetSourcesArg": "Asset caching sources. See 'vcpkg help assetcaching'",
   "AttemptingToSetBuiltInBaseline": "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in vcpkg-configuration.json.\nthe default-registry from vcpkg-configuration.json will be used.",
   "AuthenticationMayRequireManualAction": "One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.",
