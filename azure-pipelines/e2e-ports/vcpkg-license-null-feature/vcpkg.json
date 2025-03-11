@@ -1,0 +1,10 @@
+{
+  "name": "vcpkg-license-null-feature",
+  "version": "0",
+  "features": {
+    "enable-license": {
+      "description": "Enable license",
+      "license": null
+    }
+  }
+}

@@ -2404,25 +2404,25 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     {
         auto formatted = format_plan(plan, "/builtin");
         CHECK_FALSE(formatted.has_removals);
-        CHECK(formatted.text == "All requested packages are currently installed.\n");
+        CHECK(formatted.all_text() == "All requested packages are currently installed.\n");
     }
 
     plan.remove_actions.push_back(remove_b);
     {
         auto formatted = format_plan(plan, "/builtin");
         CHECK(formatted.has_removals);
-        CHECK(formatted.text == "The following packages will be removed:\n"
-                                "    b:x64-osx\n");
+        CHECK(formatted.all_text() == "The following packages will be removed:\n"
+                                      "    b:x64-osx\n");
     }
 
     plan.remove_actions.push_back(remove_a);
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan, "/builtin").all_text(),
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n");
 
     plan.install_actions.push_back(std::move(install_c));
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan, "/builtin").all_text(),
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2430,7 +2430,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(plan, "c").all_text(),
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2438,7 +2438,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1\n");
 
     plan.install_actions.push_back(std::move(install_b));
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(plan, "c").all_text(),
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "The following packages will be rebuilt:\n"
@@ -2452,7 +2452,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     {
         auto formatted = format_plan(plan, "b");
         CHECK(formatted.has_removals);
-        REQUIRE_LINES(formatted.text,
+        REQUIRE_LINES(formatted.all_text(),
                       "The following packages are already installed:\n"
                       "  * d:x86-windows@1\n"
                       "    e:x86-windows@1\n"
@@ -2464,7 +2464,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     }
 
     plan.install_actions.push_back(std::move(install_f));
-    REQUIRE_LINES(format_plan(plan, "b").text,
+    REQUIRE_LINES(format_plan(plan, "b").all_text(),
                   "The following packages are excluded:\n"
                   "    f:x64-osx@1 -- f\n"
                   "The following packages are already installed:\n"
