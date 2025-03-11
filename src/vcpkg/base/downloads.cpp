@@ -886,13 +886,7 @@ namespace vcpkg
                               View<std::string> headers,
                               const Path& file)
     {
-        if (store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file))
-        {
-            context.statusln(msg::format(msgAssetCacheSuccesfullyStored));
-            return true;
-        }
-
-        return false;
+        return store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file);
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)

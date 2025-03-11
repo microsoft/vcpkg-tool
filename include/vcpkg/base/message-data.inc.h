@@ -293,7 +293,6 @@ DECLARE_MESSAGE(AssetCacheScriptFailedToWriteCorrectHash,
                 (),
                 "",
                 "the asset cache script returned success but the resulting file has an unexpected hash")
-DECLARE_MESSAGE(AssetCacheSuccesfullyStored, (), "", "Store success")
 DECLARE_MESSAGE(AssetSourcesArg, (), "", "Asset caching sources. See 'vcpkg help assetcaching'")
 DECLARE_MESSAGE(ASemanticVersionString, (), "", "a semantic version string")
 DECLARE_MESSAGE(ASetOfFeatures, (), "", "a set of features")
