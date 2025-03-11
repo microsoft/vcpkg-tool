@@ -819,12 +819,12 @@ namespace vcpkg
         return false;
     }
 
-    static bool store_to_asset_cache_impl(DiagnosticContext& context,
-                                          StringView raw_url,
-                                          const SanitizedUrl& sanitized_url,
-                                          StringLiteral method,
-                                          View<std::string> headers,
-                                          const Path& file)
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -877,16 +877,6 @@ namespace vcpkg
         }
 
         return true;
-    }
-
-    bool store_to_asset_cache(DiagnosticContext& context,
-                              StringView raw_url,
-                              const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
-                              View<std::string> headers,
-                              const Path& file)
-    {
-        return store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file);
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
