@@ -71,8 +71,7 @@ $expected = @(
 "A suitable version of cmake was not found \(required v[0-9\.]+\)\.",
 "Trying to download cmake-[0-9.]+-[^.]+\.(zip|tar\.gz) using asset cache file://$assetCacheRegex/[0-9a-f]+"
 "Asset cache miss; trying authoritative source https://github\.com/Kitware/CMake/releases/download/[^ ]+",
-"Successfully downloaded cmake-[0-9.]+-[^.]+\.(zip|tar\.gz), storing to file://$assetCacheRegex/[0-9a-f]+",
-"Store success"
+"Successfully downloaded cmake-[0-9.]+-[^.]+\.(zip|tar\.gz), storing to file://$assetCacheRegex/[0-9a-f]+"
 ) -join "`n"
 
 if (-not ($actual -match $expected)) {
@@ -281,7 +280,6 @@ $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://example\.com",
 "Successfully downloaded example3\.html, storing to file://$assetCacheRegex/[0-9a-f]+",
-"Store success",
 "$"
 ) -join "`n"
 
@@ -344,7 +342,6 @@ $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://example\.com",
 "Successfully downloaded example3\.html, storing to file://$assetCacheRegex/[0-9a-z]+",
-"Store success",
 "$"
 ) -join "`n"
 

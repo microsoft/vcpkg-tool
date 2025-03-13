@@ -260,11 +260,6 @@ namespace vcpkg
         bool rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const;
         bool rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const;
 
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) const = 0;
-
         virtual bool remove(const Path& target, std::error_code& ec) const = 0;
         bool remove(const Path& target, LineInfo li) const;
 

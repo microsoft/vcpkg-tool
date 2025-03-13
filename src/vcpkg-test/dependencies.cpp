@@ -218,6 +218,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
+    PackagesDirAssigner packages_dir_assigner{"pkgs"};
     return create_versioned_install_plan(
         provider,
         bprovider,
@@ -226,7 +227,8 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
         deps,
         overrides,
         toplevel,
-        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
+        packages_dir_assigner,
+        {nullptr, Test::ARM_UWP, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortfileProvider& provider,
@@ -237,6 +239,7 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
                                                            const std::vector<DependencyOverride>& overrides,
                                                            const PackageSpec& toplevel)
 {
+    PackagesDirAssigner packages_dir_assigner{"pkgs"};
     return create_versioned_install_plan(
         provider,
         bprovider,
@@ -245,7 +248,8 @@ static ExpectedL<ActionPlan> create_versioned_install_plan(const IVersionedPortf
         deps,
         overrides,
         toplevel,
-        {nullptr, Test::ARM_UWP, "pkgs", UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
+        packages_dir_assigner,
+        {nullptr, Test::ARM_UWP, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No});
 }
 
 TEST_CASE ("basic version install single", "[versionplan]")
@@ -2369,7 +2373,7 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_c({"c", Test::X64_OSX}, RequestType::AUTO_SELECTED);
 
-    const Path pr = "packages_root";
+    PackagesDirAssigner pr{"packages_root"};
     InstallPlanAction install_a(
         {"a", Test::X64_OSX}, scfl_a, pr, RequestType::AUTO_SELECTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     REQUIRE(install_a.display_name() == "a:x64-osx@1");
@@ -2480,10 +2484,11 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 TEST_CASE ("dependency graph API snapshot: host and target")
 {
     MockVersionedPortfileProvider vp;
+    PackagesDirAssigner packages_dir_assigner{"packages_root"};
     auto& scfl_a = vp.emplace("a", {"1", 0});
     InstallPlanAction install_a({"a", Test::X86_WINDOWS},
                                 scfl_a,
-                                "packages_root",
+                                packages_dir_assigner,
                                 RequestType::AUTO_SELECTED,
                                 UseHeadVersion::No,
                                 Editable::No,
@@ -2492,7 +2497,7 @@ TEST_CASE ("dependency graph API snapshot: host and target")
                                 {});
     InstallPlanAction install_a_host({"a", Test::X64_WINDOWS},
                                      scfl_a,
-                                     "packages_root",
+                                     packages_dir_assigner,
                                      RequestType::AUTO_SELECTED,
                                      UseHeadVersion::No,
                                      Editable::No,

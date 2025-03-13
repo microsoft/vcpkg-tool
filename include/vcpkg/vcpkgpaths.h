@@ -57,7 +57,6 @@ namespace vcpkg
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
-        Path build_info_file_path(const PackageSpec& spec) const;
 
         const TripletDatabase& get_triplet_db() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;

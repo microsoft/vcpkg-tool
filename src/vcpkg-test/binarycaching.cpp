@@ -216,9 +216,10 @@ Build-Depends: bzip
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
 
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
-                          "test_packages_root",
+                          packages_dir_assigner,
                           RequestType::USER_REQUESTED,
                           UseHeadVersion::No,
                           Editable::No,
@@ -342,9 +343,10 @@ Description:
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     std::vector<InstallPlanAction> install_plan;
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
-                              "test_packages_root",
+                              packages_dir_assigner,
                               RequestType::USER_REQUESTED,
                               UseHeadVersion::No,
                               Editable::No,
@@ -420,9 +422,10 @@ Description: a spiffy compression library wrapper
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,
@@ -451,7 +454,7 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,

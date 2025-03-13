@@ -10,6 +10,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.build.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/postbuildlint.h>
@@ -1439,7 +1440,7 @@ namespace vcpkg
             for (auto&& absolute_path : fs.get_regular_files_non_recursive(start_in, IgnoreErrors{}))
             {
                 auto filename = absolute_path.filename();
-                if (filename == "CONTROL" || filename == "BUILD_INFO" || filename == FileDotDsStore)
+                if (filename == FileControl || filename == FileBuildInfo || filename == FileDotDsStore)
                 {
                     continue;
                 }
@@ -1636,7 +1637,7 @@ namespace vcpkg
         return relative_libs;
     }
 
-    static size_t perform_all_checks_and_return_error_count(const PackageSpec& spec,
+    static size_t perform_all_checks_and_return_error_count(const InstallPlanAction& action,
                                                             const VcpkgPaths& paths,
                                                             const PreBuildInfo& pre_build_info,
                                                             const BuildInfo& build_info,
@@ -1646,8 +1647,8 @@ namespace vcpkg
     {
         const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
         const auto& fs = paths.get_filesystem();
-        const auto build_dir = paths.build_dir(spec);
-        const auto package_dir = paths.package_dir(spec);
+        const auto build_dir = paths.build_dir(action.spec);
+        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
         const bool not_release_only = !pre_build_info.build_type;
 
         size_t error_count = 0;
@@ -1659,7 +1660,7 @@ namespace vcpkg
             error_count +=
                 check_for_no_files_in_cmake_helper_port_include_directory(fs, package_dir, portfile_cmake, msg_sink);
             error_count += check_for_vcpkg_port_config_in_cmake_helper_port(
-                fs, package_dir, spec.name(), portfile_cmake, msg_sink);
+                fs, package_dir, action.spec.name(), portfile_cmake, msg_sink);
         }
         else if (!policies.is_enabled(BuildPolicy::EMPTY_INCLUDE_FOLDER))
         {
@@ -1693,7 +1694,8 @@ namespace vcpkg
         }
         if (!policies.is_enabled(BuildPolicy::SKIP_COPYRIGHT_CHECK))
         {
-            error_count += check_for_copyright_file(fs, spec.name(), package_dir, build_dir, portfile_cmake, msg_sink);
+            error_count +=
+                check_for_copyright_file(fs, action.spec.name(), package_dir, build_dir, portfile_cmake, msg_sink);
         }
         if (windows_target && !policies.is_enabled(BuildPolicy::ALLOW_EXES_IN_BIN))
         {
@@ -1702,7 +1704,7 @@ namespace vcpkg
         if (!policies.is_enabled(BuildPolicy::SKIP_USAGE_INSTALL_CHECK))
         {
             error_count +=
-                check_for_usage_forgot_install(fs, port_dir, package_dir, spec.name(), portfile_cmake, msg_sink);
+                check_for_usage_forgot_install(fs, port_dir, package_dir, action.spec.name(), portfile_cmake, msg_sink);
         }
 
         std::vector<Path> relative_debug_libs =
@@ -1884,11 +1886,10 @@ namespace vcpkg
         return false;
     }
 
-    size_t perform_post_build_lint_checks(const PackageSpec& spec,
+    size_t perform_post_build_lint_checks(const InstallPlanAction& action,
                                           const VcpkgPaths& paths,
                                           const PreBuildInfo& pre_build_info,
                                           const BuildInfo& build_info,
-                                          const Path& port_dir,
                                           MessageSink& msg_sink)
     {
         auto& policies = build_info.policies;
@@ -1899,9 +1900,11 @@ namespace vcpkg
         }
 
         msg_sink.println(LocalizedString::from_raw("-- ").append(msgPerformingPostBuildValidation));
+        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        auto port_dir = scfl.port_directory();
         const auto portfile_cmake = port_dir / FilePortfileDotCMake;
         const size_t error_count = perform_all_checks_and_return_error_count(
-            spec, paths, pre_build_info, build_info, port_dir, portfile_cmake, msg_sink);
+            action, paths, pre_build_info, build_info, port_dir, portfile_cmake, msg_sink);
         if (error_count != 0)
         {
             msg_sink.println(Color::warning,
