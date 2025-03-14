@@ -57,4 +57,3 @@ RUN chroot /crossrootfs/arm64 apt-get install -y build-essential symlinks "g++-9
     chroot /crossrootfs/arm64 apt-get install -y build-essential symlinks "g++-9" && \
     chroot /crossrootfs/arm64 symlinks -cr /usr && \
     chroot /crossrootfs/arm64 apt-get clean
-    
