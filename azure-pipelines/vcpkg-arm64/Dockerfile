@@ -15,7 +15,7 @@ RUN tdnf install -y \
         cmake \
         ninja-build \
         # Rootfs build dependencies
-        glibc-devel \
+        libc6-devel \
         bzip2-devel \
         debootstrap \
         libarchive-devel \
