@@ -1,7 +1,7 @@
 # This infrastructure is adapted from that the .NET team uses, see
 # https://github.com/dotnet/dotnet-buildtools-prereqs-docker
 # and
-# https://github.com/dotnet/runtime/blob/main/docs/workflow/building/coreclr/linux-instructions.md
+# https://github.com/dotnet/runtime/blob/main/docs/workflow/building/coreclr/README.md
 FROM mcr.microsoft.com/cbl-mariner/base/core:2.0
 
 RUN tdnf install -y \
