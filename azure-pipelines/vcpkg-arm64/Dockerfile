@@ -15,7 +15,6 @@ RUN tdnf install -y \
         cmake \
         ninja-build \
         # Rootfs build dependencies
-        libc6-devel \
         bzip2-devel \
         debootstrap \
         libarchive-devel \
@@ -44,7 +43,8 @@ RUN chroot /crossrootfs/arm64 apt-get clean && \
     cp /etc/resolv.conf /crossrootfs/arm64/etc/resolv.conf && \
     cp sources.list /crossrootfs/arm64/etc/apt/sources.list && \
     chroot /crossrootfs/arm64 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 60C317803A41BA51845E371A1E9377A2BA9EF27F && \
-    chroot /crossrootfs/arm64 apt-get update -o Acquire::CompressionTypes::Order::=gz
+    chroot /crossrootfs/arm64 apt-get update -o Acquire::CompressionTypes::Order::=gz && \
+    chroot /crossrootfs/arm64 apt-get install -y libc6-dev
 
 # Repeated runs of apt-get install workaround 'hash sum mismatch' errors
 # (This is also why these are a separate cache layer)
