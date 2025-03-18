@@ -1,11 +1,18 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+
 $manifestPath = "$PSScriptRoot/../e2e-projects/export-project"
 $outputDir = "$manifestPath/output"
 Run-Vcpkg install --x-manifest-root=$manifestPath
 Throw-IfFailed
 
 Run-Vcpkg export --zip --x-manifest-root=$manifestPath --output-dir=$outputDir
+Throw-IfFailed
+
+Run-Vcpkg export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
+Throw-IfFailed
+
+Run-Vcpkg export --7zip --x-manifest-root=$manifestPath --output-dir=$outputDir
 Throw-IfFailed
 
 # Check existence of zip file(s)
@@ -15,21 +22,12 @@ if (-Not $zipFilesExist)
     throw "No zip files found in $outputDir"
 }
 
-
-$output = Run-VcpkgAndCaptureOutput export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
-Write-Output $output
-Throw-IfFailed
-
 # Check existence of nuget file(s)
 $nugetFilesExist = Test-Path "$outputDir/*.nupkg"
 if (-Not $nugetFilesExist)
 {
 	throw "No nuget files found in $outputDir"
 }
-
-
-Run-Vcpkg export --7zip --x-manifest-root=$manifestPath --output-dir=$outputDir
-Throw-IfFailed
 
 # Check existence of 7zip file(s)
 $sevenZipFilesExist = Test-Path "$outputDir/*.7z"
