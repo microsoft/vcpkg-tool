@@ -998,124 +998,23 @@ namespace vcpkg
                            Tools::GIT);
     }
 
-    Optional<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map(
+    Optional<std::vector<GitLSTreeEntry>> VcpkgPaths::get_builtin_ports_directory_trees(
         DiagnosticContext& context) const
     {
         auto git_exe = get_tool_exe(
             Tools::GIT,
             out_sink); // this should write to `context` but the tools cache isn't context aware at this time
-        Command prefix(git_exe);
-        prefix.string_arg("-c").string_arg("core.autocrlf=false");
-        RedirectedProcessLaunchSettings launch_settings;
-        launch_settings.working_directory.emplace(this->builtin_ports_directory());
 
-        std::string index_file;
+        const auto maybe_index_file =
+            temp_index_file_path_for_directory(context, git_exe, this->builtin_ports_directory());
+        if (const auto index_file = maybe_index_file.get())
         {
-            Command cmd = prefix;
-            cmd.string_arg("rev-parse");
-            cmd.string_arg("--path-format=absolute");
-            cmd.string_arg("--git-path");
-            cmd.string_arg("index");
-
-            auto maybe_index_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
-            if (auto index_output = check_zero_exit_code(context, maybe_index_result, git_exe))
+            auto maybe_outer_tree_sha =
+                write_git_tree(context, get_filesystem(), git_exe, *index_file, this->builtin_ports_directory());
+            if (const auto outer_tree_sha = maybe_outer_tree_sha.get())
             {
-                auto trimmed = Strings::trim_end(*index_output);
-                auto last_slash = std::find(trimmed.rbegin(), trimmed.rend(), '/').base();
-                if (last_slash == trimmed.begin())
-                {
-                    context.report_error_with_log(
-                        *index_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
-                    context.report(
-                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                    return nullopt;
-                }
-
-                index_output->resize(last_slash - trimmed.begin());
-                fmt::format_to(std::back_inserter(*index_output), "index.{}.tmp", get_process_id());
-                index_file = std::move(*index_output);
+                return ls_tree(context, git_exe, this->builtin_ports_directory(), *outer_tree_sha);
             }
-            else
-            {
-                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                return nullopt;
-            }
-        }
-
-        auto& environment = launch_settings.environment.emplace();
-        environment.add_entry("GIT_INDEX_FILE", index_file);
-        {
-            Command cmd = prefix;
-            cmd.string_arg("--work-tree");
-            cmd.string_arg(".");
-            cmd.string_arg("add");
-            cmd.string_arg("-A");
-
-            auto maybe_add_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
-            if (!check_zero_exit_code(context, maybe_add_result, git_exe))
-            {
-                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                return nullopt;
-            }
-        }
-
-        std::string outer_tree_sha;
-        {
-            Command cmd = prefix;
-            cmd.string_arg("write-tree");
-            auto maybe_write_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
-            if (auto tree_output = check_zero_exit_code(context, maybe_write_tree_result, git_exe))
-            {
-                Strings::inplace_trim_end(*tree_output);
-                outer_tree_sha = std::move(*tree_output);
-            }
-            else
-            {
-                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                return nullopt;
-            }
-        }
-
-        Command cmd = prefix;
-        cmd.string_arg("ls-tree");
-        cmd.string_arg(outer_tree_sha);
-        cmd.string_arg("--full-tree");
-        auto maybe_ls_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
-        get_filesystem().remove(index_file, IgnoreErrors{});
-        if (auto ls_tree_output = check_zero_exit_code(context, maybe_ls_tree_result, git_exe))
-        {
-            std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(*ls_tree_output, '\n');
-            // The first line of the output is always the parent directory itself.
-            for (auto&& line : lines)
-            {
-                // The default output comes in the format:
-                // <mode> SP <type> SP <object> TAB <file>
-                auto split_line = Strings::split(line, '\t');
-                if (split_line.size() != 2)
-                {
-                    Debug::println("couldn't split by tabs");
-                    context.report_error_with_log(
-                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
-                    context.report(
-                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                    return nullopt;
-                }
-
-                auto file_info_section = Strings::split(split_line[0], ' ');
-                if (file_info_section.size() != 3)
-                {
-                    Debug::println("couldn't split by spaces");
-                    context.report_error_with_log(
-                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
-                    context.report(
-                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
-                    return nullopt;
-                }
-
-                ret.emplace(split_line[1], file_info_section.back());
-            }
-            return ret;
         }
 
         context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});

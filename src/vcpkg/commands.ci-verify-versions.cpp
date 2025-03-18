@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -517,8 +518,8 @@ namespace vcpkg
         bool verbose = Util::Sets::contains(parsed_args.switches, SwitchVerbose);
         bool verify_git_trees = Util::Sets::contains(parsed_args.switches, SwitchVerifyGitTrees);
 
-        auto port_git_tree_map =
-            paths.git_get_local_port_treeish_map(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
+        auto port_git_trees =
+            paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         auto versions_database =
             load_all_git_versions_files(fs, paths.builtin_registry_versions).value_or_exit(VCPKG_LINE_INFO);
@@ -530,9 +531,9 @@ namespace vcpkg
         bool success = true;
 
         auto& success_sink = verbose ? stdout_sink : null_sink;
-        for (auto&& tree_map_entry : port_git_tree_map)
+        for (auto&& tree_entry : port_git_trees)
         {
-            auto& port_name = tree_map_entry.first;
+            auto& port_name = tree_entry.file_name;
             auto port_path = paths.builtin_ports_directory() / port_name;
             auto maybe_loaded_port =
                 Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_path}).maybe_scfl;
@@ -540,7 +541,7 @@ namespace vcpkg
             if (loaded_port)
             {
                 success &= verify_local_port_matches_version_database(
-                    errors_sink, success_sink, port_name, *loaded_port, versions_database, tree_map_entry.second);
+                    errors_sink, success_sink, port_name, *loaded_port, versions_database, tree_entry.git_tree_sha);
                 success &= verify_local_port_matches_baseline(errors_sink,
                                                               success_sink,
                                                               baseline,

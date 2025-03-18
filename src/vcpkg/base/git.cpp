@@ -1,9 +1,12 @@
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
+#include <vcpkg/base/system.h>
 #include <vcpkg/base/system.process.h>
 
 #include <vcpkg/tools.h>
@@ -163,5 +166,122 @@ namespace vcpkg
                                git_cmd_builder(config).string_arg("rev-parse").string_arg("--is-shallow-repository")),
                            Tools::GIT)
             .map([](std::string&& output) { return "true" == Strings::trim(std::move(output)); });
+    }
+
+    Optional<std::string> temp_index_file_path_for_directory(DiagnosticContext& context,
+                                                             const Path& git_exe,
+                                                             const Path& target)
+    {
+        Command cmd(git_exe);
+        cmd.string_arg("-c").string_arg("core.autocrlf=false");
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(target);
+        cmd.string_arg("rev-parse");
+        cmd.string_arg("--path-format=absolute");
+        cmd.string_arg("--git-path");
+        cmd.string_arg("index");
+
+        auto maybe_index_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+        if (auto index_output = check_zero_exit_code(context, maybe_index_result, git_exe))
+        {
+            auto trimmed = Strings::trim_end(*index_output);
+            auto last_slash = std::find(trimmed.rbegin(), trimmed.rend(), '/').base();
+            if (last_slash == trimmed.begin())
+            {
+                context.report_error_with_log(
+                    *index_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                return nullopt;
+            }
+
+            index_output->resize(last_slash - trimmed.begin());
+            fmt::format_to(std::back_inserter(*index_output), "index.{}.tmp", get_process_id());
+            return std::move(*index_output);
+        }
+
+        return nullopt;
+    }
+
+    Optional<std::string> write_git_tree(DiagnosticContext& context,
+                                         const Filesystem& fs,
+                                         const Path& git_exe,
+                                         const Path& temp_index_file,
+                                         const Path& target)
+    {
+        Command prefix(git_exe);
+        prefix.string_arg("-c").string_arg("core.autocrlf=false");
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(target);
+
+        auto& environment = launch_settings.environment.emplace();
+        environment.add_entry("GIT_INDEX_FILE", temp_index_file);
+        Command add_cmd = prefix;
+        add_cmd.string_arg("--work-tree");
+        add_cmd.string_arg(".");
+        add_cmd.string_arg("add");
+        add_cmd.string_arg("-A");
+
+        auto maybe_add_result = cmd_execute_and_capture_output(context, add_cmd, launch_settings);
+        if (check_zero_exit_code(context, maybe_add_result, git_exe))
+        {
+            Command& write_tree_cmd = prefix;
+            write_tree_cmd.string_arg("write-tree");
+            auto maybe_write_tree_result = cmd_execute_and_capture_output(context, write_tree_cmd, launch_settings);
+            if (auto tree_output = check_zero_exit_code(context, maybe_write_tree_result, git_exe))
+            {
+                Strings::inplace_trim_end(*tree_output);
+                fs.remove(temp_index_file, IgnoreErrors{});
+                return std::move(*tree_output);
+            }
+        }
+
+        fs.remove(temp_index_file, IgnoreErrors{});
+        return nullopt;
+    }
+
+    Optional<std::vector<GitLSTreeEntry>> ls_tree(DiagnosticContext& context,
+                                                  const Path& git_exe,
+                                                  const Path& working_directory,
+                                                  StringView treeish)
+    {
+        Command cmd(git_exe);
+        cmd.string_arg("-c").string_arg("core.autocrlf=false");
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(working_directory);
+        cmd.string_arg("ls-tree");
+        cmd.string_arg(treeish);
+        cmd.string_arg("--full-tree");
+        auto maybe_ls_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+        if (auto ls_tree_output = check_zero_exit_code(context, maybe_ls_tree_result, git_exe))
+        {
+            std::vector<GitLSTreeEntry> ret;
+            const auto lines = Strings::split(*ls_tree_output, '\n');
+            // The first line of the output is always the parent directory itself.
+            for (auto&& line : lines)
+            {
+                // The default output comes in the format:
+                // <mode> SP <type> SP <object> TAB <file>
+                auto split_line = Strings::split(line, '\t');
+                if (split_line.size() != 2)
+                {
+                    context.report_error_with_log(
+                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                    return nullopt;
+                }
+
+                auto file_info_section = Strings::split(split_line[0], ' ');
+                if (file_info_section.size() != 3)
+                {
+                    context.report_error_with_log(
+                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                    return nullopt;
+                }
+
+                ret.push_back(GitLSTreeEntry{split_line[1], file_info_section.back()});
+            }
+
+            return ret;
+        }
+
+        return nullopt;
     }
 }

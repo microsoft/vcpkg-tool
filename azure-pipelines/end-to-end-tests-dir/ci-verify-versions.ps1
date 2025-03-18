@@ -38,22 +38,22 @@ note: you can run the following commands to add the current version of baseline-
   git add versions
   git commit -m `"Update version database`"
 $TestingRoot/ci-verify-versions-registry/ports/baseline-version-missing/vcpkg.json: message: all version constraints are consistent with the version database
-$TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database: message: dependency-not-in-versions-database@1.0 is correctly in the version database (321c8b400526dc412a987285ef469eec6221a4b4)
-$TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-not-in-versions-database@1.0 matches the current baseline
-$TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database/vcpkg.json: error: the dependency no-versions does not exist in the version database; does that port exist?
 $TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database-feature: message: dependency-not-in-versions-database-feature@1.0 is correctly in the version database (2298ee25ea54ed92595250a2be07d01bdd76f47c)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-not-in-versions-database-feature@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database-feature/vcpkg.json: error: the dependency no-versions does not exist in the version database; does that port exist?
 note: the dependency is in the feature named add-things
-$TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database: message: dependency-version-not-in-versions-database@1.0 is correctly in the version database (f0d44555fe7714929e432ab9e12a436e28ffef9e)
-$TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-version-not-in-versions-database@1.0 matches the current baseline
-$TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database/vcpkg.json: error: the "version>=" constraint to good names version 0.9 which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.
-$TestingRoot/ci-verify-versions-registry/versions/g-/good.json: note: consider removing the version constraint or choosing a value declared here
+$TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database: message: dependency-not-in-versions-database@1.0 is correctly in the version database (321c8b400526dc412a987285ef469eec6221a4b4)
+$TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-not-in-versions-database@1.0 matches the current baseline
+$TestingRoot/ci-verify-versions-registry/ports/dependency-not-in-versions-database/vcpkg.json: error: the dependency no-versions does not exist in the version database; does that port exist?
 $TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database-feature: message: dependency-version-not-in-versions-database-feature@1.0 is correctly in the version database (ba3008bb2d42c61f172b7d9592de0212edf20fc6)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-version-not-in-versions-database-feature@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database-feature/vcpkg.json: error: the "version>=" constraint to good names version 0.9 which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.
 $TestingRoot/ci-verify-versions-registry/versions/g-/good.json: note: consider removing the version constraint or choosing a value declared here
 note: the dependency is in the feature named add-things
+$TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database: message: dependency-version-not-in-versions-database@1.0 is correctly in the version database (f0d44555fe7714929e432ab9e12a436e28ffef9e)
+$TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-version-not-in-versions-database@1.0 matches the current baseline
+$TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database/vcpkg.json: error: the "version>=" constraint to good names version 0.9 which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.
+$TestingRoot/ci-verify-versions-registry/versions/g-/good.json: note: consider removing the version constraint or choosing a value declared here
 $TestingRoot/ci-verify-versions-registry/ports/good: message: good@1.0 is correctly in the version database (0f3d67db0dbb6aa5499bc09367a606b495e16d35)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: good@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/good/vcpkg.json: message: all version constraints are consistent with the version database

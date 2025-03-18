@@ -57,7 +57,6 @@ DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated")
 DECLARE_MESSAGE(AddVersionNoFilesUpdatedForPort, (msg::package_name), "", "No files were updated for {package_name}")
-DECLARE_MESSAGE(AddVersionNoGitSha, (msg::package_name), "", "can't obtain SHA for port {package_name}")
 DECLARE_MESSAGE(AddVersionOldShaIs, (msg::commit_sha), "", "old SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
                 (msg::option),
@@ -77,14 +76,14 @@ DECLARE_MESSAGE(
     (msg::package_name, msg::version),
     "",
     "In {package_name}, {version} is completely new version, so the \"port-version\" field should be removed. Remove "
-    "\"port-version\", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .")
+    "\"port-version\" and try again. To skip this check, rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionPortVersionShouldBeOneMore,
                 (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
                 "",
                 "In {package_name}, the current \"port-version\" for {version} is {count}, so the next added "
                 "\"port-version\" should be {expected_version}, but the port declares \"port-version\" "
-                "{actual_version}. Change \"port-version\" to {expected_version}, commit that change, and try again. "
-                "To skip this check, rerun with --skip-version-format-check .")
+                "{actual_version}. Change \"port-version\" to {expected_version} and try again. To skip this check, "
+                "rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionSuggestVersionDate,
                 (msg::package_name),
                 "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
