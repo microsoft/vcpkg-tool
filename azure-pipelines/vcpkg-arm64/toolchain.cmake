@@ -16,10 +16,6 @@ endfunction()
 
 add_toolchain_linker_flag("-Wl,--rpath-link=/crossrootfs/arm64/lib/aarch64-linux-gnu")
 add_toolchain_linker_flag("-Wl,--rpath-link=/crossrootfs/arm64/usr/lib/aarch64-linux-gnu")
-add_toolchain_linker_flag("-L/crossrootfs/arm64/usr/lib/aarch64-linux-gnu")
-add_toolchain_linker_flag("-L/crossrootfs/arm64/lib/aarch64-linux-gnu")
-add_toolchain_linker_flag("-L/crossrootfs/arm64/usr/lib")
-add_toolchain_linker_flag("-L/crossrootfs/arm64/lib")
 
 set(CMAKE_C_COMPILER /usr/bin/gcc)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
