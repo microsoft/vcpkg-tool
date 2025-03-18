@@ -314,6 +314,7 @@ extends:
         pool:
           name: 'vcpkg-mariner-aarch64-1espt'
           os: linux
+          hostArchitecture: Arm64
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]

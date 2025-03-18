@@ -16,7 +16,8 @@ if (-Not $zipFilesExist)
 }
 
 
-Run-Vcpkg export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
+$output = Run-VcpkgAndCaptureOutput export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
+Write-Output $output
 Throw-IfFailed
 
 # Check existence of nuget file(s)
