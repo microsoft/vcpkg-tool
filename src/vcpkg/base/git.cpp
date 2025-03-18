@@ -30,22 +30,6 @@ namespace
 
 namespace vcpkg
 {
-    std::string try_extract_port_name_from_path(StringView path)
-    {
-        static constexpr StringLiteral prefix = "ports/";
-        static constexpr size_t min_path_size = sizeof("ports/*/") - 1;
-        if (path.size() >= min_path_size && Strings::starts_with(path, prefix))
-        {
-            auto no_prefix = path.substr(prefix.size());
-            auto slash = std::find(no_prefix.begin(), no_prefix.end(), '/');
-            if (slash != no_prefix.end())
-            {
-                return std::string(no_prefix.begin(), slash);
-            }
-        }
-        return {};
-    }
-
     ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView output, StringView cmd_line)
     {
         // Output of git status --porcelain=v1 is in the form:
@@ -171,25 +155,6 @@ namespace vcpkg
         return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
             .append_raw('\n')
             .append_raw(maybe_output.error().to_string());
-    }
-
-    ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config)
-    {
-        auto maybe_results = git_status(config, "ports");
-        if (auto results = maybe_results.get())
-        {
-            std::set<std::string> ret;
-            for (auto&& result : *results)
-            {
-                auto&& port_name = try_extract_port_name_from_path(result.path);
-                if (!port_name.empty())
-                {
-                    ret.emplace(port_name);
-                }
-            }
-            return ret;
-        }
-        return std::move(maybe_results).error();
     }
 
     ExpectedL<bool> is_shallow_clone(const GitConfig& config)

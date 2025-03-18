@@ -43,10 +43,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
-                (),
-                "",
-                "skipping detection of local changes due to unexpected format in git status output")
 DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
 DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
@@ -112,10 +108,6 @@ DECLARE_MESSAGE(
     "actually semantic parts do not apply.\n"
     "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
     "--skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionUncommittedChanges,
-                (msg::package_name),
-                "",
-                "there are uncommitted changes for {package_name}")
 DECLARE_MESSAGE(AddVersionUpdateVersionReminder, (), "", "Did you remember to update the version or port version?")
 DECLARE_MESSAGE(AddVersionUseOptionAll,
                 (msg::command_name, msg::option),
@@ -3240,20 +3232,6 @@ DECLARE_MESSAGE(VersionShaMismatch4,
                 (msg::version_spec),
                 "",
                 "if {version_spec} is not yet published, overwrite the previous git tree by running:")
-DECLARE_MESSAGE(
-    VersionShaMissing1,
-    (),
-    "",
-    "the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.")
-DECLARE_MESSAGE(VersionShaMissing2,
-                (),
-                "",
-                "you can commit your changes and add them to the version database by running:")
-DECLARE_MESSAGE(VersionShaMissing3,
-                (),
-                "This is short for 'work in progress' and must be enclosed in \" quotes if it is more than 1 word",
-                "wip")
-DECLARE_MESSAGE(VersionShaMissing4, (msg::package_name), "", "[{package_name}] Add new port")
 DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                 (),
                 "",

@@ -998,21 +998,94 @@ namespace vcpkg
                            Tools::GIT);
     }
 
-    ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    Optional<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map(
+        DiagnosticContext& context) const
     {
-        const auto cmd = git_cmd_builder({}, {})
-                             .string_arg("-C")
-                             .string_arg(this->builtin_ports_directory())
-                             .string_arg("ls-tree")
-                             .string_arg("-d")
-                             .string_arg("HEAD")
-                             .string_arg("--");
+        auto git_exe = get_tool_exe(
+            Tools::GIT,
+            out_sink); // this should write to `context` but the tools cache isn't context aware at this time
+        Command prefix(git_exe);
+        prefix.string_arg("-c").string_arg("core.autocrlf=false");
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(this->builtin_ports_directory());
 
-        auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
-        if (const auto output = maybe_output.get())
+        std::string index_file;
+        {
+            Command cmd = prefix;
+            cmd.string_arg("rev-parse");
+            cmd.string_arg("--path-format=absolute");
+            cmd.string_arg("--git-path");
+            cmd.string_arg("index");
+
+            auto maybe_index_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+            if (auto index_output = check_zero_exit_code(context, maybe_index_result, git_exe))
+            {
+                auto trimmed = Strings::trim_end(*index_output);
+                auto last_slash = std::find(trimmed.rbegin(), trimmed.rend(), '/').base();
+                if (last_slash == trimmed.begin())
+                {
+                    context.report_error_with_log(
+                        *index_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                    context.report(
+                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                    return nullopt;
+                }
+
+                index_output->resize(last_slash - trimmed.begin());
+                fmt::format_to(std::back_inserter(*index_output), "index.{}.tmp", get_process_id());
+                index_file = std::move(*index_output);
+            }
+            else
+            {
+                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                return nullopt;
+            }
+        }
+
+        auto& environment = launch_settings.environment.emplace();
+        environment.add_entry("GIT_INDEX_FILE", index_file);
+        {
+            Command cmd = prefix;
+            cmd.string_arg("--work-tree");
+            cmd.string_arg(".");
+            cmd.string_arg("add");
+            cmd.string_arg("-A");
+
+            auto maybe_add_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+            if (!check_zero_exit_code(context, maybe_add_result, git_exe))
+            {
+                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                return nullopt;
+            }
+        }
+
+        std::string outer_tree_sha;
+        {
+            Command cmd = prefix;
+            cmd.string_arg("write-tree");
+            auto maybe_write_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+            if (auto tree_output = check_zero_exit_code(context, maybe_write_tree_result, git_exe))
+            {
+                Strings::inplace_trim_end(*tree_output);
+                outer_tree_sha = std::move(*tree_output);
+            }
+            else
+            {
+                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                return nullopt;
+            }
+        }
+
+        Command cmd = prefix;
+        cmd.string_arg("ls-tree");
+        cmd.string_arg(outer_tree_sha);
+        cmd.string_arg("--full-tree");
+        auto maybe_ls_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+        get_filesystem().remove(index_file, IgnoreErrors{});
+        if (auto ls_tree_output = check_zero_exit_code(context, maybe_ls_tree_result, git_exe))
         {
             std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(std::move(*output), '\n');
+            const auto lines = Strings::split(*ls_tree_output, '\n');
             // The first line of the output is always the parent directory itself.
             for (auto&& line : lines)
             {
@@ -1022,18 +1095,22 @@ namespace vcpkg
                 if (split_line.size() != 2)
                 {
                     Debug::println("couldn't split by tabs");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
+                    context.report_error_with_log(
+                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                    context.report(
+                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                    return nullopt;
                 }
 
                 auto file_info_section = Strings::split(split_line[0], ' ');
                 if (file_info_section.size() != 3)
                 {
                     Debug::println("couldn't split by spaces");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
+                    context.report_error_with_log(
+                        *ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
+                    context.report(
+                        DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+                    return nullopt;
                 }
 
                 ret.emplace(split_line[1], file_info_section.back());
@@ -1041,12 +1118,8 @@ namespace vcpkg
             return ret;
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-            .append_raw('\n')
-            .append(std::move(maybe_output).error())
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgWhileGettingLocalTreeIshObjectsForPorts);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+        return nullopt;
     }
 
     ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const

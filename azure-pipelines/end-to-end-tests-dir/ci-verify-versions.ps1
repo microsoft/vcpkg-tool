@@ -7,9 +7,6 @@ git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions commit -m te
 Move-Item "$TestingRoot/ci-verify-versions-registry/old-port-versions/has-local-edits" "$TestingRoot/ci-verify-versions-registry/ports"
 
 $expected = @"
-$TestingRoot/ci-verify-versions-registry/ports/malformed/vcpkg.json:4:3: error: Unexpected character; expected property name
-  on expression:   ~broken
-                   ^
 $TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: bad-git-tree@1.1 git tree 000000070c5f496fcf1a97cf654d5e81f0d2685a does not match the port directory
 $TestingRoot/ci-verify-versions-registry/ports/bad-git-tree: note: the port directory has git tree 6528b2c70c5f496fcf1a97cf654d5e81f0d2685a
 $TestingRoot/ci-verify-versions-registry/ports/bad-git-tree/vcpkg.json: note: if bad-git-tree@1.1 is already published, update this file with a new version or port-version, commit it, then add the new version by running:
@@ -60,15 +57,12 @@ note: the dependency is in the feature named add-things
 $TestingRoot/ci-verify-versions-registry/ports/good: message: good@1.0 is correctly in the version database (0f3d67db0dbb6aa5499bc09367a606b495e16d35)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: good@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/good/vcpkg.json: message: all version constraints are consistent with the version database
-$TestingRoot/ci-verify-versions-registry/ports/has-local-edits/vcpkg.json: error: the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.
-note: you can commit your changes and add them to the version database by running:
-  git add "$TestingRoot/ci-verify-versions-registry/ports/has-local-edits"
-  git commit -m wip
-  vcpkg x-add-version has-local-edits
-  git add versions
-  git commit --amend -m "[has-local-edits] Add new port"
+$TestingRoot/ci-verify-versions-registry/ports/has-local-edits: message: has-local-edits@1.0.0 is correctly in the version database (b1d7f6030942b329a200f16c931c01e2ec9e1e79)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: has-local-edits@1.0.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/has-local-edits/vcpkg.json: message: all version constraints are consistent with the version database
+$TestingRoot/ci-verify-versions-registry/ports/malformed/vcpkg.json:4:3: error: Unexpected character; expected property name
+  on expression:   ~broken
+                   ^
 $TestingRoot/ci-verify-versions-registry/versions/m-/mismatch-git-tree.json: error: mismatch-git-tree@1.0 git tree 41d20d2a02d75343b0933b624faf9f061b112dad does not match the port directory
 $TestingRoot/ci-verify-versions-registry/ports/mismatch-git-tree: note: the port directory has git tree 34b3289caaa7a97950828905d354dc971c3c15a7
 $TestingRoot/ci-verify-versions-registry/ports/mismatch-git-tree/vcpkg.json: note: if mismatch-git-tree@1.0 is already published, update this file with a new version or port-version, commit it, then add the new version by running:

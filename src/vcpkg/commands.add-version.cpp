@@ -457,17 +457,11 @@ namespace vcpkg
         }();
 
         // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
+        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map(console_diagnostic_context);
         auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommitted changes
         auto git_config = paths.git_builtin_config();
-        auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
-        if (!maybe_changes.has_value() && verbose)
-        {
-            msg::println_warning(msgAddVersionDetectLocalChangesError);
-        }
-
         for (auto&& port_name : port_names)
         {
             auto port_dir = paths.builtin_ports_directory() / port_name;
@@ -511,15 +505,6 @@ namespace vcpkg
 
                         continue;
                     }
-                }
-            }
-
-            // find local uncommitted changes on port
-            if (auto changed_ports = maybe_changes.get())
-            {
-                if (Util::Sets::contains(*changed_ports, port_name))
-                {
-                    msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
                 }
             }
 
