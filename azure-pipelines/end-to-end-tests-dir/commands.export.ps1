@@ -1,7 +1,5 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$IsArm64 = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64
-
 $manifestPath = "$PSScriptRoot/../e2e-projects/export-project"
 $outputDir = "$manifestPath/output"
 Run-Vcpkg install --x-manifest-root=$manifestPath
@@ -17,17 +15,17 @@ if (-Not $zipFilesExist)
     throw "No zip files found in $outputDir"
 }
 
-if (-not $IsArm64) {
-	Run-Vcpkg export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
-	Throw-IfFailed
 
-	# Check existence of nuget file(s)
-	$nugetFilesExist = Test-Path "$outputDir/*.nupkg"
-	if (-Not $nugetFilesExist)
-	{
-		throw "No nuget files found in $outputDir"
-	}
+Run-Vcpkg export --nuget --x-manifest-root=$manifestPath --output-dir=$outputDir
+Throw-IfFailed
+
+# Check existence of nuget file(s)
+$nugetFilesExist = Test-Path "$outputDir/*.nupkg"
+if (-Not $nugetFilesExist)
+{
+	throw "No nuget files found in $outputDir"
 }
+
 
 Run-Vcpkg export --7zip --x-manifest-root=$manifestPath --output-dir=$outputDir
 Throw-IfFailed
