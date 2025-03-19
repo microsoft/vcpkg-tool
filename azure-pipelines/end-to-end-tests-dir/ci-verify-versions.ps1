@@ -2,6 +2,7 @@
 
 Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/ci-verify-versions-registry" "$TestingRoot/ci-verify-versions-registry"
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions init
+git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions add --chmod=+x 'ports/executable-bit/some-script.sh'
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions add -A
 git -C "$TestingRoot/ci-verify-versions-registry" @gitConfigOptions commit -m testing
 Move-Item "$TestingRoot/ci-verify-versions-registry/old-port-versions/has-local-edits" "$TestingRoot/ci-verify-versions-registry/ports"
@@ -54,6 +55,9 @@ $TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-version
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: dependency-version-not-in-versions-database@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/dependency-version-not-in-versions-database/vcpkg.json: error: the "version>=" constraint to good names version 0.9 which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.
 $TestingRoot/ci-verify-versions-registry/versions/g-/good.json: note: consider removing the version constraint or choosing a value declared here
+$TestingRoot/ci-verify-versions-registry/ports/executable-bit: message: executable-bit@1.0 is correctly in the version database (6fb9e388021421a5bf6e2cb1f57c67e9ceb6ee43)
+$TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: executable-bit@1.0 matches the current baseline
+$TestingRoot/ci-verify-versions-registry/ports/executable-bit/vcpkg.json: message: all version constraints are consistent with the version database
 $TestingRoot/ci-verify-versions-registry/ports/good: message: good@1.0 is correctly in the version database (0f3d67db0dbb6aa5499bc09367a606b495e16d35)
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: good@1.0 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/good/vcpkg.json: message: all version constraints are consistent with the version database
@@ -123,6 +127,7 @@ $TestingRoot/ci-verify-versions-registry/versions/d-/dependency-not-in-versions-
 $TestingRoot/ci-verify-versions-registry/versions/d-/dependency-not-in-versions-database-feature.json: message: dependency-not-in-versions-database-feature@1.0 is correctly in the version database (2298ee25ea54ed92595250a2be07d01bdd76f47c)
 $TestingRoot/ci-verify-versions-registry/versions/d-/dependency-version-not-in-versions-database.json: message: dependency-version-not-in-versions-database@1.0 is correctly in the version database (f0d44555fe7714929e432ab9e12a436e28ffef9e)
 $TestingRoot/ci-verify-versions-registry/versions/d-/dependency-version-not-in-versions-database-feature.json: message: dependency-version-not-in-versions-database-feature@1.0 is correctly in the version database (ba3008bb2d42c61f172b7d9592de0212edf20fc6)
+$TestingRoot/ci-verify-versions-registry/versions/e-/executable-bit.json: message: executable-bit@1.0 is correctly in the version database (6fb9e388021421a5bf6e2cb1f57c67e9ceb6ee43)
 $TestingRoot/ci-verify-versions-registry/versions/g-/good.json: message: good@1.0 is correctly in the version database (0f3d67db0dbb6aa5499bc09367a606b495e16d35)
 $TestingRoot/ci-verify-versions-registry/versions/h-/has-local-edits.json: message: has-local-edits@1.0.0 is correctly in the version database (b1d7f6030942b329a200f16c931c01e2ec9e1e79)
 $TestingRoot/ci-verify-versions-registry/versions/m-/malformed.json: $buildtreesRoot/versioning_/versions/malformed/a1f22424b0fb1460200c12e1b7933f309f9c8373/vcpkg.json:4:3: error: Unexpected character; expected property name
