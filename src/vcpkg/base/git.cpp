@@ -210,7 +210,7 @@ namespace vcpkg
     bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& index_file, const Path& target)
     {
         Command cmd(git_exe);
-        cmd.string_arg("-c").string_arg("core.autocrlf=false");
+        cmd.string_arg("-c").string_arg("core.autocrlf=false").string_arg("-c").string_arg("core.untrackedCache=false");
         RedirectedProcessLaunchSettings launch_settings;
         launch_settings.working_directory.emplace(target);
         auto& environment = launch_settings.environment.emplace();
