@@ -4,6 +4,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
@@ -1001,19 +1002,28 @@ namespace vcpkg
     Optional<std::vector<GitLSTreeEntry>> VcpkgPaths::get_builtin_ports_directory_trees(
         DiagnosticContext& context) const
     {
-        auto git_exe = get_tool_exe(
-            Tools::GIT,
-            out_sink); // this should write to `context` but the tools cache isn't context aware at this time
+        auto& fs = get_filesystem();
+        // this should write to `context` but the tools cache isn't context aware at this time
+        auto git_exe = get_tool_exe(Tools::GIT, out_sink);
 
-        const auto maybe_index_file =
-            temp_index_file_path_for_directory(context, git_exe, this->builtin_ports_directory());
-        if (const auto index_file = maybe_index_file.get())
+        const auto& builtin_ports = this->builtin_ports_directory();
+        const auto maybe_prefix = git_prefix(context, git_exe, builtin_ports);
+        if (auto prefix = maybe_prefix.get())
         {
-            auto maybe_outer_tree_sha =
-                write_git_tree(context, get_filesystem(), git_exe, *index_file, this->builtin_ports_directory());
-            if (const auto outer_tree_sha = maybe_outer_tree_sha.get())
+            const auto maybe_index_file = git_index_file(context, git_exe, builtin_ports);
+            if (const auto index_file = maybe_index_file.get())
             {
-                return ls_tree(context, git_exe, this->builtin_ports_directory(), *outer_tree_sha);
+                TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", *index_file, get_process_id())};
+                if (fs.copy_file(context, *index_file, temp_index_file.path, CopyOptions::overwrite_existing) &&
+                    git_add_with_index(context, git_exe, temp_index_file.path, builtin_ports))
+                {
+                    auto maybe_outer_tree_sha =
+                        git_write_index_tree(context, git_exe, temp_index_file.path, builtin_ports);
+                    if (const auto outer_tree_sha = maybe_outer_tree_sha.get())
+                    {
+                        return ls_tree(context, git_exe, builtin_ports, fmt::format("{}:{}", *outer_tree_sha, *prefix));
+                    }
+                }
             }
         }
 

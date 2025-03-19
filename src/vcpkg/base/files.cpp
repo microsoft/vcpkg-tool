@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
@@ -2165,6 +2166,22 @@ namespace vcpkg
         return result;
     }
 
+    Optional<bool> Filesystem::copy_file(DiagnosticContext& context,
+                                         const Path& source,
+                                         const Path& destination,
+                                         CopyOptions options) const
+    {
+        std::error_code ec;
+        const bool result = this->copy_file(source, destination, options, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {source, destination}));
+            return nullopt;
+        }
+
+        return result;
+    }
+
     void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li) const
     {
         std::error_code ec;
@@ -4067,4 +4084,8 @@ namespace vcpkg
         }
     }
 #endif // ^^^ !_WIN32
+
+    TempFileDeleter::TempFileDeleter(const Filesystem& fs, const Path& path) : path(path), m_fs(fs) { }
+
+    TempFileDeleter::~TempFileDeleter() { m_fs.remove(path, IgnoreErrors{}); }
 }

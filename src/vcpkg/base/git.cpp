@@ -168,9 +168,25 @@ namespace vcpkg
             .map([](std::string&& output) { return "true" == Strings::trim(std::move(output)); });
     }
 
-    Optional<std::string> temp_index_file_path_for_directory(DiagnosticContext& context,
-                                                             const Path& git_exe,
-                                                             const Path& target)
+    Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target)
+    {
+        Command cmd(git_exe);
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(target);
+        cmd.string_arg("rev-parse");
+        cmd.string_arg("--show-prefix");
+
+        auto maybe_prefix_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+        if (auto prefix_output = check_zero_exit_code(context, maybe_prefix_result, git_exe))
+        {
+            Strings::inplace_trim_end(*prefix_output);
+            return std::move(*prefix_output);
+        }
+
+        return nullopt;
+    }
+
+    Optional<std::string> git_index_file(DiagnosticContext& context, const Path& git_exe, const Path& target)
     {
         Command cmd(git_exe);
         cmd.string_arg("-c").string_arg("core.autocrlf=false");
@@ -184,57 +200,52 @@ namespace vcpkg
         auto maybe_index_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
         if (auto index_output = check_zero_exit_code(context, maybe_index_result, git_exe))
         {
-            auto trimmed = Strings::trim_end(*index_output);
-            auto last_slash = std::find(trimmed.rbegin(), trimmed.rend(), '/').base();
-            if (last_slash == trimmed.begin())
-            {
-                context.report_error_with_log(
-                    *index_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
-                return nullopt;
-            }
-
-            index_output->resize(last_slash - trimmed.begin());
-            fmt::format_to(std::back_inserter(*index_output), "index.{}.tmp", get_process_id());
+            Strings::inplace_trim_end(*index_output);
             return std::move(*index_output);
         }
 
         return nullopt;
     }
 
-    Optional<std::string> write_git_tree(DiagnosticContext& context,
-                                         const Filesystem& fs,
-                                         const Path& git_exe,
-                                         const Path& temp_index_file,
-                                         const Path& target)
+    bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& index_file, const Path& target)
     {
-        Command prefix(git_exe);
-        prefix.string_arg("-c").string_arg("core.autocrlf=false");
+        Command cmd(git_exe);
+        cmd.string_arg("-c").string_arg("core.autocrlf=false");
         RedirectedProcessLaunchSettings launch_settings;
         launch_settings.working_directory.emplace(target);
-
         auto& environment = launch_settings.environment.emplace();
-        environment.add_entry("GIT_INDEX_FILE", temp_index_file);
-        Command add_cmd = prefix;
-        add_cmd.string_arg("--work-tree");
-        add_cmd.string_arg(".");
-        add_cmd.string_arg("add");
-        add_cmd.string_arg("-A");
-
-        auto maybe_add_result = cmd_execute_and_capture_output(context, add_cmd, launch_settings);
+        environment.add_entry("GIT_INDEX_FILE", index_file);
+        cmd.string_arg("add");
+        cmd.string_arg("-A");
+        cmd.string_arg(".");
+        auto maybe_add_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
         if (check_zero_exit_code(context, maybe_add_result, git_exe))
         {
-            Command& write_tree_cmd = prefix;
-            write_tree_cmd.string_arg("write-tree");
-            auto maybe_write_tree_result = cmd_execute_and_capture_output(context, write_tree_cmd, launch_settings);
-            if (auto tree_output = check_zero_exit_code(context, maybe_write_tree_result, git_exe))
-            {
-                Strings::inplace_trim_end(*tree_output);
-                fs.remove(temp_index_file, IgnoreErrors{});
-                return std::move(*tree_output);
-            }
+            return true;
         }
 
-        fs.remove(temp_index_file, IgnoreErrors{});
+        return false;
+    }
+
+    Optional<std::string> git_write_index_tree(DiagnosticContext& context,
+                                               const Path& git_exe,
+                                               const Path& index_file,
+                                               const Path& working_directory)
+    {
+        Command cmd(git_exe);
+        cmd.string_arg("-c").string_arg("core.autocrlf=false");
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.working_directory.emplace(working_directory);
+        auto& environment = launch_settings.environment.emplace();
+        environment.add_entry("GIT_INDEX_FILE", index_file);
+        cmd.string_arg("write-tree");
+        auto maybe_write_tree_result = cmd_execute_and_capture_output(context, cmd, launch_settings);
+        if (auto tree_output = check_zero_exit_code(context, maybe_write_tree_result, git_exe))
+        {
+            Strings::inplace_trim_end(*tree_output);
+            return std::move(*tree_output);
+        }
+
         return nullopt;
     }
 

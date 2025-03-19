@@ -61,15 +61,19 @@ namespace vcpkg
     // Check whether a repository is a shallow clone
     ExpectedL<bool> is_shallow_clone(const GitConfig& config);
 
-    Optional<std::string> temp_index_file_path_for_directory(DiagnosticContext& context,
-                                                             const Path& git_exe,
-                                                             const Path& target);
+    Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target);
 
-    Optional<std::string> write_git_tree(DiagnosticContext& context,
-                                         const Filesystem& fs,
-                                         const Path& git_exe,
-                                         const Path& temp_index_file,
-                                         const Path& target);
+    Optional<std::string> git_index_file(DiagnosticContext& context, const Path& git_exe, const Path& target);
+
+    bool git_add_with_index(DiagnosticContext& context,
+                            const Path& git_exe,
+                            const Path& index_file,
+                            const Path& target);
+
+    Optional<std::string> git_write_index_tree(DiagnosticContext& context,
+                                               const Path& git_exe,
+                                               const Path& index_file,
+                                               const Path& working_directory);
 
     Optional<std::vector<GitLSTreeEntry>> ls_tree(DiagnosticContext& context,
                                                   const Path& git_exe,

@@ -410,7 +410,7 @@ namespace vcpkg
     void command_add_version_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed_args = args.parse_arguments(CommandAddVersionMetadata);
-        const bool add_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
+        bool add_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, SwitchOverwriteVersion);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, SwitchSkipFormattingCheck);
         const bool skip_version_format_check = Util::Sets::contains(parsed_args.switches, SwitchSkipVersionFormatCheck);
@@ -424,7 +424,6 @@ namespace vcpkg
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionFileNotFound, msg::path = baseline_path);
         }
 
-        std::vector<GitLSTreeEntry> port_git_trees;
         if (parsed_args.command_arguments.empty())
         {
             Checks::msg_check_exit(
@@ -433,28 +432,44 @@ namespace vcpkg
                 msg::format(msgAddVersionUseOptionAll, msg::command_name = "x-add-version", msg::option = SwitchAll)
                     .append_raw('\n')
                     .append(msgSeeURL, msg::url = docs::add_version_command_url));
-
-            port_git_trees =
-                paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
         }
-        else
+
+        std::vector<GitLSTreeEntry> port_git_trees =
+            paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
+
+        if (!parsed_args.command_arguments.empty())
         {
             if (add_all)
             {
                 msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
+                add_all = false;
             }
 
-            auto git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
-            auto temp_index_file =
-                temp_index_file_path_for_directory(console_diagnostic_context, git_exe, builtin_ports_directory)
-                    .value_or_exit(VCPKG_LINE_INFO);
+            // note that this doesn't use Util::erase_remove_if to preserve processing the ports in supplied order
+            // rather than alphabetical order
+            std::set<std::string> seen_arguments;
+            std::vector<GitLSTreeEntry> selected_git_trees;
             for (auto&& port_name : parsed_args.command_arguments)
             {
-                auto port_dir = builtin_ports_directory / port_name;
-                auto git_tree = write_git_tree(console_diagnostic_context, fs, git_exe, temp_index_file, port_dir)
-                                    .value_or_exit(VCPKG_LINE_INFO);
-                port_git_trees.push_back(GitLSTreeEntry{port_name, git_tree});
+                if (!seen_arguments.emplace(port_name).second)
+                {
+                    continue;
+                }
+
+                auto it = Util::find_if(port_git_trees,
+                                        [&](const GitLSTreeEntry& entry) { return entry.file_name == port_name; });
+
+                if (it == port_git_trees.end())
+                {
+                    console_diagnostic_context.report_error(
+                        msg::format(msgPortDoesNotExist, msg::package_name = port_name));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                selected_git_trees.push_back(std::move(*it));
             }
+
+            swap(selected_git_trees, port_git_trees);
         }
 
         auto baseline_map = vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
