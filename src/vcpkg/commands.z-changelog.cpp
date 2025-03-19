@@ -27,7 +27,8 @@ namespace vcpkg
     {
         const auto parsed = args.parse_arguments(CommandZChangelogMetadata);
         const StringView git_commit_id_for_previous_snapshot = parsed.command_arguments[0];
-        const auto portsdiff = find_portsdiff(paths, git_commit_id_for_previous_snapshot, "HEAD");
+        const auto portsdiff =
+            find_portsdiff(console_diagnostic_context, paths, git_commit_id_for_previous_snapshot, "HEAD");
 
         std::string result;
         auto total_port_count = paths.get_filesystem()
@@ -39,13 +40,15 @@ namespace vcpkg
         result.append("|---|---|\n");
         result.append("|x86-windows|Building...|\n");
         result.append("|**x64-windows**|Building...|\n");
+        result.append("|x64-windows-release|Building...|\n");
         result.append("|x64-windows-static|Building...|\n");
         result.append("|x64-windows-static-md|Building...|\n");
         result.append("|x64-uwp|Building...|\n");
         result.append("|arm64-windows|Building...|\n");
+        result.append("|arm64-windows-static-md|Building...|\n");
         result.append("|arm64-uwp|Building...|\n");
-        result.append("|**arm64-osx**|Building...|\n");
         result.append("|x64-osx|Building...|\n");
+        result.append("|**arm64-osx**|Building...|\n");
         result.append("|**x64-linux**|Building...|\n");
         result.append("|arm-neon-android|Building...|\n");
         result.append("|x64-android|Building...|\n");

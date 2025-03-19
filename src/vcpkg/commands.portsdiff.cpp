@@ -25,7 +25,9 @@ namespace
         return fmt::format("\t- {:<15} {:<}\n", name, version_diff);
     }
 
-    std::vector<VersionSpec> read_ports_from_commit(const VcpkgPaths& paths, StringView git_commit_id)
+    std::vector<VersionSpec> read_ports_from_commit(DiagnosticContext& context,
+                                                    const VcpkgPaths& paths,
+                                                    StringView git_commit_id)
     {
         auto& fs = paths.get_filesystem();
         const auto dot_git_dir = fs.try_find_file_recursively_up(paths.builtin_ports_directory().parent_path(), ".git")
@@ -39,25 +41,38 @@ namespace
 
         RedirectedProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
-        flatten(cmd_execute_and_capture_output(paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
-                                                   .string_arg("checkout")
-                                                   .string_arg(git_commit_id)
-                                                   .string_arg("-f")
-                                                   .string_arg("-q")
-                                                   .string_arg("--")
-                                                   .string_arg(checkout_this_dir)
-                                                   .string_arg(".vcpkg-root"),
-                                               settings),
-                Tools::GIT)
-            .value_or_exit(VCPKG_LINE_INFO);
-        flatten(cmd_execute_and_capture_output(
-                    paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"), settings),
-                Tools::GIT)
-            .value_or_exit(VCPKG_LINE_INFO);
+        auto maybe_checkout_output =
+            cmd_execute_and_capture_output(context,
+                                           paths.git_cmd_builder(dot_git_dir, temp_checkout_path)
+                                               .string_arg("checkout")
+                                               .string_arg(git_commit_id)
+                                               .string_arg("-f")
+                                               .string_arg("-q")
+                                               .string_arg("--")
+                                               .string_arg(checkout_this_dir)
+                                               .string_arg(".vcpkg-root"),
+                                           settings);
+        if (check_zero_exit_code(context, maybe_checkout_output, Tools::GIT) == nullptr)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto maybe_reset_output = cmd_execute_and_capture_output(
+            context, paths.git_cmd_builder(dot_git_dir, temp_checkout_path).string_arg("reset"), settings);
+        if (check_zero_exit_code(context, maybe_reset_output, Tools::GIT) == nullptr)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         OverlayPortIndexEntry ports_at_commit_index(OverlayPortKind::Directory, temp_checkout_path / ports_dir_name);
         std::map<std::string, const SourceControlFileAndLocation*> ports_at_commit;
-        ports_at_commit_index.try_load_all_ports(fs, ports_at_commit).value_or_exit(VCPKG_LINE_INFO);
+        auto maybe_loaded_all_ports = ports_at_commit_index.try_load_all_ports(fs, ports_at_commit);
+        if (!maybe_loaded_all_ports)
+        {
+            context.report(DiagnosticLine{DiagKind::None, std::move(maybe_loaded_all_ports).error()});
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         fs.remove_all(temp_checkout_path, VCPKG_LINE_INFO);
         return Util::fmap(ports_at_commit,
                           [](const std::pair<const std::string, const SourceControlFileAndLocation*>& cache_entry) {
@@ -65,32 +80,42 @@ namespace
                           });
     }
 
-    void check_commit_exists(const VcpkgPaths& paths, StringView git_commit_id)
+    void check_commit_exists(DiagnosticContext& context, const VcpkgPaths& paths, StringView git_commit_id)
     {
         static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               cmd_execute_and_capture_output(paths.git_cmd_builder(paths.root / ".git", paths.root)
-                                                                  .string_arg("cat-file")
-                                                                  .string_arg("-t")
-                                                                  .string_arg(git_commit_id))
-                                       .value_or_exit(VCPKG_LINE_INFO)
-                                       .output == VALID_COMMIT_OUTPUT,
-                               msgInvalidCommitId,
-                               msg::commit_sha = git_commit_id);
+        auto maybe_cat_file_output =
+            cmd_execute_and_capture_output(context,
+                                           paths.git_cmd_builder(paths.root / ".git", paths.root)
+                                               .string_arg("cat-file")
+                                               .string_arg("-t")
+                                               .string_arg(git_commit_id));
+        if (auto output = check_zero_exit_code(context, maybe_cat_file_output, Tools::GIT))
+        {
+            if (*output != VALID_COMMIT_OUTPUT)
+            {
+                context.report_error(msgInvalidCommitId, msg::commit_sha = git_commit_id);
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
+            return;
+        }
+
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 } // unnamed namespace
 
 namespace vcpkg
 {
-    PortsDiff find_portsdiff(const VcpkgPaths& paths,
+    PortsDiff find_portsdiff(DiagnosticContext& context,
+                             const VcpkgPaths& paths,
                              StringView git_commit_id_for_previous_snapshot,
                              StringView git_commit_id_for_current_snapshot)
     {
-        check_commit_exists(paths, git_commit_id_for_previous_snapshot);
-        check_commit_exists(paths, git_commit_id_for_current_snapshot);
+        check_commit_exists(context, paths, git_commit_id_for_previous_snapshot);
+        check_commit_exists(context, paths, git_commit_id_for_current_snapshot);
 
-        const auto previous = read_ports_from_commit(paths, git_commit_id_for_previous_snapshot);
-        const auto current = read_ports_from_commit(paths, git_commit_id_for_current_snapshot);
+        const auto previous = read_ports_from_commit(context, paths, git_commit_id_for_previous_snapshot);
+        const auto current = read_ports_from_commit(context, paths, git_commit_id_for_current_snapshot);
 
         auto firstPrevious = previous.begin();
         const auto lastPrevious = previous.end();
@@ -174,8 +199,8 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        const auto portsdiff =
-            find_portsdiff(paths, git_commit_id_for_previous_snapshot, git_commit_id_for_current_snapshot);
+        const auto portsdiff = find_portsdiff(
+            console_diagnostic_context, paths, git_commit_id_for_previous_snapshot, git_commit_id_for_current_snapshot);
         const auto& added_ports = portsdiff.added_ports;
 
         LocalizedString print_msg;
