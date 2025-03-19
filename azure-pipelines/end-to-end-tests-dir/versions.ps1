@@ -82,8 +82,6 @@ Throw-IfFailed
 # Validate port-version
 $CurrentTest = "x-add-version octopus"
 Set-EmptyTestPort -Name octopus -Version 1.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
-git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1"
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
@@ -95,11 +93,9 @@ warning: In octopus, 1.0 is completely new version, so the "port-version" field 
 Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
 Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1 to version database"
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 1.0#1"
 
 Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
-git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1"
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
@@ -111,11 +107,9 @@ warning: In octopus, 2.0 is completely new version, so the "port-version" field 
 Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
 Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1 to version database"
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#1"
 
 Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "3" -PortsRoot "$versionFilesPath/ports"
-git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
@@ -127,7 +121,7 @@ warning: In octopus, the current "port-version" for 2.0 is 1, so the next added 
 Run-Vcpkg @portsRedirectArgsOK x-add-version octopus --skip-version-format-check
 Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3 to version database"
+git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
 
 $CurrentTest = "default baseline"
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1
@@ -149,21 +143,17 @@ if (($out -notmatch ".*error: Failed to load port because versions are inconsist
 
 Write-Trace "testing baselines"
 Copy-Item -Recurse "$versionFilesPath/old-ports/zlib-1.2.11-8" "$versionFilesPath/ports/zlib"
-git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-8"
 Run-Vcpkg @portsRedirectArgsOK x-add-version zlib
 Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add zlib-1.2.11-8 to version database"
+git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-8"
 $baselineSha = git -C $versionFilesPath @gitConfigOptions rev-parse HEAD
 Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/ports/zlib"
 Copy-Item -Recurse "$versionFilesPath/old-ports/zlib-1.2.11-9" "$versionFilesPath/ports/zlib"
-git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-9"
 Run-Vcpkg @portsRedirectArgsOK x-add-version zlib
 Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
-git -C $versionFilesPath @gitConfigOptions commit -m "add zlib-1.2.11-9 to version database"
+git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-9"
 
 $CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
 Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
