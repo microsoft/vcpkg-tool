@@ -377,7 +377,10 @@ namespace vcpkg
                     proxy.lpszProxyBypass = env_noproxy_settings.data();
                 }
                 else
+                {
                     proxy.lpszProxyBypass = nullptr;
+                }
+
                 if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
                 {
                     return false;
