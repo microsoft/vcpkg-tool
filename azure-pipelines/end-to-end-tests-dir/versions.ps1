@@ -85,7 +85,7 @@ Set-EmptyTestPort -Name octopus -Version 1.0 -PortVersion "1" -PortsRoot "$versi
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
-warning: In octopus, 1.0 is completely new version, so the "port-version" field should be removed. Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .
+warning: In octopus, 1.0 is a completely new version, so there should be no "port-version". Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .
 "@) {
     throw "Expected detecting present port-version when a new version is added as bad"
 }
@@ -99,7 +99,7 @@ Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "1" -PortsRoot "$versi
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
-warning: In octopus, 2.0 is completely new version, so the "port-version" field should be removed. Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .
+warning: In octopus, 2.0 is a completely new version, so there should be no "port-version". Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .
 "@) {
     throw "Expected detecting present port-version when a new version is added as bad"
 }
@@ -113,7 +113,7 @@ Set-EmptyTestPort -Name octopus -Version 2.0 -PortVersion "3" -PortsRoot "$versi
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
 if ($output -notmatch @"
-warning: In octopus, the current "port-version" for 2.0 is 1, so the next added "port-version" should be 2, but the port declares "port-version" 3. Change "port-version" to 2 and try again. To skip this check, rerun with --skip-version-format-check .
+warning: In octopus, the current "port-version" for 2.0 is 1, so the expected new "port-version" is 2, but the port declares "port-version" 3. Change "port-version" to 2 and try again. To skip this check, rerun with --skip-version-format-check .
 "@) {
     throw "Expected detecting present port-version when a new version is added as bad"
 }
