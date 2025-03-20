@@ -223,7 +223,7 @@
         {
             "name": "linux-arm64-ci",
             "configurePreset": "linux-arm64-ci"
-        }
+        },
         {
             "name": "linux-codespaces",
             "configurePreset": "linux-codespaces"
@@ -232,7 +232,6 @@
             "name": "macos-ci",
             "configurePreset": "macos-ci"
         }
-
     ],
     "testPresets": [
         {
