@@ -156,6 +156,7 @@
                 "CMAKE_SYSTEM_PROCESSOR": "aarch64"
             }
         },
+        {
             "name": "linux-codespaces",
             "inherits": [
                 "base",
