@@ -722,10 +722,6 @@ namespace vcpkg
     Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
     Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
     Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.to_string(); }
-    Path VcpkgPaths::build_info_file_path(const PackageSpec& spec) const
-    {
-        return this->package_dir(spec) / "BUILD_INFO";
-    }
 
     const TripletDatabase& VcpkgPaths::get_triplet_db() const
     {
@@ -1199,12 +1195,6 @@ namespace vcpkg
             return format_filesystem_call_error(ec, "create_directory", {git_tree_temp});
         }
 
-        fs.remove_all(destination, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, "remove_all", {destination});
-        }
-
         auto git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
                                .string_arg("read-tree")
                                .string_arg("-m")
@@ -1232,11 +1222,11 @@ namespace vcpkg
             return error;
         }
 
-        fs.rename_with_retry(git_tree_temp, destination, ec);
+        fs.rename_or_delete(git_tree_temp, destination, ec);
         if (ec)
         {
             return error_prefix().append(
-                format_filesystem_call_error(ec, "rename_with_retry", {git_tree_temp, destination}));
+                format_filesystem_call_error(ec, "rename_or_delete", {git_tree_temp, destination}));
         }
 
         fs.remove(git_tree_index, IgnoreErrors{});

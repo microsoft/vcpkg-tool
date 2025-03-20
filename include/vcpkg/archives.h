@@ -36,12 +36,7 @@ namespace vcpkg
                          MessageSink& status_sink,
                          const Path& archive,
                          const Path& to_path);
-    // set `to_path` to `archive` contents.
-    void set_directory_to_archive_contents(const Filesystem& fs,
-                                           const ToolCache& tools,
-                                           MessageSink& status_sink,
-                                           const Path& archive,
-                                           const Path& to_path);
+    // extract `archive` to a sibling temporary subdirectory of `to_path` and returns that path
     Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
                                               const ToolCache& tools,
                                               MessageSink& status_sink,

@@ -280,11 +280,12 @@ namespace vcpkg
         }
 
         const Filesystem& fs = paths.get_filesystem();
+        std::vector<std::string> all_spec_dirs;
         if (purge == Purge::YES)
         {
             for (auto&& action : plan.not_installed)
             {
-                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+                all_spec_dirs.push_back(action.spec.dir());
             }
         }
 
@@ -298,10 +299,11 @@ namespace vcpkg
             remove_package(fs, paths.installed(), action.spec, status_db);
             if (purge == Purge::YES)
             {
-                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+                all_spec_dirs.push_back(action.spec.dir());
             }
         }
 
+        purge_packages_dirs(paths, all_spec_dirs);
         database_load_collapse(fs, paths.installed());
         Checks::exit_success(VCPKG_LINE_INFO);
     }

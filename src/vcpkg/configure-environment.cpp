@@ -155,7 +155,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
 
         // if artifacts is deployed in development, with Visual Studio, or with the One Liner, it will be deployed here
-        Path vcpkg_artifacts_path = get_exe_path_of_current_process();
+        const Path exe_path = get_exe_path_of_current_process();
+        Path vcpkg_artifacts_path = exe_path;
         vcpkg_artifacts_path.replace_filename("vcpkg-artifacts");
         vcpkg_artifacts_path.make_preferred();
         Path vcpkg_artifacts_main_path = vcpkg_artifacts_path / "main.js";
@@ -177,9 +178,9 @@ namespace vcpkg
 #endif // ^^^ !VCPKG_STANDALONE_BUNDLE_SHA
             if (out_of_date)
             {
-                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
-                auto temp = get_exe_path_of_current_process();
-                temp.replace_filename("vcpkg-artifacts-temp");
+                // This is racy; the reason for the temp-path-then-rename dance is to get only the
+                // 'vcpkg-artifacts' directory out of the standalone bundle, while extracting
+                // the standalone bundle over VCPKG_ROOT would overwrite scripts/triplets/etc.
                 auto maybe_tarball = download_vcpkg_standalone_bundle(
                     console_diagnostic_context, paths.get_asset_cache_settings(), fs, paths.downloads);
                 auto tarball = maybe_tarball.get();
@@ -188,10 +189,12 @@ namespace vcpkg
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                set_directory_to_archive_contents(fs, paths.get_tool_cache(), null_sink, *tarball, temp);
+                Path temp = extract_archive_to_temp_subdirectory(
+                    fs, paths.get_tool_cache(), null_sink, *tarball, vcpkg_artifacts_path);
+                fs.remove_all(vcpkg_artifacts_path, VCPKG_LINE_INFO);
                 fs.rename_with_retry(temp / "vcpkg-artifacts", vcpkg_artifacts_path, VCPKG_LINE_INFO);
-                fs.remove(*tarball, VCPKG_LINE_INFO);
                 fs.remove_all(temp, VCPKG_LINE_INFO);
+                fs.remove(*tarball, VCPKG_LINE_INFO);
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)
                 fs.write_contents(vcpkg_artifacts_version_path, VCPKG_BASE_VERSION_AS_STRING, VCPKG_LINE_INFO);
 #endif // ^^^ VCPKG_STANDALONE_BUNDLE_SHA
@@ -233,7 +236,7 @@ namespace vcpkg
         }
 
         cmd.string_arg("--vcpkg-root").string_arg(paths.root);
-        cmd.string_arg("--z-vcpkg-command").string_arg(get_exe_path_of_current_process());
+        cmd.string_arg("--z-vcpkg-command").string_arg(exe_path);
 
         cmd.string_arg("--z-vcpkg-artifacts-root").string_arg(paths.artifacts());
         cmd.string_arg("--z-vcpkg-downloads").string_arg(paths.downloads);

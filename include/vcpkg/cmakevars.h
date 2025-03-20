@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -31,9 +32,13 @@ namespace vcpkg::CMakeVars
 
         virtual void load_generic_triplet_vars(Triplet triplet) const = 0;
 
-        virtual void load_dep_info_vars(Span<const PackageSpec> specs, Triplet host_triplet) const = 0;
+        virtual void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const = 0;
 
-        virtual void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const = 0;
+        virtual void load_tag_vars(View<FullPackageSpec> specs,
+                                   View<Path> port_locations,
+                                   Triplet host_triplet) const = 0;
+
+        void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const;
     };
 
     std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);
