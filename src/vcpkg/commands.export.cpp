@@ -9,9 +9,6 @@
 #include <vcpkg/commands.export.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/export.chocolatey.h>
-#include <vcpkg/export.ifw.h>
-#include <vcpkg/export.prefab.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
@@ -250,11 +247,8 @@ namespace
         bool dry_run = false;
         bool raw = false;
         bool nuget = false;
-        bool ifw = false;
         bool zip = false;
         bool seven_zip = false;
-        bool chocolatey = false;
-        bool prefab = false;
         bool all_installed = false;
 
         Optional<std::string> maybe_output;
@@ -264,9 +258,6 @@ namespace
         Optional<std::string> maybe_nuget_version;
         Optional<std::string> maybe_nuget_description;
 
-        IFW::Options ifw_options;
-        Prefab::Options prefab_options;
-        Chocolatey::Options chocolatey_options;
         std::vector<PackageSpec> specs;
     };
 
@@ -274,13 +265,8 @@ namespace
         {SwitchDryRun, msgCmdExportOptDryRun},
         {SwitchRaw, msgCmdExportOptRaw},
         {SwitchNuGet, msgCmdExportOptNuget},
-        {SwitchIfw, msgCmdExportOptIFW},
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
-        {SwitchXChocolatey, msgCmdExportOptChocolatey},
-        {SwitchPrefab, msgCmdExportOptPrefab},
-        {SwitchPrefabMaven, msgCmdExportOptMaven},
-        {SwitchPrefabDebug, msgCmdExportOptDebug},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
     };
 
@@ -290,18 +276,6 @@ namespace
         {SwitchNuGetId, msgCmdExportSettingNugetID},
         {SwitchNuGetDescription, msgCmdExportSettingNugetDesc},
         {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
-        {SwitchIfwRepositoryUrl, msgCmdExportSettingRepoURL},
-        {SwitchIfwPackagesDirPath, msgCmdExportSettingPkgDir},
-        {SwitchIfwRepostitoryDirPath, msgCmdExportSettingRepoDir},
-        {SwitchIfwConfigFilePath, msgCmdExportSettingConfigFile},
-        {SwitchIfwInstallerFilePath, msgCmdExportSettingInstallerPath},
-        {SwitchXMaintainer, msgCmdExportSettingChocolateyMaint},
-        {SwitchXVersionSuffix, msgCmdExportSettingChocolateyVersion},
-        {SwitchPrefabGroupId, msgCmdExportSettingPrefabGroupID},
-        {SwitchPrefabArtifactId, msgCmdExportSettingPrefabArtifactID},
-        {SwitchPrefabVersion, msgCmdExportSettingPrefabVersion},
-        {SwitchPrefabMinSdk, msgCmdExportSettingSDKMinVersion},
-        {SwitchPrefabTargetSdk, msgCmdExportSettingSDKTargetVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -316,13 +290,8 @@ namespace
         ret.dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
         ret.raw = Util::Sets::contains(options.switches, SwitchRaw);
         ret.nuget = Util::Sets::contains(options.switches, SwitchNuGet);
-        ret.ifw = Util::Sets::contains(options.switches, SwitchIfw);
         ret.zip = Util::Sets::contains(options.switches, SwitchZip);
         ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
-        ret.chocolatey = Util::Sets::contains(options.switches, SwitchXChocolatey);
-        ret.prefab = Util::Sets::contains(options.switches, SwitchPrefab);
-        ret.prefab_options.enable_maven = Util::Sets::contains(options.switches, SwitchPrefabMaven);
-        ret.prefab_options.enable_debug = Util::Sets::contains(options.switches, SwitchPrefabDebug);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
         ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
 
@@ -373,8 +342,7 @@ namespace
             });
         }
 
-        if (!ret.raw && !ret.nuget && !ret.ifw && !ret.zip && !ret.seven_zip && !ret.dry_run && !ret.chocolatey &&
-            !ret.prefab)
+        if (!ret.raw && !ret.nuget && !ret.zip && !ret.seven_zip && !ret.dry_run)
         {
             msg::println_error(msgProvideExportType);
             msg::write_unlocalized_text(Color::none, CommandExportMetadata.get_example_text());
@@ -411,33 +379,6 @@ namespace
                             {SwitchNuGetId, ret.maybe_nuget_id},
                             {SwitchNuGetVersion, ret.maybe_nuget_version},
                             {SwitchNuGetDescription, ret.maybe_nuget_description},
-                        });
-
-        options_implies(SwitchIfw,
-                        ret.ifw,
-                        {
-                            {SwitchIfwRepositoryUrl, ret.ifw_options.maybe_repository_url},
-                            {SwitchIfwPackagesDirPath, ret.ifw_options.maybe_packages_dir_path},
-                            {SwitchIfwRepostitoryDirPath, ret.ifw_options.maybe_repository_dir_path},
-                            {SwitchIfwConfigFilePath, ret.ifw_options.maybe_config_file_path},
-                            {SwitchIfwInstallerFilePath, ret.ifw_options.maybe_installer_file_path},
-                        });
-
-        options_implies(SwitchPrefab,
-                        ret.prefab,
-                        {
-                            {SwitchPrefabArtifactId, ret.prefab_options.maybe_artifact_id},
-                            {SwitchPrefabGroupId, ret.prefab_options.maybe_group_id},
-                            {SwitchPrefabMinSdk, ret.prefab_options.maybe_min_sdk},
-                            {SwitchPrefabTargetSdk, ret.prefab_options.maybe_target_sdk},
-                            {SwitchPrefabVersion, ret.prefab_options.maybe_version},
-                        });
-
-        options_implies(SwitchXChocolatey,
-                        ret.chocolatey,
-                        {
-                            {SwitchXMaintainer, ret.chocolatey_options.maybe_maintainer},
-                            {SwitchXVersionSuffix, ret.chocolatey_options.maybe_version_suffix},
                         });
 
         return ret;
@@ -649,23 +590,6 @@ namespace vcpkg
         if (opts.raw || opts.nuget || opts.zip || opts.seven_zip)
         {
             handle_raw_based_export(export_plan, opts, export_id, paths);
-        }
-
-        if (opts.ifw)
-        {
-            IFW::do_export(export_plan, export_id, opts.ifw_options, paths);
-
-            print_next_step_info("@RootDir@/src/vcpkg");
-        }
-
-        if (opts.chocolatey)
-        {
-            Chocolatey::do_export(export_plan, paths, opts.chocolatey_options);
-        }
-
-        if (opts.prefab)
-        {
-            Prefab::do_export(export_plan, paths, opts.prefab_options, default_triplet);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

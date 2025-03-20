@@ -553,7 +553,7 @@ extends:
           inputs:
             softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
             softwareName: 'vcpkg'
-            softwareVersionNum: 'N/A'
+            softwareVersionNum: '$(VCPKG_BASE_VERSION)'
             softwareBuildNum: '$(Build.BuildId)'
             symbolsFolder: '$(Build.ArtifactStagingDirectory)\drop'
         - task: PoliCheck@2

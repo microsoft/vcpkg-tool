@@ -12,6 +12,7 @@
 #include <vcpkg/documentation.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
@@ -409,20 +410,20 @@ namespace vcpkg
     void command_add_version_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed_args = args.parse_arguments(CommandAddVersionMetadata);
-        const bool add_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
+        bool add_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
         const bool overwrite_version = Util::Sets::contains(parsed_args.switches, SwitchOverwriteVersion);
         const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, SwitchSkipFormattingCheck);
         const bool skip_version_format_check = Util::Sets::contains(parsed_args.switches, SwitchSkipVersionFormatCheck);
         const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, SwitchVerbose);
 
         auto& fs = paths.get_filesystem();
+        const auto& builtin_ports_directory = paths.builtin_ports_directory();
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
         if (!fs.exists(baseline_path, IgnoreErrors{}))
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionFileNotFound, msg::path = baseline_path);
         }
 
-        std::vector<std::string> port_names;
         if (parsed_args.command_arguments.empty())
         {
             Checks::msg_check_exit(
@@ -431,48 +432,54 @@ namespace vcpkg
                 msg::format(msgAddVersionUseOptionAll, msg::command_name = "x-add-version", msg::option = SwitchAll)
                     .append_raw('\n')
                     .append(msgSeeURL, msg::url = docs::add_version_command_url));
-
-            for (auto&& port_dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
-            {
-                port_names.emplace_back(port_dir.stem().to_string());
-            }
         }
-        else
+
+        std::vector<GitLSTreeEntry> port_git_trees =
+            paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
+
+        if (!parsed_args.command_arguments.empty())
         {
             if (add_all)
             {
                 msg::println_warning(msgAddVersionIgnoringOptionAll, msg::option = SwitchAll);
+                add_all = false;
             }
 
-            port_names = std::move(parsed_args.command_arguments);
+            // note that this doesn't use Util::erase_remove_if to preserve processing the ports in supplied order
+            // rather than alphabetical order
+            std::set<std::string> seen_arguments;
+            std::vector<GitLSTreeEntry> selected_git_trees;
+            for (auto&& port_name : parsed_args.command_arguments)
+            {
+                if (!seen_arguments.emplace(port_name).second)
+                {
+                    continue;
+                }
+
+                auto it = Util::find_if(port_git_trees,
+                                        [&](const GitLSTreeEntry& entry) { return entry.file_name == port_name; });
+
+                if (it == port_git_trees.end())
+                {
+                    console_diagnostic_context.report_error(
+                        msg::format(msgPortDoesNotExist, msg::package_name = port_name));
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                selected_git_trees.push_back(std::move(*it));
+            }
+
+            swap(selected_git_trees, port_git_trees);
         }
 
-        auto baseline_map = [&]() -> std::map<std::string, vcpkg::Version, std::less<>> {
-            if (!fs.exists(baseline_path, IgnoreErrors{}))
-            {
-                return std::map<std::string, vcpkg::Version, std::less<>>{};
-            }
-
-            return vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
-        }();
-
-        // Get tree-ish from local repository state.
-        auto maybe_git_tree_map = paths.git_get_local_port_treeish_map();
-        auto& git_tree_map = maybe_git_tree_map.value_or_exit(VCPKG_LINE_INFO);
+        auto baseline_map = vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
 
         // Find ports with uncommitted changes
-        auto git_config = paths.git_builtin_config();
-        auto maybe_changes = git_ports_with_uncommitted_changes(git_config);
-        if (!maybe_changes.has_value() && verbose)
+        for (auto&& port_git_tree_entry : port_git_trees)
         {
-            msg::println_warning(msgAddVersionDetectLocalChangesError);
-        }
-
-        for (auto&& port_name : port_names)
-        {
-            auto port_dir = paths.builtin_ports_directory() / port_name;
-            auto load_result = Paragraphs::try_load_port_required(
-                fs, port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+            auto& port_name = port_git_tree_entry.file_name;
+            auto port_dir = builtin_ports_directory / port_name;
+            auto load_result = Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_dir});
             auto& maybe_scfl = load_result.maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
@@ -514,42 +521,17 @@ namespace vcpkg
                 }
             }
 
-            // find local uncommitted changes on port
-            if (auto changed_ports = maybe_changes.get())
-            {
-                if (Util::Sets::contains(*changed_ports, port_name))
-                {
-                    msg::println_warning(msgAddVersionUncommittedChanges, msg::package_name = port_name);
-                }
-            }
-
             auto schemed_version = scfl->source_control_file->to_schemed_version();
-            auto git_tree_it = git_tree_map.find(port_name);
-            if (git_tree_it == git_tree_map.end())
-            {
-                msg::println_warning(msg::format(msgAddVersionNoGitSha, msg::package_name = port_name)
-                                         .append_raw("\n-- ")
-                                         .append(msgAddVersionCommitChangesReminder)
-                                         .append_raw("\n***")
-                                         .append(msgAddVersionNoFilesUpdated)
-                                         .append_raw("\n***")
-                                         .append(msgSeeURL, msg::url = docs::add_version_command_url)
-                                         .append_raw("***"));
-                if (add_all) continue;
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            const auto& git_tree = git_tree_it->second;
             auto updated_versions_file = update_version_db_file(paths,
                                                                 port_name,
                                                                 schemed_version,
-                                                                git_tree,
+                                                                port_git_tree_entry.git_tree_sha,
                                                                 overwrite_version,
                                                                 verbose,
                                                                 add_all,
                                                                 skip_version_format_check);
-            auto updated_baseline_file = update_baseline_version(
-                paths.get_filesystem(), port_name, schemed_version.version, baseline_path, baseline_map, verbose);
+            auto updated_baseline_file =
+                update_baseline_version(fs, port_name, schemed_version.version, baseline_path, baseline_map, verbose);
             if (verbose && updated_versions_file == UpdateResult::NotUpdated &&
                 updated_baseline_file == UpdateResult::NotUpdated)
             {

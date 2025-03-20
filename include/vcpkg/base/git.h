@@ -1,8 +1,11 @@
 #pragma once
 
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 
@@ -42,9 +45,11 @@ namespace vcpkg
         std::string old_path;
     };
 
-    // Try to extract a port name from a path.
-    // The path should start with the "ports/" prefix
-    std::string try_extract_port_name_from_path(StringView path);
+    struct GitLSTreeEntry
+    {
+        std::string file_name;
+        std::string git_tree_sha;
+    };
 
     // Attempts to parse the git status output returns a parsing error message on failure
     ExpectedL<std::vector<GitStatusLine>> parse_git_status_output(StringView git_status_output,
@@ -53,9 +58,25 @@ namespace vcpkg
     // Run git status on a repository, optionaly a specific subpath can be queried
     ExpectedL<std::vector<GitStatusLine>> git_status(const GitConfig& config, StringView path = "");
 
-    // Returns a list of ports that have uncommitted/unmerged changes
-    ExpectedL<std::set<std::string>> git_ports_with_uncommitted_changes(const GitConfig& config);
-
     // Check whether a repository is a shallow clone
     ExpectedL<bool> is_shallow_clone(const GitConfig& config);
+
+    Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target);
+
+    Optional<std::string> git_index_file(DiagnosticContext& context, const Path& git_exe, const Path& target);
+
+    bool git_add_with_index(DiagnosticContext& context,
+                            const Path& git_exe,
+                            const Path& index_file,
+                            const Path& target);
+
+    Optional<std::string> git_write_index_tree(DiagnosticContext& context,
+                                               const Path& git_exe,
+                                               const Path& index_file,
+                                               const Path& working_directory);
+
+    Optional<std::vector<GitLSTreeEntry>> ls_tree(DiagnosticContext& context,
+                                                  const Path& git_exe,
+                                                  const Path& working_directory,
+                                                  StringView treeish);
 }

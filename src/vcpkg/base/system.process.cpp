@@ -587,6 +587,7 @@ namespace vcpkg
             // Enables proxy information to be passed to Curl, the underlying download library in cmake.exe
             "http_proxy",
             "https_proxy",
+            "no_proxy",
             // Environment variables to tell git to use custom SSH executable or command
             "GIT_SSH",
             "GIT_SSH_COMMAND",
@@ -1227,7 +1228,11 @@ namespace
             if (pid != -1)
             {
                 int status;
-                const auto child = waitpid(pid, &status, 0);
+                pid_t child;
+                do
+                {
+                    child = waitpid(pid, &status, 0);
+                } while (child == -1 && errno == EINTR);
                 if (child != pid)
                 {
                     context.report_system_error("waitpid", errno);

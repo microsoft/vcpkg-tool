@@ -367,7 +367,20 @@ namespace vcpkg
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();
-                proxy.lpszProxyBypass = nullptr;
+
+                // Try to get bypass list from environment variable
+                auto maybe_no_proxy_env = get_environment_variable(EnvironmentVariableNoProxy);
+                std::wstring env_noproxy_settings;
+                if (auto p_no_proxy = maybe_no_proxy_env.get())
+                {
+                    env_noproxy_settings = Strings::to_utf16(*p_no_proxy);
+                    proxy.lpszProxyBypass = env_noproxy_settings.data();
+                }
+                else
+                {
+                    proxy.lpszProxyBypass = nullptr;
+                }
+
                 if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
                 {
                     return false;
@@ -819,12 +832,12 @@ namespace vcpkg
         return false;
     }
 
-    static bool store_to_asset_cache_impl(DiagnosticContext& context,
-                                          StringView raw_url,
-                                          const SanitizedUrl& sanitized_url,
-                                          StringLiteral method,
-                                          View<std::string> headers,
-                                          const Path& file)
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
@@ -877,22 +890,6 @@ namespace vcpkg
         }
 
         return true;
-    }
-
-    bool store_to_asset_cache(DiagnosticContext& context,
-                              StringView raw_url,
-                              const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
-                              View<std::string> headers,
-                              const Path& file)
-    {
-        if (store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file))
-        {
-            context.statusln(msg::format(msgAssetCacheSuccesfullyStored));
-            return true;
-        }
-
-        return false;
     }
 
     std::string format_url_query(StringView base_url, View<std::string> query_params)
