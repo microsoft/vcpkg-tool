@@ -167,8 +167,8 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
 
 // these are sucked out to avoid
 // warning C6262: Function uses '98624' bytes of stack.  Consider moving some data to heap.
-static wchar_t https_proxy_env[32767];
-static wchar_t no_proxy_env[32767];
+static wchar_t https_proxy_env[32768];
+static wchar_t no_proxy_env[32768];
 static char buffer[32768];
 
 #ifndef NDEBUG
