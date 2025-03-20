@@ -4,6 +4,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
@@ -998,55 +999,36 @@ namespace vcpkg
                            Tools::GIT);
     }
 
-    ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    Optional<std::vector<GitLSTreeEntry>> VcpkgPaths::get_builtin_ports_directory_trees(
+        DiagnosticContext& context) const
     {
-        const auto cmd = git_cmd_builder({}, {})
-                             .string_arg("-C")
-                             .string_arg(this->builtin_ports_directory())
-                             .string_arg("ls-tree")
-                             .string_arg("-d")
-                             .string_arg("HEAD")
-                             .string_arg("--");
+        auto& fs = get_filesystem();
+        // this should write to `context` but the tools cache isn't context aware at this time
+        auto git_exe = get_tool_exe(Tools::GIT, out_sink);
 
-        auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
-        if (const auto output = maybe_output.get())
+        const auto& builtin_ports = this->builtin_ports_directory();
+        const auto maybe_prefix = git_prefix(context, git_exe, builtin_ports);
+        if (auto prefix = maybe_prefix.get())
         {
-            std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(std::move(*output), '\n');
-            // The first line of the output is always the parent directory itself.
-            for (auto&& line : lines)
+            const auto maybe_index_file = git_index_file(context, git_exe, builtin_ports);
+            if (const auto index_file = maybe_index_file.get())
             {
-                // The default output comes in the format:
-                // <mode> SP <type> SP <object> TAB <file>
-                auto split_line = Strings::split(line, '\t');
-                if (split_line.size() != 2)
+                TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", *index_file, get_process_id())};
+                if (fs.copy_file(context, *index_file, temp_index_file.path, CopyOptions::overwrite_existing) &&
+                    git_add_with_index(context, git_exe, temp_index_file.path, builtin_ports))
                 {
-                    Debug::println("couldn't split by tabs");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
+                    auto maybe_outer_tree_sha =
+                        git_write_index_tree(context, git_exe, temp_index_file.path, builtin_ports);
+                    if (const auto outer_tree_sha = maybe_outer_tree_sha.get())
+                    {
+                        return ls_tree(context, git_exe, builtin_ports, fmt::format("{}:{}", *outer_tree_sha, *prefix));
+                    }
                 }
-
-                auto file_info_section = Strings::split(split_line[0], ' ');
-                if (file_info_section.size() != 3)
-                {
-                    Debug::println("couldn't split by spaces");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
-                }
-
-                ret.emplace(split_line[1], file_info_section.back());
             }
-            return ret;
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-            .append_raw('\n')
-            .append(std::move(maybe_output).error())
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgWhileGettingLocalTreeIshObjectsForPorts);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+        return nullopt;
     }
 
     ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const

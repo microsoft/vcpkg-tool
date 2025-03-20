@@ -95,7 +95,7 @@ namespace
     // To disambiguate between two overloads
     constexpr struct
     {
-        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+        bool operator()(char c) const noexcept { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
     } is_space_char;
 
     constexpr struct
@@ -271,8 +271,13 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
 
 void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    inplace_trim_end(s);
     s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
+}
+
+void Strings::inplace_trim_end(std::string& s)
+{
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
 }
 
 StringView Strings::trim(StringView sv)
@@ -280,6 +285,12 @@ StringView Strings::trim(StringView sv)
     auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
     auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
+}
+
+StringView Strings::trim_end(StringView sv)
+{
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    return StringView(sv.begin(), last);
 }
 
 void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)

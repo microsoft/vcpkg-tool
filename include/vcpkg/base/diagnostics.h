@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
@@ -12,16 +14,6 @@
 
 namespace vcpkg
 {
-    enum class DiagKind
-    {
-        None,    // foo.h: localized
-        Message, // foo.h: message: localized
-        Error,   // foo.h: error: localized
-        Warning, // foo.h: warning: localized
-        Note,    // foo.h: note: localized
-        COUNT
-    };
-
     struct TextRowCol
     {
         // '0' indicates that line and column information is unknown; '1' is the first row/column
@@ -241,10 +233,6 @@ namespace vcpkg
 
         DiagnosticContext& inner_context;
     };
-
-    extern DiagnosticContext& console_diagnostic_context;
-    extern DiagnosticContext& status_only_diagnostic_context;
-    extern DiagnosticContext& null_diagnostic_context;
 
     // The following overloads are implementing
     // adapt_context_to_expected(Fn functor, Args&&... args)

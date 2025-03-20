@@ -19,6 +19,7 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
@@ -120,8 +121,7 @@ namespace vcpkg
         LocalizedString get_current_git_sha_baseline_message() const;
         ExpectedL<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
-
-        ExpectedL<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
+        Optional<std::vector<GitLSTreeEntry>> get_builtin_ports_directory_trees(DiagnosticContext& context) const;
 
         // Git manipulation for remote registries
         // runs `git fetch {uri} {treeish}`, and returns the hash of FETCH_HEAD.
