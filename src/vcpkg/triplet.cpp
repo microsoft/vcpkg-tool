@@ -110,19 +110,9 @@ namespace vcpkg
         return Strings::starts_with(path, community_triplet_directory);
     }
 
-    bool TripletDatabase::is_community_triplet(Triplet triplet) const
-    {
-        return is_community_triplet_path(get_triplet_file_path(triplet));
-    }
-
     bool TripletDatabase::is_overlay_triplet_path(const Path& path) const
     {
         return !Strings::starts_with(path, default_triplet_directory) && !is_community_triplet_path(path);
-    }
-
-    bool TripletDatabase::is_overlay_triplet(Triplet triplet) const
-    {
-        return is_overlay_triplet_path(get_triplet_file_path(triplet));
     }
 
     bool TripletDatabase::is_valid_triplet_canonical_name(StringView name) const
