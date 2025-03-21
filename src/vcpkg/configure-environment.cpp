@@ -111,7 +111,8 @@ namespace vcpkg
                                                     const Path& download_root)
     {
 #if defined(VCPKG_STANDALONE_BUNDLE_SHA)
-        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-" VCPKG_BASE_VERSION_AS_STRING ".tar.gz";
+        static constexpr StringLiteral tarball_name = "vcpkg-standalone-bundle-" VCPKG_BASE_VERSION_AS_STRING ".tar.gz";
+        const auto bundle_tarball = download_root / tarball_name;
         context.statusln(msg::format(msgDownloadingVcpkgStandaloneBundle, msg::version = VCPKG_BASE_VERSION_AS_STRING));
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING
@@ -123,12 +124,14 @@ namespace vcpkg
                                         bundle_uri,
                                         {},
                                         bundle_tarball,
+                                        tarball_name,
                                         MACRO_TO_STRING(VCPKG_STANDALONE_BUNDLE_SHA)))
         {
             return nullopt;
         }
 #else  // ^^^ VCPKG_STANDALONE_BUNDLE_SHA / !VCPKG_STANDALONE_BUNDLE_SHA vvv
-        const auto bundle_tarball = download_root / "vcpkg-standalone-bundle-latest.tar.gz";
+        static constexpr StringLiteral latest_tarball_name = "vcpkg-standalone-bundle-latest.tar.gz";
+        const auto bundle_tarball = download_root / latest_tarball_name;
         context.report(DiagnosticLine{DiagKind::Warning, msg::format(msgDownloadingVcpkgStandaloneBundleLatest)});
         std::error_code ec;
         fs.remove(bundle_tarball, ec);
@@ -140,8 +143,15 @@ namespace vcpkg
 
         const auto bundle_uri =
             "https://github.com/microsoft/vcpkg-tool/releases/latest/download/vcpkg-standalone-bundle.tar.gz";
-        if (!download_file_asset_cached(
-                context, null_sink, asset_cache_settings, fs, bundle_uri, {}, bundle_tarball, nullopt))
+        if (!download_file_asset_cached(context,
+                                        null_sink,
+                                        asset_cache_settings,
+                                        fs,
+                                        bundle_uri,
+                                        {},
+                                        bundle_tarball,
+                                        latest_tarball_name,
+                                        nullopt))
         {
             return nullopt;
         }
