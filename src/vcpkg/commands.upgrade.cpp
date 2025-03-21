@@ -67,15 +67,13 @@ namespace vcpkg
             CleanBuildtrees::Yes,
             CleanPackages::Yes,
             CleanDownloads::No,
-            DownloadTool::Builtin,
             BackcompatFeatures::Allow,
             keep_going,
         };
 
-        const CreateUpgradePlanOptions create_upgrade_plan_options{
-            nullptr, host_triplet, paths.packages(), unsupported_port_action};
+        const CreateUpgradePlanOptions create_upgrade_plan_options{nullptr, host_triplet, unsupported_port_action};
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
 
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
@@ -84,6 +82,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         ActionPlan action_plan;
         if (options.command_arguments.empty())
         {
@@ -101,6 +100,7 @@ namespace vcpkg
                 var_provider,
                 Util::fmap(outdated_packages, [](const OutdatedPackage& package) { return package.spec; }),
                 status_db,
+                packages_dir_assigner,
                 create_upgrade_plan_options);
         }
         else
@@ -187,8 +187,8 @@ namespace vcpkg
                 Checks::exit_success(VCPKG_LINE_INFO);
             }
 
-            action_plan =
-                create_upgrade_plan(provider, var_provider, to_upgrade, status_db, create_upgrade_plan_options);
+            action_plan = create_upgrade_plan(
+                provider, var_provider, to_upgrade, status_db, packages_dir_assigner, create_upgrade_plan_options);
         }
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
@@ -203,17 +203,23 @@ namespace vcpkg
 
         var_provider.load_tag_vars(action_plan, host_triplet);
 
-        auto binary_cache = BinaryCache::make(args, paths, out_sink).value_or_exit(VCPKG_LINE_INFO);
+        BinaryCache binary_cache(fs);
+        if (!binary_cache.install_providers(args, paths, out_sink))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         compute_all_abis(paths, action_plan, var_provider, status_db);
         binary_cache.fetch(action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
-            args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder());
-
+            args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder);
+        msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         if (keep_going == KeepGoing::Yes)
         {
             msg::print(summary.format());
         }
 
+        binary_cache.wait_for_async_complete_and_join();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

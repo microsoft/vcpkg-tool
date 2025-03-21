@@ -468,7 +468,7 @@ try
     $gitSecondaryBranch = 'secondary'
 
     $CurrentTest = 'git init .'
-    git @gitConfigOptions init .
+    git @gitConfigOptions init . --initial-branch=$gitMainBranch
     Throw-IfFailed
 
     $vcpkgBaseline = @{

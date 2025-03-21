@@ -68,7 +68,11 @@ namespace vcpkg
                 }
                 else
                 {
-                    msg::println_warning(msgFileNotFound, msg::path = target);
+                    msg::println(Color::warning,
+                                 LocalizedString::from_raw(target)
+                                     .append_raw(": ")
+                                     .append_raw(WarningPrefix)
+                                     .append(msgFileNotFound));
                 }
             }
 
@@ -148,7 +152,7 @@ namespace
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        const StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
         auto installed_packages = get_installed_ports(status_db);
 
         return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
@@ -181,7 +185,7 @@ namespace vcpkg
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
-        StatusParagraphs status_db = database_load_check(paths.get_filesystem(), paths.installed());
+        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, SwitchOutdated))
         {
@@ -276,11 +280,12 @@ namespace vcpkg
         }
 
         const Filesystem& fs = paths.get_filesystem();
+        std::vector<std::string> all_spec_dirs;
         if (purge == Purge::YES)
         {
             for (auto&& action : plan.not_installed)
             {
-                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+                all_spec_dirs.push_back(action.spec.dir());
             }
         }
 
@@ -294,10 +299,12 @@ namespace vcpkg
             remove_package(fs, paths.installed(), action.spec, status_db);
             if (purge == Purge::YES)
             {
-                fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
+                all_spec_dirs.push_back(action.spec.dir());
             }
         }
 
+        purge_packages_dirs(paths, all_spec_dirs);
+        database_load_collapse(fs, paths.installed());
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

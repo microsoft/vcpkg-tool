@@ -167,7 +167,8 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
 
 // these are sucked out to avoid
 // warning C6262: Function uses '98624' bytes of stack.  Consider moving some data to heap.
-static wchar_t https_proxy_env[32767];
+static wchar_t https_proxy_env[32768];
+static wchar_t no_proxy_env[32768];
 static char buffer[32768];
 
 #ifndef NDEBUG
@@ -210,12 +211,10 @@ int __stdcall entry()
 
     DWORD access_type;
     const wchar_t* proxy_setting;
-    const wchar_t* proxy_bypass_setting;
     if (GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t)))
     {
         access_type = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
         proxy_setting = https_proxy_env;
-        proxy_bypass_setting = L"<local>";
         write_message(std_out, L" (using proxy: ");
         write_message(std_out, proxy_setting);
         write_message(std_out, L")");
@@ -224,6 +223,22 @@ int __stdcall entry()
     {
         access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
+    }
+    else
+    {
+        abort_api_failure(std_out, L"GetEnvironmentVariableW");
+    }
+
+    const wchar_t* proxy_bypass_setting;
+    if (GetEnvironmentVariableW(L"NO_PROXY", no_proxy_env, sizeof(no_proxy_env) / sizeof(wchar_t)))
+    {
+        proxy_bypass_setting = no_proxy_env;
+        write_message(std_out, L" (using proxy bypass: ");
+        write_message(std_out, no_proxy_env);
+        write_message(std_out, L")");
+    }
+    else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
+    {
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
     else
@@ -373,6 +388,17 @@ int __stdcall entry()
     wtfi.hFile = out_file;
     wtfi.pgKnownSubject = 0;
 
+    // CERT_STRONG_SIGN_PARA + WINTRUST_SIGNATURE_SETTINGS tell WinVerifyTrust that only SHA-2 certificates are
+    // acceptable.
+    CERT_STRONG_SIGN_PARA cssp = {0};
+    cssp.cbSize = sizeof(cssp);
+    cssp.dwInfoChoice = CERT_STRONG_SIGN_OID_INFO_CHOICE;
+    cssp.pszOID = szOID_CERT_STRONG_SIGN_OS_1;
+
+    WINTRUST_SIGNATURE_SETTINGS wtss = {0};
+    wtss.cbStruct = sizeof(wtss);
+    wtss.pCryptoPolicy = &cssp;
+
     WINTRUST_DATA wtd = {0};
     wtd.cbStruct = sizeof(wtd);
     wtd.dwUIChoice = WTD_UI_NONE;
@@ -381,6 +407,7 @@ int __stdcall entry()
     wtd.pFile = &wtfi;
     wtd.dwStateAction = WTD_STATEACTION_VERIFY;
     wtd.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+    wtd.pSignatureSettings = &wtss;
 
     GUID wt_policy_guid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 

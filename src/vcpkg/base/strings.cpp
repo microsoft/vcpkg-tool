@@ -24,9 +24,10 @@ namespace vcpkg::Strings::details
     void append_internal(std::string& into, StringView s) { into.append(s.begin(), s.end()); }
 }
 
-vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView sv,
-                                                                     void (*cb)(void*, std::string&, StringView),
-                                                                     void* user)
+Optional<std::string> vcpkg::details::api_stable_format_impl(DiagnosticContext& context,
+                                                             StringView sv,
+                                                             bool (*cb)(void*, std::string&, StringView),
+                                                             void* user)
 {
     // Transforms similarly to std::format -- "{xyz}" -> f(xyz), "{{" -> "{", "}}" -> "}"
 
@@ -46,7 +47,8 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last)
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             else if (*p == '{')
             {
@@ -60,10 +62,15 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
                 p = std::find_first_of(p, last, s_brackets, s_brackets + 2);
                 if (p == last || p[0] != '}')
                 {
-                    return msg::format(msgInvalidFormatString, msg::actual = sv);
+                    context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                    return nullopt;
                 }
                 // p[0] == '}'
-                cb(user, out, {seq_start, p});
+                if (!cb(user, out, {seq_start, p}))
+                {
+                    return nullopt;
+                }
+
                 prev = ++p;
             }
         }
@@ -71,14 +78,16 @@ vcpkg::ExpectedL<std::string> vcpkg::details::api_stable_format_impl(StringView 
         {
             if (p == last || p[0] != '}')
             {
-                return msg::format(msgInvalidFormatString, msg::actual = sv);
+                context.report_error(msg::format(msgInvalidFormatString, msg::actual = sv));
+                return nullopt;
             }
             out.push_back('}');
             prev = ++p;
         }
     }
+
     out.append(prev, last);
-    return {std::move(out), expected_left_tag};
+    return out;
 }
 
 namespace
@@ -86,7 +95,7 @@ namespace
     // To disambiguate between two overloads
     constexpr struct
     {
-        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+        bool operator()(char c) const noexcept { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
     } is_space_char;
 
     constexpr struct
@@ -173,7 +182,7 @@ bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
     return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
-bool Strings::case_insensitive_ascii_equals(StringView left, StringView right)
+bool Strings::case_insensitive_ascii_equals(StringView left, StringView right) noexcept
 {
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
@@ -262,8 +271,13 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
 
 void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    inplace_trim_end(s);
     s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
+}
+
+void Strings::inplace_trim_end(std::string& s)
+{
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
 }
 
 StringView Strings::trim(StringView sv)
@@ -271,6 +285,12 @@ StringView Strings::trim(StringView sv)
     auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
     auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
+}
+
+StringView Strings::trim_end(StringView sv)
+{
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    return StringView(sv.begin(), last);
 }
 
 void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)
@@ -328,6 +348,12 @@ std::vector<std::string> Strings::split_paths(StringView s)
 const char* Strings::find_first_of(StringView input, StringView chars)
 {
     return std::find_first_of(input.begin(), input.end(), chars.begin(), chars.end());
+}
+
+std::string::size_type Strings::find_last(StringView searched, char c)
+{
+    auto iter = std::find(searched.rbegin(), searched.rend(), c);
+    return iter == searched.rend() ? std::string::npos : (&*iter - searched.begin());
 }
 
 std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView left_delim, StringView right_delim)

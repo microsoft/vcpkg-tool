@@ -130,6 +130,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ACpuArchitecture" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a CPU architecture]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[architektura procesora CPU]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADateVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a date version string]]></Val>
@@ -412,6 +421,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ASha512" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a SHA-512 hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[skrót SHA-512]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a string]]></Val>
@@ -435,6 +453,51 @@
           <Val><![CDATA[a "string": "string" dictionary]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[słownik „string”: „string”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[tablica metadanych narzędzia]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[plik danych narzędzia]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataOS" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data operating system]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[system operacyjny danych narzędzia]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataObject" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[metadane narzędzia]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wersja danych narzędzia]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -856,6 +919,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AllFeatureTestsPassed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All feature tests passed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wszystkie testy funkcji zakończone powodzeniem.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AllFormatArgsRawArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format string "{value}" contains a raw format argument]]></Val>
@@ -1071,15 +1143,6 @@
           <Val><![CDATA[an SPDX license expression]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[wyrażenie licencji SPDX]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Brak właściwości source.properties w katalogu {env_var}: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1381,29 +1444,74 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AssetCacheConsult" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          <Val><![CDATA[Trying to download {path} using asset cache {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trafienie pamięci podręcznej zasobów dla {path}; pobrano z: {url}]]></Val>
+            <Val><![CDATA[Próba pobrania {path} przy użyciu {url} pamięci podręcznej zasobów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheConsultScript" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache script]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Próba pobrania {path} przy użyciu skryptu pamięci podręcznej zasobów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie powiodło się! Trafienie w pamięci podręcznej zasobów.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHitUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit, did not try authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie powiodło się! Trafienie w pamięci podręcznej zasobów nie spowodowało próby autorytatywnego {url} źródłowego]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AssetCacheMiss" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          <Val><![CDATA[Asset cache miss; trying authoritative source {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pominięta pamięć podręczna zasobów; pobieranie z adresu {url}]]></Val>
+            <Val><![CDATA[Chybienia w pamięci podręcznej zasobów; próba autorytatywnego {url} źródłowego]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AssetCacheMissBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          <Val><![CDATA[there were no asset cache hits, and x-block-origin blocks trying the authoritative source {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pominięcie pamięci podręcznej zasobów dla {path}, a pobieranie jest blokowane przez element x-block-origin.]]></Val>
+            <Val><![CDATA[nie było trafień w pamięci podręcznej zasobów i bloków x-block-origin próbujących autorytatywnego źródła {url}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissNoUrls" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache missed looking for {sha} and no authoritative URL is known]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pominięto wyszukiwanie {sha} w pamięci podręcznej zasobów i nie jest znany autorytatywny adres URL]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1417,11 +1525,77 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AssetCacheSuccesfullyStored" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AssetCacheScriptBadVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Successfully stored {path} to {url}.]]></Val>
+          <Val><![CDATA[the script template {value} contains unknown replacement {list}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pomyślnie zapisano {path} na adres {url}.]]></Val>
+            <Val><![CDATA[szablon skryptu {value} zawiera nieznaną {list} zastępczą]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariableHint" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if you want this on the literal command line, use {{{{{list}}}}}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[jeśli chcesz tego użyć w wierszu polecenia literału, użyj {{{{{list}}}}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[if you want this on the literal command line, use {{{list}}}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the full script command line was]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[pełny wiersz polecenia skryptu był]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned nonzero exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[skrypt pamięci podręcznej zasobów zwrócił niezerowy kod zakończenia {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteCorrectHash" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but the resulting file has an unexpected hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[skrypt pamięci podręcznej zasobów zwrócił sukces, ale wynikowy plik ma nieoczekiwany skrót]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but did not create expected result file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[skrypt pamięci podręcznej zasobów zwrócił sukces, ale nie utworzył oczekiwanego pliku wyników]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a SHA, but no SHA is known for attempted download of {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[szablon skryptu {value} wymaga sha, ale nie jest znany z próby pobrania {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a URL, but no URL is known for attempted download of {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[szablon skryptu {value} wymaga adresu URL, ale żaden adres URL nie jest znany z próby pobrania {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1546,6 +1720,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineOnlyPlatformExpressionOrTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can not specify a platform expression and a triplet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nie można określić wyrażenia platformy i trypletu]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2674,30 +2857,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptChocolatey" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports a Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Eksportuje pakiet Chocolatey (eksperymentalny)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptDebug" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables prefab debug]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Włącza debugowanie prefab]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable prefab debug]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually export]]></Val>
@@ -2706,18 +2865,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Do not actually export.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptIFW" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to an IFW-based installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Eksportuj do instalatora opartego na technologii IFW]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to an IFW-based installer]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2734,18 +2881,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptMaven" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables Maven]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Włącza narzędzie Maven]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable Maven]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
@@ -2754,18 +2889,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptPrefab" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to Prefab format]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Eksportuje do formatu prefab]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to Prefab format]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2790,54 +2913,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a zip file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyMaint" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The maintainer for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Określ opiekuna wyeksportowanego pakietu Chocolatey (funkcja eksperymentalna)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The version suffix to add for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Określ sufiks wersji do dodania dla wyeksportowanego pakietu Chocolatey (funkcja eksperymentalna)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingConfigFile" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary file path for the installer configuration]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Określ tymczasową ścieżkę pliku dla konfiguracji instalatora]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary file path for the installer configuration]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingInstallerPath" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The file path for the exported installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ścieżka do pliku wyeksportowanego instalatora]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the file path for the exported installer]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2902,93 +2977,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingPkgDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary directory path for the repacked packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ścieżka katalogu tymczasowego dla ponownie spakowanych pakietów]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary directory path for the repacked packages]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabArtifactID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact Id is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Identyfikator artefaktu to nazwa projektu zgodnie ze specyfikacjami narzędzia Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabGroupID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[GroupId uniquely identifies your project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Identyfikator GroupId jednoznacznie identyfikuje projekt zgodnie ze specyfikacjami narzędzia Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Version is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wersja jest nazwą projektu zgodnie ze specyfikacjami narzędzia Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The directory path for the exported repository]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Określ ścieżkę katalogu dla wyeksportowanego repozytorium]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoURL" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The remote repository URL for the online installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Adres URL zdalnego repozytorium dla instalatora online]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the remote repository URL for the online installer]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKMinVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android minimum supported SDK version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Minimalna obsługiwana wersja zestawu SDK dla systemu Android]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android minimum supported SDK version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKTargetVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android target sdk version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wersja docelowego zestawu SDK systemu Android]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android target sdk version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates a standalone deployment of installed ports]]></Val>
@@ -3042,6 +3030,24 @@
           <Val><![CDATA[Finds a port or artifact that may be installed or activated]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Znajduje port lub artefakt, który może być zainstalowany lub aktywowany]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineExample" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg format-feature-baseline <ci.feature.baseline.txt path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg format-feature-baseline <ci.feature.baseline.txt path>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Formats a feature baseline file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Formatuje plik punktu odniesienia funkcji]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3586,6 +3592,69 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdTestCIFeatureBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the ci.feature.baseline.txt file. Used to skip known failing tests ports and detect regressions]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ścieżka do pliku ci.feature.baseline.txt. Służy do pomijania portów znanych testów zakończonych niepowodzeniem i wykrywania regresji]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Runs tests for all ports]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uruchamia testy dla wszystkich portów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesFailingAbis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to file to which all failing ABI hashes will be written]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ścieżka do pliku, w którym zostaną zapisane wszystkie skróty ABI zakończone niepowodzeniem]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCombined" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomija testowanie każdej włączonej funkcji]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCore" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing only the 'core' feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomija testowanie tylko włączonej funkcji „core”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoSeparated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature separately]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomija testowanie każdej funkcji oddzielnie]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Tests the features of a port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Testuje funkcje portu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints out plan without execution]]></Val>
@@ -3820,15 +3889,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CommandFailedCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[command:]A;{command_line}]A;failed with exit code {exit_code} and the following output:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[polecenie:]A;{command_line}]A;niepowodzenie z kodem zakończenia {exit_code} i następującymi danymi wyjściowymi:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Community Triplets:]]></Val>
@@ -3850,15 +3910,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ComputeAllAbis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
+          <Val><![CDATA[Computing all ABI hashes...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można skompresować folderu „{path}”:]]></Val>
+            <Val><![CDATA[Trwa obliczanie wszystkich skrótów ABI...]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComputeInstallPlans" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Computing {count} install plans...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa obliczanie {count} planów instalacji...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3976,15 +4042,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Drzewo „installed” pakietu vcpkg jest uszkodzone.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotActivateEspidfPythonWasNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not activate esp-idf: python was not found.]]></Val>
@@ -4029,15 +4086,6 @@
           <Val><![CDATA[could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nie można odnaleźć drzewa GIT dla `versions` w repozytorium {package_name} przy zatwierdzeniu {commit_sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CouldNotFindToolVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not find <tools version="{version}"> in {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można odnaleźć narzędzi <tools version=" {version}"> w ścieżce {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4111,6 +4159,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[operacja curl nie powiodła się. Kod błędu {exit_code}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
@@ -4129,20 +4186,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlResponseTruncatedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl returned a partial response; waiting {value} milliseconds and trying again]]></Val>
+          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[polecenie curl zwróciło częściową odpowiedź; oczekiwanie {value} ms i ponowna próba]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl was unable to perform all requested HTTP operations, even after timeout and retries. The last command line was: {command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Polecenie curl nie mogło wykonać wszystkich żądanych operacji HTTP, nawet po przekroczenia limitu czasu i ponownych próbach. Ostatni wiersz polecenia: {command_line}]]></Val>
+            <Val><![CDATA[funkcja curl nie może zwrócić oczekiwanej liczby kodów zakończenia; może się tak zdarzyć, jeśli coś zakończy zawijanie przed jego zakończeniem. curl zakończył się z {exit_code}, co zwykle jest kodem wyniku dla ostatniej operacji, ale może być wynikiem awarii. Wiersz polecenia został {command_line}, a wszystkie dane wyjściowe są poniżej:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4339,11 +4387,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";DependencyWillFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
+          <Val><![CDATA[Dependency {feature_spec} will not build => cascade]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Opcja --prefab-debug jest teraz przestarzała.]]></Val>
+            <Val><![CDATA[Zależność {feature_spec} nie będzie kompilować => kaskadowo]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4399,39 +4447,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedCurl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{url}: curl failed to download with exit code {exit_code}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: narzędzie curl nie może pobrać za pomocą kodu zakończenia: {exit_code}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          <Val><![CDATA[download from {url} had an unexpected hash]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Plik nie ma oczekiwanego skrótu:]A;Adres URL: {url}]A;Plik: {path}]A;Oczekiwany skrót: {expected}]A;Rzeczywisty skrót: {actual}]]></Val>
+            <Val><![CDATA[pobieranie z {url} miało nieoczekiwany skrót]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchActualHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Actual  : {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wartość rzeczywista: {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatchExpectedHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to download {path}.]A;If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See, {url}]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporay download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          <Val><![CDATA[Expected: {sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można pobrać ścieżki {path}.]A;Jeśli korzystasz z serwera proxy, upewnij się, że jego ustawienia są prawidłowo skonfigurowane.]A;Możliwe przyczyny to:]A;1. W rzeczywistości używasz proxy protokołu HTTP, ale ustawiasz zmienną HTTPS_PROXY na `https//address:port`.]A;Nie jest to poprawne, ponieważ prefiks `https://` twierdzi, że proxy jest serwerem proxy HTTPS, podczas gdy Twoje proxy (v2ray, shadowsocksr, itp.) jest serwerem proxy HTTP.]A;Spróbuj zamiast tego ustawić `http://address:port` na wartości zarówno HTTP_PROXY, jak i HTTPS_PROXY.]A;2. Jeśli korzystasz z systemu Windows, aplikacja vcpkg automatycznie użyje ustawień serwera proxy dla przeglądarki Windows IE ustawionych przez oprogramowanie serwera proxy. Zobacz, {url}]A;Wartość ustawiona przez serwer proxy może być nieprawidłowa lub mieć ten sam prefiks `https://`.]A;3. Twój zdalny serwer proxy nie działa.]A;Jeśli podjęto próbę bezpośredniego pobrania linku i uważasz, że nie jest to tymczasowa awaria serwera pobierania, prześlij zgłoszenie na adres https://github.com/Microsoft/vcpkg/issues.]A;w celu zgłoszenia błędu tego nadrzędnego serwera pobierania.]]></Val>
+            <Val><![CDATA[Oczekiwano: {sha}]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchZero" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[pobieranie nie powiodło się, ponieważ oczekiwany algorytm SHA512 miał wszystkie zera. Zmień oczekiwany algorytm SHA512 na: {sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Jeśli korzystasz z serwera proxy, upewnij się, że jego ustawienia są prawidłowo skonfigurowane.]A;Możliwe przyczyny to:]A;1. W rzeczywistości używasz proxy protokołu HTTP, ale ustawiasz zmienną HTTPS_PROXY na „https//address:port”.]A;Nie jest to poprawne, ponieważ prefiks „https://” twierdzi, że proxy jest serwerem proxy HTTPS, podczas gdy Twoje proxy (v2ray, shadowsocksr, itp.) jest serwerem proxy HTTP.]A;Spróbuj zamiast tego ustawić „http://address:port” na wartości zarówno HTTP_PROXY, jak i HTTPS_PROXY.]A;2. Jeśli korzystasz z systemu Windows, aplikacja vcpkg automatycznie użyje ustawień serwera proxy dla przeglądarki Windows IE ustawionych przez oprogramowanie serwera proxy. Zobacz: https://github.com/microsoft/vcpkg-tool/pull/77]A;Wartość ustawiona przez serwer proxy może być nieprawidłowa lub mieć ten sam prefiks „https://”.]A;3. Twój zdalny serwer proxy nie działa.]A;Jeśli uważasz, że nie jest to tymczasowa awaria serwera pobierania i należy zmienić plik vcpkg, aby pobrać ten plik z innej lokalizacji, prześlij problem do https://github.com/Microsoft/vcpkg/issues]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pobieranie nie powiodło się — ponawianie próby po {value}ms]]></Val>
+            <Val><![CDATA[Pobieranie {url} nie powiodło się — ponowienie próby po {wartość} ms]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4440,6 +4515,15 @@
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: niepowodzenie: kodu stanu {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadOrUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[or {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[lub {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4458,19 +4542,43 @@
       </Item>
       <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          <Val><![CDATA[Successfully downloaded {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pomyślnie pobrano {path}.]]></Val>
+            <Val><![CDATA[Pomyślnie pobrano {path}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesfulUploading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}, storing to {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomyślnie pobrano {path}, przechowywanie w {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Próba {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: niepowodzenie interfejsu {system_api} za pomocą kodu zakończenia:{exit_code}]]></Val>
+            <Val><![CDATA[{url}: {system_api} nie powiodło się z kodem wyjścia {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4501,6 +4609,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingAssetShaToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading asset cache entry {sha} -> {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie wpisu pamięci podręcznej zasobów {sha} -> {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingAssetShaWithoutAssetCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[requested download of asset cache entry {sha} -> {path}, but no asset caches are configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[zażądano pobrania wpisu pamięci podręcznej zasobów {sha} -> {path}, ale nie skonfigurowano żadnych pamięci podręcznych zasobów]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFileFirstAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}, trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie {path}, próba {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}).]]></Val>
@@ -4513,11 +4657,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading {url}]]></Val>
+          <Val><![CDATA[Downloading {url} -> {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pobieranie adresu {ulr}]]></Val>
+            <Val><![CDATA[Pobieranie {url} -> {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4563,6 +4707,15 @@
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Zduplikuj definicję ${p0} podczas aktywacji. Nowa wartość zastąpi starą.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicateDependencyOverride" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} already has an override]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} ma już zastąpienie]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4798,6 +4951,24 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error: The option --{option} is not supported in manifest mode.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlay" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Katalog manifestu ({path}) nie może być taki sam jak katalog skonfigurowany w portach nakładki.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlayDot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory cannot be the same as a directory configured in overlay-ports, so "overlay-ports" values cannot be ".".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Katalog manifestu nie może być taki sam jak katalog skonfigurowany w portach nakładek, więc wartości "overlay-ports" nie mogą być równe ".".]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5263,24 +5434,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Opcja export prefab wymaga określenia co najmniej jednej z następujących istniejących architektur arm64-v8a, armeabi-v7a, x86_64 i x86.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Opcja export prefab wymaga potrójnej wersji systemu Android.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";Exported7zipArchive" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[7zip archive exported at: {path}]]></Val>
@@ -5304,15 +5457,6 @@
           <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Następujące pakiety zostały już skompilowane i zostaną wyeksportowane:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exporting maintenance tool...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trwa eksportowanie narzędzia do konserwacji...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5506,24 +5650,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToObtainDependencyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired dependency version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można odnaleźć żądanej wersji zależności.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired package version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można odnaleźć żądanej wersji pakietu.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToOpenAlgorithm" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to open {value}]]></Val>
@@ -5595,15 +5721,6 @@
           <Val><![CDATA[Failed to parse version file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nie można przeanalizować pliku wersji: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie można przeanalizować wersji narzędzia {tool_name}. Ciąg wersji: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5692,6 +5809,42 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Funkcja „{feature}” została już zadeklarowana jako „{value}”.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineExpectedFeatures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '{value}' a list of features must be specified.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[W przypadku korzystania z elementu „{value}” należy określić listę funkcji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineFormatted" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Succeeded in formatting the feature baseline file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomyślnie sformatowano plik punktu odniesienia funkcji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForFail" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[W przypadku używania elementu „= fail” nie jest dozwolona lista funkcji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FetchingBaselineInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Fetching baseline information from {package_name}...]]></Val>
@@ -5737,12 +5890,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}: file not found]]></Val>
+          <Val><![CDATA[file not found]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}: nie znaleziono pliku]]></Val>
+            <Val><![CDATA[nie znaleziono pliku]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}: file not found]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5944,51 +6100,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generated configuration {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wygenerowano ścieżkę {path} konfiguracji.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installer generated.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wygenerowano ścieżkę {path} instalatora.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating configuration {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trwa generowanie ścieżki {path} konfiguracji...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating installer {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trwa generowanie ścieżki {path} instalatora...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating repository {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Trwa generowanie ścieżki {path} repozytorium...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
@@ -6106,18 +6217,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Wykryto cykl w grafie przy pakiecie {package_name}:]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";HashFileFailureToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to read file "{path}" for hashing: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nie można odczytać pliku "{path}" dla haszowania: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6775,18 +6874,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uses aria2 to perform download tasks]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Użyj narzędzia aria2 do wykonywania zadań pobierania]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
@@ -7135,15 +7222,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFileFailure" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file, {command_line} failed with {exit_code}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} instalowanie pliku Maven, polecenie {command_line} nie powiodło się z błędem {exit_code}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InstallingOverlayPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[installing overlay port from here]]></Val>
@@ -7306,11 +7384,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InvalidArchitectureValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid architecture: {value}]]></Val>
+          <Val><![CDATA[Invalid architecture: {value}. Expected one of: {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nieprawidłowa architektura: {value}]]></Val>
+            <Val><![CDATA[Nieprawidłowa architektura: {value}. Oczekiwano jednego z: {expected}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7726,6 +7804,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidSha512" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid SHA-512 hash: {sha}]A;SHA-512 hash must be 128 characters long and contain only hexadecimal digits]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nieprawidłowy skrót SHA-512: {sha}]A;Skrót SHA-512 musi mieć 128 znaków i zawierać tylko cyfry szesnastkowe]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidSharpInVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[invalid character '#' in version text]]></Val>
@@ -7749,6 +7836,24 @@
           <Val><![CDATA[Invalid utf8 passed to Value::string(std::string)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Przekazano nieprawidłowy kod utf8 do elementu Value::string(std::string)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidToolOSValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool operating system: {value}. Expected one of: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nieprawidłowy system operacyjny narzędzia: {value}. Oczekiwano jednego z: {expected}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidToolVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool version; expected a string containing a substring of between 1 and 3 numbers separated by dots.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nieprawidłowa wersja narzędzia; oczekiwano ciągu zawierającego podciąg z zakresu od 1 do 3 liczb rozdzielonych kropkami.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8208,10 +8313,13 @@
       </Item>
       <Item ItemId=";MismatchedNames" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          <Val><![CDATA[the port name declared in the metadata file did not match the directory. Expected the port to be named {package_name}, but the file declares {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nazwy nie są zgodne: „{package_name}” != „{actual}”]]></Val>
+            <Val><![CDATA[nazwa portu zadeklarowana w pliku metadanych nie jest zgodna z katalogiem. Oczekiwano, że port będzie miał nazwę {package_name}, ale plik deklaruje {actual}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8242,38 +8350,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Brak zmiennej środowiskowe ANDROID_NDK_HOME]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Katalog ANDROID_NDK_HOME nie istnieje: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";MissingArgFormatManifest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Przekazano polecenie format-manifest --convert-control bez znaku „--all”.]A;Nie jest to konieczne: przekazywane jawnie pliki sterujące są konwertowane automatycznie.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAssetBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Missing {path} and downloads are blocked by x-block-origin.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Brak ścieżki {path} i pobieranie jest blokowane przez element x-block-origin.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8524,6 +8605,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoCoreFeatureAllowedInNonFailBaselineEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['core' is not allowed in the list of features if the entry is of type '{value}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Element „core” jest niedozwolony na liście funkcji, jeśli wpis jest typu „{value}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8556,15 +8646,6 @@
           <Val><![CDATA[no registry configured for port {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[nie skonfigurowano rejestru dla portu {package_name}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";NoUrlsAndHashSpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No urls specified to download SHA: {sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nie określono żadnych adresów URL do pobrania SHA: {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8659,20 +8740,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OnlySupports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} only supports {supports_expression}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} obsługuje tylko {supports_expression}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OptionMustBeInteger" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of --{option} must be an integer.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Wartość opcji --{option} musi być liczbą całkowitą.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";OptionRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} option is required.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Opcja --{option} jest wymagana.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8742,18 +8823,21 @@
       </Item>
       <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          <Val><![CDATA[Overlay path "{path}" must be an existing directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ścieżka nakładki „{path}” musi istnieć i musi być katalogiem.]]></Val>
+            <Val><![CDATA[Ścieżka nakładki "{path}" musi być istniejącym katalogiem.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";OverlayPortsDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";OverlayPortsHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Directories of overlay ports (also: {env_var})]]></Val>
+          <Val><![CDATA[Overlay-port directories, or directories containing overlay-port directories (also: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Katalogi portów nakładki (również: {env_var})]]></Val>
+            <Val><![CDATA[Katalogi portów nakładek lub katalogi zawierające katalogi overlay-port (również: {env_var})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9637,6 +9721,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is not supported on {triplet}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pakiet {package_name} nie jest obsługiwany w {triplet}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortSupportsField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[(supports: "{supports_expression}")]]></Val>
@@ -9724,11 +9817,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrecheckBinaryCache" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checking the binary cache...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sprawdzanie binarnej pamięci podręcznej...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Poprzedni plik integracji nie został usunięty.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed with exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nie powiodło się z kodem wyjścia {exit_code}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9744,10 +9855,13 @@
       </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --zip --7zip.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wymagana jest co najmniej jedna z następujących opcji: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+            <Val><![CDATA[Wymagana jest co najmniej jedna z następujących opcji: --raw --nuget --zip --7zip.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10051,6 +10165,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SkipTestingOfPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pomijanie testowania elementu {feature_spec}, ponieważ następujące zależności nie są obsługiwane w systemie {triplet}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SkipTestingOfPortAlreadyInBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing because the ABI hash {sha} is already in the binary cache.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Testowanie zostanie pominięte, ponieważ skrót ABI {sha} znajduje się już w binarnej pamięci podręcznej.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
@@ -10114,6 +10246,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StartingFeatureTest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature Test [{value}]5D; {feature_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Test funkcji [{value}]5D; {feature_spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Status" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Status]]></Val>
@@ -10132,23 +10273,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheBackground" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
+          <Val><![CDATA[Starting submission of {spec} to {count} binary cache(s) in the background]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Przechowywane dane binarne w {count} lokalizacjach docelowych w ciągu {elapsed}.]]></Val>
+            <Val><![CDATA[Rozpoczynanie przesyłania {spec} do {count} binarnych pamięci podręcznych w tle]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheComplete" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+          <Val><![CDATA[Completed submission of {spec} to {count} binary cache(s) in {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wyeksportowano {package_name} do {path}]]></Val>
+            <Val><![CDATA[Zakończono przesyłanie {spec} do {count} binarnych pamięci podręcznych w {elapsed}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10261,11 +10399,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolDataFileSchemaVersionNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[document schema version {version} is not supported by this version of vcpkg]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wersja schematu dokumentu {version} nie jest obsługiwana przez tę wersję programu vcpkg]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nie można pobrać elementu {tool_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} prawdopodobnie została już pobrana, ale ma niepoprawny skrót. Oczekiwano {expected}, ale {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10786,6 +10942,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Element {feature_spec} spowodował nieoczekiwany stan {actual} po {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Element {feature_spec} spowodował nieoczekiwany stan {actual}, ponieważ następujące zależności nie zostały skompilowane:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UnexpectedSwitch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected switch: {option}]]></Val>
@@ -11169,12 +11343,12 @@
       </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
+          <Val><![CDATA[Uploading binaries for {spec} to {vendor} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Przekazywanie danych binarnych dla "{spec}” do ścieżki źródłowej dostawcy "{vendor}": "{path}".]]></Val>
+            <Val><![CDATA[Przekazywanie plików binarnych {spec} do {vendor} z {path}]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
+            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -11472,15 +11646,6 @@
           <Val><![CDATA[vcpkg package management program version {version}]A;]A;See LICENSE.txt for license information.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[wersja programu do zarządzania pakietami vcpkg {version}]A;]A;Zobacz plik LICENSE.txt, aby uzyskać informacje o licencji.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionConflictXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected {path} version: [{expected_version}]5D;, but was [{actual_version}]5D;. Please re-run bootstrap-vcpkg.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Oczekiwano wersji {path}: [{expected_version}]5D;, ale była [{actual_version}]5D;. Uruchom ponownie polecenie bootstrap-vcpkg.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11929,6 +12094,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WaitUntilPackagesUploaded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for {count} remaining binary cache submissions...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Trwa oczekiwanie na {count} pozostałych żądań przesłania binarnej pamięci podręcznej...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WaitingForChildrenToExit" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Waiting for child processes to exit...]]></Val>
@@ -12045,6 +12219,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Podczas rozpoznawania zależności pliku projektu ${p0}, element ${p1} nie określił rejestru.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileRunningAssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while running asset cache script command line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[podczas uruchamiania wiersza polecenia skryptu pamięci podręcznej zasobów]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

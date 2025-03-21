@@ -216,9 +216,10 @@ Build-Depends: bzip
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
 
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
-                          "test_packages_root",
+                          packages_dir_assigner,
                           RequestType::USER_REQUESTED,
                           UseHeadVersion::No,
                           Editable::No,
@@ -327,9 +328,8 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryProviders providers;
-    providers.read.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
-    ReadOnlyBinaryCache uut(std::move(providers));
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(std::make_unique<KnowNothingBinaryProvider>());
 
     // create an action plan with an action without a package ABI set
     auto pghs = Paragraphs::parse_paragraphs(R"(
@@ -343,9 +343,10 @@ Description:
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     std::vector<InstallPlanAction> install_plan;
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
-                              "test_packages_root",
+                              packages_dir_assigner,
                               RequestType::USER_REQUESTED,
                               UseHeadVersion::No,
                               Editable::No,
@@ -421,9 +422,10 @@ Description: a spiffy compression library wrapper
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,
@@ -452,7 +454,7 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,
@@ -469,4 +471,61 @@ Description: a spiffy compression library wrapper
   <package id="zlib2_x64-android" version="1.52.0-vcpkgpackageabi2"/>
 </packages>
 )");
+}
+
+TEST_CASE ("Synchronizer operations", "[BinaryCache]")
+{
+    {
+        BinaryCacheSynchronizer sync;
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 0);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 1);
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 3);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
 }

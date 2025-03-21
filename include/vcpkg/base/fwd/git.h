@@ -3,4 +3,5 @@
 namespace vcpkg
 {
     struct GitConfig;
+    struct GitLSTreeEntry;
 }

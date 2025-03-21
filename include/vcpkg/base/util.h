@@ -473,10 +473,24 @@ namespace vcpkg::Util
         std::sort(begin(cont), end(cont), comp);
     }
 
+    template<class Range, class Comp = std::less<>>
+    void stable_sort(Range& cont, Comp comp = Comp())
+    {
+        using std::begin;
+        using std::end;
+        std::stable_sort(begin(cont), end(cont), comp);
+    }
+
     template<class Range, class Pred>
     bool any_of(Range&& rng, Pred pred)
     {
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
+    }
+
+    template<class Range, class Pred>
+    bool all_of(Range&& rng, Pred pred)
+    {
+        return std::all_of(rng.begin(), rng.end(), std::move(pred));
     }
 
     template<class Range, class Pred>

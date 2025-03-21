@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/downloads.h>
+#include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/git.h>
 #include <vcpkg/base/fwd/system.h>
@@ -18,12 +19,14 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
+#include <vcpkg/portfileprovider.h>
+
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace vcpkg
@@ -55,7 +58,6 @@ namespace vcpkg
         Path package_dir(const PackageSpec& spec) const;
         Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
-        Path build_info_file_path(const PackageSpec& spec) const;
 
         const TripletDatabase& get_triplet_db() const;
         const std::map<std::string, std::string>& get_cmake_script_hashes() const;
@@ -101,12 +103,12 @@ namespace vcpkg
         std::vector<Path> overlay_triplets;
 
     public:
-        std::vector<Path> overlay_ports;
+        OverlayPortPaths overlay_ports;
 
         std::string get_toolver_diagnostics() const;
 
         const Filesystem& get_filesystem() const;
-        const DownloadManager& get_download_manager() const;
+        const AssetCachingSettings& get_asset_cache_settings() const;
         const ToolCache& get_tool_cache() const;
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
@@ -119,8 +121,7 @@ namespace vcpkg
         LocalizedString get_current_git_sha_baseline_message() const;
         ExpectedL<Path> git_checkout_port(StringView port_name, StringView git_tree, const Path& dot_git_dir) const;
         ExpectedL<std::string> git_show(StringView treeish, const Path& dot_git_dir) const;
-
-        ExpectedL<std::map<std::string, std::string, std::less<>>> git_get_local_port_treeish_map() const;
+        Optional<std::vector<GitLSTreeEntry>> get_builtin_ports_directory_trees(DiagnosticContext& context) const;
 
         // Git manipulation for remote registries
         // runs `git fetch {uri} {treeish}`, and returns the hash of FETCH_HEAD.

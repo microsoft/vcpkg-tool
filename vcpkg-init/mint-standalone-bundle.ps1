@@ -47,13 +47,15 @@ $scripts_dependencies = @(
     'vcpkg_completion.bash',
     'vcpkg_completion.fish',
     'vcpkg_completion.zsh',
-    'vcpkgTools.xml'
+    'vcpkg-tools.json'
 )
 
 $scripts_exclusions = @(
-    'buildsystems/msbuild/applocal.ps1',
-    'posh-vcpkg/0.0.1/posh-vcpkg.psm1',
-    'posh-vcpkg/0.0.1/posh-vcpkg.psd1'
+    'buildsystems/msbuild/applocal.ps1'
+    'posh-vcpkg/0.0.1/posh-vcpkg.psm1' # deprecated, waiting for migration
+    'posh-vcpkg/0.0.1/posh-vcpkg.psd1' # deprecated, waiting for migration
+    'posh-vcpkg/posh-vcpkg.psm1'
+    'posh-vcpkg/posh-vcpkg.psd1'
 )
 
 if (Test-Path $TempDir) {
@@ -73,7 +75,9 @@ try {
         Move-Item 'LICENSE.txt' '../out/LICENSE.txt'
         Move-Item 'triplets' '../out/triplets'
         foreach ($exclusion in $scripts_exclusions) {
-            Remove-Item "scripts/$exclusion" -Recurse -Force
+            if (Test-Path "scripts/$exclusion") {
+                Remove-Item "scripts/$exclusion" -Recurse -Force
+            }
         }
         foreach ($dep in $scripts_dependencies) {
             Move-Item "scripts/$dep" "../out/scripts/$dep"
@@ -101,9 +105,10 @@ try {
     Set-Content -Path "out/scripts/buildsystems/msbuild/vcpkg.props" -Value $propsContent -NoNewline -Encoding Ascii
 
     Copy-Item -Path "$PSScriptRoot/vcpkg.targets" -Destination 'out/scripts/buildsystems/msbuild/vcpkg.targets'
-    New-Item -Path 'out/scripts/posh-vcpkg/0.0.1' -ItemType 'Directory' -Force
-    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psm1'
-    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psd1" -Destination 'out/scripts/posh-vcpkg/0.0.1/posh-vcpkg.psd1'
+
+    New-Item -Path 'out/scripts/posh-vcpkg/' -ItemType 'Directory' -Force
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/posh-vcpkg.psm1'
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psd1" -Destination 'out/scripts/posh-vcpkg/posh-vcpkg.psd1'
 
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-artifacts" -Destination 'out/vcpkg-artifacts' -Recurse
 

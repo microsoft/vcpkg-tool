@@ -124,6 +124,9 @@ namespace vcpkg
         {
         }
 
+        std::string to_string() const;
+        void to_string(std::string& s) const;
+
         /// Splats into individual FeatureSpec's
         void expand_fspecs_to(std::vector<FeatureSpec>& oFut) const;
 
@@ -186,3 +189,4 @@ struct std::hash<vcpkg::FeatureSpec>
 
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::PackageSpec);
 VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FeatureSpec);
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::FullPackageSpec);
