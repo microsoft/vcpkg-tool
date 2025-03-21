@@ -842,6 +842,7 @@ namespace vcpkg
                                                     tool_data.url,
                                                     {},
                                                     download_path,
+                                                    tool_data.download_subpath,
                                                     tool_data.sha512))
                     {
                         Checks::exit_fail(VCPKG_LINE_INFO);
