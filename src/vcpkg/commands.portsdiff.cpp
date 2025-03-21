@@ -34,6 +34,7 @@ namespace
                                      .map([](Path&& dot_git_parent) { return std::move(dot_git_parent) / ".git"; })
                                      .value_or_exit(VCPKG_LINE_INFO);
         const auto ports_dir_name = paths.builtin_ports_directory().filename();
+        fs.create_directories(paths.buildtrees(), IgnoreErrors{});
         const auto temp_checkout_path = paths.buildtrees() / fmt::format("{}-{}", ports_dir_name, git_commit_id);
         fs.create_directory(temp_checkout_path, IgnoreErrors{});
         const auto checkout_this_dir =
