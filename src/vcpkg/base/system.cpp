@@ -733,6 +733,53 @@ namespace vcpkg
         return concurrency;
     }
 
+#if defined(_WIN32)
+    DWORD get_subprocess_priority()
+    {
+        static const DWORD priority = []() {
+            const auto opt_user_defined_priority = get_environment_variable(EnvironmentVariableVcpkgSubprocessPriority);
+            if (!opt_user_defined_priority.has_value())
+            {
+                return IDLE_PRIORITY_CLASS;
+            }
+            const auto user_defined_priority = opt_user_defined_priority.value_or_exit(VCPKG_LINE_INFO);
+            if (user_defined_priority.empty() || Strings::case_insensitive_ascii_equals(user_defined_priority, "idle"))
+            {
+                return IDLE_PRIORITY_CLASS;
+            }
+            else if (Strings::case_insensitive_ascii_equals(user_defined_priority, "below_normal"))
+            {
+                return BELOW_NORMAL_PRIORITY_CLASS;
+            }
+            else if (Strings::case_insensitive_ascii_equals(user_defined_priority, "normal"))
+            {
+                return NORMAL_PRIORITY_CLASS;
+            }
+            else if (Strings::case_insensitive_ascii_equals(user_defined_priority, "above_normal"))
+            {
+                return ABOVE_NORMAL_PRIORITY_CLASS;
+            }
+            else if (Strings::case_insensitive_ascii_equals(user_defined_priority, "high"))
+            {
+                return HIGH_PRIORITY_CLASS;
+            }
+            else if (Strings::case_insensitive_ascii_equals(user_defined_priority, "realtime"))
+            {
+                return REALTIME_PRIORITY_CLASS;
+            }
+            else
+            {
+                Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                              msgEnvInvalidPriority,
+                                              msg::env_var = EnvironmentVariableVcpkgSubprocessPriority,
+                                              msg::value = user_defined_priority);
+            }
+            return IDLE_PRIORITY_CLASS;
+        }();
+        return priority;
+    }
+#endif
+
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture()
     {
         // Check for the "vsdevcmd" infrastructure used by Visual Studio 2017 and later
