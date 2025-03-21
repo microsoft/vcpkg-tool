@@ -1063,7 +1063,7 @@ namespace vcpkg
         const auto& triplet_db = paths.get_triplet_db();
         const auto& triplet_file_path = triplet_db.get_triplet_file_path(triplet);
 
-        if (Strings::starts_with(triplet_file_path, triplet_db.community_triplet_directory))
+        if (triplet_db.is_community_triplet_path(triplet_file_path))
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
@@ -1071,7 +1071,7 @@ namespace vcpkg
                            .append(msgLoadedCommunityTriplet)
                            .append_raw('\n'));
         }
-        else if (!Strings::starts_with(triplet_file_path, triplet_db.default_triplet_directory))
+        else if (triplet_db.is_overlay_triplet_path(triplet_file_path))
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
