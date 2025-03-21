@@ -5,8 +5,102 @@
 
 using namespace vcpkg;
 
+TEST_CASE ("replace CMake variable", "[spdx]")
+{
+    static constexpr StringLiteral str{"lorem ip${VERSION}"};
+    {
+        auto res = replace_cmake_var(str, "VERSION", "sum");
+        REQUIRE(res == "lorem ipsum");
+    }
+    {
+        auto res = replace_cmake_var(str, "VERSiON", "sum");
+        REQUIRE(res == "lorem ip${VERSION}");
+    }
+}
+
+TEST_CASE ("extract first cmake invocation args", "[spdx]")
+{
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum()", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsummmmm() lorem_ipsum(asdf)", "lorem_ipsum");
+        REQUIRE(res == "asdf");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc)", "lorem_ipsu");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum    (abc)    ", "lorem_ipsum");
+        REQUIRE(res == "abc");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum   x (abc)    ", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipum(abc)", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum( )", "lorem_ipsum");
+        REQUIRE(res == " ");
+    }
+    {
+        auto res = extract_first_cmake_invocation_args("lorem_ipsum_", "lorem_ipsum");
+        REQUIRE(res.empty());
+    }
+}
+
+TEST_CASE ("extract arg from cmake invocation args", "[spdx]")
+{
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value", "lorem");
+        REQUIRE(res == "value");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value       ", "lorem");
+        REQUIRE(res == "value");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem   ", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem ipsum", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum", "lorem");
+        REQUIRE(res.empty());
+    }
+    {
+        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum\"", "lorem");
+        REQUIRE(res == "ipsum");
+    }
+}
+
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     scfl.spdx_location = "git://some-vcs-url";
@@ -21,7 +115,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.version = Version{"1.0", 5};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "ABIHASH";
 
@@ -167,6 +261,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -176,7 +271,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -296,6 +391,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
 TEST_CASE ("spdx concat resources", "[spdx]")
 {
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
     SourceControlFileAndLocation scfl;
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
@@ -305,7 +401,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(
-        spec, scfl, "test_packages_root", RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
     abi.package_abi = "deadbeef";
 
@@ -316,7 +412,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
     auto doc2 = Json::parse(R"json(
 {
   "packages": [ "p1", "p2", "p3" ],
@@ -324,7 +420,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 })json",
                             "test")
                     .value(VCPKG_LINE_INFO)
-                    .value;
+                    .value.object(VCPKG_LINE_INFO);
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 

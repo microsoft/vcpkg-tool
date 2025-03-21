@@ -53,6 +53,11 @@ namespace vcpkg::Util
             const auto last = end(container);
             return std::find(first, last, item) != last;
         }
+        template<class Vec, class Key, size_t N>
+        bool contains(const Vec (&container)[N], const Key& item)
+        {
+            return std::find(container, container + N, item) != container + N;
+        }
         template<class T>
         std::vector<T> concat(View<T> r1, View<T> r2)
         {
@@ -468,10 +473,24 @@ namespace vcpkg::Util
         std::sort(begin(cont), end(cont), comp);
     }
 
+    template<class Range, class Comp = std::less<>>
+    void stable_sort(Range& cont, Comp comp = Comp())
+    {
+        using std::begin;
+        using std::end;
+        std::stable_sort(begin(cont), end(cont), comp);
+    }
+
     template<class Range, class Pred>
     bool any_of(Range&& rng, Pred pred)
     {
         return std::any_of(rng.begin(), rng.end(), std::move(pred));
+    }
+
+    template<class Range, class Pred>
+    bool all_of(Range&& rng, Pred pred)
+    {
+        return std::all_of(rng.begin(), rng.end(), std::move(pred));
     }
 
     template<class Range, class Pred>

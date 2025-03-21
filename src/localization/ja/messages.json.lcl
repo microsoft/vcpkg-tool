@@ -130,6 +130,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ACpuArchitecture" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a CPU architecture]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CPU アーキテクチャ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADateVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a date version string]]></Val>
@@ -412,6 +421,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ASha512" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a SHA-512 hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[SHA-512 ハッシュ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a string]]></Val>
@@ -435,6 +453,51 @@
           <Val><![CDATA[a "string": "string" dictionary]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["string": "string" ディクショナリ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール メタデータの配列]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール データ ファイル]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataOS" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data operating system]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール データ オペレーティング システム]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataObject" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール メタデータ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール データ バージョン]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -523,18 +586,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[「{command_line}」の最初の引数は「artifact」または「port」である必要があります。]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddPortRequiresManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_line}' requires an active manifest file.]]></Val>
@@ -601,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Don't forget to commit the result!]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[結果をコミットすることを忘れないでください。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
@@ -646,11 +688,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionInstructions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Val><![CDATA[you can run the following commands to add the current version of {package_name} automatically:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポート {package_name} を読み込めません]]></Val>
+            <Val><![CDATA[次のコマンドを実行して、{package_name} の現在のバージョンを自動的に追加できます。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -751,6 +793,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} では、{version} は完全に新しいバージョンであるため、"port-version" フィールドは削除する必要があります。"port-version" を削除し、その変更をコミットしてから、もう一度お試しください。このチェックをスキップするには、--skip-version-format-check を指定して再実行してください。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} では、{version} の現在の "port-version" が {count} であるため、次に追加される "port-version" は {expected_version} であるはずですが、ポートでは "port-version" {actual_version} が宣言されています。"port-version" を {expected_version} に変更し、その変更をコミットしてから、もう一度お試しください。このチェックをスキップするには、--skip-version-format-check を指定して再実行してください。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
@@ -765,15 +825,6 @@
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{package_name}" のバージョン形式では "version-string" が使用されますが、形式は "version" として許容されます。このポートのバージョンが、穏やかなバージョンの規則を使用して並べ替え可能な場合は、形式を "version" に変更して、このコマンドを再実行します。緩やかなバージョンの規則では、各数値コンポーネントによってバージョンが並べ替えられます。その後、ダッシュ サフィックスを持つバージョンは、以前に辞書式で並べ替えられます。プラス記号のビルド タグは無視されます。例:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;特に、ダッシュ付きのサフィックスは、後ではなく *前に* 並べ替えられます。1.0-anything < 1.0]A;この並べ替え順序は、セマンティック バージョニング (http://semver.org を参照) で選択した順序と同じであることに注意してください。]A;このポートのバージョンがこれらの規則によって順序付けされていない場合は、このコマンドを再実行し、--skip-version-format-check を追加して、このチェックを無効にします。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[バージョン ファイル {path} を解析できません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -864,6 +915,15 @@
           <Val><![CDATA[All artifacts are already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[すべての成果物が既にインストールされています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AllFeatureTestsPassed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All feature tests passed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[すべての機能テストに合格しました。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1083,15 +1143,6 @@
           <Val><![CDATA[an SPDX license expression]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[SPDX ライセンス式]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{env_var} ディレクトリに source.properties がありません: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1393,11 +1444,158 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AssetCacheConsult" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[アセット キャッシュ {url} を使用して {path} をダウンロードしようとしています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheConsultScript" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache script]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[アセット キャッシュ スクリプトを使用して {path} をダウンロードしようとしています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正常にダウンロードされました。資産キャッシュ ヒット。]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHitUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit, did not try authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正常にダウンロードされました。資産キャッシュ ヒット、権限のあるソース {url} を試行しませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMiss" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache miss; trying authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ ミス;権限のあるソース {url} を試行しています]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[there were no asset cache hits, and x-block-origin blocks trying the authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[アセット キャッシュヒットはありませんでした。権限のあるソース {url} を試行している x ブロック オリジン ブロック]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissNoUrls" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache missed looking for {sha} and no authoritative URL is known]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュで {sha} を検索できませんでした。権限のある URL は不明です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AssetCacheProviderAcceptsNoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: '{value}' does not accept arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[予期しない引数: '{value}' は引数を受け付けませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} contains unknown replacement {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[スクリプト テンプレート {value} に不明な置換 {list} が含まれています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariableHint" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if you want this on the literal command line, use {{{{{list}}}}}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[これをリテラル コマンド ラインで使用する場合は、{{{{{list}}}} を使用します]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[if you want this on the literal command line, use {{{list}}}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the full script command line was]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[スクリプトの完全なコマンド ラインが]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned nonzero exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ スクリプトから 0 以外の終了コードが返されました {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteCorrectHash" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but the resulting file has an unexpected hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ スクリプトから成功が返されましたが、結果ファイルに予期しないハッシュが含まれています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but did not create expected result file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ スクリプトから成功が返されましたが、予期された結果ファイルが作成されませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a SHA, but no SHA is known for attempted download of {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[スクリプト テンプレート {value} には SHA が必要ですが、{url} のダウンロードが試行された SHA は不明です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a URL, but no URL is known for attempted download of {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[スクリプト テンプレート {value} には URL が必要ですが、{sha} のダウンロードを試行した URL は不明です]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1515,9 +1713,21 @@
       </Item>
       <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is not assigned a version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ベースライン バージョンが見つかりません。以下を実行してください:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;{version} をベースライン バージョンとして設定します。]]></Val>
+            <Val><![CDATA[{package_name} にはバージョンが割り当てられていません]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineOnlyPlatformExpressionOrTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can not specify a platform expression and a triplet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[プラットフォーム式とトリプレットを同時に指定することはできません。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1789,15 +1999,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CISettingsExclude" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Comma-separated list of ports to skip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[スキップするポートのコンマ区切りの一覧]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CISettingsOptCIBase" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Path to the ci.baseline.txt file. Used to skip ports and detect regressions.]]></Val>
@@ -2019,24 +2220,6 @@
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ファイルシステム間でファイルの名前を変更できません]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[チェックアウトされた Git SHA: {commit_sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[チェックアウトされたオブジェクトにコントロール ファイルまたは vcpkg.json ファイルが含まれていません。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2652,10 +2835,13 @@
       </Item>
       <Item ItemId=";CmdExportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2667,30 +2853,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a 7zip (.7z) file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptChocolatey" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports a Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Chocolatey パッケージをエクスポートする (試験段階)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptDebug" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables prefab debug]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[プレハブデバッグを有効にする]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable prefab debug]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2707,18 +2869,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptIFW" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to an IFW-based installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[IFW ベースのインストーラーにエクスポートする]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to an IFW-based installer]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports all installed packages]]></Val>
@@ -2731,18 +2881,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptMaven" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables Maven]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Maven を有効にします]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable Maven]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
@@ -2751,18 +2889,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptPrefab" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to Prefab format]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[プレハブ形式へのエクスポート]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to Prefab format]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2787,54 +2913,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a zip file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyMaint" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The maintainer for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートされた Chocolatey パッケージの維持系統 (試験段階)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The version suffix to add for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートされた Chocolatey パッケージに追加するバージョン サフィックス (試験段階)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingConfigFile" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary file path for the installer configuration]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[インストーラー構成の一時ファイル パス]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary file path for the installer configuration]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingInstallerPath" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The file path for the exported installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートされたインストーラーのファイル パス]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the file path for the exported installer]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2899,93 +2977,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingPkgDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary directory path for the repacked packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[再パックされたパッケージの一時ディレクトリ パス]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary directory path for the repacked packages]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabArtifactID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact Id is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[成果物 ID は、Maven の仕様に従ったプロジェクトの名前です]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabGroupID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[GroupId uniquely identifies your project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[GroupId は Maven の仕様に従ってプロジェクトを一意に識別します]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Version is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[バージョンは、Maven の仕様に従ったプロジェクトの名前です]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The directory path for the exported repository]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートされたリポジトリのディレクトリ パス]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoURL" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The remote repository URL for the online installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[オンライン インストーラーのリモート リポジトリ URL]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the remote repository URL for the online installer]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKMinVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android minimum supported SDK version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Android でサポートされている SDK の最小バージョン]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android minimum supported SDK version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKTargetVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android target sdk version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Android ターゲット SDK のバージョン]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android target sdk version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates a standalone deployment of installed ports]]></Val>
@@ -3039,6 +3030,24 @@
           <Val><![CDATA[Finds a port or artifact that may be installed or activated]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[インストールまたはアクティブ化できるポートまたは成果物を検索します]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineExample" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg format-feature-baseline <ci.feature.baseline.txt path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg format-feature-baseline <ci.feature.baseline.txt path>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Formats a feature baseline file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[機能ベースライン ファイルをフォーマットします]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3583,6 +3592,69 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdTestCIFeatureBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the ci.feature.baseline.txt file. Used to skip known failing tests ports and detect regressions]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ci.feature.baseline.txt ファイルへのパス。既知の失敗したテスト ポートをスキップし、回帰を検出するために使用されます]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Runs tests for all ports]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[すべてのポートのテストを実行します]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesFailingAbis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to file to which all failing ABI hashes will be written]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[失敗したすべての ABI ハッシュが書き込まれるファイルへのパス]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCombined" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[すべての機能が有効な場合のテストをスキップします]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCore" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing only the 'core' feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['core' 機能が有効な場合のみテストをスキップします]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoSeparated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature separately]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[すべての機能のテストを個別にスキップします]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Tests the features of a port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ポートの機能をテストします]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints out plan without execution]]></Val>
@@ -3817,15 +3889,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CommandFailedCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[command:]A;{command_line}]A;failed with exit code {exit_code} and the following output:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[コマンド:]A;{command_line}]A;終了コード {exit_code} と次の出力で失敗しました:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Community Triplets:]]></Val>
@@ -3847,15 +3910,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ComputeAllAbis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
+          <Val><![CDATA[Computing all ABI hashes...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[フォルダー "{path}":を圧縮できませんでした:]]></Val>
+            <Val><![CDATA[すべての ABI ハッシュを計算中です...]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComputeInstallPlans" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Computing {count} install plans...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count} のインストール プランを計算中です...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3922,15 +3991,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[マニフェスト ファイルとコントロール ファイルの両方がポート ディレクトリに存在します: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Control character in string]]></Val>
@@ -3982,15 +4042,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg の 'installed' ツリーが破損しています。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotActivateEspidfPythonWasNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not activate esp-idf: python was not found.]]></Val>
@@ -4035,15 +4086,6 @@
           <Val><![CDATA[could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[コミット {commit_sha} でリポジトリ {package_name} に `versions` の Git ツリーが見つかりませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CouldNotFindToolVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not find <tools version="{version}"> in {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} に <tools version="{version}"> が見つかりませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4117,6 +4159,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl 操作がエラー コード {exit_code} で失敗しました。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
@@ -4135,20 +4186,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlResponseTruncatedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl returned a partial response; waiting {value} milliseconds and trying again]]></Val>
+          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl が部分的な応答を返しました。{value} ミリ秒待ってから、もう一度お試しください]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl was unable to perform all requested HTTP operations, even after timeout and retries. The last command line was: {command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl は、タイムアウトおよび再試行後であっても、要求されたすべての HTTP 操作を実行できませんでした。最後のコマンド ライン: {command_line}]]></Val>
+            <Val><![CDATA[curl は予期された数の終了コードを返せませんでした;これは、終了する前に何かがカールを終了した場合に発生する可能性があります。curl は前回の操作の結果コードである {exit_code} で終了しましたが、クラッシュの結果である可能性があります。コマンド ラインが {command_line} されました。すべての出力は次のとおりです:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4327,11 +4369,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";DependencyInFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
+          <Val><![CDATA[the dependency is in the feature named {feature}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--prefab-debug は現在非推奨です。]]></Val>
+            <Val><![CDATA[依存関係は {feature} という名前の機能に含まれています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[依存関係 {package_name} がバージョン データベースに存在しません。そのポートは存在しますか?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyWillFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dependency {feature_spec} will not build => cascade]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[依存関係 {feature_spec} はビルドされません => カスケード]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4387,30 +4447,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedCurl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: curl failed to download with exit code {exit_code}]]></Val>
+          <Val><![CDATA[download from {url} had an unexpected hash]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: curl は終了コード {exit_code} でダウンロードできませんでした]]></Val>
+            <Val><![CDATA[{url} からのダウンロードに予期しないハッシュがありました]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchActualHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Actual  : {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[実績 : {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatchExpectedHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          <Val><![CDATA[Expected: {sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ファイルに必要なハッシュがありません:]A;url: {url}]A;ファイル: {path}]A;必要なハッシュ: {expected}実際の]A;ハッシュ: {actual}]]></Val>
+            <Val><![CDATA[必要な値: {sha}]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchZero" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[予期された SHA512 がすべてゼロであったため、ダウンロードに失敗しました。必要な SHA512 を次に変更してください: {sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[プロキシを使用している場合は、プロキシ設定が正しいことを確認してください。]A;考えられる原因:]A;1. 実際に HTTP プロキシを使用していますが、HTTPS_PROXY 変数を `https//address:port` に設定しています。]A;`https://` というプレフィックスはプロキシが HTTPS プロキシであることを指しますが、使用しているプロキシ (v2ray、shadowsocksr など) は HTTP プロキシであるため、これは正しくありません。]A;代わりに、`http://address:port` を HTTP_PROXY と HTTPS_PROXY の両方に設定してみてください。]A;2. Windows を使用している場合、vcpkg はプロキシ ソフトウェアによって設定された Windows IE プロキシ設定を自動的に使用します。参照: https://github.com/microsoft/vcpkg-tool/pull/77]A;プロキシによって設定された値が間違っているか、同様の `https://` プレフィックスの問題が発生している可能性があります。]A;3. プロキシのリモート サーバーが故障しています。]A;これが一時的なダウンロード サーバーエラーではなく、別の場所からこのファイルをダウンロードするために vcpkg を変更する必要がある場合は、問題を https://github.com/Microsoft/vcpkg/issues に送信してください]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ダウンロードに失敗しました -- {value}ミリ秒後に再試行しています]]></Val>
+            <Val><![CDATA[{url} のダウンロードに失敗しました -- {value} ミリ秒後に再試行しています]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4419,6 +4515,15 @@
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: 失敗しました: 状態コード {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadOrUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[or {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[または {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4435,12 +4540,45 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} が正常にダウンロードされました]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesfulUploading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}, storing to {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} が正常にダウンロードされ、{url} に保存されました]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{url} しようとしています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: {system_api} が終了コード {exit_code} で失敗しました]]></Val>
+            <Val><![CDATA[{url}: {system_api} が終了コード {exit_code} で失敗しました。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4471,29 +4609,59 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingAssetShaToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading asset cache entry {sha} -> {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ エントリをダウンロードしています {sha} -> {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingAssetShaWithoutAssetCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[requested download of asset cache entry {sha} -> {path}, but no asset caches are configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[-> {path} {sha} アセット キャッシュ エントリのダウンロードを要求しましたが、資産キャッシュが構成されていません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} をダウンロードしています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFileFirstAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}, trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} をダウンロードしています。{url} 試しています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{tool_name} の適切なバージョンが見つかりませんでした (v{version} が必要です) ポータブル {tool_name} {version} をダウンロードしています...]]></Val>
+            <Val><![CDATA[適切なバージョンの {tool_name} が見つかりませんでした (v{version} が必須)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading {tool_name}...]A;{url}->{path}]]></Val>
+          <Val><![CDATA[Downloading {url} -> {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{tool_name} をダウンロードしています...]A;{url}->{path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading {url}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url} をダウンロードしています]]></Val>
+            <Val><![CDATA[{url} -> {path} をダウンロードしています]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4539,6 +4707,15 @@
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[アクティブ化中に ${p0} の定義が重複しています。古い値は新しい値に置き換わります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicateDependencyOverride" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} already has an override]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} は既に上書きされています]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4777,6 +4954,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlay" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[マニフェスト ディレクトリ ({path}) をオーバーレイ ポートで構成されたディレクトリと同じにすることはできません。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlayDot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory cannot be the same as a directory configured in overlay-ports, so "overlay-ports" values cannot be ".".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[マニフェスト ディレクトリをオーバーレイ ポートで構成されたディレクトリと同じにすることはできません。そのため、"overlay-ports" の値を "." にすることはできません。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.]]></Val>
@@ -4948,15 +5143,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error occured while writing {path}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ErrorsFound" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following errors:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のエラーが見つかりました:]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5143,6 +5329,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedInstallStateField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'not-installed', 'half-installed', or 'installed']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['not-installed'、'half-installed'、または 'installed' のいずれかが必要です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedOneOfNumberBooleanIdentifierStringFoundToken$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected one of {Number, Boolean, Identifier, String}, found token ${p0}]]></Val>
@@ -5209,6 +5404,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedTextHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected '{expected}' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ここには '{expected}' が必要です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
@@ -5221,20 +5425,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExpectedWantField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
+          <Val><![CDATA[expected one of 'install', 'hold', 'deinstall', or 'purge' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートの prefab を使用するには、arm64-v8a、armeabi-v7a、x86_64、x86 のいずれかのアーキテクチャが存在する必要があります。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[エクスポートの prefab には Android トリプレットが必要です。]]></Val>
+            <Val><![CDATA['install'、'hold'、'deinstall'、または 'purge' のいずれかが必要です]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5262,15 +5457,6 @@
           <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[次のパッケージは既にビルドされており、エクスポートされます:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exporting maintenance tool...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[メンテナンス ツールをエクスポートしています...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5386,15 +5572,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToDownloadFromMirrorSet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to download from mirror set]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ミラー セットからダウンロードできませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to extract "{path}":]]></Val>
@@ -5473,33 +5650,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToObtainDependencyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired dependency version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[目的の依存関係のバージョンが見つかりません。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToObtainLocalPortGitSha" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to obtain git SHAs for local ports.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ローカル ポートの Git SAS を取得できませんでした。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired package version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[目的のパッケージ バージョンが見つかりません。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToOpenAlgorithm" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to open {value}]]></Val>
@@ -5539,27 +5689,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[コントロール ファイルを解析できませんでした: {path}]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse manifest file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[マニフェスト ファイルを解析できませんでした: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToParseNoTopLevelObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
@@ -5587,38 +5716,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ツール {tool_name} のバージョンを解析できませんでした。バージョン文字列: {version}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to parse versions file {path}]]></Val>
+          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[バージョン ファイル {path} を解析できませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} から段落を読み取ることができませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRemoveControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to remove control file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[コントロール ファイル {path} を削除できませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5644,12 +5746,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Val><![CDATA[Failed to store {path} to {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ミラーに保存できませんでした:]]></Val>
+            <Val><![CDATA[{url} への {path} を保存できませんでした。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[failed to store back to mirror:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5677,15 +5782,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to write manifest file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[マニフェスト ファイル {path} を書き込めませんでした]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedVendorAuthentication" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.]]></Val>
@@ -5709,6 +5805,42 @@
           <Val><![CDATA[Fatal: The root folder '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[致命的エラー: ルート フォルダー '${p0}' を作成できません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[機能 '{feature}' は既に '{value}' として宣言されています。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineExpectedFeatures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '{value}' a list of features must be specified.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{value}' を使用する場合は、機能のリストを指定する必要があります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineFormatted" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Succeeded in formatting the feature baseline file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[機能ベースライン ファイルの書式設定に成功しました。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForFail" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['= fail' を使用する場合、機能のリストは許可されません。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5758,12 +5890,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}: file not found]]></Val>
+          <Val><![CDATA[file not found]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}: ファイルが見つかりません]]></Val>
+            <Val><![CDATA[ファイルが見つかりません]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}: file not found]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5799,12 +5934,12 @@
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files]]></Val>
+          <Val><![CDATA[absolute paths found here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のファイルに絶対パスが見つかりました]]></Val>
+            <Val><![CDATA[絶対パスがここに見つかりました]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+            <Val><![CDATA[Absolute paths were found in the following files]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5841,6 +5976,15 @@
           <Val><![CDATA[the files are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ファイルは ${{CURRENT_PACKAGES_DIR}} に対して相対的です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FindCommandFirstArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first argument to 'find' must be 'artifact' or 'port' .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['find' の最初の引数は 'artifact' または 'port' である必要があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5908,6 +6052,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ForceClassicMode" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force classic mode, even if a manifest could be found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[マニフェストが見つかった場合でもクラシック モードを強制します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ForceSystemBinariesOnWeirdPlatforms" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.]]></Val>
@@ -5947,51 +6100,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generated configuration {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[構成 {path} を生成しました。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installer generated.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} インストーラーが生成されました。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating configuration {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[構成 {path} を生成しています...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating installer {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[インストーラー {path} を生成しています...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating repository {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[リポジトリ {path} を生成しています...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
@@ -6006,6 +6114,15 @@
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{command_line} を実行できませんでした]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitCommitUpdateVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git commit -m "Update version database"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[git commit -m "Update version database"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6103,24 +6220,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HashFileFailureToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to read file "{path}" for hashing: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ハッシュのためにファイル "{path}" を読み取れませんでした: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Val><![CDATA[{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{package_name} には {count} 個のファイルが含まれています。バイナリ キャッシュの ABI ハッシュを決定するときに、これらのコンテンツのハッシュ化に時間がかかることがあります。ファイル数を減らすことを検討してください。この一般的な原因は、ソース ファイルまたはビルド ファイルをポートのディレクトリに誤ってチェックアウトすることです。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6210,6 +6318,15 @@
           <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a "?".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[**実験的: 警告なしに変更または削除されます**]A;Azure Blob Storage ソースを追加します。Shared Access Signature 検証を使用します。<url> にはコンテナー パスを含める必要があります。<sas> には "?" を前に付ける必要があります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAzUpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Universal Package Azure Artifacts source. Uses the Azure CLI (az artifacts) for uploads and downloads.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**試験段階: 警告なしに変更または削除されます**]A;ユニバーサル パッケージ Azure Artifacts ソースを追加します。アップロードとダウンロードに Azure CLI (az artifacts) を使用します。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6757,18 +6874,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uses aria2 to perform download tasks]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[aria2 を使用してダウンロード タスクを実行します]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
@@ -7117,18 +7222,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Maven ファイルをインストールしています {path}]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{path} installing maven file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InstallingOverlayPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[installing overlay port from here]]></Val>
@@ -7291,11 +7384,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InvalidArchitectureValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid architecture: {value}]]></Val>
+          <Val><![CDATA[Invalid architecture: {value}. Expected one of: {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[アーキテクチャが無効です: {value}]]></Val>
+            <Val><![CDATA[アーキテクチャが無効です: {value}。次のいずれかが必要です: {expected}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7332,6 +7425,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無効な引数: バイナリ構成 '{binary_source}' には、少なくともベース URL と SAS トークンが必要です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresFourOrFiveArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 4 or 5 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無効な引数: バイナリ構成 '{binary_source}' には 4 つまたは 5 つの引数が必要です]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7675,15 +7777,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[File contains no versions.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ファイルにバージョンが含まれていません。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidOptionForRemove" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
@@ -7707,6 +7800,15 @@
           <Val><![CDATA[Found invalid port version file name: `{path}`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[無効なポート バージョン ファイル名が見つかりました: '{path}'。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidSha512" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid SHA-512 hash: {sha}]A;SHA-512 hash must be 128 characters long and contain only hexadecimal digits]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[SHA-512 ハッシュが無効です: {sha}]A;SHA-512 ハッシュは 128 文字で、16 進数のみを含む必要があります]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7738,6 +7840,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidToolOSValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool operating system: {value}. Expected one of: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[無効なツール オペレーティング システム: {value}。次のいずれかが必要です: {expected}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidToolVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool version; expected a string containing a substring of between 1 and 3 numbers separated by dots.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツールのバージョンが無効です。ドットで区切られた 1 ~ 3 個の数値の部分文字列を含む文字列が必要です。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
@@ -7761,6 +7881,15 @@
           <Val><![CDATA[Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[変数VCPKG_HASH_ADDITIONAL_FILESに無効なファイル パスが含まれています: '{path}'。値は、存在するファイルへの絶対パスである必要があります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidValuePostPortfileIncludes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[変数 VCPKG_POST_PORTFILE_INCLUDES に無効なファイル パスが含まれています: '{path}'。値は、存在する CMake ファイルへの絶対パスである必要があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8128,11 +8257,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ManifestConflict2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
+          <Val><![CDATA[Found both a manifest and CONTROL files; please rename one or the other]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポート "{path}" にマニフェストと CONTROL ファイルの両方が見つかりました。いずれかの名前を変更してください]]></Val>
+            <Val><![CDATA[マニフェストと CONTROL ファイルの両方が見つかりました。いずれかの名前を変更してください]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8184,10 +8313,13 @@
       </Item>
       <Item ItemId=";MismatchedNames" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          <Val><![CDATA[the port name declared in the metadata file did not match the directory. Expected the port to be named {package_name}, but the file declares {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[名前が一致しませんでした: '{package_name}' != '{actual}']]></Val>
+            <Val><![CDATA[メタデータ ファイルで宣言されたポート名がディレクトリと一致しませんでした。ポートの名前は {package_name} である必要がありますが、ファイルで {actual} 宣言されています。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8214,24 +8346,6 @@
           <Val><![CDATA[Unable to find 7z header.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[7z ヘッダーが見つかりません。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ANDROID_NDK_HOME 環境変数がありません]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ANDROID_NDK_HOME ディレクトリが存在しません: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8325,6 +8439,15 @@
           <Val><![CDATA[missing required field '{json_field}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[必須フィールド '{json_field}' がありません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingShaVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {{sha}} variable must be used in the template if other variables are used.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[他の変数を使用する場合は、{{sha}} 変数をテンプレートで使用する必要があります。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8485,6 +8608,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoCoreFeatureAllowedInNonFailBaselineEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['core' is not allowed in the list of features if the entry is of type '{value}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[エントリの種類が '{value}' の場合、機能のリストには 'core' は許可されません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8521,15 +8653,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoUrlsAndHashSpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No urls specified to download SHA: {sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[SHA をダウンロードするための URL が指定されていません: {sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoUrlsAndNoHashSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No urls specified and no hash specified.]]></Val>
@@ -8562,6 +8685,15 @@
           <Val><![CDATA[the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} were provided]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[コマンド '{command_name}' には、{lower} 引数と {upper} 引数の間 (両端を含む) が必要ですが、{actual} が指定されました]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonRangeArgsGreater" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires at least {lower} arguments, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[コマンド '{command_name}' には少なくとも {lower} 個の引数が必要ですが、{actual} 個が指定されました]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8611,20 +8743,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OnlySupports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} only supports {supports_expression}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} は {supports_expression} のみをサポートしています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OptionMustBeInteger" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of --{option} must be an integer.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[--{option} 値は整数である必要があります。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";OptionRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} option is required.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--{option} オプションが必要です。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8694,18 +8826,21 @@
       </Item>
       <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          <Val><![CDATA[Overlay path "{path}" must be an existing directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[オーバーレイ パス "{path}" が存在し、ディレクトリである必要があります。]]></Val>
+            <Val><![CDATA[オーバーレイ パス "{path}" は既存のディレクトリである必要があります。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";OverlayPortsDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";OverlayPortsHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Directories of overlay ports (also: {env_var})]]></Val>
+          <Val><![CDATA[Overlay-port directories, or directories containing overlay-port directories (also: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[オーバーレイ ポートのディレクトリ ({env_var} も含む)]]></Val>
+            <Val><![CDATA[オーバーレイ ポート ディレクトリ、またはオーバーレイ ポート ディレクトリを含むディレクトリ ({env_var} も含む)]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9021,43 +9156,49 @@
       </Item>
       <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" は有効な機能名ではありません。機能名は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
+            <Val><![CDATA["{package_name}" は有効な機能名ではありません。機能名には小文字の英数字とハイフンのみを使用する必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{値}" は有効な識別子ではありません。識別子は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
+            <Val><![CDATA["{value}" は有効な識別子ではありません。識別子には小文字の英数字とハイフンのみを使用する必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" は有効なパッケージ名ではありません。パッケージ名は小文字の英数字とハイフンにする必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
+            <Val><![CDATA["{package_name}" は有効なパッケージ名ではありません。パッケージ名には小文字の英数字とハイフンのみを使用する必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[パッケージ名の入力解析の終了が必要です。 これは通常、指定された文字がポート名に使用できないことを意味します。ポート名はすべて小文字の英数字 + ハイペンであり、予約されていません (詳細については、{url} を参照してください)。]]></Val>
+            <Val><![CDATA[パッケージ名の入力解析の終了が必要です。これは通常、指定された文字がポート名に使用できないことを意味します。ポート名には小文字の英数字とハイフンのみを使用する必要があり、また、予約されていないことが必須になります (詳細については、{url} を参照してください)。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9075,10 +9216,13 @@
       </Item>
       <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[パッケージ仕様の入力解析の終了が必要です。 これは通常、指定された文字がパッケージ仕様で使用できないことを意味します。ポート名、トリプレット名、機能名はすべて小文字の英数字 + ハイフンです。]]></Val>
+            <Val><![CDATA[パッケージ仕様の入力解析の終了が必要です。これは通常、指定された文字がパッケージ仕様で使用できないことを意味します。ポート名、トリプレット名、機能名は小文字の英数字とハイフンのみです。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9087,6 +9231,15 @@
           <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[パッケージ仕様の入力解析の終了が必要です。代わりに {version_spec} ですか?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseTripletNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[トリプレット名が無効です。トリプレット名は小文字の英数字とハイフンのみです。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9526,6 +9679,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortDeclaredHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} がここで宣言されています]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortDependencyConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Port {package_name} has the following unsupported dependencies:]]></Val>
@@ -9558,6 +9720,15 @@
           <Val><![CDATA[the baseline does not contain an entry for port {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ベースラインにポート {package_name} のエントリが含まれていません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is not supported on {triplet}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{triplet} で {package_name} はサポートされていません]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9649,11 +9820,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrecheckBinaryCache" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checking the binary cache...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バイナリキャッシュを確認中です...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[以前の統合ファイルは削除されませんでした。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed with exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[終了コード ({exit_code}) で失敗しました]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9669,10 +9858,13 @@
       </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --zip --7zip.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[次のオプションのうち少なくとも 1 つが必要です: --raw --nuget --ifw --zip --7zip --chocolatey --prefab。]]></Val>
+            <Val><![CDATA[次のオプションのうち少なくとも 1 つが必要です: --raw --nuget --zip --7zip。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9805,6 +9997,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RestoredPackagesFromAZUPKG" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from Universal Packages in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{elapsed} の Universal Packages から {count} 個のパッケージを復元しました。--debug を使用して詳細を表示します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
@@ -9877,11 +10078,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RunvcpkgActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";RunvcpkgshellActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Run \`vcpkg activate\` to apply to the current terminal]]></Val>
+          <Val><![CDATA[Run \`vcpkg-shell activate\` to apply to the current terminal]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[\`vcpkg activate\` を実行して現在のターミナルに適用する]]></Val>
+            <Val><![CDATA[\`vcpkg-shell activate\` を実行して現在のターミナルに適用する]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9967,6 +10168,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SkipTestingOfPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[次の依存関係は {triplet} でサポートされていないため、{feature_spec} のテストをスキップします:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SkipTestingOfPortAlreadyInBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing because the ABI hash {sha} is already in the binary cache.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ABI ハッシュ {sha} が既にバイナリ キャッシュにあるため、テストをスキップします。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
@@ -10030,6 +10249,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StartingFeatureTest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature Test [{value}]5D; {feature_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[機能テスト [{value}]5D; {feature_spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Status" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Status]]></Val>
@@ -10048,23 +10276,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheBackground" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
+          <Val><![CDATA[Starting submission of {spec} to {count} binary cache(s) in the background]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{elapsed} の {count} 件の宛先にバイナリを格納しました。]]></Val>
+            <Val><![CDATA[バックグラウンドで {count} バイナリ キャッシュへの {spec} の送信を開始しています]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheComplete" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+          <Val><![CDATA[Completed submission of {spec} to {count} binary cache(s) in {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} を {path} にエクスポートしました]]></Val>
+            <Val><![CDATA[{elapsed} のバイナリ キャッシュへの {spec} {count} 送信が完了しました]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10074,15 +10299,6 @@
           <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[結果は古い可能性があります。'git pull' を実行して最新の結果を取得してください。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestResolution" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To attempt to resolve all errors at once, run:]A;vcpkg {command_name} --{option}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[すべてのエラーを一度に解決するには、次を実行します: ]A;vcpkg {command_name} --{option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10186,11 +10402,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolDataFileSchemaVersionNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[document schema version {version} is not supported by this version of vcpkg]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ドキュメント スキーマのバージョン {version} は、このバージョンの vcpkg ではサポートされていません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{tool_name} をフェッチできませんでした。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} は既にダウンロードされているようですが、ハッシュが正しくありません。{expected} が必要ですが、{actual} されました]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10441,7 +10675,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -10707,6 +10941,24 @@
           <Val><![CDATA[unexpected "port-version" without a versioning field]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[バージョン管理フィールドのない予期しない "port-version" です]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} は {elapsed} 後に予期しない状態 {actual} になりました]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[次の依存関係がビルドされなかったため、{feature_spec} で予期しない状態 {actual} が発生しました:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11094,12 +11346,12 @@
       </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
+          <Val><![CDATA[Uploading binaries for {spec} to {vendor} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['{spec}' のバイナリを '{vendor}' ソース "{path}" にアップロードしています。]]></Val>
+            <Val><![CDATA[{path} から {vendor} に {spec} のバイナリをアップロードしています]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
+            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -11362,12 +11614,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} matches the current baseline]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} が現在のベースラインと一致します]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is assigned {actual}, but the local port is {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[最新バージョンは {expected} ですが、ベースライン ファイルには {actual} が含まれています。]A;以下を実行してください:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;ベースライン バージョンを更新します。]]></Val>
+            <Val><![CDATA[{package_name} には {actual} が割り当てられていますが、ローカル ポートは {expected} です]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11389,11 +11653,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionConflictXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionConstraintNotInDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Expected {path} version: [{expected_version}]5D;, but was [{actual_version}]5D;. Please re-run bootstrap-vcpkg.]]></Val>
+          <Val><![CDATA[the "version>=" constraint to {package_name} names version {version} which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} バージョン: [{expected_version}]5D; が必要でしたが、[{actual_version}]5D; でした。 bootstrap-vcpkg を再実行してください。]]></Val>
+            <Val><![CDATA[{package_name} への "version>=" 制約により、バージョン データベースに存在しないバージョン {version} が指定されます。vcpkg で解釈するには、すべてのバージョンがバージョン データベースに存在する必要があります。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version constraint or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バージョン制約を削除するか、ここで宣言されている値を選択することを検討してください]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintOk" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[all version constraints are consistent with the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[すべてのバージョン制約がバージョン データベースと一致しています]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11428,11 +11710,32 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Val><![CDATA[this port is not in the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} にバージョン データベース ファイルが {path}にありません]A;vcpkg x-add-version {package_name}]A;を実行して、]A;バージョン ファイルを作成します。]]></Val>
+            <Val><![CDATA[このポートはバージョン データベースにありません]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version database file should be here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バージョン データベース ファイルがここにある必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to create the version database file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_line}' を実行してバージョン データベース ファイルを作成します]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11448,10 +11751,13 @@
       </Item>
       <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Val><![CDATA[{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ファイルで宣言されたバージョンがチェックアウトされたバージョンと一致しません: {version}]]></Val>
+            <Val><![CDATA[{git_tree_sha} は {expected} を含むと宣言されていますが、{actual} を含むようです]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11569,24 +11875,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
+          <Val><![CDATA[{version_spec} was not found in versions database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{expected} は利用できません。使用できるのは {actual} のみです]]></Val>
+            <Val><![CDATA[{version_spec} がバージョン データベースに見つかりませんでした]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile3" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[the version should be in this file]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} のバージョン ファイルにバージョン {version} が見つかりませんでした。]A;vcpkg x-add-version {package_name}]A;を実行して、]A;新しいポート バージョンを追加します。]]></Val>
+            <Val><![CDATA[バージョンはこのファイルに含まれている必要があります]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to add the new port version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['{command_line}' を実行して新しいポート バージョンを追加します]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version override {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バージョン オーバーライド {package_name} がバージョン データベースに存在しません。そのポートは存在しますか?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the override of {package_name} names version {version} which does not exist in the version database. Installing this port at the top level will fail as that version will be unresolvable.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} のオーバーライドにより、バージョン データベースに存在しないバージョン {version} という名前が付けられます。最上位レベルでこのポートをインストールすると、そのバージョンが解決できなくなるため失敗します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version override or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[バージョン オーバーライドを削除するか、ここで宣言されている値を選択することを検討してください]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverwriteVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can overwrite {version_spec} with correct local values by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[次を実行して、{version_spec} を正しいローカル値で上書きできます。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11608,29 +11956,101 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[バージョン データベースは {version} を {expected} として宣言していますが、{path} はそれを {actual} として宣言します。異なるスキームで宣言されている場合でも、バージョンは一意である必要があります。]A;vcpkg x-add-version {package_name} --overwrite-version]A;を実行して、]A;バージョン データベースで宣言されているスキームをポートで宣言されたスキームで上書きします。]]></Val>
+            <Val><![CDATA[{version} は {expected} と宣言されていますが、{package_name} は {actual} で宣言されています]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1Old" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version} は {expected} で宣言されていますが、ローカル ポートの SHA {actual}が異なります。]A;ポートのバージョン フィールドを更新してから、次を実行してください:]A;vcpkg x-add-version {package_name}]A;Git のバージョンの追加]A;git commit -m "Update version database"]A;で新しいバージョンを追加します。]]></Val>
+            <Val><![CDATA[{version} は {expected} と宣言されていますが、{package_name}@{git_tree_sha} は {actual} で宣言されています]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Val><![CDATA[versions must be unique, even if they are declared with different schemes]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} の検証中に Git SHA が見つかりません。]A;以下を実行してください:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;新しいポートをコミットし、そのバージョン ファイルを作成します。]]></Val>
+            <Val><![CDATA[異なるスキームで宣言されている場合でも、バージョンは一意である必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} git tree {git_tree_sha} does not match the port directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} Git ツリー {git_tree_sha} がポート ディレクトリと一致しません]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port directory has git tree {git_tree_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ポート ディレクトリに Git ツリー {git_tree_sha} があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is already published, update this file with a new version or port-version, commit it, then add the new version by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} が既に公開されている場合は、このファイルを新しいバージョンまたはポート バージョンで更新し、コミットしてから、次を実行して新しいバージョンを追加します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} がまだ発行されていない場合は、次を実行して前の Git ツリーを上書きします。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ポート ディレクトリの Git ツリーを特定できませんでした。これは通常、コミットされていない変更が原因で発生します。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[次を実行して、変更をコミットしてバージョン データベースに追加できます。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[wip]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[WIP]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[{package_name}]5D; 新しいポートの追加]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11674,6 +12094,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitUntilPackagesUploaded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for {count} remaining binary cache submissions...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[残りのバイナリ キャッシュの送信 {count} 待機しています...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11743,20 +12172,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WhileLoadingBaselineVersionForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Val><![CDATA[while loading baseline version for {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ローカル ポート {package_name} の読み込み中に]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ポートの読み込み中: {commit_sha}]]></Val>
+            <Val><![CDATA[{package_name} のベースライン バージョンの読み込み中]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11802,6 +12222,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[プロジェクト ファイル ${p0} の依存関係の解決中に、${p1} はレジストリを指定しませんでした。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileRunningAssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while running asset cache script command line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[資産キャッシュ スクリプトコマンド ラインの実行中]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11953,11 +12382,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";noPostscriptFileRunVcpkgshellWithTheSameArguments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Val><![CDATA[no postscript file: run vcpkg-shell with the same arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[postscript ファイルがありません: 実行可能ファイルではなく vcpkg シェル関数を使用して再度実行してください]]></Val>
+            <Val><![CDATA[postscript ファイルがありません: 同じ引数で vcpkg-shell を実行します]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

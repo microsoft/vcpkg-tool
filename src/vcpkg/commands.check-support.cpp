@@ -128,16 +128,17 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
 
         // for each spec in the user-requested specs, check all dependencies
         CreateInstallPlanOptions create_options{
-            nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+            nullptr, host_triplet, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No};
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         for (const auto& user_spec : specs)
         {
-            auto action_plan = create_feature_install_plan(provider, *cmake_vars, {&user_spec, 1}, {}, create_options);
+            auto action_plan = create_feature_install_plan(
+                provider, *cmake_vars, {&user_spec, 1}, {}, packages_dir_assigner, create_options);
 
             cmake_vars->load_tag_vars(action_plan, host_triplet);
 

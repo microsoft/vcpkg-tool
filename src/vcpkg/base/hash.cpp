@@ -142,10 +142,14 @@ namespace vcpkg::Hash
 
             virtual std::string get_hash() override
             {
+                static constexpr unsigned long static_max_hash_size = 64; // SHA512, 512/8 = 64
                 const auto hash_size = get_hash_buffer_size();
-                const auto buffer = std::make_unique<uchar[]>(hash_size);
-                const auto hash = buffer.get();
+                if (hash_size > static_max_hash_size)
+                {
+                    Checks::unreachable(VCPKG_LINE_INFO, "hash buffer too small");
+                }
 
+                uchar hash[static_max_hash_size];
                 const NTSTATUS error_code = BCryptFinishHash(hash_handle, hash, hash_size, 0);
                 Checks::check_exit(VCPKG_LINE_INFO, NT_SUCCESS(error_code), "Failed to finalize the hash");
                 return to_hex(hash, hash + hash_size);
@@ -267,20 +271,21 @@ namespace vcpkg::Hash
                     add_to_unprocessed(&temp, &temp + 1);
                 }
 
+                const auto chunk_end = m_chunk + chunk_size;
                 // append 0 to the message so that the resulting length is just enough
                 // to add the message length
                 if (chunk_size - m_current_chunk_size < sizeof(m_message_length))
                 {
                     // not enough space to add the message length
                     // just resize and process full chunk
-                    std::fill(chunk_begin(), m_chunk.end(), static_cast<uchar>(0));
+                    std::fill(chunk_begin(), chunk_end, static_cast<uchar>(0));
                     m_impl.process_full_chunk(m_chunk);
                     m_current_chunk_size = 0;
                 }
 
-                const auto before_length = m_chunk.end() - sizeof(m_message_length);
+                const auto before_length = chunk_end - sizeof(m_message_length);
                 std::fill(chunk_begin(), before_length, static_cast<uchar>(0));
-                std::generate(before_length, m_chunk.end(), [length = message_length]() mutable {
+                std::generate(before_length, chunk_end, [length = message_length]() mutable {
                     const auto result = top_bits(length);
                     length <<= 8;
                     return result;
@@ -289,7 +294,7 @@ namespace vcpkg::Hash
                 m_impl.process_full_chunk(m_chunk);
             }
 
-            auto chunk_begin() { return m_chunk.begin() + m_current_chunk_size; }
+            auto chunk_begin() { return m_chunk + m_current_chunk_size; }
 
             using underlying_type = typename ShaAlgorithm::underlying_type;
             using message_length_type = typename ShaAlgorithm::message_length_type;
@@ -297,7 +302,7 @@ namespace vcpkg::Hash
 
             ShaAlgorithm m_impl{};
 
-            std::array<uchar, chunk_size> m_chunk{};
+            uchar m_chunk[chunk_size] = {};
             std::size_t m_current_chunk_size = 0;
             message_length_type m_message_length = 0;
         };
@@ -327,7 +332,7 @@ namespace vcpkg::Hash
 
             Sha256Algorithm() noexcept { clear(); }
 
-            void process_full_chunk(const std::array<uchar, chunk_size>& chunk) noexcept
+            void process_full_chunk(const uchar (&chunk)[chunk_size]) noexcept
             {
                 std::uint32_t words[64];
 
@@ -387,7 +392,7 @@ namespace vcpkg::Hash
                 m_digest[7] = 0x5be0cd19;
             }
 
-            constexpr static std::array<std::uint32_t, number_of_rounds> round_constants = {
+            constexpr static std::uint32_t round_constants[number_of_rounds] = {
                 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
                 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
                 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -413,7 +418,7 @@ namespace vcpkg::Hash
 
             Sha512Algorithm() noexcept { clear(); }
 
-            void process_full_chunk(const std::array<uchar, chunk_size>& chunk) noexcept
+            void process_full_chunk(const uchar (&chunk)[chunk_size]) noexcept
             {
                 std::uint64_t words[80];
 
@@ -473,7 +478,7 @@ namespace vcpkg::Hash
                 m_digest[7] = 0x5be0cd19137e2179;
             }
 
-            constexpr static std::array<std::uint64_t, number_of_rounds> round_constants = {
+            constexpr static std::uint64_t round_constants[number_of_rounds] = {
                 0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc, 0x3956c25bf348b538,
                 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118, 0xd807aa98a3030242, 0x12835b0145706fbe,
                 0x243185be4ee4b28c, 0x550c7dc3d5ffb4e2, 0x72be5d74f27b896f, 0x80deb1fe3b1696b1, 0x9bdc06a725c71235,
@@ -496,10 +501,6 @@ namespace vcpkg::Hash
 
             std::uint64_t m_digest[8];
         };
-
-        // This is required on older compilers, since it was required in C++14
-        constexpr std::array<std::uint32_t, Sha256Algorithm::number_of_rounds> Sha256Algorithm::round_constants;
-        constexpr std::array<std::uint64_t, Sha512Algorithm::number_of_rounds> Sha512Algorithm::round_constants;
 #endif
     }
 
@@ -521,20 +522,17 @@ namespace vcpkg::Hash
     static ReturnType do_hash(Algorithm algo, const F& f)
     {
 #if defined(_WIN32)
-        auto hasher = BCryptHasher(algo);
-        return f(hasher);
+        return f(BCryptHasher(algo));
 #else
         switch (algo)
         {
             case Algorithm::Sha256:
             {
-                auto hasher = ShaHasher<Sha256Algorithm>();
-                return f(hasher);
+                return f(ShaHasher<Sha256Algorithm>());
             }
             case Algorithm::Sha512:
             {
-                auto hasher = ShaHasher<Sha512Algorithm>();
-                return f(hasher);
+                return f(ShaHasher<Sha512Algorithm>());
             }
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -543,7 +541,7 @@ namespace vcpkg::Hash
 
     std::string get_bytes_hash(const void* first, const void* last, Algorithm algo)
     {
-        return do_hash<std::string>(algo, [first, last](Hasher& hasher) {
+        return do_hash<std::string>(algo, [first, last](Hasher&& hasher) {
             hasher.add_bytes(first, last);
             return hasher.get_hash();
         });
@@ -556,17 +554,25 @@ namespace vcpkg::Hash
 
     std::string get_string_sha256(StringView s) { return get_string_hash(s, Hash::Algorithm::Sha256); }
 
-    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
+    HashResult get_file_hash(DiagnosticContext& context, const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
     {
-        Debug::println("Trying to hash ", path);
+        HashResult result;
         std::error_code ec;
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
+            if (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory)
+            {
+                result.prognosis = HashPrognosis::FileNotFound;
+                return result;
+            }
+
+            context.report_error(format_filesystem_call_error(ec, "open_for_read", {path}));
+            result.prognosis = HashPrognosis::OtherError;
+            return result;
         }
 
-        return do_hash<ExpectedL<std::string>>(algo, [&](Hasher& hasher) -> ExpectedL<std::string> {
+        result.hash = do_hash<std::string>(algo, [&](Hasher&& hasher) {
             constexpr std::size_t buffer_size = 1024 * 32;
             char buffer[buffer_size];
             do
@@ -578,13 +584,37 @@ namespace vcpkg::Hash
                 }
                 else if ((ec = file.error()))
                 {
-                    return error_prefix().append(msgHashFileFailureToRead, msg::path = path).append_raw(ec.message());
+                    result.prognosis = HashPrognosis::OtherError;
+                    context.report_error(format_filesystem_call_error(ec, "read", {path}));
+                    return std::string();
                 }
             } while (!file.eof());
 
-            auto result_hash = hasher.get_hash();
-            Debug::print(fmt::format("{} has hash {}\n", path, result_hash));
-            return result_hash;
+            return std::move(hasher).get_hash();
         });
+
+        return result;
+    }
+
+    Optional<std::string> get_file_hash_required(DiagnosticContext& context,
+                                                 const ReadOnlyFilesystem& fs,
+                                                 const Path& path,
+                                                 Algorithm algo)
+    {
+        auto result = get_file_hash(context, fs, path, algo);
+        switch (result.prognosis)
+        {
+            case HashPrognosis::Success: return result.hash;
+            case HashPrognosis::FileNotFound:
+                context.report(DiagnosticLine{DiagKind::Error, path, msg::format(msgFileNotFound)});
+                return nullopt;
+            case HashPrognosis::OtherError: return nullopt;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    ExpectedL<std::string> get_file_hash(const ReadOnlyFilesystem& fs, const Path& path, Algorithm algo)
+    {
+        return adapt_context_to_expected(get_file_hash_required, fs, path, algo);
     }
 }

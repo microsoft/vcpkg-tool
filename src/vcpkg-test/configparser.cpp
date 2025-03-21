@@ -531,6 +531,71 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
     }
 }
 
+TEST_CASE ("BinaryConfigParser HTTP provider", "[binaryconfigparser]")
+{
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{sha}.zip");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{sha}.zip");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/{triplet}/{sha}", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.url_templates_to_get.size() == 1);
+        REQUIRE(state.url_templates_to_get[0].url_template == "http://example.org/{triplet}/{sha}");
+    }
+    {
+        auto parsed = parse_binary_provider_configs("http,http://example.org/{triplet}", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
+TEST_CASE ("BinaryConfigParser Universal Packages provider", "[binaryconfigparser]")
+{
+    // Scheme: x-az-universal,<organization>,<project>,<feed>[,<readwrite>]
+    {
+        auto parsed =
+            parse_binary_provider_configs("x-az-universal,test_organization,test_project_name,test_feed,read", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.upkg_templates_to_get.size() == 1);
+        REQUIRE(state.upkg_templates_to_get[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_get[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_get[0].project == "test_project_name");
+    }
+    {
+        auto parsed =
+            parse_binary_provider_configs("x-az-universal,test_organization,test_project_name,test_feed,readwrite", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+        REQUIRE(state.upkg_templates_to_get.size() == 1);
+        REQUIRE(state.upkg_templates_to_put.size() == 1);
+        REQUIRE(state.upkg_templates_to_get[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_get[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_get[0].project == "test_project_name");
+        REQUIRE(state.upkg_templates_to_put[0].feed == "test_feed");
+        REQUIRE(state.upkg_templates_to_put[0].organization == "test_organization");
+        REQUIRE(state.upkg_templates_to_put[0].project == "test_project_name");
+    }
+    {
+        auto parsed = parse_binary_provider_configs(
+            "x-az-universal,test_organization,test_project_name,test_feed,extra_argument,readwrite", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-az-universal,missing_args,read", {});
+        REQUIRE(!parsed.has_value());
+    }
+}
+
 TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
 {
     CHECK(parse_download_configuration({}));
@@ -549,19 +614,19 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
     CHECK(parse_download_configuration("x-azurl,ftp://magic,none"));
 
     {
-        DownloadManagerConfig empty;
+        AssetCachingSettings empty;
         CHECK(empty.m_write_headers.empty());
         CHECK(empty.m_read_headers.empty());
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123/,foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
@@ -569,7 +634,7 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,?foo").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
@@ -577,14 +642,14 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         CHECK(dm.m_secrets == std::vector<std::string>{"?foo"});
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == nullopt);
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>");
         CHECK(dm.m_read_headers.empty());
@@ -592,13 +657,23 @@ TEST_CASE ("AssetConfigParser azurl provider", "[assetconfigparser]")
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
     }
     {
-        DownloadManagerConfig dm =
+        AssetCachingSettings dm =
             parse_download_configuration("x-azurl,https://abc/123,foo,readwrite").value_or_exit(VCPKG_LINE_INFO);
         CHECK(dm.m_read_url_template == "https://abc/123/<SHA>?foo");
         CHECK(dm.m_read_headers.empty());
         CHECK(dm.m_write_url_template == "https://abc/123/<SHA>?foo");
         Test::check_ranges(dm.m_write_headers, azure_blob_headers());
         CHECK(dm.m_secrets == std::vector<std::string>{"foo"});
+    }
+    {
+        AssetCachingSettings dm =
+            parse_download_configuration("x-script,powershell {SHA} {URL}").value_or_exit(VCPKG_LINE_INFO);
+        CHECK(!dm.m_read_url_template.has_value());
+        CHECK(dm.m_read_headers.empty());
+        CHECK(!dm.m_write_url_template.has_value());
+        CHECK(dm.m_write_headers.empty());
+        CHECK(dm.m_secrets.empty());
+        CHECK(dm.m_script.value_or_exit(VCPKG_LINE_INFO) == "powershell {SHA} {URL}");
     }
 }
 
@@ -614,7 +689,7 @@ TEST_CASE ("AssetConfigParser clear provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    DownloadManagerConfig empty;
+    AssetCachingSettings empty;
 
     CHECK(value_or(parse_download_configuration("x-azurl,https://abc/123,foo;clear"), empty).m_read_url_template ==
           nullopt);
@@ -633,7 +708,7 @@ TEST_CASE ("AssetConfigParser x-block-origin provider", "[assetconfigparser]")
             return std::move(v);
     };
 
-    DownloadManagerConfig empty;
+    AssetCachingSettings empty;
 
     CHECK(!value_or(parse_download_configuration({}), empty).m_block_origin);
     CHECK(value_or(parse_download_configuration("x-block-origin"), empty).m_block_origin);

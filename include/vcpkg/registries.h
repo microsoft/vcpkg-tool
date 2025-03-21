@@ -56,9 +56,7 @@ namespace vcpkg
 
     struct RegistryEntry
     {
-        virtual ExpectedL<View<Version>> get_port_versions() const = 0;
-
-        virtual ExpectedL<PortLocation> get_version(const Version& version) const = 0;
+        virtual ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const = 0;
 
         virtual ~RegistryEntry() = default;
     };
@@ -217,8 +215,4 @@ namespace vcpkg
     // No match is 0, exact match is SIZE_MAX, wildcard match is the length of the pattern.
     // Note that the * is included in the match size to distinguish from 0 == no match.
     size_t package_pattern_match(StringView name, StringView pattern);
-
-    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer();
-    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
-        const Path& root);
 }

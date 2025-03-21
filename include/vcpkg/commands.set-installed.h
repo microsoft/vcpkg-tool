@@ -40,6 +40,7 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
+                                           PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue);
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,

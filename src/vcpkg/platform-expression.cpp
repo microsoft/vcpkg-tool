@@ -119,7 +119,7 @@ namespace vcpkg::PlatformExpression
         struct ExpressionParser : ParserBase
         {
             ExpressionParser(StringView str, MultipleBinaryOperators multiple_binary_operators)
-                : ParserBase(str, "CONTROL"), multiple_binary_operators(multiple_binary_operators)
+                : ParserBase(str, "CONTROL", {0, 0}), multiple_binary_operators(multiple_binary_operators)
             {
             }
 
@@ -571,6 +571,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::qnx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "QNX");
                         case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
+                        case Identifier::mips64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "mips64");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
                         case Identifier::static_crt: return true_if_exists_and_equal("VCPKG_CRT_LINKAGE", "static");
@@ -584,8 +585,8 @@ namespace vcpkg::PlatformExpression
 
                             return is_native->second == "1";
                         }
-                        default: Checks::unreachable(VCPKG_LINE_INFO);
                     }
+                    Checks::unreachable(VCPKG_LINE_INFO);
                 }
                 else if (expr.kind == ExprKind::op_not)
                 {

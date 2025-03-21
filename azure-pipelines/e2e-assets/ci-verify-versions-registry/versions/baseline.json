@@ -32,6 +32,10 @@
       "baseline": "1.0",
       "port-version": 0
     },
+    "executable-bit": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
     "good": {
       "baseline": "1.0",
       "port-version": 0

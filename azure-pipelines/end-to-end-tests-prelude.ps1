@@ -6,12 +6,13 @@ $NuGetRoot = Join-Path $TestingRoot 'nuget'
 $NuGetRoot2 = Join-Path $TestingRoot 'nuget2'
 $ArchiveRoot = Join-Path $TestingRoot 'archives'
 $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
+$DownloadsRoot = Join-Path $TestingRoot 'downloads'
+$AssetCache = Join-Path $TestingRoot 'asset-cache'
+
 $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
-    "--x-packages-root=$packagesRoot",
-    "--overlay-ports=$PSScriptRoot/e2e-ports/overlays",
-    "--overlay-triplets=$PSScriptRoot/e2e-ports/triplets"
+    "--x-packages-root=$packagesRoot"
 )
 
 $commonArgs = @(
@@ -34,6 +35,13 @@ function Refresh-TestRoot {
     Remove-Item -Recurse -Force $TestingRoot -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $TestingRoot | Out-Null
     New-Item -ItemType Directory -Force $NuGetRoot | Out-Null
+    New-Item -ItemType Directory -Force $DownloadsRoot | Out-Null
+    New-Item -ItemType Directory -Force $AssetCache | Out-Null
+}
+
+function Refresh-Downloads{
+    Remove-Item -Recurse -Force $DownloadsRoot -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force $DownloadsRoot | Out-Null
 }
 
 function Write-Stack {
@@ -98,6 +106,7 @@ function Throw-IfNotFailed {
         Write-Stack
         throw "'$Script:CurrentTest' had a step with an unexpectedly zero exit code"
     }
+    $global:LASTEXITCODE = 0
 }
 
 function Write-Trace ([string]$text) {
@@ -121,7 +130,7 @@ function Run-VcpkgAndCaptureOutput {
     Write-Host -ForegroundColor red $Script:CurrentTest
     $result = (& "$thisVcpkg" @testArgs) | Out-String
     Write-Host -ForegroundColor Gray $result
-    $result
+    $result.Replace("`r`n", "`n")
 }
 
 function Run-VcpkgAndCaptureStdErr {
@@ -144,7 +153,7 @@ function Run-VcpkgAndCaptureStdErr {
     if ($null -eq $result) {
         $result = [string]::Empty
     }
-    return $result
+    return $result.Replace("`r`n", "`n")
 }
 
 function Run-Vcpkg {
@@ -156,6 +165,124 @@ function Run-Vcpkg {
         [string[]]$TestArgs
     )
     Run-VcpkgAndCaptureOutput -ForceExe:$ForceExe @TestArgs | Out-Null
+}
+
+# https://github.com/actions/toolkit/blob/main/docs/commands.md#problem-matchers
+# .github/workflows/matchers.json
+function Remove-Problem-Matchers {
+    Write-Host "::remove-matcher owner=vcpkg-msvc::"
+    Write-Host "::remove-matcher owner=vcpkg-gcc::"
+    Write-Host "::remove-matcher owner=vcpkg-catch::"
+}
+
+function Restore-Problem-Matchers {
+    Write-Host "::add-matcher::.github/workflows/matchers.json"
+}
+
+function Set-EmptyTestPort {
+    Param(
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$Name,
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$Version,
+        [string]$PortVersion,
+        [Parameter(Mandatory)][ValidateNotNullOrWhitespace()]
+        [string]$PortsRoot,
+        [switch]$Malformed
+    )
+    Write-Host "Setting $Name to $Version#$PortVersion @ $PortsRoot"
+
+    $portDir = Join-Path $PortsRoot $Name
+
+    New-Item -ItemType Directory -Force -Path $portDir | Out-Null
+    Set-Content -Value "set(VCPKG_POLICY_EMPTY_PACKAGE enabled)" -LiteralPath (Join-Path $portDir 'portfile.cmake') -Encoding Ascii
+
+    $json = @"
+{
+  "name": "$Name",
+  "version": "$Version"
+"@
+
+    if (-not $null -eq $PortVersion)
+    {
+        $json += ",`n  `"port-version`": $PortVersion"
+    }
+
+    if ($Malformed) {
+        $json += ','
+    }
+
+    $json += "`n}`n"
+
+    Set-Content -Value $json -LiteralPath (Join-Path $portDir 'vcpkg.json') -Encoding Ascii -NoNewline
+    git -C $PortsRoot status
+}
+
+function Throw-IfNonEqual {
+    Param(
+        [string]$Actual,
+        [string]$Expected
+    )
+    if ($Actual -ne $Expected) {
+        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
+        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
+        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
+        Write-Stack
+        throw "Expected '$Expected' but got '$Actual'"
+    }
+}
+
+function Throw-IfNonEndsWith {
+    Param(
+        [string]$Actual,
+        [string]$Expected
+    )
+
+    [string]$actualSuffix = $actual
+    $actualLength = $Actual.Length
+    if ($actualLength -gt $expected.Length) {
+        $actualSuffix = $Actual.Substring($actualLength - $expected.Length, $expected.Length)
+    }
+
+    if ($actualSuffix -ne $Expected) {
+        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
+        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
+        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
+        Write-Stack
+        throw "Expected '$Expected' but got '$actualSuffix'"
+    }
+}
+
+function Throw-IfNonContains {
+    Param(
+        [string]$Actual,
+        [string]$Expected
+    )
+    if (-not ($Actual.Contains($Expected))) {
+        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
+        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
+        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
+        Write-Stack
+        throw "Expected '$Expected' to be in '$Actual'"
+    }
+}
+
+function Test-ManifestInfo {
+    param (
+        [string]$ManifestInfoPath,
+        [string]$VcpkgDir,
+        [string]$ManifestRoot
+    )
+
+    if (-not (Test-Path $ManifestInfoPath)) {
+        Throw "manifest-info.json missing from $VcpkgDir"
+    }
+
+    $manifestInfoContent = Get-Content $ManifestInfoPath -Raw | ConvertFrom-Json
+
+    if ($manifestInfoContent.'manifest-path' -ne (Join-Path -Path $ManifestRoot -ChildPath "vcpkg.json")) {
+        Throw "Mismatch in manifest-path. Expected: $ManifestRoot, Found: $($manifestInfoContent.'manifest-path')"
+    }
 }
 
 Refresh-TestRoot

@@ -11,7 +11,7 @@
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
-#include <vcpkg/registries.h>
+#include <vcpkg/registries-parsing.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/versiondeserializers.h>
@@ -41,202 +41,12 @@ namespace
 
         static const RegistryPathStringDeserializer instance;
     };
+
     const RegistryPathStringDeserializer RegistryPathStringDeserializer::instance;
-
-    struct GitVersionDbEntryDeserializer final : Json::IDeserializer<GitVersionDbEntry>
-    {
-        LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
-        Optional<GitVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-    };
-
-    LocalizedString GitVersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
-    View<StringView> GitVersionDbEntryDeserializer::valid_fields() const
-    {
-        static constexpr StringView u_git[] = {JsonIdGitTree};
-        static const auto t_git = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_git);
-
-        return t_git;
-    }
-
-    Optional<GitVersionDbEntry> GitVersionDbEntryDeserializer::visit_object(Json::Reader& r,
-                                                                            const Json::Object& obj) const
-    {
-        GitVersionDbEntry ret;
-        ret.version = visit_required_schemed_version(type_name(), r, obj);
-        r.required_object_field(type_name(), obj, JsonIdGitTree, ret.git_tree, GitTreeStringDeserializer::instance);
-        return ret;
-    }
-
-    struct GitVersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<GitVersionDbEntry>>
-    {
-        virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<GitVersionDbEntry>> visit_array(Json::Reader& r,
-                                                                     const Json::Array& arr) const override;
-
-    private:
-        GitVersionDbEntryDeserializer underlying;
-    };
-    LocalizedString GitVersionDbEntryArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfVersions); }
-
-    Optional<std::vector<GitVersionDbEntry>> GitVersionDbEntryArrayDeserializer::visit_array(
-        Json::Reader& r, const Json::Array& arr) const
-    {
-        return r.array_elements(arr, underlying);
-    }
-
-    struct FilesystemVersionDbEntryDeserializer final : Json::IDeserializer<FilesystemVersionDbEntry>
-    {
-        LocalizedString type_name() const override;
-        View<StringView> valid_fields() const override;
-        Optional<FilesystemVersionDbEntry> visit_object(Json::Reader& r, const Json::Object& obj) const override;
-        FilesystemVersionDbEntryDeserializer(const Path& root) : registry_root(root) { }
-
-    private:
-        Path registry_root;
-    };
-
-    LocalizedString FilesystemVersionDbEntryDeserializer::type_name() const
-    {
-        return msg::format(msgAVersionDatabaseEntry);
-    }
-    View<StringView> FilesystemVersionDbEntryDeserializer::valid_fields() const
-    {
-        static constexpr StringView u_path[] = {JsonIdPath};
-        static const auto t_path = vcpkg::Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u_path);
-        return t_path;
-    }
-
-    Optional<FilesystemVersionDbEntry> FilesystemVersionDbEntryDeserializer::visit_object(Json::Reader& r,
-                                                                                          const Json::Object& obj) const
-    {
-        FilesystemVersionDbEntry ret;
-        ret.version = visit_required_schemed_version(type_name(), r, obj);
-
-        std::string path_res;
-        r.required_object_field(type_name(), obj, JsonIdPath, path_res, RegistryPathStringDeserializer::instance);
-        if (!Strings::starts_with(path_res, "$/"))
-        {
-            r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustStartWithDollar));
-            return nullopt;
-        }
-
-        if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
-        {
-            r.add_generic_error(msg::format(msgARegistryPath),
-                                msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
-            return nullopt;
-        }
-
-        auto first = path_res.begin();
-        const auto last = path_res.end();
-        for (std::string::iterator candidate;; first = candidate)
-        {
-            candidate = std::find(first, last, '/');
-            if (candidate == last)
-            {
-                break;
-            }
-
-            ++candidate;
-            if (candidate == last)
-            {
-                break;
-            }
-
-            if (*candidate != '.')
-            {
-                continue;
-            }
-
-            ++candidate;
-            if (candidate == last || *candidate == '/')
-            {
-                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
-                return nullopt;
-            }
-
-            if (*candidate != '.')
-            {
-                first = candidate;
-                continue;
-            }
-
-            ++candidate;
-            if (candidate == last || *candidate == '/')
-            {
-                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
-                return nullopt;
-            }
-        }
-
-        ret.p = registry_root / StringView{path_res}.substr(2);
-
-        return ret;
-    }
-
-    struct FilesystemVersionDbEntryArrayDeserializer final : Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>
-    {
-        virtual LocalizedString type_name() const override;
-        virtual Optional<std::vector<FilesystemVersionDbEntry>> visit_array(Json::Reader& r,
-                                                                            const Json::Array& arr) const override;
-        FilesystemVersionDbEntryArrayDeserializer(const Path& root) : underlying{root} { }
-
-    private:
-        FilesystemVersionDbEntryDeserializer underlying;
-    };
-    LocalizedString FilesystemVersionDbEntryArrayDeserializer::type_name() const
-    {
-        return msg::format(msgAnArrayOfVersions);
-    }
-
-    Optional<std::vector<FilesystemVersionDbEntry>> FilesystemVersionDbEntryArrayDeserializer::visit_array(
-        Json::Reader& r, const Json::Array& arr) const
-    {
-        return r.array_elements(arr, underlying);
-    }
 
     using Baseline = std::map<std::string, Version, std::less<>>;
 
     struct GitRegistry;
-
-    struct PortVersionsGitTreesStructOfArrays
-    {
-        PortVersionsGitTreesStructOfArrays() = default;
-        PortVersionsGitTreesStructOfArrays(const PortVersionsGitTreesStructOfArrays&) = default;
-        PortVersionsGitTreesStructOfArrays(PortVersionsGitTreesStructOfArrays&&) = default;
-        PortVersionsGitTreesStructOfArrays& operator=(const PortVersionsGitTreesStructOfArrays&) = default;
-        PortVersionsGitTreesStructOfArrays& operator=(PortVersionsGitTreesStructOfArrays&&) = default;
-
-        explicit PortVersionsGitTreesStructOfArrays(std::vector<GitVersionDbEntry>&& db_entries)
-        {
-            assign(std::move(db_entries));
-        }
-
-        void assign(std::vector<GitVersionDbEntry>&& db_entries)
-        {
-            m_port_versions.reserve(db_entries.size());
-            m_git_trees.reserve(db_entries.size());
-            m_port_versions.clear();
-            m_git_trees.clear();
-            for (auto& entry : db_entries)
-            {
-                m_port_versions.push_back(std::move(entry.version.version));
-                m_git_trees.push_back(std::move(entry.git_tree));
-            }
-
-            db_entries.clear();
-        }
-
-        // these two map port versions to git trees
-        // these shall have the same size, and git_trees[i] shall be the git tree for port_versions[i]
-        const std::vector<Version>& port_versions() const noexcept { return m_port_versions; }
-        const std::vector<std::string>& git_trees() const noexcept { return m_git_trees; }
-
-    private:
-        std::vector<Version> m_port_versions;
-        std::vector<std::string> m_git_trees;
-    };
 
     struct GitRegistryEntry final : RegistryEntry
     {
@@ -245,8 +55,7 @@ namespace
                          bool stale,
                          std::vector<GitVersionDbEntry>&& version_entries);
 
-        ExpectedL<View<Version>> get_port_versions() const override;
-        ExpectedL<PortLocation> get_version(const Version& version) const override;
+        ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const override;
 
     private:
         ExpectedL<Unit> ensure_not_stale() const;
@@ -258,7 +67,7 @@ namespace
         // Indicates whether port_versions and git_trees were filled in with stale (i.e. lock) data.
         mutable bool stale;
 
-        mutable PortVersionsGitTreesStructOfArrays last_loaded;
+        mutable std::vector<GitVersionDbEntry> last_loaded;
     };
 
     struct GitRegistry final : RegistryImplementation
@@ -282,7 +91,7 @@ namespace
         ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
     private:
-        friend struct GitRegistryEntry;
+        friend GitRegistryEntry;
 
         const ExpectedL<LockFile::Entry>& get_lock_entry() const
         {
@@ -401,60 +210,52 @@ namespace
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
     {
-        BuiltinPortTreeRegistryEntry(StringView name_, Path root_, Version version_)
-            : name(name_.to_string()), root(root_), version(version_)
-        {
-        }
+        BuiltinPortTreeRegistryEntry(const SourceControlFileAndLocation& load_result_) : load_result(load_result_) { }
 
-        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{&version, 1}; }
-        ExpectedL<PortLocation> get_version(const Version& v) const override
+        ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& v) const override
         {
-            if (v == version)
+            auto& core_paragraph = load_result.source_control_file->core_paragraph;
+            if (v == core_paragraph->version)
             {
-                return PortLocation{root, "git+https://github.com/Microsoft/vcpkg#ports/" + name};
+                return load_result.clone();
             }
 
             return msg::format_error(msgVersionBuiltinPortTreeEntryMissing,
-                                     msg::package_name = name,
+                                     msg::package_name = core_paragraph->name,
                                      msg::expected = v.to_string(),
-                                     msg::actual = version.to_string());
+                                     msg::actual = core_paragraph->version.to_string());
         }
 
-        std::string name;
-        Path root;
-        Version version;
+        const SourceControlFileAndLocation& load_result;
     };
 
     struct BuiltinGitRegistryEntry final : RegistryEntry
     {
         BuiltinGitRegistryEntry(const VcpkgPaths& paths) : m_paths(paths) { }
 
-        ExpectedL<View<Version>> get_port_versions() const override
-        {
-            return View<Version>{port_versions_soa.port_versions()};
-        }
-        ExpectedL<PortLocation> get_version(const Version& version) const override;
+        ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const override;
 
         const VcpkgPaths& m_paths;
 
         std::string port_name;
 
-        PortVersionsGitTreesStructOfArrays port_versions_soa;
+        std::vector<GitVersionDbEntry> port_version_entries;
     };
 
     struct FilesystemRegistryEntry final : RegistryEntry
     {
-        explicit FilesystemRegistryEntry(std::string&& port_name) : port_name(port_name) { }
+        explicit FilesystemRegistryEntry(const ReadOnlyFilesystem& fs,
+                                         StringView port_name,
+                                         std::vector<FilesystemVersionDbEntry>&& version_entries)
+            : fs(fs), port_name(port_name.data(), port_name.size()), version_entries(std::move(version_entries))
+        {
+        }
 
-        ExpectedL<View<Version>> get_port_versions() const override { return View<Version>{port_versions}; }
+        ExpectedL<SourceControlFileAndLocation> try_load_port(const Version& version) const override;
 
-        ExpectedL<PortLocation> get_version(const Version& version) const override;
-
+        const ReadOnlyFilesystem& fs;
         std::string port_name;
-        // these two map port versions to paths
-        // these shall have the same size, and paths[i] shall be the path for port_versions[i]
-        std::vector<Version> port_versions;
-        std::vector<Path> version_paths;
+        std::vector<FilesystemVersionDbEntry> version_entries;
     };
 
     // This registry implementation is the builtin registry without a baseline
@@ -481,10 +282,14 @@ namespace
         DelayedInit<Baseline> m_baseline;
 
     private:
-        const ExpectedL<SourceControlFileAndLocation>& get_scfl(StringView port_name, const Path& path) const
+        const ExpectedL<SourceControlFileAndLocation>& get_scfl(StringView port_name) const
         {
+            auto path = m_builtin_ports_directory / port_name;
             return m_scfls.get_lazy(path, [&, this]() {
-                return Paragraphs::try_load_port(m_fs, port_name, PortLocation{path}).maybe_scfl;
+                std::string spdx_location = "git+https://github.com/Microsoft/vcpkg#ports/";
+                spdx_location.append(port_name.data(), port_name.size());
+                return Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{path, std::move(spdx_location)})
+                    .maybe_scfl;
             });
         }
 
@@ -694,9 +499,8 @@ namespace
     // { BuiltinFilesRegistry::RegistryImplementation
     ExpectedL<std::unique_ptr<RegistryEntry>> BuiltinFilesRegistry::get_port_entry(StringView port_name) const
     {
-        auto port_directory = m_builtin_ports_directory / port_name;
-        return get_scfl(port_name, port_directory)
-            .then([&](const SourceControlFileAndLocation& scfl) -> ExpectedL<std::unique_ptr<RegistryEntry>> {
+        return get_scfl(port_name).then(
+            [&](const SourceControlFileAndLocation& scfl) -> ExpectedL<std::unique_ptr<RegistryEntry>> {
                 auto scf = scfl.source_control_file.get();
                 if (!scf)
                 {
@@ -705,30 +509,28 @@ namespace
 
                 if (scf->core_paragraph->name == port_name)
                 {
-                    return std::make_unique<BuiltinPortTreeRegistryEntry>(
-                        scf->core_paragraph->name, port_directory, scf->to_version());
+                    return std::make_unique<BuiltinPortTreeRegistryEntry>(scfl);
                 }
 
                 return msg::format_error(msgUnexpectedPortName,
                                          msg::expected = scf->core_paragraph->name,
                                          msg::actual = port_name,
-                                         msg::path = port_directory);
+                                         msg::path = scfl.port_directory());
             });
     }
 
     ExpectedL<Optional<Version>> BuiltinFilesRegistry::get_baseline_version(StringView port_name) const
     {
         // if a baseline is not specified, use the ports directory version
-        return get_scfl(port_name, m_builtin_ports_directory / port_name)
-            .then([&](const SourceControlFileAndLocation& scfl) -> ExpectedL<Optional<Version>> {
-                auto scf = scfl.source_control_file.get();
-                if (!scf)
-                {
-                    return Optional<Version>();
-                }
+        return get_scfl(port_name).then([&](const SourceControlFileAndLocation& scfl) -> ExpectedL<Optional<Version>> {
+            auto scf = scfl.source_control_file.get();
+            if (!scf)
+            {
+                return Optional<Version>();
+            }
 
-                return scf->to_version();
-            });
+            return scf->to_version();
+        });
     }
 
     ExpectedL<Unit> BuiltinFilesRegistry::append_all_port_names(std::vector<std::string>& out) const
@@ -773,7 +575,7 @@ namespace
 
                 auto res = std::make_unique<BuiltinGitRegistryEntry>(m_paths);
                 res->port_name.assign(port_name.data(), port_name.size());
-                res->port_versions_soa.assign(std::move(*version_entries));
+                res->port_version_entries = std::move(*version_entries);
                 return res;
             });
     }
@@ -851,14 +653,7 @@ namespace
                     return std::unique_ptr<RegistryEntry>{};
                 }
 
-                auto res = std::make_unique<FilesystemRegistryEntry>(port_name.to_string());
-                for (auto&& version_entry : *version_entries)
-                {
-                    res->port_versions.push_back(std::move(version_entry.version.version));
-                    res->version_paths.push_back(std::move(version_entry.p));
-                }
-
-                return res;
+                return std::make_unique<FilesystemRegistryEntry>(m_fs, port_name, std::move(*version_entries));
             });
     }
 
@@ -1042,17 +837,17 @@ namespace
 
     LocalizedString format_version_git_entry_missing(StringView port_name,
                                                      const Version& expected_version,
-                                                     const std::vector<Version>& versions)
+                                                     const std::vector<GitVersionDbEntry>& version_entries)
     {
         auto error_msg =
             msg::format_error(msgVersionGitEntryMissing, msg::package_name = port_name, msg::version = expected_version)
                 .append_raw('\n');
-        for (auto&& version : versions)
+        for (auto&& version_entry : version_entries)
         {
-            error_msg.append_indent().append_raw(version.to_string()).append_raw('\n');
+            error_msg.append_indent().append_raw(version_entry.version.version.to_string()).append_raw('\n');
         }
 
-        error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url);
+        error_msg.append(msgVersionIncomparable4, msg::url = docs::versioning_url).append_raw('\n');
         error_msg.append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
         return error_msg;
     }
@@ -1060,48 +855,55 @@ namespace
     // { RegistryEntry
 
     // { BuiltinRegistryEntry::RegistryEntry
-    ExpectedL<PortLocation> BuiltinGitRegistryEntry::get_version(const Version& version) const
+    ExpectedL<SourceControlFileAndLocation> BuiltinGitRegistryEntry::try_load_port(const Version& version) const
     {
-        auto& port_versions = port_versions_soa.port_versions();
-        auto it = std::find(port_versions.begin(), port_versions.end(), version);
-        if (it == port_versions.end())
+        auto it =
+            std::find_if(port_version_entries.begin(),
+                         port_version_entries.end(),
+                         [&](const GitVersionDbEntry& entry) noexcept { return entry.version.version == version; });
+        if (it == port_version_entries.end())
         {
-            return format_version_git_entry_missing(port_name, version, port_versions)
+            return format_version_git_entry_missing(port_name, version, port_version_entries)
                 .append_raw('\n')
                 .append_raw(NotePrefix)
                 .append(msgChecksUpdateVcpkg);
         }
 
-        const auto& git_tree = port_versions_soa.git_trees()[it - port_versions.begin()];
         return m_paths.versions_dot_git_dir()
             .then([&, this](Path&& dot_git) {
-                return m_paths.git_checkout_port(port_name, git_tree, dot_git).map_error([](LocalizedString&& err) {
+                return m_paths.git_checkout_port(port_name, it->git_tree, dot_git).map_error([](LocalizedString&& err) {
                     return std::move(err)
                         .append_raw('\n')
                         .append_raw(NotePrefix)
                         .append(msgSeeURL, msg::url = docs::troubleshoot_versioning_url);
                 });
             })
-            .map([&git_tree](Path&& p) -> PortLocation {
-                return {
-                    std::move(p),
-                    "git+https://github.com/Microsoft/vcpkg@" + git_tree,
-                };
+            .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
+                return Paragraphs::try_load_port_required(m_paths.get_filesystem(),
+                                                          port_name,
+                                                          PortLocation{
+                                                              std::move(p),
+                                                              "git+https://github.com/Microsoft/vcpkg@" + it->git_tree,
+                                                          })
+                    .maybe_scfl;
             });
     }
     // } BuiltinRegistryEntry::RegistryEntry
 
     // { FilesystemRegistryEntry::RegistryEntry
-    ExpectedL<PortLocation> FilesystemRegistryEntry::get_version(const Version& version) const
+    ExpectedL<SourceControlFileAndLocation> FilesystemRegistryEntry::try_load_port(const Version& version) const
     {
-        auto it = std::find(port_versions.begin(), port_versions.end(), version);
-        if (it == port_versions.end())
+        auto it = std::find_if(
+            version_entries.begin(), version_entries.end(), [&](const FilesystemVersionDbEntry& entry) noexcept {
+                return entry.version.version == version;
+            });
+        if (it == version_entries.end())
         {
             return msg::format_error(
                 msgVersionDatabaseEntryMissing, msg::package_name = port_name, msg::version = version);
         }
 
-        return PortLocation{version_paths[it - port_versions.begin()]};
+        return Paragraphs::try_load_port_required(fs, port_name, PortLocation{it->p}).maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
 
@@ -1134,29 +936,18 @@ namespace
                                          msg::path = *live_vdb / relative_path_to_versions(port_name));
             }
 
-            last_loaded.assign(std::move(*version_entries));
+            last_loaded = std::move(*version_entries);
             stale = false;
         }
 
         return Unit{};
     }
 
-    ExpectedL<View<Version>> GitRegistryEntry::get_port_versions() const
+    ExpectedL<SourceControlFileAndLocation> GitRegistryEntry::try_load_port(const Version& version) const
     {
-        // Getting all versions that might exist must always be done with 'live' data
-        auto maybe_not_stale = ensure_not_stale();
-        if (maybe_not_stale)
-        {
-            return View<Version>{last_loaded.port_versions()};
-        }
-
-        return std::move(maybe_not_stale).error();
-    }
-
-    ExpectedL<PortLocation> GitRegistryEntry::get_version(const Version& version) const
-    {
-        auto it = std::find(last_loaded.port_versions().begin(), last_loaded.port_versions().end(), version);
-        if (it == last_loaded.port_versions().end() && stale)
+        auto match_version = [&](const GitVersionDbEntry& entry) noexcept { return entry.version.version == version; };
+        auto it = std::find_if(last_loaded.begin(), last_loaded.end(), match_version);
+        if (it == last_loaded.end() && stale)
         {
             // didn't find the version, maybe a newer version database will have it
             auto maybe_not_stale = ensure_not_stale();
@@ -1165,21 +956,23 @@ namespace
                 return std::move(maybe_not_stale).error();
             }
 
-            it = std::find(last_loaded.port_versions().begin(), last_loaded.port_versions().end(), version);
+            it = std::find_if(last_loaded.begin(), last_loaded.end(), match_version);
         }
 
-        if (it == last_loaded.port_versions().end())
+        if (it == last_loaded.end())
         {
-            return format_version_git_entry_missing(port_name, version, last_loaded.port_versions());
+            return format_version_git_entry_missing(port_name, version, last_loaded);
         }
 
-        const auto& git_tree = last_loaded.git_trees()[it - last_loaded.port_versions().begin()];
-        return parent.m_paths.git_extract_tree_from_remote_registry(git_tree).map(
-            [this, &git_tree](Path&& p) -> PortLocation {
-                return {
-                    std::move(p),
-                    Strings::concat("git+", parent.m_repo, "@", git_tree),
-                };
+        return parent.m_paths.git_extract_tree_from_remote_registry(it->git_tree)
+            .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
+                return Paragraphs::try_load_port_required(parent.m_paths.get_filesystem(),
+                                                          port_name,
+                                                          PortLocation{
+                                                              p,
+                                                              Strings::concat("git+", parent.m_repo, "@", it->git_tree),
+                                                          })
+                    .maybe_scfl;
             });
     }
 
@@ -1740,14 +1533,116 @@ namespace vcpkg
         return std::make_unique<FilesystemRegistry>(fs, std::move(path), std::move(baseline));
     }
 
-    std::unique_ptr<Json::IDeserializer<std::vector<GitVersionDbEntry>>> make_git_version_db_deserializer()
+    LocalizedString FilesystemVersionDbEntryDeserializer::type_name() const
     {
-        return std::make_unique<GitVersionDbEntryArrayDeserializer>();
+        return msg::format(msgAVersionDatabaseEntry);
+    }
+    View<StringLiteral> FilesystemVersionDbEntryDeserializer::valid_fields() const noexcept
+    {
+        static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdPath};
+        return fields;
     }
 
-    std::unique_ptr<Json::IDeserializer<std::vector<FilesystemVersionDbEntry>>> make_filesystem_version_db_deserializer(
-        const Path& root)
+    Optional<FilesystemVersionDbEntry> FilesystemVersionDbEntryDeserializer::visit_object(Json::Reader& r,
+                                                                                          const Json::Object& obj) const
     {
-        return std::make_unique<FilesystemVersionDbEntryArrayDeserializer>(root);
+        FilesystemVersionDbEntry ret;
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
+
+        std::string path_res;
+        r.required_object_field(type_name(), obj, JsonIdPath, path_res, RegistryPathStringDeserializer::instance);
+        if (!Strings::starts_with(path_res, "$/"))
+        {
+            r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustStartWithDollar));
+            return nullopt;
+        }
+
+        if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
+        {
+            r.add_generic_error(msg::format(msgARegistryPath),
+                                msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
+            return nullopt;
+        }
+
+        auto first = path_res.begin();
+        const auto last = path_res.end();
+        for (std::string::iterator candidate;; first = candidate)
+        {
+            candidate = std::find(first, last, '/');
+            if (candidate == last)
+            {
+                break;
+            }
+
+            ++candidate;
+            if (candidate == last)
+            {
+                break;
+            }
+
+            if (*candidate != '.')
+            {
+                continue;
+            }
+
+            ++candidate;
+            if (candidate == last || *candidate == '/')
+            {
+                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
+                return nullopt;
+            }
+
+            if (*candidate != '.')
+            {
+                first = candidate;
+                continue;
+            }
+
+            ++candidate;
+            if (candidate == last || *candidate == '/')
+            {
+                r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustNotHaveDots));
+                return nullopt;
+            }
+        }
+
+        ret.p = registry_root / StringView{path_res}.substr(2);
+
+        return ret;
+    }
+
+    LocalizedString FilesystemVersionDbEntryArrayDeserializer::type_name() const
+    {
+        return msg::format(msgAnArrayOfVersions);
+    }
+
+    Optional<std::vector<FilesystemVersionDbEntry>> FilesystemVersionDbEntryArrayDeserializer::visit_array(
+        Json::Reader& r, const Json::Array& arr) const
+    {
+        return r.array_elements(arr, underlying);
+    }
+
+    LocalizedString GitVersionDbEntryDeserializer::type_name() const { return msg::format(msgAVersionDatabaseEntry); }
+    View<StringLiteral> GitVersionDbEntryDeserializer::valid_fields() const noexcept
+    {
+        static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdGitTree};
+        return fields;
+    }
+
+    Optional<GitVersionDbEntry> GitVersionDbEntryDeserializer::visit_object(Json::Reader& r,
+                                                                            const Json::Object& obj) const
+    {
+        GitVersionDbEntry ret;
+        ret.version = visit_required_schemed_version(type_name(), r, obj);
+        r.required_object_field(type_name(), obj, JsonIdGitTree, ret.git_tree, GitTreeStringDeserializer::instance);
+        return ret;
+    }
+
+    LocalizedString GitVersionDbEntryArrayDeserializer::type_name() const { return msg::format(msgAnArrayOfVersions); }
+
+    Optional<std::vector<GitVersionDbEntry>> GitVersionDbEntryArrayDeserializer::visit_array(
+        Json::Reader& r, const Json::Array& arr) const
+    {
+        return r.array_elements(arr, GitVersionDbEntryDeserializer());
     }
 }

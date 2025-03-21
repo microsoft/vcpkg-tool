@@ -13,6 +13,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.process.h>
 #include <vcpkg/base/util.h>
@@ -24,6 +25,7 @@
 #include <vcpkg/vcpkgpaths.h>
 
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -36,7 +38,40 @@ namespace vcpkg
                                          BuildResult result) const = 0;
     };
 
-    const IBuildLogsRecorder& null_build_logs_recorder() noexcept;
+    extern const IBuildLogsRecorder& null_build_logs_recorder;
+
+    struct CiBuildLogsRecorder final : IBuildLogsRecorder
+    {
+        explicit CiBuildLogsRecorder(const Path& base_path_);
+
+        CiBuildLogsRecorder(const CiBuildLogsRecorder&) = delete;
+        CiBuildLogsRecorder& operator=(const CiBuildLogsRecorder&) = delete;
+
+        void record_build_result(const VcpkgPaths& paths, const PackageSpec& spec, BuildResult result) const override;
+
+    private:
+        Path base_path;
+    };
+
+    struct PackagesDirAssigner
+    {
+        explicit PackagesDirAssigner(const Path& packages_dir);
+        Path generate(const PackageSpec& spec);
+
+    private:
+        Path m_packages_dir;
+        std::map<std::string, std::size_t, std::less<>> m_next_dir_count;
+    };
+
+    bool is_package_dir_match(StringView filename, StringView spec_dir);
+
+    void purge_packages_dirs(const VcpkgPaths& paths, View<std::string> spec_dirs);
+    template<class ActionKindVector,
+             std::enable_if_t<std::is_convertible<typename ActionKindVector::value_type, BasicAction>::value, int> = 0>
+    void purge_packages_dirs(const VcpkgPaths& paths, const ActionKindVector& actions)
+    {
+        purge_packages_dirs(paths, Util::fmap(actions, [](const auto& action) { return action.spec.dir(); }));
+    }
 
     extern const CommandMetadata CommandBuildMetadata;
     int command_build_ex(const VcpkgCmdArguments& args,
@@ -59,9 +94,6 @@ namespace vcpkg
                                 Triplet default_triplet,
                                 Triplet host_triplet);
 
-    StringLiteral to_string_view(DownloadTool tool);
-    std::string to_string(DownloadTool tool);
-
     struct BuildPackageOptions
     {
         BuildMissing build_missing;
@@ -70,9 +102,7 @@ namespace vcpkg
         CleanBuildtrees clean_buildtrees;
         CleanPackages clean_packages;
         CleanDownloads clean_downloads;
-        DownloadTool download_tool;
         BackcompatFeatures backcompat_features;
-        PrintUsage print_usage;
         KeepGoing keep_going;
     };
 
@@ -95,13 +125,18 @@ namespace vcpkg
     StringLiteral to_string_locale_invariant(const BuildResult build_result);
     LocalizedString to_string(const BuildResult build_result);
     LocalizedString create_user_troubleshooting_message(const InstallPlanAction& action,
+                                                        CIKind detected_ci,
                                                         const VcpkgPaths& paths,
-                                                        const Optional<Path>& issue_body);
+                                                        const std::vector<std::string>& error_logs,
+                                                        const Optional<Path>& maybe_issue_body);
     inline void print_user_troubleshooting_message(const InstallPlanAction& action,
+                                                   CIKind detected_ci,
                                                    const VcpkgPaths& paths,
-                                                   Optional<Path>&& issue_body)
+                                                   const std::vector<std::string>& error_logs,
+                                                   Optional<Path>&& maybe_issue_body)
     {
-        msg::println(Color::error, create_user_troubleshooting_message(action, paths, issue_body));
+        msg::println(Color::error,
+                     create_user_troubleshooting_message(action, detected_ci, paths, error_logs, maybe_issue_body));
     }
 
     /// <summary>
@@ -132,6 +167,7 @@ namespace vcpkg
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
+        std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
 
         Path toolchain_file() const;
@@ -225,6 +261,18 @@ namespace vcpkg
         }
     };
 
+    // The parts of AbiInfo which depend only on the port directory and thus can be reused across multiple feature
+    // builds
+    struct PortDirAbiInfoCacheEntry
+    {
+        std::vector<AbiEntry> abi_entries;
+        std::vector<Path> files;
+        std::vector<std::string> hashes;
+        Json::Object heuristic_resources;
+    };
+
+    using PortDirAbiInfoCache = Cache<Path, PortDirAbiInfoCacheEntry>;
+
     struct CompilerInfo
     {
         std::string id;
@@ -245,13 +293,19 @@ namespace vcpkg
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Value> heuristic_resources;
+        std::vector<Json::Object> heuristic_resources;
     };
 
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db);
+
+    void compute_all_abis(const VcpkgPaths& paths,
+                          ActionPlan& action_plan,
+                          const CMakeVars::CMakeVarProvider& var_provider,
+                          const StatusParagraphs& status_db,
+                          PortDirAbiInfoCache& port_dir_cache);
 
     struct EnvCache
     {

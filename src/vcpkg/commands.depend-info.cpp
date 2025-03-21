@@ -409,20 +409,21 @@ namespace vcpkg
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(
-            fs, *registry_set, make_overlay_provider(fs, paths.original_cwd, paths.overlay_ports));
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,
             specs,
             status_db,
-            {nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
+            packages_dir_assigner,
+            {nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())

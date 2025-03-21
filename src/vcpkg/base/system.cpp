@@ -1,10 +1,12 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
+#include <vcpkg/base/uuid.h>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -132,6 +134,29 @@ namespace
         return result;
     }
 #endif // ^^^ _WIN32
+
+    struct CPUArchitectureEntry
+    {
+        StringLiteral name;
+        CPUArchitecture arch;
+    };
+
+    // keep this in sync with vcpkg-tools.schema.json
+    static constexpr CPUArchitectureEntry cpu_architecture_table[] = {
+        {"x86", CPUArchitecture::X86},
+        {"x64", CPUArchitecture::X64},
+        {"amd64", CPUArchitecture::X64},
+        {"arm", CPUArchitecture::ARM},
+        {"arm64", CPUArchitecture::ARM64},
+        {"arm64ec", CPUArchitecture::ARM64EC},
+        {"s390x", CPUArchitecture::S390X},
+        {"ppc64le", CPUArchitecture::PPC64LE},
+        {"riscv32", CPUArchitecture::RISCV32},
+        {"riscv64", CPUArchitecture::RISCV64},
+        {"loongarch32", CPUArchitecture::LOONGARCH32},
+        {"loongarch64", CPUArchitecture::LOONGARCH64},
+        {"mips64", CPUArchitecture::MIPS64},
+    };
 }
 
 namespace vcpkg
@@ -145,43 +170,36 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
     }
 
-    Optional<CPUArchitecture> to_cpu_architecture(StringView arch)
+    Optional<CPUArchitecture> to_cpu_architecture(StringView arch) noexcept
     {
-        if (Strings::case_insensitive_ascii_equals(arch, "x86")) return CPUArchitecture::X86;
-        if (Strings::case_insensitive_ascii_equals(arch, "x64")) return CPUArchitecture::X64;
-        if (Strings::case_insensitive_ascii_equals(arch, "amd64")) return CPUArchitecture::X64;
-        if (Strings::case_insensitive_ascii_equals(arch, "arm")) return CPUArchitecture::ARM;
-        if (Strings::case_insensitive_ascii_equals(arch, "arm64")) return CPUArchitecture::ARM64;
-        if (Strings::case_insensitive_ascii_equals(arch, "arm64ec")) return CPUArchitecture::ARM64EC;
-        if (Strings::case_insensitive_ascii_equals(arch, "s390x")) return CPUArchitecture::S390X;
-        if (Strings::case_insensitive_ascii_equals(arch, "ppc64le")) return CPUArchitecture::PPC64LE;
-        if (Strings::case_insensitive_ascii_equals(arch, "riscv32")) return CPUArchitecture::RISCV32;
-        if (Strings::case_insensitive_ascii_equals(arch, "riscv64")) return CPUArchitecture::RISCV64;
-        if (Strings::case_insensitive_ascii_equals(arch, "loongarch32")) return CPUArchitecture::LOONGARCH32;
-        if (Strings::case_insensitive_ascii_equals(arch, "loongarch64")) return CPUArchitecture::LOONGARCH64;
-        if (Strings::case_insensitive_ascii_equals(arch, "mips64")) return CPUArchitecture::MIPS64;
+        for (auto&& entry : cpu_architecture_table)
+        {
+            if (Strings::case_insensitive_ascii_equals(arch, entry.name))
+            {
+                return entry.arch;
+            }
+        }
 
         return nullopt;
     }
 
-    ZStringView to_zstring_view(CPUArchitecture arch) noexcept
+    StringLiteral to_string_literal(CPUArchitecture arch) noexcept
     {
-        switch (arch)
+        for (auto&& entry : cpu_architecture_table)
         {
-            case CPUArchitecture::X86: return "x86";
-            case CPUArchitecture::X64: return "x64";
-            case CPUArchitecture::ARM: return "arm";
-            case CPUArchitecture::ARM64: return "arm64";
-            case CPUArchitecture::ARM64EC: return "arm64ec";
-            case CPUArchitecture::S390X: return "s390x";
-            case CPUArchitecture::PPC64LE: return "ppc64le";
-            case CPUArchitecture::RISCV32: return "riscv32";
-            case CPUArchitecture::RISCV64: return "riscv64";
-            case CPUArchitecture::LOONGARCH32: return "loongarch32";
-            case CPUArchitecture::LOONGARCH64: return "loongarch64";
-            case CPUArchitecture::MIPS64: return "mips64";
-            default: Checks::exit_with_message(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
+            if (entry.arch == arch)
+            {
+                return entry.name;
+            }
         }
+
+        Checks::unreachable(VCPKG_LINE_INFO, "unexpected vcpkg::CPUArchitecture");
+    }
+
+    LocalizedString all_comma_separated_cpu_architectures()
+    {
+        return LocalizedString::from_raw(
+            Strings::join(", ", cpu_architecture_table, [](const CPUArchitectureEntry& entry) { return entry.name; }));
     }
 
     CPUArchitecture get_host_processor()
@@ -367,9 +385,9 @@ namespace vcpkg
 #endif
     }
 
-    std::string get_environment_variables()
+    std::vector<std::string> get_environment_variables()
     {
-        std::string result;
+        std::vector<std::string> result;
 #if defined(_WIN32)
         const struct EnvironmentStringsW
         {
@@ -382,12 +400,12 @@ namespace vcpkg
         for (LPWCH i = env_block.strings; *i; i += len + 1)
         {
             len = wcslen(i);
-            result.append(Strings::to_utf8(i, len)).push_back('\n');
+            result.emplace_back(Strings::to_utf8(i, len));
         }
 #else
         for (char** s = environ; *s; s++)
         {
-            result.append(*s).push_back('\n');
+            result.emplace_back(*s);
         }
 #endif
         return result;
@@ -504,15 +522,21 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
+    const ExpectedL<Path>& get_platform_cache_root() noexcept
     {
-        static ExpectedL<Path> s_vcpkg =
-#ifdef _WIN32
+        static ExpectedL<Path> s_home =
+#if defined(_WIN32)
             get_appdata_local()
 #else
             get_xdg_cache_home()
 #endif
-                .map([](const Path& p) { return p / "vcpkg"; });
+            ;
+        return s_home;
+    }
+
+    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
+    {
+        static ExpectedL<Path> s_vcpkg = get_platform_cache_root().map([](const Path& p) { return p / "vcpkg"; });
         return s_vcpkg;
     }
 
@@ -555,17 +579,16 @@ namespace vcpkg
                 {
                     case REG_SZ:
                     case REG_EXPAND_SZ:
-                        // remove trailing nulls
-                        while (!value->data.empty() && !value->data.back())
+                    {
+                        auto length_in_wchar_ts = value->data.size() >> 1;
+                        auto as_utf8 =
+                            Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()), length_in_wchar_ts);
+                        while (!as_utf8.empty() && as_utf8.back() == 0)
                         {
-                            value->data.pop_back();
+                            as_utf8.pop_back();
                         }
-
-                        {
-                            auto length_in_wchar_ts = value->data.size() >> 1;
-                            return Strings::to_utf8(reinterpret_cast<const wchar_t*>(value->data.data()),
-                                                    length_in_wchar_ts);
-                        }
+                        return as_utf8;
+                    }
                     default:
                         return msg::format_error(msgRegistryValueWrongType,
                                                  msg::path = format_registry_value_name(base_hkey, sub_key, valuename));
@@ -617,8 +640,7 @@ namespace vcpkg
             case CPUArchitecture::ARM: value = L"ARM"; break;
             case CPUArchitecture::ARM64: value = L"ARM64"; break;
             default:
-                Checks::msg_exit_with_error(
-                    VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = to_zstring_view(proc));
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnexpectedWindowsArchitecture, msg::actual = proc);
                 break;
         }
 

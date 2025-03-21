@@ -9,6 +9,8 @@
 #include <vcpkg/fwd/tools.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/diagnostics.h>
+#include <vcpkg/base/optional.h>
 #include <vcpkg/base/path.h>
 
 namespace vcpkg
@@ -18,9 +20,11 @@ namespace vcpkg
         Unknown,
         Tar,
         Zip,
+        SevenZip,
         Nupkg,
         Msi,
-        Exe
+        Exe,
+        SelfExtracting7z
     };
 
     // Extract `archive` to `to_path` using `tar_tool`.
@@ -32,12 +36,7 @@ namespace vcpkg
                          MessageSink& status_sink,
                          const Path& archive,
                          const Path& to_path);
-    // set `to_path` to `archive` contents.
-    void set_directory_to_archive_contents(const Filesystem& fs,
-                                           const ToolCache& tools,
-                                           MessageSink& status_sink,
-                                           const Path& archive,
-                                           const Path& to_path);
+    // extract `archive` to a sibling temporary subdirectory of `to_path` and returns that path
     Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
                                               const ToolCache& tools,
                                               MessageSink& status_sink,
@@ -48,33 +47,24 @@ namespace vcpkg
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
     void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path);
-    // Extract `archive` to `to_path`, deleting `to_path` first. `archive` must be a zip file.
-    // This function will use potentially less performant tools that are reliably available on any machine.
-    void win32_extract_bootstrap_zip(const Filesystem& fs,
-                                     const ToolCache& tools,
-                                     MessageSink& status_sink,
-                                     const Path& archive,
-                                     const Path& to_path);
 #endif
 
     struct ZipTool
     {
-        static ExpectedL<ZipTool> make(const ToolCache& tools, MessageSink& status_sink);
+        void setup(const ToolCache& tools, MessageSink& status_sink);
 
-    private:
-        ZipTool() = default;
-
-#if defined _WIN32
-        Path seven_zip;
-#endif
-
-    public:
         // Compress the source directory into the destination file.
-        ExpectedL<Unit> compress_directory_to_zip(const Filesystem& fs,
-                                                  const Path& source,
-                                                  const Path& destination) const;
+        bool compress_directory_to_zip(DiagnosticContext& context,
+                                       const Filesystem& fs,
+                                       const Path& source,
+                                       const Path& destination) const;
 
         Command decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const;
+
+    private:
+#if defined _WIN32
+        Optional<Path> seven_zip;
+#endif
     };
 
     std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);

@@ -166,30 +166,30 @@ TEST_CASE ("CacheStatus operations", "[BinaryCache]")
     REQUIRE(assignee.is_restored());
 }
 
-TEST_CASE ("format_version_for_nugetref semver-ish", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref semver-ish", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.2", "abitag") == "1.2.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v52", "abitag") == "52.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("1", "abitag") == "1.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("0.0.0", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.0.1", "abitag") == "1.0.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.01.000", "abitag") == "1.1.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.2", "abitag") == "1.2.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v52", "abitag") == "52.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("v09.01.02", "abitag") == "9.1.2-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1.1.1q", "abitag") == "1.1.1-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("1", "abitag") == "1.0.0-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref date", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref date", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("20-06-26", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26-release", "abitag") == "2020.6.26-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("2020-06-26000", "abitag") == "2020.6.26-vcpkgabitag");
 }
 
-TEST_CASE ("format_version_for_nugetref generic", "[format_version_for_nugetref]")
+TEST_CASE ("format_version_for_feedref generic", "[format_version_for_feedref]")
 {
-    REQUIRE(format_version_for_nugetref("apr", "abitag") == "0.0.0-vcpkgabitag");
-    REQUIRE(format_version_for_nugetref("", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("apr", "abitag") == "0.0.0-vcpkgabitag");
+    REQUIRE(format_version_for_feedref("", "abitag") == "0.0.0-vcpkgabitag");
 }
 
 TEST_CASE ("generate_nuspec", "[generate_nuspec]")
@@ -216,9 +216,10 @@ Build-Depends: bzip
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
 
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     InstallPlanAction ipa(PackageSpec{"zlib2", Test::X64_WINDOWS},
                           scfl,
-                          "test_packages_root",
+                          packages_dir_assigner,
                           RequestType::USER_REQUESTED,
                           UseHeadVersion::No,
                           Editable::No,
@@ -236,11 +237,11 @@ Build-Depends: bzip
     compiler_info.version = "compilerversion";
     ipa.abi_info.get()->compiler_info = compiler_info;
 
-    NugetReference ref2 = make_nugetref(ipa, "prefix_");
+    FeedReference ref2 = make_nugetref(ipa, "prefix_");
 
     REQUIRE(ref2.nupkg_filename() == "prefix_zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
-    NugetReference ref = make_nugetref(ipa, "");
+    FeedReference ref = make_nugetref(ipa, "");
 
     REQUIRE(ref.nupkg_filename() == "zlib2_x64-windows.1.5.0-vcpkgpackageabi.nupkg");
 
@@ -327,9 +328,8 @@ Dependencies:
 TEST_CASE ("Provider nullptr checks", "[BinaryCache]")
 {
     // create a binary cache to test
-    BinaryProviders providers;
-    providers.read.emplace_back(std::make_unique<KnowNothingBinaryProvider>());
-    ReadOnlyBinaryCache uut(std::move(providers));
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(std::make_unique<KnowNothingBinaryProvider>());
 
     // create an action plan with an action without a package ABI set
     auto pghs = Paragraphs::parse_paragraphs(R"(
@@ -343,9 +343,10 @@ Description:
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
     std::vector<InstallPlanAction> install_plan;
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     install_plan.emplace_back(PackageSpec{"someheadpackage", Test::X64_WINDOWS},
                               scfl,
-                              "test_packages_root",
+                              packages_dir_assigner,
                               RequestType::USER_REQUESTED,
                               UseHeadVersion::No,
                               Editable::No,
@@ -421,9 +422,10 @@ Description: a spiffy compression library wrapper
     auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
     REQUIRE(maybe_scf.has_value());
     SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     plan.install_actions.emplace_back(PackageSpec("zlib", Test::X64_ANDROID),
                                       scfl,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,
@@ -452,7 +454,7 @@ Description: a spiffy compression library wrapper
     SourceControlFileAndLocation scfl2{std::move(*maybe_scf2.get()), Path()};
     plan.install_actions.emplace_back(PackageSpec("zlib2", Test::X64_ANDROID),
                                       scfl2,
-                                      "test_packages_root",
+                                      packages_dir_assigner,
                                       RequestType::USER_REQUESTED,
                                       UseHeadVersion::No,
                                       Editable::No,
@@ -469,4 +471,61 @@ Description: a spiffy compression library wrapper
   <package id="zlib2_x64-android" version="1.52.0-vcpkgpackageabi2"/>
 </packages>
 )");
+}
+
+TEST_CASE ("Synchronizer operations", "[BinaryCache]")
+{
+    {
+        BinaryCacheSynchronizer sync;
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 0);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 1);
+        sync.add_submitted();
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
+
+    {
+        BinaryCacheSynchronizer sync;
+        sync.add_submitted();
+        sync.add_submitted();
+        sync.add_submitted();
+        auto result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 3);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE_FALSE(result.submission_complete);
+        REQUIRE(sync.fetch_incomplete_mark_submission_complete() == 2);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 1);
+        REQUIRE(result.submission_complete);
+        result = sync.fetch_add_completed();
+        REQUIRE(result.jobs_submitted == 2);
+        REQUIRE(result.jobs_completed == 2);
+        REQUIRE(result.submission_complete);
+    }
 }

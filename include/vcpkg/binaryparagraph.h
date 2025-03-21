@@ -8,9 +8,7 @@
 
 namespace vcpkg
 {
-    /// <summary>
-    /// Built package metadata
-    /// </summary>
+    // metadata for a package in the 'packages' tree
     struct BinaryParagraph
     {
         BinaryParagraph() = default;
@@ -27,8 +25,6 @@ namespace vcpkg
         std::string display_name() const;
 
         std::string fullstem() const;
-
-        std::string dir() const;
 
         bool is_feature() const { return !feature.empty(); }
 

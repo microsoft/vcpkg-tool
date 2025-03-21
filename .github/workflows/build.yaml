@@ -14,20 +14,22 @@ jobs:
         include:
           - os: windows-2022
             preset: windows-ci
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             preset: linux-ci
-          - os: macos-12
+          - os: ubuntu-24.04-arm
+            preset: linux-arm64-ci
+          - os: macos-13
             preset: macos-ci
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "18.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
-      - uses: lukka/get-cmake@v3.26.3
+      - uses: lukka/get-cmake@v3.31.0
         with:
           cmakeVersion: 3.22.1 # ubuntu 22.04
           ninjaVersion: 1.11.1
@@ -37,7 +39,7 @@ jobs:
         if: inputs.codeql
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript
+          languages: javascript-typescript, c-cpp
       - name: Configure and Build
         if: matrix.preset != 'windows-ci'
         run: |
@@ -70,12 +72,17 @@ jobs:
         run: |
           "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
       - name: Checkout microsoft/vcpkg for end-to-end tests
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: ${{ github.workspace }}/vcpkg-root
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
+      - name: Install Mono (for NuGet export)
+        if: matrix.preset == 'linux-arm64-ci'
+        run: |
+          sudo apt update
+          sudo apt install -y mono-complete
       - name: Run vcpkg end-to-end tests
         shell: pwsh
         run: |

@@ -99,7 +99,7 @@ namespace
     struct RegistryConfigDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_null(Json::Reader&) const override;
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
@@ -147,7 +147,7 @@ namespace
     struct RegistryDeserializer final : Json::IDeserializer<RegistryConfig>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgARegistry); }
-        virtual View<StringView> valid_fields() const override;
+        virtual View<StringLiteral> valid_fields() const noexcept override;
 
         virtual Optional<RegistryConfig> visit_object(Json::Reader&, const Json::Object&) const override;
 
@@ -164,9 +164,9 @@ namespace
 
     const RegistriesArrayDeserializer RegistriesArrayDeserializer::instance;
 
-    View<StringView> RegistryConfigDeserializer::valid_fields() const
+    View<StringLiteral> RegistryConfigDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,
@@ -177,20 +177,20 @@ namespace
         };
         return t;
     }
-    static constexpr StringView valid_builtin_fields[] = {
+    static constexpr StringLiteral valid_builtin_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_filesystem_fields[] = {
+    static constexpr StringLiteral valid_filesystem_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdPath,
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_git_fields[] = {
+    static constexpr StringLiteral valid_git_fields[] = {
         JsonIdKind,
         JsonIdBaseline,
         JsonIdRepository,
@@ -198,7 +198,7 @@ namespace
         JsonIdPackages,
     };
 
-    static constexpr StringView valid_artifact_fields[] = {
+    static constexpr StringLiteral valid_artifact_fields[] = {
         JsonIdKind,
         JsonIdName,
         JsonIdLocation,
@@ -283,9 +283,9 @@ namespace
         return std::move(res); // gcc-7 bug workaround redundant move
     }
 
-    View<StringView> RegistryDeserializer::valid_fields() const
+    View<StringLiteral> RegistryDeserializer::valid_fields() const noexcept
     {
-        static constexpr StringView t[] = {
+        static constexpr StringLiteral t[] = {
             JsonIdKind,
             JsonIdBaseline,
             JsonIdPath,
@@ -441,23 +441,23 @@ namespace
                 continue;
             }
 
-            if (!el.second.is_object())
+            auto maybe_demand_obj = el.second.maybe_object();
+            if (!maybe_demand_obj)
             {
                 r.add_generic_error(type_name(), msg::format(msgJsonFieldNotObject, msg::json_field = key));
                 continue;
             }
 
-            const auto& demand_obj = el.second.object(VCPKG_LINE_INFO);
-            if (demand_obj.contains(JsonIdDemands))
+            if (maybe_demand_obj->contains(JsonIdDemands))
             {
                 r.add_generic_error(type_name(),
                                     msg::format(msgConfigurationNestedDemands, msg::json_field = el.first));
             }
 
-            auto maybe_demand = r.visit(demand_obj, CeMetadataDeserializer::instance);
-            if (maybe_demand.has_value())
+            auto maybe_demand = CeMetadataDeserializer::instance.visit(r, *maybe_demand_obj);
+            if (auto demand = maybe_demand.get())
             {
-                ret.insert_or_replace(key, maybe_demand.value_or_exit(VCPKG_LINE_INFO));
+                ret.insert_or_replace(key, *demand);
             }
         }
         return ret;
@@ -569,10 +569,10 @@ namespace
         }
 
         Json::Object& ce_metadata_obj = ret.ce_metadata;
-        auto maybe_ce_metadata = r.visit(obj, CeMetadataDeserializer::instance);
-        if (maybe_ce_metadata.has_value())
+        auto maybe_ce_metadata = CeMetadataDeserializer::instance.visit(r, obj);
+        if (auto ce_metadata = maybe_ce_metadata.get())
         {
-            ce_metadata_obj = maybe_ce_metadata.value_or_exit(VCPKG_LINE_INFO);
+            ce_metadata_obj = *ce_metadata;
         }
 
         Json::Object demands_obj;
@@ -602,13 +602,14 @@ namespace
         auto serialize_demands = [](const Json::Object& obj, Json::Object& put_into) {
             if (auto demands = obj.get(JsonIdDemands))
             {
-                if (!demands->is_object())
+                auto demands_obj = demands->maybe_object();
+                if (!demands_obj)
                 {
                     return;
                 }
 
                 Json::Object serialized_demands;
-                for (const auto& el : demands->object(VCPKG_LINE_INFO))
+                for (const auto& el : *demands_obj)
                 {
                     auto key = el.first;
                     if (Strings::starts_with(key, "$"))
@@ -617,10 +618,10 @@ namespace
                         continue;
                     }
 
-                    if (el.second.is_object())
+                    if (auto demand_obj = el.second.maybe_object())
                     {
                         auto& inserted = serialized_demands.insert_or_replace(key, Json::Object{});
-                        serialize_ce_metadata(el.second.object(VCPKG_LINE_INFO), inserted);
+                        serialize_ce_metadata(*demand_obj, inserted);
                     }
                 }
                 put_into.insert_or_replace(JsonIdDemands, serialized_demands);
@@ -667,12 +668,13 @@ namespace
 
             if (el.first == JsonIdDemands)
             {
-                if (!el.second.is_object())
+                auto maybe_demands_object = el.second.maybe_object();
+                if (!maybe_demands_object)
                 {
                     continue;
                 }
 
-                for (const auto& demand : el.second.object(VCPKG_LINE_INFO))
+                for (const auto& demand : *maybe_demands_object)
                 {
                     if (Strings::starts_with(demand.first, "$"))
                     {
@@ -826,7 +828,8 @@ namespace vcpkg
         return std::any_of(registries.begin(), registries.end(), registry_config_requests_ce);
     }
 
-    Json::IDeserializer<Configuration>& get_configuration_deserializer() { return ConfigurationDeserializer::instance; }
+    constexpr const Json::IDeserializer<Configuration>& configuration_deserializer =
+        ConfigurationDeserializer::instance;
 
     Optional<Configuration> parse_configuration(StringView contents, StringView origin, MessageSink& messageSink)
     {
@@ -840,19 +843,19 @@ namespace vcpkg
         }
 
         auto conf_value = std::move(conf).value(VCPKG_LINE_INFO).value;
-        if (!conf_value.is_object())
+        if (auto conf_value_object = conf_value.maybe_object())
         {
-            messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
-            return nullopt;
+            return parse_configuration(std::move(*conf_value_object), origin, messageSink);
         }
 
-        return parse_configuration(std::move(conf_value).object(VCPKG_LINE_INFO), origin, messageSink);
+        messageSink.println(msgFailedToParseNoTopLevelObj, msg::path = origin);
+        return nullopt;
     }
 
     Optional<Configuration> parse_configuration(const Json::Object& obj, StringView origin, MessageSink& messageSink)
     {
         Json::Reader reader(origin);
-        auto maybe_configuration = reader.visit(obj, get_configuration_deserializer());
+        auto maybe_configuration = ConfigurationDeserializer::instance.visit(reader, obj);
         bool has_warnings = !reader.warnings().empty();
         bool has_errors = !reader.errors().empty();
         if (has_warnings || has_errors)
@@ -1022,32 +1025,34 @@ namespace vcpkg
             return true;
         }
 
-        /*if (sv == "*")
-        {
-            return true;
-        }*/
-
-        // ([a-z0-9]+(-[a-z0-9]+)*)(\*?)
+        // ([a-z0-9]+-)*([a-z0-9]+[*]?|[*])
         auto cur = sv.begin();
         const auto last = sv.end();
+        // each iteration of this loop matches either
+        // ([a-z0-9]+-)
+        // or the last
+        // ([a-z0-9]+[*]?|[*])
         for (;;)
         {
-            // [a-z0-9]+
             if (cur == last)
             {
                 return false;
             }
 
+            // this if checks for the first matched character of [a-z0-9]+
             if (!ParserBase::is_lower_digit(*cur))
             {
-                if (*cur != '*')
+                // [a-z0-9]+ didn't match anything, so we must be matching
+                // the last [*]
+                if (*cur == '*')
                 {
-                    return false;
+                    return ++cur == last;
                 }
 
-                return ++cur == last;
+                return false;
             }
 
+            // match the rest of the [a-z0-9]+
             do
             {
                 ++cur;
@@ -1060,11 +1065,11 @@ namespace vcpkg
             switch (*cur)
             {
                 case '-':
-                    // repeat outer [a-z0-9]+ again to match -[a-z0-9]+
+                    // this loop iteration matched [a-z0-9]+- once
                     ++cur;
                     continue;
                 case '*':
-                    // match last optional *
+                    // this loop matched [a-z0-9]+[*]? (and [*] was present)
                     ++cur;
                     return cur == last;
                 default: return false;

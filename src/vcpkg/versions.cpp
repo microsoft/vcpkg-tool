@@ -18,12 +18,7 @@ namespace vcpkg
     {
     }
 
-    std::string Version::to_string() const
-    {
-        std::string result;
-        to_string(result);
-        return result;
-    }
+    std::string Version::to_string() const { return adapt_to_string(*this); }
 
     void Version::to_string(std::string& out) const
     {
@@ -57,11 +52,11 @@ namespace vcpkg
         return Version{StringView{content.begin(), hash}, port_version};
     }
 
-    bool operator==(const Version& left, const Version& right)
+    bool operator==(const Version& left, const Version& right) noexcept
     {
         return left.text == right.text && left.port_version == right.port_version;
     }
-    bool operator!=(const Version& left, const Version& right) { return !(left == right); }
+    bool operator!=(const Version& left, const Version& right) noexcept { return !(left == right); }
 
     bool VersionMapLess::operator()(const Version& left, const Version& right) const
     {
@@ -81,9 +76,17 @@ namespace vcpkg
     VersionDiff::VersionDiff() noexcept : left(), right() { }
     VersionDiff::VersionDiff(const Version& left, const Version& right) : left(left), right(right) { }
 
-    std::string VersionDiff::to_string() const { return fmt::format("{} -> {}", left, right); }
+    std::string VersionDiff::to_string() const { return adapt_to_string(*this); }
+    void VersionDiff::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{} -> {}", left, right);
+    }
 
-    std::string VersionSpec::to_string() const { return fmt::format("{}@{}", port_name, version); }
+    std::string VersionSpec::to_string() const { return adapt_to_string(*this); }
+    void VersionSpec::to_string(std::string& out) const
+    {
+        fmt::format_to(std::back_inserter(out), "{}@{}", port_name, version);
+    }
 
     namespace
     {
@@ -381,12 +384,12 @@ namespace vcpkg
     {
     }
 
-    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs)
+    bool operator==(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept
     {
         return lhs.scheme == rhs.scheme && lhs.version == rhs.version;
     }
 
-    bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs) { return !(lhs == rhs); }
+    bool operator!=(const SchemedVersion& lhs, const SchemedVersion& rhs) noexcept { return !(lhs == rhs); }
 
     StringLiteral to_string_literal(VersionScheme scheme)
     {

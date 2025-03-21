@@ -15,7 +15,17 @@
 
 namespace vcpkg
 {
-    struct SplitURIView
+    struct SanitizedUrl
+    {
+        SanitizedUrl() = default;
+        SanitizedUrl(StringView raw_url, View<std::string> secrets);
+        const std::string& to_string() const noexcept { return m_sanitized_url; }
+
+    private:
+        std::string m_sanitized_url;
+    };
+
+    struct SplitUrlView
     {
         StringView scheme;
         Optional<StringView> authority;
@@ -23,39 +33,45 @@ namespace vcpkg
     };
 
     // e.g. {"https","//example.org", "/index.html"}
-    ExpectedL<SplitURIView> split_uri_view(StringView uri);
-
-    void verify_downloaded_file_hash(const ReadOnlyFilesystem& fs,
-                                     StringView sanitized_url,
-                                     const Path& downloaded_path,
-                                     StringView sha512);
+    Optional<SplitUrlView> parse_split_url_view(StringView raw_url);
 
     View<std::string> azure_blob_headers();
 
-    std::vector<int> download_files(View<std::pair<std::string, Path>> url_pairs,
-                                    View<std::string> headers,
-                                    View<std::string> secrets);
+    // Parses a curl output line for curl invoked with
+    // -w "PREFIX%{http_code} %{exitcode} %{errormsg}"
+    // with specific handling for curl version < 7.75.0 which does not understand %{exitcode} %{errormsg}
+    // If the line is malformed for any reason, no entry to http_codes is added.
+    // Returns: true if the new version of curl's output with exitcode and errormsg was parsed; otherwise, false.
+    bool parse_curl_status_line(DiagnosticContext& context,
+                                std::vector<int>& http_codes,
+                                StringLiteral prefix,
+                                StringView this_line);
 
-    bool send_snapshot_to_api(const std::string& github_token,
-                              const std::string& github_repository,
-                              const Json::Object& snapshot);
-    ExpectedL<int> put_file(const ReadOnlyFilesystem&,
-                            StringView url,
-                            const std::vector<std::string>& secrets,
-                            View<std::string> headers,
-                            const Path& file,
-                            StringView method = "PUT");
+    std::vector<int> download_files_no_cache(DiagnosticContext& context,
+                                             View<std::pair<std::string, Path>> url_pairs,
+                                             View<std::string> headers,
+                                             View<std::string> secrets);
 
-    ExpectedL<std::string> invoke_http_request(StringView method,
-                                               View<std::string> headers,
-                                               StringView url,
-                                               StringView data = {});
+    bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
+                                                 const Optional<std::string>& maybe_github_server_url,
+                                                 const std::string& github_token,
+                                                 const std::string& github_repository,
+                                                 const Json::Object& snapshot);
+
+    Optional<std::string> invoke_http_request(DiagnosticContext& context,
+                                              StringLiteral method,
+                                              View<std::string> headers,
+                                              StringView url,
+                                              StringView data = {});
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 
-    std::vector<int> url_heads(View<std::string> urls, View<std::string> headers, View<std::string> secrets);
+    std::vector<int> url_heads(DiagnosticContext& context,
+                               View<std::string> urls,
+                               View<std::string> headers,
+                               View<std::string> secrets);
 
-    struct DownloadManagerConfig
+    struct AssetCachingSettings
     {
         Optional<std::string> m_read_url_template;
         std::vector<std::string> m_read_headers;
@@ -67,34 +83,37 @@ namespace vcpkg
     };
 
     // Handles downloading and uploading to a content addressable mirror
-    struct DownloadManager
-    {
-        DownloadManager() = default;
-        explicit DownloadManager(const DownloadManagerConfig& config) : m_config(config) { }
-        explicit DownloadManager(DownloadManagerConfig&& config) : m_config(std::move(config)) { }
+    bool download_file_asset_cached(DiagnosticContext& context,
+                                    MessageSink& machine_readable_progress,
+                                    const AssetCachingSettings& asset_cache_settings,
+                                    const Filesystem& fs,
+                                    const std::string& url,
+                                    View<std::string> headers,
+                                    const Path& download_path,
+                                    StringView display_path,
+                                    const Optional<std::string>& maybe_sha512);
 
-        void download_file(const Filesystem& fs,
-                           const std::string& url,
-                           View<std::string> headers,
-                           const Path& download_path,
-                           const Optional<std::string>& sha512,
-                           MessageSink& progress_sink) const;
+    bool download_file_asset_cached(DiagnosticContext& context,
+                                    MessageSink& machine_readable_progress,
+                                    const AssetCachingSettings& asset_cache_settings,
+                                    const Filesystem& fs,
+                                    View<std::string> urls,
+                                    View<std::string> headers,
+                                    const Path& download_path,
+                                    StringView display_path,
+                                    const Optional<std::string>& maybe_sha512);
 
-        // Returns url that was successfully downloaded from
-        std::string download_file(const Filesystem& fs,
-                                  View<std::string> urls,
-                                  View<std::string> headers,
-                                  const Path& download_path,
-                                  const Optional<std::string>& sha512,
-                                  MessageSink& progress_sink) const;
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file);
 
-        ExpectedL<int> put_file_to_mirror(const ReadOnlyFilesystem& fs,
-                                          const Path& file_to_put,
-                                          StringView sha512) const;
-
-    private:
-        DownloadManagerConfig m_config;
-    };
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              const AssetCachingSettings& asset_cache_settings,
+                              const Path& file_to_put,
+                              StringView sha512);
 
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 
@@ -102,8 +121,8 @@ namespace vcpkg
     {
         unsigned int total_percent;
         unsigned long long total_size;
-        unsigned int recieved_percent;
-        unsigned long long recieved_size;
+        unsigned int received_percent;
+        unsigned long long received_size;
         unsigned int transfer_percent;
         unsigned long long transfer_size;
         unsigned long long average_download_speed; // bytes per second
@@ -124,3 +143,5 @@ namespace vcpkg
     // is likely to contain query parameters or similar.
     std::string url_encode_spaces(StringView url);
 }
+
+VCPKG_FORMAT_WITH_TO_STRING(vcpkg::SanitizedUrl);

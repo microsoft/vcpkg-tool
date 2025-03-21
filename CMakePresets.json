@@ -150,6 +150,25 @@
             }
         },
         {
+            "name": "linux-arm64-ci",
+            "inherits": [ "linux-ci" ],
+            "cacheVariables": {
+                "CMAKE_SYSTEM_PROCESSOR": "aarch64"
+            }
+        },
+        {
+            "name": "linux-codespaces",
+            "inherits": [
+                "base",
+                "debug",
+                "artifacts",
+                "linux"
+            ],
+            "cacheVariables": {
+                "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
             "name": "macos",
             "hidden": true,
             "vendor": {
@@ -203,6 +222,14 @@
             "configurePreset": "linux-ci"
         },
         {
+            "name": "linux-arm64-ci",
+            "configurePreset": "linux-arm64-ci"
+        },
+        {
+            "name": "linux-codespaces",
+            "configurePreset": "linux-codespaces"
+        },
+        {
             "name": "macos-ci",
             "configurePreset": "macos-ci"
         }
@@ -215,6 +242,14 @@
         {
             "name": "linux-ci",
             "configurePreset": "linux-ci"
+        },
+        {
+            "name": "linux-arm64-ci",
+            "configurePreset": "linux-arm64-ci"
+        },
+        {
+            "name": "linux-codespaces",
+            "configurePreset": "linux-codespaces"
         },
         {
             "name": "macos-ci",

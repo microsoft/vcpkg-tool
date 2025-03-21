@@ -41,7 +41,8 @@ namespace
         auto res = serialize_manifest(*data.scf);
 
         // reparse res to ensure no semantic changes were made
-        auto maybe_reparsed = SourceControlFile::parse_project_manifest_object(StringView{}, res, null_sink);
+        auto maybe_reparsed =
+            SourceControlFile::parse_project_manifest_object(StringLiteral{"<unsaved>"}, res, null_sink);
         bool reparse_matches;
         if (auto reparsed = maybe_reparsed.get())
         {
@@ -147,7 +148,7 @@ namespace vcpkg
             else
             {
                 auto maybe_manifest =
-                    Paragraphs::try_load_project_manifest_text(contents->content, contents->origin, stdout_sink);
+                    Paragraphs::try_load_project_manifest_text(contents->content, contents->origin, out_sink);
                 if (auto manifest = maybe_manifest.get())
                 {
                     to_write.push_back(ToWrite{contents->content, std::move(*manifest), path, path});

@@ -516,9 +516,9 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADefaultFeature); }
 
-        Span<const StringView> valid_fields() const override
+        View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView t[] = {
+            static const StringLiteral t[] = {
                 JsonIdName,
                 JsonIdPlatform,
             };
@@ -580,9 +580,9 @@ namespace vcpkg
     {
         LocalizedString type_name() const override { return msg::format(msgADependencyFeature); }
 
-        Span<const StringView> valid_fields() const override
+        View<StringLiteral> valid_fields() const noexcept override
         {
-            static const StringView t[] = {
+            static const StringLiteral t[] = {
                 JsonIdName,
                 JsonIdPlatform,
             };
@@ -620,9 +620,9 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgADependency); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView t[] = {
+            static constexpr StringLiteral t[] = {
                 JsonIdName,
                 JsonIdHost,
                 JsonIdFeatures,
@@ -701,11 +701,10 @@ namespace vcpkg
     struct DependencyOverrideDeserializer final : Json::IDeserializer<DependencyOverride>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAnOverride); }
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView u[] = {JsonIdName};
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
-            return t;
+            static constexpr StringLiteral fields[] = {VCPKG_SCHEMED_DESERIALIZER_FIELDS, JsonIdName};
+            return fields;
         }
 
         virtual Optional<DependencyOverride> visit_object(Json::Reader& r, const Json::Object& obj) const override
@@ -731,9 +730,32 @@ namespace vcpkg
 
     const DependencyOverrideDeserializer DependencyOverrideDeserializer::instance;
 
-    struct DependencyOverrideArrayDeserializer : Json::ArrayDeserializer<DependencyOverrideDeserializer>
+    struct DependencyOverrideArrayDeserializer : Json::IDeserializer<std::vector<DependencyOverride>>
     {
         LocalizedString type_name() const override { return msg::format(msgAnArrayOfDependencyOverrides); }
+
+        virtual Optional<std::vector<DependencyOverride>> visit_array(Json::Reader& r,
+                                                                      const Json::Array& arr) const override
+        {
+            std::set<std::string> seen;
+            return r.array_elements_fn(
+                arr,
+                DependencyOverrideDeserializer::instance,
+                [&](Json::Reader& r, const IDeserializer<DependencyOverride>& visitor, const Json::Value& value) {
+                    auto maybe_dependency_override = visitor.visit(r, value);
+                    if (auto dependency_override = maybe_dependency_override.get())
+                    {
+                        if (!seen.insert(dependency_override->name).second)
+                        {
+                            r.add_generic_error(visitor.type_name(),
+                                                msg::format(msgDuplicateDependencyOverride,
+                                                            msg::package_name = dependency_override->name));
+                        }
+                    }
+
+                    return maybe_dependency_override;
+                });
+        }
 
         static const DependencyOverrideArrayDeserializer instance;
     };
@@ -753,7 +775,7 @@ namespace vcpkg
     // * `null`, for when the license of the package cannot be described by an SPDX expression
     struct SpdxLicenseExpressionParser : ParserBase
     {
-        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin) { }
+        SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin, {0, 0}) { }
 
         static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
         {
@@ -1004,9 +1026,9 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAFeature); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView t[] = {JsonIdDescription, JsonIdDependencies, JsonIdSupports, JsonIdLicense};
+            static constexpr StringLiteral t[] = {JsonIdDescription, JsonIdDependencies, JsonIdSupports, JsonIdLicense};
             return t;
         }
 
@@ -1051,8 +1073,6 @@ namespace vcpkg
     struct FeaturesFieldDeserializer final : Json::IDeserializer<FeaturesObject>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgASetOfFeatures); }
-
-        virtual Span<const StringView> valid_fields() const override { return {}; }
 
         virtual Optional<FeaturesObject> visit_object(Json::Reader& r, const Json::Object& obj) const override
         {
@@ -1122,9 +1142,10 @@ namespace vcpkg
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAManifest); }
 
-        virtual Span<const StringView> valid_fields() const override
+        virtual View<StringLiteral> valid_fields() const noexcept override
         {
-            static constexpr StringView u[] = {
+            static constexpr StringLiteral fields[] = {
+                VCPKG_SCHEMED_DESERIALIZER_FIELDS,
                 JsonIdName,
                 JsonIdMaintainers,
                 JsonIdContacts,
@@ -1141,9 +1162,8 @@ namespace vcpkg
                 JsonIdBuiltinBaseline,
                 JsonIdVcpkgConfiguration,
             };
-            static const auto t = Util::Vectors::concat<StringView>(schemed_deserializer_fields(), u);
 
-            return t;
+            return fields;
         }
 
         vcpkg::Optional<std::unique_ptr<vcpkg::SourceControlFile>> visit_object_common(
@@ -1194,9 +1214,9 @@ namespace vcpkg
 
             if (auto configuration = obj.get(JsonIdVcpkgConfiguration))
             {
-                if (configuration->is_object())
+                if (auto configuration_object = configuration->maybe_object())
                 {
-                    spgh.vcpkg_configuration.emplace(configuration->object(VCPKG_LINE_INFO));
+                    spgh.vcpkg_configuration.emplace(*configuration_object);
                 }
                 else
                 {
@@ -1278,7 +1298,7 @@ namespace vcpkg
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
             if (!r.optional_object_field(
-                    obj, JsonIdVcpkgConfiguration, ret.config.emplace(), get_configuration_deserializer()))
+                    obj, JsonIdVcpkgConfiguration, ret.config.emplace(), configuration_deserializer))
             {
                 ret.config = nullopt;
             }
@@ -1299,7 +1319,7 @@ namespace vcpkg
                                                                   MessageSink& warningsSink)
     {
         Json::Reader reader(origin);
-        auto res = reader.visit(manifest, ManifestConfigurationDeserializer::instance);
+        auto res = ManifestConfigurationDeserializer::instance.visit(reader, manifest);
 
         if (!reader.warnings().empty())
         {
@@ -1339,6 +1359,8 @@ namespace vcpkg
         {
             ret.feature_paragraphs.push_back(std::make_unique<FeatureParagraph>(*feat_ptr));
         }
+
+        ret.extra_features_info = extra_features_info;
         return ret;
     }
 
@@ -1349,7 +1371,7 @@ namespace vcpkg
     {
         Json::Reader reader(control_path);
 
-        auto res = reader.visit(manifest, ManifestDeserializerType::instance);
+        auto res = ManifestDeserializerType::instance.visit(reader, manifest);
 
         for (auto&& w : reader.warnings())
         {

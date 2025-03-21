@@ -70,18 +70,29 @@ namespace
 
 namespace vcpkg
 {
-    std::string FeatureSpec::to_string() const
-    {
-        std::string ret;
-        this->to_string(ret);
-        return ret;
-    }
+    std::string FeatureSpec::to_string() const { return adapt_to_string(*this); }
     void FeatureSpec::to_string(std::string& out) const
     {
         if (feature().empty()) return spec().to_string(out);
         fmt::format_to(std::back_inserter(out), "{}[{}]:{}", port(), feature(), triplet());
     }
 
+    std::string FullPackageSpec::to_string() const
+    {
+        std::string ret;
+        this->to_string(ret);
+        return ret;
+    }
+
+    void FullPackageSpec::to_string(std::string& out) const
+    {
+        out += package_spec.name();
+        if (!features.empty())
+        {
+            Strings::append(out, '[', Strings::join(",", features), ']');
+        }
+        Strings::append(out, ':', package_spec.triplet());
+    }
     std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
     {
         return fmt::format("{}[{}]", package_name, feature_name);
@@ -130,7 +141,7 @@ namespace vcpkg
 
     std::string PackageSpec::dir() const { return fmt::format("{}_{}", this->m_name, this->m_triplet); }
 
-    std::string PackageSpec::to_string() const { return fmt::format("{}:{}", this->name(), this->triplet()); }
+    std::string PackageSpec::to_string() const { return adapt_to_string(*this); }
     void PackageSpec::to_string(std::string& s) const
     {
         fmt::format_to(std::back_inserter(s), "{}:{}", this->name(), this->triplet());
@@ -177,7 +188,7 @@ namespace vcpkg
                                                                   AllowPlatformSpec allow_platform_spec)
     {
         // there is no origin because this function is used for user inputs
-        auto parser = ParserBase(input, nullopt);
+        auto parser = ParserBase(input, nullopt, {0, 0});
         auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
         if (!parser.at_eof())
         {

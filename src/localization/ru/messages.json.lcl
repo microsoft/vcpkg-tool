@@ -130,6 +130,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ACpuArchitecture" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a CPU architecture]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[архитектура ЦП]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ADateVersionString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a date version string]]></Val>
@@ -412,6 +421,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ASha512" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a SHA-512 hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[хэш SHA-512]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[a string]]></Val>
@@ -435,6 +453,51 @@
           <Val><![CDATA[a "string": "string" dictionary]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["string": словарь "string"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataArray" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[an array of tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[массив метаданных инструмента]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[файл данных инструмента]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataOS" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data operating system]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[операционная система данных инструмента]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataObject" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[метаданные инструмента]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AToolDataVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[a tool data version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[версия данных инструмента]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -523,18 +586,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddFirstArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Первым аргументом для "{command_line}" должен быть 'artifact' или 'port'.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[The first argument to '{command_line}' must be 'artifact' or 'port'.]A;]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddPortRequiresManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['{command_line}' requires an active manifest file.]]></Val>
@@ -601,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionCommitResultReminder" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Don't forget to commit the result!]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не забудьте зафиксировать результат!]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
@@ -646,11 +688,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionLoadPortFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AddVersionInstructions" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[can't load port {package_name}]]></Val>
+          <Val><![CDATA[you can run the following commands to add the current version of {package_name} automatically:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[не удалось загрузить порт {package_name}]]></Val>
+            <Val><![CDATA[для автоматического добавления текущей версии {package_name} можно выполнить следующие команды:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -751,6 +793,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[В {package_name} {version} — это совершенно новая версия, поэтому поле "port-version" следует удалить. Удалите "port-version", зафиксируйте это изменение и повторите попытку. Чтобы пропустить эту проверку, запустите ее повторно с параметром --skip-version-format-check.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[В {package_name} текущая "port-version" для {version} — {count}, поэтому следующая добавляемая "port-version" должна быть {expected_version}, но порт объявляет "port-version" {actual_version}. Измените "port-version" на {expected_version}, зафиксируйте это изменение и повторите попытку. Чтобы пропустить эту проверку, запустите ее повторно с параметром --skip-version-format-check.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AddVersionSuggestVersionDate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version-date". If this format is actually intended to be an ISO 8601 date, change the format to "version-date", and rerun this command. Otherwise, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
@@ -765,15 +825,6 @@
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[В формате версии "{package_name}" используется "version-string", но формат допустим в виде "version". Если версии для этого порта можно упорядочить с помощью правил с нестрогой версией, измените формат на "version" и выполните эту команду повторно. Правила с нестрогой версией упорядочивают версии по каждому числовому компоненту. Затем версии с пунктирными суффиксами сортируются лексикографически в начале. Теги сборок с плюсами игнорируются. Примеры:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Обратите внимание, что пунктирные суффиксы сортируются *в начале*, а не в конце. 1.0-anything < 1.0]A;Обратите внимание, что этот порядок сортировки совпадает с выбранным в семантическом версионировании (см. страницу https://semver.org), хотя фактически семантические части не применяются.]A;Если версии для этого порта не упорядочиваются этими правилами, отключите эту проверку, повторно выполнив эту команду и добавив параметр --skip-version-format-check.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionUnableToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[не удалось проанализировать файл версий {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -864,6 +915,15 @@
           <Val><![CDATA[All artifacts are already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Все артефакты уже установлены]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AllFeatureTestsPassed" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All feature tests passed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Все тесты функций пройдены.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1083,15 +1143,6 @@
           <Val><![CDATA[an SPDX license expression]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[выражение лицензии SPDX]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AndroidHomeDirMissingProps" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[source.properties missing in {env_var} directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[В каталоге {env_var} отсутствует source.properties: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1393,11 +1444,158 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AssetCacheConsult" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Попытка скачать {path} с помощью кэша ресурсов {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheConsultScript" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying to download {path} using asset cache script]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Попытка скачать {path} с помощью сценария кэша ресурсов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHit" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание выполнено успешно! Попадание в кэш ресурсов.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache hit for {path}; downloaded from: {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheHitUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download successful! Asset cache hit, did not try authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание выполнено успешно! Попадание в кэш ресурсов, не выполнена попытка авторизованного исходного {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMiss" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache miss; trying authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Промах кэша ресурсов; выполняется попытка принудительного {url}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss; downloading from {url}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissBlockOrigin" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[there were no asset cache hits, and x-block-origin blocks trying the authoritative source {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[не обнаружено попаданий в кэш ресурсов, а блоки X-block-origin пытается использовать заслуживающий доверия источник {url}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Asset cache miss for {path} and downloads are blocked by x-block-origin.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheMissNoUrls" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Asset cache missed looking for {sha} and no authoritative URL is known]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Кэш ресурсов пропущен при поиске {sha} и неизвестен заслуживающий доверия URL-адрес]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";AssetCacheProviderAcceptsNoArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: '{value}' does not accept arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[непредвиденные аргументы: "{value}" не принимает аргументы]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} contains unknown replacement {list}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[шаблон скрипта {value} содержит неизвестные заменяемые {list}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptBadVariableHint" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if you want this on the literal command line, use {{{{{list}}}}}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[если это необходимо в командной строке литерала, используйте {{{{{list}}}}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[if you want this on the literal command line, use {{{list}}}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the full script command line was]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[командная строка полного сценария:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned nonzero exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[сценарий кэша ресурсов вернул ненулевой код завершения {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteCorrectHash" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but the resulting file has an unexpected hash]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[скрипт кэша ресурсов вернул успешное выполнение, но полученный файл имеет непредвиденный хэш]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptFailedToWriteFile" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the asset cache script returned success but did not create expected result file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[скрипт кэша ресурсов вернул успешное выполнение, но не вернул ожидаемый файл результатов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a SHA, but no SHA is known for attempted download of {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[для шаблона {value} требуется SHA, но sha не известен для попытки скачивания {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AssetCacheScriptNeedsUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the script template {value} requires a URL, but no URL is known for attempted download of {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[для шаблона {value} требуется URL-адрес, но ни один URL-адрес неизвестен для попытки скачивания {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1515,9 +1713,21 @@
       </Item>
       <Item ItemId=";BaselineMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is not assigned a version]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Базовая версия не найдена. Запустите:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database",]A;чтобы установить {version} в качестве базовой версии.]]></Val>
+            <Val><![CDATA[Для {package_name} не назначена версия]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Baseline version not found. Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to set {version} as the baseline version.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BaselineOnlyPlatformExpressionOrTriplet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[You can not specify a platform expression and a triplet]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Невозможно указать выражение платформы и триаду]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1789,15 +1999,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CISettingsExclude" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Comma-separated list of ports to skip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Список разделенных запятыми портов, которые нужно пропустить]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CISettingsOptCIBase" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Path to the ci.baseline.txt file. Used to skip ports and detect regressions.]]></Val>
@@ -2019,24 +2220,6 @@
           <Val><![CDATA[Cannot rename files across filesystems]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Не удается переименовать файлы в разных файловых системах]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Checked out Git SHA: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Извлеченный Git SHA: {commit_sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CheckedOutObjectMissingManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The checked-out object does not contain a CONTROL file or vcpkg.json file.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Извлеченный объект не содержит файла CONTROL или файла vcpkg.json.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2652,10 +2835,13 @@
       </Item>
       <Item ItemId=";CmdExportExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+            <Val><![CDATA[vcpkg export <имена портов> [--nuget]5D; [--output-dir=out_dir]5D;]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg export <port names> [--nuget]5D; [--directory=out_dir]5D;]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2667,30 +2853,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a 7zip (.7z) file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptChocolatey" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports a Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Экспортирует в пакет Chocolatey (экспериментальная функция)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptDebug" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables prefab debug]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Включает отладку prefab]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable prefab debug]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2707,18 +2869,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptIFW" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to an IFW-based installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Экспортирует в установщик на основе IFW]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to an IFW-based installer]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptInstalled" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports all installed packages]]></Val>
@@ -2731,18 +2881,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptMaven" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Enables Maven]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Включает Maven]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Enable Maven]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
@@ -2751,18 +2889,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportOptPrefab" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exports to Prefab format]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Экспортирует в формат Prefab]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export to Prefab format]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2787,54 +2913,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Export to a zip file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyMaint" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The maintainer for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Программа обслуживания для экспортированного пакета Chocolatey (экспериментальная функция)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the maintainer for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingChocolateyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The version suffix to add for the exported Chocolatey package (experimental)]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Суффикс версии для добавления к экспортированному пакету Chocolatey (экспериментальная функция)]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version suffix to add for the exported Chocolatey package (experimental feature)]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingConfigFile" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary file path for the installer configuration]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь к временному файлу конфигурации установщика]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary file path for the installer configuration]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingInstallerPath" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The file path for the exported installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь к файлу экспортированного установщика]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the file path for the exported installer]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -2899,93 +2977,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingPkgDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The temporary directory path for the repacked packages]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь к временному каталогу для переупакованных пакетов.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the temporary directory path for the repacked packages]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabArtifactID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Artifact Id is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Идентификатор артефакта — это имя проекта в соответствии со спецификациями Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabGroupID" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[GroupId uniquely identifies your project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[GroupId однозначно идентифицирует проект в соответствии со спецификациями Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingPrefabVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Version is the name of the project according Maven specifications]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Версия — это имя проекта в соответствии со спецификациями Maven]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoDir" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The directory path for the exported repository]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь к каталогу для экспортированного репозитория]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the directory path for the exported repository]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingRepoURL" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The remote repository URL for the online installer]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[URL-адрес удаленного репозитория для веб-установщика.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the remote repository URL for the online installer]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKMinVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android minimum supported SDK version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Минимальная поддерживаемая версия SDK для Android]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android minimum supported SDK version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CmdExportSettingSDKTargetVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The Android target sdk version]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Версия целевого SDK для Android]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Android target sdk version]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CmdExportSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creates a standalone deployment of installed ports]]></Val>
@@ -3039,6 +3030,24 @@
           <Val><![CDATA[Finds a port or artifact that may be installed or activated]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Выполняет поиск порта или артефакта, который может быть установлен или активирован]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineExample" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg format-feature-baseline <ci.feature.baseline.txt path>]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg format-feature-baseline <путь к ci.feature.baseline.txt>]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdFormatFeatureBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Formats a feature baseline file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Форматирует базовый файл функций]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3583,6 +3592,69 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdTestCIFeatureBaseline" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the ci.feature.baseline.txt file. Used to skip known failing tests ports and detect regressions]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь к файлу ci.feature.baseline.txt. Используется для пропуска портов с известными сбоями тестов и обнаружения регрессий]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesAll" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Runs tests for all ports]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Выполняет тесты для всех портов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesFailingAbis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to file to which all failing ABI hashes will be written]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Путь к файлу, в который будут записаны все хэши ABI со сбоями]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCombined" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает тестирование всех включенных функций]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoCore" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing only the 'core' feature turned on]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает тестирование только включенной функции "core"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesNoSeparated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips testing every feature separately]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропускает тестирование каждой функции по отдельности]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdTestFeaturesSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Tests the features of a port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Тестирует функции порта]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Prints out plan without execution]]></Val>
@@ -3817,15 +3889,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CommandFailedCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[command:]A;{command_line}]A;failed with exit code {exit_code} and the following output:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[следующую команду:]A;{command_line}]A;выполнить не удалось. Возвращен код выхода {exit_code} и следующее сообщение:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CommunityTriplets" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Community Triplets:]]></Val>
@@ -3847,15 +3910,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CompressFolderFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ComputeAllAbis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to compress folder "{path}":]]></Val>
+          <Val><![CDATA[Computing all ABI hashes...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Сбой сжатия папки "{path}":]]></Val>
+            <Val><![CDATA[Вычисление всех хэшей ABI...]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to compress folder '{path}':]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ComputeInstallPlans" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Computing {count} install plans...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Вычисление планов установки ({count})...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -3922,15 +3991,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ControlAndManifestFilesPresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Both a manifest file and a CONTROL file exist in port directory: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Файл манифеста и файл CONTROL существуют в каталоге порта: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ControlCharacterInString" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Control character in string]]></Val>
@@ -3982,15 +4042,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CorruptedInstallTree" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Your vcpkg 'installed' tree is corrupted.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Дерево vcpkg "installed" повреждено.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CouldNotActivateEspidfPythonWasNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not activate esp-idf: python was not found.]]></Val>
@@ -4035,15 +4086,6 @@
           <Val><![CDATA[could not find the git tree for `versions` in repo {package_name} at commit {commit_sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[не удалось найти дерево Git для "versions" в репозитории {package_name} фиксации {commit_sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CouldNotFindToolVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Could not find <tools version="{version}"> in {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось найти <tools version="{version}"> в {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4117,6 +4159,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Операция завитка завершилась сбоем, код ошибки {exit_code}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
@@ -4135,20 +4186,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlResponseTruncatedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl returned a partial response; waiting {value} milliseconds and trying again]]></Val>
+          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Вызов curl возвратил частичный ответ; через {value} миллисекунд попытка будет повторена]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlTimeout" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl was unable to perform all requested HTTP operations, even after timeout and retries. The last command line was: {command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Вызову curl не удалось выполнить все запрашиваемые операции HTTP даже после ожидания и повторного выполнения. Последняя командная строка: {command_line}]]></Val>
+            <Val><![CDATA[Не удалось вернуть ожидаемое число кодов завершения. это может произойти, если что-то завершает завиток до его завершения. Завиток завершился {exit_code} что обычно является кодом результата последней операции, но может быть результатом сбоя. Командная строка {command_line}, и все выходные данные приведены ниже:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4327,11 +4369,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeprecatedPrefabDebugOption" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";DependencyInFeature" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--prefab-debug is now deprecated.]]></Val>
+          <Val><![CDATA[the dependency is in the feature named {feature}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Параметр --prefab-debug упразднен.]]></Val>
+            <Val><![CDATA[зависимость находится в функции с именем {feature}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the dependency {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[в базе данных версий нет зависимости {package_name}. Существует ли этот порт?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DependencyWillFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Dependency {feature_spec} will not build => cascade]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Зависимость {feature_spec} не будет выполнять сборку => cascade]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4387,30 +4447,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedCurl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: curl failed to download with exit code {exit_code}]]></Val>
+          <Val><![CDATA[download from {url} had an unexpected hash]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: не удалось скачать curl с кодом завершения {exit_code}]]></Val>
+            <Val><![CDATA[скачивание из {url} имеет непредвиденный хэш]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchActualHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Actual  : {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Фактически: {sha}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadFailedHashMismatchExpectedHash" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[File does not have the expected hash:]A;url: {url}]A;File: {path}]A;Expected hash: {expected}]A;Actual hash: {actual}]]></Val>
+          <Val><![CDATA[Expected: {sha}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Файл не содержит ожидаемого хэша:]A;URL-адрес: {url}]A;Файл: {path}]A;Ожидаемый хэш: {expected}]A;Фактический хэш: {actual}]]></Val>
+            <Val><![CDATA[Ожидается: {sha}]]></Val>
           </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedHashMismatchZero" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[не удалось скачать, так как ожидаемый SHA512 был нулевым. Измените ожидаемое значение SHA512 на: {sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность параметров прокси-сервера.]A;Возможные причины:]A;1. Вы действительно используете HTTP-прокси, но HTTPS_PROXY переменную "https//address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является HTTPS-прокси, а прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте задатьhttp://address:port` для HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически использует параметры прокси-сервера Windows IE, заданные программным обеспечением прокси-сервера. Просмотреть: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, заданное прокси-сервером, может быть неправильным или иметь одну и ту же https:// префикса "https://".]A;3. Удаленный сервер вашего прокси-сервера является нашим службой.]A;Если вы считаете, что это не временная ошибка сервера загрузки и необходимо изменить VCPKG для скачивания этого файла из другого расположения, отправьте проблему в https://github.com/Microsoft/vcpkg/issues]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Сбой скачивания — повторная попытка через {value} мс]]></Val>
+            <Val><![CDATA[Сбой скачивания {url} — повторная попытка через {value} мс]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4419,6 +4515,15 @@
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: сбой: код состояния {value}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadOrUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[or {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[или {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4435,12 +4540,45 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadSuccesful" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Успешно загружено {path}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Successfully downloaded {path}.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadSuccesfulUploading" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Successfully downloaded {path}, storing to {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Успешно загружена {path}, сохранена в {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Попытка {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: сбой {system_api} с кодом завершения {exit_code}]]></Val>
+            <Val><![CDATA[{url}: сбой {system_api} с кодом завершения {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4471,29 +4609,59 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingAssetShaToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading asset cache entry {sha} -> {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание записи кэша ресурсов {sha} -> {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingAssetShaWithoutAssetCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[requested download of asset cache entry {sha} -> {path}, but no asset caches are configured]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[запрошено скачивание записи кэша ресурсов {sha} -> {path}, но кэши ресурсов не настроены]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadingFileFirstAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {path}, trying {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Скачивание {path}, попытка {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingPortableToolVersionX" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не найдена подходящая версия {tool_name} (требуется v{version}) Скачивание переносимой версии {tool_name} {version}...]]></Val>
+            <Val><![CDATA[Подходящая версия инструмента {tool_name} не найдена (требуется версия {version}).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) Downloading portable {tool_name} {version}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Downloading {tool_name}...]A;{url}->{path}]]></Val>
+          <Val><![CDATA[Downloading {url} -> {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Скачивание {tool_name}...]A;{url}->{path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadingUrl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Downloading {url}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Выполняется скачивание {url}]]></Val>
+            <Val><![CDATA[Скачивание {url} -> {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4539,6 +4707,15 @@
           <Val><![CDATA[Duplicate define ${p0} during activation. New value will replace old.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Дублировать определение ${p0} во время активации. Новое значение заменит старое.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DuplicateDependencyOverride" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} already has an override]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} уже имеет переопределение]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4777,6 +4954,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlay" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory ({path}) cannot be the same as a directory configured in overlay-ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог манифеста ({path}) не может совпадать с каталогом, настроенным в наложенных портах.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ErrorManifestMustDifferFromOverlayDot" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The manifest directory cannot be the same as a directory configured in overlay-ports, so "overlay-ports" values cannot be ".".]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Каталог манифеста не может совпадать с каталогом, настроенным в наложенных портах, поэтому значения "overlay-ports" не могут иметь значение ".".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ErrorMissingVcpkgRoot" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not detect vcpkg-root. If you are trying to use a copy of vcpkg that you've built, you must define the VCPKG_ROOT environment variable to point to a cloned copy of https://github.com/Microsoft/vcpkg.]]></Val>
@@ -4948,15 +5143,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Error occured while writing {path}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ErrorsFound" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following errors:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Обнаружены следующие ошибки:]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5143,6 +5329,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedInstallStateField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected one of 'not-installed', 'half-installed', or 'installed']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ожидается одно из следующих значений: "not-installed", "half-installed" или "installed"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedOneOfNumberBooleanIdentifierStringFoundToken$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Expected one of {Number, Boolean, Identifier, String}, found token ${p0}]]></Val>
@@ -5209,6 +5404,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExpectedTextHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected '{expected}' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[здесь ожидается "{expected}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExpectedTripletName" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected a triplet name here (must be lowercase, digits, '-')]]></Val>
@@ -5221,20 +5425,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExportArchitectureReq" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExpectedWantField" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Export prefab requires targeting at least one of the following architectures arm64-v8a, armeabi-v7a, x86_64, x86 to be present.]]></Val>
+          <Val><![CDATA[expected one of 'install', 'hold', 'deinstall', or 'purge' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Для экспорта prefab требуется выбор хотя бы одной из следующих целевых архитектур: arm64-v8a, armeabi-v7a, x86_64, x86.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportPrefabRequiresAndroidTriplet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[export prefab requires an Android triplet.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Для экспорта prefab требуется триплет Android.]]></Val>
+            <Val><![CDATA[ожидается один из следующих значений: "install", "hold", "deinstall" или "purge"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5262,15 +5457,6 @@
           <Val><![CDATA[The following packages are already built and will be exported:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Следующие пакеты уже созданы и будут экспортированы:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExportingMaintenanceTool" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Exporting maintenance tool...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Экспорт средства обслуживания...]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5386,15 +5572,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToDownloadFromMirrorSet" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to download from mirror set]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось скачать из зеркального набора]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to extract "{path}":]]></Val>
@@ -5473,33 +5650,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToObtainDependencyVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired dependency version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удается найти нужную версию зависимостей.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToObtainLocalPortGitSha" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to obtain git SHAs for local ports.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось получить Git SHA для локальных портов.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToObtainPackageVersion" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Cannot find desired package version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удается найти нужную версию пакета.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToOpenAlgorithm" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to open {value}]]></Val>
@@ -5539,27 +5689,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse CONTROL file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось проанализировать файл CONTROL: {path}]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse control file: {path}]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse manifest file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось проанализировать файл манифеста: {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedToParseNoTopLevelObj" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Failed to parse {path}, expected a top-level object.]]></Val>
@@ -5587,38 +5716,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseVersionXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not parse version for tool {tool_name}. Version string was: {version}]]></Val>
+          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось проанализировать версию инструмента {tool_name}. Строка версии: {version}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to parse versions file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[не удалось проанализировать файл версий {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToReadParagraph" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to read paragraphs from {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось прочитать абзацы из {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRemoveControl" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to remove control file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось удалить файл управления {path}]]></Val>
+            <Val><![CDATA[Не удалось проанализировать файл версии: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5644,12 +5746,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToStoreBackToMirror" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to store back to mirror:]]></Val>
+          <Val><![CDATA[Failed to store {path} to {url}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[не удалось сохранить обратно в зеркале:]]></Val>
+            <Val><![CDATA[Не удалось сохранить путь {path} для URL-адреса {url}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[failed to store back to mirror:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5677,15 +5782,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToWriteManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to write manifest file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не удалось записать файл манифеста {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";FailedVendorAuthentication" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.]]></Val>
@@ -5709,6 +5805,42 @@
           <Val><![CDATA[Fatal: The root folder '${p0}' cannot be created]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Неустранимая ошибка: не удается создать корневую папку "${p0}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Функция "{feature}" уже объявлена как "{value}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineExpectedFeatures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '{value}' a list of features must be specified.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[При использовании "{value}" необходимо указать список функций.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineFormatted" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Succeeded in formatting the feature baseline file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Форматирование базового файла функций успешно выполнено.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForFail" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[При использовании "= fail" список функций не разрешен.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5758,12 +5890,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FileNotFound" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{path}: file not found]]></Val>
+          <Val><![CDATA[file not found]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}: файл не найден]]></Val>
+            <Val><![CDATA[файл не найден]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{path}: file not found]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5799,12 +5934,12 @@
       </Item>
       <Item ItemId=";FilesContainAbsolutePath2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Absolute paths were found in the following files]]></Val>
+          <Val><![CDATA[absolute paths found here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Абсолютные пути найдены в следующих файлах]]></Val>
+            <Val><![CDATA[здесь найдены абсолютные пути]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Absolute paths were found in the following files:]]></Val>
+            <Val><![CDATA[Absolute paths were found in the following files]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5841,6 +5976,15 @@
           <Val><![CDATA[the files are relative to ${{CURRENT_PACKAGES_DIR}} here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[файлы здесь относятся к ${{CURRENT_PACKAGES_DIR}}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FindCommandFirstArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The first argument to 'find' must be 'artifact' or 'port' .]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Первым аргументом для "find" должен быть "artifact" или "port".]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5908,6 +6052,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ForceClassicMode" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Force classic mode, even if a manifest could be found.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Принудительный классический режим, даже если удалось найти манифест.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ForceSystemBinariesOnWeirdPlatforms" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.]]></Val>
@@ -5947,51 +6100,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GeneratedConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generated configuration {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Созданная конфигурация {path}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratedInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installer generated.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Установщик {path} создан.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingConfiguration" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating configuration {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Создание конфигурации {path}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingInstaller" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating installer {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Создание установщика {path}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GeneratingRepo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Generating repository {path}...]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Создание репозитория {path}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
@@ -6006,6 +6114,15 @@
           <Val><![CDATA[failed to execute: {command_line}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[не удалось выполнить: {command_line}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GitCommitUpdateVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[git commit -m "Update version database"]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[git commit -m "Обновить базу данных версий"]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6103,24 +6220,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HashFileFailureToRead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to read file "{path}" for hashing: ]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[сбой при чтении файла "{path}" для хеширования: ]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[failed to read file '{path}' for hashing: ]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HashPortManyFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          <Val><![CDATA[{package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{package_name} содержит несколько ({count}) файлов. Хэширование этого содержимого может занять много времени при определении хэша ABI для двоичного кэширования. Рассмотрите возможность уменьшения количества файлов. Распространенные причины: случайное извлечение исходных файлов или файлов сборки в каталог порта.]]></Val>
+            <Val><![CDATA[{package_name} содержит несколько файлов ({count}). Хэширование этого содержимого может занять много времени при определении хэша ABI для двоичного кэширования. Рассмотрите возможность уменьшения количества файлов. Распространенные причины: случайное извлечение исходных файлов или файлов сборки в каталог порта.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The {package_name} contains {count} files. Hashing these contents may take a long time when determining the ABI hash for binary caching. Consider reducing the number of files. Common causes of this are accidentally checking out source or build files into a port's directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6210,6 +6318,15 @@
           <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds an Azure Blob Storage source. Uses Shared Access Signature validation. <url> should include the container path. <sas> must be be prefixed with a "?".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[**Экспериментальная функция: будет изменена или удалена без предупреждения**]A;Добавляет источник Хранилища BLOB-объектов Azure. Использует проверку подписанного URL-адреса. <url> должен содержать путь к контейнеру. <sas> должен быть указан с префиксом "?".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpBinaryCachingAzUpkg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Universal Package Azure Artifacts source. Uses the Azure CLI (az artifacts) for uploads and downloads.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[**Экспериментальная функция: будет изменена или удалена без предупреждения**]A;Добавляет источник Universal Package Azure Artifacts. Использует Azure CLI (az artifacts) для отправки и скачивания.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6757,18 +6874,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";HelpTxtOptUseAria2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Uses aria2 to perform download tasks]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Использует aria2 для выполнения задач скачивания]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Use aria2 to perform download tasks.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
@@ -7117,18 +7222,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InstallingMavenFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{path} installing Maven file]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path}: установка файла Maven]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{path} installing maven file]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InstallingOverlayPort" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[installing overlay port from here]]></Val>
@@ -7291,11 +7384,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidArchitecture" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";InvalidArchitectureValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[invalid architecture: {value}]]></Val>
+          <Val><![CDATA[Invalid architecture: {value}. Expected one of: {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[недопустимая архитектура: {value}]]></Val>
+            <Val><![CDATA[Недопустимая архитектура: {value}. Ожидается одно из следующих: {expected}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7332,6 +7425,15 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires at least a base-url and a SAS token]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[недопустимый аргумент: для двоичной config "{binary_source}" требуется по крайней мере базовый URL-адрес и маркер SAS]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidArgumentRequiresFourOrFiveArguments" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 4 or 5 arguments]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[недопустимый аргумент: для двоичной конфигурации "{binary_source}" требуется 4 или 5 аргументов]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7675,15 +7777,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidNoVersions" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[File contains no versions.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Файл не содержит версий.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidOptionForRemove" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA['remove' accepts either libraries or '--outdated']]></Val>
@@ -7707,6 +7800,15 @@
           <Val><![CDATA[Found invalid port version file name: `{path}`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Обнаружено недопустимое имя файла версии порта: "{path}".]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidSha512" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid SHA-512 hash: {sha}]A;SHA-512 hash must be 128 characters long and contain only hexadecimal digits]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[недопустимый хэш SHA-512: {sha}]A;Хэш SHA-512 должен содержать 128 символов и содержать только шестнадцатеричные цифры]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7738,6 +7840,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidToolOSValue" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool operating system: {value}. Expected one of: {expected}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Недопустимая операционная система средства: {value}. Ожидается одно из следующих: {expected}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidToolVersion" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid tool version; expected a string containing a substring of between 1 and 3 numbers separated by dots.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Недопустимая версия средства; требуется строка, содержащая подстроку от 1 до 3 чисел, разделенных точками.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidTriplet" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
@@ -7761,6 +7881,15 @@
           <Val><![CDATA[Variable VCPKG_HASH_ADDITIONAL_FILES contains invalid file path: '{path}'. The value must be an absolute path to an existent file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Переменная VCPKG_HASH_ADDITIONAL_FILES содержит недопустимый путь к файлу: "{path}". Значение должно быть абсолютным путем к существующему файлу.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidValuePostPortfileIncludes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be an absolute path to an existent cmake file.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Переменная VCPKG_POST_PORTFILE_INCLUDES содержит недопустимый путь к файлу: "{path}". Значение должно быть абсолютным путем к существующему файлу cmake.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8128,11 +8257,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ManifestConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ManifestConflict2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Found both a manifest and CONTROL files in port "{path}"; please rename one or the other]]></Val>
+          <Val><![CDATA[Found both a manifest and CONTROL files; please rename one or the other]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Обнаружен файл манифеста и файл CONTROL в порте "{path}". Переименуйте один из них]]></Val>
+            <Val><![CDATA[Обнаружен файл манифеста и файл CONTROL. Переименуйте один из них]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8184,10 +8313,13 @@
       </Item>
       <Item ItemId=";MismatchedNames" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          <Val><![CDATA[the port name declared in the metadata file did not match the directory. Expected the port to be named {package_name}, but the file declares {actual}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[имена не совпадают: "{package_name}" != "{actual}"]]></Val>
+            <Val><![CDATA[имя порта, объявленное в файле метаданных, не соответствует каталогу. Ожидался порт с именем {package_name}, но файл объявляет {actual}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[names did not match: '{package_name}' != '{actual}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -8214,24 +8346,6 @@
           <Val><![CDATA[Unable to find 7z header.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Не удалось найти заголовок 7z.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAndroidEnv" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME environment variable missing]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Отсутствует переменная среды ANDROID_NDK_HOME]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingAndroidHomeDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[ANDROID_NDK_HOME directory does not exist: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Каталог ANDROID_NDK_HOME не существует: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8325,6 +8439,15 @@
           <Val><![CDATA[missing required field '{json_field}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[отсутствует обязательное поле "{json_field}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MissingShaVariable" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The {{sha}} variable must be used in the template if other variables are used.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Если используются другие переменные, в шаблоне должна применяться переменная {{sha}}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8485,6 +8608,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoCoreFeatureAllowedInNonFailBaselineEntry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA['core' is not allowed in the list of features if the entry is of type '{value}']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA["core" не допускается в списке функций, если запись относится к типу "{value}"]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8521,15 +8653,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NoUrlsAndHashSpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[No urls specified to download SHA: {sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Не указаны URL-адреса для скачивания SHA: {sha}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";NoUrlsAndNoHashSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[No urls specified and no hash specified.]]></Val>
@@ -8562,6 +8685,15 @@
           <Val><![CDATA[the command '{command_name}' requires between {lower} and {upper} arguments, inclusive, but {actual} were provided]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[команда "{command_name}" требует от {lower} до {upper} аргументов включительно, но указано {actual}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NonRangeArgsGreater" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the command '{command_name}' requires at least {lower} arguments, but {actual} were provided]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[команда "{command_name}" требует не менее {lower} аргументов, но указано {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8611,20 +8743,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";OnlySupports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} only supports {supports_expression}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} поддерживает только {supports_expression}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";OptionMustBeInteger" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Value of --{option} must be an integer.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Значение --{option} должно быть целым числом.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";OptionRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[--{option} option is required.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Требуется параметр --{option}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8694,18 +8826,21 @@
       </Item>
       <Item ItemId=";OverlayPatchDir" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          <Val><![CDATA[Overlay path "{path}" must be an existing directory.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Путь наложения "{path}" должен существовать и быть каталогом.]]></Val>
+            <Val><![CDATA[Путь наложения "{path}" должен быть существующим каталогом.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Overlay path "{path}" must exist and must be a directory.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";OverlayPortsDirectoriesHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";OverlayPortsHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Directories of overlay ports (also: {env_var})]]></Val>
+          <Val><![CDATA[Overlay-port directories, or directories containing overlay-port directories (also: {env_var})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Каталоги портов наложения (также: {env_var})]]></Val>
+            <Val><![CDATA[Каталоги наложения портов или каталоги, содержащие каталоги наложения портов (также: {env_var})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9021,43 +9156,49 @@
       </Item>
       <Item ItemId=";ParseFeatureNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" не является допустимым именем компонента. Имена компонентов должны содержать строчные буквы, цифры и дефисы и не должны быть зарезервированы (см. {url} для получения дополнительных сведений).]]></Val>
+            <Val><![CDATA["{package_name}" не является допустимым именем компонента. Имена функций должны состоять из строчных букв, цифр и дефисов и не быть зарезервированными (для получения дополнительной информации см. {url}).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA["{package_name}" is not a valid feature name. Feature names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParseIdentifierError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA["{value}" не является допустимым идентификатором. Идентификаторы должны содержать строчные буквы, цифры и дефисы и не должны быть зарезервированы (см. {url} для получения дополнительных сведений).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{value}" is not a valid identifier. Identifiers must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}" не является допустимым именем пакета. Имена пакетов должны содержать строчные буквы, цифры и дефисы и не должны быть зарезервированы (см. {url} для получения дополнительных сведений).]]></Val>
+            <Val><![CDATA["{package_name}" не является допустимым именем пакета. Имена пакетов должны состоять из строчных букв, цифр и дефисов и не быть зарезервированными (для получения дополнительной информации см. {url}).]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information)]]></Val>
+            <Val><![CDATA["{package_name}" is not a valid package name. Package names must be lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";ParsePackageNameNotEof" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hyphens and not reserved (see {url} for more information).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[ожидался конец ввода при анализе имени пакета; обычно это означает, что имя порта не может содержать указанный символ. Имена пакетов могут содержать только строчные буквы, цифры и дефисы и не должны быть зарезервированы (подробнее см. {url}).]]></Val>
+            <Val><![CDATA[ожидался конец ввода при анализе имени пакета; обычно это означает, что имя порта не может содержать указанный символ. Имена портов могут содержать только строчные буквы, цифры и дефисы и не должны быть зарезервированы (подробнее см. {url}).]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package name; this usually means the indicated character is not allowed to be in a port name. Port names are all lowercase alphanumeric+hypens and not reserved (see {url} for more information).]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9075,10 +9216,13 @@
       </Item>
       <Item ItemId=";ParseQualifiedSpecifierNotEof" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hyphens.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ожидался конец ввода при анализе спецификации пакета; обычно это означает, что спецификация пакета не может содержать указанный символ. Имена портов, триплетов и функций могут содержать строчные буквы, цифры и дефисы.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[expected the end of input parsing a package spec; this usually means the indicated character is not allowed to be in a package spec. Port, triplet, and feature names are all lowercase alphanumeric+hypens.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9087,6 +9231,15 @@
           <Val><![CDATA[expected the end of input parsing a package spec; did you mean {version_spec} instead?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ожидался конец ввода при анализе спецификации пакета; может быть, вы хотели вместо этого указать {version_spec}?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ParseTripletNotEof" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid triplet name. Triplet names are all lowercase alphanumeric+hyphens.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Недопустимое имя триады. Все имена триад состоят из строчных букв, цифр и дефисов.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9526,6 +9679,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PortDeclaredHere" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} объявлен здесь]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PortDependencyConflict" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Port {package_name} has the following unsupported dependencies:]]></Val>
@@ -9558,6 +9720,15 @@
           <Val><![CDATA[the baseline does not contain an entry for port {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[В базовом плане нет записи для порта {package_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PortNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name} is not supported on {triplet}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} не поддерживается в {triplet}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9649,11 +9820,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrecheckBinaryCache" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checking the binary cache...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Проверка двоичного кэша...]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Предыдущий файл интеграции не был удален.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed with exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[сбой с кодом завершения {exit_code}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9669,10 +9858,13 @@
       </Item>
       <Item ItemId=";ProvideExportType" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          <Val><![CDATA[At least one of the following options are required: --raw --nuget --zip --7zip.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Требуется хотя бы один из следующих параметров: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+            <Val><![CDATA[Требуется хотя бы один из следующих параметров: --raw --nuget --zip --7zip.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9805,6 +9997,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RestoredPackagesFromAZUPKG" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from Universal Packages in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Восстановлено несколько ({count}) пакетов из Universal Packages за {elapsed}. Используйте --debug, чтобы увидеть больше деталей.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
@@ -9877,11 +10078,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";RunvcpkgActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";RunvcpkgshellActivateToApplyToTheCurrentTerminal" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Run \`vcpkg activate\` to apply to the current terminal]]></Val>
+          <Val><![CDATA[Run \`vcpkg-shell activate\` to apply to the current terminal]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Запустите команду \"vcpkg activate\", чтобы применить к текущему терминалу]]></Val>
+            <Val><![CDATA[Запустите команду \"vcpkg-shell activate\", чтобы применить к текущему терминалу]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9967,6 +10168,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SkipTestingOfPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing of {feature_spec} because the following dependencies are not supported on {triplet}:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропуск тестирования {feature_spec}, так как следующие зависимости не поддерживаются в {triplet}:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SkipTestingOfPortAlreadyInBinaryCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skipping testing because the ABI hash {sha} is already in the binary cache.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Пропуск тестирования, так как хэш ABI {sha} уже находится в двоичном кэше.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";SkippingPostBuildValidationDueTo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Skipping post-build validation due to {cmake_var}]]></Val>
@@ -10030,6 +10249,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";StartingFeatureTest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Feature Test [{value}]5D; {feature_spec}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Тест функции [{value}]5D; {feature_spec}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Status" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Status]]></Val>
@@ -10048,23 +10276,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoredBinariesToDestinations" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheBackground" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Stored binaries in {count} destinations in {elapsed}.]]></Val>
+          <Val><![CDATA[Starting submission of {spec} to {count} binary cache(s) in the background]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Двоичные файлы сохранены в нескольких ({count}) назначениях за {elapsed}.]]></Val>
+            <Val><![CDATA[Начинается отправка {spec} в {count} двоичных кэшах в фоновом режиме]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Stored binaries in {count} destinations.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SuccessfulyExported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";SubmittingBinaryCacheComplete" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Exported {package_name} to {path}]]></Val>
+          <Val><![CDATA[Completed submission of {spec} to {count} binary cache(s) in {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Пакет {package_name} экспортирован в папку {path}]]></Val>
+            <Val><![CDATA[Завершена отправка {spec} в {count} двоичных кэшах в {elapsed}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10074,15 +10299,6 @@
           <Val><![CDATA[The result may be outdated. Run `git pull` to get the latest results.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Результат может быть устаревшим. Чтобы получить последние результаты, запустите "git pull".]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SuggestResolution" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[To attempt to resolve all errors at once, run:]A;vcpkg {command_name} --{option}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Чтобы попытаться устранить все ошибки сразу, запустите: ]A;vcpkg {command_name} --{option}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10186,11 +10402,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolDataFileSchemaVersionNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[document schema version {version} is not supported by this version of vcpkg]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[версия схемы {version} не поддерживается данной версией vcpkg]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ToolFetchFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Could not fetch {tool_name}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Не удалось получить {tool_name}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolHashMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{tool_name} уже скачан, но имеет неправильный хэш. Ожидалось {expected}, но {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10441,7 +10675,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";UnexpectedAssetCacheProvider" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unknown asset provider type: valid source types are 'x-azurl', 'x-script', 'x-block-origin', and 'clear']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -10707,6 +10941,24 @@
           <Val><![CDATA[unexpected "port-version" without a versioning field]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[неожиданный параметр "port-version" без поля управления версиями]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} привел к непредвиденному состоянию {actual} после {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} привел к непредвиденному состоянию {actual}, так как не выполнена сборка следующих зависимостей:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11094,12 +11346,12 @@
       </Item>
       <Item ItemId=";UploadingBinariesToVendor" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
+          <Val><![CDATA[Uploading binaries for {spec} to {vendor} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Загрузка двоичных файлов для "{spec}" в источник "{vendor}" "{path}".]]></Val>
+            <Val><![CDATA[Отправка двоичных файлов для {spec} в {vendor} из {path}]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source '{path}'.]]></Val>
+            <Val><![CDATA[Uploading binaries for '{spec}' to '{vendor}' source "{path}".]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -11362,12 +11614,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";VersionBaselineMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} matches the current baseline]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} соответствует текущему базовому плану]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";VersionBaselineMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          <Val><![CDATA[{package_name} is assigned {actual}, but the local port is {expected}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Последняя версия — {expected}, но базовый файл содержит {actual}.]A;Запустите:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;для обновления базовой версии.]]></Val>
+            <Val><![CDATA[Для {package_name} назначено {actual}, но локальный порт: {expected}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The latest version is {expected}, but the baseline file contains {actual}.]A;Run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to update the baseline version.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11389,11 +11653,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionConflictXML" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionConstraintNotInDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Expected {path} version: [{expected_version}]5D;, but was [{actual_version}]5D;. Please re-run bootstrap-vcpkg.]]></Val>
+          <Val><![CDATA[the "version>=" constraint to {package_name} names version {version} which does not exist in the version database. All versions must exist in the version database to be interpreted by vcpkg.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ожидаемая версия {path}: [{expected_version}]5D;, но была [{actual_version}]5D;. Повторно запустите bootstrap-vcpkg.]]></Val>
+            <Val><![CDATA[ограничение "version>=" версии {version} имен {package_name}, которая не существует в базе данных версий. Все версии должны существовать в базе данных версий для интерпретации с помощью vcpkg.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintNotInDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version constraint or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[рассмотрите возможность удалить ограничение версии или выбрать значение, объявленное здесь]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionConstraintOk" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[all version constraints are consistent with the version database]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[все ограничения версий согласованы с базой данных версий]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11428,11 +11710,32 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionDatabaseFileMissing" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          <Val><![CDATA[this port is not in the version database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[В {package_name} отсутствует файл базы данных версии в {path}]A;Запустите:]A;vcpkg x-add-version {package_name}]A;для создания файла версий.]]></Val>
+            <Val><![CDATA[этого порта нет в базе данных версий]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{package_name} is missing a version database file at {path}]A;Run:]A;vcpkg x-add-version {package_name}]A;to create the versions file.]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version database file should be here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[файл базы данных версий должен находиться здесь]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionDatabaseFileMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to create the version database file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[выполните команду "{command_line}", чтобы создать файл базы данных версий]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11448,10 +11751,13 @@
       </Item>
       <Item ItemId=";VersionInDeclarationDoesNotMatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          <Val><![CDATA[{git_tree_sha} is declared to contain {expected}, but appears to contain {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Версия, указанная в файле, не соответствует проверенной версии: {version}]]></Val>
+            <Val><![CDATA[{git_tree_sha} объявлено как содержащее {expected}, но, по-видимому, содержит {actual}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version declared in file does not match checked-out version: {version}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11569,24 +11875,66 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{expected} not available, only {actual} is available]]></Val>
+          <Val><![CDATA[{version_spec} was not found in versions database]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{expected} недоступно, {actual} доступно только {actual}.]]></Val>
+            <Val><![CDATA[{version_spec} не найдено в базе данных версий]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionNotFoundInVersionsFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionNotFoundInVersionsFile3" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Version {version} was not found in versions file for {package_name}.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
+          <Val><![CDATA[the version should be in this file]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Версия {version} не найдена в файле версий для {package_name}.]A;Запустите:]A;vcpkg x-add-version {package_name},]A;чтобы добавить новую версию порта.]]></Val>
+            <Val><![CDATA[версия должна находиться в этом файле]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Version {version} was not found in versions file.]A;Run:]A;vcpkg x-add-version {package_name}]A;to add the new port version.]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionNotFoundInVersionsFile4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[run '{command_line}' to add the new port version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[выполните команду "{command_line}", чтобы добавить новую версию порта]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideNotInVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the version override {package_name} does not exist in the version database; does that port exist?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[в базе данных версий нет переопределения версии {package_name}. Существует ли этот порт?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the override of {package_name} names version {version} which does not exist in the version database. Installing this port at the top level will fail as that version will be unresolvable.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[переопределение версии {version} имен {package_name}, которая не существует в базе данных версий. Установка этого порта на верхнем уровне приведет к сбою, так как эта версия будет неразрешимой.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverrideVersionNotInVersionDatabase2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider removing the version override or choosing a value declared here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[рассмотрите возможность удалить переопределение версии или выбрать значение, объявленное здесь]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionOverwriteVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can overwrite {version_spec} with correct local values by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[вы можете перезаписать {version_spec} с правильными локальными значениями, выполнив команду:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11608,29 +11956,101 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionSchemeMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version database declares {version} as {expected}, but {path} declares it as {actual}. Versions must be unique, even if they are declared with different schemes.]A;Run:]A;vcpkg x-add-version {package_name} --overwrite-version]A;to overwrite the scheme declared in the version database with that declared in the port.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[База данных версии объявляет {version} как {expected}, но {path} объявляет ее как {actual}. Версии должны быть уникальными, даже если они объявлены с разными схемами.]A;Запустите:]A;vcpkg x-add-version {package_name} --overwrite-version,]A;чтобы перезаписать схему, объявленную в базе данных версии, схемой, объявленной в порту.]]></Val>
+            <Val><![CDATA[{version} объявлено как {expected}, но {package_name} объявлен с {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMismatch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch1Old" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{version} is declared with {expected}, but the local port has a different SHA {actual}.]A;Please update the port's version fields and then run:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database"]A;to add the new version.]]></Val>
+          <Val><![CDATA[{version} is declared {expected}, but {package_name}@{git_tree_sha} is declared with {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{version} объявлена с {expected}, но локальный порт имеет другой {actual} SHA.]A;Обновите поля версии порта, а затем запустите:]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit -m "Update version database",]A;чтобы добавить новую версию.]]></Val>
+            <Val><![CDATA[{version} объявлено как {expected}, но {package_name}@{git_tree_sha} объявлен с {actual}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";VersionShaMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";VersionSchemeMismatch2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while validating {package_name}, missing Git SHA.]A;Run:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port"]A;to commit the new port and create its version file.]]></Val>
+          <Val><![CDATA[versions must be unique, even if they are declared with different schemes]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[при проверке {package_name} отсутствует Git SHA.]A;Запустите:]A;git add "{path}"]A;git commit -m "wip"]A;vcpkg x-add-version {package_name}]A;git add versions]A;git commit --amend -m "[{package_name}]5D; Add new port",]A;чтобы зафиксировать новый порт и создать файл его версии.]]></Val>
+            <Val><![CDATA[версии должны быть уникальными, даже если они объявлены с разными схемами]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{version_spec} git tree {git_tree_sha} does not match the port directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{version_spec} дерева Git {git_tree_sha} не соответствует каталогу порта]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the port directory has git tree {git_tree_sha}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[каталог порта содержит дерево Git {git_tree_sha}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is already published, update this file with a new version or port-version, commit it, then add the new version by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[если {version_spec} уже опубликовано, обновите этот файл, используя новую версию или версию порта, зафиксируйте его, а затем добавьте новую версию, выполнив команду:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMismatch4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[если {version_spec} еще не опубликовано, перезапишите предыдущее дерево Git, выполнив команду:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[не удалось определить дерево Git каталога порта. Обычно это вызвано незафиксированных изменениями.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[вы можете зафиксировать изменения и добавить их в базу данных версий, выполнив команду:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[wip]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[wip]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[[{package_name}]5D; Добавить новый порт]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11674,6 +12094,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[OK: {version_spec} -> {commit_sha}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WaitUntilPackagesUploaded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Waiting for {count} remaining binary cache submissions...]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ожидание {count} отправки двоичного кэша...]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -11743,20 +12172,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WhileLoadingLocalPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WhileLoadingBaselineVersionForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[while attempting to load local port {package_name}]]></Val>
+          <Val><![CDATA[while loading baseline version for {package_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[при попытке загрузить локальный порт {package_name}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WhileLoadingPortFromGitTree" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[while trying to load port from: {commit_sha}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[при попытке загрузить порт из: {commit_sha}]]></Val>
+            <Val><![CDATA[при загрузке базовой версии для {package_name}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11802,6 +12222,15 @@
           <Val><![CDATA[While resolving dependencies of the project file ${p0}, ${p1} did not specify a registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Когда выполнялось разрешение зависимостей файла проекта ${p0}, ${p1} не указал реестр.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileRunningAssetCacheScriptCommandLine" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while running asset cache script command line]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[при выполнении командной строки сценария кэша ресурсов]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11953,11 +12382,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";noPostscriptFileRerunWithTheVcpkgShellFunctionRatherThanExecutable" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";noPostscriptFileRunVcpkgshellWithTheSameArguments" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[no postscript file: rerun with the vcpkg shell function rather than executable]]></Val>
+          <Val><![CDATA[no postscript file: run vcpkg-shell with the same arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[нет файла в формате PostScript: перезапустите с помощью функции оболочки vcpkg, а не исполняемого файла]]></Val>
+            <Val><![CDATA[нет postscript-файла: запустите команду \"vcpkg-shell\" с теми же аргументами]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

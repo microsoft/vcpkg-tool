@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
+#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
@@ -14,9 +15,11 @@ namespace vcpkg
     Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
 
-    std::string get_environment_variables();
+    std::vector<std::string> get_environment_variables();
 
     const ExpectedL<Path>& get_home_dir() noexcept;
+
+    const ExpectedL<Path>& get_platform_cache_root() noexcept;
 
     const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept;
 
@@ -42,9 +45,11 @@ namespace vcpkg
 
     long get_process_id();
 
-    Optional<CPUArchitecture> to_cpu_architecture(StringView arch);
+    Optional<CPUArchitecture> to_cpu_architecture(StringView arch) noexcept;
 
-    ZStringView to_zstring_view(CPUArchitecture arch) noexcept;
+    StringLiteral to_string_literal(CPUArchitecture arch) noexcept;
+
+    LocalizedString all_comma_separated_cpu_architectures();
 
     CPUArchitecture get_host_processor();
 
@@ -60,3 +65,5 @@ namespace vcpkg
 
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture();
 }
+
+VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::CPUArchitecture);

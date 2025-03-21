@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
@@ -1374,7 +1375,7 @@ namespace vcpkg
     FilePointer::FilePointer(const Path& path) : m_fs(nullptr), m_path(path) { }
     FilePointer::FilePointer() noexcept : m_fs(nullptr), m_path{} { }
 
-    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std ::move(other.m_path))
+    FilePointer::FilePointer(FilePointer&& other) noexcept : m_fs(other.m_fs), m_path(std::move(other.m_path))
     {
         other.m_fs = nullptr;
         other.m_path = {};
@@ -2008,6 +2009,44 @@ namespace vcpkg
         }
     }
 
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const
+    {
+        std::error_code ec;
+        bool result = this->rename_or_delete(old_path, new_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
+        }
+
+        return result;
+    }
+
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const
+    {
+        this->rename(old_path, new_path, ec);
+        using namespace std::chrono_literals;
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
+        {
+            if (!ec)
+            {
+                return true;
+            }
+            else if (ec == std::make_error_condition(std::errc::directory_not_empty) ||
+                     ec == std::make_error_condition(std::errc::file_exists) || this->exists(new_path, ec))
+            {
+                // either the rename failed with a target already exists error, or the target explicitly exists,
+                // assume another process 'won' the 'CAS'.
+                this->remove_all(old_path, ec);
+                return false;
+            }
+
+            std::this_thread::sleep_for(delay);
+            this->rename(old_path, new_path, ec);
+        }
+
+        return false;
+    }
+
     bool Filesystem::remove(const Path& target, LineInfo li) const
     {
         std::error_code ec;
@@ -2122,6 +2161,22 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {source, destination});
+        }
+
+        return result;
+    }
+
+    Optional<bool> Filesystem::copy_file(DiagnosticContext& context,
+                                         const Path& source,
+                                         const Path& destination,
+                                         CopyOptions options) const
+    {
+        std::error_code ec;
+        const bool result = this->copy_file(source, destination, options, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {source, destination}));
+            return nullopt;
         }
 
         return result;
@@ -3152,7 +3207,21 @@ namespace vcpkg
         virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) const override
         {
 #if defined(_WIN32)
-            stdfs::rename(to_stdfs_path(old_path), to_stdfs_path(new_path), ec);
+            // Note that in particular this does *NOT* use MOVEFILE_COPY_ALLOWED like std::filesystem::rename
+            auto old_utf16 = to_stdfs_path(old_path);
+            auto new_utf16 = to_stdfs_path(new_path);
+            if (MoveFileExW(old_utf16.c_str(), new_utf16.c_str(), MOVEFILE_REPLACE_EXISTING))
+            {
+                ec.clear();
+            }
+            else
+            {
+                // note that in particular,
+                // std::error_code(ERROR_NOT_SAME_DEVICE, std::system_category())
+                //   == std::make_error_condition(std::errc::cross_device_link)
+                auto last_error = GetLastError();
+                ec.assign(static_cast<int>(last_error), std::system_category());
+            }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             if (::rename(old_path.c_str(), new_path.c_str()) == 0)
             {
@@ -3163,33 +3232,6 @@ namespace vcpkg
                 ec.assign(errno, std::generic_category());
             }
 #endif // ^^^ !_WIN32
-        }
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) const override
-        {
-            this->rename(old_path, new_path, ec);
-            (void)temp_suffix;
-#if !defined(_WIN32)
-            if (ec)
-            {
-                auto dst = new_path + temp_suffix;
-                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->rename(dst, new_path, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->remove(old_path, ec);
-            }
-#endif // ^^^ !defined(_WIN32)
         }
 
         virtual bool remove(const Path& target, std::error_code& ec) const override
@@ -3912,8 +3954,7 @@ namespace vcpkg
             ls.append_indent().append_raw(as_preferred).append_raw('\n');
         }
 
-        ls.append_raw('\n');
-        msg_sink.print(ls);
+        msg_sink.println(ls);
     }
 
     uint64_t get_filesystem_stats() { return g_us_filesystem_stats.load(); }
@@ -4043,4 +4084,8 @@ namespace vcpkg
         }
     }
 #endif // ^^^ !_WIN32
+
+    TempFileDeleter::TempFileDeleter(const Filesystem& fs, const Path& path) : path(path), m_fs(fs) { }
+
+    TempFileDeleter::~TempFileDeleter() { m_fs.remove(path, IgnoreErrors{}); }
 }

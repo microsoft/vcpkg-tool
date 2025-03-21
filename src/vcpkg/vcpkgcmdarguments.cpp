@@ -15,58 +15,65 @@ namespace
 {
     using namespace vcpkg;
 
-    constexpr std::pair<StringLiteral, StringLiteral> KNOWN_CI_VARIABLES[]{
+    struct CIRecord
+    {
+        StringLiteral env_var;
+        StringLiteral name;
+        CIKind type;
+    };
+
+    constexpr CIRecord KNOWN_CI_VARIABLES[]{
         // Opt-out from CI detection
-        {EnvironmentVariableVcpkgNoCi, "VCPKG_NO_CI"},
+        {EnvironmentVariableVcpkgNoCi, "VCPKG_NO_CI", CIKind::None},
 
         // Azure Pipelines
         // https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables#system-variables
-        {EnvironmentVariableTfBuild, "Azure_Pipelines"},
+        {EnvironmentVariableTfBuild, "Azure_Pipelines", CIKind::AzurePipelines},
 
         // AppVeyor
         // https://www.appveyor.com/docs/environment-variables/
-        {EnvironmentVariableAppveyor, "AppVeyor"},
+        {EnvironmentVariableAppveyor, "AppVeyor", CIKind::AppVeyor},
 
         // AWS Code Build
         // https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
-        {EnvironmentVariableCodebuildBuildId, "AWS_CodeBuild"},
+        {EnvironmentVariableCodebuildBuildId, "AWS_CodeBuild", CIKind::AwsCodeBuild},
 
         // CircleCI
         // https://circleci.com/docs/env-vars#built-in-environment-variables
-        {EnvironmentVariableCircleCI, "Circle_CI"},
+        {EnvironmentVariableCircleCI, "Circle_CI", CIKind::CircleCI},
 
         // GitHub Actions
         // https://docs.github.com/en/actions/learn-github-actions/
-        {EnvironmentVariableGitHubActions, "GitHub_Actions"},
+        {EnvironmentVariableGitHubActions, "GitHub_Actions", CIKind::GithubActions},
 
         // GitLab
         // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
-        {EnvironmentVariableGitLabCI, "GitLab_CI"},
+        {EnvironmentVariableGitLabCI, "GitLab_CI", CIKind::GitLabCI},
 
         // Heroku
         // https://devcenter.heroku.com/articles/heroku-ci#immutable-environment-variables
-        {EnvironmentVariableHerokuTestRunId, "Heroku_CI"},
+        {EnvironmentVariableHerokuTestRunId, "Heroku_CI", CIKind::HerokuCI},
 
         // Jenkins
         // https://wiki.jenkins.io/display/JENKINS/Building+a+software+project#Buildingasoftwareproject-belowJenkinsSetEnvironmentVariables
-        {EnvironmentVariableJenkinsHome, "Jenkins_CI"},
-        {EnvironmentVariableJenkinsUrl, "Jenkins_CI"},
+        {EnvironmentVariableJenkinsHome, "Jenkins_CI", CIKind::JenkinsCI},
+        {EnvironmentVariableJenkinsUrl, "Jenkins_CI", CIKind::JenkinsCI},
 
         // TeamCity
         // https://www.jetbrains.com/help/teamcity/predefined-build-parameters.html#Predefined+Server+Build+Parameters
-        {EnvironmentVariableTeamcityVersion, "TeamCity_CI"},
+        {EnvironmentVariableTeamcityVersion, "TeamCity_CI", CIKind::TeamCityCI},
 
         // Travis CI
         // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-        {EnvironmentVariableTravis, "Travis_CI"},
+        {EnvironmentVariableTravis, "Travis_CI", CIKind::TravisCI},
 
         // Generic CI environment variables
-        {EnvironmentVariableCI, "Generic"},
-        {EnvironmentVariableBuildId, "Generic"},
-        {EnvironmentVariableBuildNumber, "Generic"},
+        {EnvironmentVariableCI, "Generic", CIKind::Generic},
+        {EnvironmentVariableBuildId, "Generic", CIKind::Generic},
+        {EnvironmentVariableBuildNumber, "Generic", CIKind::Generic},
     };
 
-    constexpr std::array<StringLiteral, 3> KNOWN_CI_REPOSITORY_IDENTIFIERS{
+    constexpr StringLiteral KNOWN_CI_REPOSITORY_IDENTIFIERS[] = {
         // Azure Pipelines
         // https://learn.microsoft.com/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml#build-variables-devops-services
         EnvironmentVariableBuildRepositoryId,
@@ -336,6 +343,8 @@ namespace vcpkg
             args.host_triplet,
             msg::format(msgSpecifyHostArch,
                         msg::env_var = format_environment_variable(EnvironmentVariableVcpkgDefaultHostTriplet)));
+        args.parser.parse_switch(
+            SwitchClassic, StabilityTag::Standard, args.force_classic_mode, msg::format(msgForceClassicMode));
         args.parser.parse_option(SwitchManifestRoot, StabilityTag::Experimental, args.manifest_root_dir);
         args.parser.parse_option(SwitchBuildtreesRoot,
                                  StabilityTag::Experimental,
@@ -356,6 +365,7 @@ namespace vcpkg
         args.parser.parse_option(
             SwitchBuiltinRegistryVersionsDir, StabilityTag::Experimental, args.builtin_registry_versions_dir);
         args.parser.parse_option(SwitchRegistriesCache, StabilityTag::Experimental, args.registries_cache_dir);
+        args.parser.parse_option(SwitchToolDataFile, StabilityTag::ImplementationDetail, args.tools_data_file);
         args.parser.parse_option(SwitchAssetSources,
                                  StabilityTag::Experimental,
                                  args.asset_sources_template_arg,
@@ -377,7 +387,7 @@ namespace vcpkg
             SwitchOverlayPorts,
             StabilityTag::Standard,
             args.cli_overlay_ports,
-            msg::format(msgOverlayPortsDirectoriesHelp,
+            msg::format(msgOverlayPortsHelp,
                         msg::env_var = format_environment_variable(EnvironmentVariableVcpkgOverlayPorts)));
         args.parser.parse_multi_option(
             SwitchOverlayTriplets,
@@ -578,9 +588,10 @@ namespace vcpkg
         // detect whether we are running in a CI environment
         for (auto&& ci_env_var : KNOWN_CI_VARIABLES)
         {
-            if (get_env(ci_env_var.first).has_value())
+            if (get_env(ci_env_var.env_var).has_value())
             {
-                m_detected_ci_environment = ci_env_var.second;
+                m_detected_ci_environment_name = ci_env_var.name;
+                m_detected_ci_environment_type = ci_env_var.type;
                 break;
             }
         }
@@ -787,7 +798,7 @@ namespace vcpkg
     void VcpkgCmdArguments::track_environment_metrics() const
     {
         MetricsSubmission submission;
-        if (auto ci_env = m_detected_ci_environment.get())
+        if (auto ci_env = m_detected_ci_environment_name.get())
         {
             Debug::println("Detected CI environment: ", *ci_env);
             submission.track_string(StringMetric::DetectedCiEnvironment, *ci_env);

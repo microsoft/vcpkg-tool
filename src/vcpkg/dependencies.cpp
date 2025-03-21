@@ -336,7 +336,7 @@ namespace vcpkg
                          const CMakeVars::CMakeVarProvider& var_provider,
                          const StatusParagraphs& status_db,
                          Triplet host_triplet,
-                         const Path& packages_dir);
+                         PackagesDirAssigner& packages_dir_assigner);
             ~PackageGraph() = default;
 
             void install(Span<const FeatureSpec> specs, UnsupportedPortAction unsupported_port_action);
@@ -352,7 +352,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
-            Path m_packages_dir;
+            PackagesDirAssigner& m_packages_dir_assigner;
             std::map<FeatureSpec, PlatformExpression::Expr> m_unsupported_features;
         };
 
@@ -508,7 +508,7 @@ namespace vcpkg
 
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
                                          const SourceControlFileAndLocation& scfl,
-                                         const Path& packages_dir,
+                                         PackagesDirAssigner& packages_dir_assigner,
                                          RequestType request_type,
                                          UseHeadVersion use_head_version,
                                          Editable editable,
@@ -524,7 +524,7 @@ namespace vcpkg
         , editable(editable)
         , feature_dependencies(std::move(dependencies))
         , build_failure_messages(std::move(build_failure_messages))
-        , package_dir(packages_dir / spec.dir())
+        , package_dir(packages_dir_assigner.generate(spec))
     {
     }
 
@@ -660,12 +660,8 @@ namespace vcpkg
 
     bool RemovePlan::has_non_user_requested() const
     {
-        constexpr struct
-        {
-            bool operator()(const RemovePlanAction& a) const { return a.request_type != RequestType::USER_REQUESTED; }
-        } non_user_requested;
-
-        return Util::find_if(remove, non_user_requested) != remove.end();
+        return Util::any_of(remove,
+                            [](const RemovePlanAction& a) { return a.request_type != RequestType::USER_REQUESTED; });
     }
 
     RemovePlan create_remove_plan(const std::vector<PackageSpec>& specs, const StatusParagraphs& status_db)
@@ -680,8 +676,6 @@ namespace vcpkg
             }
 
             PackageSpec load_vertex_data(const PackageSpec& s) const override { return s; }
-
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
         };
 
         RemoveAdjacencyProvider p;
@@ -746,8 +740,6 @@ namespace vcpkg
 
                 return ExportPlanAction{spec, request_type};
             }
-
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
         };
 
         const std::unordered_set<PackageSpec> specs_as_set(specs.cbegin(), specs.cend());
@@ -765,9 +757,10 @@ namespace vcpkg
                                            const CMakeVars::CMakeVarProvider& var_provider,
                                            View<FullPackageSpec> specs,
                                            const StatusParagraphs& status_db,
+                                           PackagesDirAssigner& packages_dir_assigner,
                                            const CreateInstallPlanOptions& options)
     {
-        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, options.packages_dir);
+        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, packages_dir_assigner);
 
         std::vector<FeatureSpec> feature_specs;
         for (const FullPackageSpec& spec : specs)
@@ -980,9 +973,10 @@ namespace vcpkg
                                    const CMakeVars::CMakeVarProvider& var_provider,
                                    const std::vector<PackageSpec>& specs,
                                    const StatusParagraphs& status_db,
+                                   PackagesDirAssigner& packages_dir_assigner,
                                    const CreateUpgradePlanOptions& options)
     {
-        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, options.packages_dir);
+        PackageGraph pgraph(port_provider, var_provider, status_db, options.host_triplet, packages_dir_assigner);
 
         pgraph.upgrade(specs, options.unsupported_port_action);
 
@@ -997,7 +991,6 @@ namespace vcpkg
         {
             BaseEdgeProvider(const ClusterGraph& parent) : m_parent(parent) { }
 
-            std::string to_string(const PackageSpec& spec) const override { return spec.to_string(); }
             const Cluster* load_vertex_data(const PackageSpec& spec) const override
             {
                 return &m_parent.find_or_exit(spec, VCPKG_LINE_INFO);
@@ -1140,7 +1133,7 @@ namespace vcpkg
 
                 plan.install_actions.emplace_back(p_cluster->m_spec,
                                                   p_cluster->get_scfl_or_exit(),
-                                                  m_packages_dir,
+                                                  m_packages_dir_assigner,
                                                   p_cluster->request_type,
                                                   use_head_version,
                                                   editable,
@@ -1201,10 +1194,10 @@ namespace vcpkg
                                const CMakeVars::CMakeVarProvider& var_provider,
                                const StatusParagraphs& status_db,
                                Triplet host_triplet,
-                               const Path& packages_dir)
+                               PackagesDirAssigner& packages_dir_assigner)
         : m_var_provider(var_provider)
         , m_graph(create_feature_install_graph(port_provider, status_db, host_triplet))
-        , m_packages_dir(packages_dir)
+        , m_packages_dir_assigner(packages_dir_assigner)
     {
     }
 
@@ -1249,9 +1242,9 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
-            Util::find_if(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
+            Util::any_of(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
                 return action.request_type != RequestType::USER_REQUESTED;
-            }) != action_plan.install_actions.cend();
+            });
 
         for (auto&& remove_action : action_plan.remove_actions)
         {
@@ -1316,15 +1309,11 @@ namespace vcpkg
         return ret;
     }
 
-    void print_plan(const ActionPlan& action_plan, const bool is_recursive, const Path& builtin_ports_dir)
+    FormattedPlan print_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
     {
         auto formatted = format_plan(action_plan, builtin_ports_dir);
         msg::print(formatted.text);
-        if (!is_recursive && formatted.has_removals)
-        {
-            msg::println_warning(msgPackagesToRebuildSuggestRecurse);
-            Checks::exit_fail(VCPKG_LINE_INFO);
-        }
+        return formatted;
     }
 
     namespace
@@ -1365,14 +1354,14 @@ namespace vcpkg
                                   const CMakeVars::CMakeVarProvider& var_provider,
                                   const PackageSpec& toplevel,
                                   Triplet host_triplet,
-                                  const Path& packages_dir)
+                                  PackagesDirAssigner& packages_dir_assigner)
                 : m_ver_provider(ver_provider)
                 , m_base_provider(base_provider)
                 , m_o_provider(oprovider)
                 , m_var_provider(var_provider)
                 , m_toplevel(toplevel)
                 , m_host_triplet(host_triplet)
-                , m_packages_dir(packages_dir)
+                , m_packages_dir_assigner(packages_dir_assigner)
             {
             }
 
@@ -1391,7 +1380,7 @@ namespace vcpkg
             const CMakeVars::CMakeVarProvider& m_var_provider;
             const PackageSpec& m_toplevel;
             const Triplet m_host_triplet;
-            const Path m_packages_dir;
+            PackagesDirAssigner& m_packages_dir_assigner;
 
             struct DepSpec
             {
@@ -1937,7 +1926,7 @@ namespace vcpkg
 
                     InstallPlanAction ipa(dep.spec,
                                           *node.second.scfl,
-                                          m_packages_dir,
+                                          m_packages_dir_assigner,
                                           request,
                                           use_head_version,
                                           editable,
@@ -2059,10 +2048,11 @@ namespace vcpkg
                                                         const std::vector<Dependency>& deps,
                                                         const std::vector<DependencyOverride>& overrides,
                                                         const PackageSpec& toplevel,
+                                                        PackagesDirAssigner& packages_dir_assigner,
                                                         const CreateInstallPlanOptions& options)
     {
         VersionedPackageGraph vpg(
-            provider, bprovider, oprovider, var_provider, toplevel, options.host_triplet, options.packages_dir);
+            provider, bprovider, oprovider, var_provider, toplevel, options.host_triplet, packages_dir_assigner);
         for (auto&& o : overrides)
         {
             vpg.add_override(o.name, o.version);

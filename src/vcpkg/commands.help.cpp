@@ -78,7 +78,7 @@ namespace
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
         {"commands", [](const VcpkgPaths&) { print_full_command_list(); }},
-        {"topics", [](const VcpkgPaths&) { msg::print(help_topics()); }},
+        {"topics", [](const VcpkgPaths&) { msg::println(help_topics()); }},
         {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
     };
@@ -101,7 +101,6 @@ namespace
         LocalizedString result;
         result.append(msgAvailableHelpTopics);
         result.append_floating_list(1, all_topic_names);
-        result.append_raw('\n');
         return result;
     }
 
@@ -193,8 +192,8 @@ namespace vcpkg
             }
         }
 
-        stderr_sink.println_error(msgUnknownTopic, msg::value = topic);
-        stderr_sink.print(help_topics());
+        stderr_sink.println(msg::format_error(msgUnknownTopic, msg::value = topic));
+        stderr_sink.println(help_topics());
         get_global_metrics_collector().track_string(StringMetric::CommandContext, "unknown");
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
