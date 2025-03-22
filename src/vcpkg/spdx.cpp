@@ -267,7 +267,8 @@ static void find_all_sourceforge(StringView text, Json::Array& packages, StringV
         }
         auto repo = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRepo);
         auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRef), version_text);
-        auto filename = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename);
+        auto filename =
+            fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename), version_text);
         auto sha = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableSHA512);
         auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
         packages.push_back(make_resource(
