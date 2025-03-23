@@ -1,0 +1,14 @@
+deb http://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu xenial main
+deb-src http://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu xenial main
+
+deb http://ports.ubuntu.com/ubuntu-ports xenial main restricted universe
+deb-src http://ports.ubuntu.com/ubuntu-ports xenial main restricted universe
+
+deb http://ports.ubuntu.com/ubuntu-ports xenial-updates main restricted universe
+deb-src http://ports.ubuntu.com/ubuntu-ports xenial-updates main restricted universe
+
+deb http://ports.ubuntu.com/ubuntu-ports xenial-backports main restricted
+deb-src http://ports.ubuntu.com/ubuntu-ports xenial-backports main restricted
+
+deb http://ports.ubuntu.com/ubuntu-ports xenial-security main restricted universe multiverse
+deb-src http://ports.ubuntu.com/ubuntu-ports xenial-security main restricted universe multiverse

@@ -89,11 +89,13 @@ namespace vcpkg
 
     void command_download_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        // Note that we must NOT make a VcpkgPaths because that will chdir
         auto parsed = args.parse_arguments(CommandDownloadMetadata);
         auto asset_cache_settings =
             parse_download_configuration(args.asset_sources_template()).value_or_exit(VCPKG_LINE_INFO);
-        auto file = fs.absolute(parsed.command_arguments[0], VCPKG_LINE_INFO);
 
+        const Path file = parsed.command_arguments[0];
+        const StringView display_path = file.is_absolute() ? file.filename() : file.native();
         auto sha = get_sha512_check(parsed);
 
         // Is this a store command?
@@ -150,6 +152,7 @@ namespace vcpkg
                     urls,
                     headers,
                     file,
+                    display_path,
                     sha))
             {
                 Checks::exit_success(VCPKG_LINE_INFO);

@@ -56,18 +56,3 @@ TEST_CASE ("Parse git status output", "[git]")
     auto maybe_bad_results3 = parse_git_status_output(bad_output3, "git status");
     REQUIRE(!maybe_bad_results3.has_value());
 }
-
-TEST_CASE ("Extract port name from path", "[git]")
-{
-    // should be empty cases
-    CHECK(try_extract_port_name_from_path("ports/").empty());
-    CHECK(try_extract_port_name_from_path("ports/README.md").empty());
-    CHECK(try_extract_port_name_from_path("versions/test/test.json").empty());
-    CHECK(try_extract_port_name_from_path("overlays/ports/test/portfile.cmake").empty());
-
-    // should have port name cases
-    CHECK(try_extract_port_name_from_path("ports/t/CONTROL") == "t");
-    CHECK(try_extract_port_name_from_path("ports/test/vcpkg.json") == "test");
-    CHECK(try_extract_port_name_from_path("ports/ports/a/README.md") == "ports");
-    CHECK(try_extract_port_name_from_path("ports/ports/a/ports/b/ports/c.json") == "ports");
-}

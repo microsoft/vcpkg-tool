@@ -105,6 +105,16 @@ namespace vcpkg
         return is_valid_triplet_canonical_name(Strings::ascii_to_lowercase(name));
     }
 
+    bool TripletDatabase::is_community_triplet_path(const Path& path) const
+    {
+        return Strings::starts_with(path, community_triplet_directory);
+    }
+
+    bool TripletDatabase::is_overlay_triplet_path(const Path& path) const
+    {
+        return !Strings::starts_with(path, default_triplet_directory) && !is_community_triplet_path(path);
+    }
+
     bool TripletDatabase::is_valid_triplet_canonical_name(StringView name) const
     {
         return Util::any_of(available_triplets, [=](const TripletFile& tf) { return tf.name == name; });

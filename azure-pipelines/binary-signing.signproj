@@ -30,6 +30,9 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-glibc">
       <Authenticode>LinuxSign</Authenticode>
     </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-glibc-arm64">
+      <Authenticode>LinuxSign</Authenticode>
+    </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-muslc">
       <Authenticode>LinuxSign</Authenticode>
     </FilesToSign>
