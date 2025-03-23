@@ -1240,7 +1240,7 @@ namespace vcpkg
 
         for (const Path& rel_port_file : rel_port_files)
         {
-            Path abs_port_file = port_dir / rel_port_file;
+            const Path abs_port_file = port_dir / rel_port_file;
             if (abs_port_file.extension() == ".cmake")
             {
                 const auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
@@ -1253,7 +1253,7 @@ namespace vcpkg
                                      .value_or_exit(VCPKG_LINE_INFO));
             }
 
-            abi_tag_entries.emplace_back(std::move(abs_port_file), hashes.back());
+            abi_tag_entries.emplace_back(rel_port_file, hashes.back());
         }
 
         abi_tag_entries.emplace_back(AbiTagCMake, paths.get_tool_version(Tools::CMAKE, out_sink));
