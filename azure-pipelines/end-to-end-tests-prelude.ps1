@@ -190,6 +190,7 @@ function Set-EmptyTestPort {
         [string]$PortsRoot,
         [switch]$Malformed
     )
+    Write-Host "Setting $Name to $Version#$PortVersion @ $PortsRoot"
 
     $portDir = Join-Path $PortsRoot $Name
 
@@ -214,6 +215,7 @@ function Set-EmptyTestPort {
     $json += "`n}`n"
 
     Set-Content -Value $json -LiteralPath (Join-Path $portDir 'vcpkg.json') -Encoding Ascii -NoNewline
+    git -C $PortsRoot status
 }
 
 function Throw-IfNonEqual {

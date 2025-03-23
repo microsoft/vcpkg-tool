@@ -307,6 +307,44 @@ extends:
               mkdir -p "$(Agent.TempDirectory)/build"
               docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
               mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
+      - job: glibc_arm64_build
+        displayName: 'glibc Arm64 Build'
+        dependsOn:
+        - arch_independent
+        pool:
+          name: 'vcpkg-mariner-aarch64-1espt'
+          os: linux
+          hostArchitecture: Arm64
+        variables:
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+        templateContext:
+          sdl:
+            codeql:
+              language: cpp
+              buildIdentifier: vcpkg_cpp_glibc_arm64
+          mb:
+            signing:
+              enabled: false
+          outputs:
+          - output: pipelineArtifact
+            displayName: 'Publish Unsigned glibc Arm64 Binary'
+            artifactName: 'stagingGlibcArm64'
+            publishLocation: 'Container'
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+        steps:
+          - bash: |
+              az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
+              az acr login --name vcpkgdockercontainers
+            displayName: 'Set up managed identity'
+          - task: CmdLine@2
+            displayName: "Run Docker build for arm64 Linux binary"
+            inputs:
+              failOnStderr: false
+              script: |
+                mkdir -p "$(Agent.TempDirectory)/build"
+                docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-arm64-linux:2025-03-18 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-arm64/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+                mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc-arm64"
       - job: windows_and_sign
         displayName: 'Build Windows binaries and Sign'
         timeoutInMinutes: 120
@@ -315,6 +353,7 @@ extends:
         - macos_build
         - glibc_build
         - muslc_build
+        - glibc_arm64_build
         pool:
           name: 'VSEngSS-MicroBuild2022-1ES'
         variables:
@@ -342,6 +381,9 @@ extends:
           - input: pipelineArtifact
             artifactName: stagingGlibc
             targetPath: $(Build.ArtifactStagingDirectory)\stagingGlibc
+          - input: pipelineArtifact
+            artifactName: stagingGlibcArm64
+            targetPath: $(Build.ArtifactStagingDirectory)\stagingGlibcArm64
           - input: pipelineArtifact
             artifactName: stagingMuslc
             targetPath: $(Build.ArtifactStagingDirectory)\stagingMuslc
@@ -400,6 +442,7 @@ extends:
               mkdir "$(Build.BinariesDirectory)\build"
               copy /Y "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-init" "$(Build.BinariesDirectory)\vcpkg-init"
               copy /Y "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.BinariesDirectory)\vcpkg-glibc"
+              copy /Y "$(Build.ArtifactStagingDirectory)\stagingGlibcArm64\vcpkg-glibc-arm64" "$(Build.BinariesDirectory)\vcpkg-glibc-arm64"
               copy /Y "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.BinariesDirectory)\vcpkg-muslc"
         - task: MSBuild@1
           displayName: 'Sign Binaries'
@@ -454,6 +497,7 @@ extends:
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psm1"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\drop\posh-vcpkg.psd1"
               move "$(Build.ArtifactStagingDirectory)\stagingGlibc\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc"
+              move "$(Build.ArtifactStagingDirectory)\stagingGlibcArm64\vcpkg-glibc-arm64" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc-arm64"
               move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
 
@@ -491,6 +535,7 @@ extends:
             script: |
               move "$(Build.BinariesDirectory)\vcpkg-init" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-init.sig"
               move "$(Build.BinariesDirectory)\vcpkg-glibc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc.sig"
+              move "$(Build.BinariesDirectory)\vcpkg-glibc-arm64" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc-arm64.sig"
               move "$(Build.BinariesDirectory)\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc.sig"
         - task: NuGetCommand@2
           displayName: 'NuGet pack for VS Insertion'
@@ -508,7 +553,7 @@ extends:
           inputs:
             softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
             softwareName: 'vcpkg'
-            softwareVersionNum: 'N/A'
+            softwareVersionNum: '$(VCPKG_BASE_VERSION)'
             softwareBuildNum: '$(Build.BuildId)'
             symbolsFolder: '$(Build.ArtifactStagingDirectory)\drop'
         - task: PoliCheck@2

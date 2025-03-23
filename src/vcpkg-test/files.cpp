@@ -29,7 +29,10 @@ namespace
 {
     using urbg_t = std::mt19937_64;
 
-    std::string get_random_filename(urbg_t& urbg) { return Strings::b32_encode(urbg()); }
+    std::string get_random_filename(urbg_t& urbg, StringLiteral tag)
+    {
+        return Strings::b32_encode(urbg()).append(tag.data(), tag.size());
+    }
 
     bool is_valid_symlink_failure(const std::error_code& ec) noexcept
     {
@@ -131,7 +134,7 @@ namespace
             CHECK_EC_ON_FILE(base, ec);
             for (unsigned int i = 0; i < 5; ++i)
             {
-                create_directory_tree(urbg, fs, base / get_random_filename(urbg), remaining_depth - 1);
+                create_directory_tree(urbg, fs, base / get_random_filename(urbg, "_tree"), remaining_depth - 1);
             }
 
 #if !defined(_WIN32)
@@ -177,7 +180,7 @@ namespace
 
         auto& fs = setup();
 
-        auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+        auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_enum");
         INFO("temp dir is: " << temp_dir.native());
 
         const auto target_root = temp_dir / "target";
@@ -619,7 +622,7 @@ TEST_CASE ("remove readonly", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_readonly");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -672,7 +675,7 @@ TEST_CASE ("remove all", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all");
     INFO("temp dir is: " << temp_dir.native());
 
     create_directory_tree(urbg, fs, temp_dir);
@@ -692,7 +695,7 @@ TEST_CASE ("remove all symlinks", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all_symlinks");
     INFO("temp dir is: " << temp_dir.native());
 
     const auto target_root = temp_dir / "target";
@@ -840,7 +843,7 @@ TEST_CASE ("copy_file", "[files]")
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_copy_file");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -914,13 +917,107 @@ TEST_CASE ("copy_file", "[files]")
     CHECK_EC_ON_FILE(temp_dir, ec);
 }
 
+TEST_CASE ("rename", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_rename");
+    INFO("temp dir is: " << temp_dir.native());
+
+    static constexpr StringLiteral FileTxt = "file.txt";
+    fs.remove_all(temp_dir, VCPKG_LINE_INFO);
+    fs.create_directory(temp_dir, VCPKG_LINE_INFO);
+    auto temp_dir_a = temp_dir / "a";
+    fs.create_directory(temp_dir_a, VCPKG_LINE_INFO);
+    auto temp_dir_a_file = temp_dir_a / FileTxt;
+    auto temp_dir_b = temp_dir / "b";
+    auto temp_dir_b_file = temp_dir_b / FileTxt;
+
+    static constexpr StringLiteral text_file_contents = "hello there";
+    fs.write_contents(temp_dir_a_file, text_file_contents, VCPKG_LINE_INFO);
+
+    // try rename_with_retry
+    {
+        fs.rename_with_retry(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO);
+        REQUIRE(!fs.exists(temp_dir_a, VCPKG_LINE_INFO));
+        REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
+
+        // put things back
+        fs.rename(temp_dir_b, temp_dir_a, VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir_a_file, VCPKG_LINE_INFO) == text_file_contents);
+        REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
+    }
+
+    // try rename_or_delete directory, target does not exist
+    {
+        REQUIRE(fs.rename_or_delete(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
+        REQUIRE(!fs.exists(temp_dir_a, VCPKG_LINE_INFO));
+        REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
+
+        // put things back
+        fs.rename(temp_dir_b, temp_dir_a, VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir_a_file, VCPKG_LINE_INFO) == text_file_contents);
+        REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
+    }
+
+    // try rename_or_delete directory, target exists
+    {
+        fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
+        fs.write_contents(temp_dir_b_file, text_file_contents, VCPKG_LINE_INFO);
+
+        // Note that the VCPKG_LINE_INFO overload implicitly tests that ec got cleared
+        REQUIRE(!fs.rename_or_delete(temp_dir_a, temp_dir_b, VCPKG_LINE_INFO));
+        REQUIRE(!fs.exists(temp_dir_a, VCPKG_LINE_INFO));
+        REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
+
+        // put things back
+        fs.rename(temp_dir_b, temp_dir_a, VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir_a_file, VCPKG_LINE_INFO) == text_file_contents);
+        REQUIRE(!fs.exists(temp_dir_b, VCPKG_LINE_INFO));
+    }
+
+    // try rename_or_delete file, target does not exist
+    {
+        fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
+        REQUIRE(fs.rename_or_delete(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
+        REQUIRE(!fs.exists(temp_dir_a_file, VCPKG_LINE_INFO));
+        REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
+
+        // put things back
+        fs.rename(temp_dir_b_file, temp_dir_a_file, VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir_a_file, VCPKG_LINE_INFO) == text_file_contents);
+        REQUIRE(!fs.exists(temp_dir_b_file, VCPKG_LINE_INFO));
+        fs.remove(temp_dir_b, VCPKG_LINE_INFO);
+    }
+
+    // try rename_or_delete file, target exists
+    {
+        fs.create_directory(temp_dir_b, VCPKG_LINE_INFO);
+        fs.write_contents(temp_dir_b_file, text_file_contents, VCPKG_LINE_INFO);
+        // Note that the VCPKG_LINE_INFO overload implicitly tests that ec got cleared
+        // Also note that POSIX rename() will just delete the target like we want by itself so
+        // this returns true.
+        REQUIRE(fs.rename_or_delete(temp_dir_a_file, temp_dir_b_file, VCPKG_LINE_INFO));
+        REQUIRE(!fs.exists(temp_dir_a_file, VCPKG_LINE_INFO));
+        REQUIRE(fs.read_contents(temp_dir_b_file, VCPKG_LINE_INFO) == text_file_contents);
+
+        // put things back
+        fs.rename(temp_dir_b_file, temp_dir_a_file, VCPKG_LINE_INFO);
+        REQUIRE(fs.read_contents(temp_dir_a_file, VCPKG_LINE_INFO) == text_file_contents);
+        REQUIRE(!fs.exists(temp_dir_b_file, VCPKG_LINE_INFO));
+        fs.remove(temp_dir_b, VCPKG_LINE_INFO);
+    }
+}
+
 TEST_CASE ("copy_symlink", "[files]")
 {
     urbg_t urbg;
 
     auto& fs = setup();
 
-    auto temp_dir = base_temporary_directory() / get_random_filename(urbg);
+    auto temp_dir = base_temporary_directory() / get_random_filename(urbg, "_copy_symlink");
     INFO("temp dir is: " << temp_dir.native());
 
     fs.create_directory(temp_dir, VCPKG_LINE_INFO);
@@ -1080,7 +1177,7 @@ TEST_CASE ("remove all -- benchmarks", "[files][!benchmark]")
             temp_dirs.resize(meter.runs());
 
             std::generate(begin(temp_dirs), end(temp_dirs), [&] {
-                Path temp_dir = base_temporary_directory() / get_random_filename(urbg);
+                Path temp_dir = base_temporary_directory() / get_random_filename(urbg, "_remove_all_bench");
                 create_directory_tree(urbg, fs, temp_dir, max_depth);
                 return temp_dir;
             });

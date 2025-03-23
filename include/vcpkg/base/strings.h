@@ -186,7 +186,11 @@ namespace vcpkg::Strings
 
     void inplace_trim(std::string& s);
 
+    void inplace_trim_end(std::string& s);
+
     [[nodiscard]] StringView trim(StringView sv);
+
+    [[nodiscard]] StringView trim_end(StringView sv);
 
     void inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings);
 

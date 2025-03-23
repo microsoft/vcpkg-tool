@@ -14,8 +14,10 @@ jobs:
         include:
           - os: windows-2022
             preset: windows-ci
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             preset: linux-ci
+          - os: ubuntu-24.04-arm
+            preset: linux-arm64-ci
           - os: macos-13
             preset: macos-ci
     runs-on: ${{ matrix.os }}
@@ -76,6 +78,11 @@ jobs:
           path: ${{ github.workspace }}/vcpkg-root
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
+      - name: Install Mono (for NuGet export)
+        if: matrix.preset == 'linux-arm64-ci'
+        run: |
+          sudo apt update
+          sudo apt install -y mono-complete
       - name: Run vcpkg end-to-end tests
         shell: pwsh
         run: |

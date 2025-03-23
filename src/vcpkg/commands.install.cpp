@@ -46,9 +46,9 @@ namespace vcpkg
 
     const Path& InstallDir::listfile() const { return this->m_listfile; }
 
-    void install_package_and_write_listfile(const Filesystem& fs,
-                                            const Path& source_dir,
-                                            const InstallDir& destination_dir)
+    static void install_package_and_write_listfile(const Filesystem& fs,
+                                                   const Path& source_dir,
+                                                   const InstallDir& destination_dir)
     {
         Checks::check_exit(VCPKG_LINE_INFO,
                            fs.exists(source_dir, IgnoreErrors{}),
@@ -86,7 +86,7 @@ namespace vcpkg
 
             const auto filename = file.filename();
             if (vcpkg::is_regular_file(status) &&
-                (filename == "CONTROL" || filename == "vcpkg.json" || filename == "BUILD_INFO"))
+                (filename == FileControl || filename == FileVcpkgDotJson || filename == FileBuildInfo))
             {
                 // Do not copy the control file or manifest file
                 continue;
@@ -217,11 +217,13 @@ namespace vcpkg
         return SortedVector<file_pack>(std::move(installed_files));
     }
 
-    InstallResult install_package(const VcpkgPaths& paths, const BinaryControlFile& bcf, StatusParagraphs* status_db)
+    static InstallResult install_package(const VcpkgPaths& paths,
+                                         const Path& package_dir,
+                                         const BinaryControlFile& bcf,
+                                         StatusParagraphs* status_db)
     {
         auto& fs = paths.get_filesystem();
         const auto& installed = paths.installed();
-        const auto package_dir = paths.package_dir(bcf.core_paragraph.spec);
         Triplet triplet = bcf.core_paragraph.spec.triplet();
         const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
             get_installed_files_and_upgrade(fs, installed, *status_db);
@@ -389,7 +391,8 @@ namespace vcpkg
             BuildResult code;
             if (all_dependencies_satisfied)
             {
-                const auto install_result = install_package(paths, *bcf, &status_db);
+                const auto install_result =
+                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, &status_db);
                 switch (install_result)
                 {
                     case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
@@ -552,15 +555,16 @@ namespace vcpkg
         TrackedPackageInstallGuard& operator=(const TrackedPackageInstallGuard&) = delete;
     };
 
-    void install_preclear_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    void install_preclear_plan_packages(const VcpkgPaths& paths, const ActionPlan& action_plan)
+    {
+        purge_packages_dirs(paths, action_plan.remove_actions);
+        install_clear_installed_packages(paths, action_plan.install_actions);
+    }
+
+    void install_clear_installed_packages(const VcpkgPaths& paths, View<InstallPlanAction> install_actions)
     {
         auto& fs = paths.get_filesystem();
-        for (auto&& action : action_plan.remove_actions)
-        {
-            fs.remove_all(paths.package_dir(action.spec), VCPKG_LINE_INFO);
-        }
-
-        for (auto&& action : action_plan.install_actions)
+        for (auto&& action : install_actions)
         {
             fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
         }
@@ -625,8 +629,7 @@ namespace vcpkg
         }
 
         database_load_collapse(fs, paths.installed());
-        msg::println(msgTotalInstallTime, msg::elapsed = timer.to_string());
-        return InstallSummary{std::move(results)};
+        return InstallSummary{std::move(results), timer.elapsed()};
     }
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -1128,9 +1131,9 @@ namespace vcpkg
             keep_going,
         };
 
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         const CreateInstallPlanOptions create_options{nullptr,
                                                       host_triplet,
-                                                      paths.packages(),
                                                       unsupported_port_action,
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
                                                       Util::Enum::to_enum<Editable>(is_editable)};
@@ -1254,6 +1257,7 @@ namespace vcpkg
                                                               dependencies,
                                                               manifest_core.overrides,
                                                               toplevel,
+                                                              packages_dir_assigner,
                                                               create_options)
                                     .value_or_exit(VCPKG_LINE_INFO);
 
@@ -1288,7 +1292,8 @@ namespace vcpkg
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
-        auto action_plan = create_feature_install_plan(provider, var_provider, specs, status_db, create_options);
+        auto action_plan = create_feature_install_plan(
+            provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 
         action_plan.print_unsupported_warnings();
         var_provider.load_tag_vars(action_plan, host_triplet);
@@ -1356,7 +1361,7 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
-        install_preclear_packages(paths, action_plan);
+        install_preclear_plan_packages(paths, action_plan);
 
         BinaryCache binary_cache(fs);
         if (!only_downloads)
@@ -1375,8 +1380,8 @@ namespace vcpkg
                                                             action_plan,
                                                             status_db,
                                                             binary_cache,
-                                                            null_build_logs_recorder());
-
+                                                            null_build_logs_recorder);
+        msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         // Skip printing the summary without --keep-going because the status without it is 'obvious': everything was a
         // success.
         if (keep_going == KeepGoing::Yes)
