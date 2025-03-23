@@ -1194,14 +1194,6 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
-        // If there is an unusually large number of files in the port then
-        // something suspicious is going on.
-        constexpr int max_port_file_count = 100;
-
-        std::string portfile_cmake_contents;
-        std::vector<Path> files;
-        std::vector<std::string> hashes;
-
         for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
         {
             auto& file = abi_info.pre_build_info->hash_additional_files[i];
@@ -1229,23 +1221,27 @@ namespace vcpkg
         }
 
         auto&& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
-        auto port_dir = scfl.port_directory();
-        auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
-        if (raw_files.size() > max_port_file_count)
+        const Path port_dir = scfl.port_directory();
+        auto rel_port_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+        Util::erase_remove_if(rel_port_files,
+                              [](const Path& port_file) { return port_file.filename() == FileDotDsStore; });
+
+        // If there is an unusually large number of files in the port then
+        // something suspicious is going on.
+        static constexpr int max_port_file_count = 100;
+        if (rel_port_files.size() > max_port_file_count)
         {
             msg::println_warning(
-                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+                msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = rel_port_files.size());
         }
 
-        for (auto& port_file : raw_files)
-        {
-            if (port_file.filename() == FileDotDsStore)
-            {
-                continue;
-            }
+        std::string portfile_cmake_contents;
+        std::vector<std::string> hashes;
 
-            const auto& abs_port_file = files.emplace_back(port_dir / port_file);
-            if (port_file.extension() == ".cmake")
+        for (const Path& rel_port_file : rel_port_files)
+        {
+            Path abs_port_file = port_dir / rel_port_file;
+            if (abs_port_file.extension() == ".cmake")
             {
                 auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
                 portfile_cmake_contents += contents;
@@ -1257,7 +1253,7 @@ namespace vcpkg
                                      .value_or_exit(VCPKG_LINE_INFO));
             }
 
-            abi_tag_entries.emplace_back(port_file, hashes.back());
+            abi_tag_entries.emplace_back(std::move(abs_port_file), hashes.back());
         }
 
         abi_tag_entries.emplace_back(AbiTagCMake, paths.get_tool_version(Tools::CMAKE, out_sink));
@@ -1328,7 +1324,7 @@ namespace vcpkg
         auto& scf = scfl.source_control_file;
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
-        abi_info.relative_port_files = std::move(files);
+        abi_info.relative_port_files = std::move(rel_port_files);
         abi_info.relative_port_hashes = std::move(hashes);
         abi_info.heuristic_resources.push_back(
             run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text));
