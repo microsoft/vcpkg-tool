@@ -1307,23 +1307,29 @@ namespace vcpkg
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory();
         const auto& port_dir_cache_entry = port_dir_cache.get_lazy(port_dir, [&]() {
             PortDirAbiInfoCacheEntry port_dir_cache_entry;
-            // If there is an unusually large number of files in the port then
-            // something suspicious is going on.
-            constexpr int max_port_file_count = 100;
 
             std::string portfile_cmake_contents;
-            auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
-            if (raw_files.size() > max_port_file_count)
             {
-                msg::println_warning(
-                    msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+                auto rel_port_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+                Util::erase_remove_if(rel_port_files,
+                                      [](const Path& port_file) { return port_file.filename() == FileDotDsStore; });
+                // If there is an unusually large number of files in the port then
+                // something suspicious is going on.
+                constexpr int max_port_file_count = 100;
+                if (rel_port_files.size() > max_port_file_count)
+                {
+                    msg::println_warning(msgHashPortManyFiles,
+                                         msg::package_name = action.spec.name(),
+                                         msg::count = rel_port_files.size());
+                }
+                port_dir_cache_entry.files = std::move(rel_port_files);
             }
-
+            const auto& rel_port_files = port_dir_cache_entry.files;
             // Technically the pre_build_info is not part of the port_dir cache key, but a given port_dir is only going
             // to be associated with 1 port
             for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
             {
-                auto& file = abi_info.pre_build_info->hash_additional_files[i];
+                const auto& file = abi_info.pre_build_info->hash_additional_files[i];
                 if (file.is_relative() || !fs.is_regular_file(file))
                 {
                     Checks::msg_exit_with_message(
@@ -1334,18 +1340,13 @@ namespace vcpkg
                     Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
             }
 
-            for (auto& port_file : raw_files)
+            for (const Path& rel_port_file : rel_port_files)
             {
-                if (port_file.filename() == FileDotDsStore)
-                {
-                    continue;
-                }
-                const auto& abs_port_file = port_dir_cache_entry.files.emplace_back(port_dir / port_file);
+                const Path abs_port_file = port_dir / rel_port_file;
 
-                if (port_file.extension() == ".cmake")
+                if (rel_port_file.extension() == ".cmake")
                 {
-                    auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
-
+                    const auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
                     portfile_cmake_contents += contents;
                     port_dir_cache_entry.hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
                 }
@@ -1355,8 +1356,7 @@ namespace vcpkg
                         vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
                             .value_or_exit(VCPKG_LINE_INFO));
                 }
-
-                port_dir_cache_entry.abi_entries.emplace_back(port_file, port_dir_cache_entry.hashes.back());
+                port_dir_cache_entry.abi_entries.emplace_back(rel_port_file, port_dir_cache_entry.hashes.back());
             }
 
             auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
@@ -1458,10 +1458,8 @@ namespace vcpkg
             return;
         }
 
-        Path abi_file_path = paths.build_dir(action.spec);
-        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
-        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
-        fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+        Path abi_file_path = paths.build_dir(action.spec) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        fs.write_contents_and_dirs(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = port_dir_cache_entry.files;
