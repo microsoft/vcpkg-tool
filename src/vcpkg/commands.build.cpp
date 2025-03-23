@@ -1196,7 +1196,7 @@ namespace vcpkg
 
         for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
         {
-            auto& file = abi_info.pre_build_info->hash_additional_files[i];
+            const auto& file = abi_info.pre_build_info->hash_additional_files[i];
             if (file.is_relative() || !fs.is_regular_file(file))
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
@@ -1209,7 +1209,7 @@ namespace vcpkg
 
         for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
         {
-            auto& file = abi_info.pre_build_info->post_portfile_includes[i];
+            const auto& file = abi_info.pre_build_info->post_portfile_includes[i];
             if (file.is_relative() || !fs.is_regular_file(file) || file.extension() != ".cmake")
             {
                 Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidValuePostPortfileIncludes, msg::path = file);
@@ -1243,8 +1243,8 @@ namespace vcpkg
             Path abs_port_file = port_dir / rel_port_file;
             if (abs_port_file.extension() == ".cmake")
             {
-                auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
-                portfile_cmake_contents += contents;
+                const auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
+                portfile_cmake_contents.append(contents);
                 hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
             }
             else
@@ -1298,7 +1298,7 @@ namespace vcpkg
         if (Debug::g_debugging)
         {
             std::string message = Strings::concat("[DEBUG] <abientries for ", action.spec, ">\n");
-            for (auto&& entry : abi_tag_entries)
+            for (const auto& entry : abi_tag_entries)
             {
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
@@ -1306,7 +1306,8 @@ namespace vcpkg
             msg::write_unlocalized_text(Color::none, message);
         }
 
-        auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
+        const auto abi_tag_entries_missing =
+            Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
         if (!abi_tag_entries_missing.empty())
         {
             Debug::println("Warning: abi keys are missing values:\n",
@@ -1316,18 +1317,17 @@ namespace vcpkg
             return;
         }
 
-        auto abi_file_path = paths.build_dir(action.spec);
+        Path abi_file_path = paths.build_dir(action.spec);
         fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
         abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
         fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
 
-        auto& scf = scfl.source_control_file;
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = std::move(rel_port_files);
         abi_info.relative_port_hashes = std::move(hashes);
         abi_info.heuristic_resources.push_back(
-            run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text));
+            run_resource_heuristics(portfile_cmake_contents, scfl.source_control_file->core_paragraph->version.text));
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
