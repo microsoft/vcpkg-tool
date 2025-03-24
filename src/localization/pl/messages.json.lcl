@@ -652,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[pomijanie wykrywania zmian lokalnych z powodu nieoczekiwanego formatu w danych wyjściowych stanu git]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[couldn't find required file {path}]]></Val>
@@ -736,15 +727,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionNoGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[can't obtain SHA for port {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nie można uzyskać algorytmu SHA dla pakietu portu {package_name}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[old SHA: {commit_sha}]]></Val>
@@ -795,19 +777,25 @@
       </Item>
       <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Val><![CDATA[In {package_name}, {version} is a completely new version, so there should be no "port-version". Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[W pakiecie {package_name} wersja {version} jest zupełnie nową wersją, dlatego należy usunąć pole „port-version”. Usuń pole „port-version”, zatwierdź tę zmianę i spróbuj ponownie. Aby pominąć to sprawdzenie, uruchom ponownie polecenie --skip-version-format-check.]]></Val>
+            <Val><![CDATA[W {package_name} wersja {version} jest zupełnie nową wersją, więc nie powinien istnieć żaden parametr „port-version”. Usuń parametr „port-version" i spróbuj ponownie. Aby pominąć to sprawdzenie, uruchom ponownie polecenie --skip-version-format-check.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the expected new "port-version" is {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version} and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[W pakiecie {package_name} bieżące pole „port-version” dla wersji {version} to {count}, więc następną dodaną wersją „port-version” powinna być {expected_version}, ale port deklaruje pole „port-version” o wartości {actual_version}. Zmień wartość pola „port-version” na {expected_version}, zatwierdź tę zmianę i spróbuj ponownie. Aby pominąć to sprawdzenie, uruchom ponownie polecenie --skip-version-format-check.]]></Val>
+            <Val><![CDATA[W {package_name} bieżący parametr „port-version” dla {version} to {count}, więc oczekiwany nowy parametr „port-version” to {expected_version}, ale port deklaruje parametr „port-version” o wartości {actual_version}. Zmień wartość parametru „port-version” na {expected_version} i spróbuj ponownie. Aby pominąć to sprawdzenie, uruchom ponownie polecenie --skip-version-format-check.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -825,15 +813,6 @@
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Format wersji „{package_name}” używa ciągu „version-string”, ale format jest dopuszczalny jako „version”. Jeśli wersje tego portu można uporządkować przy użyciu reguł swobodnej wersji, zmień format na „version” i uruchom ponownie to polecenie. Reguły swobodnej wersji porządkują wersje według każdego składnika liczbowego. Następnie wersje z przyrostkami w postaci myślnika są sortowane leksekograficznie wcześniej. Tagi kompilacji Plus'd są ignorowane. Przykłady:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Zwróć uwagę na to, że przyrostki w postaci myślnika sortuje się *przed*, a nie po. 1.0-anything < 1.0]A;Należy pamiętać, że ta kolejność sortowania jest taka sama jak wybrana w semantycznym przechowywaniu wersji (zobacz https://semver.org), mimo że faktycznie części semantyczne nie mają zastosowania.]A;Jeśli wersje dla tego portu nie są uporządkowane według tych reguł, wyłącz to sprawdzenie, uruchamiając ponownie to polecenie i dodając polecenie --skip-version-format-check.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionUncommittedChanges" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[there are uncommitted changes for {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[istnieją niezatwierdzone zmiany dla pakietu {package_name}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12012,42 +11991,6 @@
           <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[jeśli wersja {version_spec} nie został jeszcze opublikowana, zastąp poprzednie drzewo Git, uruchamiając:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nie można określić drzewa Git katalogu portów. Jest to zwykle spowodowane przez niezatwierdzone zmiany.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[możesz zatwierdzić zmiany i dodać je do bazy danych wersji, uruchamiając:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[wip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[praca w toku]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[[{package_name}]5D; Dodaj nowy port]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
