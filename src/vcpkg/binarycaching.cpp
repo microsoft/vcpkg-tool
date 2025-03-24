@@ -1330,12 +1330,12 @@ namespace
         ExpectedL<Unit> publish(const AzureUpkgSource& src,
                                 StringView package_name,
                                 StringView package_version,
-                                const Path& package_dir,
+                                const Path& zip_path,
                                 StringView description,
                                 MessageSink& sink) const
         {
             Command cmd = base_cmd(src, package_name, package_version, "publish");
-            cmd.string_arg("--description").string_arg(description).string_arg("--path").string_arg(package_dir);
+            cmd.string_arg("--description").string_arg(description).string_arg("--path").string_arg(zip_path);
             return run_az_artifacts_cmd(cmd, sink);
         }
 
@@ -1378,10 +1378,12 @@ namespace
             size_t count_stored = 0;
             auto ref = make_feedref(request, "");
             std::string package_description = "Cached package for " + ref.id;
+
+            const Path& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             for (auto&& write_src : m_sources)
             {
                 auto res = m_azure_tool.publish(
-                    write_src, ref.id, ref.version, request.package_dir, package_description, msg_sink);
+                    write_src, ref.id, ref.version, zip_path, package_description, msg_sink);
                 if (res)
                 {
                     count_stored++;
@@ -1396,7 +1398,7 @@ namespace
         }
 
         bool needs_nuspec_data() const override { return false; }
-        bool needs_zip_file() const override { return false; }
+        bool needs_zip_file() const override { return true; }
 
     private:
         AzureUpkgTool m_azure_tool;
