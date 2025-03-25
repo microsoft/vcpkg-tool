@@ -1322,6 +1322,7 @@ namespace
                                  const Path& download_path,
                                  MessageSink& sink) const
         {
+
             Command cmd = base_cmd(src, package_name, package_version, "download");
             cmd.string_arg("--path").string_arg(download_path);
             return run_az_artifacts_cmd(cmd, sink);
@@ -1407,7 +1408,7 @@ namespace
 
     struct AzureUpkgGetBinaryProvider : public ZipReadBinaryProvider
     {
-        AzureUpkgGetBinaryProvider(ZipTool zip, const Filesystem& fs, const ToolCache& cache, MessageSink& sink, AzureUpkgSource source, const Path& buildtrees)
+        AzureUpkgGetBinaryProvider(ZipTool zip, const Filesystem& fs, const ToolCache& cache, MessageSink& sink, const AzureUpkgSource& source, const Path& buildtrees)
             : ZipReadBinaryProvider(std::move(zip), fs), m_azure_tool(cache, sink), m_sink(sink), m_source(std::move(source)), m_buildtrees(buildtrees)
         {
         }
@@ -1431,19 +1432,12 @@ namespace
                 const auto ref = make_feedref(info, "");
 
                 Path temp_dir = m_buildtrees / fmt::format("upkg_download_{}", info.package_abi);
+                Path zip_path = temp_dir / fmt::format("{}.zip", ref.id);
 
                 const auto result = m_azure_tool.download(m_source, ref.id, ref.version, temp_dir, m_sink);
-                if (result.has_value())
+                if (result.has_value() && m_fs.exists(zip_path, IgnoreErrors{}))
                 {
-                    Path zip_path = temp_dir / fmt::format("{}.zip", ref.id);
-                    if (m_fs.exists(zip_path, IgnoreErrors{}))
-                    {
-                        out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
-                    }
-                    else
-                    {
-                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("zip_path not found: {}\n", zip_path));
-                    }
+                    out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
                 }
                 else
                 {
