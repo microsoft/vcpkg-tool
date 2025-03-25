@@ -1322,7 +1322,6 @@ namespace
                                  const Path& download_path,
                                  MessageSink& sink) const
         {
-
             Command cmd = base_cmd(src, package_name, package_version, "download");
             cmd.string_arg("--path").string_arg(download_path);
             return run_az_artifacts_cmd(cmd, sink);
@@ -1383,8 +1382,8 @@ namespace
             const Path& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             for (auto&& write_src : m_sources)
             {
-                auto res = m_azure_tool.publish(
-                    write_src, ref.id, ref.version, zip_path, package_description, msg_sink);
+                auto res =
+                    m_azure_tool.publish(write_src, ref.id, ref.version, zip_path, package_description, msg_sink);
                 if (res)
                 {
                     count_stored++;
@@ -1408,8 +1407,17 @@ namespace
 
     struct AzureUpkgGetBinaryProvider : public ZipReadBinaryProvider
     {
-        AzureUpkgGetBinaryProvider(ZipTool zip, const Filesystem& fs, const ToolCache& cache, MessageSink& sink, const AzureUpkgSource& source, const Path& buildtrees)
-            : ZipReadBinaryProvider(std::move(zip), fs), m_azure_tool(cache, sink), m_sink(sink), m_source(std::move(source)), m_buildtrees(buildtrees)
+        AzureUpkgGetBinaryProvider(ZipTool zip,
+                                   const Filesystem& fs,
+                                   const ToolCache& cache,
+                                   MessageSink& sink,
+                                   const AzureUpkgSource& source,
+                                   const Path& buildtrees)
+            : ZipReadBinaryProvider(std::move(zip), fs)
+            , m_azure_tool(cache, sink)
+            , m_sink(sink)
+            , m_source(std::move(source))
+            , m_buildtrees(buildtrees)
         {
         }
 
@@ -1422,8 +1430,7 @@ namespace
             return msg::format(msgRestoredPackagesFromAZUPKG, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        void acquire_zips(View<const InstallPlanAction*> actions,
-            Span<Optional<ZipResource>> out_zips) const override
+        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<ZipResource>> out_zips) const override
         {
             for (size_t i = 0; i < actions.size(); ++i)
             {
@@ -1443,15 +1450,14 @@ namespace
                 {
                     out_zips[i] = nullopt;
                 }
+            }
         }
-}
 
     private:
         AzureUpkgTool m_azure_tool;
         MessageSink& m_sink;
         AzureUpkgSource m_source;
         const Path& m_buildtrees;
-
     };
 
     ExpectedL<Path> default_cache_path_impl()
@@ -2514,8 +2520,8 @@ namespace vcpkg
                 zip_tool.setup(tools, out_sink);
                 for (auto&& src : s.upkg_templates_to_get)
                 {
-                    m_config.read.push_back(
-                        std::make_unique<AzureUpkgGetBinaryProvider>(zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
+                    m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
+                        zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
                 }
             }
             if (!s.upkg_templates_to_put.empty())
