@@ -1405,10 +1405,10 @@ namespace
         std::vector<AzureUpkgSource> m_sources;
     };
 
-    struct AzureUpkgGetBinaryProvider : public IReadBinaryProvider
+    struct AzureUpkgGetBinaryProvider : public ZipReadBinaryProvider
     {
-        AzureUpkgGetBinaryProvider(const ToolCache& cache, MessageSink& sink, AzureUpkgSource source)
-            : m_azure_tool(cache, sink), m_sink(sink), m_source(source)
+        AzureUpkgGetBinaryProvider(ZipTool zip, const Filesystem& fs, const ToolCache& cache, MessageSink& sink, AzureUpkgSource source, const Path& buildtrees)
+            : ZipReadBinaryProvider(std::move(zip), fs), m_azure_tool(cache, sink), m_sink(sink), m_source(std::move(source)), m_buildtrees(buildtrees)
         {
         }
 
@@ -1421,29 +1421,43 @@ namespace
             return msg::format(msgRestoredPackagesFromAZUPKG, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+        void acquire_zips(View<const InstallPlanAction*> actions,
+            Span<Optional<ZipResource>> out_zips) const override
         {
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                auto info = BinaryPackageReadInfo{*actions[i]};
-                auto ref = make_feedref(info, "");
-                auto res = m_azure_tool.download(m_source, ref.id, ref.version, info.package_dir, m_sink);
+                const auto& action = *actions[i];
+                const auto info = BinaryPackageReadInfo{action};
+                const auto ref = make_feedref(info, "");
 
-                if (res)
+                Path temp_dir = m_buildtrees / fmt::format("upkg_download_{}", info.package_abi);
+
+                const auto result = m_azure_tool.download(m_source, ref.id, ref.version, temp_dir, m_sink);
+                if (result.has_value())
                 {
-                    out_status[i] = RestoreResult::restored;
+                    Path zip_path = temp_dir / fmt::format("{}.zip", ref.id);
+                    if (m_fs.exists(zip_path, IgnoreErrors{}))
+                    {
+                        out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
+                    }
+                    else
+                    {
+                        msg::write_unlocalized_text_to_stdout(Color::error, fmt::format("zip_path not found: {}\n", zip_path));
+                    }
                 }
                 else
                 {
-                    out_status[i] = RestoreResult::unavailable;
+                    out_zips[i] = nullopt;
                 }
-            }
         }
+}
 
     private:
         AzureUpkgTool m_azure_tool;
         MessageSink& m_sink;
         AzureUpkgSource m_source;
+        const Path& m_buildtrees;
+
     };
 
     ExpectedL<Path> default_cache_path_impl()
@@ -2502,10 +2516,12 @@ namespace vcpkg
 
             if (!s.upkg_templates_to_get.empty())
             {
+                ZipTool zip_tool;
+                zip_tool.setup(tools, out_sink);
                 for (auto&& src : s.upkg_templates_to_get)
                 {
                     m_config.read.push_back(
-                        std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
+                        std::make_unique<AzureUpkgGetBinaryProvider>(zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
                 }
             }
             if (!s.upkg_templates_to_put.empty())
