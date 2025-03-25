@@ -263,7 +263,7 @@ namespace vcpkg
             Strings::inplace_trim_end(*output);
             if (is_git_sha(*output))
             {
-                return *output;
+                return std::move(*output);
             }
 
             context.report_error_with_log(*output,
