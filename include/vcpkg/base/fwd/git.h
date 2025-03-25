@@ -2,6 +2,12 @@
 
 namespace vcpkg
 {
-    struct GitConfig;
+    enum class GitRepoLocatorKind
+    {
+        CurrentDirectory,
+        DotGitDir
+    };
+
+    struct GitRepoLocator;
     struct GitLSTreeEntry;
 }

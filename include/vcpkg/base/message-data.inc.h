@@ -1278,6 +1278,7 @@ DECLARE_MESSAGE(FailedToDeleteDueToFile,
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
                 "printed after this",
                 "failed to remove_all({value}) due to {path}: ")
+DECLARE_MESSAGE(FailedToDeleteDueToFile2, (msg::path), "", "failed to remove due to {path}")
 DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 (msg::value, msg::path),
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
@@ -1434,9 +1435,6 @@ DECLARE_MESSAGE(
     "",
     "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal "
     "characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".")
-DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name")
-DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line")
-DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines")
 DECLARE_MESSAGE(GitStatusUnknownFileStatus,
                 (msg::value),
                 "{value} is a single character indicating file status, for example: A, U, M, D",
@@ -2705,10 +2703,9 @@ DECLARE_MESSAGE(SettingEnvVar,
                 "'--' at the beginning must be preserved",
                 "-- Setting \"{env_var}\" environment variables to \"{url}\".")
 DECLARE_MESSAGE(ShallowRepositoryDetected,
-                (msg::path),
+                (),
                 "",
-                "vcpkg was cloned as a shallow repository in: {path}\n"
-                "Try again with a full vcpkg clone.")
+                "vcpkg was cloned as a shallow repository. Try again with a full vcpkg clone.")
 DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                 (),
                 "",

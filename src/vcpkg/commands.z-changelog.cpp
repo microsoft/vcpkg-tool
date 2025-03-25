@@ -27,8 +27,13 @@ namespace vcpkg
     {
         const auto parsed = args.parse_arguments(CommandZChangelogMetadata);
         const StringView git_commit_id_for_previous_snapshot = parsed.command_arguments[0];
-        const auto portsdiff =
+        const auto maybe_portsdiff =
             find_portsdiff(console_diagnostic_context, paths, git_commit_id_for_previous_snapshot, "HEAD");
+        const auto portsdiff = maybe_portsdiff.get();
+        if (!portsdiff)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         std::string result;
         auto total_port_count = paths.get_filesystem()
@@ -63,15 +68,15 @@ namespace vcpkg
         result.append("* \n");
         result.append("\n");
 
-        if (!portsdiff.added_ports.empty())
+        if (!portsdiff->added_ports.empty())
         {
             result.append("<details>\n");
             fmt::format_to(std::back_inserter(result),
                            "<summary><b>The following {} ports have been added:</b></summary>\n\n",
-                           portsdiff.added_ports.size());
+                           portsdiff->added_ports.size());
             result.append("|port|version|\n");
             result.append("|---|---|\n");
-            for (auto&& added_port : portsdiff.added_ports)
+            for (auto&& added_port : portsdiff->added_ports)
             {
                 fmt::format_to(std::back_inserter(result), "|{}|{}|\n", added_port.port_name, added_port.version);
             }
@@ -79,15 +84,15 @@ namespace vcpkg
             result.append("</details>\n\n");
         }
 
-        if (!portsdiff.updated_ports.empty())
+        if (!portsdiff->updated_ports.empty())
         {
             result.append("<details>\n");
             fmt::format_to(std::back_inserter(result),
                            "<summary><b>The following {} ports have been updated:</b></summary>\n\n",
-                           portsdiff.updated_ports.size());
+                           portsdiff->updated_ports.size());
             result.append("|port|original version|new version|\n");
             result.append("|---|---|---|\n");
-            for (auto&& updated_port : portsdiff.updated_ports)
+            for (auto&& updated_port : portsdiff->updated_ports)
             {
                 fmt::format_to(std::back_inserter(result),
                                "|{}|{}|{}|\n",
@@ -99,15 +104,15 @@ namespace vcpkg
             result.append("</details>\n\n");
         }
 
-        if (!portsdiff.removed_ports.empty())
+        if (!portsdiff->removed_ports.empty())
         {
             result.append("<details>\n");
             fmt::format_to(std::back_inserter(result),
                            "<summary><b>The following {} ports have been removed:</b></summary>\n\n",
-                           portsdiff.removed_ports.size());
+                           portsdiff->removed_ports.size());
             result.append("|port|\n");
             result.append("|---|\n");
-            for (auto&& removed_port : portsdiff.removed_ports)
+            for (auto&& removed_port : portsdiff->removed_ports)
             {
                 fmt::format_to(std::back_inserter(result), "|{}|\n", removed_port);
             }
