@@ -26,7 +26,8 @@ namespace vcpkg
         std::string git_tree_sha;
     };
 
-    // Check whether a repository is a shallow clone
+    bool is_git_sha(StringView sv) noexcept;
+
     Optional<bool> is_shallow_clone(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator);
 
     Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target);
@@ -61,4 +62,10 @@ namespace vcpkg
                                        const Path& git_exe,
                                        GitRepoLocator locator,
                                        StringView git_commit_id);
+
+    Optional<std::string> git_merge_base(DiagnosticContext& context,
+                                         const Path& git_exe,
+                                         GitRepoLocator locator,
+                                         StringView commit1,
+                                         StringView commit2);
 }

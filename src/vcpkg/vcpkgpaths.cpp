@@ -197,7 +197,7 @@ namespace
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
                 get_global_metrics_collector().track_define(DefineMetric::ManifestBaseline);
-                if (!is_git_commit_sha(*p_baseline))
+                if (!is_git_sha(*p_baseline))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::VersioningErrorBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
@@ -479,7 +479,7 @@ namespace
                     const auto& commit = reference_to_commit.second;
                     if (auto commit_string = commit.maybe_string())
                     {
-                        if (!is_git_commit_sha(*commit_string))
+                        if (!is_git_sha(*commit_string))
                         {
                             Debug::print("Lockfile value for key '", reference, "' was not a commit sha\n");
                             return ret;
