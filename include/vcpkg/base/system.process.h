@@ -267,6 +267,6 @@ namespace vcpkg
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns a pointer to the process' output.
     // Otherwise, records an error in `context` and returns nullptr.
     std::string* check_zero_exit_code(DiagnosticContext& context,
-                                      Optional<ExitCodeAndOutput>& maybe_exit,
-                                      StringView exe_path);
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit);
 }

@@ -1976,8 +1976,8 @@ namespace vcpkg
     }
 
     std::string* check_zero_exit_code(DiagnosticContext& context,
-                                      Optional<ExitCodeAndOutput>& maybe_exit,
-                                      StringView exe_path)
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit)
     {
         if (auto exit = maybe_exit.get())
         {
@@ -1986,10 +1986,13 @@ namespace vcpkg
                 return &exit->output;
             }
 
-            context.report(
-                DiagnosticLine{DiagKind::Error,
-                               exe_path,
-                               msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code)});
+            context.report(DiagnosticLine{
+                DiagKind::Error,
+                LocalizedString::from_raw(command.command_line())
+                    .append_raw(' ')
+                    .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code))
+                    .append_raw('\n')
+                    .append_raw(exit->output)});
         }
 
         return nullptr;

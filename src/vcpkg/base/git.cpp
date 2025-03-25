@@ -49,7 +49,7 @@ namespace
         }
 
         auto maybe_result = cmd_execute_and_capture_output(context, result.command, launch_settings);
-        if (auto prefix_output = check_zero_exit_code(context, maybe_result, git_exe))
+        if (auto prefix_output = check_zero_exit_code(context, result.command, maybe_result))
         {
             Strings::inplace_trim_end(*prefix_output);
             result.maybe_output.emplace(std::move(*prefix_output));
