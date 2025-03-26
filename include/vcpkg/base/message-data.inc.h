@@ -2170,6 +2170,7 @@ DECLARE_MESSAGE(MultipleFeatures,
                 (msg::package_name, msg::feature),
                 "",
                 "{package_name} declares {feature} multiple times; please ensure that features have distinct names")
+DECLARE_MESSAGE(MutuallyExclusivePorts, (msg::option), "", "--{option} cannot be used explicitly named ports.")
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",

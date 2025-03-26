@@ -52,6 +52,57 @@ namespace
 
         return base_path / feature_dir;
     }
+
+    std::vector<std::string> get_for_merge_with_test_port_names(const VcpkgPaths& paths, StringView for_merge_with)
+    {
+        auto& builtin_ports_directory = paths.builtin_ports_directory();
+        auto git_cmd = paths.get_tool_exe(Tools::GIT, out_sink);
+        auto ports_dir_prefix =
+            git_prefix(console_diagnostic_context, git_cmd, builtin_ports_directory).value_or_exit(VCPKG_LINE_INFO);
+        auto merge_base = git_merge_base(console_diagnostic_context,
+                                         git_cmd,
+                                         GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
+                                         for_merge_with,
+                                         "HEAD")
+                              .value_or_exit(VCPKG_LINE_INFO);
+        auto diffs = git_diff_tree(console_diagnostic_context,
+                                   git_cmd,
+                                   GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
+                                   fmt::format("{}:{}", merge_base, ports_dir_prefix),
+                                   fmt::format("HEAD:{}", ports_dir_prefix))
+                         .value_or_exit(VCPKG_LINE_INFO);
+        std::vector<std::string> test_port_names;
+        for (auto&& diff : diffs)
+        {
+            switch (diff.kind)
+            {
+                case GitDiffTreeLineKind::Added:
+                case GitDiffTreeLineKind::Copied:
+                case GitDiffTreeLineKind::Modified:
+                case GitDiffTreeLineKind::Renamed:
+                case GitDiffTreeLineKind::TypeChange: test_port_names.push_back(std::move(diff.file_name)); break;
+                case GitDiffTreeLineKind::Deleted:
+                case GitDiffTreeLineKind::Unmerged:
+                case GitDiffTreeLineKind::Unknown: break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = for_merge_with)
+                       .append_raw(' ')
+                       .append_raw(Strings::join(" ", test_port_names))
+                       .append_raw('\n'));
+
+        return test_port_names;
+    }
+
+    std::vector<SourceControlFile*> load_all_scf_by_name(std::vector<std::string>&& test_port_names,
+                                                         PathsPortFileProvider& provider)
+    {
+        return Util::fmap(std::move(test_port_names), [&](std::string&& arg) {
+            return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
+        });
+    }
 }
 
 namespace vcpkg
@@ -126,59 +177,35 @@ namespace vcpkg
         auto it_merge_with = settings.find(SwitchForMergeWith);
         if (all_ports)
         {
-            const auto files = provider.load_all_control_files();
-            feature_test_ports = Util::fmap(files, [](auto& scfl) { return scfl->source_control_file.get(); });
-        }
-        else if (it_merge_with != settings.end())
-        {
-            auto& builtin_ports_directory = paths.builtin_ports_directory();
-            auto git_cmd = paths.get_tool_exe(Tools::GIT, out_sink);
-            auto ports_dir_prefix =
-                git_prefix(console_diagnostic_context, git_cmd, builtin_ports_directory).value_or_exit(VCPKG_LINE_INFO);
-            auto merge_base =
-                git_merge_base(console_diagnostic_context,
-                               git_cmd,
-                               GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
-                               it_merge_with->second,
-                               "HEAD")
-                    .value_or_exit(VCPKG_LINE_INFO);
-            auto diffs = git_diff_tree(console_diagnostic_context,
-                                       git_cmd,
-                                       GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
-                                       fmt::format("{}:{}", merge_base, ports_dir_prefix),
-                                       fmt::format("HEAD:{}", ports_dir_prefix))
-                             .value_or_exit(VCPKG_LINE_INFO);
-            std::vector<std::string> test_port_names;
-            for (auto&& diff : diffs)
+            if (it_merge_with != settings.end())
             {
-                switch (diff.kind)
-                {
-                    case GitDiffTreeLineKind::Added:
-                    case GitDiffTreeLineKind::Copied:
-                    case GitDiffTreeLineKind::Modified:
-                    case GitDiffTreeLineKind::Renamed:
-                    case GitDiffTreeLineKind::TypeChange: test_port_names.push_back(std::move(diff.file_name)); break;
-                    case GitDiffTreeLineKind::Deleted:
-                    case GitDiffTreeLineKind::Unmerged:
-                    case GitDiffTreeLineKind::Unknown: break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgMutuallyExclusiveOption,
+                                            msg::value = SwitchAll,
+                                            msg::option = SwitchForMergeWith);
             }
 
-            msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = it_merge_with->second)
-                           .append_raw(' ')
-                           .append_raw(Strings::join(" ", test_port_names))
-                           .append_raw('\n'));
+            if (!options.command_arguments.empty())
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMutuallyExclusivePorts, msg::option = SwitchAll);
+            }
 
-            feature_test_ports = Util::fmap(std::move(test_port_names), [&](std::string&& arg) {
-                return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
-            });
+            feature_test_ports =
+                Util::fmap(provider.load_all_control_files(),
+                           [](const SourceControlFileAndLocation* scfl) { return scfl->source_control_file.get(); });
+        }
+        else if (it_merge_with == settings.end())
+        {
+            feature_test_ports = load_all_scf_by_name(std::move(options.command_arguments), provider);
+        }
+        else if (options.command_arguments.empty())
+        {
+            feature_test_ports =
+                load_all_scf_by_name(get_for_merge_with_test_port_names(paths, it_merge_with->second), provider);
         }
         else
         {
-            feature_test_ports = Util::fmap(std::move(options.command_arguments), [&](std::string&& arg) {
-                return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
-            });
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMutuallyExclusivePorts, msg::option = SwitchForMergeWith);
         }
 
         auto feature_baseline_iter = settings.find(SwitchCIFeatureBaseline);
@@ -199,8 +226,9 @@ namespace vcpkg
         }
 
         // to reduce number of cmake invocations
-        auto all_specs = Util::fmap(feature_test_ports,
-                                    [&](auto scf) { return PackageSpec(scf->core_paragraph->name, target_triplet); });
+        auto all_specs = Util::fmap(feature_test_ports, [&](const SourceControlFile* scf) {
+            return PackageSpec(scf->core_paragraph->name, target_triplet);
+        });
         var_provider.load_dep_info_vars(all_specs, host_triplet);
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};

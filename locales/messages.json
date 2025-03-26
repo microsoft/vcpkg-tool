@@ -1194,6 +1194,8 @@
   "_MultipleFeatures.comment": "An example of {package_name} is zlib. An example of {feature} is avisynthplus.",
   "MutuallyExclusiveOption": "--{value} cannot be used with --{option}.",
   "_MutuallyExclusiveOption.comment": "{value} is a second {option} switch An example of {option} is editable.",
+  "MutuallyExclusivePorts": "--{option} cannot be used explicitly named ports.",
+  "_MutuallyExclusivePorts.comment": "An example of {option} is editable.",
   "NewConfigurationAlreadyExists": "Creating a manifest would overwrite a vcpkg-configuration.json at {path}.",
   "_NewConfigurationAlreadyExists.comment": "An example of {path} is /foo/bar.",
   "NewManifestAlreadyExists": "A manifest is already present at {path}.",
