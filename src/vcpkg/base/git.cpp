@@ -22,11 +22,11 @@ namespace
         Optional<std::string> maybe_output;
     };
 
-    GitCmdResult run_git_cmd_impl(vcpkg::DiagnosticContext& context,
-                                  const vcpkg::Path& git_exe,
-                                  GitRepoLocator locator,
-                                  View<StringView> additional_args,
-                                  const RedirectedProcessLaunchSettings& launch_settings)
+    GitCmdResult run_git_cmd(vcpkg::DiagnosticContext& context,
+                             const vcpkg::Path& git_exe,
+                             GitRepoLocator locator,
+                             View<StringView> additional_args,
+                             const RedirectedProcessLaunchSettings& launch_settings)
     {
         // Inline git_cmd_builder functionality
         static constexpr StringLiteral DashC{"-C"};
@@ -64,7 +64,7 @@ namespace
                              View<StringView> additional_args)
     {
         RedirectedProcessLaunchSettings launch_settings;
-        return run_git_cmd_impl(context, git_exe, locator, additional_args, launch_settings);
+        return run_git_cmd(context, git_exe, locator, additional_args, launch_settings);
     }
 
     GitCmdResult run_git_cmd_with_index(DiagnosticContext& context,
@@ -76,7 +76,7 @@ namespace
         RedirectedProcessLaunchSettings launch_settings;
         auto& environment = launch_settings.environment.emplace();
         environment.add_entry("GIT_INDEX_FILE", index_file);
-        return run_git_cmd_impl(context, git_exe, locator, additional_args, launch_settings);
+        return run_git_cmd(context, git_exe, locator, additional_args, launch_settings);
     }
 }
 
@@ -487,5 +487,21 @@ namespace vcpkg
         }
 
         return result_storage;
+    }
+
+    Optional<std::vector<GitDiffTreeLine>> git_diff_tree(
+        DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView tree1, StringView tree2)
+    {
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.encoding = Encoding::Utf8WithNulls;
+        StringView args[] = {StringLiteral{"diff-tree"}, StringLiteral{"-z"}, tree1, tree2};
+        auto maybe_git_diff_tree_output = run_git_cmd(context, git_exe, locator, args, launch_settings);
+        if (auto git_diff_tree_output = maybe_git_diff_tree_output.maybe_output.get())
+        {
+            Strings::inplace_trim_end(*git_diff_tree_output);
+            return parse_git_diff_tree_lines(
+                context, maybe_git_diff_tree_output.command.command_line(), *git_diff_tree_output);
+        }
+        return nullopt;
     }
 }

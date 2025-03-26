@@ -774,6 +774,7 @@ DECLARE_MESSAGE(CmdOwnsExample1,
                 (),
                 "This is a command line, only the part <pattern> should be localized.",
                 "vcpkg owns <pattern>")
+DECLARE_MESSAGE(CmdOptForMergeWith, (), "", "test ports intended to merge with this git ref")
 DECLARE_MESSAGE(CmdPackageInfoExample1,
                 (),
                 "This is a command line, only the part <package name> should be localized.",
@@ -1409,6 +1410,10 @@ DECLARE_MESSAGE(
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
 DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
+DECLARE_MESSAGE(ForMergeWithTestingTheFollowing,
+                (msg::value),
+                "{value} is what the user entered as the target git ref",
+                "--for-merge-with {value} is testing:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",

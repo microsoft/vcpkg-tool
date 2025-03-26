@@ -1,6 +1,7 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/span.h>
@@ -23,6 +24,7 @@
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -66,6 +68,7 @@ namespace vcpkg
         {SwitchCIFeatureBaseline, msgCmdTestCIFeatureBaseline},
         {SwitchFailingAbiLog, msgCmdTestFeaturesFailingAbis},
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
+        {SwitchForMergeWith, msgCmdOptForMergeWith},
     };
 
     constexpr CommandMetadata CommandTestFeaturesMetadata = {
@@ -86,7 +89,7 @@ namespace vcpkg
                                         Triplet host_triplet)
     {
         auto& fs = paths.get_filesystem();
-        const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
+        ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
         const auto all_ports = Util::Sets::contains(options.switches, SwitchAll);
@@ -119,14 +122,61 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         std::vector<SourceControlFile*> feature_test_ports;
+
+        auto it_merge_with = settings.find(SwitchForMergeWith);
         if (all_ports)
         {
             const auto files = provider.load_all_control_files();
             feature_test_ports = Util::fmap(files, [](auto& scfl) { return scfl->source_control_file.get(); });
         }
+        else if (it_merge_with != settings.end())
+        {
+            auto& builtin_ports_directory = paths.builtin_ports_directory();
+            auto git_cmd = paths.get_tool_exe(Tools::GIT, out_sink);
+            auto ports_dir_prefix =
+                git_prefix(console_diagnostic_context, git_cmd, builtin_ports_directory).value_or_exit(VCPKG_LINE_INFO);
+            auto merge_base =
+                git_merge_base(console_diagnostic_context,
+                               git_cmd,
+                               GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
+                               it_merge_with->second,
+                               "HEAD")
+                    .value_or_exit(VCPKG_LINE_INFO);
+            auto diffs = git_diff_tree(console_diagnostic_context,
+                                       git_cmd,
+                                       GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
+                                       fmt::format("{}:{}", merge_base, ports_dir_prefix),
+                                       fmt::format("HEAD:{}", ports_dir_prefix))
+                             .value_or_exit(VCPKG_LINE_INFO);
+            std::vector<std::string> test_port_names;
+            for (auto&& diff : diffs)
+            {
+                switch (diff.kind)
+                {
+                    case GitDiffTreeLineKind::Added:
+                    case GitDiffTreeLineKind::Copied:
+                    case GitDiffTreeLineKind::Modified:
+                    case GitDiffTreeLineKind::Renamed:
+                    case GitDiffTreeLineKind::TypeChange: test_port_names.push_back(std::move(diff.file_name)); break;
+                    case GitDiffTreeLineKind::Deleted:
+                    case GitDiffTreeLineKind::Unmerged:
+                    case GitDiffTreeLineKind::Unknown: break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            }
+
+            msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = it_merge_with->second)
+                           .append_raw(' ')
+                           .append_raw(Strings::join(" ", test_port_names))
+                           .append_raw('\n'));
+
+            feature_test_ports = Util::fmap(std::move(test_port_names), [&](std::string&& arg) {
+                return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
+            });
+        }
         else
         {
-            feature_test_ports = Util::fmap(options.command_arguments, [&](auto&& arg) {
+            feature_test_ports = Util::fmap(std::move(options.command_arguments), [&](std::string&& arg) {
                 return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
             });
         }

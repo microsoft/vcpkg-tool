@@ -1649,6 +1649,19 @@ namespace
                     data_cb(StringView{encoded});
                 };
                 break;
+            case Encoding::Utf8WithNulls:
+                raw_cb = [&](char* buf, size_t bytes_read) {
+                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                    {
+                        msg::write_unlocalized_text_to_stdout(Color::none,
+                                                              Strings::replace_all(StringView{buf, bytes_read},
+                                                                                   StringLiteral{"\0"},
+                                                                                   StringLiteral{"\\0"}));
+                    }
+
+                    data_cb(StringView{buf, bytes_read});
+                };
+                break;
             default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
         }
 
@@ -1845,11 +1858,28 @@ namespace
             }
 
             StringView this_read_data{buf, static_cast<size_t>(read_amount)};
-            data_cb(this_read_data);
-            if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+            switch (settings.encoding)
             {
-                msg::write_unlocalized_text(Color::none, this_read_data);
+                case Encoding::Utf8:
+                    std::replace(buf, buf + read_amount, '\0', '?');
+                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                    {
+                        msg::write_unlocalized_text(Color::none, this_read_data);
+                    }
+                    break;
+                case Encoding::Utf8WithNulls:
+                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
+                    {
+                        msg::write_unlocalized_text_to_stdout(
+                            Color::none,
+                            Strings::replace_all(this_read_data, StringLiteral{"\0"}, StringLiteral{"\\0"}));
+                    }
+
+                    break;
+                default: Checks::unreachable(VCPKG_LINE_INFO); break;
             }
+
+            data_cb(this_read_data);
         }
 
         return pid.wait_for_termination(context);

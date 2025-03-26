@@ -92,4 +92,7 @@ namespace vcpkg
     Optional<std::vector<GitDiffTreeLine>> parse_git_diff_tree_lines(DiagnosticContext& context,
                                                                      StringView command_line,
                                                                      StringView output);
+
+    Optional<std::vector<GitDiffTreeLine>> git_diff_tree(
+        DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView tree1, StringView tree2);
 }
