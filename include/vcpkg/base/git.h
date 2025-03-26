@@ -26,6 +26,24 @@ namespace vcpkg
         std::string git_tree_sha;
     };
 
+    // https://git-scm.com/docs/git-diff-tree#_raw_output_format
+    struct GitDiffTreeLine
+    {
+        std::string old_mode;
+        std::string new_mode;
+        std::string old_sha;
+        std::string new_sha;
+        GitDiffTreeLineKind kind;
+        int score;
+        std::string file_name;
+        std::string old_file_name;
+
+        friend bool operator==(const GitDiffTreeLine& lhs, const GitDiffTreeLine& rhs) noexcept;
+        friend bool operator!=(const GitDiffTreeLine& lhs, const GitDiffTreeLine& rhs) noexcept;
+    };
+
+    bool is_git_mode(StringView sv) noexcept;
+
     bool is_git_sha(StringView sv) noexcept;
 
     Optional<bool> is_shallow_clone(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator);
@@ -68,4 +86,10 @@ namespace vcpkg
                                          GitRepoLocator locator,
                                          StringView commit1,
                                          StringView commit2);
+
+    bool parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char*& first, const char* last);
+
+    Optional<std::vector<GitDiffTreeLine>> parse_git_diff_tree_lines(DiagnosticContext& context,
+                                                                     StringView command_line,
+                                                                     StringView output);
 }

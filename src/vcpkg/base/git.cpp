@@ -82,6 +82,21 @@ namespace
 
 namespace vcpkg
 {
+    bool operator==(const GitDiffTreeLine& lhs, const GitDiffTreeLine& rhs) noexcept
+    {
+        return lhs.old_mode == rhs.old_mode && lhs.new_mode == rhs.new_mode && lhs.old_sha == rhs.old_sha &&
+               lhs.new_sha == rhs.new_sha && lhs.kind == rhs.kind && lhs.score == rhs.score &&
+               lhs.file_name == rhs.file_name && lhs.old_file_name == rhs.old_file_name;
+    }
+
+    bool operator!=(const GitDiffTreeLine& lhs, const GitDiffTreeLine& rhs) noexcept { return !(lhs == rhs); }
+
+    bool is_git_mode(StringView sv) noexcept
+    {
+        return sv.size() == 6 &&
+               std::all_of(sv.begin(), sv.end(), [](char ch) noexcept { return '0' <= ch && ch <= '7'; });
+    }
+
     bool is_git_sha(StringView sv) noexcept
     {
         return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), [](char ch) noexcept {
@@ -272,5 +287,205 @@ namespace vcpkg
         }
 
         return nullopt;
+    }
+
+    bool parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char*& original_first, const char* last)
+    {
+        // from https://git-scm.com/docs/git-diff-tree#_raw_output_format
+        // in-place edit  :100644 100644 bcd1234 0123456 M\0file0\0
+        // copy-edit      :100644 100644 abcd123 1234567 C68\0file1\0file2\0
+        // rename-edit    :100644 100644 abcd123 1234567 R86\0file1\0file3\0
+        // create         :000000 100644 0000000 1234567 A\0file4\0
+        // delete         :100644 000000 1234567 0000000 D\0file5\0
+        // unmerged       :000000 000000 0000000 0000000 U\0file6\0
+        // That is, from the left to the right:
+        //
+        // 1. a colon.
+        // 2. mode for "src"; 000000 if creation or unmerged.
+        // 3. space.
+        // 4. mode for "dst"; 000000 if deletion or unmerged.
+        // 5. a space.
+        // 6. sha1 for "src"; 0{40} if creation or unmerged.
+        // 7. a space.
+        // 8. sha1 for "dst"; 0{40} if deletion, unmerged or "work tree out of sync with the index".
+        // 9. a space.
+        // 10. status, followed by optional "score" number.
+        // 11. a tab or a NUL when -z option is used.
+        // 12. path for "src"
+        // 13. a tab or a NUL when -z option is used; only exists for C or R.
+        // 14. path for "dst"; only exists for C or R.
+        // 15. an LF or a NUL when -z option is used, to terminate the record.
+
+        auto first = original_first;
+        first = std::find(first, last, ':');
+        static constexpr ptrdiff_t minimum_prefix_size = 1 + 7 + 7 + 41 + 41 + 2;
+        if ((last - first) < minimum_prefix_size || first[0] != ':' || first[7] != ' ' || first[14] != ' ' ||
+            first[55] != ' ' || first[96] != ' ')
+        {
+            return false;
+        }
+
+        ++first; // skip :
+        StringView old_mode{first, 6};
+        if (!is_git_mode(old_mode))
+        {
+            return false;
+        }
+
+        first += 7; // +1 to skip space, ditto below
+        StringView new_mode{first, 6};
+        if (!is_git_mode(new_mode))
+        {
+            return false;
+        }
+
+        first += 7;
+        StringView old_sha{first, 40};
+        if (!is_git_sha(old_sha))
+        {
+            return false;
+        }
+
+        first += 41;
+        StringView new_sha{first, 40};
+        if (!is_git_sha(new_sha))
+        {
+            return false;
+        }
+
+        first += 41;
+        bool has_second_file;
+        GitDiffTreeLineKind kind;
+        switch (*first)
+        {
+            case 'A':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::Added;
+                break;
+            case 'C':
+                has_second_file = true;
+                kind = GitDiffTreeLineKind::Copied;
+                break;
+            case 'D':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::Deleted;
+                break;
+            case 'M':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::Modified;
+                break;
+            case 'R':
+                has_second_file = true;
+                kind = GitDiffTreeLineKind::Renamed;
+                break;
+            case 'T':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::TypeChange;
+                break;
+            case 'U':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::Unmerged;
+                break;
+            case 'X':
+                has_second_file = false;
+                kind = GitDiffTreeLineKind::Unknown;
+                break;
+            default: return false;
+        }
+
+        int score;
+        ++first;
+        static constexpr auto is_tab_or_nul = [](char ch) noexcept { return ch == '\0' || ch == '\t'; };
+        if (first != last && !is_tab_or_nul(*first))
+        {
+            auto score_end = std::find_if(first, last, is_tab_or_nul);
+            if (score_end == last)
+            {
+                return false;
+            }
+
+            auto maybe_score = Strings::strto<int>(StringView{first, score_end});
+            if (auto p_score = maybe_score.get())
+            {
+                score = *p_score;
+            }
+            else
+            {
+                return false;
+            }
+
+            first = score_end;
+        }
+        else
+        {
+            score = 0;
+        }
+
+        ++first; // skip tab or nul
+        const char* old_file_start;
+        size_t old_file_size;
+        if (has_second_file)
+        {
+            auto old_file_end = std::find_if(first, last, is_tab_or_nul);
+            if (old_file_end == last)
+            {
+                return false;
+            }
+
+            old_file_start = first;
+            old_file_size = old_file_end - first;
+            first = old_file_end;
+            ++first; // skip tab or nul
+        }
+        else
+        {
+            old_file_start = nullptr;
+            old_file_size = 0;
+        }
+
+        static constexpr auto is_lf_or_nul = [](char ch) noexcept { return ch == '\0' || ch == '\n'; };
+        auto file_end = std::find_if(first, last, is_lf_or_nul);
+        if (file_end == last)
+        {
+            return false;
+        }
+
+        StringView file_name{first, file_end};
+        first = file_end;
+        ++first; // skip lf or nul
+
+        GitDiffTreeLine& entry = target.emplace_back();
+        entry.old_mode.assign(old_mode.data(), old_mode.size());
+        entry.new_mode.assign(new_mode.data(), new_mode.size());
+        entry.old_sha.assign(old_sha.data(), old_sha.size());
+        entry.new_sha.assign(new_sha.data(), new_sha.size());
+        entry.kind = kind;
+        entry.score = score;
+        entry.file_name.assign(file_name.data(), file_name.size());
+        entry.old_file_name.assign(old_file_start, old_file_size);
+        original_first = first;
+        return true;
+    }
+
+    Optional<std::vector<GitDiffTreeLine>> parse_git_diff_tree_lines(DiagnosticContext& context,
+                                                                     StringView command_line,
+                                                                     StringView output)
+    {
+        Optional<std::vector<GitDiffTreeLine>> result_storage;
+        auto& result = result_storage.emplace();
+        const char* first = output.begin();
+        const char* const last = output.end();
+        while (first != last)
+        {
+            if (!parse_git_diff_tree_line(result, first, last))
+            {
+                context.report_error_with_log(
+                    output, msgGitUnexpectedCommandOutputCmd, msg::command_line = command_line);
+                result_storage.clear();
+                return result_storage;
+            }
+        }
+
+        return result_storage;
     }
 }
