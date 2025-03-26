@@ -1440,10 +1440,6 @@ DECLARE_MESSAGE(
     "",
     "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal "
     "characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".")
-DECLARE_MESSAGE(GitStatusUnknownFileStatus,
-                (msg::value),
-                "{value} is a single character indicating file status, for example: A, U, M, D",
-                "unknown file status: {value}")
 DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
                 (msg::command_line),
                 "",

@@ -862,8 +862,6 @@
   "_GitFailedToInitializeLocalRepository.comment": "An example of {path} is /foo/bar.",
   "GitRegistryMustHaveBaseline": "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".",
   "_GitRegistryMustHaveBaseline.comment": "An example of {url} is https://github.com/microsoft/vcpkg. An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
-  "GitStatusUnknownFileStatus": "unknown file status: {value}",
-  "_GitStatusUnknownFileStatus.comment": "{value} is a single character indicating file status, for example: A, U, M, D",
   "GitUnexpectedCommandOutputCmd": "git produced unexpected output when running {command_line}",
   "_GitUnexpectedCommandOutputCmd.comment": "An example of {command_line} is vcpkg install zlib.",
   "GraphCycleDetected": "Cycle detected within graph at {package_name}:",
