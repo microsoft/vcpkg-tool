@@ -158,8 +158,8 @@ Throw-IfNotFailed
 function Sanitize() {
   Param([string]$text)
   $text = $text.Replace('\', '/').Trim()
-  $gitCommandRegex = 'error: [^\n]+git[^\n]+failed with exit code 128' # Git command line has a lot of absolute paths and other machine-dependent state inside
-  $text = [System.Text.RegularExpressions.Regex]::Replace($text, $workTreeRegex, '<<<GIT COMMAND LINE EXITED WITH CODE 128>>>')
+  $gitCommandRegex = 'error: [^\n]+git[^\n]+failed with exit code 128$' # Git command line has a lot of absolute paths and other machine-dependent state inside
+  $text = [System.Text.RegularExpressions.Regex]::Replace($text, $gitCommandRegex, '<<<GIT COMMAND LINE EXITED WITH CODE 128>>>', [System.Text.RegularExpressions.RegexOptions]::Multiline)
   return $text
 }
 
