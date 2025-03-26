@@ -60,9 +60,10 @@ namespace
         auto& builtin_ports = paths.builtin_ports_directory();
         auto git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
         auto ports_dir_prefix =
-            git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_exit(VCPKG_LINE_INFO);
+            git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_quiet_exit(VCPKG_LINE_INFO);
         const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
-        auto index_file = git_index_file(console_diagnostic_context, git_exe, locator).value_or_exit(VCPKG_LINE_INFO);
+        auto index_file =
+            git_index_file(console_diagnostic_context, git_exe, locator).value_or_quiet_exit(VCPKG_LINE_INFO);
         TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", index_file, get_process_id())};
         if (!fs.copy_file(
                 console_diagnostic_context, index_file, temp_index_file.path, CopyOptions::overwrite_existing) ||
@@ -71,15 +72,15 @@ namespace
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         auto head_tree = git_write_index_tree(console_diagnostic_context, git_exe, locator, temp_index_file.path)
-                             .value_or_exit(VCPKG_LINE_INFO);
+                             .value_or_quiet_exit(VCPKG_LINE_INFO);
         auto merge_base = git_merge_base(console_diagnostic_context, git_exe, locator, for_merge_with, "HEAD")
-                              .value_or_exit(VCPKG_LINE_INFO);
+                              .value_or_quiet_exit(VCPKG_LINE_INFO);
         auto diffs = git_diff_tree(console_diagnostic_context,
                                    git_exe,
                                    locator,
                                    fmt::format("{}:{}", merge_base, ports_dir_prefix),
                                    fmt::format("{}:{}", head_tree, ports_dir_prefix))
-                         .value_or_exit(VCPKG_LINE_INFO);
+                         .value_or_quiet_exit(VCPKG_LINE_INFO);
         std::vector<std::string> test_port_names;
         for (auto&& diff : diffs)
         {
