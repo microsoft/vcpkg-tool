@@ -228,7 +228,7 @@ namespace vcpkg
         StringView read_tree_args[] = {StringLiteral{"read-tree"}, treeish};
         auto maybe_git_read_tree_output =
             run_git_cmd_with_index(context, git_exe, locator, git_tree_index, read_tree_args);
-        if (auto git_read_tree_output = maybe_git_read_tree_output.maybe_output.get())
+        if (maybe_git_read_tree_output.maybe_output.has_value())
         {
             auto prefix_arg = fmt::format("--prefix={}/", git_tree_temp);
             StringView checkout_index_args[] = {StringLiteral{"--work-tree"},
