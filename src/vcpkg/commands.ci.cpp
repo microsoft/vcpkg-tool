@@ -472,7 +472,7 @@ namespace vcpkg
 
         if (is_dry_run)
         {
-            print_plan(action_plan, paths.builtin_ports_directory());
+            print_plan(action_plan);
             if (!not_supported_regressions.empty())
             {
                 msg::write_unlocalized_text_to_stderr(

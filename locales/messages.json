@@ -995,6 +995,8 @@
   "_InstalledBy.comment": "An example of {path} is /foo/bar.",
   "InstalledPackages": "The following packages are already installed:",
   "InstalledRequestedPackages": "All requested packages are currently installed.",
+  "InstallingFromFilesystemRegistry": "installing from filesystem registry here",
+  "InstallingFromGitRegistry": "installing from git registry",
   "InstallingOverlayPort": "installing overlay port from here",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "_InstallingPackage.comment": "An example of {action_index} is 340. An example of {count} is 42. An example of {spec} is zlib:x64-windows.",

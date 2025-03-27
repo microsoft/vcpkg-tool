@@ -431,10 +431,7 @@ namespace vcpkg
         };
     }
 
-    static void format_plan_ipa_row(LocalizedString& out,
-                                    bool add_head_tag,
-                                    const InstallPlanAction& action,
-                                    const Path& builtin_ports_dir)
+    static void format_plan_ipa_row(LocalizedString& out, bool add_head_tag, const InstallPlanAction& action)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
         if (add_head_tag && action.use_head_version == UseHeadVersion::Yes)
@@ -443,11 +440,16 @@ namespace vcpkg
         }
         if (auto scfl = action.source_control_file_and_location.get())
         {
-            auto port_directory = scfl->port_directory();
-            if (!builtin_ports_dir.empty() &&
-                !Strings::case_insensitive_ascii_starts_with(port_directory, builtin_ports_dir))
+            switch (scfl->kind)
             {
-                out.append_raw(" -- ").append_raw(port_directory);
+                case PortSourceKind::Unknown:
+                case PortSourceKind::Builtin:
+                    // intentionally empty
+                    break;
+                case PortSourceKind::Overlay:
+                case PortSourceKind::Filesystem: out.append_raw(" -- ").append_raw(scfl->port_directory()); break;
+                case PortSourceKind::Git: out.append_raw(" -- ").append_raw(scfl->spdx_location); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
     }
@@ -1204,13 +1206,12 @@ namespace vcpkg
     static void format_plan_block(LocalizedString& msg,
                                   msg::MessageT<> header,
                                   bool add_head_tag,
-                                  View<const InstallPlanAction*> actions,
-                                  const Path& builtin_ports_dir)
+                                  View<const InstallPlanAction*> actions)
     {
         msg.append(header).append_raw('\n');
         for (auto action : actions)
         {
-            format_plan_ipa_row(msg, add_head_tag, *action, builtin_ports_dir);
+            format_plan_ipa_row(msg, add_head_tag, *action);
             msg.append_raw('\n');
         }
     }
@@ -1224,7 +1225,7 @@ namespace vcpkg
         }
     }
 
-    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
+    FormattedPlan format_plan(const ActionPlan& action_plan)
     {
         FormattedPlan ret;
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
@@ -1277,12 +1278,12 @@ namespace vcpkg
 
         if (!excluded.empty())
         {
-            format_plan_block(ret.text, msgExcludedPackages, false, excluded, builtin_ports_dir);
+            format_plan_block(ret.text, msgExcludedPackages, false, excluded);
         }
 
         if (!already_installed_plans.empty())
         {
-            format_plan_block(ret.text, msgInstalledPackages, false, already_installed_plans, builtin_ports_dir);
+            format_plan_block(ret.text, msgInstalledPackages, false, already_installed_plans);
         }
 
         if (!remove_specs.empty())
@@ -1292,12 +1293,12 @@ namespace vcpkg
 
         if (!rebuilt_plans.empty())
         {
-            format_plan_block(ret.text, msgPackagesToRebuild, true, rebuilt_plans, builtin_ports_dir);
+            format_plan_block(ret.text, msgPackagesToRebuild, true, rebuilt_plans);
         }
 
         if (!new_plans.empty())
         {
-            format_plan_block(ret.text, msgPackagesToInstall, true, new_plans, builtin_ports_dir);
+            format_plan_block(ret.text, msgPackagesToInstall, true, new_plans);
         }
 
         if (has_non_user_requested_packages)
@@ -1309,9 +1310,9 @@ namespace vcpkg
         return ret;
     }
 
-    FormattedPlan print_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir)
+    FormattedPlan print_plan(const ActionPlan& action_plan)
     {
-        auto formatted = format_plan(action_plan, builtin_ports_dir);
+        auto formatted = format_plan(action_plan);
         msg::print(formatted.text);
         return formatted;
     }

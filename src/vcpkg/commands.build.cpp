@@ -1080,13 +1080,36 @@ namespace vcpkg
                            .append_raw('\n'));
         }
 
-        if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
+        switch (scfl.kind)
         {
-            msg::print(LocalizedString::from_raw(scfl.port_directory())
-                           .append_raw(": ")
-                           .append_raw(InfoPrefix)
-                           .append(msgInstallingOverlayPort)
-                           .append_raw('\n'));
+            case PortSourceKind::Unknown:
+            case PortSourceKind::Builtin:
+                // intentionally no output for these
+                break;
+            case PortSourceKind::Overlay:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingOverlayPort)
+                               .append_raw('\n'));
+                break;
+            case PortSourceKind::Git:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingFromGitRegistry)
+                               .append_raw(' ')
+                               .append_raw(scfl.spdx_location)
+                               .append_raw('\n'));
+                break;
+            case PortSourceKind::Filesystem:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingFromFilesystemRegistry)
+                               .append_raw('\n'));
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);

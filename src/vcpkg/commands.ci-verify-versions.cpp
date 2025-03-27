@@ -54,8 +54,12 @@ namespace
             return success;
         }
 
-        auto load_result =
-            Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, PortLocation{*extracted_tree});
+        auto load_result = Paragraphs::try_load_port_required(
+            paths.get_filesystem(),
+            port_name,
+            PortLocation(*extracted_tree,
+                         Paragraphs::builtin_git_tree_spdx_location(version_entry.git_tree),
+                         PortSourceKind::Git));
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {
@@ -534,9 +538,8 @@ namespace vcpkg
         for (auto&& tree_entry : port_git_trees)
         {
             auto& port_name = tree_entry.file_name;
-            auto port_path = paths.builtin_ports_directory() / port_name;
             auto maybe_loaded_port =
-                Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_path}).maybe_scfl;
+                Paragraphs::try_load_builtin_port_required(fs, port_name, paths.builtin_ports_directory()).maybe_scfl;
             auto loaded_port = maybe_loaded_port.get();
             if (loaded_port)
             {

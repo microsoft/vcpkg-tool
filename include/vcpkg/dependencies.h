@@ -211,7 +211,7 @@ namespace vcpkg
         LocalizedString text;
     };
 
-    FormattedPlan format_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
+    FormattedPlan format_plan(const ActionPlan& action_plan);
 
-    FormattedPlan print_plan(const ActionPlan& action_plan, const Path& builtin_ports_dir);
+    FormattedPlan print_plan(const ActionPlan& action_plan);
 }

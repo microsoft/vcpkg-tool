@@ -16,6 +16,26 @@
 
 using namespace vcpkg;
 
+namespace
+{
+    PortLocation get_try_load_port_subdirectory_uncached_location(OverlayPortKind kind,
+                                                                  const Path& directory,
+                                                                  StringView port_name)
+    {
+        switch (kind)
+        {
+            case OverlayPortKind::Directory:
+                return PortLocation{directory / port_name, no_assertion, PortSourceKind::Overlay};
+            case OverlayPortKind::Builtin:
+                return PortLocation{
+                    directory / port_name, Paragraphs::builtin_port_spdx_location(port_name), PortSourceKind::Builtin};
+            case OverlayPortKind::Unknown:
+            case OverlayPortKind::Port:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+} // unnamed namespace
+
 namespace vcpkg
 {
     OverlayPortIndexEntry::OverlayPortIndexEntry(OverlayPortKind kind, const Path& directory)
@@ -38,7 +58,9 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO, "OverlayPortKind::Unknown empty cache constraint violated");
             }
 
-            auto maybe_scfl = Paragraphs::try_load_port(fs, PortLocation{m_directory}).maybe_scfl;
+            auto maybe_scfl =
+                Paragraphs::try_load_port(fs, PortLocation{m_directory, no_assertion, PortSourceKind::Overlay})
+                    .maybe_scfl;
             if (auto scfl = maybe_scfl.get())
             {
                 if (scfl->source_control_file)
@@ -88,13 +110,8 @@ namespace vcpkg
     OverlayPortIndexEntry::MapT::iterator OverlayPortIndexEntry::try_load_port_subdirectory_uncached(
         MapT::iterator hint, const ReadOnlyFilesystem& fs, StringView port_name)
     {
-        if (m_kind != OverlayPortKind::Directory)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
-
-        auto port_directory = m_directory / port_name;
-        auto load_result = Paragraphs::try_load_port(fs, PortLocation{port_directory});
+        auto load_result = Paragraphs::try_load_port(
+            fs, get_try_load_port_subdirectory_uncached_location(m_kind, m_directory, port_name));
         auto& maybe_scfl = load_result.maybe_scfl;
         if (auto scfl = maybe_scfl.get())
         {
@@ -122,9 +139,15 @@ namespace vcpkg
     const ExpectedL<SourceControlFileAndLocation>* OverlayPortIndexEntry::try_load_port_subdirectory_with_cache(
         const ReadOnlyFilesystem& fs, StringView port_name)
     {
-        if (m_kind != OverlayPortKind::Directory)
+        switch (m_kind)
         {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            case OverlayPortKind::Directory:
+            case OverlayPortKind::Builtin:
+                // intentionally empty
+                break;
+            case OverlayPortKind::Unknown:
+            case OverlayPortKind::Port:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         auto already_loaded = m_loaded_ports.lower_bound(port_name);
@@ -147,7 +170,8 @@ namespace vcpkg
         switch (determine_kind(fs))
         {
             case OverlayPortKind::Port: return try_load_port_cached_port(port_name);
-            case OverlayPortKind::Directory: return try_load_port_subdirectory_with_cache(fs, port_name);
+            case OverlayPortKind::Directory:
+            case OverlayPortKind::Builtin: return try_load_port_subdirectory_with_cache(fs, port_name);
             case OverlayPortKind::Unknown:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
@@ -175,6 +199,7 @@ namespace vcpkg
                 return maybe_this_port.second.error();
             }
             case OverlayPortKind::Directory:
+            case OverlayPortKind::Builtin:
             {
                 auto maybe_subdirectories = fs.try_get_directories_non_recursive(m_directory);
                 if (auto subdirectories = maybe_subdirectories.get())
@@ -264,7 +289,7 @@ namespace vcpkg
 
             if (auto builtin_overlay_port_dir = paths.builtin_overlay_port_dir.get())
             {
-                m_entries.emplace_back(OverlayPortKind::Directory, *builtin_overlay_port_dir);
+                m_entries.emplace_back(OverlayPortKind::Builtin, *builtin_overlay_port_dir);
             }
         }
 

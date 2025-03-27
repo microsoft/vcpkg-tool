@@ -286,9 +286,7 @@ namespace
         {
             auto path = m_builtin_ports_directory / port_name;
             return m_scfls.get_lazy(path, [&, this]() {
-                std::string spdx_location = "git+https://github.com/Microsoft/vcpkg#ports/";
-                spdx_location.append(port_name.data(), port_name.size());
-                return Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{path, std::move(spdx_location)})
+                return Paragraphs::try_load_builtin_port_required(m_fs, port_name, m_builtin_ports_directory)
                     .maybe_scfl;
             });
         }
@@ -879,12 +877,12 @@ namespace
                 });
             })
             .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
-                return Paragraphs::try_load_port_required(m_paths.get_filesystem(),
-                                                          port_name,
-                                                          PortLocation{
-                                                              std::move(p),
-                                                              "git+https://github.com/Microsoft/vcpkg@" + it->git_tree,
-                                                          })
+                return Paragraphs::try_load_port_required(
+                           m_paths.get_filesystem(),
+                           port_name,
+                           PortLocation{std::move(p),
+                                        Paragraphs::builtin_git_tree_spdx_location(it->git_tree),
+                                        PortSourceKind::Builtin})
                     .maybe_scfl;
             });
     }
@@ -903,7 +901,9 @@ namespace
                 msgVersionDatabaseEntryMissing, msg::package_name = port_name, msg::version = version);
         }
 
-        return Paragraphs::try_load_port_required(fs, port_name, PortLocation{it->p}).maybe_scfl;
+        return Paragraphs::try_load_port_required(
+                   fs, port_name, PortLocation{it->p, no_assertion, PortSourceKind::Filesystem})
+            .maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
 
@@ -966,12 +966,10 @@ namespace
 
         return parent.m_paths.git_extract_tree_from_remote_registry(it->git_tree)
             .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
-                return Paragraphs::try_load_port_required(parent.m_paths.get_filesystem(),
-                                                          port_name,
-                                                          PortLocation{
-                                                              p,
-                                                              Strings::concat("git+", parent.m_repo, "@", it->git_tree),
-                                                          })
+                return Paragraphs::try_load_port_required(
+                           parent.m_paths.get_filesystem(),
+                           port_name,
+                           PortLocation{p, fmt::format("git+{}@{}", parent.m_repo, it->git_tree), PortSourceKind::Git})
                     .maybe_scfl;
             });
     }

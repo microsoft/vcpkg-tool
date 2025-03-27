@@ -478,8 +478,7 @@ namespace vcpkg
         for (auto&& port_git_tree_entry : port_git_trees)
         {
             auto& port_name = port_git_tree_entry.file_name;
-            auto port_dir = builtin_ports_directory / port_name;
-            auto load_result = Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_dir});
+            auto load_result = Paragraphs::try_load_builtin_port_required(fs, port_name, builtin_ports_directory);
             auto& maybe_scfl = load_result.maybe_scfl;
             auto scfl = maybe_scfl.get();
             if (!scfl)
