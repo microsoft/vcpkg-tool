@@ -1775,6 +1775,8 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
+DECLARE_MESSAGE(InstallingFromFilesystemRegistry, (), "", "installing from filesystem registry here")
+DECLARE_MESSAGE(InstallingFromGitRegistry, (), "", "installing from git registry")
 DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),

@@ -140,13 +140,39 @@ namespace vcpkg
         friend bool operator!=(const SourceParagraph& lhs, const SourceParagraph& rhs) { return !(lhs == rhs); }
     };
 
+    enum class PortSourceKind
+    {
+        Unknown,
+        Builtin,
+        Overlay,
+        Git,
+        Filesystem,
+    };
+
+    struct NoAssertionTag
+    {
+    };
+
+    inline constexpr NoAssertionTag no_assertion;
+
     struct PortLocation
     {
+        explicit PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind);
+        explicit PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind);
+        explicit PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind);
+        explicit PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind);
+        PortLocation(const PortLocation&) = default;
+        PortLocation(PortLocation&&) = default;
+        PortLocation& operator=(const PortLocation&) = default;
+        PortLocation& operator=(PortLocation&&) = default;
+
         Path port_directory;
 
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
+
+        PortSourceKind kind;
     };
 
     /// <summary>
@@ -218,7 +244,7 @@ namespace vcpkg
                 scf = std::make_unique<SourceControlFile>(source_control_file->clone());
             }
 
-            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location};
+            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location, kind};
         }
 
         std::unique_ptr<SourceControlFile> source_control_file;
@@ -227,6 +253,8 @@ namespace vcpkg
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
+
+        PortSourceKind kind = PortSourceKind::Unknown;
     };
 
     void print_error_message(const LocalizedString& message);

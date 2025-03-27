@@ -193,7 +193,7 @@ namespace vcpkg
 
         Checks::check_exit(VCPKG_LINE_INFO, !action_plan.empty());
         action_plan.print_unsupported_warnings();
-        print_plan(action_plan, paths.builtin_ports_directory());
+        print_plan(action_plan);
 
         if (!no_dry_run)
         {

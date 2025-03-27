@@ -133,6 +133,26 @@ namespace vcpkg
         return true;
     }
 
+    PortLocation::PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind)
+        : port_directory(port_directory), spdx_location(), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind)
+        : port_directory(std::move(port_directory)), spdx_location(), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind)
+        : port_directory(port_directory), spdx_location(std::move(spdx_location)), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind)
+        : port_directory(std::move(port_directory)), spdx_location(std::move(spdx_location)), kind(kind)
+    {
+    }
+
     bool operator==(const FeatureParagraph& lhs, const FeatureParagraph& rhs)
     {
         if (lhs.name != rhs.name) return false;

@@ -1330,7 +1330,7 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        const auto formatted = print_plan(action_plan, paths.builtin_ports_directory());
+        const auto formatted = print_plan(action_plan);
         if (!is_recursive && formatted.has_removals)
         {
             msg::println_warning(msgPackagesToRebuildSuggestRecurse);
