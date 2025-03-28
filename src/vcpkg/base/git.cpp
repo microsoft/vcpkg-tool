@@ -119,13 +119,15 @@ namespace vcpkg
             .maybe_output;
     }
 
-    Optional<std::string> git_index_file(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
+    Optional<Path> git_index_file(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
     {
         static constexpr StringView args[] = {StringLiteral{"rev-parse"},
                                               StringLiteral{"--path-format=absolute"},
                                               StringLiteral{"--git-path"},
                                               StringLiteral{"index"}};
-        return run_git_cmd(context, git_exe, locator, args).maybe_output;
+        return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& proto_path) -> Path {
+            return std::move(proto_path);
+        });
     }
 
     bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& target, const Path& index_file)

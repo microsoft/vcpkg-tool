@@ -1009,7 +1009,7 @@ namespace vcpkg
             const auto maybe_index_file = git_index_file(context, git_exe, locator);
             if (const auto index_file = maybe_index_file.get())
             {
-                TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", *index_file, get_process_id())};
+                TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", index_file->native(), get_process_id())};
                 if (fs.copy_file(context, *index_file, temp_index_file.path, CopyOptions::overwrite_existing) &&
                     git_add_with_index(context, git_exe, builtin_ports, temp_index_file.path))
                 {
