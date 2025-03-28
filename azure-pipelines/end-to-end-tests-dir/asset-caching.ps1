@@ -8,7 +8,11 @@ Throw-IfFailed
 Run-Vcpkg @commonArgs fetch ninja
 Throw-IfFailed
 Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
-Remove-Item (Join-Path $DefaultDownloadsRoot 'hello-world.txt') -ErrorActionPreference SilentlyContinue
+$helloPath = Join-Path $DefaultDownloadsRoot 'hello-world.txt'
+if (Test-Path $helloPath) {
+    Remove-Item $helloPath
+}
+
 Run-Vcpkg @commonArgs install vcpkg-test-x-script --x-binarysource=clear "--overlay-ports=$PSScriptRoot/../e2e-ports" "--x-asset-sources=x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"
 Throw-IfFailed
 
