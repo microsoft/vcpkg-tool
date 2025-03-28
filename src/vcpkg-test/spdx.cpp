@@ -98,6 +98,264 @@ TEST_CASE ("extract arg from cmake invocation args", "[spdx]")
     }
 }
 
+TEST_CASE ("spdx run resource heuristics", "[spdx]")
+{
+    auto portfile_cmake = R"(
+vcpkg_download_distfile(ARCHIVE
+    URLS "https://vcpkg-download-distfile.dev/${VERSION}.tar.gz"
+         "https://vcpkg-download-distfile.dev/${VERSION}-other.tar.gz"
+    FILENAME "distfile-${VERSION}.tar.gz"
+    SHA512 distfile_test_1
+)
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO from/github
+    REF v${VERSION}
+    SHA512 from_github_test_1
+    HEAD_REF devel
+)
+vcpkg_from_gitlab(
+    OUT_SOURCE_PATH SOURCE_PATH
+    GITLAB_URL https://from.gitlab.org
+    REPO from/gitlab
+    REF "${VERSION}"
+    SHA512 from_gitlab_test_1
+)
+vcpkg_from_sourceforge(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO sourceforge
+    REF sourceforge
+    FILENAME "sourceforge-${VERSION}.tar.gz"
+    SHA512 sourceforge_test_1
+    )
+vcpkg_from_bitbucket(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO from/bitbucket
+    REF "v${VERSION}"
+    SHA512 from_bitbucket_test_1
+    HEAD_REF master
+)
+vcpkg_download_distfile(ARCHIVE
+    URLS "https://vcpkg-download-distfile.dev/${VERSION}.tar.gz"
+         "https://vcpkg-download-distfile.dev/${VERSION}-other.tar.gz"
+    FILENAME "distfile-${VERSION}.tar.gz"
+    SHA512 distfile_test_2
+)
+vcpkg_from_github(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO from/github
+    REF v${VERSION}
+    SHA512 from_github_test_2
+    HEAD_REF devel
+)
+vcpkg_from_gitlab(
+    OUT_SOURCE_PATH SOURCE_PATH
+    GITLAB_URL https://from.gitlab.org
+    REPO from/gitlab
+    REF "${VERSION}"
+    SHA512 from_gitlab_test_2
+)
+vcpkg_from_sourceforge(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO sourceforge
+    REF sourceforge
+    FILENAME "sourceforge-${VERSION}.tar.gz"
+    SHA512 sourceforge_test_2
+    )
+vcpkg_from_bitbucket(
+    OUT_SOURCE_PATH SOURCE_PATH
+    REPO from/bitbucket
+    REF "v${VERSION}"
+    SHA512 from_bitbucket_test_2
+    HEAD_REF master
+)
+vcpkg_from_git(
+    OUT_SOURCE_PATH SOURCE_PATH
+    URL https://from-git-1.dev
+    REF "${VERSION}"
+    HEAD_REF main
+)
+vcpkg_from_git(
+    OUT_SOURCE_PATH SOURCE_PATH
+    URL https://from-git-2.dev
+    REF "${VERSION}"
+    HEAD_REF main
+)
+    )";
+    auto expected = Json::parse(R"json(
+{
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-resource-0",
+      "name": "from/github",
+      "downloadLocation": "git+https://github.com/from/github@v3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_github_test_1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-1",
+      "name": "from/github",
+      "downloadLocation": "git+https://github.com/from/github@v3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_github_test_2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-2",
+      "name": "from/gitlab",
+      "downloadLocation": "git+https://from.gitlab.org/from/gitlab@3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_gitlab_test_1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-3",
+      "name": "from/gitlab",
+      "downloadLocation": "git+https://from.gitlab.org/from/gitlab@3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_gitlab_test_2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-4",
+      "name": "https://from-git-1.dev",
+      "downloadLocation": "git+https://from-git-1.dev@3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-resource-5",
+      "name": "https://from-git-2.dev",
+      "downloadLocation": "git+https://from-git-2.dev@3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "SPDXID": "SPDXRef-resource-6",
+      "name": "distfile-3.2.1.tar.gz",
+      "packageFileName": "distfile-3.2.1.tar.gz",
+      "downloadLocation": "https://vcpkg-download-distfile.dev/3.2.1.tar.gz",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "distfile_test_1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-7",
+      "name": "distfile-3.2.1.tar.gz",
+      "packageFileName": "distfile-3.2.1.tar.gz",
+      "downloadLocation": "https://vcpkg-download-distfile.dev/3.2.1.tar.gz",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "distfile_test_2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-8",
+      "name": "sourceforge-3.2.1.tar.gz",
+      "packageFileName": "sourceforge-3.2.1.tar.gz",
+      "downloadLocation": "https://sourceforge.net/projects/sourceforge/files/sourceforge/sourceforge-3.2.1.tar.gz",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "sourceforge_test_1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-9",
+      "name": "sourceforge-3.2.1.tar.gz",
+      "packageFileName": "sourceforge-3.2.1.tar.gz",
+      "downloadLocation": "https://sourceforge.net/projects/sourceforge/files/sourceforge/sourceforge-3.2.1.tar.gz",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "sourceforge_test_2"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-10",
+      "name": "from/bitbucket",
+      "downloadLocation": "git+https://bitbucket.com/from/bitbucket@v3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_bitbucket_test_1"
+        }
+      ]
+    },
+    {
+      "SPDXID": "SPDXRef-resource-11",
+      "name": "from/bitbucket",
+      "downloadLocation": "git+https://bitbucket.com/from/bitbucket@v3.2.1",
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "copyrightText": "NOASSERTION",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "from_bitbucket_test_2"
+        }
+      ]
+    }
+  ]
+})json",
+                                "test")
+                        .value(VCPKG_LINE_INFO);
+
+    auto generated_spdx = run_resource_heuristics(portfile_cmake, "3.2.1");
+    auto spdx_str = Json::stringify(generated_spdx);
+    auto res = Json::parse(spdx_str, "test").value(VCPKG_LINE_INFO);
+    Test::check_json_eq(expected.value, res.value);
+}
+
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackagesDirAssigner packages_dir_assigner{"test_packages_root"};

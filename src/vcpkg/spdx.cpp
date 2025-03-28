@@ -233,7 +233,7 @@ static void find_all_git(StringView text, Json::Array& packages, StringView vers
     }
 }
 
-static void find_all_distfile(StringView text, Json::Array& packages)
+static void find_all_distfile(StringView text, Json::Array& packages, StringView version_text)
 {
     auto it = text.begin();
     while (it != text.end())
@@ -244,11 +244,12 @@ static void find_all_distfile(StringView text, Json::Array& packages)
             it = text.end();
             continue;
         }
-        auto url = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableUrls);
-        auto filename = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableFilename);
+        auto url = fix_ref_version(extract_arg_from_cmake_invocation_args(distfile, CMakeVariableUrls), version_text);
+        auto filename =
+            fix_ref_version(extract_arg_from_cmake_invocation_args(distfile, CMakeVariableFilename), version_text);
         auto sha = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableSHA512);
         packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", packages.size()), filename, url.to_string(), sha, filename));
+            fmt::format("SPDXRef-resource-{}", packages.size()), filename, std::move(url), sha, filename));
         it = distfile.end();
     }
 }
@@ -266,7 +267,8 @@ static void find_all_sourceforge(StringView text, Json::Array& packages, StringV
         }
         auto repo = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRepo);
         auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRef), version_text);
-        auto filename = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename);
+        auto filename =
+            fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename), version_text);
         auto sha = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableSHA512);
         auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
         packages.push_back(make_resource(
@@ -285,7 +287,7 @@ Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView vers
     find_all_github(contents, packages, version_text);
     find_all_gitlab(contents, packages, version_text);
     find_all_git(contents, packages, version_text);
-    find_all_distfile(contents, packages);
+    find_all_distfile(contents, packages, version_text);
     find_all_sourceforge(contents, packages, version_text);
     find_all_bitbucket(contents, packages, version_text);
 
