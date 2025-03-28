@@ -264,9 +264,16 @@ namespace vcpkg
     // Otherwise, returns an ExpectedL containing error text
     ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&& maybe_exit, StringView tool_name);
 
+    void replace_secrets(std::string& target, View<std::string> secrets);
+
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns a pointer to the process' output.
     // Otherwise, records an error in `context` and returns nullptr.
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit);
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      View<std::string> secrets);
 }

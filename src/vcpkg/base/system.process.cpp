@@ -2005,9 +2005,26 @@ namespace vcpkg
                 expected_right_tag};
     }
 
+    void replace_secrets(std::string& target, View<std::string> secrets)
+    {
+        const auto replacement = msg::format(msgSecretBanner);
+        for (const auto& secret : secrets)
+        {
+            Strings::inplace_replace_all(target, secret, replacement);
+        }
+    }
+
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit)
+    {
+        return check_zero_exit_code(context, command, maybe_exit, View<std::string>{});
+    }
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      View<std::string> secrets)
     {
         if (auto exit = maybe_exit.get())
         {
@@ -2016,9 +2033,11 @@ namespace vcpkg
                 return &exit->output;
             }
 
+            auto str_command = command.command_line().to_string();
+            replace_secrets(str_command, secrets);
             context.report(DiagnosticLine{
                 DiagKind::Error,
-                LocalizedString::from_raw(command.command_line())
+                LocalizedString::from_raw(str_command)
                     .append_raw(' ')
                     .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code))
                     .append_raw('\n')

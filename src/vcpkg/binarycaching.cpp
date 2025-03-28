@@ -837,7 +837,7 @@ namespace
             };
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "GET", headers, url);
+            auto res = invoke_http_request(wdc, "GET", headers, url, m_secrets);
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -902,8 +902,12 @@ namespace
     struct GHABinaryPushProvider : IWriteBinaryProvider
     {
         GHABinaryPushProvider(const Filesystem& fs, const std::string& url, const std::string& token)
-            : m_fs(fs), m_url(url + "_apis/artifactcache/caches"), m_token_header("Authorization: Bearer " + token)
+            : m_fs(fs)
+            , m_url(url + "_apis/artifactcache/caches")
+            , m_secrets()
+            , m_token_header("Authorization: Bearer " + token)
         {
+            m_secrets.emplace_back(token);
         }
 
         Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
@@ -920,7 +924,7 @@ namespace
             };
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "POST", headers, m_url, stringify(payload));
+            auto res = invoke_http_request(wdc, "POST", headers, m_url, m_secrets, stringify(payload));
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -970,7 +974,7 @@ namespace
                         m_token_header,
                     };
 
-                    if (invoke_http_request(wdc, "POST", headers, raw_url, stringify(commit)))
+                    if (invoke_http_request(wdc, "POST", headers, raw_url, m_secrets, stringify(commit)))
                     {
                         ++upload_count;
                     }
@@ -984,6 +988,7 @@ namespace
 
         const Filesystem& m_fs;
         std::string m_url;
+        std::vector<std::string> m_secrets;
         std::string m_token_header;
         static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
