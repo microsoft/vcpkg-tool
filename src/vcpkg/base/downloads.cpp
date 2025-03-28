@@ -1440,7 +1440,8 @@ namespace vcpkg
         }
 
         context.statusln(msg::format(msgAssetCacheConsultScript, msg::path = display_path));
-        const auto download_path_part_path = fmt::format("{}.{}.part", download_path, get_process_id());
+        const auto download_path_part_path =
+            fmt::format("{}.{}.part", fs.absolute(download_path, VCPKG_LINE_INFO), get_process_id());
         Lazy<std::string> escaped_url;
         const auto escaped_dpath = Command(download_path_part_path).extract();
         auto maybe_raw_command = api_stable_format(context, *script, [&](std::string& out, StringView key) {
