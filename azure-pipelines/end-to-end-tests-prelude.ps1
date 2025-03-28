@@ -113,42 +113,47 @@ function Write-Trace ([string]$text) {
     Write-Host (@($MyInvocation.ScriptName, ":", $MyInvocation.ScriptLineNumber, ": ", $text) -join "")
 }
 
-function Run-VcpkgAndCaptureOutput {
+function Run-VcpkgImplAndCaptureOutput {
     Param(
-        [Parameter(Mandatory = $false)]
-        [Switch]$ForceExe,
-
-        [Parameter(ValueFromRemainingArguments)]
+        [Parameter(Mandatory = $true)]
+        [string]$ThisVcpkg,
+        [Parameter(Mandatory = $true)]
         [string[]]$TestArgs
     )
-    $thisVcpkg = $VcpkgPs1;
-    if ($ForceExe) {
-        $thisVcpkg = $VcpkgExe;
-    }
-
-    $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
+    $Script:CurrentTest = "$ThisVcpkg $($testArgs -join ' ')"
     Write-Host -ForegroundColor red $Script:CurrentTest
-    $result = (& "$thisVcpkg" @testArgs) | Out-String
+    $result = (& "$ThisVcpkg" @testArgs) | Out-String
     Write-Host -ForegroundColor Gray $result
     $result.Replace("`r`n", "`n")
 }
 
-function Run-VcpkgAndCaptureStdErr {
+function Run-VcpkgShellAndCaptureOutput {
     Param(
-        [Parameter(Mandatory = $false)]
-        [Switch]$ForceExe,
-
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    $thisVcpkg = $VcpkgPs1;
-    if ($ForceExe) {
-        $thisVcpkg = $VcpkgExe;
-    }
 
-    $Script:CurrentTest = "$thisVcpkg $($testArgs -join ' ')"
+    return Run-VcpkgImplAndCaptureOutput -ThisVcpkg $VcpkgPs1 -TestArgs $TestArgs
+}
+
+function Run-VcpkgAndCaptureOutput {
+    Param(
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+
+    return Run-VcpkgImplAndCaptureOutput -ThisVcpkg $VcpkgExe -TestArgs $TestArgs
+}
+
+function Run-VcpkgAndCaptureStdErr {
+    Param(
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+
+    $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
     Write-Host -ForegroundColor red $Script:CurrentTest
-    & "$thisVcpkg" @testArgs 1> $unusedStdoutFile 2> $stderrFile
+    & "$VcpkgExe" @testArgs 1> $unusedStdoutFile 2> $stderrFile
     $result = Get-Content -LiteralPath $stderrFile -Encoding 'utf8' -Raw
     if ($null -eq $result) {
         $result = [string]::Empty
@@ -156,15 +161,20 @@ function Run-VcpkgAndCaptureStdErr {
     return $result.Replace("`r`n", "`n")
 }
 
-function Run-Vcpkg {
+function Run-VcpkgShell {
     Param(
-        [Parameter(Mandatory = $false)]
-        [Switch]$ForceExe,
-
         [Parameter(ValueFromRemainingArguments)]
         [string[]]$TestArgs
     )
-    Run-VcpkgAndCaptureOutput -ForceExe:$ForceExe @TestArgs | Out-Null
+    Run-VcpkgShellAndCaptureOutput @TestArgs | Out-Null
+}
+
+function Run-Vcpkg {
+    Param(
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+    Run-VcpkgAndCaptureOutput @TestArgs | Out-Null
 }
 
 # https://github.com/actions/toolkit/blob/main/docs/commands.md#problem-matchers

@@ -113,14 +113,14 @@ $ProjectRegex = [System.Text.RegularExpressions.Regex]::Escape($Project)
 New-Item -Path $Project -Type Directory -Force
 Push-Location $Project
 try {
-    Run-Vcpkg deactivate
+    Run-VcpkgShell deactivate
     Throw-IfFailed
     Test-Activations
     Run-Vcpkg new --application
     Throw-IfFailed
 
     # deactivated-- no effects, issue warning -->deactivated
-    $output = Run-VcpkgAndCaptureOutput deactivate
+    $output = Run-VcpkgShellAndCaptureOutput deactivate
     Throw-IfFailed
     Test-DeactivationWarning $output
 
@@ -128,35 +128,35 @@ try {
     Reset-VcpkgConfiguration
     Run-Vcpkg add artifact artifacts-test:vcpkg-test-artifact-1
     Throw-IfFailed
-    $output = Run-VcpkgAndCaptureOutput activate
+    $output = Run-VcpkgShellAndCaptureOutput activate
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
     Test-Activations -One
 
     # environment_changed-- deactivate -->deactivated
     #   activated -> deactivated
-    $output = Run-VcpkgAndCaptureOutput deactivate
+    $output = Run-VcpkgShellAndCaptureOutput deactivate
     Throw-IfFailed
     Test-NoDeactivationWarning $output $ProjectRegex
 
     # deactivated-- use -->used
-    $output = Run-VcpkgAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
+    $output = Run-VcpkgShellAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
     Test-Match $output "Activating: artifacts-test:vcpkg-test-artifact-1"
     Test-Activations -One
     # used-- use, stacks -->used
-    $output = Run-VcpkgAndCaptureOutput use vcpkg-test-artifact-2
+    $output = Run-VcpkgShellAndCaptureOutput use vcpkg-test-artifact-2
     # Note that we just remember what the user said, we don't try to resolve what it means
     Test-Match $output "Activating: artifacts-test:vcpkg-test-artifact-1 \+ vcpkg-test-artifact-2"
     Test-Activations -One -Two
 
     # environment_changed-- deactivate -->deactivated
     #   used -> deactivated
-    $output = Run-VcpkgAndCaptureOutput deactivate
+    $output = Run-VcpkgShellAndCaptureOutput deactivate
     Throw-IfFailed
     Test-NoDeactivationWarning $output "artifacts-test:vcpkg-test-artifact-1 \+ vcpkg-test-artifact-2"
 
     # activated-- activate, deactivates first -->activated
-    $output = Run-VcpkgAndCaptureOutput activate
+    $output = Run-VcpkgShellAndCaptureOutput activate
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
     Test-Activations -One
@@ -164,24 +164,24 @@ try {
     Run-Vcpkg add artifact artifacts-test:vcpkg-test-artifact-3
     Throw-IfFailed
     Test-Activations -One
-    $output = Run-VcpkgAndCaptureOutput activate
+    $output = Run-VcpkgShellAndCaptureOutput activate
     Throw-IfFailed
     Test-Activations -Three
     Test-Match $output "Deactivating: $ProjectRegex"
     Test-Match $output "Activating: $ProjectRegex"
 
     # activated-- use -->activate_use_stacked
-    $output = Run-VcpkgAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
+    $output = Run-VcpkgShellAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
     Test-Match $output "Activating: $ProjectRegex \+ artifacts-test:vcpkg-test-artifact-1"
     Test-Activations -One -Three
 
     # activate_use_stacked-- use, stacks -->activate_use_stacked
-    $output = Run-VcpkgAndCaptureOutput use artifacts-test:vcpkg-test-artifact-2
+    $output = Run-VcpkgShellAndCaptureOutput use artifacts-test:vcpkg-test-artifact-2
     Test-Match $output "Activating: $ProjectRegex \+ artifacts-test:vcpkg-test-artifact-1 \+ artifacts-test:vcpkg-test-artifact-2"
     Test-Activations -One -Two -Three
 
     # activate_use_stacked-- activate, deactivates first -->activated
-    $output = Run-VcpkgAndCaptureOutput activate
+    $output = Run-VcpkgShellAndCaptureOutput activate
     Throw-IfFailed
     Test-Activations -Three
     Test-Match $output "Deactivating: $ProjectRegex \+ artifacts-test:vcpkg-test-artifact-1 \+ artifacts-test:vcpkg-test-artifact-2"
@@ -189,18 +189,18 @@ try {
 
     # environment_changed-- deactivate -->deactivated
     #   activated_stacked -> deactivated
-    $output = Run-VcpkgAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
+    $output = Run-VcpkgShellAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
     Test-Match $output "Activating: $ProjectRegex \+ artifacts-test:vcpkg-test-artifact-1"
     Test-Activations -One -Three
-    $output = Run-VcpkgAndCaptureOutput deactivate
+    $output = Run-VcpkgShellAndCaptureOutput deactivate
     Throw-IfFailed
     Test-NoDeactivationWarning $output "$ProjectRegex \+ artifacts-test:vcpkg-test-artifact-1"
 
     # used-- activate, deactivates first-->activated
-    $output = Run-VcpkgAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
+    $output = Run-VcpkgShellAndCaptureOutput use artifacts-test:vcpkg-test-artifact-1
     Test-Match $output "Activating: artifacts-test:vcpkg-test-artifact-1"
     Test-Activations -One
-    $output = Run-VcpkgAndCaptureOutput activate
+    $output = Run-VcpkgShellAndCaptureOutput activate
     Throw-IfFailed
     Test-Activations -Three
     Test-Match $output "Deactivating: artifacts-test:vcpkg-test-artifact-1"
@@ -208,29 +208,29 @@ try {
 
     # test "no postscript" warning:
     #  can't deactivate without postscript:
-    $output = Run-VcpkgAndCaptureOutput -ForceExe deactivate
+    $output = Run-VcpkgAndCaptureOutput deactivate
     Throw-IfNotFailed
     Test-Match $output "no postscript file: run vcpkg-shell with the same arguments"
 
-    $output = Run-VcpkgAndCaptureOutput deactivate
+    $output = Run-VcpkgShellAndCaptureOutput deactivate
     Throw-IfFailed
     Test-NoDeactivationWarning $output $ProjectRegex
 
-    #  can't activate without postscript:
-    $output = Run-VcpkgAndCaptureOutput -ForceExe activate
+    #  can't activate without the shell function:
+    $output = Run-VcpkgAndCaptureOutput activate
     Throw-IfNotFailed
     Test-Match $output "no postscript file: run vcpkg-shell with the same arguments"
     Test-Activations
 
     #  unless --json passed
-    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --json (Join-Path $Project 'result.json')
+    $output = Run-VcpkgAndCaptureOutput activate --json (Join-Path $Project 'result.json')
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
     Test-NoMatch $output "no postscript file: run vcpkg-shell with the same arguments"
     Test-Activations # no shell activation
 
     #  or --msbuild-props passed
-    $output = Run-VcpkgAndCaptureOutput -ForceExe activate --msbuild-props (Join-Path $Project 'result.props')
+    $output = Run-VcpkgAndCaptureOutput activate --msbuild-props (Join-Path $Project 'result.props')
     Throw-IfFailed
     Test-Match $output "Activating: $ProjectRegex"
     Test-NoMatch $output "no postscript file: run vcpkg-shell with the same arguments"
