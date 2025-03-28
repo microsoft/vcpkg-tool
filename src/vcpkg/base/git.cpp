@@ -128,14 +128,6 @@ namespace vcpkg
         return run_git_cmd(context, git_exe, locator, args).maybe_output;
     }
 
-    Optional<std::string> git_git_dir(DiagnosticContext& context, const Path& git_exe, const Path& target)
-    {
-        static constexpr StringView args[] = {
-            StringLiteral{"rev-parse"}, StringLiteral{"--path-format=absolute"}, StringLiteral{"--git-dir"}};
-        return run_git_cmd(context, git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, args)
-            .maybe_output;
-    }
-
     bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& target, const Path& index_file)
     {
         static constexpr StringView args[] = {StringLiteral{"add"}, StringLiteral{"-A"}, StringLiteral{"."}};
