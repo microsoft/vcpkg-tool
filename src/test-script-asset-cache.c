@@ -31,7 +31,23 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    FILE* fp = fopen(argv[3], "wb");
+    char* destination = argv[3];
+#if defined(_WIN32)
+    if (!((destination[0] >= 'A' && destination[0] <= 'Z') || (destination[0] >= 'a' && destination[0] <= 'z')) ||
+        destination[1] != ':' || (destination[2] != '/' && destination[2] != '\\'))
+    {
+        printf("Bad argument 3; expected path be absolute, got %s\n", destination);
+        return 1;
+    }
+#else
+    if (destination[0] != '/')
+    {
+        printf("Bad argument 3; expected path be absolute, got %s\n", destination);
+        return 1;
+    }
+#endif
+
+    FILE* fp = fopen(destination, "wb");
     if (!fp)
     {
         puts("fopen failed");
