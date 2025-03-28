@@ -682,6 +682,8 @@
   "InstalledBy": "Установлено посредством {path}",
   "InstalledPackages": "Следующие пакеты уже установлены:",
   "InstalledRequestedPackages": "Все запрашиваемые пакеты сейчас установлены.",
+  "InstallingFromFilesystemRegistry": "installing from filesystem registry here",
+  "InstallingFromGitRegistry": "installing from git registry",
   "InstallingOverlayPort": "производится установка порта наложения отсюда",
   "InstallingPackage": "Выполняется установка {action_index}/{count} {spec}…",
   "IntegrateBashHelp": "Включить завершение табуляции bash. Только для систем, отличных от Windows",

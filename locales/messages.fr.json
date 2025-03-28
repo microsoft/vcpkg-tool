@@ -682,6 +682,8 @@
   "InstalledBy": "Installé par {path}",
   "InstalledPackages": "Les packages suivants sont déjà installés :",
   "InstalledRequestedPackages": "Tous les packages demandés sont actuellement installés.",
+  "InstallingFromFilesystemRegistry": "installing from filesystem registry here",
+  "InstallingFromGitRegistry": "installing from git registry",
   "InstallingOverlayPort": "installation du port de superposition ici",
   "InstallingPackage": "Installation de {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "Activez la saisie semi-automatique de tabulation Bash. Non-Windows uniquement",

@@ -682,6 +682,8 @@
   "InstalledBy": "Installiert von {path}",
   "InstalledPackages": "Die folgenden Pakete sind bereits installiert:",
   "InstalledRequestedPackages": "Alle angeforderten Pakete sind derzeit installiert.",
+  "InstallingFromFilesystemRegistry": "installing from filesystem registry here",
+  "InstallingFromGitRegistry": "installing from git registry",
   "InstallingOverlayPort": "Überlagerungsport wird von hier aus installiert",
   "InstallingPackage": "Installing {action_index}/{count} {spec}...",
   "IntegrateBashHelp": "Aktivieren Sie die Tab-Vervollständigung in bash. Nur Nicht-Windows",
