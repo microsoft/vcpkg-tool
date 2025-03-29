@@ -86,7 +86,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     auto first = test_data.begin();
     const auto last = test_data.end();
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 1);
     REQUIRE(test_out.back().old_mode == "000000");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -97,7 +98,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-added");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 2);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -108,7 +110,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-copied-new");
     REQUIRE(test_out.back().old_file_name == "file-copied-old");
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 3);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -119,7 +122,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-copied-old");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 4);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "000000");
@@ -130,7 +134,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-deleted");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 5);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -141,7 +146,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-modified");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 6);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -152,7 +158,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-moved-new");
     REQUIRE(test_out.back().old_file_name == "file-moved-old");
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 7);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -163,7 +170,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-type-modified");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 8);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -174,7 +182,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-unmerged");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
     REQUIRE(test_out.size() == 9);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -185,7 +194,9 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-unknown");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(parse_git_diff_tree_line(test_out, first, last));
+    first = parse_git_diff_tree_line(test_out, first, last);
+    REQUIRE(first);
+    REQUIRE(first + 1 == last);
     REQUIRE(test_out.size() == 10);
     REQUIRE(test_out.back().old_mode == "100644");
     REQUIRE(test_out.back().new_mode == "100644");
@@ -196,10 +207,8 @@ TEST_CASE ("parse_git_diff_tree_line", "[git]")
     REQUIRE(test_out.back().file_name == "file-modified-score");
     REQUIRE(test_out.back().old_file_name.empty());
 
-    REQUIRE(first + 1 == last);
     REQUIRE(!parse_git_diff_tree_line(test_out, first, last));
     REQUIRE(test_out.size() == 10);
-    REQUIRE(first + 1 == last);
 
     FullyBufferedDiagnosticContext bdc;
     REQUIRE(parse_git_diff_tree_lines(bdc, "git diff-tree", test_data.substr(0, test_data.size() - 1))
@@ -213,107 +222,75 @@ TEST_CASE ("parse_git_diff_tree_line_failures", "[git]")
 
     // Too short
     static constexpr StringLiteral test_short = ":100644";
-    auto first = test_short.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_short.end()));
-    REQUIRE(first == test_short.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_short.begin(), test_short.end()));
 
     // Missing colon
     static constexpr StringLiteral test_no_colon = "100644 100644 abcd123 1234567 M\0file1\0";
-    first = test_no_colon.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_no_colon.end()));
-    REQUIRE(first == test_no_colon.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_no_colon.begin(), test_no_colon.end()));
 
     // Incorrect spacing at position 7
     static constexpr StringLiteral test_bad_space1 = ":100644X100644 abcd123 1234567 M\0file1\0";
-    first = test_bad_space1.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_bad_space1.end()));
-    REQUIRE(first == test_bad_space1.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_bad_space1.begin(), test_bad_space1.end()));
 
     // Incorrect spacing at position 14
     static constexpr StringLiteral test_bad_space2 = ":100644 100644Xabcd123 1234567 M\0file1\0";
-    first = test_bad_space2.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_bad_space2.end()));
-    REQUIRE(first == test_bad_space2.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_bad_space2.begin(), test_bad_space2.end()));
 
     // Incorrect spacing at position 55 (after SHA)
     static constexpr StringLiteral test_bad_space3 =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123Xabcd123abcd123abcd123abcd123abcd123 M\0file1\0";
-    first = test_bad_space3.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_bad_space3.end()));
-    REQUIRE(first == test_bad_space3.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_bad_space3.begin(), test_bad_space3.end()));
 
     // Incorrect spacing at position 96 (after second SHA)
     static constexpr StringLiteral test_bad_space4 =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123XM\0file1\0";
-    first = test_bad_space4.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_bad_space4.end()));
-    REQUIRE(first == test_bad_space4.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_bad_space4.begin(), test_bad_space4.end()));
 
     // Using 'Z' as an invalid action character
     static constexpr StringLiteral test_invalid_action =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 Z\0file1\0";
-    first = test_invalid_action.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_invalid_action.end()));
-    REQUIRE(first == test_invalid_action.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_invalid_action.begin(), test_invalid_action.end()));
 
     // Not a mode
     static constexpr StringLiteral test_not_mode_1 =
         ":100a44 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 A\0file1\0";
-    first = test_not_mode_1.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_not_mode_1.end()));
-    REQUIRE(first == test_not_mode_1.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_not_mode_1.begin(), test_not_mode_1.end()));
 
     static constexpr StringLiteral test_not_mode_2 =
         ":100644 10a644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 A\0file1\0";
-    first = test_not_mode_2.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_not_mode_2.end()));
-    REQUIRE(first == test_not_mode_2.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_not_mode_2.begin(), test_not_mode_2.end()));
 
     // Not a SHA
     static constexpr StringLiteral test_not_sha_1 =
         ":100644 100644 abcd123abcd123abcd12zabcd123abcd123 abcd123abcd123abcd123abcd123abcd123 A\0file1\0";
-    first = test_not_sha_1.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_not_sha_1.end()));
-    REQUIRE(first == test_not_sha_1.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_not_sha_1.begin(), test_not_sha_1.end()));
 
     static constexpr StringLiteral test_not_sha_2 =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcdz23abcd123abcd123 A\0file1\0";
-    first = test_not_sha_2.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_not_sha_2.end()));
-    REQUIRE(first == test_not_sha_2.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_not_sha_2.begin(), test_not_sha_2.end()));
 
     // Score with no terminator
     static constexpr StringLiteral test_missing_score_term =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 M50";
-    first = test_missing_score_term.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_missing_score_term.end()));
-    REQUIRE(first == test_missing_score_term.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_missing_score_term.begin(), test_missing_score_term.end()));
 
     // Score is not a valid integer
     static constexpr StringLiteral test_invalid_score =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 M5x\0file1\0";
-    first = test_invalid_score.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_invalid_score.end()));
-    REQUIRE(first == test_invalid_score.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_invalid_score.begin(), test_invalid_score.end()));
 
     // Rename action with missing terminator after first file name
     static constexpr StringLiteral test_missing_file_term =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 R86\0file1";
-    first = test_missing_file_term.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_missing_file_term.end()));
-    REQUIRE(first == test_missing_file_term.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_missing_file_term.begin(), test_missing_file_term.end()));
 
     // Copy action with missing terminator after first file name
     static constexpr StringLiteral test_missing_file_term2 =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 C68\0file1";
-    first = test_missing_file_term2.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_missing_file_term2.end()));
-    REQUIRE(first == test_missing_file_term2.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_missing_file_term2.begin(), test_missing_file_term2.end()));
 
     // Missing terminator after file name
     static constexpr StringLiteral test_missing_term =
         ":100644 100644 abcd123abcd123abcd123abcd123abcd123 abcd123abcd123abcd123abcd123abcd123 M\0file1";
-    first = test_missing_term.begin();
-    REQUIRE(!parse_git_diff_tree_line(test_out, first, test_missing_term.end()));
-    REQUIRE(first == test_missing_term.begin());
+    REQUIRE(!parse_git_diff_tree_line(test_out, test_missing_term.begin(), test_missing_term.end()));
 }

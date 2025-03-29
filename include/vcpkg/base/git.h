@@ -96,7 +96,7 @@ namespace vcpkg
                                          StringView commit1,
                                          StringView commit2);
 
-    bool parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char*& first, const char* last);
+    const char* parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char* first, const char* last);
 
     Optional<std::vector<GitDiffTreeLine>> parse_git_diff_tree_lines(DiagnosticContext& context,
                                                                      StringView command_line,

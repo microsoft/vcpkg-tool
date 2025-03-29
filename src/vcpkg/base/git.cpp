@@ -308,7 +308,7 @@ namespace vcpkg
         return nullopt;
     }
 
-    bool parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char*& original_first, const char* last)
+    const char* parse_git_diff_tree_line(std::vector<GitDiffTreeLine>& target, const char* first, const char* last)
     {
         // from https://git-scm.com/docs/git-diff-tree#_raw_output_format
         // in-place edit  :100644 100644 bcd1234 0123456 M\0file0\0
@@ -335,41 +335,40 @@ namespace vcpkg
         // 14. path for "dst"; only exists for C or R.
         // 15. an LF or a NUL when -z option is used, to terminate the record.
 
-        auto first = original_first;
         first = std::find(first, last, ':');
         static constexpr ptrdiff_t minimum_prefix_size = 1 + 7 + 7 + 41 + 41 + 2;
         if ((last - first) < minimum_prefix_size || first[0] != ':' || first[7] != ' ' || first[14] != ' ' ||
             first[55] != ' ' || first[96] != ' ')
         {
-            return false;
+            return nullptr;
         }
 
         ++first; // skip :
         StringView old_mode{first, 6};
         if (!is_git_mode(old_mode))
         {
-            return false;
+            return nullptr;
         }
 
         first += 7; // +1 to skip space, ditto below
         StringView new_mode{first, 6};
         if (!is_git_mode(new_mode))
         {
-            return false;
+            return nullptr;
         }
 
         first += 7;
         StringView old_sha{first, 40};
         if (!is_git_sha(old_sha))
         {
-            return false;
+            return nullptr;
         }
 
         first += 41;
         StringView new_sha{first, 40};
         if (!is_git_sha(new_sha))
         {
-            return false;
+            return nullptr;
         }
 
         first += 41;
@@ -409,7 +408,7 @@ namespace vcpkg
                 has_second_file = false;
                 kind = GitDiffTreeLineKind::Unknown;
                 break;
-            default: return false;
+            default: return nullptr;
         }
 
         int score;
@@ -420,7 +419,7 @@ namespace vcpkg
             auto score_end = std::find_if(first, last, is_tab_or_nul);
             if (score_end == last)
             {
-                return false;
+                return nullptr;
             }
 
             auto maybe_score = Strings::strto<int>(StringView{first, score_end});
@@ -430,7 +429,7 @@ namespace vcpkg
             }
             else
             {
-                return false;
+                return nullptr;
             }
 
             first = score_end;
@@ -448,7 +447,7 @@ namespace vcpkg
             auto old_file_end = std::find_if(first, last, is_tab_or_nul);
             if (old_file_end == last)
             {
-                return false;
+                return nullptr;
             }
 
             old_file_start = first;
@@ -466,7 +465,7 @@ namespace vcpkg
         auto file_end = std::find_if(first, last, is_lf_or_nul);
         if (file_end == last)
         {
-            return false;
+            return nullptr;
         }
 
         StringView file_name{first, file_end};
@@ -482,8 +481,7 @@ namespace vcpkg
         entry.score = score;
         entry.file_name.assign(file_name.data(), file_name.size());
         entry.old_file_name.assign(old_file_start, old_file_size);
-        original_first = first;
-        return true;
+        return first;
     }
 
     Optional<std::vector<GitDiffTreeLine>> parse_git_diff_tree_lines(DiagnosticContext& context,
@@ -494,9 +492,15 @@ namespace vcpkg
         auto& result = result_storage.emplace();
         const char* first = output.begin();
         const char* const last = output.end();
-        while (first != last)
+        for (;;)
         {
-            if (!parse_git_diff_tree_line(result, first, last))
+            if (first == last)
+            {
+                return result_storage;
+            }
+
+            first = parse_git_diff_tree_line(result, first, last);
+            if (!first)
             {
                 context.report_error_with_log(
                     output, msgGitUnexpectedCommandOutputCmd, msg::command_line = command_line);
@@ -504,8 +508,6 @@ namespace vcpkg
                 return result_storage;
             }
         }
-
-        return result_storage;
     }
 
     Optional<std::vector<GitDiffTreeLine>> git_diff_tree(
