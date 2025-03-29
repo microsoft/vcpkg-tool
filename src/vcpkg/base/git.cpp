@@ -169,7 +169,7 @@ namespace vcpkg
                                   StringView ls_tree_output,
                                   StringView ls_tree_command)
     {
-        const auto lines = Strings::split(ls_tree_output, '\n');
+        const auto lines = Strings::split(ls_tree_output, '\0');
         // The first line of the output is always the parent directory itself.
         for (auto&& line : lines)
         {
@@ -202,9 +202,11 @@ namespace vcpkg
                                                       GitRepoLocator locator,
                                                       StringView treeish)
     {
+        RedirectedProcessLaunchSettings launch_settings;
+        launch_settings.encoding = Encoding::Utf8WithNulls;
         Optional<std::vector<GitLSTreeEntry>> result;
-        StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}};
-        auto maybe_ls_tree_result = run_git_cmd(context, git_exe, locator, args);
+        StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}, StringLiteral{"-z"}};
+        auto maybe_ls_tree_result = run_git_cmd(context, git_exe, locator, args, launch_settings);
         if (auto ls_tree_output = maybe_ls_tree_result.maybe_output.get())
         {
             if (parse_git_ls_tree_output(
