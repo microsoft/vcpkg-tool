@@ -83,11 +83,11 @@ namespace
                              const Path& builtin_ports_dir,
                              StringView git_commit_id)
     {
-        if (git_check_is_commit(context,
-                                git_exe,
-                                GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir},
-                                git_commit_id)
-                .value_or(false))
+        if (!git_check_is_commit(context,
+                                 git_exe,
+                                 GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir},
+                                 git_commit_id)
+                 .value_or(false))
         {
             context.report_error(msgInvalidCommitId, msg::commit_sha = git_commit_id);
             return false;

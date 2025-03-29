@@ -125,7 +125,7 @@ namespace vcpkg
     {
         static constexpr StringView args[] = {StringLiteral{"rev-parse"}, StringLiteral{"--is-shallow-repository"}};
         return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& output) {
-            return "true" == Strings::trim(std::move(output));
+            return output == "true";
         });
     }
 
@@ -278,12 +278,11 @@ namespace vcpkg
                                        GitRepoLocator locator,
                                        StringView git_commit_id)
     {
-        static constexpr StringLiteral VALID_COMMIT_OUTPUT = "commit\n";
         StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-t"}, git_commit_id};
         auto maybe_cat_file_output = run_git_cmd(context, git_exe, locator, args);
         if (auto output = maybe_cat_file_output.maybe_output.get())
         {
-            return *output == VALID_COMMIT_OUTPUT;
+            return *output == "commit";
         }
 
         return nullopt;
@@ -296,7 +295,6 @@ namespace vcpkg
         auto maybe_merge_base_output = run_git_cmd(context, git_exe, locator, args);
         if (auto output = maybe_merge_base_output.maybe_output.get())
         {
-            Strings::inplace_trim_end(*output);
             if (is_git_sha(*output))
             {
                 return std::move(*output);
@@ -519,7 +517,6 @@ namespace vcpkg
         auto maybe_git_diff_tree_output = run_git_cmd(context, git_exe, locator, args, launch_settings);
         if (auto git_diff_tree_output = maybe_git_diff_tree_output.maybe_output.get())
         {
-            Strings::inplace_trim_end(*git_diff_tree_output);
             return parse_git_diff_tree_lines(
                 context, maybe_git_diff_tree_output.command.command_line(), *git_diff_tree_output);
         }
