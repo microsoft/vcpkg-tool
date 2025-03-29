@@ -279,13 +279,9 @@ namespace vcpkg
                                        StringView git_commit_id)
     {
         StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-t"}, git_commit_id};
-        auto maybe_cat_file_output = run_git_cmd(context, git_exe, locator, args);
-        if (auto output = maybe_cat_file_output.maybe_output.get())
-        {
-            return *output == "commit";
-        }
-
-        return nullopt;
+        return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& output) {
+            return output == "commit";
+        });
     }
 
     Optional<std::string> git_merge_base(
