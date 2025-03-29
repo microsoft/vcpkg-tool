@@ -106,10 +106,10 @@ namespace
         return test_port_names;
     }
 
-    std::vector<SourceControlFile*> load_all_scf_by_name(std::vector<std::string>&& test_port_names,
+    std::vector<SourceControlFile*> load_all_scf_by_name(View<std::string> test_port_names,
                                                          PathsPortFileProvider& provider)
     {
-        return Util::fmap(std::move(test_port_names), [&](std::string&& arg) {
+        return Util::fmap(test_port_names, [&](const std::string& arg) {
             return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
         });
     }
@@ -206,7 +206,7 @@ namespace vcpkg
         }
         else if (it_merge_with == settings.end())
         {
-            feature_test_ports = load_all_scf_by_name(std::move(options.command_arguments), provider);
+            feature_test_ports = load_all_scf_by_name(options.command_arguments, provider);
         }
         else if (options.command_arguments.empty())
         {
