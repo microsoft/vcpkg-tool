@@ -78,12 +78,12 @@ namespace vcpkg
                                                       GitRepoLocator locator,
                                                       StringView treeish);
 
-    bool git_read_tree(DiagnosticContext& context,
-                       const Filesystem& fs,
-                       const Path& git_exe,
-                       GitRepoLocator locator,
-                       const Path& destination,
-                       StringView treeish);
+    bool git_extract_tree(DiagnosticContext& context,
+                          const Filesystem& fs,
+                          const Path& git_exe,
+                          GitRepoLocator locator,
+                          const Path& destination,
+                          StringView treeish);
 
     Optional<bool> git_check_is_commit(DiagnosticContext& context,
                                        const Path& git_exe,

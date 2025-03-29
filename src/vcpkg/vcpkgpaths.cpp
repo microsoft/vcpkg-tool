@@ -1009,7 +1009,8 @@ namespace vcpkg
             const auto maybe_index_file = git_index_file(context, git_exe, locator);
             if (const auto index_file = maybe_index_file.get())
             {
-                TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", index_file->native(), get_process_id())};
+                TempFileDeleter temp_index_file{fs,
+                                                fmt::format("{}_vcpkg_{}.tmp", index_file->native(), get_process_id())};
                 if (fs.copy_file(context, *index_file, temp_index_file.path, CopyOptions::overwrite_existing) &&
                     git_add_with_index(context, git_exe, builtin_ports, temp_index_file.path))
                 {
@@ -1146,12 +1147,12 @@ namespace vcpkg
     ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const
     {
         BufferedDiagnosticContext bdc{out_sink};
-        if (vcpkg::git_read_tree(bdc,
-                                 get_filesystem(),
-                                 get_tool_exe(Tools::GIT, out_sink),
-                                 GitRepoLocator{GitRepoLocatorKind::DotGitDir, dot_git_dir},
-                                 destination,
-                                 tree))
+        if (vcpkg::git_extract_tree(bdc,
+                                    get_filesystem(),
+                                    get_tool_exe(Tools::GIT, out_sink),
+                                    GitRepoLocator{GitRepoLocatorKind::DotGitDir, dot_git_dir},
+                                    destination,
+                                    tree))
         {
             return Unit{};
         }

@@ -219,12 +219,12 @@ namespace vcpkg
         return result;
     }
 
-    bool git_read_tree(DiagnosticContext& context,
-                       const Filesystem& fs,
-                       const Path& git_exe,
-                       GitRepoLocator locator,
-                       const Path& destination,
-                       StringView treeish)
+    bool git_extract_tree(DiagnosticContext& context,
+                          const Filesystem& fs,
+                          const Path& git_exe,
+                          GitRepoLocator locator,
+                          const Path& destination,
+                          StringView treeish)
     {
         auto pid = get_process_id();
         Path git_tree_temp = fmt::format("{}_{}.tmp", destination, pid);

@@ -48,12 +48,12 @@ namespace
         }
 
         const auto temp_checkout_path = paths.buildtrees() / temp_name;
-        if (!git_read_tree(context,
-                           fs,
-                           git_exe,
-                           GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
-                           temp_checkout_path,
-                           fmt::format("{}:{}", git_commit_id, *builtin_ports_prefix)))
+        if (!git_extract_tree(context,
+                              fs,
+                              git_exe,
+                              GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_directory},
+                              temp_checkout_path,
+                              fmt::format("{}:{}", git_commit_id, *builtin_ports_prefix)))
         {
             return nullopt;
         }
