@@ -4,6 +4,61 @@
 
 using namespace vcpkg;
 
+TEST_CASE ("parse_git_ls_tree_output", "[git]")
+{
+    static constexpr StringLiteral test_data =
+        StringLiteral{"100644 blob d0c3b3e9ccf66ddf0f30f2ac9a8a7f310c45b3d1\t.gitattributes\n"
+                      "040000 tree 44246de64bc5e07c0e4ed90a66415f0c3742e1df\t.github\n"
+                      "100644 blob d6d47929120f8f1d73457cfd5ee41d7e6c96bf0c\t.gitignore\n"
+                      "100644 blob e69de29bb2d1d6434b8b29ae775ad8c2e48c5391\t.vcpkg-root\n"
+                      "100644 blob 6e019d977590f5c602b24ddc1b6146e4d7d69a62\tCONTRIBUTING.md\n"
+                      "100644 blob 63c4c885fbb4c313b09cbedc5b2afe97e0584ff9\tCONTRIBUTING_pt.md\n"
+                      "100644 blob 7aef2f5dcb9fd82bad9becc44a5800494be85945\tCONTRIBUTING_zh.md\n"
+                      "100644 blob 4d23e0e39b2531c41499e7b1c5ec0efffd15c6b6\tLICENSE.txt\n"
+                      "100644 blob 0e2e9604835faba06f6e8bbf27b723f58ce35c95\tNOTICE.txt\n"
+                      "100644 blob 678ca692eff279bc1c06f6467349a5166222a49e\tNOTICE_pt.txt\n"
+                      "100644 blob 87ca864c4d975d72f00533edfc074ef58e3b930b\tREADME.md\n"
+                      "100644 blob 869fdfe2b246991a053fab9cfec1bed3ab532ab1\tSECURITY.md\n"
+                      "100644 blob 54e0b85a225030ab1a9e0096cdb6f637ee84c326\tbootstrap-vcpkg.bat\n"
+                      "100755 blob 7165a725fd719883b614e6e90a95179dcd5a1817\tbootstrap-vcpkg.sh\n"
+                      "040000 tree fe6e499f79b05d67cf23cd6d2d523108031380e0\tdocs\n"
+                      "040000 tree 84aa6e15bbf46cf43d72e0e33eaa24a3d16db12a\tports\n"
+                      "040000 tree 2b1772552342a6a3b6e723f359a2b3a42db0d630\tscripts\n"
+                      "100644 blob 8b9f485e767b9fa3f0b7fd4875a5c35a51711cc3\tshell.nix\n"
+                      "040000 tree 2699108f354764415c1484e3d09ab493b9ef2c51\ttoolsrc\n"
+                      "040000 tree 2c82f61efda080f200d2ae079d68dfff9b4c08fe\ttriplets\n"
+                      "040000 tree 0a65dad715e7c6fa94e5cd140ab094fb99211e63\tversions\n"};
+
+    FullyBufferedDiagnosticContext bdc;
+    std::vector<GitLSTreeEntry> test_out;
+    REQUIRE(!parse_git_ls_tree_output(bdc, test_out, test_data, "git ls-tree HEAD:^{tree}"));
+    std::vector<GitLSTreeEntry> expected = {
+        {StringLiteral{".gitattributes"}, StringLiteral{"d0c3b3e9ccf66ddf0f30f2ac9a8a7f310c45b3d1"}},
+        {StringLiteral{".github"}, StringLiteral{"44246de64bc5e07c0e4ed90a66415f0c3742e1df"}},
+        {StringLiteral{".gitignore"}, StringLiteral{"d6d47929120f8f1d73457cfd5ee41d7e6c96bf0c"}},
+        {StringLiteral{".vcpkg-root"}, StringLiteral{"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"}},
+        {StringLiteral{"CONTRIBUTING.md"}, StringLiteral{"6e019d977590f5c602b24ddc1b6146e4d7d69a62"}},
+        {StringLiteral{"CONTRIBUTING_pt.md"}, StringLiteral{"63c4c885fbb4c313b09cbedc5b2afe97e0584ff9"}},
+        {StringLiteral{"CONTRIBUTING_zh.md"}, StringLiteral{"7aef2f5dcb9fd82bad9becc44a5800494be85945"}},
+        {StringLiteral{"LICENSE.txt"}, StringLiteral{"4d23e0e39b2531c41499e7b1c5ec0efffd15c6b6"}},
+        {StringLiteral{"NOTICE.txt"}, StringLiteral{"0e2e9604835faba06f6e8bbf27b723f58ce35c95"}},
+        {StringLiteral{"NOTICE_pt.txt"}, StringLiteral{"678ca692eff279bc1c06f6467349a5166222a49e"}},
+        {StringLiteral{"README.md"}, StringLiteral{"87ca864c4d975d72f00533edfc074ef58e3b930b"}},
+        {StringLiteral{"SECURITY.md"}, StringLiteral{"869fdfe2b246991a053fab9cfec1bed3ab532ab1"}},
+        {StringLiteral{"bootstrap-vcpkg.bat"}, StringLiteral{"54e0b85a225030ab1a9e0096cdb6f637ee84c326"}},
+        {StringLiteral{"bootstrap-vcpkg.sh"}, StringLiteral{"7165a725fd719883b614e6e90a95179dcd5a1817"}},
+        {StringLiteral{"docs"}, StringLiteral{"fe6e499f79b05d67cf23cd6d2d523108031380e0"}},
+        {StringLiteral{"ports"}, StringLiteral{"84aa6e15bbf46cf43d72e0e33eaa24a3d16db12a"}},
+        {StringLiteral{"scripts"}, StringLiteral{"2b1772552342a6a3b6e723f359a2b3a42db0d630"}},
+        {StringLiteral{"shell.nix"}, StringLiteral{"8b9f485e767b9fa3f0b7fd4875a5c35a51711cc3"}},
+        {StringLiteral{"toolsrc"}, StringLiteral{"2699108f354764415c1484e3d09ab493b9ef2c51"}},
+        {StringLiteral{"triplets"}, StringLiteral{"2c82f61efda080f200d2ae079d68dfff9b4c08fe"}},
+        {StringLiteral{"versions"}, StringLiteral{"0a65dad715e7c6fa94e5cd140ab094fb99211e63"}},
+    };
+
+    REQUIRE(test_out == expected);
+}
+
 TEST_CASE ("parse_git_diff_tree_line", "[git]")
 {
     // clang-format off

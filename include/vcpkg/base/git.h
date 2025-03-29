@@ -24,6 +24,12 @@ namespace vcpkg
     {
         std::string file_name;
         std::string git_tree_sha;
+
+        GitLSTreeEntry(StringLiteral file_name, StringLiteral git_tree_sha);
+        explicit GitLSTreeEntry(std::string&& file_name, std::string&& git_tree_sha);
+
+        friend bool operator==(const GitLSTreeEntry& lhs, const GitLSTreeEntry& rhs) noexcept;
+        friend bool operator!=(const GitLSTreeEntry& lhs, const GitLSTreeEntry& rhs) noexcept;
     };
 
     // https://git-scm.com/docs/git-diff-tree#_raw_output_format
@@ -61,6 +67,11 @@ namespace vcpkg
                                                const Path& git_exe,
                                                GitRepoLocator locator,
                                                const Path& index_file);
+
+    bool parse_git_ls_tree_output(DiagnosticContext& context,
+                                  std::vector<GitLSTreeEntry>& target,
+                                  StringView ls_tree_output,
+                                  StringView ls_tree_command);
 
     Optional<std::vector<GitLSTreeEntry>> git_ls_tree(DiagnosticContext& context,
                                                       const Path& git_exe,

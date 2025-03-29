@@ -82,6 +82,23 @@ namespace
 
 namespace vcpkg
 {
+    GitLSTreeEntry::GitLSTreeEntry(StringLiteral file_name, StringLiteral git_tree_sha)
+        : file_name(file_name.data(), file_name.size()), git_tree_sha(git_tree_sha.data(), git_tree_sha.size())
+    {
+    }
+
+    GitLSTreeEntry::GitLSTreeEntry(std::string&& file_name, std::string&& git_tree_sha)
+        : file_name(std::move(file_name)), git_tree_sha(std::move(git_tree_sha))
+    {
+    }
+
+    bool operator==(const GitLSTreeEntry& lhs, const GitLSTreeEntry& rhs) noexcept
+    {
+        return lhs.file_name == rhs.file_name && lhs.git_tree_sha == rhs.git_tree_sha;
+    }
+
+    bool operator!=(const GitLSTreeEntry& lhs, const GitLSTreeEntry& rhs) noexcept { return !(lhs == rhs); }
+
     bool operator==(const GitDiffTreeLine& lhs, const GitDiffTreeLine& rhs) noexcept
     {
         return lhs.old_mode == rhs.old_mode && lhs.new_mode == rhs.new_mode && lhs.old_sha == rhs.old_sha &&
@@ -147,50 +164,58 @@ namespace vcpkg
         return run_git_cmd_with_index(context, git_exe, locator, index_file, args).maybe_output;
     }
 
+    bool parse_git_ls_tree_output(DiagnosticContext& context,
+                                  std::vector<GitLSTreeEntry>& target,
+                                  StringView ls_tree_output,
+                                  StringView ls_tree_command)
+    {
+        const auto lines = Strings::split(ls_tree_output, '\n');
+        // The first line of the output is always the parent directory itself.
+        for (auto&& line : lines)
+        {
+            // The default output comes in the format:
+            // <mode> SP <type> SP <object> TAB <file>
+            auto split_line = Strings::split(line, '\t');
+            if (split_line.size() != 2)
+            {
+                context.report_error_with_log(
+                    ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = ls_tree_command);
+                return true;
+            }
+
+            auto file_info_section = Strings::split(split_line[0], ' ');
+            if (file_info_section.size() != 3)
+            {
+                context.report_error_with_log(
+                    ls_tree_output, msgGitUnexpectedCommandOutputCmd, msg::command_line = ls_tree_command);
+                return true;
+            }
+
+            target.emplace_back(std::move(split_line[1]), std::move(file_info_section.back()));
+        }
+
+        return false;
+    }
+
     Optional<std::vector<GitLSTreeEntry>> git_ls_tree(DiagnosticContext& context,
                                                       const Path& git_exe,
                                                       GitRepoLocator locator,
                                                       StringView treeish)
     {
         Optional<std::vector<GitLSTreeEntry>> result;
-        auto& ret = result.emplace();
         StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}};
         auto maybe_ls_tree_result = run_git_cmd(context, git_exe, locator, args);
         if (auto ls_tree_output = maybe_ls_tree_result.maybe_output.get())
         {
-            const auto lines = Strings::split(*ls_tree_output, '\n');
-            // The first line of the output is always the parent directory itself.
-            for (auto&& line : lines)
+            if (parse_git_ls_tree_output(
+                    context, result.emplace(), *ls_tree_output, maybe_ls_tree_result.command.command_line()))
             {
-                // The default output comes in the format:
-                // <mode> SP <type> SP <object> TAB <file>
-                auto split_line = Strings::split(line, '\t');
-                if (split_line.size() != 2)
-                {
-                    context.report_error_with_log(*ls_tree_output,
-                                                  msgGitUnexpectedCommandOutputCmd,
-                                                  msg::command_line = maybe_ls_tree_result.command.command_line());
-                    result.clear();
-                    return result;
-                }
-
-                auto file_info_section = Strings::split(split_line[0], ' ');
-                if (file_info_section.size() != 3)
-                {
-                    context.report_error_with_log(*ls_tree_output,
-                                                  msgGitUnexpectedCommandOutputCmd,
-                                                  msg::command_line = maybe_ls_tree_result.command.command_line());
-                    result.clear();
-                    return result;
-                }
-
-                ret.push_back(GitLSTreeEntry{split_line[1], file_info_section.back()});
+                result.clear();
             }
 
             return result;
         }
 
-        result.clear();
         return result;
     }
 
