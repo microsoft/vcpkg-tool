@@ -16,23 +16,12 @@ namespace
 {
     using namespace vcpkg;
 
-    struct GitCmdResult
+    Command make_git_command(const vcpkg::Path& git_exe, GitRepoLocator locator, View<StringView> additional_args)
     {
-        Command command;
-        Optional<std::string> maybe_output;
-    };
-
-    GitCmdResult run_git_cmd(vcpkg::DiagnosticContext& context,
-                             const vcpkg::Path& git_exe,
-                             GitRepoLocator locator,
-                             View<StringView> additional_args,
-                             const RedirectedProcessLaunchSettings& launch_settings)
-    {
-        // Inline git_cmd_builder functionality
         static constexpr StringLiteral DashC{"-C"};
         static constexpr StringLiteral GitDir{"--git-dir"};
 
-        GitCmdResult result{Command{git_exe}};
+        Command result{git_exe};
         const StringLiteral* arg_name;
         switch (locator.kind)
         {
@@ -40,43 +29,45 @@ namespace
             case GitRepoLocatorKind::DotGitDir: arg_name = &GitDir; break;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-        result.command.string_arg(*arg_name);
-        result.command.string_arg(locator.path);
-        result.command.string_arg("-c").string_arg("core.autocrlf=false");
+        result.string_arg(*arg_name);
+        result.string_arg(locator.path);
+        result.string_arg("-c").string_arg("core.autocrlf=false");
         for (auto&& additional_arg : additional_args)
         {
-            result.command.string_arg(additional_arg);
-        }
-
-        auto maybe_result = cmd_execute_and_capture_output(context, result.command, launch_settings);
-        if (auto prefix_output = check_zero_exit_code(context, result.command, maybe_result))
-        {
-            Strings::inplace_trim_end(*prefix_output);
-            result.maybe_output.emplace(std::move(*prefix_output));
+            result.string_arg(additional_arg);
         }
 
         return result;
     }
 
-    GitCmdResult run_git_cmd(DiagnosticContext& context,
-                             const Path& git_exe,
-                             GitRepoLocator locator,
-                             View<StringView> additional_args)
+    Optional<std::string> run_cmd_trim(vcpkg::DiagnosticContext& context,
+                                       const Command& command,
+                                       const RedirectedProcessLaunchSettings& launch_settings)
     {
-        RedirectedProcessLaunchSettings launch_settings;
-        return run_git_cmd(context, git_exe, locator, additional_args, launch_settings);
+        auto maybe_result = cmd_execute_and_capture_output(context, command, launch_settings);
+        if (auto prefix_output = check_zero_exit_code(context, command, maybe_result))
+        {
+            Strings::inplace_trim_end(*prefix_output);
+            return std::move(*prefix_output);
+        }
+
+        return nullopt;
     }
 
-    GitCmdResult run_git_cmd_with_index(DiagnosticContext& context,
-                                        const Path& git_exe,
-                                        GitRepoLocator locator,
-                                        const Path& index_file,
-                                        View<StringView> additional_args)
+    Optional<std::string> run_cmd_trim(vcpkg::DiagnosticContext& context, const Command& command)
+    {
+        RedirectedProcessLaunchSettings launch_settings;
+        return run_cmd_trim(context, command, launch_settings);
+    }
+
+    Optional<std::string> run_cmd_git_with_index(DiagnosticContext& context,
+                                                 const Command& command,
+                                                 const Path& index_file)
     {
         RedirectedProcessLaunchSettings launch_settings;
         auto& environment = launch_settings.environment.emplace();
         environment.add_entry("GIT_INDEX_FILE", index_file);
-        return run_git_cmd(context, git_exe, locator, additional_args, launch_settings);
+        return run_cmd_trim(context, command, launch_settings);
     }
 }
 
@@ -124,7 +115,7 @@ namespace vcpkg
     Optional<bool> is_shallow_clone(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
     {
         static constexpr StringView args[] = {StringLiteral{"rev-parse"}, StringLiteral{"--is-shallow-repository"}};
-        return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& output) {
+        return run_cmd_trim(context, make_git_command(git_exe, locator, args)).map([](std::string&& output) {
             return output == "true";
         });
     }
@@ -132,8 +123,8 @@ namespace vcpkg
     Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target)
     {
         static constexpr StringView args[] = {StringLiteral{"rev-parse"}, StringLiteral{"--show-prefix"}};
-        return run_git_cmd(context, git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, args)
-            .maybe_output;
+        return run_cmd_trim(
+            context, make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, args));
     }
 
     Optional<Path> git_index_file(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
@@ -142,17 +133,18 @@ namespace vcpkg
                                               StringLiteral{"--path-format=absolute"},
                                               StringLiteral{"--git-path"},
                                               StringLiteral{"index"}};
-        return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& proto_path) -> Path {
-            return std::move(proto_path);
-        });
+        return run_cmd_trim(context, make_git_command(git_exe, locator, args))
+            .map([](std::string&& proto_path) -> Path { return std::move(proto_path); });
     }
 
     bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& target, const Path& index_file)
     {
         static constexpr StringView args[] = {StringLiteral{"add"}, StringLiteral{"-A"}, StringLiteral{"."}};
-        return run_git_cmd_with_index(
-                   context, git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, index_file, args)
-            .maybe_output.has_value();
+        return run_cmd_git_with_index(
+                   context,
+                   make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, args),
+                   index_file)
+            .has_value();
     }
 
     Optional<std::string> git_write_index_tree(DiagnosticContext& context,
@@ -161,7 +153,7 @@ namespace vcpkg
                                                const Path& index_file)
     {
         static constexpr StringView args[] = {StringLiteral{"write-tree"}};
-        return run_git_cmd_with_index(context, git_exe, locator, index_file, args).maybe_output;
+        return run_cmd_git_with_index(context, make_git_command(git_exe, locator, args), index_file);
     }
 
     bool parse_git_ls_tree_output(DiagnosticContext& context,
@@ -206,11 +198,11 @@ namespace vcpkg
         launch_settings.encoding = Encoding::Utf8WithNulls;
         Optional<std::vector<GitLSTreeEntry>> result;
         StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}, StringLiteral{"-z"}};
-        auto maybe_ls_tree_result = run_git_cmd(context, git_exe, locator, args, launch_settings);
-        if (auto ls_tree_output = maybe_ls_tree_result.maybe_output.get())
+        auto cmd = make_git_command(git_exe, locator, args);
+        auto maybe_ls_tree_result = run_cmd_trim(context, cmd, launch_settings);
+        if (auto ls_tree_output = maybe_ls_tree_result.get())
         {
-            if (parse_git_ls_tree_output(
-                    context, result.emplace(), *ls_tree_output, maybe_ls_tree_result.command.command_line()))
+            if (parse_git_ls_tree_output(context, result.emplace(), *ls_tree_output, cmd.command_line()))
             {
                 result.clear();
             }
@@ -247,9 +239,8 @@ namespace vcpkg
         }
 
         StringView read_tree_args[] = {StringLiteral{"read-tree"}, treeish};
-        auto maybe_git_read_tree_output =
-            run_git_cmd_with_index(context, git_exe, locator, git_tree_index, read_tree_args);
-        if (maybe_git_read_tree_output.maybe_output.has_value())
+        auto read_tree_cmd = make_git_command(git_exe, locator, read_tree_args);
+        if (run_cmd_git_with_index(context, read_tree_cmd, git_tree_index).has_value())
         {
             auto prefix_arg = fmt::format("--prefix={}/", git_tree_temp);
             StringView checkout_index_args[] = {StringLiteral{"--work-tree"},
@@ -258,9 +249,8 @@ namespace vcpkg
                                                 StringLiteral{"-af"},
                                                 StringLiteral{"--ignore-skip-worktree-bits"},
                                                 prefix_arg};
-            auto git_checkout_index_command =
-                run_git_cmd_with_index(context, git_exe, locator, git_tree_index, checkout_index_args);
-            bool succeeded = git_checkout_index_command.maybe_output.has_value();
+            auto checkout_index_cmd = make_git_command(git_exe, locator, checkout_index_args);
+            bool succeeded = run_cmd_git_with_index(context, checkout_index_cmd, git_tree_index).has_value();
             fs.remove(git_tree_index, IgnoreErrors{});
             return succeeded && fs.rename_or_delete(context, git_tree_temp, destination).has_value();
         }
@@ -279,7 +269,7 @@ namespace vcpkg
                                        StringView git_commit_id)
     {
         StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-t"}, git_commit_id};
-        return run_git_cmd(context, git_exe, locator, args).maybe_output.map([](std::string&& output) {
+        return run_cmd_trim(context, make_git_command(git_exe, locator, args)).map([](std::string&& output) {
             return output == "commit";
         });
     }
@@ -288,17 +278,17 @@ namespace vcpkg
         DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView commit1, StringView commit2)
     {
         StringView args[] = {StringLiteral{"merge-base"}, commit1, commit2};
-        auto maybe_merge_base_output = run_git_cmd(context, git_exe, locator, args);
-        if (auto output = maybe_merge_base_output.maybe_output.get())
+        auto cmd = make_git_command(git_exe, locator, args);
+        auto maybe_merge_base_output = run_cmd_trim(context, cmd);
+        if (auto output = maybe_merge_base_output.get())
         {
             if (is_git_sha(*output))
             {
                 return std::move(*output);
             }
 
-            context.report_error_with_log(*output,
-                                          msgGitUnexpectedCommandOutputCmd,
-                                          msg::command_line = maybe_merge_base_output.command.command_line());
+            context.report_error_with_log(
+                *output, msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line());
         }
 
         return nullopt;
@@ -512,11 +502,11 @@ namespace vcpkg
         RedirectedProcessLaunchSettings launch_settings;
         launch_settings.encoding = Encoding::Utf8WithNulls;
         StringView args[] = {StringLiteral{"diff-tree"}, StringLiteral{"-z"}, tree1, tree2};
-        auto maybe_git_diff_tree_output = run_git_cmd(context, git_exe, locator, args, launch_settings);
-        if (auto git_diff_tree_output = maybe_git_diff_tree_output.maybe_output.get())
+        auto cmd = make_git_command(git_exe, locator, args);
+        auto maybe_git_diff_tree_output = run_cmd_trim(context, cmd, launch_settings);
+        if (auto git_diff_tree_output = maybe_git_diff_tree_output.get())
         {
-            return parse_git_diff_tree_lines(
-                context, maybe_git_diff_tree_output.command.command_line(), *git_diff_tree_output);
+            return parse_git_diff_tree_lines(context, cmd.command_line(), *git_diff_tree_output);
         }
         return nullopt;
     }
