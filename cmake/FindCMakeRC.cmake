@@ -11,10 +11,12 @@ if(POLICY CMP0135)
 endif()
 
 include(FetchContent)
+find_package(Git REQUIRED)
 FetchContent_Declare(
     CMakeRC
     URL "${VCPKG_CMAKERC_URL}"
     URL_HASH "SHA512=cb69ff4545065a1a89e3a966e931a58c3f07d468d88ecec8f00da9e6ce3768a41735a46fc71af56e0753926371d3ca5e7a3f2221211b4b1cf634df860c2c997f"
+    PATCH_COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_LIST_DIR}/CMakeRC_cmake_4.patch"
 )
 
 if(NOT CMakeRC_FIND_REQUIRED)

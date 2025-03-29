@@ -1,0 +1,23 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 432b8bf97c..0f5e51c5e8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.6)
++cmake_minimum_required(VERSION 3.6...4.0)
+ project(CMakeRC VERSION 2.0.0)
+ 
+ list(INSERT CMAKE_MODULE_PATH 0 "${PROJECT_SOURCE_DIR}/cmake")
+diff --git a/CMakeRC.cmake b/CMakeRC.cmake
+index 409136f789..5bacc60d33 100644
+--- a/CMakeRC.cmake
++++ b/CMakeRC.cmake
+@@ -34,7 +34,7 @@
+ 
+ set(_version 2.0.0)
+ 
+-cmake_minimum_required(VERSION 3.3)
++cmake_minimum_required(VERSION 3.3...4.0)
+ include(CMakeParseArguments)
+ 
+ if(COMMAND cmrc_add_resource_library)
