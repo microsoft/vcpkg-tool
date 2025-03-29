@@ -34,15 +34,6 @@ namespace
             cmd.string_arg("-H").string_arg(header);
         }
     }
-
-    void replace_secrets(std::string& target, View<std::string> secrets)
-    {
-        const auto replacement = msg::format(msgSecretBanner);
-        for (const auto& secret : secrets)
-        {
-            Strings::inplace_replace_all(target, secret, replacement);
-        }
-    }
 }
 
 namespace vcpkg
@@ -906,6 +897,7 @@ namespace vcpkg
                                               StringLiteral method,
                                               View<std::string> headers,
                                               StringView raw_url,
+                                              View<std::string> secrets,
                                               StringView data)
     {
         auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
@@ -921,7 +913,7 @@ namespace vcpkg
         cmd.string_arg(url_encode_spaces(raw_url));
 
         auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-        if (auto output = check_zero_exit_code(context, maybe_output, "curl"))
+        if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
         {
             return *output;
         }

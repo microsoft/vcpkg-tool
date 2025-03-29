@@ -5,6 +5,9 @@
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
+#include <vcpkg/base/diagnostics.h>
+#include <vcpkg/base/optional.h>
+
 #include <vcpkg/versions.h>
 
 #include <string>
@@ -25,9 +28,10 @@ namespace vcpkg
         std::vector<std::string> removed_ports;
     };
 
-    PortsDiff find_portsdiff(const VcpkgPaths& paths,
-                             StringView git_commit_id_for_previous_snapshot,
-                             StringView git_commit_id_for_current_snapshot);
+    Optional<PortsDiff> find_portsdiff(DiagnosticContext& context,
+                                       const VcpkgPaths& paths,
+                                       StringView git_commit_id_for_previous_snapshot,
+                                       StringView git_commit_id_for_current_snapshot);
 
     extern const CommandMetadata CommandPortsdiffMetadata;
     void command_portsdiff_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths);

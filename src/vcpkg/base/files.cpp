@@ -2047,6 +2047,21 @@ namespace vcpkg
         return false;
     }
 
+    Optional<bool> Filesystem::rename_or_delete(DiagnosticContext& context,
+                                                const Path& old_path,
+                                                const Path& new_path) const
+    {
+        std::error_code ec;
+        bool result = this->rename_or_delete(old_path, new_path, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {old_path, new_path}));
+            return nullopt;
+        }
+
+        return result;
+    }
+
     bool Filesystem::remove(const Path& target, LineInfo li) const
     {
         std::error_code ec;
@@ -2071,6 +2086,19 @@ namespace vcpkg
         return result;
     }
 
+    Optional<bool> Filesystem::create_directory(DiagnosticContext& context, const Path& new_directory) const
+    {
+        std::error_code ec;
+        bool result = this->create_directory(new_directory, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
+            return nullopt;
+        }
+
+        return result;
+    }
+
     bool Filesystem::create_directories(const Path& new_directory, LineInfo li) const
     {
         std::error_code ec;
@@ -2078,6 +2106,19 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {new_directory});
+        }
+
+        return result;
+    }
+
+    Optional<bool> Filesystem::create_directories(DiagnosticContext& context, const Path& new_directory) const
+    {
+        std::error_code ec;
+        bool result = this->create_directories(new_directory, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
+            return nullopt;
         }
 
         return result;
@@ -2223,6 +2264,26 @@ namespace vcpkg
     {
         Path failure_point;
         this->remove_all(base, ec, failure_point);
+    }
+
+    bool Filesystem::remove_all(DiagnosticContext& context, const Path& base) const
+    {
+        std::error_code ec;
+        Path failure_point;
+
+        this->remove_all(base, ec, failure_point);
+
+        if (ec)
+        {
+            context.report(DiagnosticLine{DiagKind::Error,
+                                          base,
+                                          msg::format(msgFailedToDeleteDueToFile2, msg::path = failure_point)
+                                              .append_raw(' ')
+                                              .append_raw(ec.message())});
+            return false;
+        }
+
+        return true;
     }
 
     void Filesystem::remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) const

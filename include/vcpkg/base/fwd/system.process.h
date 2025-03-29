@@ -11,7 +11,10 @@ namespace vcpkg
     enum class Encoding
     {
         Utf8,
-        Utf16
+#if defined(_WIN32)
+        Utf16,
+#endif // ^^^ _WIN32
+        Utf8WithNulls,
     };
 
     enum class CreateNewConsole

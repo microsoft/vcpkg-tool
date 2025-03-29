@@ -220,6 +220,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
     inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
+    inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";

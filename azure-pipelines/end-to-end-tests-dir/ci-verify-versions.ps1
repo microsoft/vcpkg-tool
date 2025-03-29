@@ -108,13 +108,11 @@ note: you can overwrite version-scheme-mismatch@1.1 with correct local values by
 vcpkg x-add-version version-scheme-mismatch --overwrite-version
 $TestingRoot/ci-verify-versions-registry/versions/baseline.json: message: version-scheme-mismatch@1.1 matches the current baseline
 $TestingRoot/ci-verify-versions-registry/ports/version-scheme-mismatch/vcpkg.json: message: all version constraints are consistent with the version database
-$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"C:\Program Files\Git\cmd\git.exe`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/000000070c5f496fcf1a97cf654d5e81f0d2685a_82336.tmp`" -c core.autocrlf=false read-tree -m -u 000000070c5f496fcf1a97cf654d5e81f0d2685a
-error: git failed with exit code: (128).
+$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: "C:/Program Files/Git/cmd/git.exe" --git-dir "C:/Dev/work/testing/ci-verify-versions-registry/.git" -c core.autocrlf=false read-tree 000000070c5f496fcf1a97cf654d5e81f0d2685a failed with exit code 128
 fatal: failed to unpack tree object 000000070c5f496fcf1a97cf654d5e81f0d2685a
 note: while checking out port bad-git-tree with git tree 000000070c5f496fcf1a97cf654d5e81f0d2685a
 note: while validating version: 1.1
-$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: failed to execute: `"C:\Program Files\Git\cmd\git.exe`" `"--git-dir=$TestingRoot/ci-verify-versions-registry/.git`" `"--work-tree=$buildtreesRoot/versioning_/versions/bad-git-tree/00000005fb6b76058ce09252f521847363c6b266_82336.tmp`" -c core.autocrlf=false read-tree -m -u 00000005fb6b76058ce09252f521847363c6b266
-error: git failed with exit code: (128).
+$TestingRoot/ci-verify-versions-registry/versions/b-/bad-git-tree.json: error: "C:/Program Files/Git/cmd/git.exe" --git-dir "C:/Dev/work/testing/ci-verify-versions-registry/.git" -c core.autocrlf=false read-tree 00000005fb6b76058ce09252f521847363c6b266 failed with exit code 128
 fatal: failed to unpack tree object 00000005fb6b76058ce09252f521847363c6b266
 note: while checking out port bad-git-tree with git tree 00000005fb6b76058ce09252f521847363c6b266
 note: while validating version: 1.0
@@ -159,9 +157,9 @@ Throw-IfNotFailed
 
 function Sanitize() {
   Param([string]$text)
-  $workTreeRegex = 'error: failed to execute:[^\n]+' # Git command line has an unpredictable PID inside
   $text = $text.Replace('\', '/').Trim()
-  $text = [System.Text.RegularExpressions.Regex]::Replace($text, $workTreeRegex, '')
+  $gitCommandRegex = 'error: [^\n]+git[^\n]+failed with exit code 128$' # Git command line has a lot of absolute paths and other machine-dependent state inside
+  $text = [System.Text.RegularExpressions.Regex]::Replace($text, $gitCommandRegex, '<<<GIT COMMAND LINE EXITED WITH CODE 128>>>', [System.Text.RegularExpressions.RegexOptions]::Multiline)
   return $text
 }
 

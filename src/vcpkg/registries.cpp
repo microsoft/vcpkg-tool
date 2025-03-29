@@ -2,6 +2,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/delayed-init.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
@@ -731,7 +732,7 @@ namespace
     {
         return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
             // We delay baseline validation until here to give better error messages and suggestions
-            if (!is_git_commit_sha(m_baseline_identifier))
+            if (!is_git_sha(m_baseline_identifier))
             {
                 auto& maybe_lock_entry = get_lock_entry();
                 auto lock_entry = maybe_lock_entry.get();
@@ -1482,16 +1483,6 @@ namespace vcpkg
     ExpectedL<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
     {
         return load_baseline_versions(paths.get_filesystem(), paths.builtin_registry_versions / FileBaselineDotJson);
-    }
-
-    bool is_git_commit_sha(StringView sv)
-    {
-        static constexpr struct
-        {
-            bool operator()(char ch) const { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
-        } is_lcase_ascii_hex;
-
-        return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);
     }
 
     std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths)

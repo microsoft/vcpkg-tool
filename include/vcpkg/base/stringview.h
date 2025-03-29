@@ -94,6 +94,9 @@ namespace vcpkg
 
             return ZStringView{};
         }
+
+        // Allowing 2 parameter substr would break null termination; try converting to the base class StringView instead
+        void substr(size_t pos, size_t count) const = delete;
     };
 
     struct StringLiteral : ZStringView

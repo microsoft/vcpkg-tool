@@ -359,6 +359,36 @@ namespace vcpkg
             return this->value();
         }
 
+        T&& value_or_quiet_exit(const LineInfo& line_info) && noexcept
+        {
+            if (!this->has_value())
+            {
+                Checks::exit_fail(line_info);
+            }
+
+            return std::move(this->value());
+        }
+
+        T& value_or_quiet_exit(const LineInfo& line_info) & noexcept
+        {
+            if (!this->has_value())
+            {
+                Checks::exit_fail(line_info);
+            }
+
+            return this->value();
+        }
+
+        const T& value_or_quiet_exit(const LineInfo& line_info) const& noexcept
+        {
+            if (!this->has_value())
+            {
+                Checks::exit_fail(line_info);
+            }
+
+            return this->value();
+        }
+
         constexpr explicit operator bool() const noexcept { return this->has_value(); }
 
         template<class U>
