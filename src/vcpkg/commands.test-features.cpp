@@ -98,11 +98,6 @@ namespace
             }
         }
 
-        msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = for_merge_with)
-                       .append_raw(' ')
-                       .append_raw(Strings::join(" ", test_port_names))
-                       .append_raw('\n'));
-
         return test_port_names;
     }
 
@@ -210,8 +205,12 @@ namespace vcpkg
         }
         else if (options.command_arguments.empty())
         {
-            feature_test_ports =
-                load_all_scf_by_name(get_for_merge_with_test_port_names(paths, it_merge_with->second), provider);
+            auto test_port_names = get_for_merge_with_test_port_names(paths, it_merge_with->second);
+            msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = it_merge_with->second)
+                           .append_raw(' ')
+                           .append_raw(Strings::join(" ", test_port_names))
+                           .append_raw('\n'));
+            feature_test_ports = load_all_scf_by_name(test_port_names, provider);
         }
         else
         {
