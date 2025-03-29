@@ -265,7 +265,7 @@ namespace vcpkg
             return succeeded && fs.rename_or_delete(context, git_tree_temp, destination).has_value();
         }
 
-        if (is_shallow_clone(context, git_exe, locator).value_or(false))
+        if (is_shallow_clone(null_diagnostic_context, git_exe, locator).value_or(false))
         {
             context.report(DiagnosticLine{DiagKind::Note, locator.path, msg::format(msgShallowRepositoryDetected)});
         }

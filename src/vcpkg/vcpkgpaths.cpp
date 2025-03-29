@@ -936,14 +936,13 @@ namespace vcpkg
 
     LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
     {
-        BufferedDiagnosticContext bdc{out_sink};
-        if (is_shallow_clone(bdc,
+        if (is_shallow_clone(null_diagnostic_context,
                              get_tool_exe(Tools::GIT, out_sink),
                              GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, this->root})
                 .value_or(false))
         {
-            bdc.report(DiagnosticLine{DiagKind::Note, this->root, msg::format(msgShallowRepositoryDetected)});
-            return LocalizedString::from_raw(std::move(bdc).to_string());
+            return LocalizedString::from_raw(
+                DiagnosticLine{DiagKind::Note, this->root, msg::format(msgShallowRepositoryDetected)}.to_string());
         }
 
         auto maybe_cur_sha = get_current_git_sha();
