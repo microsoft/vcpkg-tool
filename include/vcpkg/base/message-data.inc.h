@@ -774,6 +774,7 @@ DECLARE_MESSAGE(CmdOwnsExample1,
                 (),
                 "This is a command line, only the part <pattern> should be localized.",
                 "vcpkg owns <pattern>")
+DECLARE_MESSAGE(CmdOptForMergeWith, (), "", "test ports intended to merge with this git ref")
 DECLARE_MESSAGE(CmdPackageInfoExample1,
                 (),
                 "This is a command line, only the part <package name> should be localized.",
@@ -1278,6 +1279,7 @@ DECLARE_MESSAGE(FailedToDeleteDueToFile,
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
                 "printed after this",
                 "failed to remove_all({value}) due to {path}: ")
+DECLARE_MESSAGE(FailedToDeleteDueToFile2, (msg::path), "", "failed to remove due to {path}")
 DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 (msg::value, msg::path),
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
@@ -1408,6 +1410,10 @@ DECLARE_MESSAGE(
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
 DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
+DECLARE_MESSAGE(ForMergeWithTestingTheFollowing,
+                (msg::value),
+                "{value} is what the user entered as the target git ref",
+                "--for-merge-with {value} is testing:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
@@ -1434,13 +1440,6 @@ DECLARE_MESSAGE(
     "",
     "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal "
     "characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".")
-DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name")
-DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line")
-DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines")
-DECLARE_MESSAGE(GitStatusUnknownFileStatus,
-                (msg::value),
-                "{value} is a single character indicating file status, for example: A, U, M, D",
-                "unknown file status: {value}")
 DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
                 (msg::command_line),
                 "",
@@ -1775,6 +1774,8 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
+DECLARE_MESSAGE(InstallingFromFilesystemRegistry, (), "", "installing from filesystem registry here")
+DECLARE_MESSAGE(InstallingFromGitRegistry, (), "", "installing from git registry")
 DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
@@ -2171,6 +2172,7 @@ DECLARE_MESSAGE(MultipleFeatures,
                 (msg::package_name, msg::feature),
                 "",
                 "{package_name} declares {feature} multiple times; please ensure that features have distinct names")
+DECLARE_MESSAGE(MutuallyExclusivePorts, (msg::option), "", "--{option} cannot be used explicitly named ports.")
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
@@ -2705,10 +2707,9 @@ DECLARE_MESSAGE(SettingEnvVar,
                 "'--' at the beginning must be preserved",
                 "-- Setting \"{env_var}\" environment variables to \"{url}\".")
 DECLARE_MESSAGE(ShallowRepositoryDetected,
-                (msg::path),
+                (),
                 "",
-                "vcpkg was cloned as a shallow repository in: {path}\n"
-                "Try again with a full vcpkg clone.")
+                "vcpkg was cloned as a shallow repository. Try again with a full vcpkg clone.")
 DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                 (),
                 "",

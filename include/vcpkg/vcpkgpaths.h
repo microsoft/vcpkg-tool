@@ -113,7 +113,6 @@ namespace vcpkg
         const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
         const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
 
-        GitConfig git_builtin_config() const;
         Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
 
         // Git manipulation in the vcpkg directory

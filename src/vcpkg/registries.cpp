@@ -2,6 +2,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/delayed-init.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
@@ -286,9 +287,7 @@ namespace
         {
             auto path = m_builtin_ports_directory / port_name;
             return m_scfls.get_lazy(path, [&, this]() {
-                std::string spdx_location = "git+https://github.com/Microsoft/vcpkg#ports/";
-                spdx_location.append(port_name.data(), port_name.size());
-                return Paragraphs::try_load_port_required(m_fs, port_name, PortLocation{path, std::move(spdx_location)})
+                return Paragraphs::try_load_builtin_port_required(m_fs, port_name, m_builtin_ports_directory)
                     .maybe_scfl;
             });
         }
@@ -733,7 +732,7 @@ namespace
     {
         return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
             // We delay baseline validation until here to give better error messages and suggestions
-            if (!is_git_commit_sha(m_baseline_identifier))
+            if (!is_git_sha(m_baseline_identifier))
             {
                 auto& maybe_lock_entry = get_lock_entry();
                 auto lock_entry = maybe_lock_entry.get();
@@ -879,12 +878,12 @@ namespace
                 });
             })
             .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
-                return Paragraphs::try_load_port_required(m_paths.get_filesystem(),
-                                                          port_name,
-                                                          PortLocation{
-                                                              std::move(p),
-                                                              "git+https://github.com/Microsoft/vcpkg@" + it->git_tree,
-                                                          })
+                return Paragraphs::try_load_port_required(
+                           m_paths.get_filesystem(),
+                           port_name,
+                           PortLocation{std::move(p),
+                                        Paragraphs::builtin_git_tree_spdx_location(it->git_tree),
+                                        PortSourceKind::Builtin})
                     .maybe_scfl;
             });
     }
@@ -903,7 +902,9 @@ namespace
                 msgVersionDatabaseEntryMissing, msg::package_name = port_name, msg::version = version);
         }
 
-        return Paragraphs::try_load_port_required(fs, port_name, PortLocation{it->p}).maybe_scfl;
+        return Paragraphs::try_load_port_required(
+                   fs, port_name, PortLocation{it->p, no_assertion, PortSourceKind::Filesystem})
+            .maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
 
@@ -966,12 +967,10 @@ namespace
 
         return parent.m_paths.git_extract_tree_from_remote_registry(it->git_tree)
             .then([this, &it](Path&& p) -> ExpectedL<SourceControlFileAndLocation> {
-                return Paragraphs::try_load_port_required(parent.m_paths.get_filesystem(),
-                                                          port_name,
-                                                          PortLocation{
-                                                              p,
-                                                              Strings::concat("git+", parent.m_repo, "@", it->git_tree),
-                                                          })
+                return Paragraphs::try_load_port_required(
+                           parent.m_paths.get_filesystem(),
+                           port_name,
+                           PortLocation{p, fmt::format("git+{}@{}", parent.m_repo, it->git_tree), PortSourceKind::Git})
                     .maybe_scfl;
             });
     }
@@ -1484,16 +1483,6 @@ namespace vcpkg
     ExpectedL<Baseline> get_builtin_baseline(const VcpkgPaths& paths)
     {
         return load_baseline_versions(paths.get_filesystem(), paths.builtin_registry_versions / FileBaselineDotJson);
-    }
-
-    bool is_git_commit_sha(StringView sv)
-    {
-        static constexpr struct
-        {
-            bool operator()(char ch) const { return ('0' <= ch && ch <= '9') || ('a' <= ch && ch <= 'f'); }
-        } is_lcase_ascii_hex;
-
-        return sv.size() == 40 && std::all_of(sv.begin(), sv.end(), is_lcase_ascii_hex);
     }
 
     std::unique_ptr<RegistryImplementation> make_builtin_registry(const VcpkgPaths& paths)

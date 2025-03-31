@@ -15,5 +15,6 @@ namespace vcpkg
         Unknown,   // We have not tested yet
         Port,      // The overlay directory is itself a port
         Directory, // The overlay directory itself contains port directories
+        Builtin,   // Same as directory but we remember that it came from builtin_ports_directory
     };
 }

@@ -86,7 +86,7 @@ try
     $out = Run-VcpkgAndCaptureOutput @commonArgs install
     Throw-IfFailed
     if ($out -match 'error: the baseline does not contain an entry for port removed' -Or
-        $out -notmatch 'The following packages will be built and installed:\s+removed:[^ ]+@1.0.0 -- [^ ]+git-trees[\\/]9b82c31964570870d27a5bb634f5b84e13f8b90a'
+        $out -notmatch 'The following packages will be built and installed:\s+removed:[^ ]+@1.0.0 -- git\+[^\n]+@9b82c31964570870d27a5bb634f5b84e13f8b90a'
         )
     {
         throw 'Baseline removed port could not be selected with overrides'

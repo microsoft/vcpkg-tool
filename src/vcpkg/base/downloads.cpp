@@ -34,15 +34,6 @@ namespace
             cmd.string_arg("-H").string_arg(header);
         }
     }
-
-    void replace_secrets(std::string& target, View<std::string> secrets)
-    {
-        const auto replacement = msg::format(msgSecretBanner);
-        for (const auto& secret : secrets)
-        {
-            Strings::inplace_replace_all(target, secret, replacement);
-        }
-    }
 }
 
 namespace vcpkg
@@ -688,7 +679,7 @@ namespace vcpkg
             prefix_cmd.raw_arg(prefixArgs);
         }
 
-        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-w").string_arg(
+        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-sS").string_arg("-w").string_arg(
             GUID_MARKER "%{http_code} %{exitcode} %{errormsg}\\n");
 #undef GUID_MARKER
 
@@ -906,6 +897,7 @@ namespace vcpkg
                                               StringLiteral method,
                                               View<std::string> headers,
                                               StringView raw_url,
+                                              View<std::string> secrets,
                                               StringView data)
     {
         auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
@@ -921,7 +913,7 @@ namespace vcpkg
         cmd.string_arg(url_encode_spaces(raw_url));
 
         auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-        if (auto output = check_zero_exit_code(context, maybe_output, "curl"))
+        if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
         {
             return *output;
         }
@@ -1440,7 +1432,8 @@ namespace vcpkg
         }
 
         context.statusln(msg::format(msgAssetCacheConsultScript, msg::path = display_path));
-        const auto download_path_part_path = fmt::format("{}.{}.part", download_path, get_process_id());
+        const auto download_path_part_path =
+            fmt::format("{}.{}.part", fs.absolute(download_path, VCPKG_LINE_INFO), get_process_id());
         Lazy<std::string> escaped_url;
         const auto escaped_dpath = Command(download_path_part_path).extract();
         auto maybe_raw_command = api_stable_format(context, *script, [&](std::string& out, StringView key) {

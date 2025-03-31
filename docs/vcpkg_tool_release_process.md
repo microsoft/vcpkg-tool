@@ -19,32 +19,40 @@ such as https://github.com/microsoft/vcpkg/pull/23757
   localization tools which will start with `* LEGO: Pull request from juno/`.
 1. Publish that draft release as "pre-release".
 1. Clean up a machine for the following tests:
-    * Delete `VCPKG_DOWNLOADS/artifacts` (which forces artifacts to be reacquired)
-    * Delete `LOCALAPPDATA/vcpkg` (which forces registries to be reacquired)
-1. Smoke test the 'one liner' installer: (Where 2024-12-09 is replaced with the right release name)
-    * Powershell:
-        `iex (iwr https://github.com/microsoft/vcpkg-tool/releases/download/2024-12-09/vcpkg-init.ps1)`
-    * Batch:
-        `curl -L -o vcpkg-init.cmd https://github.com/microsoft/vcpkg-tool/releases/download/2024-12-09/vcpkg-init.ps1 && .\vcpkg-init.cmd`
-    * Bash:
-        `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2024-12-09/vcpkg-init -L)`
+    * Delete `VCPKG_DOWNLOADS/artifacts` (Windows) `HOME/.cache/vcpkg/downloads` (non-Windows)
+      (which forces artifacts to be reacquired). (This is the path calculated in `VcpkgPaths` with
+      `get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "downloads";`)
+    * Delete `LOCALAPPDATA/vcpkg` (Windows) `HOME/.cache/vcpkg` (non-Windows) (which forces
+      registries to be reacquired)
+1. Smoke test the 'one liner' installer. Run these in an environment with VCPKG_ROOT unset;
+  otherwise changes in your working repo there may be overwritten. Where 2025-03-22 is replaced
+  with the right release name:
+    * Powershell (Windows):
+        `iex (iwr https://github.com/microsoft/vcpkg-tool/releases/download/2025-03-22/vcpkg-init.ps1)`
+    * Batch (Windows):
+        `curl -L -o vcpkg-init.cmd https://github.com/microsoft/vcpkg-tool/releases/download/2025-03-22/vcpkg-init.ps1 && .\vcpkg-init.cmd`
+    * Bash (non-Windows):
+        `. <(curl https://github.com/microsoft/vcpkg-tool/releases/download/2025-03-22/vcpkg-init -L)`
   (and test that `vcpkg use microsoft:cmake` works from each of these)
-1. Create a new task in the DevDiv VS instance for this release. (PRs into VS require an associated work
-   item in order to be merged.)
-1. In the vcpkg repo, run `\scripts\update-vcpkg-tool-metadata.ps1 -Date 2024-12-09`
+1. In the vcpkg repo, run `$/scripts/update-vcpkg-tool-metadata.ps1 -Date 2025-03-22`
   with the new release date, which updates SHAs as appropriate. Commit these changes and submit as a PR.
 1. If changes in this release that might affect ports, submit a new full tree rebuild by
   microsoft.vcpkg.ci (https://dev.azure.com/vcpkg/public/_build?definitionId=29 as of this writing)
   targeting `refs/pull/NUMBER/head`
 1. (Probably the next day) Check over the failures and ensure any differences with the most recent
   full rebuild using the previous tool version are understood.
+1. Create a new task in the DevDiv VS instance for this release. (PRs into VS require an associated work
+   item in order to be merged.)
+1. Download the VS-insertion .nupkg from the "vcpkg Signed Binaries (from GitHub)" run.
 1. In the DevDiv VS repo ( https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS ),
-   update `src\ConfigData\Packages\Redist\Setup.props`
-1. The first time you try to do a VS update on a machine, open a developer command prompt, go to
-   `src\vc\projbld\Vcpkg\VcpkgInsertionUtility`, and follow the instructions to make `Program.exe`
-   in a comment in `Program.cs`
-1. Download the VS-insertion .nupkg.
-1. Run `src\vc\projbld\Vcpkg\VcpkgInsertionUtility\Program.exe path-to-nupkg`
+   update `src/ConfigData/Packages/Redist/Setup.props` with the version number from the name of the
+   nupkg:
+   `<PackageVersion Include="VS.Redist.Vcpkg.amd64" Version="1.0.0-2025-02-11-bec4296bf5289dc9ce83b4f5095943e44162f9c2" />`
+1. The first time you try to do a VS update on a machine, clone the VS repo, and open a text editor
+   go to `$/src/vc/projbld/Vcpkg/VcpkgInsertionUtility/Program.cs`, and look for the command line
+   in a comment to build it. Open a developer command prompt, go to
+   `$/src/vc/projbld/Vcpkg/VcpkgInsertionUtility` and run that command.
+1. Run `src/vc/projbld/Vcpkg/VcpkgInsertionUtility/Program.exe path-to-VS-insertion-nupkg`
 1. Submit this as a change to the VS repo. Example: https://devdiv.visualstudio.com/DefaultCollection/DevDiv/_git/VS/pullrequest/498110
    Don't forget to attach the work item number from the previous step.
 1. Smoke test the copy of vcpkg inserted into VS. See smoke test steps below. The prototype copy is
