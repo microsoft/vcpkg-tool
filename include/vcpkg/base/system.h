@@ -63,6 +63,10 @@ namespace vcpkg
 
     unsigned int get_concurrency();
 
+#if defined(_WIN32)
+    DWORD get_subprocess_priority();
+#endif
+
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture();
 }
 
