@@ -39,6 +39,7 @@ extends:
                   isCreatePrSelected: true
                   repoType: 'gitHub'
                   prSourceBranchPrefix: 'locfiles'
+                  isAutoCompletePrSelected: false
                   isUseLfLineEndingsSelected: true
                   dependencyPackageSource: 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/vcpkg.localization/nuget/v3/index.json'
                   packageSourceAuth: 'patAuth'
