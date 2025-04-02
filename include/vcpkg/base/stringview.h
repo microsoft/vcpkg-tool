@@ -33,6 +33,15 @@ namespace vcpkg
         constexpr size_t size() const noexcept { return m_size; }
         constexpr bool empty() const noexcept { return m_size == 0; }
 
+        constexpr void remove_bom() noexcept
+        {
+            if (m_size >= 3 && m_ptr[0] == '\xEF' && m_ptr[1] == '\xBB' && m_ptr[2] == '\xBF')
+            {
+                m_ptr += 3;
+                m_size -= 3;
+            }
+        }
+
         // intentionally not provided because this may not be null terminated
         // constexpr const char* c_str() const
 

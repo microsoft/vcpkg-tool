@@ -1064,6 +1064,8 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
+                json.remove_bom();
+
                 auto parser = Parser(json, origin, {1, 1});
 
                 auto val = parser.parse_value();
