@@ -213,6 +213,7 @@ namespace vcpkg
 
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
+        Optional<Path> absolute(DiagnosticContext& context, const Path& target) const;
 
         virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
         std::vector<Path> find_from_PATH(StringView stem) const;
