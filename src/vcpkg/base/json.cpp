@@ -1152,8 +1152,7 @@ namespace vcpkg::Json
             {
                 return false; // we're a reserved identifier
             }
-            if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv[3] >= '0' && sv[3] <= '9')
+            if (sv.size() == 4 && (sv.starts_with("lpt") || sv.starts_with("com")) && sv[3] >= '0' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }

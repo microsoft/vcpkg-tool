@@ -1515,16 +1515,9 @@ namespace vcpkg
         }
 
         {
-            const char* to_append = buffer;
-            size_t to_append_size = this_read;
-            if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
-            {
-                // remove byte-order mark from the beginning of the string
-                to_append_size -= 3;
-                to_append += 3;
-            }
-
-            output.append(to_append, to_append_size);
+            StringView to_append_view{buffer, this_read};
+            to_append_view.remove_bom();
+            output.append(to_append_view.data(), to_append_view.size());
         }
 
         read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
@@ -2457,22 +2450,15 @@ namespace vcpkg
             }
 
             {
-                const char* to_append = buffer;
-                size_t to_append_size = this_read;
-                if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
-                {
-                    // remove byte-order mark from the beginning of the string
-                    to_append_size -= 3;
-                    to_append += 3;
-                }
-
-                if (to_append_size < 2 || ::memcmp(to_append, "#!", 2) != 0)
+                StringView to_append_view{buffer, this_read};
+                to_append_view.remove_bom();
+                if (!to_append_view.starts_with("#!"))
                 {
                     // doesn't start with shebang
                     return output;
                 }
 
-                output.append(to_append, to_append_size);
+                output.append(to_append_view.data(), to_append_view.size());
             }
 
             file.read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
@@ -2508,10 +2494,10 @@ namespace vcpkg
             } while (!file.eof());
 
             auto res = output.extract();
-            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            if (Strings::starts_with(res[0], UTF8_BOM))
             {
                 // remove byte-order mark from the beginning of the string
-                res[0].erase(0, 3);
+                res[0].erase(0, UTF8_BOM.size());
             }
 
             return res;
@@ -4029,8 +4015,7 @@ namespace vcpkg
             return Path{};
         }
 
-        if (Strings::starts_with(native, "\\\\?\\") || Strings::starts_with(native, "\\??\\") ||
-            Strings::starts_with(native, "\\\\.\\"))
+        if (native.starts_with("\\\\?\\") || native.starts_with("\\??\\") || native.starts_with("\\\\.\\"))
         {
             // no support to attempt to fix paths in the NT, \\GLOBAL??, or device namespaces at this time
             return source;

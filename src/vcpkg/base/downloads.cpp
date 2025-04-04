@@ -809,7 +809,7 @@ namespace vcpkg
         settings.stdin_content = Json::stringify(snapshot);
         int code = 0;
         auto result = cmd_execute_and_stream_lines(context, cmd, settings, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            if (line.starts_with(guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
@@ -832,7 +832,7 @@ namespace vcpkg
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-        if (Strings::starts_with(raw_url, "ftp://"))
+        if (raw_url.starts_with("ftp://"))
         {
             // HTTP headers are ignored for FTP clients
             auto ftp_cmd = Command{"curl"};
@@ -861,7 +861,7 @@ namespace vcpkg
         http_cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            if (line.starts_with(guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
@@ -1265,7 +1265,7 @@ namespace vcpkg
                                 StringLiteral prefix,
                                 StringView this_line)
     {
-        if (!Strings::starts_with(this_line, prefix))
+        if (!this_line.starts_with(prefix))
         {
             return false;
         }
