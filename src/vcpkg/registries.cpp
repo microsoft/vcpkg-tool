@@ -71,13 +71,14 @@ namespace
         mutable std::vector<GitVersionDbEntry> last_loaded;
     };
 
-    struct GitRegistry final : RegistryImplementation
+    struct GitRegistry : RegistryImplementation
     {
         GitRegistry(const VcpkgPaths& paths, std::string&& repo, std::string&& reference, std::string&& baseline)
             : m_paths(paths)
             , m_repo(std::move(repo))
             , m_reference(std::move(reference))
             , m_baseline_identifier(std::move(baseline))
+            , m_remote_root_path(FileVersions.to_string())
         {
         }
 
@@ -91,7 +92,7 @@ namespace
 
         ExpectedL<Optional<Version>> get_baseline_version(StringView) const override;
 
-    private:
+    protected:
         friend GitRegistryEntry;
 
         const ExpectedL<LockFile::Entry>& get_lock_entry() const
@@ -100,7 +101,7 @@ namespace
                 [this]() { return m_paths.get_installed_lockfile().get_or_fetch(m_paths, m_repo, m_reference); });
         }
 
-        const ExpectedL<Path>& get_versions_tree_path() const
+        virtual const ExpectedL<Path>& get_versions_tree_path() const
         {
             return m_versions_tree.get([this]() -> ExpectedL<Path> {
                 auto& maybe_lock_entry = get_lock_entry();
@@ -116,8 +117,8 @@ namespace
                     return std::move(maybe_up_to_date).error();
                 }
 
-                auto maybe_tree = m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(),
-                                                                                      FileVersions.to_string());
+                auto maybe_tree =
+                    m_paths.git_find_object_id_for_remote_registry_path(lock_entry->commit_id(), m_remote_root_path);
                 auto tree = maybe_tree.get();
                 if (!tree)
                 {
@@ -207,6 +208,23 @@ namespace
         mutable Optional<Path> m_stale_versions_tree;
         DelayedInit<ExpectedL<Path>> m_versions_tree;
         DelayedInit<ExpectedL<Baseline>> m_baseline;
+        std::string m_remote_root_path;
+    };
+
+    struct FilesystemFromGitRegistry final : GitRegistry
+    {
+        FilesystemFromGitRegistry(const VcpkgPaths& paths,
+                                  std::string&& repo,
+                                  std::string&& reference,
+                                  std::string&& baseline)
+            : GitRegistry(paths, std::move(repo), std::move(reference), std::move(baseline))
+        {
+            m_remote_root_path = "";
+        }
+
+        StringLiteral kind() const override { return "filesystem-from-git"; }
+
+        ExpectedL<std::unique_ptr<RegistryEntry>> get_port_entry(StringView) const override;
     };
 
     struct BuiltinPortTreeRegistryEntry final : RegistryEntry
@@ -666,6 +684,27 @@ namespace
         return append_all_port_names(port_names).map([](Unit) { return true; });
     }
     // } FilesystemRegistry::RegistryImplementation
+
+    // { FilesystemFromGitRegistry::RegistryImplementation
+    ExpectedL<std::unique_ptr<RegistryEntry>> FilesystemFromGitRegistry::get_port_entry(StringView port_name) const
+    {
+        return get_versions_tree_path().then([this, &port_name](const Path& live_vcb) {
+            return load_filesystem_versions_file(
+                       m_paths.get_filesystem(), live_vcb / Path(FileVersions), port_name, live_vcb)
+                .then([&](Optional<std::vector<FilesystemVersionDbEntry>>&& maybe_version_entries)
+                          -> ExpectedL<std::unique_ptr<RegistryEntry>> {
+                    auto version_entries = maybe_version_entries.get();
+                    if (!version_entries)
+                    {
+                        return std::unique_ptr<RegistryEntry>{};
+                    }
+
+                    return std::make_unique<FilesystemRegistryEntry>(
+                        m_paths.get_filesystem(), port_name, std::move(*version_entries));
+                });
+        });
+    }
+    // } FilesystemFromGitRegistry::RegistryImplementation
 
     // { GitRegistry::RegistryImplementation
     ExpectedL<std::unique_ptr<RegistryEntry>> GitRegistry::get_port_entry(StringView port_name) const
@@ -1514,6 +1553,14 @@ namespace vcpkg
                                                               std::string baseline)
     {
         return std::make_unique<GitRegistry>(paths, std::move(repo), std::move(reference), std::move(baseline));
+    }
+    std::unique_ptr<RegistryImplementation> make_filesystem_from_git_registry(const VcpkgPaths& paths,
+                                                                              std::string repo,
+                                                                              std::string reference,
+                                                                              std::string baseline)
+    {
+        return std::make_unique<FilesystemFromGitRegistry>(
+            paths, std::move(repo), std::move(reference), std::move(baseline));
     }
     std::unique_ptr<RegistryImplementation> make_filesystem_registry(const ReadOnlyFilesystem& fs,
                                                                      Path path,
