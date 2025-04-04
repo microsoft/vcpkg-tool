@@ -1893,6 +1893,19 @@ namespace vcpkg
         return result;
     }
 
+    Optional<Path> ReadOnlyFilesystem::absolute(DiagnosticContext& context, const Path& target) const
+    {
+        std::error_code ec;
+        Optional<Path> result{this->absolute(target, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {target}));
+            result.clear();
+        }
+
+        return result;
+    }
+
     std::vector<Path> ReadOnlyFilesystem::find_from_PATH(StringView stem) const
     {
         return this->find_from_PATH(View<StringView>{&stem, 1});
@@ -2052,11 +2065,11 @@ namespace vcpkg
                                                 const Path& new_path) const
     {
         std::error_code ec;
-        bool result = this->rename_or_delete(old_path, new_path, ec);
+        Optional<bool> result{this->rename_or_delete(old_path, new_path, ec)};
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, __func__, {old_path, new_path}));
-            return nullopt;
+            result.clear();
         }
 
         return result;
@@ -2089,11 +2102,11 @@ namespace vcpkg
     Optional<bool> Filesystem::create_directory(DiagnosticContext& context, const Path& new_directory) const
     {
         std::error_code ec;
-        bool result = this->create_directory(new_directory, ec);
+        Optional<bool> result{this->create_directory(new_directory, ec)};
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
-            return nullopt;
+            result.clear();
         }
 
         return result;
@@ -2114,11 +2127,11 @@ namespace vcpkg
     Optional<bool> Filesystem::create_directories(DiagnosticContext& context, const Path& new_directory) const
     {
         std::error_code ec;
-        bool result = this->create_directories(new_directory, ec);
+        Optional<bool> result{this->create_directories(new_directory, ec)};
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
-            return nullopt;
+            result.clear();
         }
 
         return result;
@@ -2213,11 +2226,11 @@ namespace vcpkg
                                          CopyOptions options) const
     {
         std::error_code ec;
-        const bool result = this->copy_file(source, destination, options, ec);
+        Optional<bool> result{this->copy_file(source, destination, options, ec)};
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, __func__, {source, destination}));
-            return nullopt;
+            result.clear();
         }
 
         return result;
