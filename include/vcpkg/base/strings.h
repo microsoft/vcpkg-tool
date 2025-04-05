@@ -99,18 +99,6 @@ namespace vcpkg::Strings
         return std::move(into);
     }
 
-    template<class... Args, class = void>
-    [[nodiscard]] std::string concat_or_view(Args&&... args)
-    {
-        return Strings::concat(static_cast<Args&&>(args)...);
-    }
-
-    template<class T, class = std::enable_if_t<std::is_convertible_v<T, StringView>>>
-    [[nodiscard]] StringView concat_or_view(const T& v)
-    {
-        return v;
-    }
-
 #if defined(_WIN32)
     std::wstring to_utf16(StringView s);
 
@@ -250,9 +238,6 @@ namespace vcpkg::Strings
     Optional<double> strto<double>(StringView);
 
     const char* search(StringView haystack, StringView needle);
-
-    bool contains(StringView haystack, StringView needle);
-    bool contains(StringView haystack, char needle);
 
     // base 32 encoding, following IETF RFC 4648
     [[nodiscard]] std::string b32_encode(std::uint64_t x) noexcept;

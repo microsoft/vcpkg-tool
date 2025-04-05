@@ -512,12 +512,13 @@ namespace vcpkg
                 auto ieProxy = get_windows_ie_proxy_server();
                 if (ieProxy.has_value() && !proxy_from_env)
                 {
-                    std::string server = Strings::to_utf8(ieProxy.get()->server);
+                    std::string server_storage = Strings::to_utf8(ieProxy.get()->server);
+                    StringView server = server_storage;
 
                     // Separate settings in IE Proxy Settings, which is rare?
                     // Python implementation:
                     // https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2655
-                    if (Strings::contains(server, "="))
+                    if (server.contains("="))
                     {
                         auto proxy_settings = Strings::split(server, ';');
                         for (auto& s : proxy_settings)
@@ -544,28 +545,28 @@ namespace vcpkg
                                  */
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
-                                env.emplace(protocol, address);
+                                auto& emplaced = *env.emplace(std::move(protocol), std::move(address)).first;
                                 msg::println(msgSettingEnvVar,
-                                             msg::env_var = format_environment_variable(protocol),
-                                             msg::url = address);
+                                             msg::env_var = format_environment_variable(emplaced.first),
+                                             msg::url = emplaced.second);
                             }
                         }
                     }
                     // Specified http:// prefix
-                    else if (Strings::starts_with(server, "http://"))
+                    else if (server.starts_with("http://"))
                     {
                         msg::println(msgSettingEnvVar,
                                      msg::env_var = format_environment_variable(EnvironmentVariableHttpProxy),
                                      msg::url = server);
-                        env.emplace(EnvironmentVariableHttpProxy, server);
+                        env.emplace(EnvironmentVariableHttpProxy, std::move(server_storage));
                     }
                     // Specified https:// prefix
-                    else if (Strings::starts_with(server, "https://"))
+                    else if (server.starts_with("https://"))
                     {
                         msg::println(msgSettingEnvVar,
                                      msg::env_var = format_environment_variable(EnvironmentVariableHttpsProxy),
                                      msg::url = server);
-                        env.emplace(EnvironmentVariableHttpsProxy, server);
+                        env.emplace(EnvironmentVariableHttpsProxy, std::move(server_storage));
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
                     // An HTTP(S)_PROXY means https requests go through that, it can be:
@@ -579,8 +580,8 @@ namespace vcpkg
                                      msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
                                      msg::url = server);
 
-                        env.emplace(EnvironmentVariableHttpProxy, server.c_str());
-                        env.emplace(EnvironmentVariableHttpsProxy, server.c_str());
+                        env.emplace(EnvironmentVariableHttpProxy, server_storage);
+                        env.emplace(EnvironmentVariableHttpsProxy, std::move(server_storage));
                     }
                 }
             }
@@ -812,20 +813,20 @@ namespace vcpkg
         Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
         auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
         auto rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
-            if (Strings::starts_with(s, MarkerCompilerHash))
+            if (s.starts_with(MarkerCompilerHash))
             {
                 compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
             }
-            if (Strings::starts_with(s, MarkerCompilerCxxVersion))
+            if (s.starts_with(MarkerCompilerCxxVersion))
             {
                 compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
             }
-            if (Strings::starts_with(s, MarkerCompilerCxxId))
+            if (s.starts_with(MarkerCompilerCxxId))
             {
                 compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
             }
             static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
-            if (Strings::starts_with(s, s_path_marker))
+            if (s.starts_with(s_path_marker))
             {
                 const auto compiler_cxx_path = s.substr(s_path_marker.size());
                 compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());

@@ -417,7 +417,7 @@ namespace
                 auto filename = file.filename();
                 if (!Strings::case_insensitive_ascii_ends_with(filename, ".json")) continue;
 
-                if (!Strings::ends_with(filename, ".json"))
+                if (!filename.ends_with(".json"))
                 {
                     return msg::format_error(msgJsonFileMissingExtension, msg::path = file);
                 }
@@ -1441,7 +1441,7 @@ namespace vcpkg
             {
                 auto port_name_json = versions_file.filename();
                 static constexpr StringLiteral dot_json = ".json";
-                if (!Strings::ends_with(port_name_json, dot_json))
+                if (!port_name_json.ends_with(dot_json))
                 {
                     continue;
                 }
@@ -1538,15 +1538,17 @@ namespace vcpkg
         FilesystemVersionDbEntry ret;
         ret.version = visit_required_schemed_version(type_name(), r, obj);
 
-        std::string path_res;
-        r.required_object_field(type_name(), obj, JsonIdPath, path_res, RegistryPathStringDeserializer::instance);
-        if (!Strings::starts_with(path_res, "$/"))
+        std::string path_res_storage;
+        r.required_object_field(
+            type_name(), obj, JsonIdPath, path_res_storage, RegistryPathStringDeserializer::instance);
+        StringView path_res{path_res_storage};
+        if (!path_res.starts_with("$/"))
         {
             r.add_generic_error(msg::format(msgARegistryPath), msg::format(msgARegistryPathMustStartWithDollar));
             return nullopt;
         }
 
-        if (Strings::contains(path_res, '\\') || Strings::contains(path_res, "//"))
+        if (path_res.contains('\\') || path_res.contains("//"))
         {
             r.add_generic_error(msg::format(msgARegistryPath),
                                 msg::format(msgARegistryPathMustBeDelimitedWithForwardSlashes));
@@ -1555,7 +1557,7 @@ namespace vcpkg
 
         auto first = path_res.begin();
         const auto last = path_res.end();
-        for (std::string::iterator candidate;; first = candidate)
+        for (const char* candidate;; first = candidate)
         {
             candidate = std::find(first, last, '/');
             if (candidate == last)
@@ -1595,7 +1597,7 @@ namespace vcpkg
             }
         }
 
-        ret.p = registry_root / StringView{path_res}.substr(2);
+        ret.p = registry_root / path_res.substr(2);
 
         return ret;
     }

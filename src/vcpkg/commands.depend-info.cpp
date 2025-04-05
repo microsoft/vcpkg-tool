@@ -167,11 +167,11 @@ namespace vcpkg
 {
     namespace
     {
-        const char* get_dot_element_style(const std::string& label)
+        const char* get_dot_element_style(StringView label)
         {
-            if (!Strings::contains(label, ':')) return "";
+            if (!label.contains(':')) return "";
 
-            if (Strings::ends_with(label, ":host")) return " [color=gray51 fontcolor=gray51]";
+            if (label.ends_with(":host")) return " [color=gray51 fontcolor=gray51]";
 
             return " [color=blue fontcolor=blue]";
         }

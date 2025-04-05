@@ -225,16 +225,9 @@ bool Strings::case_insensitive_ascii_ends_with(StringView s, StringView pattern)
     return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
-bool Strings::ends_with(StringView s, StringView pattern)
-{
-    if (s.size() < pattern.size()) return false;
-    return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end());
-}
-bool Strings::starts_with(StringView s, StringView pattern)
-{
-    if (s.size() < pattern.size()) return false;
-    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
-}
+bool Strings::ends_with(StringView s, StringView pattern) { return s.ends_with(pattern); }
+
+bool Strings::starts_with(StringView s, StringView pattern) { return s.starts_with(pattern); }
 
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
@@ -520,16 +513,6 @@ bool Strings::equals(StringView a, StringView b)
 const char* Strings::search(StringView haystack, StringView needle)
 {
     return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end());
-}
-
-bool Strings::contains(StringView haystack, StringView needle)
-{
-    return Strings::search(haystack, needle) != haystack.end();
-}
-
-bool Strings::contains(StringView haystack, char needle)
-{
-    return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
 }
 
 size_t Strings::byte_edit_distance(StringView a, StringView b)

@@ -507,13 +507,9 @@ namespace
                         }
                     }
 
-                    if (Strings::starts_with(directive_command_line, StringLiteral{"\xEF\xBB\xBF"}))
-                    {
-                        // chop off the BOM
-                        directive_command_line.erase(0, 3);
-                    }
-
-                    for (auto&& directive : tokenize_command_line(directive_command_line))
+                    StringView directive_command_line_view{directive_command_line};
+                    directive_command_line_view.remove_bom();
+                    for (auto&& directive : tokenize_command_line(directive_command_line_view))
                     {
                         directives.insert(std::move(directive));
                     }
