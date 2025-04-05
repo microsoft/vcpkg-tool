@@ -63,7 +63,7 @@ namespace
             git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_quiet_exit(VCPKG_LINE_INFO);
         const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
         auto index_file =
-            git_index_file(console_diagnostic_context, git_exe, locator).value_or_quiet_exit(VCPKG_LINE_INFO);
+            git_index_file(console_diagnostic_context, fs, git_exe, locator).value_or_quiet_exit(VCPKG_LINE_INFO);
         TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", index_file.native(), get_process_id())};
         if (!fs.copy_file(
                 console_diagnostic_context, index_file, temp_index_file.path, CopyOptions::overwrite_existing) ||

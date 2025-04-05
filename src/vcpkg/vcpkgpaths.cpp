@@ -1005,7 +1005,7 @@ namespace vcpkg
         if (auto prefix = maybe_prefix.get())
         {
             const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
-            const auto maybe_index_file = git_index_file(context, git_exe, locator);
+            const auto maybe_index_file = git_index_file(context, fs, git_exe, locator);
             if (const auto index_file = maybe_index_file.get())
             {
                 TempFileDeleter temp_index_file{fs,

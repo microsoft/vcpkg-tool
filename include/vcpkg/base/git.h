@@ -56,7 +56,15 @@ namespace vcpkg
 
     Optional<std::string> git_prefix(DiagnosticContext& context, const Path& git_exe, const Path& target);
 
-    Optional<Path> git_index_file(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator);
+    Optional<Path> git_index_file(DiagnosticContext& context,
+                                  const Filesystem& fs,
+                                  const Path& git_exe,
+                                  GitRepoLocator locator);
+
+    Optional<Path> git_absolute_git_dir(DiagnosticContext& context,
+                                        const Filesystem& fs,
+                                        const Path& git_exe,
+                                        GitRepoLocator locator);
 
     bool git_add_with_index(DiagnosticContext& context,
                             const Path& git_exe,

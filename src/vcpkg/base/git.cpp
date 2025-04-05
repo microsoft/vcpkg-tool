@@ -12,6 +12,14 @@
 
 #include <algorithm>
 
+// When making changes to this file, check that the git command lines intended do what is expected on
+// vcpkg's current minimum supported git version (2.7.4). You can get a version of git that old with docker:
+//
+// docker run -it --rm ubuntu:16.04
+// apt update
+// apt install git
+// git --version # check that this is 2.7.4
+
 namespace
 {
     using namespace vcpkg;
@@ -114,6 +122,8 @@ namespace vcpkg
 
     Optional<bool> is_shallow_clone(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
     {
+        // --is-shallow-repository is not present in git 2.7.4, but in that case git just prints
+        // "--is-shallow-repository", which is not "true", so we safely report "false"
         static constexpr StringView args[] = {StringLiteral{"rev-parse"}, StringLiteral{"--is-shallow-repository"}};
         return run_cmd_trim(context, make_git_command(git_exe, locator, args)).map([](std::string&& output) {
             return output == "true";
@@ -127,14 +137,48 @@ namespace vcpkg
             context, make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, target}, args));
     }
 
-    Optional<Path> git_index_file(DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator)
+    Optional<Path> git_index_file(DiagnosticContext& context,
+                                  const Filesystem& fs,
+                                  const Path& git_exe,
+                                  GitRepoLocator locator)
     {
-        static constexpr StringView args[] = {StringLiteral{"rev-parse"},
-                                              StringLiteral{"--path-format=absolute"},
-                                              StringLiteral{"--git-path"},
-                                              StringLiteral{"index"}};
-        return run_cmd_trim(context, make_git_command(git_exe, locator, args))
-            .map([](std::string&& proto_path) -> Path { return std::move(proto_path); });
+        // We can't use --path-format unconditionally as that is unavailable in git 2.7.4.
+        // However, the path format always appears to be absolute if we use --git-dir with an absolute path
+        static constexpr StringView args[] = {
+            StringLiteral{"rev-parse"}, StringLiteral{"--git-path"}, StringLiteral{"index"}};
+        return git_absolute_git_dir(context, fs, git_exe, locator).then([&](Path&& absolute_git_dir) {
+            auto git_path_index_cmd =
+                make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::DotGitDir, absolute_git_dir}, args);
+            return run_cmd_trim(context, git_path_index_cmd).then([&](std::string&& proto_path) -> Optional<Path> {
+                Optional<Path> result;
+                auto& result_path = result.emplace(std::move(proto_path));
+                if (!result_path.is_absolute() || !fs.exists(result_path, IgnoreErrors{}))
+                {
+                    context.report_error_with_log(result_path.native(),
+                                                  msgGitUnexpectedCommandOutputCmd,
+                                                  msg::command_line = git_path_index_cmd.command_line());
+                    result.clear();
+                }
+
+                return result;
+            });
+        });
+    }
+
+    Optional<Path> git_absolute_git_dir(DiagnosticContext& context,
+                                        const Filesystem& fs,
+                                        const Path& git_exe,
+                                        GitRepoLocator locator)
+    {
+        static constexpr StringView args[] = {StringLiteral{"rev-parse"}, StringLiteral{"--git-dir"}};
+        switch (locator.kind)
+        {
+            case GitRepoLocatorKind::CurrentDirectory:
+                return run_cmd_trim(context, make_git_command(git_exe, locator, args))
+                    .then([&](std::string&& proto_path) { return fs.absolute(context, locator.path / proto_path); });
+            case GitRepoLocatorKind::DotGitDir: return fs.absolute(context, locator.path);
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
     }
 
     bool git_add_with_index(DiagnosticContext& context, const Path& git_exe, const Path& target, const Path& index_file)
@@ -197,6 +241,7 @@ namespace vcpkg
         RedirectedProcessLaunchSettings launch_settings;
         launch_settings.encoding = Encoding::Utf8WithNulls;
         Optional<std::vector<GitLSTreeEntry>> result;
+
         StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}, StringLiteral{"-z"}};
         auto cmd = make_git_command(git_exe, locator, args);
         auto maybe_ls_tree_result = run_cmd_trim(context, cmd, launch_settings);
@@ -242,12 +287,12 @@ namespace vcpkg
         auto read_tree_cmd = make_git_command(git_exe, locator, read_tree_args);
         if (run_cmd_git_with_index(context, read_tree_cmd, git_tree_index).has_value())
         {
+            // No --ignore-skip-worktree-bits because that was added in recent-ish git versions
             auto prefix_arg = fmt::format("--prefix={}/", git_tree_temp);
             StringView checkout_index_args[] = {StringLiteral{"--work-tree"},
                                                 git_tree_temp,
                                                 StringLiteral{"checkout-index"},
                                                 StringLiteral{"-af"},
-                                                StringLiteral{"--ignore-skip-worktree-bits"},
                                                 prefix_arg};
             auto checkout_index_cmd = make_git_command(git_exe, locator, checkout_index_args);
             bool succeeded = run_cmd_git_with_index(context, checkout_index_cmd, git_tree_index).has_value();
