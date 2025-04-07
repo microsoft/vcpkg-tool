@@ -1446,10 +1446,6 @@ namespace
                 {
                     out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
                 }
-                else
-                {
-                    out_zips[i] = nullopt;
-                }
             }
         }
 
@@ -2424,7 +2420,7 @@ namespace vcpkg
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read || !s.upkg_templates_to_get.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
@@ -2463,15 +2459,13 @@ namespace vcpkg
                     const auto& token = *args.actions_runtime_token.get();
                     m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
                 }
-
-                if (!s.upkg_templates_to_get.empty())
+                
+                for (auto&& src : s.upkg_templates_to_get)
                 {
-                    for (auto&& src : s.upkg_templates_to_get)
-                    {
-                        m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
-                            zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
-                    }
+                    m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
+                        zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
                 }
+
                 if (!s.upkg_templates_to_put.empty())
                 {
                     m_config.write.push_back(std::make_unique<AzureUpkgPutBinaryProvider>(
