@@ -849,8 +849,8 @@ namespace vcpkg
             bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
             if (!bytes_read)
             {
-                msg::format_error(
-                    msgFileReadFailed, msg::path = file, msg::byte_offset = i, msg::count = chunk_size);
+                // msg::format_error(
+                //     msgFileReadFailed, msg::path = file, msg::byte_offset = i, msg::count = chunk_size);
                 return false;
             }
 
@@ -871,8 +871,8 @@ namespace vcpkg
             });
             if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
             {
-                msg::format_error(
-                    msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = url, msg::value = code);
+                // msg::format_error(
+                //     msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = url, msg::value = code);
                 return false;
             }
         }
