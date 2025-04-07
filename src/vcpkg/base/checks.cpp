@@ -1,7 +1,10 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+
+#include <vcpkg/metrics.h>
 
 #include <stdlib.h>
 
@@ -67,6 +70,11 @@ namespace vcpkg
     [[noreturn]] void Checks::exit_with_code(const LineInfo& line_info, const int exit_code)
     {
         Debug::println(locale_invariant_lineinfo(line_info));
+        // Collect exit code and success telemetry
+        Path file_info{line_info.file_name};
+        get_global_metrics_collector().track_bool(BoolMetric::ExitSuccess, exit_code == EXIT_SUCCESS);
+        get_global_metrics_collector().track_string(
+            StringMetric::ExitCode, fmt::format("{};{};{}", exit_code, file_info.filename(), line_info.line_number));
         final_cleanup_and_exit(exit_code);
     }
 
