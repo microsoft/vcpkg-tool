@@ -2453,17 +2453,17 @@ namespace vcpkg
                         std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
                 }
 
+                for (auto&& src : s.upkg_templates_to_get)
+                {
+                    m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
+                        zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
+                }
+
                 if (s.gha_read)
                 {
                     const auto& url = *args.actions_cache_url.get();
                     const auto& token = *args.actions_runtime_token.get();
                     m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
-                }
-                
-                for (auto&& src : s.upkg_templates_to_get)
-                {
-                    m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
-                        zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
                 }
 
                 if (!s.upkg_templates_to_put.empty())
