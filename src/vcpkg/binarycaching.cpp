@@ -2424,7 +2424,8 @@ namespace vcpkg
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read || !s.upkg_templates_to_get.empty())
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read ||
+                !s.upkg_templates_to_get.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
