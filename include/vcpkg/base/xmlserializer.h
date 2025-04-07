@@ -16,7 +16,7 @@ namespace vcpkg
         template<class T>
         XmlSerializer& attr(StringLiteral name, const T& content)
         {
-            return text_attr(name, Strings::concat_or_view(content));
+            return text_attr(name, content);
         }
         XmlSerializer& finish_complex_open_tag();
         XmlSerializer& finish_self_closing_complex_tag();

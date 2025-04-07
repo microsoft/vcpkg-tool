@@ -130,7 +130,7 @@ namespace vcpkg
                 StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
 
-                const bool is_option = Strings::starts_with(prefix, "-");
+                const bool is_option = prefix.starts_with("-");
                 if (is_option)
                 {
                     for (const auto& s : metadata->options.switches)
