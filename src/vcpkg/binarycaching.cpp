@@ -1450,6 +1450,11 @@ namespace
                 {
                     msg::println_warning(result.error());
                 }
+                // RemoveWhen mechanism is insufficient since there is now an extra temporary directory 
+                if (m_fs.exists(temp_dir, IgnoreErrors{}))
+                {
+                    m_fs.remove(temp_dir, VCPKG_LINE_INFO);
+                }
             }
         }
 
