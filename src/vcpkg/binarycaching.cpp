@@ -1446,6 +1446,10 @@ namespace
                 {
                     out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
                 }
+                else
+                {
+                    msg::println_warning(result.error());
+                }
             }
         }
 
