@@ -90,7 +90,6 @@ namespace vcpkg
     {
         DetectedContainer,
         DependencyGraphSuccess,
-        ExitSuccess,
         FeatureFlagBinaryCaching,
         FeatureFlagCompilerTracking,
         FeatureFlagDependencyGraph,

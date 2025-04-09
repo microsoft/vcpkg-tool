@@ -159,7 +159,6 @@ namespace vcpkg
     const constexpr BoolMetricEntry all_bool_metrics[static_cast<size_t>(BoolMetric::COUNT)] = {
         {BoolMetric::DetectedContainer, "detected_container"},
         {BoolMetric::DependencyGraphSuccess, "dependency-graph-success"},
-        {BoolMetric::ExitSuccess, "exit_success"},
         {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
         {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
         {BoolMetric::FeatureFlagDependencyGraph, "feature-flag-dependency-graph"},
