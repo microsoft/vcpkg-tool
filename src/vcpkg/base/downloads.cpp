@@ -17,7 +17,9 @@
 
 #include <vcpkg/commands.version.h>
 
+#include <iomanip>
 #include <set>
+#include <sstream>
 
 using namespace vcpkg;
 
@@ -821,6 +823,99 @@ namespace vcpkg
             return true;
         }
         return false;
+    }
+
+    bool put_blocklist(DiagnosticContext& context,
+                       const Filesystem& fs,
+                       StringView url,
+                       const SanitizedUrl& sanitized_url,
+                       View<std::string> headers,
+                       const Path& file,
+                       std::size_t file_size,
+                       std::size_t chunk_size)
+    {
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
+        Command base_cmd, base_cmd_without_headers;
+        base_cmd_without_headers.string_arg("curl").string_arg("-X").string_arg("PUT").string_arg("-w").string_arg(
+            "\\n" + guid_marker.to_string() + "%{http_code}\n");
+        base_cmd = base_cmd_without_headers;
+        add_curl_headers(base_cmd, headers);
+
+        auto file_ptr = fs.open_for_read(file, VCPKG_LINE_INFO);
+        std::vector<char> buffer(chunk_size);
+        std::size_t bytes_read = 0;
+        std::vector<std::string> block_ids;
+        for (std::size_t i = 0, idx = 0; i < file_size; i += bytes_read, idx++)
+        {
+            bytes_read = file_ptr.read(buffer.data(), sizeof(decltype(buffer)::value_type), chunk_size);
+            if (!bytes_read)
+            {
+                context.report_error(
+                    msgFileReadFailed, msg::path = file, msg::byte_offset = i, msg::count = chunk_size);
+                return false;
+            }
+
+            auto cmd = base_cmd;
+            std::stringstream stream;
+            stream << std::setw(4) << std::setfill('0') << idx;
+            std::string block_id = stream.str();
+            block_ids.push_back(block_id);
+            std::string block_url = fmt::format("{}&comp=block&blockid={}", url, block_id);
+            cmd.string_arg(block_url).string_arg("--data-binary").string_arg("@-");
+
+            int code = 0;
+            RedirectedProcessLaunchSettings launch_settings;
+            launch_settings.stdin_content = {buffer.data(), bytes_read};
+            auto res = cmd_execute_and_stream_lines(cmd, launch_settings, [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+            });
+            if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                context.report_error(msgCurlFailedToPutHttp,
+                                     msg::exit_code = res.value_or(-1),
+                                     msg::url = sanitized_url,
+                                     msg::value = code);
+                return false;
+            }
+        }
+
+        std::string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n";
+        for (const auto& id : block_ids)
+        {
+            xml += fmt::format("  <Latest>{}</Latest>\n", id);
+        }
+        xml += "</BlockList>\n";
+        std::string block_url = fmt::format("{}&comp=blocklist", url);
+
+        Command blocklist_cmd = base_cmd_without_headers;
+        blocklist_cmd.string_arg("-H")
+            .string_arg("x-ms-version: 2020-04-08")
+            .string_arg("-H")
+            .string_arg("Content-Type: text/plain; charset=UTF-8")
+            .string_arg(block_url)
+            .string_arg("--data-binary")
+            .string_arg(xml);
+
+        int code = 0;
+        RedirectedProcessLaunchSettings blocklist_launch_settings;
+        auto res = cmd_execute_and_stream_lines(blocklist_cmd, blocklist_launch_settings, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
+        if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+        {
+            context.report_error(
+                msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = sanitized_url, msg::value = code);
+            return false;
+        }
+
+        return true;
     }
 
     bool store_to_asset_cache(DiagnosticContext& context,
