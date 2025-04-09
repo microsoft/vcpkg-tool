@@ -138,7 +138,10 @@ namespace vcpkg
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
         {StringMetric::DevDeviceId, "devdeviceid", "00000000-0000-0000-0000-000000000000"},
-        {StringMetric::ExitCode, "exit_code", "1;vcpkg.cpp;200"},
+        {StringMetric::ExitCode, "exit_code", "0"},
+        {StringMetric::ExitLocation,
+         "exit_location",
+         "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff:1"},
         // spec:triplet:version,...
         {StringMetric::InstallPlan_1, "installplan_1", plan_example},
         {StringMetric::ListFile, "listfile", "update to new format"},

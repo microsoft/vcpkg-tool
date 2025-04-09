@@ -75,7 +75,7 @@ namespace
                 // Ctrl-C was hit while blocked on the child process
                 // This is the last external process to complete
                 // Therefore, exit
-                Checks::final_cleanup_and_exit(1);
+                Checks::log_final_cleanup_and_exit(VCPKG_LINE_INFO, 1);
             }
             else if (previous < 0)
             {
@@ -104,7 +104,7 @@ namespace
             if (old_value == 0)
             {
                 // Not currently blocked on a child process
-                Checks::final_cleanup_and_exit(1);
+                Checks::log_final_cleanup_and_exit(VCPKG_LINE_INFO, 1);
             }
             else
             {

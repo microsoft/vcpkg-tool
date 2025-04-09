@@ -64,6 +64,7 @@ namespace vcpkg
         DetectedCiEnvironment,
         DevDeviceId,
         ExitCode,
+        ExitLocation,
         InstallPlan_1,
         ListFile,
         ProcessTree,
