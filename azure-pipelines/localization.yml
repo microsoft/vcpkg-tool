@@ -28,6 +28,11 @@ extends:
           jobs:
             - job: job
               displayName: Build Localization Files Job
+              templateContext:
+                outputs:
+                - output: pipelineArtifact
+                  targetPath: $(Build.ArtifactStagingDirectory)
+                  artifactName: drop
               steps:
               - task: OneLocBuild@3
                 displayName: 'Build localization files'
