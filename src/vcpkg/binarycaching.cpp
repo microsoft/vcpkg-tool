@@ -1439,13 +1439,13 @@ namespace
                 const auto ref = make_feedref(info, "");
 
                 Path temp_dir = m_buildtrees / fmt::format("upkg_download_{}", info.package_abi);
-                Path zip_path_temp = temp_dir / fmt::format("{}.zip", ref.id);
+                Path temp_zip_path = temp_dir / fmt::format("{}.zip", ref.id);
                 Path final_zip_path = m_buildtrees / fmt::format("{}.zip", ref.id);
 
                 const auto result = m_azure_tool.download(m_source, ref.id, ref.version, temp_dir, m_sink);
-                if (result.has_value() && m_fs.exists(zip_path_temp, IgnoreErrors{}))
+                if (result.has_value() && m_fs.exists(temp_zip_path, IgnoreErrors{}))
                 {
-                    m_fs.rename(zip_path_temp, final_zip_path, VCPKG_LINE_INFO);
+                    m_fs.rename(temp_zip_path, final_zip_path, VCPKG_LINE_INFO);
                     out_zips[i].emplace(std::move(final_zip_path), RemoveWhen::always);
                 }
                 else
