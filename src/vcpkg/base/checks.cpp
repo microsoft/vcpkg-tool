@@ -1,7 +1,11 @@
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.debug.h>
+
+#include <vcpkg/metrics.h>
 
 #include <stdlib.h>
 
@@ -20,6 +24,17 @@ std::string vcpkg::LineInfo::to_string() const { return fmt::format("{}({})", fi
 
 namespace vcpkg
 {
+    [[noreturn]] void Checks::log_final_cleanup_and_exit(const LineInfo& line_info, const int exit_code)
+    {
+        get_global_metrics_collector().track_string(StringMetric::ExitCode, std::to_string(exit_code));
+        get_global_metrics_collector().track_string(
+            StringMetric::ExitLocation,
+            fmt::format(
+                "{}:{}:{}", Path{line_info.file_name}.filename(), line_info.function_name, line_info.line_number));
+
+        Checks::final_cleanup_and_exit(exit_code);
+    }
+
     [[noreturn]] void Checks::final_cleanup_and_exit(const int exit_code)
     {
         static std::atomic<bool> have_entered{false};
@@ -67,7 +82,7 @@ namespace vcpkg
     [[noreturn]] void Checks::exit_with_code(const LineInfo& line_info, const int exit_code)
     {
         Debug::println(locale_invariant_lineinfo(line_info));
-        final_cleanup_and_exit(exit_code);
+        log_final_cleanup_and_exit(line_info, exit_code);
     }
 
     [[noreturn]] void Checks::exit_fail(const LineInfo& line_info) { exit_with_code(line_info, EXIT_FAILURE); }
