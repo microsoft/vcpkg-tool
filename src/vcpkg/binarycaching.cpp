@@ -335,7 +335,7 @@ namespace
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
-        }
+        }   
 
         // For every action denoted by actions, at corresponding indicies in out_zips, stores a ZipResource indicating
         // the downloaded location.
@@ -1439,18 +1439,20 @@ namespace
                 const auto ref = make_feedref(info, "");
 
                 Path temp_dir = m_buildtrees / fmt::format("upkg_download_{}", info.package_abi);
-                Path zip_path = temp_dir / fmt::format("{}.zip", ref.id);
+                Path zip_path_temp = temp_dir / fmt::format("{}.zip", ref.id);
+                Path final_zip_path = m_buildtrees / fmt::format("{}.zip", ref.id);
 
                 const auto result = m_azure_tool.download(m_source, ref.id, ref.version, temp_dir, m_sink);
-                if (result.has_value() && m_fs.exists(zip_path, IgnoreErrors{}))
+                if (result.has_value() && m_fs.exists(zip_path_temp, IgnoreErrors{}))
                 {
-                    out_zips[i].emplace(std::move(zip_path), RemoveWhen::always);
+                    m_fs.rename(zip_path_temp, final_zip_path, VCPKG_LINE_INFO);
+                    out_zips[i].emplace(std::move(final_zip_path), RemoveWhen::always);
                 }
                 else
                 {
                     msg::println_warning(result.error());
                 }
-                // RemoveWhen mechanism is insufficient since there is now an extra temporary directory 
+                 
                 if (m_fs.exists(temp_dir, IgnoreErrors{}))
                 {
                     m_fs.remove(temp_dir, VCPKG_LINE_INFO);
