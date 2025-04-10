@@ -26,12 +26,11 @@ namespace vcpkg
 {
     [[noreturn]] void Checks::log_final_cleanup_and_exit(const LineInfo& line_info, const int exit_code)
     {
-        // Collect exit code and success telemetry.
-        // Hash the filename as it is recommended practice to avoid potential PII.
         get_global_metrics_collector().track_string(StringMetric::ExitCode, std::to_string(exit_code));
         get_global_metrics_collector().track_string(
             StringMetric::ExitLocation,
-            fmt::format("{}:{}", Hash::get_string_sha256(Path{line_info.file_name}.filename()), line_info.line_number));
+            fmt::format(
+                "{}:{}:{}", Path{line_info.file_name}.filename(), line_info.function_name, line_info.line_number));
 
         Checks::final_cleanup_and_exit(exit_code);
     }
