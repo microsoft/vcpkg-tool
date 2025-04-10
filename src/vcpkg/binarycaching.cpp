@@ -335,7 +335,7 @@ namespace
             {
                 m_fs.remove(r.path, IgnoreErrors{});
             }
-        }   
+        }
 
         // For every action denoted by actions, at corresponding indicies in out_zips, stores a ZipResource indicating
         // the downloaded location.
@@ -1452,7 +1452,7 @@ namespace
                 {
                     msg::println_warning(result.error());
                 }
-                 
+
                 if (m_fs.exists(temp_dir, IgnoreErrors{}))
                 {
                     m_fs.remove(temp_dir, VCPKG_LINE_INFO);
