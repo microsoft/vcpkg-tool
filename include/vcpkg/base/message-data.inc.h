@@ -509,6 +509,7 @@ DECLARE_MESSAGE(CISettingsOptCIBase,
 DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied")
 DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet")
+DECLARE_MESSAGE(CISettingsOptKnownFailuresFrom, (), "", "Path to the file of known package build failures")
 DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes")
 DECLARE_MESSAGE(CISettingsOptParentHashes,
                 (),

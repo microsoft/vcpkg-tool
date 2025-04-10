@@ -271,6 +271,7 @@
   "CISettingsOptExclude": "Comma separated list of ports to skip",
   "CISettingsOptFailureLogs": "Directory to which failure logs will be copied",
   "CISettingsOptHostExclude": "Comma separated list of ports to skip for the host triplet",
+  "CISettingsOptKnownFailuresFrom": "Path to the file of known package build failures",
   "CISettingsOptOutputHashes": "File to output all determined package hashes",
   "CISettingsOptParentHashes": "File to read package hashes for a parent CI state, to reduce the set of changed packages",
   "CISettingsOptXUnit": "File to output results in XUnit format",
