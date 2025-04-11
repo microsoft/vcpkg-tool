@@ -2477,12 +2477,11 @@ namespace vcpkg
                     const auto& token = *args.actions_runtime_token.get();
                     m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
                 }
-
-                if (!s.upkg_templates_to_put.empty())
-                {
-                    m_config.write.push_back(std::make_unique<AzureUpkgPutBinaryProvider>(
-                        tools, out_sink, std::move(s.upkg_templates_to_put)));
-                }
+            }
+            if (!s.upkg_templates_to_put.empty())
+            {
+                m_config.write.push_back(std::make_unique<AzureUpkgPutBinaryProvider>(
+                    tools, out_sink, std::move(s.upkg_templates_to_put)));
             }
             if (!s.archives_to_write.empty())
             {
