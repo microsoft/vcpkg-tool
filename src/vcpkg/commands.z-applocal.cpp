@@ -296,8 +296,8 @@ namespace
 
                 for (auto&& c : children)
                 {
-                    const std::string& c_filename = c.filename().to_string();
-                    if (Strings::ends_with(c_filename, ".dll"))
+                    const auto c_filename = c.filename();
+                    if (c_filename.ends_with(".dll"))
                     {
                         deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
                         resolve(c);
@@ -310,7 +310,7 @@ namespace
             }
         }
 
-        void deployQt(const Path& target_binary_dir, const Path& qt_plugins_dir, const std::string& target_binary_name)
+        void deployQt(const Path& target_binary_dir, const Path& qt_plugins_dir, StringView target_binary_name)
         {
             Path bin_dir = Path(qt_plugins_dir.parent_path()) / "bin";
 
@@ -333,8 +333,8 @@ namespace
                 std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / "platforms", ec);
                 for (auto&& c : children)
                 {
-                    const std::string& c_filename = c.filename().to_string();
-                    if (Strings::starts_with(c_filename, "qwindows") && Strings::ends_with(c_filename, ".dll"))
+                    auto c_filename = c.filename();
+                    if (c_filename.starts_with("qwindows") && c_filename.ends_with(".dll"))
                     {
                         deploy_binary(new_dir, qt_plugins_dir / "platforms", c_filename);
                     }
@@ -353,13 +353,13 @@ namespace
                 std::vector<Path> children = m_fs.get_files_non_recursive(bin_dir, ec);
                 for (auto&& c : children)
                 {
-                    const std::string& c_filename = c.filename().to_string();
-                    if (Strings::starts_with(c_filename, "libcrypto-") && Strings::ends_with(c_filename, ".dll"))
+                    const auto c_filename = c.filename();
+                    if (c_filename.starts_with("libcrypto-") && c_filename.ends_with(".dll"))
                     {
                         deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
 
-                    if (Strings::starts_with(c_filename, "libssl-") && Strings::ends_with(c_filename, ".dll"))
+                    if (c_filename.starts_with("libssl-") && c_filename.ends_with(".dll"))
                     {
                         deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
@@ -443,52 +443,42 @@ namespace
                 deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5Declarative") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5Declarative") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5Positioning") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5Positioning") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5Location") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5Location") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5Sensors") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5Sensors") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5WebEngineCore") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5WebEngineCore") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt53DRenderer") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt53DRenderer") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5TextToSpeech") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5TextToSpeech") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
             }
-            else if (Strings::starts_with(target_binary_name, "Qt5SerialBus") &&
-                     Strings::ends_with(target_binary_name, ".dll"))
+            else if (target_binary_name.starts_with("Qt5SerialBus") && target_binary_name.ends_with(".dll"))
             {
                 deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
             }
         }
 
-        bool deploy_binary(const Path& target_binary_dir,
-                           const Path& installed_dir,
-                           const std::string& target_binary_name)
+        bool deploy_binary(const Path& target_binary_dir, const Path& installed_dir, StringView target_binary_name)
         {
             auto source = installed_dir / target_binary_name;
             source.make_preferred();

@@ -434,7 +434,7 @@ namespace
         for (const auto& el : obj)
         {
             const auto key = el.first;
-            if (Strings::starts_with(key, "$"))
+            if (key.starts_with("$"))
             {
                 // Put comments back without attempting to parse.
                 ret.insert_or_replace(key, el.second);
@@ -540,7 +540,7 @@ namespace
         std::vector<std::string> comment_keys;
         for (const auto& el : obj)
         {
-            if (Strings::starts_with(el.first, "$"))
+            if (el.first.starts_with("$"))
             {
                 extra_info.insert_or_replace(el.first, el.second);
                 comment_keys.emplace_back(el.first);
@@ -612,7 +612,7 @@ namespace
                 for (const auto& el : *demands_obj)
                 {
                     auto key = el.first;
-                    if (Strings::starts_with(key, "$"))
+                    if (key.starts_with("$"))
                     {
                         serialized_demands.insert_or_replace(key, el.second);
                         continue;
@@ -652,14 +652,14 @@ namespace
         for (const auto& el : obj)
         {
             auto key = el.first;
-            if (Strings::starts_with(key, "$"))
+            if (key.starts_with("$"))
             {
                 continue;
             }
 
             if (Util::find(Configuration::known_fields(), key) == std::end(Configuration::known_fields()))
             {
-                if (Strings::contains(key, " "))
+                if (key.contains(' '))
                 {
                     key = Strings::concat("[\"", key, "\"]");
                 }
@@ -676,7 +676,7 @@ namespace
 
                 for (const auto& demand : *maybe_demands_object)
                 {
-                    if (Strings::starts_with(demand.first, "$"))
+                    if (demand.first.starts_with("$"))
                     {
                         continue;
                     }
