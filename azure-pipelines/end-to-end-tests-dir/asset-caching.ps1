@@ -206,7 +206,7 @@ if ($IsWindows) {
 Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://nonexistent\.example\.com",
-"warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 1 seconds\. 3 retries left\.",
+"warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 1 seconds?\. 3 retries left\.",
 "warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 2 seconds\. 2 retries left\.",
 "warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 4 seconds\. 1 (retries|retry) left\.",
 "Trying https://example\.com",
