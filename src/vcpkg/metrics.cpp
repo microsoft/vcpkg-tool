@@ -133,6 +133,7 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::DetectedLibCurlVersion, "detected_libcurl_version", "libcurl/8.5.0 OpenSSL/3.0.13"},
         {StringMetric::DevDeviceId, "devdeviceid", "00000000-0000-0000-0000-000000000000"},
         {StringMetric::CiProjectId, "ci_project_id", "0"},
         {StringMetric::CiOwnerId, "ci_owner_id", "0"},
@@ -151,6 +152,7 @@ namespace vcpkg
 
     const constexpr BoolMetricEntry all_bool_metrics[static_cast<size_t>(BoolMetric::COUNT)] = {
         {BoolMetric::DetectedContainer, "detected_container"},
+        {BoolMetric::DetectedLibCurlAvailable, "detected_libcurl_available"},
         {BoolMetric::DependencyGraphSuccess, "dependency-graph-success"},
         {BoolMetric::FeatureFlagBinaryCaching, "feature-flag-binarycaching"},
         {BoolMetric::FeatureFlagCompilerTracking, "feature-flag-compilertracking"},
@@ -160,7 +162,6 @@ namespace vcpkg
         {BoolMetric::FeatureFlagVersions, "feature-flag-versions"},
         {BoolMetric::InstallManifestMode, "install_manifest_mode"},
         {BoolMetric::OptionOverlayPorts, "option_overlay_ports"},
-        {BoolMetric::TestLibcurlSuccess, "test_libcurl_success"},
     };
 
     void MetricsSubmission::track_elapsed_us(double value)

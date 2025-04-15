@@ -60,6 +60,7 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
+        DetectedLibCurlVersion,
         DevDeviceId,
         CiProjectId,
         CiOwnerId,
@@ -87,6 +88,7 @@ namespace vcpkg
     enum class BoolMetric
     {
         DetectedContainer,
+        DetectedLibCurlAvailable,
         DependencyGraphSuccess,
         FeatureFlagBinaryCaching,
         FeatureFlagCompilerTracking,
@@ -96,7 +98,6 @@ namespace vcpkg
         FeatureFlagVersions,
         InstallManifestMode,
         OptionOverlayPorts,
-        TestLibcurlSuccess,
         COUNT // always keep COUNT last
     };
 

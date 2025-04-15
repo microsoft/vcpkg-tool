@@ -31,7 +31,8 @@
 #pragma comment(lib, "shell32")
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#define TEST_LIBCURL_AVAILABLE
 #include <dlfcn.h>
 #endif
 
@@ -62,12 +63,12 @@ namespace
         std::string version;
     };
 
-    Optional<LibCurlDetails> detect_libcurl()
+    LibCurlDetails detect_libcurl()
     {
         // Determine if libcurl is installed in the system by attempting to load it
         // At the moment we don't do anything with it, but we're tracking availability
         // of libcurl to replace the current download/upload implementation
-#if defined(__linux__)
+#if defined(TEST_LIBCURL_AVAILABLE)
         const auto libcurl_names = {
             "libcurl.so",
             "libcurl.so.4",
@@ -78,20 +79,20 @@ namespace
 
         for (const auto& libcurl_name : libcurl_names)
         {
-            LibCurlDetails ret{true, "unknown"};
             if (auto handle = dlopen(libcurl_name, RTLD_LAZY))
             {
+                std::string version = "unknown";
                 auto curl_versin_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
                 if (curl_versin_fn)
                 {
-                    ret.version = curl_versin_fn();
+                    version = curl_versin_fn();
                 }
                 dlclose(handle);
-                return ret;
+                return {true, version};
             }
         }
 #endif
-        return nullopt;
+        return {false, "unknown"};
     }
 
     bool detect_container(const Filesystem& fs)
@@ -163,9 +164,9 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        auto details = detect_libcurl().value_or({false, "unknown"});
-        get_global_metrics_collector().track_bool(BoolMetric::LibcurlAvailable, details->has_libcurl);
-        get_global_metrics_collector().track_string(StringMetric::LibcurlVersion, details->version);
+        auto details = detect_libcurl();
+        get_global_metrics_collector().track_bool(BoolMetric::DetectedLibCurlAvailable, details.has_libcurl);
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, details.version);
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
