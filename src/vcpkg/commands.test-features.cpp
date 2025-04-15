@@ -595,6 +595,6 @@ namespace vcpkg
 
         binary_cache.wait_for_async_complete_and_join();
 
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, unexpected_states.empty() ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 }
