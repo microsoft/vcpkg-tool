@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
+#include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/base/checks.h>
@@ -211,6 +213,7 @@ namespace vcpkg
 
         virtual Path absolute(const Path& target, std::error_code& ec) const = 0;
         Path absolute(const Path& target, LineInfo li) const;
+        Optional<Path> absolute(DiagnosticContext& context, const Path& target) const;
 
         virtual std::vector<Path> find_from_PATH(View<StringView> stems) const = 0;
         std::vector<Path> find_from_PATH(StringView stem) const;
@@ -246,10 +249,17 @@ namespace vcpkg
         void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec) const;
         void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li) const;
 
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) const = 0;
+        // Rename old_path -> new_path, but consider new_path already existing as acceptable.
+        // Traditionally used to interact with downloads, or git tree cache, where multiple
+        // instances of vcpkg may be trying to do the same action at the same time.
+        //
+        // Returns whether the rename actually happened. Note that `rename` has 'replace if exists' behavior for files
+        // but not directories, so if old_path and new_path are files, this function always returns true.
+        //
+        // If `old_path` and `new_path` resolve to the same file, the behavior is undefined.
+        bool rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const;
+        bool rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const;
+        Optional<bool> rename_or_delete(DiagnosticContext& context, const Path& old_path, const Path& new_path) const;
 
         virtual bool remove(const Path& target, std::error_code& ec) const = 0;
         bool remove(const Path& target, LineInfo li) const;
@@ -257,6 +267,7 @@ namespace vcpkg
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) const = 0;
         void remove_all(const Path& base, std::error_code& ec) const;
         void remove_all(const Path& base, LineInfo li) const;
+        bool remove_all(DiagnosticContext& context, const Path& base) const;
 
         void remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) const;
         void remove_all_inside(const Path& base, std::error_code& ec) const;
@@ -264,9 +275,11 @@ namespace vcpkg
 
         virtual bool create_directory(const Path& new_directory, std::error_code& ec) const = 0;
         bool create_directory(const Path& new_directory, LineInfo li) const;
+        Optional<bool> create_directory(DiagnosticContext& context, const Path& new_directory) const;
 
         virtual bool create_directories(const Path& new_directory, std::error_code& ec) const = 0;
         bool create_directories(const Path& new_directory, LineInfo) const;
+        Optional<bool> create_directories(DiagnosticContext& context, const Path& new_directory) const;
 
         virtual Path create_or_get_temp_directory(std::error_code& ec) const = 0;
         Path create_or_get_temp_directory(LineInfo) const;
@@ -294,6 +307,10 @@ namespace vcpkg
                                CopyOptions options,
                                std::error_code& ec) const = 0;
         bool copy_file(const Path& source, const Path& destination, CopyOptions options, LineInfo li) const;
+        Optional<bool> copy_file(DiagnosticContext& context,
+                                 const Path& source,
+                                 const Path& destination,
+                                 CopyOptions options) const;
 
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) const = 0;
         void copy_symlink(const Path& source, const Path& destination, LineInfo li) const;
@@ -363,6 +380,21 @@ namespace vcpkg
 #if !defined(_WIN32)
     void close_mark_invalid(int& fd) noexcept;
 #endif // ^^^ !_WIN32
+
+    struct TempFileDeleter
+    {
+        explicit TempFileDeleter(const Filesystem& fs, const Path& path);
+
+        TempFileDeleter(TempFileDeleter&&) = delete;
+        TempFileDeleter(const TempFileDeleter&) = delete;
+
+        ~TempFileDeleter();
+
+        const Path path;
+
+    private:
+        const Filesystem& m_fs;
+    };
 }
 
 VCPKG_FORMAT_AS(vcpkg::Path, vcpkg::StringView);

@@ -77,6 +77,22 @@ namespace vcpkg
         fmt::format_to(std::back_inserter(out), "{}[{}]:{}", port(), feature(), triplet());
     }
 
+    std::string FullPackageSpec::to_string() const
+    {
+        std::string ret;
+        this->to_string(ret);
+        return ret;
+    }
+
+    void FullPackageSpec::to_string(std::string& out) const
+    {
+        out += package_spec.name();
+        if (!features.empty())
+        {
+            Strings::append(out, '[', Strings::join(",", features), ']');
+        }
+        Strings::append(out, ':', package_spec.triplet());
+    }
     std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
     {
         return fmt::format("{}[{}]", package_name, feature_name);

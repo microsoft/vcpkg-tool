@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
@@ -1514,16 +1515,9 @@ namespace vcpkg
         }
 
         {
-            const char* to_append = buffer;
-            size_t to_append_size = this_read;
-            if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
-            {
-                // remove byte-order mark from the beginning of the string
-                to_append_size -= 3;
-                to_append += 3;
-            }
-
-            output.append(to_append, to_append_size);
+            StringView to_append_view{buffer, this_read};
+            to_append_view.remove_bom();
+            output.append(to_append_view.data(), to_append_view.size());
         }
 
         read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
@@ -1892,6 +1886,19 @@ namespace vcpkg
         return result;
     }
 
+    Optional<Path> ReadOnlyFilesystem::absolute(DiagnosticContext& context, const Path& target) const
+    {
+        std::error_code ec;
+        Optional<Path> result{this->absolute(target, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {target}));
+            result.clear();
+        }
+
+        return result;
+    }
+
     std::vector<Path> ReadOnlyFilesystem::find_from_PATH(StringView stem) const
     {
         return this->find_from_PATH(View<StringView>{&stem, 1});
@@ -2008,6 +2015,59 @@ namespace vcpkg
         }
     }
 
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, LineInfo li) const
+    {
+        std::error_code ec;
+        bool result = this->rename_or_delete(old_path, new_path, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {old_path, new_path});
+        }
+
+        return result;
+    }
+
+    bool Filesystem::rename_or_delete(const Path& old_path, const Path& new_path, std::error_code& ec) const
+    {
+        this->rename(old_path, new_path, ec);
+        using namespace std::chrono_literals;
+        for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
+        {
+            if (!ec)
+            {
+                return true;
+            }
+            else if (ec == std::make_error_condition(std::errc::directory_not_empty) ||
+                     ec == std::make_error_condition(std::errc::file_exists) || this->exists(new_path, ec))
+            {
+                // either the rename failed with a target already exists error, or the target explicitly exists,
+                // assume another process 'won' the 'CAS'.
+                this->remove_all(old_path, ec);
+                return false;
+            }
+
+            std::this_thread::sleep_for(delay);
+            this->rename(old_path, new_path, ec);
+        }
+
+        return false;
+    }
+
+    Optional<bool> Filesystem::rename_or_delete(DiagnosticContext& context,
+                                                const Path& old_path,
+                                                const Path& new_path) const
+    {
+        std::error_code ec;
+        Optional<bool> result{this->rename_or_delete(old_path, new_path, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {old_path, new_path}));
+            result.clear();
+        }
+
+        return result;
+    }
+
     bool Filesystem::remove(const Path& target, LineInfo li) const
     {
         std::error_code ec;
@@ -2032,6 +2092,19 @@ namespace vcpkg
         return result;
     }
 
+    Optional<bool> Filesystem::create_directory(DiagnosticContext& context, const Path& new_directory) const
+    {
+        std::error_code ec;
+        Optional<bool> result{this->create_directory(new_directory, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
+            result.clear();
+        }
+
+        return result;
+    }
+
     bool Filesystem::create_directories(const Path& new_directory, LineInfo li) const
     {
         std::error_code ec;
@@ -2039,6 +2112,19 @@ namespace vcpkg
         if (ec)
         {
             exit_filesystem_call_error(li, ec, __func__, {new_directory});
+        }
+
+        return result;
+    }
+
+    Optional<bool> Filesystem::create_directories(DiagnosticContext& context, const Path& new_directory) const
+    {
+        std::error_code ec;
+        Optional<bool> result{this->create_directories(new_directory, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {new_directory}));
+            result.clear();
         }
 
         return result;
@@ -2127,6 +2213,22 @@ namespace vcpkg
         return result;
     }
 
+    Optional<bool> Filesystem::copy_file(DiagnosticContext& context,
+                                         const Path& source,
+                                         const Path& destination,
+                                         CopyOptions options) const
+    {
+        std::error_code ec;
+        Optional<bool> result{this->copy_file(source, destination, options, ec)};
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, __func__, {source, destination}));
+            result.clear();
+        }
+
+        return result;
+    }
+
     void Filesystem::copy_symlink(const Path& source, const Path& destination, LineInfo li) const
     {
         std::error_code ec;
@@ -2168,6 +2270,26 @@ namespace vcpkg
     {
         Path failure_point;
         this->remove_all(base, ec, failure_point);
+    }
+
+    bool Filesystem::remove_all(DiagnosticContext& context, const Path& base) const
+    {
+        std::error_code ec;
+        Path failure_point;
+
+        this->remove_all(base, ec, failure_point);
+
+        if (ec)
+        {
+            context.report(DiagnosticLine{DiagKind::Error,
+                                          base,
+                                          msg::format(msgFailedToDeleteDueToFile2, msg::path = failure_point)
+                                              .append_raw(' ')
+                                              .append_raw(ec.message())});
+            return false;
+        }
+
+        return true;
     }
 
     void Filesystem::remove_all_inside(const Path& base, std::error_code& ec, Path& failure_point) const
@@ -2341,22 +2463,15 @@ namespace vcpkg
             }
 
             {
-                const char* to_append = buffer;
-                size_t to_append_size = this_read;
-                if (to_append_size >= 3 && ::memcmp(to_append, "\xEF\xBB\xBF", 3) == 0)
-                {
-                    // remove byte-order mark from the beginning of the string
-                    to_append_size -= 3;
-                    to_append += 3;
-                }
-
-                if (to_append_size < 2 || ::memcmp(to_append, "#!", 2) != 0)
+                StringView to_append_view{buffer, this_read};
+                to_append_view.remove_bom();
+                if (!to_append_view.starts_with("#!"))
                 {
                     // doesn't start with shebang
                     return output;
                 }
 
-                output.append(to_append, to_append_size);
+                output.append(to_append_view.data(), to_append_view.size());
             }
 
             file.read_to_end_suffix(output, ec, buffer, buffer_size, this_read);
@@ -2392,10 +2507,10 @@ namespace vcpkg
             } while (!file.eof());
 
             auto res = output.extract();
-            if (res.size() > 0 && Strings::starts_with(res[0], "\xEF\xBB\xBF"))
+            if (Strings::starts_with(res[0], UTF8_BOM))
             {
                 // remove byte-order mark from the beginning of the string
-                res[0].erase(0, 3);
+                res[0].erase(0, UTF8_BOM.size());
             }
 
             return res;
@@ -3152,7 +3267,21 @@ namespace vcpkg
         virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) const override
         {
 #if defined(_WIN32)
-            stdfs::rename(to_stdfs_path(old_path), to_stdfs_path(new_path), ec);
+            // Note that in particular this does *NOT* use MOVEFILE_COPY_ALLOWED like std::filesystem::rename
+            auto old_utf16 = to_stdfs_path(old_path);
+            auto new_utf16 = to_stdfs_path(new_path);
+            if (MoveFileExW(old_utf16.c_str(), new_utf16.c_str(), MOVEFILE_REPLACE_EXISTING))
+            {
+                ec.clear();
+            }
+            else
+            {
+                // note that in particular,
+                // std::error_code(ERROR_NOT_SAME_DEVICE, std::system_category())
+                //   == std::make_error_condition(std::errc::cross_device_link)
+                auto last_error = GetLastError();
+                ec.assign(static_cast<int>(last_error), std::system_category());
+            }
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             if (::rename(old_path.c_str(), new_path.c_str()) == 0)
             {
@@ -3163,33 +3292,6 @@ namespace vcpkg
                 ec.assign(errno, std::generic_category());
             }
 #endif // ^^^ !_WIN32
-        }
-        virtual void rename_or_copy(const Path& old_path,
-                                    const Path& new_path,
-                                    StringLiteral temp_suffix,
-                                    std::error_code& ec) const override
-        {
-            this->rename(old_path, new_path, ec);
-            (void)temp_suffix;
-#if !defined(_WIN32)
-            if (ec)
-            {
-                auto dst = new_path + temp_suffix;
-                this->copy_file(old_path, dst, CopyOptions::overwrite_existing, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->rename(dst, new_path, ec);
-                if (ec)
-                {
-                    return;
-                }
-
-                this->remove(old_path, ec);
-            }
-#endif // ^^^ !defined(_WIN32)
         }
 
         virtual bool remove(const Path& target, std::error_code& ec) const override
@@ -3926,8 +4028,7 @@ namespace vcpkg
             return Path{};
         }
 
-        if (Strings::starts_with(native, "\\\\?\\") || Strings::starts_with(native, "\\??\\") ||
-            Strings::starts_with(native, "\\\\.\\"))
+        if (native.starts_with("\\\\?\\") || native.starts_with("\\??\\") || native.starts_with("\\\\.\\"))
         {
             // no support to attempt to fix paths in the NT, \\GLOBAL??, or device namespaces at this time
             return source;
@@ -4042,4 +4143,8 @@ namespace vcpkg
         }
     }
 #endif // ^^^ !_WIN32
+
+    TempFileDeleter::TempFileDeleter(const Filesystem& fs, const Path& path) : path(path), m_fs(fs) { }
+
+    TempFileDeleter::~TempFileDeleter() { m_fs.remove(path, IgnoreErrors{}); }
 }

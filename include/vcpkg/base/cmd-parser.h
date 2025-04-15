@@ -157,8 +157,8 @@ namespace vcpkg
         void add_unexpected_argument_errors();
         void add_unexpected_argument_errors_after(size_t idx);
         bool add_unexpected_switch_errors();
-        void add_unexpected_argument_error(const std::string& unrecognized);
-        void add_unexpected_switch_error(const std::string& unrecognized);
+        void add_unexpected_argument_error(StringView unrecognized);
+        void add_unexpected_switch_error(StringView unrecognized);
         bool consume_remaining_args_impl(std::vector<std::string>& result);
 
         // The original names the user supplied for arguments after @response-file replacement.

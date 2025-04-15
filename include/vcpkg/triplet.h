@@ -78,6 +78,8 @@ namespace vcpkg
 
         Path get_triplet_file_path(Triplet triplet) const;
         bool is_valid_triplet_name(StringView name) const;
+        bool is_community_triplet_path(const Path& triplet_dir) const;
+        bool is_overlay_triplet_path(const Path& triplet_dir) const;
         bool is_valid_triplet_canonical_name(StringView name) const;
     };
 }

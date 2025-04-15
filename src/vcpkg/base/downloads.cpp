@@ -34,15 +34,6 @@ namespace
             cmd.string_arg("-H").string_arg(header);
         }
     }
-
-    void replace_secrets(std::string& target, View<std::string> secrets)
-    {
-        const auto replacement = msg::format(msgSecretBanner);
-        for (const auto& secret : secrets)
-        {
-            Strings::inplace_replace_all(target, secret, replacement);
-        }
-    }
 }
 
 namespace vcpkg
@@ -367,7 +358,20 @@ namespace vcpkg
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();
-                proxy.lpszProxyBypass = nullptr;
+
+                // Try to get bypass list from environment variable
+                auto maybe_no_proxy_env = get_environment_variable(EnvironmentVariableNoProxy);
+                std::wstring env_noproxy_settings;
+                if (auto p_no_proxy = maybe_no_proxy_env.get())
+                {
+                    env_noproxy_settings = Strings::to_utf16(*p_no_proxy);
+                    proxy.lpszProxyBypass = env_noproxy_settings.data();
+                }
+                else
+                {
+                    proxy.lpszProxyBypass = nullptr;
+                }
+
                 if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
                 {
                     return false;
@@ -675,7 +679,7 @@ namespace vcpkg
             prefix_cmd.raw_arg(prefixArgs);
         }
 
-        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-w").string_arg(
+        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-sS").string_arg("-w").string_arg(
             GUID_MARKER "%{http_code} %{exitcode} %{errormsg}\\n");
 #undef GUID_MARKER
 
@@ -805,7 +809,7 @@ namespace vcpkg
         settings.stdin_content = Json::stringify(snapshot);
         int code = 0;
         auto result = cmd_execute_and_stream_lines(context, cmd, settings, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            if (line.starts_with(guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
@@ -819,16 +823,16 @@ namespace vcpkg
         return false;
     }
 
-    static bool store_to_asset_cache_impl(DiagnosticContext& context,
-                                          StringView raw_url,
-                                          const SanitizedUrl& sanitized_url,
-                                          StringLiteral method,
-                                          View<std::string> headers,
-                                          const Path& file)
+    bool store_to_asset_cache(DiagnosticContext& context,
+                              StringView raw_url,
+                              const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
+                              View<std::string> headers,
+                              const Path& file)
     {
         static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-        if (Strings::starts_with(raw_url, "ftp://"))
+        if (raw_url.starts_with("ftp://"))
         {
             // HTTP headers are ignored for FTP clients
             auto ftp_cmd = Command{"curl"};
@@ -857,7 +861,7 @@ namespace vcpkg
         http_cmd.string_arg("-T").string_arg(file);
         int code = 0;
         auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
-            if (Strings::starts_with(line, guid_marker))
+            if (line.starts_with(guid_marker))
             {
                 code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
             }
@@ -879,22 +883,6 @@ namespace vcpkg
         return true;
     }
 
-    bool store_to_asset_cache(DiagnosticContext& context,
-                              StringView raw_url,
-                              const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
-                              View<std::string> headers,
-                              const Path& file)
-    {
-        if (store_to_asset_cache_impl(context, raw_url, sanitized_url, method, headers, file))
-        {
-            context.statusln(msg::format(msgAssetCacheSuccesfullyStored));
-            return true;
-        }
-
-        return false;
-    }
-
     std::string format_url_query(StringView base_url, View<std::string> query_params)
     {
         if (query_params.empty())
@@ -909,6 +897,7 @@ namespace vcpkg
                                               StringLiteral method,
                                               View<std::string> headers,
                                               StringView raw_url,
+                                              View<std::string> secrets,
                                               StringView data)
     {
         auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
@@ -924,7 +913,7 @@ namespace vcpkg
         cmd.string_arg(url_encode_spaces(raw_url));
 
         auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-        if (auto output = check_zero_exit_code(context, maybe_output, "curl"))
+        if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
         {
             return *output;
         }
@@ -1003,7 +992,10 @@ namespace vcpkg
 
         // Make sure the directories are present, otherwise fopen_s fails
         const auto dir = download_path_part_path.parent_path();
-        fs.create_directories(dir, VCPKG_LINE_INFO);
+        if (!dir.empty())
+        {
+            fs.create_directories(dir, VCPKG_LINE_INFO);
+        }
 
         WinHttpSession s;
         if (!s.open(context, sanitized_url))
@@ -1168,6 +1160,13 @@ namespace vcpkg
             }
         }
 #endif
+        // Create directory in advance, otherwise curl will create it in 750 mode on unix style file systems.
+        const auto dir = download_path_part_path.parent_path();
+        if (!dir.empty())
+        {
+            fs.create_directories(dir, VCPKG_LINE_INFO);
+        }
+
         auto cmd = Command{"curl"}
                        .string_arg("--fail")
                        .string_arg("--retry")
@@ -1269,7 +1268,7 @@ namespace vcpkg
                                 StringLiteral prefix,
                                 StringView this_line)
     {
-        if (!Strings::starts_with(this_line, prefix))
+        if (!this_line.starts_with(prefix))
         {
             return false;
         }
@@ -1352,7 +1351,7 @@ namespace vcpkg
                                                              const AssetCachingSettings& asset_cache_settings,
                                                              const Filesystem& fs,
                                                              const Path& download_path,
-                                                             StringView target_filename,
+                                                             StringView display_path,
                                                              const StringView* maybe_sha512,
                                                              std::string* out_sha512)
     {
@@ -1365,7 +1364,7 @@ namespace vcpkg
 
         auto raw_read_url = Strings::replace_all(*read_template, "<SHA>", *maybe_sha512);
         SanitizedUrl sanitized_read_url{raw_read_url, asset_cache_settings.m_secrets};
-        context.statusln(msg::format(msgAssetCacheConsult, msg::path = target_filename, msg::url = sanitized_read_url));
+        context.statusln(msg::format(msgAssetCacheConsult, msg::path = display_path, msg::url = sanitized_read_url));
         return try_download_file(context,
                                  machine_readable_progress,
                                  fs,
@@ -1419,7 +1418,7 @@ namespace vcpkg
                                                               View<std::string> raw_urls,
                                                               const std::vector<SanitizedUrl>& sanitized_urls,
                                                               const Path& download_path,
-                                                              StringView target_filename,
+                                                              StringView display_path,
                                                               const StringView* maybe_sha512,
                                                               std::string* out_sha512)
     {
@@ -1435,8 +1434,9 @@ namespace vcpkg
             Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        context.statusln(msg::format(msgAssetCacheConsultScript, msg::path = target_filename));
-        const auto download_path_part_path = fmt::format("{}.{}.part", download_path, get_process_id());
+        context.statusln(msg::format(msgAssetCacheConsultScript, msg::path = display_path));
+        const auto download_path_part_path =
+            fmt::format("{}.{}.part", fs.absolute(download_path, VCPKG_LINE_INFO), get_process_id());
         Lazy<std::string> escaped_url;
         const auto escaped_dpath = Command(download_path_part_path).extract();
         auto maybe_raw_command = api_stable_format(context, *script, [&](std::string& out, StringView key) {
@@ -1572,7 +1572,7 @@ namespace vcpkg
                                                        View<std::string> raw_urls,
                                                        const std::vector<SanitizedUrl>& sanitized_urls,
                                                        const Path& download_path,
-                                                       StringView target_filename,
+                                                       StringView display_path,
                                                        const StringView* maybe_sha512,
                                                        std::string* out_sha512)
     {
@@ -1581,7 +1581,7 @@ namespace vcpkg
                                                 asset_cache_settings,
                                                 fs,
                                                 download_path,
-                                                target_filename,
+                                                display_path,
                                                 maybe_sha512,
                                                 out_sha512))
         {
@@ -1593,7 +1593,7 @@ namespace vcpkg
                                                         raw_urls,
                                                         sanitized_urls,
                                                         download_path,
-                                                        target_filename,
+                                                        display_path,
                                                         maybe_sha512,
                                                         out_sha512);
             case DownloadPrognosis::NetworkErrorProxyMightHelp: return DownloadPrognosis::NetworkErrorProxyMightHelp;
@@ -1602,7 +1602,7 @@ namespace vcpkg
     }
     static void report_download_success_and_maybe_upload(DiagnosticContext& context,
                                                          const Path& download_path,
-                                                         StringView target_filename,
+                                                         StringView display_path,
                                                          const AssetCachingSettings& asset_cache_settings,
                                                          const StringView* maybe_sha512)
     {
@@ -1611,8 +1611,8 @@ namespace vcpkg
         {
             auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", *maybe_sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
-            context.statusln(msg::format(
-                msgDownloadSuccesfulUploading, msg::path = target_filename, msg::url = sanitized_upload_url));
+            context.statusln(
+                msg::format(msgDownloadSuccesfulUploading, msg::path = display_path, msg::url = sanitized_upload_url));
             WarningDiagnosticContext wdc{context};
             if (!store_to_asset_cache(wdc,
                                       raw_upload_url,
@@ -1623,13 +1623,13 @@ namespace vcpkg
             {
                 context.report(DiagnosticLine{DiagKind::Warning,
                                               msg::format(msgFailedToStoreBackToMirror,
-                                                          msg::path = target_filename,
+                                                          msg::path = display_path,
                                                           msg::url = sanitized_upload_url)});
             }
         }
         else
         {
-            context.statusln(msg::format(msgDownloadSuccesful, msg::path = target_filename));
+            context.statusln(msg::format(msgDownloadSuccesful, msg::path = display_path));
         }
     }
 
@@ -1640,6 +1640,7 @@ namespace vcpkg
                                     const std::string& url,
                                     View<std::string> headers,
                                     const Path& download_path,
+                                    StringView display_path,
                                     const Optional<std::string>& maybe_sha512)
     {
         return download_file_asset_cached(context,
@@ -1649,6 +1650,7 @@ namespace vcpkg
                                           View<std::string>(&url, 1),
                                           headers,
                                           download_path,
+                                          display_path,
                                           maybe_sha512);
     }
 
@@ -1659,6 +1661,7 @@ namespace vcpkg
                                                          View<std::string> raw_urls,
                                                          View<std::string> headers,
                                                          const Path& download_path,
+                                                         StringView display_path,
                                                          const StringView* maybe_sha512,
                                                          std::string* out_sha512)
     {
@@ -1684,7 +1687,6 @@ namespace vcpkg
         std::vector<SanitizedUrl> sanitized_urls =
             Util::fmap(raw_urls, [&](const std::string& url) { return SanitizedUrl{url, {}}; });
         const auto last_sanitized_url = sanitized_urls.end();
-        const auto target_filename = download_path.filename();
         bool can_read_asset_cache = false;
         if (asset_cache_settings.m_read_url_template.has_value() && maybe_sha512)
         {
@@ -1706,12 +1708,12 @@ namespace vcpkg
                 if (can_read_asset_cache)
                 {
                     context.statusln(
-                        msg::format(msgDownloadingAssetShaToFile, msg::sha = *maybe_sha512, msg::path = download_path));
+                        msg::format(msgDownloadingAssetShaToFile, msg::sha = *maybe_sha512, msg::path = display_path));
                 }
                 else
                 {
                     context.report_error(msg::format(
-                        msgDownloadingAssetShaWithoutAssetCache, msg::sha = *maybe_sha512, msg::path = download_path));
+                        msgDownloadingAssetShaWithoutAssetCache, msg::sha = *maybe_sha512, msg::path = display_path));
                     return false;
                 }
             }
@@ -1726,7 +1728,7 @@ namespace vcpkg
         {
             // this will emit msgAssetCacheMissBlockOrigin below, this message just ensures the filename is mentioned in
             // the output at all
-            context.statusln(msg::format(msgDownloadingFile, msg::path = target_filename));
+            context.statusln(msg::format(msgDownloadingFile, msg::path = display_path));
         }
 
         DownloadPrognosis asset_cache_prognosis = DownloadPrognosis::Success;
@@ -1740,7 +1742,7 @@ namespace vcpkg
                                                                        raw_urls,
                                                                        sanitized_urls,
                                                                        download_path,
-                                                                       target_filename,
+                                                                       display_path,
                                                                        maybe_sha512,
                                                                        out_sha512)))
         {
@@ -1797,13 +1799,12 @@ namespace vcpkg
         else if (raw_urls.size() == 1)
         {
             context.statusln(
-                msg::format(msgDownloadingUrlToFile, msg::url = *first_sanitized_url, msg::path = target_filename));
+                msg::format(msgDownloadingUrlToFile, msg::url = *first_sanitized_url, msg::path = display_path));
         }
         else
         {
-            context.statusln(msg::format(msgDownloadingFileFirstAuthoritativeSource,
-                                         msg::path = target_filename,
-                                         msg::url = *first_sanitized_url));
+            context.statusln(msg::format(
+                msgDownloadingFileFirstAuthoritativeSource, msg::path = display_path, msg::url = *first_sanitized_url));
         }
 
         if (check_combine_download_prognosis(authoritative_prognosis,
@@ -1820,7 +1821,7 @@ namespace vcpkg
             asset_cache_attempt_context.handle();
             authoritative_attempt_context.handle();
             report_download_success_and_maybe_upload(
-                context, download_path, target_filename, asset_cache_settings, maybe_sha512);
+                context, download_path, display_path, asset_cache_settings, maybe_sha512);
             return true;
         }
 
@@ -1841,7 +1842,7 @@ namespace vcpkg
                 asset_cache_attempt_context.handle();
                 authoritative_attempt_context.handle();
                 report_download_success_and_maybe_upload(
-                    context, download_path, target_filename, asset_cache_settings, maybe_sha512);
+                    context, download_path, display_path, asset_cache_settings, maybe_sha512);
                 return true;
             }
         }
@@ -1870,6 +1871,7 @@ namespace vcpkg
                                     View<std::string> raw_urls,
                                     View<std::string> headers,
                                     const Path& download_path,
+                                    StringView display_path,
                                     const Optional<std::string>& maybe_sha512_mixed_case)
     {
         if (auto sha512_mixed_case = maybe_sha512_mixed_case.get())
@@ -1887,6 +1889,7 @@ namespace vcpkg
                                                              raw_urls,
                                                              headers,
                                                              download_path,
+                                                             display_path,
                                                              nullptr,
                                                              &actual_sha512))
                 {
@@ -1905,6 +1908,7 @@ namespace vcpkg
                                                             raw_urls,
                                                             headers,
                                                             download_path,
+                                                            display_path,
                                                             &sha512sv,
                                                             nullptr);
         }
@@ -1916,6 +1920,7 @@ namespace vcpkg
                                                         raw_urls,
                                                         headers,
                                                         download_path,
+                                                        display_path,
                                                         nullptr,
                                                         nullptr);
     }

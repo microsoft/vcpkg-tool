@@ -62,6 +62,7 @@ namespace vcpkg
                                               StringLiteral method,
                                               View<std::string> headers,
                                               StringView url,
+                                              View<std::string> secrets,
                                               StringView data = {});
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
@@ -90,6 +91,7 @@ namespace vcpkg
                                     const std::string& url,
                                     View<std::string> headers,
                                     const Path& download_path,
+                                    StringView display_path,
                                     const Optional<std::string>& maybe_sha512);
 
     bool download_file_asset_cached(DiagnosticContext& context,
@@ -99,6 +101,7 @@ namespace vcpkg
                                     View<std::string> urls,
                                     View<std::string> headers,
                                     const Path& download_path,
+                                    StringView display_path,
                                     const Optional<std::string>& maybe_sha512);
 
     bool store_to_asset_cache(DiagnosticContext& context,

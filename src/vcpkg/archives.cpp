@@ -310,18 +310,6 @@ namespace vcpkg
                                msg::path = archive);
     }
 
-    void set_directory_to_archive_contents(const Filesystem& fs,
-                                           const ToolCache& tools,
-                                           MessageSink& status_sink,
-                                           const Path& archive,
-                                           const Path& to_path)
-
-    {
-        fs.remove_all(to_path, VCPKG_LINE_INFO);
-        Path to_path_partial = extract_archive_to_temp_subdirectory(fs, tools, status_sink, archive, to_path);
-        fs.rename_with_retry(to_path_partial, to_path, VCPKG_LINE_INFO);
-    }
-
     bool ZipTool::compress_directory_to_zip(DiagnosticContext& context,
                                             const Filesystem& fs,
                                             const Path& source,
@@ -332,23 +320,23 @@ namespace vcpkg
         RedirectedProcessLaunchSettings settings;
         settings.environment = get_clean_environment();
         auto& seven_zip_path = seven_zip.value_or_exit(VCPKG_LINE_INFO);
-        auto output = cmd_execute_and_capture_output(
-            context, Command{seven_zip_path}.string_arg("a").string_arg(destination).string_arg(source / "*"));
-        return check_zero_exit_code(context, output, seven_zip_path) != nullptr;
+        Command seven_zip_command{seven_zip_path};
+        seven_zip_command.string_arg("a").string_arg(destination).string_arg(source / "*");
+        auto output = cmd_execute_and_capture_output(context, seven_zip_command, settings);
+        return check_zero_exit_code(context, seven_zip_command, output) != nullptr;
 #else
         RedirectedProcessLaunchSettings settings;
         settings.working_directory = source;
-        auto output = cmd_execute_and_capture_output(context,
-                                                     Command{"zip"}
-                                                         .string_arg("--quiet")
-                                                         .string_arg("-y")
-                                                         .string_arg("-r")
-                                                         .string_arg(destination)
-                                                         .string_arg("*")
-                                                         .string_arg("--exclude")
-                                                         .string_arg(FileDotDsStore),
-                                                     settings);
-        return check_zero_exit_code(context, output, "zip") != nullptr;
+        Command zip_command{"zip"};
+        zip_command.string_arg("--quiet")
+            .string_arg("-y")
+            .string_arg("-r")
+            .string_arg(destination)
+            .string_arg("*")
+            .string_arg("--exclude")
+            .string_arg(FileDotDsStore);
+        auto output = cmd_execute_and_capture_output(context, zip_command, settings);
+        return check_zero_exit_code(context, zip_command, output) != nullptr;
 #endif
     }
 

@@ -3,8 +3,6 @@ trigger:
 pr: none
 
 variables:
-- name: GitEmbeddedBotArgs
-  value: '-C $(Build.SourcesDirectory) -c user.email=embeddedbot@microsoft.com -c user.name="Embedded Bot"'
 - name: TeamName
   value: 'Visual-Cpp-vcpkg'
 
@@ -36,41 +34,17 @@ extends:
                   targetPath: $(Build.ArtifactStagingDirectory)
                   artifactName: drop
               steps:
-              - task: OneLocBuild@2
+              - task: OneLocBuild@3
                 displayName: 'Build localization files'
                 env:
                   SYSTEM_ACCESSTOKEN: $(System.AccessToken)
                 inputs:
                   locProj: 'LocProject.json'
                   outDir: '$(Build.ArtifactStagingDirectory)'
+                  isCreatePrSelected: true
+                  repoType: 'gitHub'
+                  prSourceBranchPrefix: 'locfiles'
+                  isAutoCompletePrSelected: false
                   isUseLfLineEndingsSelected: true
                   dependencyPackageSource: 'https://pkgs.dev.azure.com/devdiv/DevDiv/_packaging/vcpkg.localization/nuget/v3/index.json'
                   packageSourceAuth: 'patAuth'
-              - task: Powershell@2
-                displayName: Format messages.*.json files
-                continueOnError: true
-                inputs:
-                  pwsh: true
-                  filePath: azure-pipelines/Format-LocalizationFiles.ps1
-              - script: |
-                  git $(GitEmbeddedBotArgs) add locales
-                  git $(GitEmbeddedBotArgs) commit -m "[localization][automated][ci skip] update locale files"
-                displayName: Commit Changed Files
-                continueOnError: true
-              - task: DownloadSecureFile@1
-                displayName: Download Deploy Key
-                name: githubDeployKey
-                inputs:
-                  secureFile: id_vcpkg_tool
-                # GitHub has a large, regularly changing set of IP address, so ignore the
-                # hostname and allow anything with the right key.
-                # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/about-githubs-ip-addresses
-                # This public key should have the well-known fingerprint documented below.
-                # SHA256:uNiVztksCsDhcc0u9e8BujQXVUpKZIDTMczCvj3tD2s
-                # https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
-              - script: mkdir %USERPROFILE%\.ssh && echo github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=>>%USERPROFILE%\.ssh\known_hosts
-                displayName: Store GitHub Public Key
-              - script: git $(GitEmbeddedBotArgs) push git@github.com:microsoft/vcpkg-tool HEAD:$(Build.SourceBranch)
-                env:
-                  GIT_SSH_COMMAND: ssh -i "$(githubDeployKey.secureFilePath)"
-                displayName: Push Localization Files

@@ -165,7 +165,8 @@ namespace vcpkg
         {
             for (const auto& dir : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
             {
-                auto maybe_manifest = Paragraphs::try_load_port_required(fs, dir.filename(), PortLocation{dir});
+                auto maybe_manifest =
+                    Paragraphs::try_load_builtin_port_required(fs, dir.filename(), paths.builtin_ports_directory());
                 if (auto manifest = maybe_manifest.maybe_scfl.get())
                 {
                     auto original = manifest->control_path;

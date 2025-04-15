@@ -167,11 +167,11 @@ namespace vcpkg
 {
     namespace
     {
-        const char* get_dot_element_style(const std::string& label)
+        const char* get_dot_element_style(StringView label)
         {
-            if (!Strings::contains(label, ':')) return "";
+            if (!label.contains(':')) return "";
 
-            if (Strings::ends_with(label, ":host")) return " [color=gray51 fontcolor=gray51]";
+            if (label.ends_with(":host")) return " [color=gray51 fontcolor=gray51]";
 
             return " [color=blue fontcolor=blue]";
         }
@@ -416,12 +416,14 @@ namespace vcpkg
         // By passing an empty status_db, we should get a plan containing all dependencies.
         // All actions in the plan should be install actions, as there's no installed packages to remove.
         StatusParagraphs status_db;
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = create_feature_install_plan(
             provider,
             var_provider,
             specs,
             status_db,
-            {nullptr, host_triplet, paths.packages(), UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
+            packages_dir_assigner,
+            {nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.remove_actions.empty())
