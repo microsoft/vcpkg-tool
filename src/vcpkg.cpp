@@ -56,16 +56,39 @@ namespace
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    Optional<bool> detect_libcurl()
+    struct LibCurlDetails
+    {
+        bool has_libcurl;
+        std::string version;
+    };
+
+    Optional<LibCurlDetails> detect_libcurl()
     {
         // Determine if libcurl is installed in the system by attempting to load it
         // At the moment we don't do anything with it, but we're tracking availability
         // of libcurl to replace the current download/upload implementation
 #if defined(__linux__)
-        if (auto handle = dlopen("libcurl.so", RTLD_LAZY | RTLD_NOLOAD))
+        const auto libcurl_names = {
+            "libcurl.so",
+            "libcurl.so.4",
+            "libcurl.so.3",
+            "libcurl.so.2",
+            "libcurl.so.1",
+        };
+
+        for (const auto& libcurl_name : libcurl_names)
         {
-            dlclose(handle);
-            return true;
+            LibCurlDetails ret{true, "unknown"};
+            if (auto handle = dlopen(libcurl_name, RTLD_LAZY))
+            {
+                auto curl_versin_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+                if (curl_versin_fn)
+                {
+                    ret.version = curl_versin_fn();
+                }
+                dlclose(handle);
+                return ret;
+            }
         }
 #endif
         return nullopt;
@@ -140,11 +163,9 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        auto maybe_test_curl = detect_libcurl();
-        if (auto test_curl = maybe_test_curl.get())
-        {
-            get_global_metrics_collector().track_bool(BoolMetric::TestLibcurlSuccess, *test_curl);
-        }
+        auto details = detect_libcurl().value_or({false, "unknown"});
+        get_global_metrics_collector().track_bool(BoolMetric::LibcurlAvailable, details->has_libcurl);
+        get_global_metrics_collector().track_string(StringMetric::LibcurlVersion, details->version);
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
