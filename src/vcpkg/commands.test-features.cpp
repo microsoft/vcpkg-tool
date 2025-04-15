@@ -477,8 +477,6 @@ namespace vcpkg
             {
                 auto& logs_dir =
                     maybe_logs_dir.emplace(ci_build_log_feature_test_base_path(*build_logs_base_path, i, spec));
-                fs.create_directory(logs_dir, VCPKG_LINE_INFO);
-                fs.write_contents(logs_dir / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                 build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir));
             }
 
@@ -553,6 +551,12 @@ namespace vcpkg
                         known_failures.insert(*abi);
                     }
                     handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
+                    if (maybe_logs_dir)
+                    {
+                        fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);
+                        fs.write_contents(
+                            *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
+                    }
                     break;
             }
 

@@ -75,7 +75,7 @@ namespace vcpkg
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
         auto target_path = base_path / spec.name();
-        (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
+        (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
         if (children.empty())
         {
             auto message =
