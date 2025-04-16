@@ -17,7 +17,10 @@
 
 #include <vcpkg/commands.version.h>
 
+#include <iomanip>
 #include <set>
+#include <sstream>
+#include <iostream>
 
 using namespace vcpkg;
 
@@ -821,6 +824,121 @@ namespace vcpkg
             return true;
         }
         return false;
+    }
+
+    bool put_blocklist(DiagnosticContext& context,
+                       const Filesystem& fs,
+                       StringView url,
+                       const SanitizedUrl& sanitized_url,
+                       View<std::string> headers,
+                       const Path& file,
+                       std::size_t file_size,
+                       std::size_t chunk_size)
+    {
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+
+        std::cout << "file_size1: " << file_size << "\n";
+        std::cout << "chunk_size1: " << chunk_size << "\n";
+
+        Command version_cmd;
+        version_cmd.string_arg("C:/Users/cloudtest/AppData/Local/Temp/curl-8.13.0/curl-8.13.0_1-win64-mingw/bin/curl.exe").string_arg("--version");
+        cmd_execute(version_cmd);
+
+        Command base_cmd, base_cmd_without_headers;
+        base_cmd_without_headers.string_arg("C:/Users/cloudtest/AppData/Local/Temp/curl-8.13.0/curl-8.13.0_1-win64-mingw/bin/curl.exe").string_arg("-X").string_arg("PUT").string_arg("-w").string_arg(
+            "\\n" + guid_marker.to_string() + "%{http_code}\n");
+        base_cmd = base_cmd_without_headers;
+        add_curl_headers(base_cmd, headers);
+
+        auto file_ptr = fs.open_for_read(file, VCPKG_LINE_INFO);
+        std::vector<char> buffer(chunk_size);
+        std::vector<std::string> block_ids;
+        std::size_t start_offset = 0, end_offset = 0, idx = 0;
+        while ( start_offset < file_size)
+        {
+            std::size_t chunk_size_bytes = std::min(chunk_size, file_size - start_offset);
+            end_offset = start_offset + chunk_size_bytes - 1;
+            std::cout << "start_offset: " << start_offset << "\n";
+            std::cout << "end_offset: " << end_offset << "\n";
+            auto cmd = base_cmd;
+            std::stringstream stream;
+            stream << std::setw(4) << std::setfill('0') << idx;
+            std::string block_id = stream.str();
+            block_ids.push_back(block_id);
+            std::string block_url = fmt::format("{}&comp=block&blockid={}", url, block_id);
+            cmd
+            .string_arg("-H")
+            .string_arg("Content-Type: application/x-www-url-formencoded")
+            .string_arg("--variable")
+            .string_arg(fmt::format("binary[{}-{}]@{}", start_offset, end_offset, file.c_str()))
+            .string_arg(block_url)
+            .string_arg("--expand-data-binary")
+            .string_arg("'{{binary:b64}}'");
+
+            std::cout << "Curl Command: " << cmd.c_str() << "\n";
+            int code = 0;
+            RedirectedProcessLaunchSettings launch_settings;
+            auto res = cmd_execute_and_stream_lines(cmd, launch_settings, [&code](StringView line) {
+                if (Strings::starts_with(line, guid_marker))
+                {
+                    code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+                }
+            });
+            if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+            {
+                std::cout << "report_error2: " << msg::format(
+                    msgCurlFailedToPutHttp,
+                                     msg::exit_code = res.value_or(-1),
+                                     msg::url = sanitized_url,
+                                     msg::value = code
+                ).to_string() << "\n";
+                context.report_error(msgCurlFailedToPutHttp,
+                                     msg::exit_code = res.value_or(-1),
+                                     msg::url = sanitized_url,
+                                     msg::value = code);
+                return false;
+            }
+            start_offset += chunk_size;
+            idx++;
+        }
+
+        std::string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n";
+        for (const auto& id : block_ids)
+        {
+            xml += fmt::format("  <Latest>{}</Latest>\n", id);
+        }
+        xml += "</BlockList>\n";
+        std::string block_url = fmt::format("{}&comp=blocklist", url);
+
+        Command blocklist_cmd = base_cmd_without_headers;
+        blocklist_cmd.string_arg("-H")
+            .string_arg("x-ms-version: 2020-04-08")
+            .string_arg("-H")
+            .string_arg("Content-Type: text/plain; charset=UTF-8")
+            .string_arg(block_url)
+            .string_arg("--data-binary")
+            .string_arg(xml);
+
+        std::cout << "Curl Command: " << blocklist_cmd.c_str() << "\n";
+        int code = 0;
+        RedirectedProcessLaunchSettings blocklist_launch_settings;
+        auto res = cmd_execute_and_stream_lines(blocklist_cmd, blocklist_launch_settings, [&code](StringView line) {
+            if (Strings::starts_with(line, guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
+        if (!res.get() || *res.get() != 0 || (code >= 100 && code < 200) || code >= 300)
+        {
+            std::cout << "report_error3: " << msg::format(
+                msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = sanitized_url, msg::value = code
+            ).to_string() << "\n";
+            context.report_error(
+                msgCurlFailedToPutHttp, msg::exit_code = res.value_or(-1), msg::url = sanitized_url, msg::value = code);
+            return false;
+        }
+
+        return true;
     }
 
     bool store_to_asset_cache(DiagnosticContext& context,
