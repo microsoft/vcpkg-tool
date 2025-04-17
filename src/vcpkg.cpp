@@ -59,7 +59,6 @@ namespace
 
     struct LibCurlDetails
     {
-        bool has_libcurl;
         std::string version;
     };
 
@@ -79,20 +78,20 @@ namespace
 
         for (const auto& libcurl_name : libcurl_names)
         {
-            if (auto handle = dlopen(libcurl_name, RTLD_LAZY))
+            if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
             {
-                std::string version = "unknown";
+                std::string detected_version = "unknown";
                 auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
-                if (curl_versin_fn)
+                if (curl_version_fn)
                 {
-                    version = curl_version_fn();
+                    detected_version = curl_version_fn();
                 }
                 dlclose(handle);
-                return {true, version};
+                return {std::move(detected_version)};
             }
         }
 #endif
-        return {false, "unknown"};
+        return {"unknown"};
     }
 
     bool detect_container(const Filesystem& fs)
@@ -164,9 +163,7 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        auto details = detect_libcurl();
-        get_global_metrics_collector().track_bool(BoolMetric::DetectedLibCurlAvailable, details.has_libcurl);
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, details.version);
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl().version);
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
