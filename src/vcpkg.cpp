@@ -82,10 +82,10 @@ namespace
             if (auto handle = dlopen(libcurl_name, RTLD_LAZY))
             {
                 std::string version = "unknown";
-                auto curl_versin_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
                 if (curl_versin_fn)
                 {
-                    version = curl_versin_fn();
+                    version = curl_version_fn();
                 }
                 dlclose(handle);
                 return {true, version};
