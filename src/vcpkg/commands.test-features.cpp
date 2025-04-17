@@ -113,7 +113,6 @@ namespace
 namespace vcpkg
 {
     static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
-
         {SwitchAll, msgCmdTestFeaturesAll},
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
@@ -379,7 +378,7 @@ namespace vcpkg
         const auto handle_result = [&](FullPackageSpec&& spec,
                                        CiFeatureBaselineState result,
                                        CiFeatureBaselineEntry baseline,
-                                       std::string cascade_reason,
+                                       std::string&& cascade_reason,
                                        ElapsedTime build_time) {
             bool expected_cascade =
                 (baseline.state == CiFeatureBaselineState::Cascade ||
@@ -550,42 +549,49 @@ namespace vcpkg
                     {
                         known_failures.insert(*abi);
                     }
-                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
+
                     if (maybe_logs_dir)
                     {
                         fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);
                         fs.write_contents(
                             *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                     }
+
+                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
                     break;
             }
 
             msg::println();
         }
 
-        for (const auto& result : unexpected_states)
-        {
-            if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
-            {
-                msg::println(Color::error,
-                             msg::format(msgUnexpectedStateCascade,
-                                         msg::feature_spec = result.spec,
-                                         msg::actual = result.actual_state)
-                                 .append_raw(" ")
-                                 .append_raw(result.cascade_reason));
-            }
-            else
-            {
-                msg::println(Color::error,
-                             msg::format(msgUnexpectedState,
-                                         msg::feature_spec = result.spec,
-                                         msg::actual = result.actual_state,
-                                         msg::elapsed = result.build_time));
-            }
-        }
+        int exit_code;
         if (unexpected_states.empty())
         {
+            exit_code = EXIT_SUCCESS;
             msg::println(msgAllFeatureTestsPassed);
+        }
+        else
+        {
+            exit_code = EXIT_FAILURE;
+            msg::println(msgFeatureTestProblems);
+            for (const auto& result : unexpected_states)
+            {
+                if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
+                {
+                    msg::println(Color::error,
+                                 msg::format(msgUnexpectedStateCascade, msg::feature_spec = result.spec)
+                                     .append_raw(" ")
+                                     .append_raw(result.cascade_reason));
+                }
+                else
+                {
+                    msg::println(Color::error,
+                                 msg::format(msgUnexpectedState,
+                                             msg::feature_spec = result.spec,
+                                             msg::actual = result.actual_state,
+                                             msg::elapsed = result.build_time));
+                }
+            }
         }
 
         auto it_output_file = settings.find(SwitchFailingAbiLog);
@@ -599,6 +605,6 @@ namespace vcpkg
 
         binary_cache.wait_for_async_complete_and_join();
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, unexpected_states.empty() ? EXIT_SUCCESS : EXIT_FAILURE);
+        Checks::exit_with_code(VCPKG_LINE_INFO, exit_code);
     }
 }
