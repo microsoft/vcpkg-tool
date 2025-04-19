@@ -514,7 +514,7 @@ if (BUILD_TESTING)
        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
-    add_test(NAME default COMMAND vcpkg-test --order rand --rng-seed time)
+    add_test(NAME default COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
 
     if (VCPKG_BUILD_BENCHMARKING)
         target_compile_options(vcpkg-test PRIVATE -DCATCH_CONFIG_ENABLE_BENCHMARKING)
