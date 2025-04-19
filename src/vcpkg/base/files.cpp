@@ -2239,6 +2239,18 @@ namespace vcpkg
         }
     }
 
+    int64_t Filesystem::last_write_time(const Path& target, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        auto result = this->last_write_time(target, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+
+        return result;
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const
     {
         std::error_code ec;
@@ -3809,6 +3821,39 @@ namespace vcpkg
             {
                 ec.assign(errno, std::generic_category());
             }
+#endif // ^^^ !_WIN32
+        }
+
+        int64_t file_time_now() const override
+        {
+#if defined(_WIN32)
+            return stdfs::file_time_type::clock::now().time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
+#endif
+        }
+
+        int64_t last_write_time(const Path& target, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
+            return result.time_since_epoch().count();
+#else // ^^^ _WIN32 // !_WIN32 vvv
+            struct stat s;
+            if (::lstat(target.c_str(), &s) == 0)
+            {
+                ec.clear();
+#ifdef __APPLE__
+                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
+#else
+                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
+#endif
+            }
+
+            ec.assign(errno, std::generic_category());
+            return {};
 #endif // ^^^ !_WIN32
         }
 

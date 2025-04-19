@@ -477,7 +477,7 @@ namespace vcpkg
             {
                 auto& logs_dir =
                     maybe_logs_dir.emplace(ci_build_log_feature_test_base_path(*build_logs_base_path, i, spec));
-                build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir));
+                build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir, fs.file_time_now()));
             }
 
             ElapsedTimer install_timer;

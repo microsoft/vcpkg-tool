@@ -59,7 +59,10 @@ namespace vcpkg
 {
     constexpr const IBuildLogsRecorder& null_build_logs_recorder = null_build_logs_recorder_instance;
 
-    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
+    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_, int64_t minimum_last_write_time_)
+        : base_path(base_path_), minimum_last_write_time(minimum_last_write_time_)
+    {
+    }
 
     void CiBuildLogsRecorder::record_build_result(const VcpkgPaths& paths,
                                                   const PackageSpec& spec,
@@ -74,6 +77,12 @@ namespace vcpkg
         const auto source_path = paths.build_dir(spec);
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+        if (minimum_last_write_time > 0)
+        {
+            Util::erase_remove_if(children, [&](Path& path) {
+                return filesystem.last_write_time(path, VCPKG_LINE_INFO) >= minimum_last_write_time;
+            });
+        }
         auto target_path = base_path / spec.name();
         (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
         if (children.empty())
