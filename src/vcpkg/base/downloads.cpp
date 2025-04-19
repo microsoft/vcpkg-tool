@@ -18,6 +18,7 @@
 #include <vcpkg/commands.version.h>
 
 #include <set>
+#include <type_traits>
 
 using namespace vcpkg;
 
@@ -859,6 +860,110 @@ namespace vcpkg
         http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         http_cmd.string_arg(raw_url);
         http_cmd.string_arg("-T").string_arg(file);
+        int code = 0;
+        auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
+            if (line.starts_with(guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
+
+        auto pres = res.get();
+        if (!pres)
+        {
+            return false;
+        }
+
+        if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+        {
+            context.report_error(msg::format(
+                msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
+            return false;
+        }
+
+        return true;
+    }
+
+    bool store_to_azblob_cache(DiagnosticContext& context,
+                               const Filesystem& fs,
+                               StringView raw_url,
+                               const SanitizedUrl& sanitized_url,
+                               View<std::string> headers,
+                               const Path& file,
+                               size_t file_size,
+                               size_t max_single_write,
+                               size_t block_size)
+    {
+        if (file_size <= max_single_write)
+            return store_to_asset_cache(context, raw_url, sanitized_url, "PUT", headers, file);
+
+        static constexpr StringLiteral guid_marker = "63ba93be-2084-4751-8b4b-d481c80d965c";
+
+        // base64 encoded IDs, generated with
+        // for I in @ A B C D E F G H I; do echo '"'$(echo "00${I}" | base64)'",' ; done
+        static const char* block_ids[10] = {
+            "MDBACg==",
+            "MDBBCg==",
+            "MDBCCg==",
+            "MDBDCg==",
+            "MDBECg==",
+            "MDBFCg==",
+            "MDBGCg==",
+            "MDBHCg==",
+            "MDBICg==",
+            "MDBJCg==",
+        };
+
+        if (file_size > block_size * std::extent<decltype(block_ids)>::value) return false;
+
+        auto http_cmd = Command{"curl"}.string_arg("--fail-early");
+
+        auto block_url = raw_url.to_string();
+        block_url += raw_url.contains('?') ? '&' : '?';
+        block_url += "&comp=block&blockid=";
+
+        auto block_file = fmt::format("{}.chunk", file);
+        auto block_id = std::begin(block_ids);
+        auto block_list = std::string("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<BlockList>\n");
+        for (size_t range_from = 0; range_from < file_size; range_from += block_size, ++block_id)
+        {
+            auto range_to = std::min(range_from + block_size, file_size);
+
+            // Extract block data locally
+            http_cmd.string_arg("-o").string_arg(block_file);
+            http_cmd.string_arg("--range").string_arg(fmt::format("{}-{}", range_from, range_to - 1));
+            http_cmd.string_arg(fmt::format("file://{}", file));
+            http_cmd.string_arg("--next");
+
+            // Upload block
+            add_curl_headers(http_cmd, headers);
+            http_cmd.string_arg("-X").string_arg("PUT");
+            http_cmd.string_arg(block_url + *block_id);
+            http_cmd.string_arg("-T").string_arg(block_file);
+            http_cmd.string_arg("--next");
+            http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+
+            block_list += "  <Latest>";
+            block_list += *block_id;
+            block_list += "</Latest>\n";
+        }
+        block_list += "</BlockList>\n";
+
+        std::error_code ec;
+        auto block_list_filepath = file + ".blocklist";
+        fs.write_contents(block_list_filepath, block_list, ec);
+        if (ec) return false;
+
+        auto block_list_url = raw_url.to_string();
+        block_list_url += raw_url.contains('?') ? '&' : '?';
+        block_list_url += "comp=blocklist";
+        add_curl_headers(http_cmd, {}); // do not send x-ms-blob-type!
+        http_cmd.string_arg("-H").string_arg("x-ms-version: 2020-04-08");
+        http_cmd.string_arg("-X").string_arg("PUT");
+        http_cmd.string_arg(block_list_url);
+        http_cmd.string_arg("-T").string_arg(block_list_filepath);
+        http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+
         int code = 0;
         auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
             if (line.starts_with(guid_marker))

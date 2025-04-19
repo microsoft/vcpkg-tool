@@ -459,8 +459,9 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         CHECK(state.url_templates_to_get.empty());
-        CHECK(state.url_templates_to_put.size() == 1);
-        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
+        CHECK(state.url_templates_to_put.empty());
+        CHECK(state.azblob_templates_to_put.size() == 1);
+        CHECK(state.azblob_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -471,8 +472,9 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         CHECK(state.url_templates_to_get.size() == 1);
         CHECK(state.url_templates_to_get.front().url_template == "https://azure/container/{sha}.zip?sas");
-        CHECK(state.url_templates_to_put.size() == 1);
-        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
+        CHECK(state.url_templates_to_put.empty());
+        CHECK(state.azblob_templates_to_put.size() == 1);
+        CHECK(state.azblob_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
         REQUIRE(!state.archives_to_write.empty());

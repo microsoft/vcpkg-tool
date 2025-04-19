@@ -2,8 +2,22 @@
 
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/system.h>
+#include <vcpkg/base/util.h>
+
+#include <random>
+#include <type_traits>
 
 using namespace vcpkg;
+
+#define CHECK_EC_ON_FILE(file, ec)                                                                                     \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (ec)                                                                                                        \
+        {                                                                                                              \
+            FAIL((file).native() << ": " << (ec).message());                                                           \
+        }                                                                                                              \
+    } while (0)
 
 TEST_CASE ("parse_split_url_view", "[downloads]")
 {
@@ -312,4 +326,139 @@ TEST_CASE ("url_encode_spaces", "[downloads]")
             "https://example.com/a%20space/b?query=value&query2=value2");
     REQUIRE(url_encode_spaces("https://example.com/a  space/b?query=value&query2=value2") ==
             "https://example.com/a%20%20space/b?query=value&query2=value2");
+}
+
+/*
+ * To run this test:
+ * - Set environment variables VCPKG_TEST_AZBLOB_URL and VCPKG_TEST_AZBLOB_SAS.
+ *   (Use Azurite for a local test environment.)
+ * - Run 'vcpkg-test azblob [-s]'.
+ */
+TEST_CASE ("azblob", "[.][azblob]")
+{
+    auto maybe_url = vcpkg::get_environment_variable("VCPKG_TEST_AZBLOB_URL");
+    REQUIRE(maybe_url.has_value());
+    std::string url = maybe_url.value_or_exit(VCPKG_LINE_INFO);
+    REQUIRE(!url.empty());
+
+    if (url.back() != '/') url += '/';
+
+    auto maybe_sas = vcpkg::get_environment_variable("VCPKG_TEST_AZBLOB_SAS");
+    REQUIRE(maybe_sas.has_value());
+    const std::string sas = maybe_sas.value_or_exit(VCPKG_LINE_INFO);
+
+    REQUIRE(!sas.empty());
+    REQUIRE(sas[0] != '?');
+
+    auto& fs = real_filesystem;
+    auto temp_dir = Test::base_temporary_directory() / "azblob";
+    fs.remove_all(temp_dir, VCPKG_LINE_INFO);
+
+    std::error_code ec;
+    fs.create_directories(temp_dir, ec);
+    CHECK_EC_ON_FILE(temp_dir, ec);
+
+    const char* data = "0123456789\nabcdefghij\n";
+    const auto data_size = strlen(data);
+    const auto block_size = (data_size - 1) / 2; // 3 blocks
+
+    auto data_filepath = temp_dir / "data";
+    CAPTURE(data_filepath);
+    fs.write_contents(data_filepath, data, ec);
+    CHECK_EC_ON_FILE(data_filepath, ec);
+
+    auto rnd = Strings::b32_encode(std::mt19937_64()());
+    std::vector<std::pair<std::string, Path>> url_pairs;
+    {
+        auto plain_put_filename = "plain_put_" + rnd;
+        auto plain_put_url = url + plain_put_filename + '?' + sas;
+        url_pairs.emplace_back(plain_put_url, temp_dir / plain_put_filename);
+
+        FullyBufferedDiagnosticContext diagnostics{};
+        auto plain_put_success = store_to_asset_cache(
+            diagnostics, plain_put_url, SanitizedUrl{url, {}}, "PUT", azure_blob_headers(), data_filepath);
+        INFO(diagnostics.to_string());
+        CHECK(plain_put_success);
+    }
+
+    {
+        auto single_write_filename = "single_write_" + rnd;
+        auto single_write_url = url + single_write_filename + '?' + sas;
+        url_pairs.emplace_back(single_write_url, temp_dir / single_write_filename);
+
+        FullyBufferedDiagnosticContext diagnostics{};
+        auto single_write_success = store_to_azblob_cache(diagnostics,
+                                                          fs,
+                                                          single_write_url,
+                                                          SanitizedUrl{url, {}},
+                                                          azure_blob_headers(),
+                                                          data_filepath,
+                                                          data_size,
+                                                          data_size,
+                                                          1);
+        INFO(diagnostics.to_string());
+        CHECK(single_write_success);
+    }
+
+    auto block_list_filename = "block_list_" + rnd;
+    auto block_list_url = url + block_list_filename + '?' + sas;
+    url_pairs.emplace_back(block_list_url, temp_dir / block_list_filename);
+    {
+        FullyBufferedDiagnosticContext diagnostics{};
+        auto block_list_success = store_to_azblob_cache(diagnostics,
+                                                        fs,
+                                                        block_list_url,
+                                                        SanitizedUrl{url, {}},
+                                                        azure_blob_headers(),
+                                                        data_filepath,
+                                                        data_size,
+                                                        block_size,
+                                                        block_size);
+        INFO(diagnostics.to_string());
+        CHECK(block_list_success);
+    }
+
+    {
+        FullyBufferedDiagnosticContext diagnostics{};
+        auto results = download_files_no_cache(diagnostics, url_pairs, azure_blob_headers(), {});
+        INFO(diagnostics.to_string());
+        CHECK(results == std::vector<int>{200, 200, 200});
+    }
+
+    for (auto& download : url_pairs)
+    {
+        auto download_filepath = download.second;
+        CAPTURE(download_filepath);
+        CHECK(fs.read_contents(download_filepath, VCPKG_LINE_INFO) == data);
+    }
+
+    auto block_list_urls = Util::fmap(url_pairs, [](auto url_pair) {
+        url_pair.first += "&comp=blocklist";
+        url_pair.second += ".blocklist";
+        return url_pair;
+    });
+    {
+        FullyBufferedDiagnosticContext diagnostics{};
+        auto results = download_files_no_cache(diagnostics, block_list_urls, azure_blob_headers(), {});
+        INFO(diagnostics.to_string());
+        CHECK(results == std::vector<int>{200, 200, 200});
+    }
+
+    for (auto& download : block_list_urls)
+    {
+        auto block_list_filepath = download.second;
+        CAPTURE(block_list_filepath);
+        auto block_list = fs.read_contents(block_list_filepath, VCPKG_LINE_INFO);
+        CAPTURE(block_list);
+        int count = 0;
+        for (std::string::size_type pos = block_list.find("<Block>"); pos != std::string::npos;
+             pos = block_list.find("<Block>", pos + 7))
+            ++count;
+        if (Strings::starts_with(download.first, block_list_url))
+            CHECK(count == 3);
+        else
+            CHECK(count == 0);
+    }
+
+    fs.remove_all(temp_dir, VCPKG_LINE_INFO);
 }
