@@ -115,6 +115,7 @@ namespace vcpkg
     static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
 
         {SwitchAll, msgCmdTestFeaturesAll},
+        {SwitchCleanBuildtreesAfterBuild, msgHelpTxtOptCleanBuildTreesAfterBuild},
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
         {SwitchNoCombined, msgCmdTestFeaturesNoCombined},
@@ -153,6 +154,7 @@ namespace vcpkg
         const auto test_feature_core = !Util::Sets::contains(options.switches, SwitchNoCore);
         const auto test_features_combined = !Util::Sets::contains(options.switches, SwitchNoCombined);
         const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
+        const bool clean_buildtrees = Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
 
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
@@ -243,11 +245,11 @@ namespace vcpkg
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions install_plan_options{
             nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No};
-        static constexpr BuildPackageOptions build_options{
+        BuildPackageOptions build_options{
             BuildMissing::Yes,
             AllowDownloads::Yes,
             OnlyDownloads::No,
-            CleanBuildtrees::Yes,
+            clean_buildtrees ? CleanBuildtrees::Yes : CleanBuildtrees::OnSuccess,
             CleanPackages::Yes,
             CleanDownloads::No,
             BackcompatFeatures::Prohibit,

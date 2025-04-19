@@ -340,7 +340,7 @@ namespace vcpkg
             BuildMissing::Yes,
             AllowDownloads::Yes,
             only_downloads,
-            CleanBuildtrees::Yes,
+            CleanBuildtrees::OnSuccess,
             CleanPackages::Yes,
             CleanDownloads::No,
             prohibit_backcompat_features,

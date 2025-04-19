@@ -36,6 +36,7 @@ namespace vcpkg
     enum class CleanBuildtrees
     {
         No = 0,
+        OnSuccess,
         Yes
     };
 
