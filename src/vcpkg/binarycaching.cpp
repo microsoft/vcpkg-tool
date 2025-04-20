@@ -241,8 +241,8 @@ namespace
                     // either we need to make a copy or the rename failed because buildtrees and the binary
                     // cache write target are on different filesystems, copy to a sibling in that directory and rename
                     // into place
-                    // First copy to temporary location to avoid race between different instances trying to upload the
-                    // same archive, e.g. if 2 machines try to upload to a shared binary cache.
+                    // First copy to temporary location to avoid race between different vcpkg instances trying to upload
+                    // the same archive, e.g. if 2 machines try to upload to a shared binary cache.
                     m_fs.copy_file(zip_path, archive_temp_path, CopyOptions::overwrite_existing, ec);
                     if (!ec)
                     {
