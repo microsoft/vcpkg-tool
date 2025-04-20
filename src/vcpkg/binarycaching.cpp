@@ -221,6 +221,8 @@ namespace
         {
             const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             size_t count_stored = 0;
+            // Can't rename if zip_path should be coppied to multiple locations;
+            // otherwise, the original file would be gone.
             const bool can_attempt_rename = m_dirs.size() == 1 && request.unique_write_provider;
             for (const auto& archives_root_dir : m_dirs)
             {
@@ -231,7 +233,6 @@ namespace
                 std::error_code ec;
                 if (can_attempt_rename)
                 {
-                    // if we are already on the same filesystem we can just rename into place
                     m_fs.rename_or_delete(zip_path, archive_path, ec);
                 }
 
@@ -240,6 +241,8 @@ namespace
                     // either we need to make a copy or the rename failed because buildtrees and the binary
                     // cache write target are on different filesystems, copy to a sibling in that directory and rename
                     // into place
+                    // First copy to temporary location to avoid race between different instances trying to upload the
+                    // same archive, e.g. if 2 machines try to upload to a shared binary cache.
                     m_fs.copy_file(zip_path, archive_temp_path, CopyOptions::overwrite_existing, ec);
                     if (!ec)
                     {
