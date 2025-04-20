@@ -2045,6 +2045,11 @@ namespace vcpkg
                 this->remove_all(old_path, ec);
                 return false;
             }
+            else if (ec == std::make_error_condition(std::errc::cross_device_link))
+            {
+                // If old_path and new_path are on different file systems, trying again will never help.
+                return false;
+            }
 
             std::this_thread::sleep_for(delay);
             this->rename(old_path, new_path, ec);
