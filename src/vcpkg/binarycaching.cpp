@@ -237,7 +237,7 @@ namespace
 
                 if (!can_attempt_rename || (ec && ec == std::make_error_condition(std::errc::cross_device_link)))
                 {
-                    // either we need to make a copy or the rename failed because because buildtrees and the binary
+                    // either we need to make a copy or the rename failed because buildtrees and the binary
                     // cache write target are on different filesystems, copy to a sibling in that directory and rename
                     // into place
                     m_fs.copy_file(zip_path, archive_temp_path, CopyOptions::overwrite_existing, ec);
