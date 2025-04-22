@@ -19,7 +19,6 @@ namespace vcpkg
         Fail,
         Cascade,
         Pass,
-        FirstFree // only a marker for the last enum entry
     };
 
     struct CiFeatureBaselineEntry
