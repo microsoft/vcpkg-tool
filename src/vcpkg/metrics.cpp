@@ -616,7 +616,7 @@ namespace vcpkg
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
 #else
-        // TODO: replace with libcurl code
+        // TODO: replace with libcurl code here too
         cmd_execute_background(Command("curl")
                                    .string_arg("https://dc.services.visualstudio.com/v2/track")
                                    .string_arg("--max-time")

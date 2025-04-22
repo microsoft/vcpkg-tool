@@ -666,7 +666,134 @@ namespace vcpkg
         return true;
     }
 
-    static std::vector<int> curl_bulk_operation(DiagnosticContext& context,
+    static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
+                                                   const Filesystem* maybe_fs,
+                                                   View<std::string> urls,
+                                                   View<std::string> outputs,
+                                                   View<std::string> headers,
+                                                   View<std::string> secrets)
+    {
+        // TODO: handle secret replacement when error messages are implemented
+        (void)secrets;
+
+        if (urls.size() != outputs.size())
+        {
+            return {};
+        }
+
+        // Filesystem is required for writing output files
+        if (outputs.size() && !maybe_fs)
+        {
+            return {};
+        }
+        const auto& fs = *maybe_fs;
+
+        std::vector<int> ret;
+        ret.reserve(urls.size());
+
+        CURLM* multi_handle = curl_multi_init();
+        if (!multi_handle)
+        {
+            return ret;
+        }
+
+        std::vector<CURL*> easy_handles;
+        std::vector<curl_slist*> header_lists;
+
+        for (size_t i = 0; i < urls.size(); ++i)
+        {
+            const auto& url = urls[i];
+            CURL* curl = curl_easy_init();
+            if (!curl)
+            {
+                continue;
+            }
+
+            curl_easy_setopt(curl, CURLOPT_URL, url);
+            if (!outputs[i].empty())
+            {
+                // Set the write function to write to the file
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, outputs[i].c_str());
+                curl_easy_setopt(
+                    curl, CURLOPT_WRITEFUNCTION, [&](void* contents, size_t size, size_t nmemb, void* param) -> size_t {
+                        const char* filename = static_cast<const char*>(param);
+                        std::error_code ec;
+                        WriteFilePointer file = fs.open_for_write(static_cast<const char*>(filename), Append::YES, ec);
+                        if (ec)
+                        {
+                            context.report_error(format_filesystem_call_error(ec, "fopen", {filename}));
+                            return 0;
+                        }
+
+                        return file.write(contents, size, nmemb);
+                    });
+            }
+
+            curl_slist* curl_headers = nullptr;
+            for (const auto& header : headers)
+            {
+                curl_headers = curl_slist_append(curl_headers, header.c_str());
+            }
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+
+            // Add the easy handle to the multi handle
+            curl_multi_add_handle(multi_handle, curl);
+
+            easy_handles.push_back(curl);
+            header_lists.push_back(curl_headers);
+        }
+
+        int still_running = 0;
+        do
+        {
+            CURLMcode mc = curl_multi_perform(multi_handle, &still_running);
+            if (mc != CURLM_OK)
+            {
+                break;
+            }
+            curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
+        } while (still_running);
+
+        for (size_t i = 0; i < easy_handles.size(); ++i)
+        {
+            CURL* curl = easy_handles[i];
+            long http_code = 0;
+
+            CURLcode res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+            if (res != CURLE_OK)
+            {
+                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(res)));
+                ret.push_back(-1);
+            }
+            else
+            {
+                ret.push_back(static_cast<int>(http_code));
+            }
+
+            // Clean up headers for this operation
+            if (header_lists[i])
+            {
+                curl_slist_free_all(header_lists[i]);
+            }
+
+            // Remove and clean up the easy handle
+            curl_multi_remove_handle(multi_handle, curl);
+            curl_easy_cleanup(curl);
+        }
+
+        curl_multi_cleanup(multi_handle);
+        return ret;
+    }
+
+    static std::vector<int> libcurl_bulk_check(DiagnosticContext& context,
+                                               View<std::string> urls,
+                                               View<std::string> headers,
+                                               View<std::string> secrets)
+    {
+        return libcurl_bulk_operation(context, nullptr, urls, {}, headers, secrets);
+    }
+
+    /*static std::vector<int> curl_bulk_operation(DiagnosticContext& context,
                                                 View<Command> operation_args,
                                                 StringLiteral prefixArgs,
                                                 View<std::string> headers,
@@ -737,37 +864,28 @@ namespace vcpkg
         }
 
         return ret;
-    }
+    }*/
 
     std::vector<int> url_heads(DiagnosticContext& context,
                                View<std::string> urls,
                                View<std::string> headers,
                                View<std::string> secrets)
     {
-        return curl_bulk_operation(
-            context,
-            Util::fmap(urls, [](const std::string& url) { return Command{}.string_arg(url_encode_spaces(url)); }),
-            "--head",
-            headers,
-            secrets);
+        return libcurl_bulk_check(context, urls, headers, secrets);
     }
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
+                                             const Filesystem& fs,
                                              View<std::pair<std::string, Path>> url_pairs,
                                              View<std::string> headers,
                                              View<std::string> secrets)
     {
-        return curl_bulk_operation(context,
-                                   Util::fmap(url_pairs,
-                                              [](const std::pair<std::string, Path>& url_pair) {
-                                                  return Command{}
-                                                      .string_arg(url_encode_spaces(url_pair.first))
-                                                      .string_arg("-o")
-                                                      .string_arg(url_pair.second);
-                                              }),
-                                   "--create-dirs",
-                                   headers,
-                                   secrets);
+        return libcurl_bulk_operation(context,
+                                      &fs,
+                                      Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.first; }),
+                                      Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.second.generic_u8string(); }),
+                                      headers,
+                                      secrets);
     }
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
@@ -792,6 +910,7 @@ namespace vcpkg
         fmt::format_to(
             std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
+        // TODO: Replace with libcurl code
         auto cmd = Command{"curl"};
         cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
         cmd.string_arg("-X").string_arg("POST");
@@ -836,6 +955,7 @@ namespace vcpkg
 
         if (raw_url.starts_with("ftp://"))
         {
+            // TODO: Replace with libcurl code
             // HTTP headers are ignored for FTP clients
             auto ftp_cmd = Command{"curl"};
             ftp_cmd.string_arg(url_encode_spaces(raw_url));
@@ -856,6 +976,7 @@ namespace vcpkg
             return false;
         }
 
+        // TODO: Replace with libcurl code
         auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
         add_curl_headers(http_cmd, headers);
         http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
@@ -902,6 +1023,7 @@ namespace vcpkg
                                               View<std::string> secrets,
                                               StringView data)
     {
+        // TODO: Replace with libcurl code
         auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
         add_curl_headers(cmd, headers);
 
@@ -1169,6 +1291,7 @@ namespace vcpkg
             fs.create_directories(dir, VCPKG_LINE_INFO);
         }
 
+        // TODO: Replace with libcurl code
         auto cmd = Command{"curl"}
                        .string_arg("--fail")
                        .string_arg("--retry")
