@@ -1,3 +1,4 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/util.h>
 
@@ -190,13 +191,13 @@ namespace vcpkg
             if (respect_entry(spec, triplet, host_triplet, var_provider))
             {
                 auto& entry = result.ports[spec.name];
-                if (spec.features.has_value())
+                if (auto spec_features = spec.features.get())
                 {
-                    auto& features = *spec.features.get();
-                    const auto error_if_already_defined = [&](const auto& set, auto state) {
-                        if (auto iter = Util::find_if(
-                                features, [&](const auto& feature) { return Util::Sets::contains(set, feature); });
-                            iter != features.end())
+                    const auto error_if_already_defined = [&](const auto& set, CiFeatureBaselineParseState state) {
+                        if (auto iter =
+                                Util::find_if(*spec_features,
+                                              [&](const std::string& feature) { return Util::Sets::contains(set, feature); });
+                            iter != spec_features->end())
                         {
                             parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
                                                          msg::feature = *iter,
@@ -212,37 +213,37 @@ namespace vcpkg
                             break;
                         if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineParseState::Cascade))
                             break;
-                        entry.skip_features.insert(features.begin(), features.end());
+                        entry.skip_features.insert(spec_features->begin(), spec_features->end());
                     }
                     else if (state == CiFeatureBaselineParseState::Cascade)
                     {
                         if (error_if_already_defined(entry.failing_features, CiFeatureBaselineParseState::FeatureFail))
                             break;
                         if (error_if_already_defined(entry.skip_features, CiFeatureBaselineParseState::Skip)) break;
-                        entry.cascade_features.insert(features.begin(), features.end());
+                        entry.cascade_features.insert(spec_features->begin(), spec_features->end());
                     }
                     else if (state == CiFeatureBaselineParseState::CombinationFail)
                     {
                         if (error_if_already_defined(entry.skip_features, CiFeatureBaselineParseState::Skip)) break;
                         if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineParseState::Cascade))
                             break;
-                        features.emplace_back("core");
-                        entry.fail_configurations.push_back(Util::sort_unique_erase(std::move(features)));
+                        spec_features->emplace_back(FeatureNameCore);
+                        entry.fail_configurations.push_back(Util::sort_unique_erase(std::move(*spec_features)));
                     }
                     else if (state == CiFeatureBaselineParseState::FeatureFail)
                     {
                         if (error_if_already_defined(entry.skip_features, CiFeatureBaselineParseState::Skip)) break;
                         if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineParseState::Cascade))
                             break;
-                        entry.failing_features.insert(features.begin(), features.end());
+                        entry.failing_features.insert(spec_features->begin(), spec_features->end());
                     }
                     else if (state == CiFeatureBaselineParseState::NoTest)
                     {
-                        entry.no_separate_feature_test.insert(features.begin(), features.end());
+                        entry.no_separate_feature_test.insert(spec_features->begin(), spec_features->end());
                     }
                     else if (state == CiFeatureBaselineParseState::Options)
                     {
-                        entry.options.push_back(features);
+                        entry.options.push_back(*spec_features);
                     }
                 }
                 else
