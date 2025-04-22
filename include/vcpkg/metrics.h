@@ -198,7 +198,5 @@ namespace vcpkg
     extern std::atomic<bool> g_should_send_metrics;
 
     void flush_global_metrics(const Filesystem&);
-#if defined(_WIN32)
-    void winhttp_upload_metrics(StringView payload);
-#endif // ^^^ _WIN32
+    bool curl_upload_metrics(StringView payload);
 }

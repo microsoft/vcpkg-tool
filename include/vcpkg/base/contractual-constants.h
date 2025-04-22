@@ -206,6 +206,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchDebug = "debug";
     inline constexpr StringLiteral SwitchDebugBin = "debug-bin";
     inline constexpr StringLiteral SwitchDebugEnv = "debug-env";
+    inline constexpr StringLiteral SwitchDeleteFileAfterUpload = "delete-file-after-upload";
     inline constexpr StringLiteral SwitchDgml = "dgml";
     inline constexpr StringLiteral SwitchDisableMetrics = "disable-metrics";
     inline constexpr StringLiteral SwitchDot = "dot";

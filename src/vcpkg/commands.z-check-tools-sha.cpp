@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -106,7 +107,7 @@ namespace vcpkg
             ++http_codes_iter;
         }
 
-        if (!has_sha_error)
+        if (!has_http_error && !has_sha_error)
         {
             msg::println(msgAllShasValid);
         }
