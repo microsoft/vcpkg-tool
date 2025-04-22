@@ -495,7 +495,8 @@ namespace vcpkg
             std::string failed_dependencies;
             for (const auto& result : summary.results)
             {
-                switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
+                auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
+                switch (build_result.code)
                 {
                     case BuildResult::BuildFailed:
                         if (Path* logs_dir = maybe_logs_dir.get())
@@ -504,7 +505,7 @@ namespace vcpkg
                             fs.write_contents(
                                 issue_body_path,
                                 create_github_issue(args,
-                                                    result.build_result.value_or_exit(VCPKG_LINE_INFO),
+                                                    build_result,
                                                     paths,
                                                     result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
                                                     false),
@@ -597,7 +598,7 @@ namespace vcpkg
         auto it_output_file = settings.find(SwitchFailingAbiLog);
         if (it_output_file != settings.end())
         {
-            Path raw_path = it_output_file->second;
+            auto&& raw_path = it_output_file->second;
             auto content = Strings::join("\n", known_failures);
             content += '\n';
             fs.write_contents_and_dirs(raw_path, content, VCPKG_LINE_INFO);
