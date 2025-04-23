@@ -595,6 +595,10 @@ DECLARE_MESSAGE(CmdCheckSupportExample1,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg x-check-support <port name>")
 DECLARE_MESSAGE(CmdCheckSupportSynopsis, (), "", "Tests whether a port is supported without building it")
+DECLARE_MESSAGE(CmdCheckToolsShaSynopsis,
+                (),
+                "",
+                "Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes")
 DECLARE_MESSAGE(CmdCreateExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",

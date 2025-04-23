@@ -57,6 +57,8 @@
 #include <vcpkg/commands.z-upload-metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include "vcpkg/commands.check-tools-sha.h"
+
 namespace vcpkg
 {
     static constexpr CommandRegistration<BasicCommandFn> basic_commands_storage[] = {
@@ -65,6 +67,7 @@ namespace vcpkg
         {CommandDownloadMetadata, command_download_and_exit},
         {CommandFormatFeatureBaselineMetadata, command_format_feature_baseline_and_exit},
         {CommandHashMetadata, command_hash_and_exit},
+        {CommandCheckToolsShaMetadata, command_check_tools_sha_and_exit},
         {CommandInitRegistryMetadata, command_init_registry_and_exit},
         {CommandVersionMetadata, command_version_and_exit},
 #if defined(_WIN32)

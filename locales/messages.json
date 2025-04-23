@@ -343,6 +343,7 @@
   "CmdCheckSupportExample1": "vcpkg x-check-support <port name>",
   "_CmdCheckSupportExample1.comment": "This is a command line, only the <>s part should be localized",
   "CmdCheckSupportSynopsis": "Tests whether a port is supported without building it",
+  "CmdCheckToolsShaSynopsis": "Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes",
   "CmdCiCleanSynopsis": "Clears all files to prepare for a CI run",
   "_CmdCiCleanSynopsis.comment": "CI is continuous integration (building everything together)",
   "CmdCiSynopsis": "Tries building all ports for CI testing",
