@@ -191,8 +191,8 @@ namespace vcpkg
             return parse_qualified_specifier(
                        parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
                 .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                    Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                    for (const auto& feature : pqs.features.value_or({}))
+                    Dependency dependency{pqs.name.value, {}, pqs.platform_or_always_true()};
+                    for (const auto& feature : pqs.features_or_empty())
                     {
                         if (feature == FeatureNameCore)
                         {

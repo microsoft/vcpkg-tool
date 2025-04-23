@@ -40,7 +40,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib", AllowFeatures::No, ParseExplicitTriplet::Forbid, AllowPlatformSpec::No)
                         .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
+        REQUIRE(spec.name.value == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(!spec.triplet);
         REQUIRE(!spec.platform);
@@ -65,9 +65,9 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib:x64-uwp", AllowFeatures::No, ParseExplicitTriplet::Require, AllowPlatformSpec::No)
                         .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
+        REQUIRE(spec.name.value == "zlib");
         REQUIRE(!spec.features);
-        REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO) == "x64-uwp");
+        REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO).value == "x64-uwp");
         REQUIRE(!spec.platform);
 
         auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::Yes);
@@ -269,9 +269,9 @@ TEST_CASE ("specifier parsing", "[specifier]")
             vcpkg::parse_qualified_specifier(
                 "zlib[feature]:x64-uwp", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                 .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
-        REQUIRE(spec.features.value_or(std::vector<std::string>{}) == std::vector<std::string>{"feature"});
-        REQUIRE(spec.triplet.value_or("") == "x64-uwp");
+        REQUIRE(spec.name.value == "zlib");
+        REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO).value == std::vector<std::string>{"feature"});
+        REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO).value == "x64-uwp");
         REQUIRE(!spec.platform);
 
         auto full_spec_implicit = spec.to_full_spec(Test::X86_WINDOWS, ImplicitDefault::Yes);
@@ -298,8 +298,8 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib[0, 1,2]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                         .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
-        REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"0", "1", "2"});
+        REQUIRE(spec.name.value == "zlib");
+        REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO).value == std::vector<std::string>{"0", "1", "2"});
         REQUIRE(!spec.triplet);
         REQUIRE(!spec.platform);
     }
@@ -309,8 +309,8 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib[*]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                         .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
-        REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) == std::vector<std::string>{"*"});
+        REQUIRE(spec.name.value == "zlib");
+        REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO).value == std::vector<std::string>{"*"});
         REQUIRE(!spec.triplet);
         REQUIRE(!spec.platform);
     }
@@ -344,10 +344,10 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib (windows)", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                         .value_or_exit(VCPKG_LINE_INFO);
-        REQUIRE(spec.name == "zlib");
+        REQUIRE(spec.name.value == "zlib");
         REQUIRE(!spec.features);
         REQUIRE(!spec.triplet);
-        REQUIRE(to_string(spec.platform.value_or_exit(VCPKG_LINE_INFO)) == "windows");
+        REQUIRE(to_string(spec.platform.value_or_exit(VCPKG_LINE_INFO).value) == "windows");
 
         auto forbidden_spec = vcpkg::parse_qualified_specifier(
             "zlib (windows)", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::No);

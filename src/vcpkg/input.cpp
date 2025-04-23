@@ -59,7 +59,7 @@ namespace vcpkg
             .then([&](ParsedQualifiedSpecifier&& qualified_specifier) -> ExpectedL<PackageSpec> {
                 if (auto specified_triplet = qualified_specifier.triplet.get())
                 {
-                    auto maybe_error = check_triplet(*specified_triplet, database);
+                    auto maybe_error = check_triplet(specified_triplet->value, database);
                     if (!maybe_error.has_value())
                     {
                         return std::move(maybe_error).error();
@@ -81,7 +81,7 @@ namespace vcpkg
             .then([&](ParsedQualifiedSpecifier&& qualified_specifier) -> ExpectedL<FullPackageSpec> {
                 if (auto specified_triplet = qualified_specifier.triplet.get())
                 {
-                    auto maybe_error = check_triplet(*specified_triplet, database);
+                    auto maybe_error = check_triplet(specified_triplet->value, database);
                     if (!maybe_error.has_value())
                     {
                         return std::move(maybe_error).error();

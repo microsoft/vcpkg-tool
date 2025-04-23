@@ -10,11 +10,11 @@
 namespace
 {
     using namespace vcpkg;
-    Triplet resolve_triplet(const Optional<std::string>& specified_triplet, Triplet default_triplet)
+    Triplet resolve_triplet(const Optional<Located<std::string>>& specified_triplet, Triplet default_triplet)
     {
         if (auto pspecified = specified_triplet.get())
         {
-            return Triplet::from_canonical_name(*pspecified);
+            return Triplet::from_canonical_name(pspecified->value);
         }
 
         return default_triplet;
@@ -22,21 +22,21 @@ namespace
 
     bool parse_features(char32_t& ch, ParsedQualifiedSpecifier& ret, ParserBase& parser)
     {
-        auto& features = ret.features.emplace();
+        auto& features = ret.features.emplace(parser.cur_loc());
         for (;;)
         {
             parser.next();
             parser.skip_tabs_spaces();
             if (parser.cur() == '*')
             {
-                features.emplace_back("*");
+                features.value.emplace_back("*");
                 parser.next();
             }
             else
             {
                 auto feature = parse_feature_name(parser);
                 if (auto f = feature.get())
-                    features.push_back(std::move(*f));
+                    features.value.push_back(std::move(*f));
                 else
                     return false;
             }
@@ -152,6 +152,26 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
+    View<std::string> ParsedQualifiedSpecifier::features_or_empty() const
+    {
+        if (auto pfeatures = features.get())
+        {
+            return pfeatures->value;
+        }
+
+        return View<std::string>{};
+    }
+
+    const PlatformExpression::Expr& ParsedQualifiedSpecifier::platform_or_always_true() const
+    {
+        if (auto pplatform = platform.get())
+        {
+            return pplatform->value;
+        }
+
+        return PlatformExpression::Expr::always_true;
+    }
+
     FullPackageSpec ParsedQualifiedSpecifier::to_full_spec(Triplet default_triplet, ImplicitDefault id) const
     {
         if (platform)
@@ -164,10 +184,11 @@ namespace vcpkg
         View<std::string> fs{};
         if (auto pfeatures = features.get())
         {
-            fs = *pfeatures;
+            fs = pfeatures->value;
         }
 
-        return FullPackageSpec{{name, resolve_triplet(triplet, default_triplet)}, internalize_feature_list(fs, id)};
+        return FullPackageSpec{{name.value, resolve_triplet(triplet, default_triplet)},
+                               internalize_feature_list(fs, id)};
     }
 
     PackageSpec ParsedQualifiedSpecifier::to_package_spec(Triplet default_triplet) const
@@ -179,7 +200,7 @@ namespace vcpkg
                                 "parse_qualified_specifier and using to_package_spec");
         }
 
-        return PackageSpec{name, resolve_triplet(triplet, default_triplet)};
+        return PackageSpec{name.value, resolve_triplet(triplet, default_triplet)};
     }
 
     ExpectedL<ParsedQualifiedSpecifier> parse_qualified_specifier(StringView input,
@@ -210,9 +231,9 @@ namespace vcpkg
                     {
                         auto presumed_spec =
                             fmt::format("{}[{}]:{}",
-                                        pqs->name,
-                                        Strings::join(",", pqs->features.value_or_exit(VCPKG_LINE_INFO)),
-                                        *triplet);
+                                        pqs->name.value,
+                                        Strings::join(",", pqs->features.value_or_exit(VCPKG_LINE_INFO).value),
+                                        triplet->value);
                         parser.add_error(msg::format(msgParseQualifiedSpecifierNotEofSquareBracket,
                                                      msg::version_spec = presumed_spec));
                     }
@@ -284,12 +305,16 @@ namespace vcpkg
                                                                  ParseExplicitTriplet allow_triplet,
                                                                  AllowPlatformSpec allow_platform_spec)
     {
-        ParsedQualifiedSpecifier ret;
-        auto name = parse_package_name(parser);
-        if (auto n = name.get())
-            ret.name = std::move(*n);
-        else
+        auto name_loc = parser.cur_loc();
+        auto name_storage = parse_package_name(parser);
+        auto name = name_storage.get();
+        if (!name)
+        {
             return nullopt;
+        }
+
+        ParsedQualifiedSpecifier ret{Located<std::string>{std::move(name_loc), std::move(*name)}};
+
         auto ch = parser.cur();
         if (ch == '[')
         {
@@ -306,15 +331,15 @@ namespace vcpkg
         }
         if (ch == ':')
         {
-            auto triplet_start = parser.cur_loc();
+            auto triplet_loc = parser.cur_loc();
             parser.next();
             auto triplet_parsed = parser.match_while(ParserBase::is_package_name_char);
             if (allow_triplet == ParseExplicitTriplet::Forbid)
             {
                 parser.add_error(msg::format(msgAddTripletExpressionNotAllowed,
-                                             msg::package_name = ret.name,
+                                             msg::package_name = ret.name.value,
                                              msg::triplet = triplet_parsed),
-                                 triplet_start);
+                                 triplet_loc);
                 return nullopt;
             }
 
@@ -324,7 +349,7 @@ namespace vcpkg
                 return nullopt;
             }
 
-            ret.triplet.emplace(triplet_parsed.to_string());
+            ret.triplet.emplace(triplet_loc, triplet_parsed.data(), triplet_parsed.size());
         }
         else if (allow_triplet == ParseExplicitTriplet::Require)
         {
@@ -360,7 +385,7 @@ namespace vcpkg
                 platform_string, PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto platform = platform_opt.get())
             {
-                ret.platform = std::move(*platform);
+                ret.platform.emplace(loc, std::move(*platform));
             }
             else
             {

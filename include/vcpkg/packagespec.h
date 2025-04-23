@@ -8,6 +8,7 @@
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/unicode.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -137,12 +138,27 @@ namespace vcpkg
         friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
     };
 
+    template<class T>
+    struct Located
+    {
+        SourceLoc loc;
+        T value;
+
+        template<class... Args>
+        explicit Located(const SourceLoc& loc, Args&&... args) : loc(loc), value(std::forward<Args>(args)...)
+        {
+        }
+    };
+
     struct ParsedQualifiedSpecifier
     {
-        std::string name;
-        Optional<std::vector<std::string>> features;
-        Optional<std::string> triplet;
-        Optional<PlatformExpression::Expr> platform;
+        Located<std::string> name;
+        Optional<Located<std::vector<std::string>>> features;
+        Optional<Located<std::string>> triplet;
+        Optional<Located<PlatformExpression::Expr>> platform;
+
+        View<std::string> features_or_empty() const;
+        const PlatformExpression::Expr& platform_or_always_true() const;
 
         /// @param id add "default" if "core" is not present
         // Assumes AllowPlatformSpec::No

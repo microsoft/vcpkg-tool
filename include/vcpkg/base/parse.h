@@ -12,14 +12,6 @@
 
 namespace vcpkg
 {
-    struct SourceLoc
-    {
-        Unicode::Utf8Decoder it;
-        Unicode::Utf8Decoder start_of_line;
-        int row;
-        int column;
-    };
-
     void append_caret_line(LocalizedString& res,
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);

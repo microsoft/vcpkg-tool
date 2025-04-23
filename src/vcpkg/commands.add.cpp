@@ -110,19 +110,24 @@ namespace vcpkg
             for (const auto& spec : specs)
             {
                 auto dep = Util::find_if(manifest_scf.core_paragraph->dependencies, [&spec](Dependency& dep) {
-                    return dep.name == spec.name && !dep.host &&
-                           structurally_equal(spec.platform.value_or(PlatformExpression::Expr()), dep.platform);
+                    return dep.name == spec.name.value && !dep.host &&
+                           structurally_equal(spec.platform_or_always_true(), dep.platform);
                 });
-                auto feature_names = spec.features.value_or({});
+
+                std::vector<std::string> feature_names;
                 bool is_core = false;
-                Util::erase_if(feature_names, [&](const auto& feature_name) {
+                for (auto&& feature_name : spec.features_or_empty())
+                {
                     if (feature_name == "core")
                     {
                         is_core = true;
-                        return true;
                     }
-                    return false;
-                });
+                    else
+                    {
+                        feature_names.push_back(feature_name);
+                    }
+                }
+
                 const auto features = Util::fmap(feature_names, [](const std::string& feature) {
                     Checks::check_exit(VCPKG_LINE_INFO,
                                        !feature.empty() && feature != FeatureNameCore && feature != FeatureNameDefault);
@@ -131,7 +136,7 @@ namespace vcpkg
                 if (dep == manifest_scf.core_paragraph->dependencies.end())
                 {
                     auto& new_dep = manifest_scf.core_paragraph->dependencies.emplace_back(
-                        Dependency{spec.name, features, spec.platform.value_or({})});
+                        Dependency{spec.name.value, features, spec.platform_or_always_true()});
                     if (is_core)
                     {
                         new_dep.default_features = false;
@@ -157,9 +162,10 @@ namespace vcpkg
                 manifest->path, Json::stringify(serialize_manifest(manifest_scf)), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceeded);
 
-            auto command_args_hash = Strings::join(" ", Util::fmap(specs, [](auto&& spec) -> std::string {
-                                                       return Hash::get_string_hash(spec.name, Hash::Algorithm::Sha256);
-                                                   }));
+            auto command_args_hash =
+                Strings::join(" ", Util::fmap(specs, [](const ParsedQualifiedSpecifier& spec) -> std::string {
+                                  return Hash::get_string_hash(spec.name.value, Hash::Algorithm::Sha256);
+                              }));
             metrics.track_string(StringMetric::CommandContext, "port");
             metrics.track_string(StringMetric::CommandArgs, command_args_hash);
             get_global_metrics_collector().track_submission(std::move(metrics));
