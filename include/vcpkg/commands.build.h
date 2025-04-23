@@ -42,7 +42,7 @@ namespace vcpkg
 
     struct CiBuildLogsRecorder final : IBuildLogsRecorder
     {
-        explicit CiBuildLogsRecorder(const Path& base_path_, int64_t minimum_last_write_time = 0);
+        explicit CiBuildLogsRecorder(const Path& base_path_, int64_t minimum_last_write_time);
 
         CiBuildLogsRecorder(const CiBuildLogsRecorder&) = delete;
         CiBuildLogsRecorder& operator=(const CiBuildLogsRecorder&) = delete;

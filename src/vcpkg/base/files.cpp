@@ -3831,7 +3831,7 @@ namespace vcpkg
 #else // ^^^ _WIN32 // !_WIN32 vvv
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            return ts.tv_sec * 1'000'000'000 + ts.tv_nsec;
+            return int64_t{ts.tv_sec} * 1'000'000'000 + ts.tv_nsec;
 #endif
         }
 
@@ -3846,9 +3846,9 @@ namespace vcpkg
             {
                 ec.clear();
 #ifdef __APPLE__
-                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
+                return int64_t{s.st_mtimespec.tv_sec} * 1'000'000'000 + s.st_mtimespec.tv_nsec;
 #else
-                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
+                return int64_t{s.st_mtim.tv_sec} * 1'000'000'000 + s.st_mtim.tv_nsec;
 #endif
             }
 
