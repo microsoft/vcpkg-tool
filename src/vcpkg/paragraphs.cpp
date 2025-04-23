@@ -192,15 +192,18 @@ namespace vcpkg
                        parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
                 .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
                     Dependency dependency{pqs.name.value, {}, pqs.platform_or_always_true()};
-                    for (const auto& feature : pqs.features_or_empty())
+                    if (auto pfeatures = pqs.features.get())
                     {
-                        if (feature == FeatureNameCore)
+                        for (auto&& feature : std::move(*pfeatures))
                         {
-                            dependency.default_features = false;
-                        }
-                        else
-                        {
-                            dependency.features.push_back({feature});
+                            if (feature.value == FeatureNameCore)
+                            {
+                                dependency.default_features = false;
+                            }
+                            else
+                            {
+                                dependency.features.push_back({std::move(feature).value});
+                            }
                         }
                     }
                     return dependency;

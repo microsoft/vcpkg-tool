@@ -274,9 +274,9 @@ namespace vcpkg
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}});
                 for (const auto& option_set : baseline.options)
                 {
-                    if (option_set.front() != FeatureNameCore)
+                    if (option_set.value.front() != FeatureNameCore)
                     {
-                        specs_to_test.back().features.push_back(option_set.front());
+                        specs_to_test.back().features.push_back(option_set.value.front());
                     }
                 }
             }
@@ -291,8 +291,9 @@ namespace vcpkg
                     if (!Util::Sets::contains(baseline.cascade_features, feature->name) &&
                         !Util::Sets::contains(baseline.failing_features, feature->name))
                     {
-                        if (Util::all_of(baseline.options, [&](const auto& options) {
-                                return !Util::contains(options, feature->name) || options.front() == feature->name;
+                        if (Util::all_of(baseline.options, [&](const Located<std::vector<std::string>>& options) {
+                                return !Util::contains(options.value, feature->name) ||
+                                       options.value.front() == feature->name;
                             }))
                         {
                             all_features.push_back(feature->name);
@@ -305,9 +306,10 @@ namespace vcpkg
                                                    InternalFeatureSet{{FeatureNameCore.to_string(), feature->name}});
                         for (const auto& option_set : baseline.options)
                         {
-                            if (option_set.front() != FeatureNameCore && !Util::contains(option_set, feature->name))
+                            if (option_set.value.front() != FeatureNameCore &&
+                                !Util::contains(option_set.value, feature->name))
                             {
-                                specs_to_test.back().features.push_back(option_set.front());
+                                specs_to_test.back().features.push_back(option_set.value.front());
                             }
                         }
                     }

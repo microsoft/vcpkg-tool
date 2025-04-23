@@ -3,6 +3,7 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/documentation.h>
 #include <vcpkg/packagespec.h>
@@ -22,21 +23,22 @@ namespace
 
     bool parse_features(char32_t& ch, ParsedQualifiedSpecifier& ret, ParserBase& parser)
     {
-        auto& features = ret.features.emplace(parser.cur_loc());
+        auto& features = ret.features.emplace();
         for (;;)
         {
             parser.next();
             parser.skip_tabs_spaces();
             if (parser.cur() == '*')
             {
-                features.value.emplace_back("*");
+                features.emplace_back(parser.cur_loc(), "*");
                 parser.next();
             }
             else
             {
+                auto feature_loc = parser.cur_loc();
                 auto feature = parse_feature_name(parser);
                 if (auto f = feature.get())
-                    features.value.push_back(std::move(*f));
+                    features.emplace_back(std::move(feature_loc), std::move(*f));
                 else
                     return false;
             }
@@ -93,9 +95,26 @@ namespace vcpkg
         }
         Strings::append(out, ':', package_spec.triplet());
     }
+
     std::string format_name_only_feature_spec(StringView package_name, StringView feature_name)
     {
         return fmt::format("{}[{}]", package_name, feature_name);
+    }
+
+    Located<std::vector<std::string>> hoist_locations(std::vector<Located<std::string>>&& values)
+    {
+        if (values.empty())
+        {
+            return Located<std::vector<std::string>>{SourceLoc{}};
+        }
+
+        // Note that this uses loc after values is moved-from, but the moved-to Util::fmap call
+        // does not touch loc
+        return Located<std::vector<std::string>>{
+            values.front().loc,
+            Util::fmap(std::move(values), [](Located<std::string>&& located_value) -> std::string&& {
+                return std::move(located_value).value;
+            })};
     }
 
     bool InternalFeatureSet::empty_or_only_core() const
@@ -103,17 +122,17 @@ namespace vcpkg
         return empty() || (size() == 1 && *begin() == FeatureNameCore);
     }
 
-    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id)
+    InternalFeatureSet internalize_feature_list(View<Located<std::string>> fs, ImplicitDefault id)
     {
         InternalFeatureSet ret;
         bool core = false;
         for (auto&& f : fs)
         {
-            if (f == FeatureNameCore)
+            if (f.value == FeatureNameCore)
             {
                 core = true;
             }
-            ret.emplace_back(f);
+            ret.emplace_back(f.value);
         }
 
         if (!core)
@@ -152,16 +171,6 @@ namespace vcpkg
         return left.name() == right.name() && left.triplet() == right.triplet();
     }
 
-    View<std::string> ParsedQualifiedSpecifier::features_or_empty() const
-    {
-        if (auto pfeatures = features.get())
-        {
-            return pfeatures->value;
-        }
-
-        return View<std::string>{};
-    }
-
     const PlatformExpression::Expr& ParsedQualifiedSpecifier::platform_or_always_true() const
     {
         if (auto pplatform = platform.get())
@@ -181,10 +190,10 @@ namespace vcpkg
                 "AllowPlatformSpec must be No when calling parse_qualified_specifier and using to_full_spec");
         }
 
-        View<std::string> fs{};
+        View<Located<std::string>> fs{};
         if (auto pfeatures = features.get())
         {
-            fs = pfeatures->value;
+            fs = *pfeatures;
         }
 
         return FullPackageSpec{{name.value, resolve_triplet(triplet, default_triplet)},
@@ -229,11 +238,11 @@ namespace vcpkg
                     char32_t ch = '[';
                     if (parse_features(ch, *pqs, speculative_parser_copy) && speculative_parser_copy.at_eof())
                     {
-                        auto presumed_spec =
-                            fmt::format("{}[{}]:{}",
-                                        pqs->name.value,
-                                        Strings::join(",", pqs->features.value_or_exit(VCPKG_LINE_INFO).value),
-                                        triplet->value);
+                        auto feature_names = Util::fmap(
+                            std::move(pqs->features).value_or_exit(VCPKG_LINE_INFO),
+                            [](Located<std::string>&& feature) -> std::string&& { return std::move(feature).value; });
+                        auto presumed_spec = fmt::format(
+                            "{}[{}]:{}", pqs->name.value, Strings::join(",", feature_names), triplet->value);
                         parser.add_error(msg::format(msgParseQualifiedSpecifierNotEofSquareBracket,
                                                      msg::version_spec = presumed_spec));
                     }

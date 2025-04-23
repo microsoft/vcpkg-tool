@@ -116,15 +116,18 @@ namespace vcpkg
 
                 std::vector<std::string> feature_names;
                 bool is_core = false;
-                for (auto&& feature_name : spec.features_or_empty())
+                if (auto pspec_features = spec.features.get())
                 {
-                    if (feature_name == "core")
+                    for (auto&& feature_name : *pspec_features)
                     {
-                        is_core = true;
-                    }
-                    else
-                    {
-                        feature_names.push_back(feature_name);
+                        if (feature_name.value == "core")
+                        {
+                            is_core = true;
+                        }
+                        else
+                        {
+                            feature_names.push_back(feature_name.value);
+                        }
                     }
                 }
 
