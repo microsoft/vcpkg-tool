@@ -21,9 +21,9 @@ namespace vcpkg
     };
 
     constexpr CommandMetadata CommandCheckToolsShaMetadata{
-        "x-check-tools-sha",
+        "z-check-tools-sha",
         msgCmdCheckToolsShaSynopsis,
-        {"vcpkg x-check-tools-sha scripts/vcpkg-tools.json"},
+        {"vcpkg z-check-tools-sha scripts/vcpkg-tools.json"},
         Undocumented,
         AutocompletePriority::Internal,
         1,
@@ -105,6 +105,11 @@ namespace vcpkg
             }
             fs.remove(urlAndPath.second, VCPKG_LINE_INFO);
             ++http_codes_iter;
+        }
+
+        if (!has_sha_error)
+        {
+            msg::println(msgAllShasValid);
         }
 
         if (!url_to_fixed_sha.empty() && Util::Sets::contains(parsed.switches, SwitchFix))

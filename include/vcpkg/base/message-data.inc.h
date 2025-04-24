@@ -131,6 +131,7 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
 DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllShasValid, (), "sha = sha512 of url", "All checked sha's are valid.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),

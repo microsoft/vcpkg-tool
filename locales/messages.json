@@ -115,6 +115,8 @@
   "AllFormatArgsUnbalancedBraces": "unbalanced brace in format string \"{value}\"",
   "_AllFormatArgsUnbalancedBraces.comment": "example of {value} is 'foo bar {'",
   "AllPackagesAreUpdated": "All installed packages are up-to-date.",
+  "AllShasValid": "All checked sha's are valid.",
+  "_AllShasValid.comment": "sha = sha512 of url",
   "AlreadyInstalled": "{spec} is already installed",
   "_AlreadyInstalled.comment": "An example of {spec} is zlib:x64-windows.",
   "AlreadyInstalledNotHead": "{spec} is already installed -- not building from HEAD",
