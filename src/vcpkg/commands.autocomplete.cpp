@@ -105,8 +105,8 @@ namespace vcpkg
                 StringView port_name{last_arg.begin(), colon};
                 StringView triplet_prefix{colon + 1, last_arg.end()};
                 // TODO: Support autocomplete for ports in --overlay-ports
-                auto maybe_port = Paragraphs::try_load_port_required(
-                    paths.get_filesystem(), port_name, PortLocation{paths.builtin_ports_directory() / port_name});
+                auto maybe_port = Paragraphs::try_load_builtin_port_required(
+                    paths.get_filesystem(), port_name, paths.builtin_ports_directory());
                 if (!maybe_port.maybe_scfl)
                 {
                     Checks::exit_success(VCPKG_LINE_INFO);
@@ -130,7 +130,7 @@ namespace vcpkg
                 StringView prefix = command_arguments.back();
                 std::vector<std::string> results;
 
-                const bool is_option = Strings::starts_with(prefix, "-");
+                const bool is_option = prefix.starts_with("-");
                 if (is_option)
                 {
                     for (const auto& s : metadata->options.switches)

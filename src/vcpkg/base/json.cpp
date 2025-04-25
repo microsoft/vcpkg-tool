@@ -1066,6 +1066,8 @@ namespace vcpkg::Json
             {
                 StatsTimer t(g_json_parsing_stats);
 
+                json.remove_bom();
+
                 auto parser = Parser(json, origin, {1, 1});
 
                 auto val = parser.parse_value();
@@ -1165,8 +1167,7 @@ namespace vcpkg::Json
             {
                 return false; // we're a reserved identifier
             }
-            if (sv.size() == 4 && (Strings::starts_with(sv, "lpt") || Strings::starts_with(sv, "com")) &&
-                sv[3] >= '0' && sv[3] <= '9')
+            if (sv.size() == 4 && (sv.starts_with("lpt") || sv.starts_with("com")) && sv[3] >= '0' && sv[3] <= '9')
             {
                 return false; // we're a reserved identifier
             }

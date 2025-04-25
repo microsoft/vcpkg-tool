@@ -94,12 +94,12 @@ namespace
             bool parse_result;
             ZStringView name = switch_.name;
             StabilityTag tag = StabilityTag::Standard;
-            if (Strings::starts_with(name, "x-"))
+            if (name.starts_with("x-"))
             {
                 name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
-            else if (Strings::starts_with(name, "z-"))
+            else if (name.starts_with("z-"))
             {
                 name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;
@@ -127,12 +127,12 @@ namespace
             {
                 ZStringView name = option.name;
                 StabilityTag tag = StabilityTag::Standard;
-                if (Strings::starts_with(name, "x-"))
+                if (name.starts_with("x-"))
                 {
                     name = name.substr(2);
                     tag = StabilityTag::Experimental;
                 }
-                else if (Strings::starts_with(name, "z-"))
+                else if (name.starts_with("z-"))
                 {
                     name = name.substr(2);
                     tag = StabilityTag::ImplementationDetail;
@@ -159,12 +159,12 @@ namespace
         {
             ZStringView name = option.name;
             StabilityTag tag = StabilityTag::Standard;
-            if (Strings::starts_with(name, "x-"))
+            if (name.starts_with("x-"))
             {
                 name = name.substr(2);
                 tag = StabilityTag::Experimental;
             }
-            else if (Strings::starts_with(name, "z-"))
+            else if (name.starts_with("z-"))
             {
                 name = name.substr(2);
                 tag = StabilityTag::ImplementationDetail;

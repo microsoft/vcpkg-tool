@@ -220,6 +220,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
     inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
+    inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
@@ -507,6 +508,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableHome = "HOME";
     inline constexpr StringLiteral EnvironmentVariableHttpProxy = "HTTP_PROXY";
     inline constexpr StringLiteral EnvironmentVariableHttpsProxy = "HTTPS_PROXY";
+    inline constexpr StringLiteral EnvironmentVariableNoProxy = "NO_PROXY";
     inline constexpr StringLiteral EnvironmentVariableInclude = "INCLUDE";
     inline constexpr StringLiteral EnvironmentVariableJenkinsHome = "JENKINS_HOME";
     inline constexpr StringLiteral EnvironmentVariableJenkinsUrl = "JENKINS_URL";

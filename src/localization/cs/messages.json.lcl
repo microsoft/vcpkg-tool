@@ -652,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionDetectLocalChangesError" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[skipping detection of local changes due to unexpected format in git status output]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[z důvodu neočekávaného formátu ve stavu výstupu git se přeskakuje zjišťování místních změn]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[couldn't find required file {path}]]></Val>
@@ -736,15 +727,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionNoGitSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[can't obtain SHA for port {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nejde získat SHA pro port {package_name}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionOldShaIs" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[old SHA: {commit_sha}]]></Val>
@@ -795,19 +777,25 @@
       </Item>
       <Item ItemId=";AddVersionPortVersionShouldBeGone" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Val><![CDATA[In {package_name}, {version} is a completely new version, so there should be no "port-version". Remove "port-version" and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[V názvu {package_name} je {version} zcela nová verze, takže pole port-version by mělo být odebráno. Odeberte pole port-version, potvrďte danou změnu a zkuste to znovu. Pokud chcete tuto kontrolu přeskočit, opakujte spuštění s parametrem --skip-version-format-check.]]></Val>
+            <Val><![CDATA[V názvu {package_name} je {version} zcela nová verze, takže by neměla existovat žádná hodnota v poli port-version. Odeberte hodnotu v poli port-version a zkuste to znovu. Pokud chcete tuto kontrolu přeskočit, opakujte spuštění s parametrem --skip-version-format-check.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[In {package_name}, {version} is completely new version, so the "port-version" field should be removed. Remove "port-version", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";AddVersionPortVersionShouldBeOneMore" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the expected new "port-version" is {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version} and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aktuální hodnota port-version v názvu {package_name} pro {version} je {count}, takže další přidaná hodnota port-version by měla být {expected_version}, ale port deklaruje port-version {actual_version}. Změňte hodnotu pole port-version na {expected_version}, potvrďte tuto změnu a zkuste to znovu. Pokud chcete tuto kontrolu přeskočit, opakujte spuštění s parametrem --skip-version-format-check.]]></Val>
+            <Val><![CDATA[Aktuální hodnota port-version v názvu {package_name} pro {version} je {count}, takže očekávaná nová hodnota port-version je {expected_version}, ale port deklaruje port-version {actual_version}. Změňte hodnotu v poli port-version na {expected_version} a zkuste to znovu. Pokud chcete tuto kontrolu přeskočit, opakujte spuštění s parametrem --skip-version-format-check.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[In {package_name}, the current "port-version" for {version} is {count}, so the next added "port-version" should be {expected_version}, but the port declares "port-version" {actual_version}. Change "port-version" to {expected_version}, commit that change, and try again. To skip this check, rerun with --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -825,15 +813,6 @@
           <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Formát verze {package_name} používá version-string, ale formát je přijatelný jako version. Pokud je možné verze pro tento port objednat pomocí pravidel relaxed-version, změňte formát na version a spusťte tento příkaz znovu. Pravidla relaxed-version seřadí verze podle jednotlivých číselných komponent. Verze s příponami pomlček se pak seřadí lexikograficky před. Značky sestavení plus se ignorují. Příklady:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Všimněte si zejména, že přípony s pomlčkami řadí *před*, ne po. 1.0-anything < 1.0]A;Všimněte si, že toto pořadí je stejné jako u sémantické správy verzí (viz https://semver.org), i když se skutečně sémantické části nepoužívají.]A;Pokud verze pro tento port nejsou seřazené podle těchto pravidel, zakažte tuto kontrolu opětovným spuštěním tohoto příkazu a přidáním --skip-version-format-check .]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AddVersionUncommittedChanges" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[there are uncommitted changes for {package_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[pro {package_name} existují nepotvrzené změny.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3367,6 +3346,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdOptForMergeWith" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[test ports intended to merge with this git ref]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[testovací porty určené ke sloučení s tímto odkazem Git]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdOwnsExample1" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg owns <pattern>]]></Val>
@@ -5545,6 +5533,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FailedToDeleteDueToFile2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to remove due to {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[nepovedlo se odebrat kvůli {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FailedToDeleteInsideDueToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to remove_all_inside({value}) due to {path}: ]]></Val>
@@ -6043,6 +6040,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ForMergeWithTestingTheFollowing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--for-merge-with {value} is testing:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--for-merge-with {value} testuje:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ForMoreHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[For More Help]]></Val>
@@ -6163,42 +6169,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[The git registry entry for "{package_name}" must have a "baseline" field that is a valid git commit SHA (40 hexadecimal characters).]A;The current HEAD of that repo is "{value}".]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitStatusOutputExpectedFileName" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected a file name]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[očekával se název souboru]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitStatusOutputExpectedNewLine" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected new line]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[očekával se nový řádek]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitStatusOutputExpectedRenameOrNewline" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[expected renamed file or new lines]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[očekával se přejmenovaný soubor nebo nové řádky]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitStatusUnknownFileStatus" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unknown file status: {value}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[neznámý stav souboru: {value}]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7218,6 +7188,24 @@
           <Val><![CDATA[Installing ${p0}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Instaluje se ${p0}…]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingFromFilesystemRegistry" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[installing from filesystem registry here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[instalace z registru systému souborů]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstallingFromGitRegistry" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[installing from git registry]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[instalace z registru Git]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8515,6 +8503,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[--{value} can not be used with --{option}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";MutuallyExclusivePorts" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[--{option} cannot be used explicitly named ports.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[--{option} nelze použít pro explicitně pojmenované porty.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10150,12 +10147,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ShallowRepositoryDetected" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          <Val><![CDATA[vcpkg was cloned as a shallow repository. Try again with a full vcpkg clone.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Vcpkg se naklonoval jako mělké úložiště v: {path}]A;Zkuste to znovu s úplným klonem vcpkg.]]></Val>
+            <Val><![CDATA[vcpkg se naklonoval jako mělké úložiště. Zkuste to znovu s úplným klonem vcpkg.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[vcpkg was cloned as a shallow repository in: {path}]A;Try again with a full vcpkg clone.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -12015,42 +12015,6 @@
           <Val><![CDATA[if {version_spec} is not yet published, overwrite the previous git tree by running:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[pokud ještě verze {version_spec} není publikovaná, přepište předchozí strom git spuštěním následujícího příkazu:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing1" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nebylo možné určit strom git adresáře portu. To je obvykle způsobeno nepotvrzenými změnami.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing2" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[you can commit your changes and add them to the version database by running:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[změny můžete potvrdit a přidat je do databáze verzí spuštěním následujícího příkazu:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing3" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[wip]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[wip]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";VersionShaMissing4" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[[{package_name}]5D; Add new port]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[[{package_name}]5D; Přidat nový port]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -165,7 +165,7 @@ namespace
         }
 
         auto switch_name_begin = switch_name.begin();
-        if (Strings::starts_with(switch_name, "no-"))
+        if (switch_name.starts_with("no-"))
         {
             saw_no = !saw_no;
             switch_name_begin += 3;
@@ -750,14 +750,14 @@ namespace vcpkg
         return error;
     }
 
-    void CmdParser::add_unexpected_argument_error(const std::string& unrecognized)
+    void CmdParser::add_unexpected_argument_error(StringView unrecognized)
     {
         errors.emplace_back(msg::format_error(msgUnexpectedArgument, msg::option = unrecognized));
     }
 
-    void CmdParser::add_unexpected_switch_error(const std::string& unrecognized)
+    void CmdParser::add_unexpected_switch_error(StringView unrecognized)
     {
-        if (Strings::contains(unrecognized, '='))
+        if (unrecognized.contains('='))
         {
             errors.emplace_back(msg::format_error(msgUnexpectedOption, msg::option = unrecognized));
         }
@@ -796,7 +796,7 @@ namespace vcpkg
         auto first = target.begin();
         while (first != target.end())
         {
-            if (Strings::contains(*first, ','))
+            if (StringView{*first}.contains(','))
             {
                 auto as_split = Strings::split(*first, ',');
                 switch (as_split.size())

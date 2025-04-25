@@ -1305,7 +1305,7 @@ namespace
             };
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "GET", headers, url);
+            auto res = invoke_http_request(wdc, "GET", headers, url, m_secrets);
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -1370,8 +1370,12 @@ namespace
     struct GHABinaryPushProvider : IWriteBinaryProvider
     {
         GHABinaryPushProvider(const Filesystem& fs, const std::string& url, const std::string& token)
-            : m_fs(fs), m_url(url + "_apis/artifactcache/caches"), m_token_header("Authorization: Bearer " + token)
+            : m_fs(fs)
+            , m_url(url + "_apis/artifactcache/caches")
+            , m_secrets()
+            , m_token_header("Authorization: Bearer " + token)
         {
+            m_secrets.emplace_back(token);
         }
 
         Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
@@ -1388,7 +1392,7 @@ namespace
             };
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "POST", headers, m_url, stringify(payload));
+            auto res = invoke_http_request(wdc, "POST", headers, m_url, m_secrets, stringify(payload));
             if (auto p = res.get())
             {
                 auto maybe_json = Json::parse_object(*p, m_url);
@@ -1438,7 +1442,7 @@ namespace
                         m_token_header,
                     };
 
-                    if (invoke_http_request(wdc, "POST", headers, raw_url, stringify(commit)))
+                    if (invoke_http_request(wdc, "POST", headers, raw_url, m_secrets, stringify(commit)))
                     {
                         ++upload_count;
                     }
@@ -1452,6 +1456,7 @@ namespace
 
         const Filesystem& m_fs;
         std::string m_url;
+        std::vector<std::string> m_secrets;
         std::string m_token_header;
         static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
         static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
@@ -1798,12 +1803,12 @@ namespace
         ExpectedL<Unit> publish(const AzureUpkgSource& src,
                                 StringView package_name,
                                 StringView package_version,
-                                const Path& package_dir,
+                                const Path& zip_path,
                                 StringView description,
                                 MessageSink& sink) const
         {
             Command cmd = base_cmd(src, package_name, package_version, "publish");
-            cmd.string_arg("--description").string_arg(description).string_arg("--path").string_arg(package_dir);
+            cmd.string_arg("--description").string_arg(description).string_arg("--path").string_arg(zip_path);
             return run_az_artifacts_cmd(cmd, sink);
         }
 
@@ -1846,10 +1851,12 @@ namespace
             size_t count_stored = 0;
             auto ref = make_feedref(request, "");
             std::string package_description = "Cached package for " + ref.id;
+
+            const Path& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             for (auto&& write_src : m_sources)
             {
-                auto res = m_azure_tool.publish(
-                    write_src, ref.id, ref.version, request.package_dir, package_description, msg_sink);
+                auto res =
+                    m_azure_tool.publish(write_src, ref.id, ref.version, zip_path, package_description, msg_sink);
                 if (res)
                 {
                     count_stored++;
@@ -1864,17 +1871,26 @@ namespace
         }
 
         bool needs_nuspec_data() const override { return false; }
-        bool needs_zip_file() const override { return false; }
+        bool needs_zip_file() const override { return true; }
 
     private:
         AzureUpkgTool m_azure_tool;
         std::vector<AzureUpkgSource> m_sources;
     };
 
-    struct AzureUpkgGetBinaryProvider : public IReadBinaryProvider
+    struct AzureUpkgGetBinaryProvider : public ZipReadBinaryProvider
     {
-        AzureUpkgGetBinaryProvider(const ToolCache& cache, MessageSink& sink, AzureUpkgSource source)
-            : m_azure_tool(cache, sink), m_sink(sink), m_source(source)
+        AzureUpkgGetBinaryProvider(ZipTool zip,
+                                   const Filesystem& fs,
+                                   const ToolCache& cache,
+                                   MessageSink& sink,
+                                   const AzureUpkgSource& source,
+                                   const Path& buildtrees)
+            : ZipReadBinaryProvider(std::move(zip), fs)
+            , m_azure_tool(cache, sink)
+            , m_sink(sink)
+            , m_source(std::move(source))
+            , m_buildtrees(buildtrees)
         {
         }
 
@@ -1887,21 +1903,32 @@ namespace
             return msg::format(msgRestoredPackagesFromAZUPKG, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
-        void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+        void acquire_zips(View<const InstallPlanAction*> actions, Span<Optional<ZipResource>> out_zips) const override
         {
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                auto info = BinaryPackageReadInfo{*actions[i]};
-                auto ref = make_feedref(info, "");
-                auto res = m_azure_tool.download(m_source, ref.id, ref.version, info.package_dir, m_sink);
+                const auto& action = *actions[i];
+                const auto info = BinaryPackageReadInfo{action};
+                const auto ref = make_feedref(info, "");
 
-                if (res)
+                Path temp_dir = m_buildtrees / fmt::format("upkg_download_{}", info.package_abi);
+                Path temp_zip_path = temp_dir / fmt::format("{}.zip", ref.id);
+                Path final_zip_path = m_buildtrees / fmt::format("{}.zip", ref.id);
+
+                const auto result = m_azure_tool.download(m_source, ref.id, ref.version, temp_dir, m_sink);
+                if (result.has_value() && m_fs.exists(temp_zip_path, IgnoreErrors{}))
                 {
-                    out_status[i] = RestoreResult::restored;
+                    m_fs.rename(temp_zip_path, final_zip_path, VCPKG_LINE_INFO);
+                    out_zips[i].emplace(std::move(final_zip_path), RemoveWhen::always);
                 }
                 else
                 {
-                    out_status[i] = RestoreResult::unavailable;
+                    msg::println_warning(result.error());
+                }
+
+                if (m_fs.exists(temp_dir, IgnoreErrors{}))
+                {
+                    m_fs.remove(temp_dir, VCPKG_LINE_INFO);
                 }
             }
         }
@@ -1910,6 +1937,7 @@ namespace
         AzureUpkgTool m_azure_tool;
         MessageSink& m_sink;
         AzureUpkgSource m_source;
+        const Path& m_buildtrees;
     };
 
     ExpectedL<Path> default_cache_path_impl()
@@ -2876,7 +2904,8 @@ namespace vcpkg
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read)
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read ||
+                !s.upkg_templates_to_get.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
@@ -2909,12 +2938,23 @@ namespace vcpkg
                         std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
                 }
 
+                for (auto&& src : s.upkg_templates_to_get)
+                {
+                    m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
+                        zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
+                }
+
                 if (s.gha_read)
                 {
                     const auto& url = *args.actions_cache_url.get();
                     const auto& token = *args.actions_runtime_token.get();
                     m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
                 }
+            }
+            if (!s.upkg_templates_to_put.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
             }
             if (!s.archives_to_write.empty())
             {
@@ -2964,20 +3004,6 @@ namespace vcpkg
                     m_config.write.push_back(std::make_unique<NugetBinaryPushProvider>(
                         nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
                 }
-            }
-
-            if (!s.upkg_templates_to_get.empty())
-            {
-                for (auto&& src : s.upkg_templates_to_get)
-                {
-                    m_config.read.push_back(
-                        std::make_unique<AzureUpkgGetBinaryProvider>(tools, out_sink, std::move(src)));
-                }
-            }
-            if (!s.upkg_templates_to_put.empty())
-            {
-                m_config.write.push_back(
-                    std::make_unique<AzureUpkgPutBinaryProvider>(tools, out_sink, std::move(s.upkg_templates_to_put)));
             }
         }
 

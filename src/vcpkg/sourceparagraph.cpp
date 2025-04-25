@@ -133,6 +133,26 @@ namespace vcpkg
         return true;
     }
 
+    PortLocation::PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind)
+        : port_directory(port_directory), spdx_location(), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind)
+        : port_directory(std::move(port_directory)), spdx_location(), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind)
+        : port_directory(port_directory), spdx_location(std::move(spdx_location)), kind(kind)
+    {
+    }
+
+    PortLocation::PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind)
+        : port_directory(std::move(port_directory)), spdx_location(std::move(spdx_location)), kind(kind)
+    {
+    }
+
     bool operator==(const FeatureParagraph& lhs, const FeatureParagraph& rhs)
     {
         if (lhs.name != rhs.name) return false;
@@ -646,7 +666,7 @@ namespace vcpkg
 
             for (const auto& el : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (el.first.starts_with("$"))
                 {
                     dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
@@ -713,7 +733,7 @@ namespace vcpkg
 
             for (const auto& el : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (el.first.starts_with("$"))
                 {
                     dep.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
@@ -797,7 +817,7 @@ namespace vcpkg
             auto loc = cur_loc();
             auto token = match_while(is_idstring_element);
 
-            if (Strings::starts_with(token, "DocumentRef-"))
+            if (token.starts_with("DocumentRef-"))
             {
                 add_error(msg::format(msgLicenseExpressionDocumentRefUnsupported), loc);
                 if (cur() == ':')
@@ -845,7 +865,7 @@ namespace vcpkg
                     add_error(msg::format(msgLicenseExpressionExpectCompoundOrWithFoundWord, msg::value = token), loc);
                     break;
                 case Expecting::License:
-                    if (Strings::starts_with(token, "LicenseRef-"))
+                    if (token.starts_with("LicenseRef-"))
                     {
                         result.append(token.begin(), token.end());
                     }
@@ -1038,7 +1058,7 @@ namespace vcpkg
             auto feature = std::make_unique<FeatureParagraph>();
             for (const auto& el : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (el.first.starts_with("$"))
                 {
                     feature->extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
@@ -1081,7 +1101,7 @@ namespace vcpkg
 
             for (const auto& pr : obj)
             {
-                if (Strings::starts_with(pr.first, "$"))
+                if (pr.first.starts_with("$"))
                 {
                     res.extra_features_info.insert(pr.first.to_string(), pr.second);
                     continue;
@@ -1174,7 +1194,7 @@ namespace vcpkg
         {
             for (const auto& el : obj)
             {
-                if (Strings::starts_with(el.first, "$"))
+                if (el.first.starts_with("$"))
                 {
                     spgh.extra_info.insert_or_replace(el.first.to_string(), el.second);
                 }
@@ -1505,10 +1525,7 @@ namespace vcpkg
         return it == last ? last : it + 1;
     }
 
-    static bool starts_with_error(StringView sv)
-    {
-        return Strings::starts_with(sv, "Error") || Strings::starts_with(sv, "error: ");
-    }
+    static bool starts_with_error(StringView sv) { return sv.starts_with("Error") || sv.starts_with("error: "); }
 
     void print_error_message(const LocalizedString& message)
     {

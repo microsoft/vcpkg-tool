@@ -110,9 +110,9 @@ namespace vcpkg
         Optional<Path> working_directory;
         Optional<Environment> environment;
 
-#if defined(_WIN32)
         // the encoding to use for standard streams of the child
         Encoding encoding = Encoding::Utf8;
+#if defined(_WIN32)
         CreateNewConsole create_new_console = CreateNewConsole::No;
 #endif // ^^^ _WIN32
        // whether to echo all read content to the enclosing terminal;
@@ -264,9 +264,16 @@ namespace vcpkg
     // Otherwise, returns an ExpectedL containing error text
     ExpectedL<std::string> flatten_out(ExpectedL<ExitCodeAndOutput>&& maybe_exit, StringView tool_name);
 
+    void replace_secrets(std::string& target, View<std::string> secrets);
+
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns a pointer to the process' output.
     // Otherwise, records an error in `context` and returns nullptr.
     std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit);
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
-                                      StringView exe_path);
+                                      View<std::string> secrets);
 }
