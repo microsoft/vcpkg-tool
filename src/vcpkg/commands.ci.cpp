@@ -345,8 +345,8 @@ namespace vcpkg
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 fs.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder =
-                    &(build_logs_recorder_storage.emplace(fs.almost_canonical(raw_path, VCPKG_LINE_INFO)));
+                build_logs_recorder = &(build_logs_recorder_storage.emplace(
+                    fs.almost_canonical(raw_path, VCPKG_LINE_INFO), fs.file_time_now()));
             }
         }
 
