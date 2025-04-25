@@ -3,6 +3,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -53,8 +54,12 @@ namespace
             return success;
         }
 
-        auto load_result =
-            Paragraphs::try_load_port_required(paths.get_filesystem(), port_name, PortLocation{*extracted_tree});
+        auto load_result = Paragraphs::try_load_port_required(
+            paths.get_filesystem(),
+            port_name,
+            PortLocation(*extracted_tree,
+                         Paragraphs::builtin_git_tree_spdx_location(version_entry.git_tree),
+                         PortSourceKind::Git));
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {
@@ -517,7 +522,8 @@ namespace vcpkg
         bool verbose = Util::Sets::contains(parsed_args.switches, SwitchVerbose);
         bool verify_git_trees = Util::Sets::contains(parsed_args.switches, SwitchVerifyGitTrees);
 
-        auto port_git_tree_map = paths.git_get_local_port_treeish_map().value_or_exit(VCPKG_LINE_INFO);
+        auto port_git_trees =
+            paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);
         auto& fs = paths.get_filesystem();
         auto versions_database =
             load_all_git_versions_files(fs, paths.builtin_registry_versions).value_or_exit(VCPKG_LINE_INFO);
@@ -526,68 +532,34 @@ namespace vcpkg
         std::map<std::string, SourceControlFileAndLocation, std::less<>> local_ports;
 
         MessageSink& errors_sink = stdout_sink;
-        for (auto&& port_path : fs.get_directories_non_recursive(paths.builtin_ports_directory(), VCPKG_LINE_INFO))
-        {
-            auto port_name = port_path.stem().to_string();
-            auto maybe_loaded_port =
-                Paragraphs::try_load_port_required(fs, port_name, PortLocation{port_path}).maybe_scfl;
-            auto loaded_port = maybe_loaded_port.get();
-            if (loaded_port)
-            {
-                local_ports.emplace(port_name, std::move(*loaded_port));
-                continue;
-            }
-
-            errors_sink.println(Color::error, std::move(maybe_loaded_port).error());
-        }
-
         bool success = true;
 
         auto& success_sink = verbose ? stdout_sink : null_sink;
-        for (const auto& local_port : local_ports)
+        for (auto&& tree_entry : port_git_trees)
         {
-            const auto& port_name = local_port.first;
-            const auto& scfl = local_port.second;
-            auto git_tree_it = port_git_tree_map.find(port_name);
-            if (git_tree_it == port_git_tree_map.end())
+            auto& port_name = tree_entry.file_name;
+            auto maybe_loaded_port =
+                Paragraphs::try_load_builtin_port_required(fs, port_name, paths.builtin_ports_directory()).maybe_scfl;
+            auto loaded_port = maybe_loaded_port.get();
+            if (loaded_port)
             {
-                errors_sink.println(
-                    Color::error,
-                    LocalizedString::from_raw(scfl.control_path)
-                        .append_raw(": ")
-                        .append_raw(ErrorPrefix)
-                        .append(msgVersionShaMissing1)
-                        .append_raw('\n')
-                        .append_raw(NotePrefix)
-                        .append(msgVersionShaMissing2)
-                        .append_raw('\n')
-                        .append_indent()
-                        .append_raw(fmt::format("git add \"{}\"\n", scfl.port_directory()))
-                        .append_indent()
-                        .append_raw(fmt::format("git commit -m {}\n", msg::format(msgVersionShaMissing3)))
-                        .append_indent()
-                        .append_raw(fmt::format("vcpkg x-add-version {}\n", port_name))
-                        .append_indent()
-                        .append_raw("git add versions\n")
-                        .append_indent()
-                        .append_raw(fmt::format("git commit --amend -m \"{}\"",
-                                                msg::format(msgVersionShaMissing4, msg::package_name = port_name))));
+                success &= verify_local_port_matches_version_database(
+                    errors_sink, success_sink, port_name, *loaded_port, versions_database, tree_entry.git_tree_sha);
+                success &= verify_local_port_matches_baseline(errors_sink,
+                                                              success_sink,
+                                                              baseline,
+                                                              paths.builtin_registry_versions / "baseline.json",
+                                                              port_name,
+                                                              *loaded_port);
+
+                success &= verify_all_dependencies_and_version_constraints(
+                    errors_sink, success_sink, *loaded_port, versions_database);
             }
             else
             {
-                success &= verify_local_port_matches_version_database(
-                    errors_sink, success_sink, port_name, scfl, versions_database, git_tree_it->second);
+                errors_sink.println(Color::error, std::move(maybe_loaded_port).error());
+                success = false;
             }
-
-            success &= verify_local_port_matches_baseline(errors_sink,
-                                                          success_sink,
-                                                          baseline,
-                                                          paths.builtin_registry_versions / "baseline.json",
-                                                          port_name,
-                                                          scfl);
-
-            success &=
-                verify_all_dependencies_and_version_constraints(errors_sink, success_sink, scfl, versions_database);
         }
 
         // We run version database checks at the end in case any of the above created new cache entries
@@ -598,6 +570,7 @@ namespace vcpkg
             if (!maybe_entries)
             {
                 errors_sink.println(Color::error, versions_cache_entry.second.entries.error());
+                success = false;
                 continue;
             }
 

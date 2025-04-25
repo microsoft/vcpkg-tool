@@ -43,10 +43,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionDetectLocalChangesError,
-                (),
-                "",
-                "skipping detection of local changes due to unexpected format in git status output")
 DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
 DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
@@ -61,7 +57,6 @@ DECLARE_MESSAGE(AddVersionNewFile, (), "", "(new file)")
 DECLARE_MESSAGE(AddVersionNewShaIs, (msg::commit_sha), "", "new SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionNoFilesUpdated, (), "", "No files were updated")
 DECLARE_MESSAGE(AddVersionNoFilesUpdatedForPort, (msg::package_name), "", "No files were updated for {package_name}")
-DECLARE_MESSAGE(AddVersionNoGitSha, (msg::package_name), "", "can't obtain SHA for port {package_name}")
 DECLARE_MESSAGE(AddVersionOldShaIs, (msg::commit_sha), "", "old SHA: {commit_sha}")
 DECLARE_MESSAGE(AddVersionOverwriteOptionSuggestion,
                 (msg::option),
@@ -76,19 +71,18 @@ DECLARE_MESSAGE(AddVersionPortFilesShaUnchanged,
                 "",
                 "checked-in files for {package_name} are unchanged from version {version}")
 DECLARE_MESSAGE(AddVersionPortHasImproperFormat, (msg::package_name), "", "{package_name} is not properly formatted")
-DECLARE_MESSAGE(
-    AddVersionPortVersionShouldBeGone,
-    (msg::package_name, msg::version),
-    "",
-    "In {package_name}, {version} is completely new version, so the \"port-version\" field should be removed. Remove "
-    "\"port-version\", commit that change, and try again. To skip this check, rerun with --skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionPortVersionShouldBeOneMore,
-                (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
+DECLARE_MESSAGE(AddVersionPortVersionShouldBeGone,
+                (msg::package_name, msg::version),
                 "",
-                "In {package_name}, the current \"port-version\" for {version} is {count}, so the next added "
-                "\"port-version\" should be {expected_version}, but the port declares \"port-version\" "
-                "{actual_version}. Change \"port-version\" to {expected_version}, commit that change, and try again. "
-                "To skip this check, rerun with --skip-version-format-check .")
+                "In {package_name}, {version} is a completely new version, so there should be no \"port-version\". "
+                "Remove \"port-version\" and try again. To skip this check, rerun with --skip-version-format-check .")
+DECLARE_MESSAGE(
+    AddVersionPortVersionShouldBeOneMore,
+    (msg::package_name, msg::version, msg::count, msg::expected_version, msg::actual_version),
+    "",
+    "In {package_name}, the current \"port-version\" for {version} is {count}, so the expected new \"port-version\" is "
+    "{expected_version}, but the port declares \"port-version\" {actual_version}. Change \"port-version\" to "
+    "{expected_version} and try again. To skip this check, rerun with --skip-version-format-check .")
 DECLARE_MESSAGE(AddVersionSuggestVersionDate,
                 (msg::package_name),
                 "\"version-string\" and \"version-date\" are JSON keys, and --skip-version-format-check is a command "
@@ -112,10 +106,6 @@ DECLARE_MESSAGE(
     "actually semantic parts do not apply.\n"
     "If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding "
     "--skip-version-format-check .")
-DECLARE_MESSAGE(AddVersionUncommittedChanges,
-                (msg::package_name),
-                "",
-                "there are uncommitted changes for {package_name}")
 DECLARE_MESSAGE(AddVersionUpdateVersionReminder, (), "", "Did you remember to update the version or port version?")
 DECLARE_MESSAGE(AddVersionUseOptionAll,
                 (msg::command_name, msg::option),
@@ -785,6 +775,7 @@ DECLARE_MESSAGE(CmdOwnsExample1,
                 (),
                 "This is a command line, only the part <pattern> should be localized.",
                 "vcpkg owns <pattern>")
+DECLARE_MESSAGE(CmdOptForMergeWith, (), "", "test ports intended to merge with this git ref")
 DECLARE_MESSAGE(CmdPackageInfoExample1,
                 (),
                 "This is a command line, only the part <package name> should be localized.",
@@ -1289,6 +1280,7 @@ DECLARE_MESSAGE(FailedToDeleteDueToFile,
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
                 "printed after this",
                 "failed to remove_all({value}) due to {path}: ")
+DECLARE_MESSAGE(FailedToDeleteDueToFile2, (msg::path), "", "failed to remove due to {path}")
 DECLARE_MESSAGE(FailedToDeleteInsideDueToFile,
                 (msg::value, msg::path),
                 "{value} is the parent path of {path} we tried to delete; the underlying Windows error message is "
@@ -1419,6 +1411,10 @@ DECLARE_MESSAGE(
     "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.")
 DECLARE_MESSAGE(ForceClassicMode, (), "", "Force classic mode, even if a manifest could be found.")
 DECLARE_MESSAGE(FormattedParseMessageExpressionPrefix, (), "", "on expression:")
+DECLARE_MESSAGE(ForMergeWithTestingTheFollowing,
+                (msg::value),
+                "{value} is what the user entered as the target git ref",
+                "--for-merge-with {value} is testing:")
 DECLARE_MESSAGE(ForMoreHelp,
                 (),
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
@@ -1445,13 +1441,6 @@ DECLARE_MESSAGE(
     "",
     "The git registry \"{url}\" must have a \"baseline\" field that is a valid git commit SHA (40 hexadecimal "
     "characters).\nTo use the current latest versions, set baseline to that repo's HEAD, \"{commit_sha}\".")
-DECLARE_MESSAGE(GitStatusOutputExpectedFileName, (), "", "expected a file name")
-DECLARE_MESSAGE(GitStatusOutputExpectedNewLine, (), "", "expected new line")
-DECLARE_MESSAGE(GitStatusOutputExpectedRenameOrNewline, (), "", "expected renamed file or new lines")
-DECLARE_MESSAGE(GitStatusUnknownFileStatus,
-                (msg::value),
-                "{value} is a single character indicating file status, for example: A, U, M, D",
-                "unknown file status: {value}")
 DECLARE_MESSAGE(GitUnexpectedCommandOutputCmd,
                 (msg::command_line),
                 "",
@@ -1786,6 +1775,8 @@ DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
+DECLARE_MESSAGE(InstallingFromFilesystemRegistry, (), "", "installing from filesystem registry here")
+DECLARE_MESSAGE(InstallingFromGitRegistry, (), "", "installing from git registry")
 DECLARE_MESSAGE(InstallingOverlayPort, (), "", "installing overlay port from here")
 DECLARE_MESSAGE(InstallingPackage,
                 (msg::action_index, msg::count, msg::spec),
@@ -2182,6 +2173,7 @@ DECLARE_MESSAGE(MultipleFeatures,
                 (msg::package_name, msg::feature),
                 "",
                 "{package_name} declares {feature} multiple times; please ensure that features have distinct names")
+DECLARE_MESSAGE(MutuallyExclusivePorts, (msg::option), "", "--{option} cannot be used explicitly named ports.")
 DECLARE_MESSAGE(MutuallyExclusiveOption,
                 (msg::value, msg::option),
                 "{value} is a second {option} switch",
@@ -2716,10 +2708,9 @@ DECLARE_MESSAGE(SettingEnvVar,
                 "'--' at the beginning must be preserved",
                 "-- Setting \"{env_var}\" environment variables to \"{url}\".")
 DECLARE_MESSAGE(ShallowRepositoryDetected,
-                (msg::path),
+                (),
                 "",
-                "vcpkg was cloned as a shallow repository in: {path}\n"
-                "Try again with a full vcpkg clone.")
+                "vcpkg was cloned as a shallow repository. Try again with a full vcpkg clone.")
 DECLARE_MESSAGE(ShaPassedAsArgAndOption,
                 (),
                 "",
@@ -3241,20 +3232,6 @@ DECLARE_MESSAGE(VersionShaMismatch4,
                 (msg::version_spec),
                 "",
                 "if {version_spec} is not yet published, overwrite the previous git tree by running:")
-DECLARE_MESSAGE(
-    VersionShaMissing1,
-    (),
-    "",
-    "the git tree of the port directory could not be determined. This is usually caused by uncommitted changes.")
-DECLARE_MESSAGE(VersionShaMissing2,
-                (),
-                "",
-                "you can commit your changes and add them to the version database by running:")
-DECLARE_MESSAGE(VersionShaMissing3,
-                (),
-                "This is short for 'work in progress' and must be enclosed in \" quotes if it is more than 1 word",
-                "wip")
-DECLARE_MESSAGE(VersionShaMissing4, (msg::package_name), "", "[{package_name}] Add new port")
 DECLARE_MESSAGE(VersionSharpMustBeFollowedByPortVersion,
                 (),
                 "",

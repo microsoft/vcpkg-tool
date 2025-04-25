@@ -1,6 +1,8 @@
 #include <vcpkg/base/cache.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/span.h>
@@ -23,6 +25,7 @@
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -50,6 +53,61 @@ namespace
 
         return base_path / feature_dir;
     }
+
+    std::vector<std::string> get_for_merge_with_test_port_names(const VcpkgPaths& paths, StringView for_merge_with)
+    {
+        auto& fs = paths.get_filesystem();
+        auto& builtin_ports = paths.builtin_ports_directory();
+        auto git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
+        auto ports_dir_prefix =
+            git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_quiet_exit(VCPKG_LINE_INFO);
+        const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
+        auto index_file =
+            git_index_file(console_diagnostic_context, fs, git_exe, locator).value_or_quiet_exit(VCPKG_LINE_INFO);
+        TempFileDeleter temp_index_file{fs, fmt::format("{}_vcpkg_{}.tmp", index_file.native(), get_process_id())};
+        if (!fs.copy_file(
+                console_diagnostic_context, index_file, temp_index_file.path, CopyOptions::overwrite_existing) ||
+            !git_add_with_index(console_diagnostic_context, git_exe, builtin_ports, temp_index_file.path))
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+        auto head_tree = git_write_index_tree(console_diagnostic_context, git_exe, locator, temp_index_file.path)
+                             .value_or_quiet_exit(VCPKG_LINE_INFO);
+        auto merge_base = git_merge_base(console_diagnostic_context, git_exe, locator, for_merge_with, "HEAD")
+                              .value_or_quiet_exit(VCPKG_LINE_INFO);
+        auto diffs = git_diff_tree(console_diagnostic_context,
+                                   git_exe,
+                                   locator,
+                                   fmt::format("{}:{}", merge_base, ports_dir_prefix),
+                                   fmt::format("{}:{}", head_tree, ports_dir_prefix))
+                         .value_or_quiet_exit(VCPKG_LINE_INFO);
+        std::vector<std::string> test_port_names;
+        for (auto&& diff : diffs)
+        {
+            switch (diff.kind)
+            {
+                case GitDiffTreeLineKind::Added:
+                case GitDiffTreeLineKind::Copied:
+                case GitDiffTreeLineKind::Modified:
+                case GitDiffTreeLineKind::Renamed:
+                case GitDiffTreeLineKind::TypeChange: test_port_names.push_back(std::move(diff.file_name)); break;
+                case GitDiffTreeLineKind::Deleted:
+                case GitDiffTreeLineKind::Unmerged:
+                case GitDiffTreeLineKind::Unknown: break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        return test_port_names;
+    }
+
+    std::vector<SourceControlFile*> load_all_scf_by_name(View<std::string> test_port_names,
+                                                         PathsPortFileProvider& provider)
+    {
+        return Util::fmap(test_port_names, [&](const std::string& arg) {
+            return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
+        });
+    }
 }
 
 namespace vcpkg
@@ -66,6 +124,7 @@ namespace vcpkg
         {SwitchCIFeatureBaseline, msgCmdTestCIFeatureBaseline},
         {SwitchFailingAbiLog, msgCmdTestFeaturesFailingAbis},
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
+        {SwitchForMergeWith, msgCmdOptForMergeWith},
     };
 
     constexpr CommandMetadata CommandTestFeaturesMetadata = {
@@ -86,7 +145,7 @@ namespace vcpkg
                                         Triplet host_triplet)
     {
         auto& fs = paths.get_filesystem();
-        const ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
+        ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
         const auto all_ports = Util::Sets::contains(options.switches, SwitchAll);
@@ -119,16 +178,43 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         std::vector<SourceControlFile*> feature_test_ports;
+
+        auto it_merge_with = settings.find(SwitchForMergeWith);
         if (all_ports)
         {
-            const auto files = provider.load_all_control_files();
-            feature_test_ports = Util::fmap(files, [](auto& scfl) { return scfl->source_control_file.get(); });
+            if (it_merge_with != settings.end())
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                            msgMutuallyExclusiveOption,
+                                            msg::value = SwitchAll,
+                                            msg::option = SwitchForMergeWith);
+            }
+
+            if (!options.command_arguments.empty())
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMutuallyExclusivePorts, msg::option = SwitchAll);
+            }
+
+            feature_test_ports =
+                Util::fmap(provider.load_all_control_files(),
+                           [](const SourceControlFileAndLocation* scfl) { return scfl->source_control_file.get(); });
+        }
+        else if (it_merge_with == settings.end())
+        {
+            feature_test_ports = load_all_scf_by_name(options.command_arguments, provider);
+        }
+        else if (options.command_arguments.empty())
+        {
+            auto test_port_names = get_for_merge_with_test_port_names(paths, it_merge_with->second);
+            msg::print(msg::format(msgForMergeWithTestingTheFollowing, msg::value = it_merge_with->second)
+                           .append_raw(' ')
+                           .append_raw(Strings::join(" ", test_port_names))
+                           .append_raw('\n'));
+            feature_test_ports = load_all_scf_by_name(test_port_names, provider);
         }
         else
         {
-            feature_test_ports = Util::fmap(options.command_arguments, [&](auto&& arg) {
-                return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
-            });
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMutuallyExclusivePorts, msg::option = SwitchForMergeWith);
         }
 
         auto feature_baseline_iter = settings.find(SwitchCIFeatureBaseline);
@@ -149,8 +235,9 @@ namespace vcpkg
         }
 
         // to reduce number of cmake invocations
-        auto all_specs = Util::fmap(feature_test_ports,
-                                    [&](auto scf) { return PackageSpec(scf->core_paragraph->name, target_triplet); });
+        auto all_specs = Util::fmap(feature_test_ports, [&](const SourceControlFile* scf) {
+            return PackageSpec(scf->core_paragraph->name, target_triplet);
+        });
         var_provider.load_dep_info_vars(all_specs, host_triplet);
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
@@ -390,8 +477,6 @@ namespace vcpkg
             {
                 auto& logs_dir =
                     maybe_logs_dir.emplace(ci_build_log_feature_test_base_path(*build_logs_base_path, i, spec));
-                fs.create_directory(logs_dir, VCPKG_LINE_INFO);
-                fs.write_contents(logs_dir / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                 build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir));
             }
 
@@ -466,6 +551,12 @@ namespace vcpkg
                         known_failures.insert(*abi);
                     }
                     handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
+                    if (maybe_logs_dir)
+                    {
+                        fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);
+                        fs.write_contents(
+                            *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
+                    }
                     break;
             }
 
@@ -506,6 +597,8 @@ namespace vcpkg
             fs.write_contents_and_dirs(raw_path, content, VCPKG_LINE_INFO);
         }
 
-        Checks::exit_success(VCPKG_LINE_INFO);
+        binary_cache.wait_for_async_complete_and_join();
+
+        Checks::exit_with_code(VCPKG_LINE_INFO, unexpected_states.empty() ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 }

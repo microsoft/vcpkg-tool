@@ -95,7 +95,7 @@ namespace
     // To disambiguate between two overloads
     constexpr struct
     {
-        bool operator()(char c) const noexcept { return std::isspace(static_cast<unsigned char>(c)) != 0; }
+        bool operator()(char c) const noexcept { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
     } is_space_char;
 
     constexpr struct
@@ -225,16 +225,9 @@ bool Strings::case_insensitive_ascii_ends_with(StringView s, StringView pattern)
     return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
-bool Strings::ends_with(StringView s, StringView pattern)
-{
-    if (s.size() < pattern.size()) return false;
-    return std::equal(s.end() - pattern.size(), s.end(), pattern.begin(), pattern.end());
-}
-bool Strings::starts_with(StringView s, StringView pattern)
-{
-    if (s.size() < pattern.size()) return false;
-    return std::equal(s.begin(), s.begin() + pattern.size(), pattern.begin(), pattern.end());
-}
+bool Strings::ends_with(StringView s, StringView pattern) { return s.ends_with(pattern); }
+
+bool Strings::starts_with(StringView s, StringView pattern) { return s.starts_with(pattern); }
 
 std::string Strings::replace_all(StringView s, StringView search, StringView rep)
 {
@@ -271,8 +264,13 @@ void Strings::inplace_replace_all(std::string& s, char search, char rep) noexcep
 
 void Strings::inplace_trim(std::string& s)
 {
-    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
+    inplace_trim_end(s);
     s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), is_space_char));
+}
+
+void Strings::inplace_trim_end(std::string& s)
+{
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), is_space_char).base(), s.end());
 }
 
 StringView Strings::trim(StringView sv)
@@ -280,6 +278,12 @@ StringView Strings::trim(StringView sv)
     auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
     auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
     return StringView(first, last);
+}
+
+StringView Strings::trim_end(StringView sv)
+{
+    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    return StringView(sv.begin(), last);
 }
 
 void Strings::inplace_trim_all_and_remove_whitespace_strings(std::vector<std::string>& strings)
@@ -509,16 +513,6 @@ bool Strings::equals(StringView a, StringView b)
 const char* Strings::search(StringView haystack, StringView needle)
 {
     return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end());
-}
-
-bool Strings::contains(StringView haystack, StringView needle)
-{
-    return Strings::search(haystack, needle) != haystack.end();
-}
-
-bool Strings::contains(StringView haystack, char needle)
-{
-    return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
 }
 
 size_t Strings::byte_edit_distance(StringView a, StringView b)

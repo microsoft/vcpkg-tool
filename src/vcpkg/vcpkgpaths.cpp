@@ -4,6 +4,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/git.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/jsonreader.h>
@@ -196,7 +197,7 @@ namespace
             if (auto p_baseline = manifest->builtin_baseline.get())
             {
                 get_global_metrics_collector().track_define(DefineMetric::ManifestBaseline);
-                if (!is_git_commit_sha(*p_baseline))
+                if (!is_git_sha(*p_baseline))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::VersioningErrorBaseline);
                     Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
@@ -478,7 +479,7 @@ namespace
                     const auto& commit = reference_to_commit.second;
                     if (auto commit_string = commit.maybe_string())
                     {
-                        if (!is_git_commit_sha(*commit_string))
+                        if (!is_git_sha(*commit_string))
                         {
                             Debug::print("Lockfile value for key '", reference, "' was not a commit sha\n");
                             return ret;
@@ -901,15 +902,6 @@ namespace vcpkg
         return m_pimpl->m_tool_cache->get_tool_version(tool, status_messages);
     }
 
-    GitConfig VcpkgPaths::git_builtin_config() const
-    {
-        GitConfig conf;
-        conf.git_exe = get_tool_exe(Tools::GIT, out_sink);
-        conf.git_dir = this->root / ".git";
-        conf.git_work_tree = this->root;
-        return conf;
-    }
-
     Command VcpkgPaths::git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const
     {
         Command ret(get_tool_exe(Tools::GIT, out_sink));
@@ -944,10 +936,13 @@ namespace vcpkg
 
     LocalizedString VcpkgPaths::get_current_git_sha_baseline_message() const
     {
-        const auto& git_config = git_builtin_config();
-        if (is_shallow_clone(git_config).value_or(false))
+        if (is_shallow_clone(null_diagnostic_context,
+                             get_tool_exe(Tools::GIT, out_sink),
+                             GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, this->root})
+                .value_or(false))
         {
-            return msg::format(msgShallowRepositoryDetected, msg::path = git_config.git_dir);
+            return LocalizedString::from_raw(
+                DiagnosticLine{DiagKind::Note, this->root, msg::format(msgShallowRepositoryDetected)}.to_string());
         }
 
         auto maybe_cur_sha = get_current_git_sha();
@@ -998,55 +993,37 @@ namespace vcpkg
                            Tools::GIT);
     }
 
-    ExpectedL<std::map<std::string, std::string, std::less<>>> VcpkgPaths::git_get_local_port_treeish_map() const
+    Optional<std::vector<GitLSTreeEntry>> VcpkgPaths::get_builtin_ports_directory_trees(
+        DiagnosticContext& context) const
     {
-        const auto cmd = git_cmd_builder({}, {})
-                             .string_arg("-C")
-                             .string_arg(this->builtin_ports_directory())
-                             .string_arg("ls-tree")
-                             .string_arg("-d")
-                             .string_arg("HEAD")
-                             .string_arg("--");
+        auto& fs = get_filesystem();
+        // this should write to `context` but the tools cache isn't context aware at this time
+        auto git_exe = get_tool_exe(Tools::GIT, out_sink);
 
-        auto maybe_output = flatten_out(cmd_execute_and_capture_output(cmd), Tools::GIT);
-        if (const auto output = maybe_output.get())
+        const auto& builtin_ports = this->builtin_ports_directory();
+        const auto maybe_prefix = git_prefix(context, git_exe, builtin_ports);
+        if (auto prefix = maybe_prefix.get())
         {
-            std::map<std::string, std::string, std::less<>> ret;
-            const auto lines = Strings::split(std::move(*output), '\n');
-            // The first line of the output is always the parent directory itself.
-            for (auto&& line : lines)
+            const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
+            const auto maybe_index_file = git_index_file(context, fs, git_exe, locator);
+            if (const auto index_file = maybe_index_file.get())
             {
-                // The default output comes in the format:
-                // <mode> SP <type> SP <object> TAB <file>
-                auto split_line = Strings::split(line, '\t');
-                if (split_line.size() != 2)
+                TempFileDeleter temp_index_file{fs,
+                                                fmt::format("{}_vcpkg_{}.tmp", index_file->native(), get_process_id())};
+                if (fs.copy_file(context, *index_file, temp_index_file.path, CopyOptions::overwrite_existing) &&
+                    git_add_with_index(context, git_exe, builtin_ports, temp_index_file.path))
                 {
-                    Debug::println("couldn't split by tabs");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
+                    auto maybe_outer_tree_sha = git_write_index_tree(context, git_exe, locator, temp_index_file.path);
+                    if (const auto outer_tree_sha = maybe_outer_tree_sha.get())
+                    {
+                        return git_ls_tree(context, git_exe, locator, fmt::format("{}:{}", *outer_tree_sha, *prefix));
+                    }
                 }
-
-                auto file_info_section = Strings::split(split_line[0], ' ');
-                if (file_info_section.size() != 3)
-                {
-                    Debug::println("couldn't split by spaces");
-                    return msg::format_error(msgGitUnexpectedCommandOutputCmd, msg::command_line = cmd.command_line())
-                        .append_raw('\n')
-                        .append_raw(line);
-                }
-
-                ret.emplace(split_line[1], file_info_section.back());
             }
-            return ret;
         }
 
-        return msg::format(msgGitCommandFailed, msg::command_line = cmd.command_line())
-            .append_raw('\n')
-            .append(std::move(maybe_output).error())
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgWhileGettingLocalTreeIshObjectsForPorts);
+        context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhileGettingLocalTreeIshObjectsForPorts)});
+        return nullopt;
     }
 
     ExpectedL<std::string> VcpkgPaths::git_fetch_from_remote_registry(StringView repo, StringView treeish) const
@@ -1168,69 +1145,18 @@ namespace vcpkg
 
     ExpectedL<Unit> VcpkgPaths::git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const
     {
-        auto& fs = get_filesystem();
-        std::error_code ec;
-        auto pid = get_process_id();
-        Path git_tree_temp = fmt::format("{}_{}.tmp", destination, pid);
-        Path git_tree_index = fmt::format("{}_{}.index", destination, pid);
-        auto parent = destination.parent_path();
-        if (!parent.empty())
+        BufferedDiagnosticContext bdc{out_sink};
+        if (vcpkg::git_extract_tree(bdc,
+                                    get_filesystem(),
+                                    get_tool_exe(Tools::GIT, out_sink),
+                                    GitRepoLocator{GitRepoLocatorKind::DotGitDir, dot_git_dir},
+                                    destination,
+                                    tree))
         {
-            fs.create_directories(parent, ec);
-            if (ec)
-            {
-                return format_filesystem_call_error(ec, "create_directories", {parent});
-            }
+            return Unit{};
         }
 
-        fs.remove_all(git_tree_temp, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, "remove_all", {git_tree_temp});
-        }
-
-        fs.create_directory(git_tree_temp, ec);
-        if (ec)
-        {
-            return format_filesystem_call_error(ec, "create_directory", {git_tree_temp});
-        }
-
-        auto git_archive = git_cmd_builder(dot_git_dir, git_tree_temp)
-                               .string_arg("read-tree")
-                               .string_arg("-m")
-                               .string_arg("-u")
-                               .string_arg(tree);
-
-        RedirectedProcessLaunchSettings git_archive_settings;
-        auto& env = git_archive_settings.environment.emplace();
-        env.add_entry("GIT_INDEX_FILE", git_tree_index.native());
-
-        auto maybe_git_read_tree_output =
-            flatten(cmd_execute_and_capture_output(git_archive, git_archive_settings), Tools::GIT);
-        if (!maybe_git_read_tree_output)
-        {
-            auto error = msg::format_error(msgGitCommandFailed, msg::command_line = git_archive.command_line());
-            const auto& git_config = git_builtin_config();
-            if (is_shallow_clone(GitConfig{get_tool_exe(Tools::GIT, out_sink), dot_git_dir, git_tree_temp})
-                    .value_or(false))
-            {
-                error = std::move(error).append_raw('\n').append(msgShallowRepositoryDetected,
-                                                                 msg::path = git_config.git_dir);
-            }
-
-            error.append_raw('\n').append(std::move(maybe_git_read_tree_output).error());
-            return error;
-        }
-
-        fs.rename_or_delete(git_tree_temp, destination, ec);
-        if (ec)
-        {
-            return error_prefix().append(
-                format_filesystem_call_error(ec, "rename_or_delete", {git_tree_temp, destination}));
-        }
-
-        fs.remove(git_tree_index, IgnoreErrors{});
-        return Unit{};
+        return LocalizedString::from_raw(std::move(bdc).to_string());
     }
 
     ExpectedL<Path> VcpkgPaths::git_extract_tree_from_remote_registry(StringView tree) const

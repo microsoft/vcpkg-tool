@@ -175,7 +175,7 @@ namespace vcpkg
                 }
             }
 
-            if (Strings::contains(msg.value, "   "))
+            if (msg.value.contains("   "))
             {
                 has_errors = true;
                 msg::print(error_prefix().append_raw(

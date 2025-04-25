@@ -280,7 +280,7 @@ namespace vcpkg
             Checks::check_exit(VCPKG_LINE_INFO, action_plan.empty());
         }
 
-        print_plan(action_plan, paths.builtin_ports_directory());
+        print_plan(action_plan);
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {

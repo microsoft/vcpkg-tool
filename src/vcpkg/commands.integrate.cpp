@@ -54,7 +54,7 @@ namespace vcpkg
         {
             const auto end_of_line = std::find(first, last, '\n');
             const auto line = Strings::trim(StringView{first, end_of_line});
-            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.bash"))
+            if (line.starts_with("source") && line.ends_with("scripts/vcpkg_completion.bash"))
             {
                 matches.emplace_back(line.data(), line.size());
             }
@@ -76,13 +76,13 @@ namespace vcpkg
             const auto line = Strings::trim(StringView{first, end_of_line});
             const auto bashcompinit = Strings::search(line, BASHCOMPINIT);
 
-            if (Strings::starts_with(line, "source") && Strings::ends_with(line, "scripts/vcpkg_completion.zsh"))
+            if (line.starts_with("source") && line.ends_with("scripts/vcpkg_completion.zsh"))
             {
                 res.source_completion_lines.emplace_back(line.data(), line.size());
             }
             else if (bashcompinit != line.end())
             {
-                if (Strings::starts_with(line, "autoload"))
+                if (line.starts_with("autoload"))
                 {
                     // autoload[ a-zA-Z0-9-]+bashcompinit
                     if (std::all_of(first, bashcompinit, [](char ch) {
@@ -97,8 +97,8 @@ namespace vcpkg
                     auto line_before_bashcompinit = Strings::trim(StringView{first, bashcompinit});
                     // check this is not commented out,
                     // and that it is either the first element after a && or the beginning
-                    if (!Strings::contains(line_before_bashcompinit, '#') &&
-                        (line_before_bashcompinit.empty() || Strings::ends_with(line_before_bashcompinit, "&&")))
+                    if (!line_before_bashcompinit.contains('#') &&
+                        (line_before_bashcompinit.empty() || line_before_bashcompinit.ends_with("&&")))
                     {
                         res.has_bashcompinit = true;
                     }

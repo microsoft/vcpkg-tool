@@ -55,9 +55,8 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
         return it2->second;
     }
 
-    SourceControlFileAndLocation& emplace(std::string&& name,
-                                          Version&& version,
-                                          VersionScheme scheme = VersionScheme::String)
+    SourceControlFileAndLocation& emplace(
+        std::string&& name, Version&& version, VersionScheme scheme, PortSourceKind kind, StringView spdx_location)
     {
         auto&& version_map = v[name];
         auto it2 = version_map.find(version);
@@ -69,13 +68,47 @@ struct MockVersionedPortfileProvider : IVersionedPortfileProvider
             core->version_scheme = scheme;
             core->version = version;
             scf->core_paragraph = std::move(core);
-            it2 = version_map
-                      .emplace(std::move(version),
-                               SourceControlFileAndLocation{std::move(scf), Path(std::move(name)) / "vcpkg.json"})
-                      .first;
+            it2 =
+                version_map
+                    .emplace(std::move(version),
+                             SourceControlFileAndLocation{
+                                 std::move(scf), Path(std::move(name)) / "vcpkg.json", spdx_location.to_string(), kind})
+                    .first;
         }
 
         return it2->second;
+    }
+
+    SourceControlFileAndLocation& emplace(std::string&& name,
+                                          Version&& version,
+                                          VersionScheme scheme,
+                                          PortSourceKind kind)
+    {
+        return emplace(std::move(name), std::move(version), scheme, kind, StringLiteral{""});
+    }
+
+    SourceControlFileAndLocation& emplace(std::string&& name,
+                                          Version&& version,
+                                          PortSourceKind kind,
+                                          StringView spdx_location)
+    {
+        return emplace(std::move(name), std::move(version), VersionScheme::String, kind, spdx_location);
+    }
+
+    SourceControlFileAndLocation& emplace(std::string&& name, Version&& version, PortSourceKind kind)
+    {
+        return emplace(std::move(name), std::move(version), VersionScheme::String, kind, StringLiteral{""});
+    }
+
+    SourceControlFileAndLocation& emplace(std::string&& name, Version&& version, VersionScheme scheme)
+    {
+        return emplace(std::move(name), std::move(version), scheme, PortSourceKind::Unknown, StringLiteral{""});
+    }
+
+    SourceControlFileAndLocation& emplace(std::string&& name, Version&& version)
+    {
+        return emplace(
+            std::move(name), std::move(version), VersionScheme::String, PortSourceKind::Unknown, StringLiteral{""});
     }
 };
 
@@ -2366,8 +2399,11 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     MockVersionedPortfileProvider vp;
     auto& scfl_a = vp.emplace("a", {"1", 0});
     auto& scfl_b = vp.emplace("b", {"1", 0});
-    auto& scfl_c = vp.emplace("c", {"1", 0});
-    auto& scfl_f = vp.emplace("f", {"1", 0});
+    auto& scfl_c = vp.emplace("c", {"1", 0}, PortSourceKind::Overlay);
+    auto& scfl_f = vp.emplace("f",
+                              {"1", 0},
+                              PortSourceKind::Git,
+                              "git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf");
 
     const RemovePlanAction remove_b({"b", Test::X64_OSX}, RequestType::USER_REQUESTED);
     const RemovePlanAction remove_a({"a", Test::X64_OSX}, RequestType::USER_REQUESTED);
@@ -2406,27 +2442,27 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     ActionPlan plan;
     {
-        auto formatted = format_plan(plan, "/builtin");
+        auto formatted = format_plan(plan);
         CHECK_FALSE(formatted.has_removals);
         CHECK(formatted.text == "All requested packages are currently installed.\n");
     }
 
     plan.remove_actions.push_back(remove_b);
     {
-        auto formatted = format_plan(plan, "/builtin");
+        auto formatted = format_plan(plan);
         CHECK(formatted.has_removals);
         CHECK(formatted.text == "The following packages will be removed:\n"
                                 "    b:x64-osx\n");
     }
 
     plan.remove_actions.push_back(remove_a);
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan).text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n");
 
     plan.install_actions.push_back(std::move(install_c));
-    REQUIRE_LINES(format_plan(plan, "/builtin").text,
+    REQUIRE_LINES(format_plan(plan).text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
@@ -2434,48 +2470,48 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "    c:x64-osx@1 -- c\n");
 
     plan.remove_actions.push_back(remove_c);
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(plan).text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "    b:x64-osx\n"
                   "The following packages will be rebuilt:\n"
-                  "    c:x64-osx@1\n");
+                  "    c:x64-osx@1 -- c\n");
 
     plan.install_actions.push_back(std::move(install_b));
-    REQUIRE_LINES(format_plan(plan, "c").text,
+    REQUIRE_LINES(format_plan(plan).text,
                   "The following packages will be removed:\n"
                   "    a:x64-osx\n"
                   "The following packages will be rebuilt:\n"
-                  "  * b[1]:x64-osx@1 -- b\n"
-                  "    c:x64-osx@1\n"
+                  "  * b[1]:x64-osx@1\n"
+                  "    c:x64-osx@1 -- c\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
 
     plan.install_actions.push_back(std::move(install_a));
     plan.already_installed.push_back(std::move(already_installed_d));
     plan.already_installed.push_back(std::move(already_installed_e));
     {
-        auto formatted = format_plan(plan, "b");
+        auto formatted = format_plan(plan);
         CHECK(formatted.has_removals);
         REQUIRE_LINES(formatted.text,
                       "The following packages are already installed:\n"
                       "  * d:x86-windows@1\n"
                       "    e:x86-windows@1\n"
                       "The following packages will be rebuilt:\n"
-                      "  * a:x64-osx@1 -- a\n"
+                      "  * a:x64-osx@1\n"
                       "  * b[1]:x64-osx@1\n"
                       "    c:x64-osx@1 -- c\n"
                       "Additional packages (*) will be modified to complete this operation.\n");
     }
 
     plan.install_actions.push_back(std::move(install_f));
-    REQUIRE_LINES(format_plan(plan, "b").text,
+    REQUIRE_LINES(format_plan(plan).text,
                   "The following packages are excluded:\n"
-                  "    f:x64-osx@1 -- f\n"
+                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
                   "The following packages are already installed:\n"
                   "  * d:x86-windows@1\n"
                   "    e:x86-windows@1\n"
                   "The following packages will be rebuilt:\n"
-                  "  * a:x64-osx@1 -- a\n"
+                  "  * a:x64-osx@1\n"
                   "  * b[1]:x64-osx@1\n"
                   "    c:x64-osx@1 -- c\n"
                   "Additional packages (*) will be modified to complete this operation.\n");

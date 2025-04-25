@@ -781,11 +781,11 @@ namespace vcpkg
         static constexpr StringLiteral CASE_INSENSITIVE_CONFIG_SUFFIX = "-config.cmake";
 
         StringView res;
-        if (Strings::ends_with(filename, CASE_SENSITIVE_CONFIG_SUFFIX))
+        if (filename.ends_with(CASE_SENSITIVE_CONFIG_SUFFIX))
         {
             res = filename.substr(0, filename.size() - CASE_SENSITIVE_CONFIG_SUFFIX.size());
         }
-        else if (Strings::ends_with(filename, CASE_INSENSITIVE_CONFIG_SUFFIX))
+        else if (filename.ends_with(CASE_INSENSITIVE_CONFIG_SUFFIX))
         {
             res = filename.substr(0, filename.size() - CASE_INSENSITIVE_CONFIG_SUFFIX.size());
         }
@@ -850,19 +850,19 @@ namespace vcpkg
                 {
                     continue;
                 }
-                else if (Strings::starts_with(suffix, "share/") && Strings::ends_with(suffix, DOT_CMAKE))
+                else if (suffix.starts_with("share/") && suffix.ends_with(DOT_CMAKE))
                 {
                     const auto suffix_without_ending = suffix.substr(0, DOT_CMAKE.size());
-                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-port-config")) continue;
-                    if (Strings::ends_with(suffix_without_ending, "/vcpkg-cmake-wrapper")) continue;
-                    if (Strings::ends_with(suffix_without_ending, /*[Vv]*/ "ersion")) continue;
+                    if (suffix_without_ending.ends_with("/vcpkg-port-config")) continue;
+                    if (suffix_without_ending.ends_with("/vcpkg-cmake-wrapper")) continue;
+                    if (suffix_without_ending.ends_with(/*[Vv]*/ "ersion")) continue;
 
                     const auto filepath = installed.root() / triplet_and_suffix;
                     const auto parent_path = Path(filepath.parent_path());
-                    if (!Strings::ends_with(parent_path.parent_path(), "/share"))
+                    if (!parent_path.parent_path().ends_with("/share"))
                         continue; // Ignore nested find modules, config, or helpers
 
-                    if (Strings::contains(suffix_without_ending, "/Find")) continue;
+                    if (suffix_without_ending.contains("/Find")) continue;
 
                     const auto dirname = parent_path.filename().to_string();
                     const auto package_name = get_cmake_find_package_name(dirname, filepath.filename());
@@ -888,22 +888,22 @@ namespace vcpkg
                         }
                     }
                 }
-                else if (!has_binaries && Strings::starts_with(suffix, "bin/"))
+                else if (!has_binaries && suffix.starts_with("bin/"))
                 {
                     has_binaries = true;
                 }
-                else if (Strings::ends_with(suffix, ".pc"))
+                else if (suffix.ends_with(".pc"))
                 {
-                    if (Strings::contains(suffix, "pkgconfig"))
+                    if (suffix.contains("pkgconfig"))
                     {
                         pkgconfig_files.push_back(installed.root() / triplet_and_suffix);
                     }
                 }
-                else if (Strings::starts_with(suffix, "lib/"))
+                else if (suffix.starts_with("lib/"))
                 {
                     has_binaries = true;
                 }
-                else if (header_path.empty() && Strings::starts_with(suffix, INCLUDE_PREFIX))
+                else if (header_path.empty() && suffix.starts_with(INCLUDE_PREFIX))
                 {
                     header_path = suffix.substr(INCLUDE_PREFIX.size()).to_string();
                 }
@@ -929,12 +929,10 @@ namespace vcpkg
                         return l < r;
                     });
 
-                    static const auto is_namespaced = [](const std::string& target) {
-                        return Strings::contains(target, "::");
-                    };
+                    static const auto is_namespaced = [](StringView target) { return target.contains("::"); };
                     if (Util::any_of(targets, is_namespaced))
                     {
-                        Util::erase_remove_if(targets, [](const std::string& t) { return !is_namespaced(t); });
+                        Util::erase_remove_if(targets, [](StringView t) { return !is_namespaced(t); });
                     }
                 }
                 ret.cmake_targets_map[package.name] = std::move(targets);
@@ -1029,7 +1027,7 @@ namespace vcpkg
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
     {
-        return Util::any_of(args.cmake_args, [](auto& s) { return Strings::starts_with(s, "-D"); });
+        return Util::any_of(args.cmake_args, [](StringView s) { return s.starts_with("-D"); });
     }
 
     void command_install_and_exit(const VcpkgCmdArguments& args,
@@ -1330,7 +1328,7 @@ namespace vcpkg
         }
 #endif // defined(_WIN32)
 
-        const auto formatted = print_plan(action_plan, paths.builtin_ports_directory());
+        const auto formatted = print_plan(action_plan);
         if (!is_recursive && formatted.has_removals)
         {
             msg::println_warning(msgPackagesToRebuildSuggestRecurse);

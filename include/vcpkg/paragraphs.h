@@ -41,6 +41,11 @@ namespace vcpkg::Paragraphs
     PortLoadResult try_load_port_required(const ReadOnlyFilesystem& fs,
                                           StringView port_name,
                                           const PortLocation& port_location);
+    std::string builtin_port_spdx_location(StringView port_name);
+    std::string builtin_git_tree_spdx_location(StringView git_tree);
+    PortLoadResult try_load_builtin_port_required(const ReadOnlyFilesystem& fs,
+                                                  StringView port_name,
+                                                  const Path& builtin_ports_directory);
     ExpectedL<std::unique_ptr<SourceControlFile>> try_load_project_manifest_text(StringView text,
                                                                                  StringView control_path,
                                                                                  MessageSink& warning_sink);

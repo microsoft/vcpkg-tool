@@ -36,6 +36,7 @@ Param(
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 
 if ($PSVersionTable.PSVersion.Major -lt 7) {
     Write-Error "vcpkg end to end tests must use pwsh rather than Windows PowerShell"

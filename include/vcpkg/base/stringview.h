@@ -32,6 +32,11 @@ namespace vcpkg
         constexpr const char* data() const noexcept { return m_ptr; }
         constexpr size_t size() const noexcept { return m_size; }
         constexpr bool empty() const noexcept { return m_size == 0; }
+        bool ends_with(StringView pattern) const noexcept;
+        bool starts_with(StringView pattern) const noexcept;
+        bool contains(StringView needle) const noexcept;
+        bool contains(char needle) const noexcept;
+        void remove_bom() noexcept;
 
         // intentionally not provided because this may not be null terminated
         // constexpr const char* c_str() const
@@ -94,6 +99,9 @@ namespace vcpkg
 
             return ZStringView{};
         }
+
+        // Allowing 2 parameter substr would break null termination; try converting to the base class StringView instead
+        void substr(size_t pos, size_t count) const = delete;
     };
 
     struct StringLiteral : ZStringView
@@ -103,6 +111,8 @@ namespace vcpkg
         {
         }
     };
+
+    inline constexpr StringLiteral UTF8_BOM = "\xEF\xBB\xBF";
 }
 
 template<class Char>

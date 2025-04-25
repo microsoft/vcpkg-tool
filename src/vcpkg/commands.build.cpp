@@ -76,7 +76,7 @@ namespace vcpkg
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
         auto target_path = base_path / spec.name();
-        (void)filesystem.create_directory(target_path, VCPKG_LINE_INFO);
+        (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
         if (children.empty())
         {
             auto message =
@@ -513,12 +513,13 @@ namespace vcpkg
                 auto ieProxy = get_windows_ie_proxy_server();
                 if (ieProxy.has_value() && !proxy_from_env)
                 {
-                    std::string server = Strings::to_utf8(ieProxy.get()->server);
+                    std::string server_storage = Strings::to_utf8(ieProxy.get()->server);
+                    StringView server = server_storage;
 
                     // Separate settings in IE Proxy Settings, which is rare?
                     // Python implementation:
                     // https://github.com/python/cpython/blob/7215d1ae25525c92b026166f9d5cac85fb1defe1/Lib/urllib/request.py#L2655
-                    if (Strings::contains(server, "="))
+                    if (server.contains("="))
                     {
                         auto proxy_settings = Strings::split(server, ';');
                         for (auto& s : proxy_settings)
@@ -545,28 +546,28 @@ namespace vcpkg
                                  */
 
                                 protocol = Strings::concat(Strings::ascii_to_uppercase(protocol), "_PROXY");
-                                env.emplace(protocol, address);
+                                auto& emplaced = *env.emplace(std::move(protocol), std::move(address)).first;
                                 msg::println(msgSettingEnvVar,
-                                             msg::env_var = format_environment_variable(protocol),
-                                             msg::url = address);
+                                             msg::env_var = format_environment_variable(emplaced.first),
+                                             msg::url = emplaced.second);
                             }
                         }
                     }
                     // Specified http:// prefix
-                    else if (Strings::starts_with(server, "http://"))
+                    else if (server.starts_with("http://"))
                     {
                         msg::println(msgSettingEnvVar,
                                      msg::env_var = format_environment_variable(EnvironmentVariableHttpProxy),
                                      msg::url = server);
-                        env.emplace(EnvironmentVariableHttpProxy, server);
+                        env.emplace(EnvironmentVariableHttpProxy, std::move(server_storage));
                     }
                     // Specified https:// prefix
-                    else if (Strings::starts_with(server, "https://"))
+                    else if (server.starts_with("https://"))
                     {
                         msg::println(msgSettingEnvVar,
                                      msg::env_var = format_environment_variable(EnvironmentVariableHttpsProxy),
                                      msg::url = server);
-                        env.emplace(EnvironmentVariableHttpsProxy, server);
+                        env.emplace(EnvironmentVariableHttpsProxy, std::move(server_storage));
                     }
                     // Most common case: "ip:port" style, apply to HTTP and HTTPS proxies.
                     // An HTTP(S)_PROXY means https requests go through that, it can be:
@@ -580,8 +581,8 @@ namespace vcpkg
                                      msg::env_var = format_environment_variable("HTTP(S)_PROXY"),
                                      msg::url = server);
 
-                        env.emplace(EnvironmentVariableHttpProxy, server.c_str());
-                        env.emplace(EnvironmentVariableHttpsProxy, server.c_str());
+                        env.emplace(EnvironmentVariableHttpProxy, server_storage);
+                        env.emplace(EnvironmentVariableHttpsProxy, std::move(server_storage));
                     }
                 }
             }
@@ -942,20 +943,20 @@ namespace vcpkg
         Optional<WriteFilePointer> out_file_storage = fs.open_for_write(stdoutlog, VCPKG_LINE_INFO);
         auto& out_file = out_file_storage.value_or_exit(VCPKG_LINE_INFO);
         auto rc = cmd_execute_and_stream_lines(cmd, settings, [&](StringView s) {
-            if (Strings::starts_with(s, MarkerCompilerHash))
+            if (s.starts_with(MarkerCompilerHash))
             {
                 compiler_info.hash = s.substr(MarkerCompilerHash.size()).to_string();
             }
-            if (Strings::starts_with(s, MarkerCompilerCxxVersion))
+            if (s.starts_with(MarkerCompilerCxxVersion))
             {
                 compiler_info.version = s.substr(MarkerCompilerCxxVersion.size()).to_string();
             }
-            if (Strings::starts_with(s, MarkerCompilerCxxId))
+            if (s.starts_with(MarkerCompilerCxxId))
             {
                 compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
             }
             static constexpr StringLiteral cxx_path_marker = "#COMPILER_CXX_PATH#";
-            if (Strings::starts_with(s, cxx_path_marker))
+            if (s.starts_with(cxx_path_marker))
             {
                 const auto compiler_cxx_path = s.substr(cxx_path_marker.size());
                 compiler_info.cxx_compiler_path = compiler_cxx_path;
@@ -1199,7 +1200,7 @@ namespace vcpkg
         const auto& triplet_db = paths.get_triplet_db();
         const auto& triplet_file_path = triplet_db.get_triplet_file_path(triplet);
 
-        if (Strings::starts_with(triplet_file_path, triplet_db.community_triplet_directory))
+        if (triplet_db.is_community_triplet_path(triplet_file_path))
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
@@ -1207,7 +1208,7 @@ namespace vcpkg
                            .append(msgLoadedCommunityTriplet)
                            .append_raw('\n'));
         }
-        else if (!Strings::starts_with(triplet_file_path, triplet_db.default_triplet_directory))
+        else if (triplet_db.is_overlay_triplet_path(triplet_file_path))
         {
             msg::print(LocalizedString::from_raw(triplet_file_path)
                            .append_raw(": ")
@@ -1216,13 +1217,36 @@ namespace vcpkg
                            .append_raw('\n'));
         }
 
-        if (!Strings::starts_with(scfl.control_path, paths.builtin_ports_directory()))
+        switch (scfl.kind)
         {
-            msg::print(LocalizedString::from_raw(scfl.port_directory())
-                           .append_raw(": ")
-                           .append_raw(InfoPrefix)
-                           .append(msgInstallingOverlayPort)
-                           .append_raw('\n'));
+            case PortSourceKind::Unknown:
+            case PortSourceKind::Builtin:
+                // intentionally no output for these
+                break;
+            case PortSourceKind::Overlay:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingOverlayPort)
+                               .append_raw('\n'));
+                break;
+            case PortSourceKind::Git:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingFromGitRegistry)
+                               .append_raw(' ')
+                               .append_raw(scfl.spdx_location)
+                               .append_raw('\n'));
+                break;
+            case PortSourceKind::Filesystem:
+                msg::print(LocalizedString::from_raw(scfl.port_directory())
+                               .append_raw(": ")
+                               .append_raw(InfoPrefix)
+                               .append(msgInstallingFromFilesystemRegistry)
+                               .append_raw('\n'));
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
@@ -1444,23 +1468,29 @@ namespace vcpkg
         auto&& port_dir = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory();
         const auto& port_dir_cache_entry = port_dir_cache.get_lazy(port_dir, [&]() {
             PortDirAbiInfoCacheEntry port_dir_cache_entry;
-            // If there is an unusually large number of files in the port then
-            // something suspicious is going on.
-            constexpr int max_port_file_count = 100;
 
             std::string portfile_cmake_contents;
-            auto raw_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
-            if (raw_files.size() > max_port_file_count)
             {
-                msg::println_warning(
-                    msgHashPortManyFiles, msg::package_name = action.spec.name(), msg::count = raw_files.size());
+                auto rel_port_files = fs.get_regular_files_recursive_lexically_proximate(port_dir, VCPKG_LINE_INFO);
+                Util::erase_remove_if(rel_port_files,
+                                      [](const Path& port_file) { return port_file.filename() == FileDotDsStore; });
+                // If there is an unusually large number of files in the port then
+                // something suspicious is going on.
+                constexpr int max_port_file_count = 100;
+                if (rel_port_files.size() > max_port_file_count)
+                {
+                    msg::println_warning(msgHashPortManyFiles,
+                                         msg::package_name = action.spec.name(),
+                                         msg::count = rel_port_files.size());
+                }
+                port_dir_cache_entry.files = std::move(rel_port_files);
             }
-
+            const auto& rel_port_files = port_dir_cache_entry.files;
             // Technically the pre_build_info is not part of the port_dir cache key, but a given port_dir is only going
             // to be associated with 1 port
             for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
             {
-                auto& file = abi_info.pre_build_info->hash_additional_files[i];
+                const auto& file = abi_info.pre_build_info->hash_additional_files[i];
                 if (file.is_relative() || !fs.is_regular_file(file))
                 {
                     Checks::msg_exit_with_message(
@@ -1471,18 +1501,13 @@ namespace vcpkg
                     Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
             }
 
-            for (auto& port_file : raw_files)
+            for (const Path& rel_port_file : rel_port_files)
             {
-                if (port_file.filename() == FileDotDsStore)
-                {
-                    continue;
-                }
-                const auto& abs_port_file = port_dir_cache_entry.files.emplace_back(port_dir / port_file);
+                const Path abs_port_file = port_dir / rel_port_file;
 
-                if (port_file.extension() == ".cmake")
+                if (rel_port_file.extension() == ".cmake")
                 {
-                    auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
-
+                    const auto contents = fs.read_contents(abs_port_file, VCPKG_LINE_INFO);
                     portfile_cmake_contents += contents;
                     port_dir_cache_entry.hashes.push_back(vcpkg::Hash::get_string_sha256(contents));
                 }
@@ -1492,8 +1517,7 @@ namespace vcpkg
                         vcpkg::Hash::get_file_hash(fs, abs_port_file, Hash::Algorithm::Sha256)
                             .value_or_exit(VCPKG_LINE_INFO));
                 }
-
-                port_dir_cache_entry.abi_entries.emplace_back(port_file, port_dir_cache_entry.hashes.back());
+                port_dir_cache_entry.abi_entries.emplace_back(rel_port_file, port_dir_cache_entry.hashes.back());
             }
 
             auto& scf = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
@@ -1576,7 +1600,7 @@ namespace vcpkg
         if (Debug::g_debugging)
         {
             std::string message = Strings::concat("[DEBUG] <abientries for ", action.spec, ">\n");
-            for (auto&& entry : abi_tag_entries)
+            for (const auto& entry : abi_tag_entries)
             {
                 Strings::append(message, "[DEBUG]   ", entry.key, "|", entry.value, "\n");
             }
@@ -1584,7 +1608,8 @@ namespace vcpkg
             msg::write_unlocalized_text(Color::none, message);
         }
 
-        auto abi_tag_entries_missing = Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
+        const auto abi_tag_entries_missing =
+            Util::filter(abi_tag_entries, [](const AbiEntry& p) { return p.value.empty(); });
         if (!abi_tag_entries_missing.empty())
         {
             Debug::println("Warning: abi keys are missing values:\n",
@@ -1594,10 +1619,8 @@ namespace vcpkg
             return;
         }
 
-        auto abi_file_path = paths.build_dir(action.spec);
-        fs.create_directory(abi_file_path, VCPKG_LINE_INFO);
-        abi_file_path /= triplet_canonical_name + ".vcpkg_abi_info.txt";
-        fs.write_contents(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
+        Path abi_file_path = paths.build_dir(action.spec) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        fs.write_contents_and_dirs(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = port_dir_cache_entry.files;
