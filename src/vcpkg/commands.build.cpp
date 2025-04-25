@@ -1209,7 +1209,7 @@ namespace vcpkg
     {
         auto result = do_build_package(args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
 
-        if (build_options.clean_buildtrees == CleanBuildtrees::Yes)
+        if (build_options.clean_buildtrees == CleanBuildtrees::Yes && result.code == BuildResult::Succeeded)
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
