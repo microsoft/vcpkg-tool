@@ -158,9 +158,6 @@ namespace vcpkg
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
 
-        bool gha_write = false;
-        bool gha_read = false;
-
         std::vector<AzureUpkgSource> upkg_templates_to_get;
         std::vector<AzureUpkgSource> upkg_templates_to_put;
 

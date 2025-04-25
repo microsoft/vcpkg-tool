@@ -16,8 +16,6 @@ namespace vcpkg
             "https://learn.microsoft.com/vcpkg/users/assetcaching?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral binarycaching_url =
             "https://learn.microsoft.com/vcpkg/users/binarycaching?WT.mc_id=vcpkg_inproduct_cli";
-        static constexpr StringLiteral binarycaching_gha_url =
-            "https://learn.microsoft.com/vcpkg/users/binarycaching?WT.mc_id=vcpkg_inproduct_cli#gha";
         static constexpr StringLiteral versioning_url =
             "https://learn.microsoft.com/vcpkg/users/versioning?WT.mc_id=vcpkg_inproduct_cli";
         static constexpr StringLiteral version_schemes =
