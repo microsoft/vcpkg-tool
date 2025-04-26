@@ -70,7 +70,8 @@ namespace
             }
             else
             {
-                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+                add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+                return;
             }
         }
 
@@ -102,7 +103,7 @@ namespace
             }
             else
             {
-                return add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
+                add_error(msg::format(msgExpectedReadWriteReadWrite), segments[segment_idx].first);
             }
         }
     };
@@ -128,7 +129,8 @@ namespace
                     ch = next();
                     if (ch == Unicode::end_of_file)
                     {
-                        return add_error(msg::format(msgUnexpectedEOFAfterBacktick));
+                        add_error(msg::format(msgUnexpectedEOFAfterBacktick));
+                        return;
                     }
                     else
                     {
@@ -1537,8 +1539,9 @@ namespace
             {
                 if (segments.size() != 1)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "clear"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "clear"),
+                              segments[1].first);
+                    return;
                 }
 
                 state->clear();
@@ -1547,23 +1550,25 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPathArgument, msg::binary_source = "files"),
-                                     segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresPathArgument, msg::binary_source = "files"),
+                              segments[0].first);
+                    return;
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "files"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "files"),
+                              segments[1].first);
+                    return;
                 }
 
                 handle_readwrite(state->archives_to_read, state->archives_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "files"),
+                              segments[3].first);
+                    return;
                 }
                 state->binary_cache_providers.insert("files");
             }
@@ -1571,9 +1576,9 @@ namespace
             {
                 if (segments.size() > 1)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "interactive"),
-                        segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresNoneArguments, msg::binary_source = "interactive"),
+                              segments[1].first);
+                    return;
                 }
 
                 state->nuget_interactive = true;
@@ -1582,25 +1587,26 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nugetconfig"),
-                        segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nugetconfig"),
+                              segments[0].first);
+                    return;
                 }
 
                 Path p = segments[1].second;
                 if (!p.is_absolute())
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "nugetconfig"),
-                        segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresAbsolutePath, msg::binary_source = "nugetconfig"),
+                              segments[1].first);
+                    return;
                 }
 
                 handle_readwrite(state->configs_to_read, state->configs_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error(
+                    add_error(
                         msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nugetconfig"),
                         segments[3].first);
+                    return;
                 }
                 state->binary_cache_providers.insert("nuget");
             }
@@ -1608,24 +1614,24 @@ namespace
             {
                 if (segments.size() < 2)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"),
-                        segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"),
+                              segments[0].first);
+                    return;
                 }
 
                 auto&& p = segments[1].second;
                 if (p.empty())
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
+                    add_error(msg::format(msgInvalidArgumentRequiresSourceArgument, msg::binary_source = "nuget"));
+                    return;
                 }
 
                 handle_readwrite(state->sources_to_read, state->sources_to_write, std::move(p), segments, 2);
                 if (segments.size() > 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "nuget"),
+                              segments[3].first);
+                    return;
                 }
                 state->binary_cache_providers.insert("nuget");
             }
@@ -1633,13 +1639,15 @@ namespace
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    return;
                 }
 
                 long timeout = Strings::strto<long>(segments[1].second).value_or(-1);
                 if (timeout <= 0)
                 {
-                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    return;
                 }
 
                 state->nugettimeout = std::to_string(timeout);
@@ -1649,15 +1657,16 @@ namespace
             {
                 if (segments.size() > 2)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresSingleArgument, msg::binary_source = "default"),
-                        segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresSingleArgument, msg::binary_source = "default"),
+                              segments[0].first);
+                    return;
                 }
 
                 const auto& maybe_home = default_cache_path();
                 if (!maybe_home)
                 {
-                    return add_error(LocalizedString{maybe_home.error()}, segments[0].first);
+                    add_error(LocalizedString{maybe_home.error()}, segments[0].first);
+                    return;
                 }
 
                 handle_readwrite(
@@ -1669,30 +1678,32 @@ namespace
                 // Scheme: x-azblob,<baseurl>,<sas>[,<readwrite>]
                 if (segments.size() < 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "azblob"),
-                        segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "azblob"),
+                              segments[0].first);
+                    return;
                 }
 
                 if (!Strings::starts_with(segments[1].second, "https://"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "azblob"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                          msg::base_url = "https://",
+                                          msg::binary_source = "azblob"),
+                              segments[1].first);
+                    return;
                 }
 
                 if (Strings::starts_with(segments[2].second, "?"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azblob"),
-                                     segments[2].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azblob"),
+                              segments[2].first);
+                    return;
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "azblob"),
-                        segments[4].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "azblob"),
+                              segments[4].first);
+                    return;
                 }
 
                 auto p = segments[1].second;
@@ -1724,23 +1735,25 @@ namespace
                 // Scheme: x-gcs,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "gcs"),
-                                     segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "gcs"),
+                              segments[0].first);
+                    return;
                 }
 
                 if (!Strings::starts_with(segments[1].second, "gs://"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "gs://",
-                                                 msg::binary_source = "gcs"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                          msg::base_url = "gs://",
+                                          msg::binary_source = "gcs"),
+                              segments[1].first);
+                    return;
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "gcs"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "gcs"),
+                              segments[3].first);
+                    return;
                 }
 
                 auto p = segments[1].second;
@@ -1758,23 +1771,25 @@ namespace
                 // Scheme: x-aws,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "aws"),
-                                     segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "aws"),
+                              segments[0].first);
+                    return;
                 }
 
                 if (!Strings::starts_with(segments[1].second, "s3://"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "s3://",
-                                                 msg::binary_source = "aws"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                          msg::base_url = "s3://",
+                                          msg::binary_source = "aws"),
+                              segments[1].first);
+                    return;
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "aws"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "aws"),
+                              segments[3].first);
+                    return;
                 }
 
                 auto p = segments[1].second;
@@ -1791,8 +1806,9 @@ namespace
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
-                                                 msg::binary_source = "x-aws-config"));
+                    add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
+                                          msg::binary_source = "x-aws-config"));
+                    return;
                 }
 
                 bool no_sign_request = false;
@@ -1802,7 +1818,8 @@ namespace
                 }
                 else
                 {
-                    return add_error(msg::format(msgInvalidArgument), segments[1].first);
+                    add_error(msg::format(msgInvalidArgument), segments[1].first);
+                    return;
                 }
 
                 state->aws_no_sign_request = no_sign_request;
@@ -1813,23 +1830,25 @@ namespace
                 // Scheme: x-cos,<prefix>[,<readwrite>]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "cos"),
-                                     segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "cos"),
+                              segments[0].first);
+                    return;
                 }
 
                 if (!Strings::starts_with(segments[1].second, "cos://"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "cos://",
-                                                 msg::binary_source = "cos"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                          msg::base_url = "cos://",
+                                          msg::binary_source = "cos"),
+                              segments[1].first);
+                    return;
                 }
 
                 if (segments.size() > 3)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "cos"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "cos"),
+                              segments[3].first);
+                    return;
                 }
 
                 auto p = segments[1].second;
@@ -1846,9 +1865,9 @@ namespace
                 // Scheme: x-gha[,<readwrite>]
                 if (segments.size() > 2)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
-                        segments[2].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
+                              segments[2].first);
+                    return;
                 }
 
                 handle_readwrite(state->gha_read, state->gha_write, segments, 1);
@@ -1860,30 +1879,33 @@ namespace
                 // Scheme: http,<url_template>[,<readwrite>[,<header>]]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "http"),
-                                     segments[0].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresPrefix, msg::binary_source = "http"),
+                              segments[0].first);
+                    return;
                 }
 
                 if (!Strings::starts_with(segments[1].second, "http://") &&
                     !Strings::starts_with(segments[1].second, "https://"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "http"),
-                                     segments[1].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                          msg::base_url = "https://",
+                                          msg::binary_source = "http"),
+                              segments[1].first);
+                    return;
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "http"),
-                        segments[3].first);
+                    add_error(msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "http"),
+                              segments[3].first);
+                    return;
                 }
 
                 UrlTemplate url_template{segments[1].second};
                 if (auto err = url_template.valid(); !err.empty())
                 {
-                    return add_error(std::move(err), segments[1].first);
+                    add_error(std::move(err), segments[1].first);
+                    return;
                 }
                 bool has_sha = false;
                 bool has_other = false;
@@ -1904,7 +1926,8 @@ namespace
                 {
                     if (has_other)
                     {
-                        return add_error(msg::format(msgMissingShaVariable), segments[1].first);
+                        add_error(msg::format(msgMissingShaVariable), segments[1].first);
+                        return;
                     }
                     if (url_template.url_template.back() != '/')
                     {
@@ -1926,8 +1949,9 @@ namespace
                 // Scheme: x-az-universal,<organization>,<project>,<feed>[,<readwrite>]
                 if (segments.size() < 4 || segments.size() > 5)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresFourOrFiveArguments,
-                                                 msg::binary_source = "Universal Packages"));
+                    add_error(msg::format(msgInvalidArgumentRequiresFourOrFiveArguments,
+                                          msg::binary_source = "Universal Packages"));
+                    return;
                 }
                 AzureUpkgSource upkg_template{
                     segments[1].second,
@@ -1941,7 +1965,8 @@ namespace
             }
             else
             {
-                return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+                add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+                return;
             }
         }
     };
@@ -1993,9 +2018,9 @@ namespace
             {
                 if (segments.size() >= 2)
                 {
-                    return add_error(
-                        msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "x-block-origin"),
-                        segments[1].first);
+                    add_error(msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "x-block-origin"),
+                              segments[1].first);
+                    return;
                 }
 
                 state->block_origin = true;
@@ -2004,8 +2029,9 @@ namespace
             {
                 if (segments.size() >= 2)
                 {
-                    return add_error(msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "clear"),
-                                     segments[1].first);
+                    add_error(msg::format(msgAssetCacheProviderAcceptsNoArguments, msg::value = "clear"),
+                              segments[1].first);
+                    return;
                 }
 
                 state->clear();
@@ -2015,17 +2041,20 @@ namespace
                 // Scheme: x-azurl,<baseurl>[,<sas>[,<readwrite>]]
                 if (segments.size() < 2)
                 {
-                    return add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[0].first);
+                    add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[0].first);
+                    return;
                 }
 
                 if (segments.size() > 4)
                 {
-                    return add_error(msg::format(msgAzUrlAssetCacheRequiresLessThanFour), segments[4].first);
+                    add_error(msg::format(msgAzUrlAssetCacheRequiresLessThanFour), segments[4].first);
+                    return;
                 }
 
                 if (segments[1].second.empty())
                 {
-                    return add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[1].first);
+                    add_error(msg::format(msgAzUrlAssetCacheRequiresBaseUrl), segments[1].first);
+                    return;
                 }
 
                 auto p = segments[1].second;
@@ -2053,14 +2082,16 @@ namespace
                 // Scheme: x-script,<script-template>
                 if (segments.size() != 2)
                 {
-                    return add_error(msg::format(msgScriptAssetCacheRequiresScript), segments[0].first);
+                    add_error(msg::format(msgScriptAssetCacheRequiresScript), segments[0].first);
+                    return;
                 }
                 state->script = segments[1].second;
             }
             else
             {
                 // Don't forget to update this message if new providers are added.
-                return add_error(msg::format(msgUnexpectedAssetCacheProvider), segments[0].first);
+                add_error(msg::format(msgUnexpectedAssetCacheProvider), segments[0].first);
+                return;
             }
         }
     };

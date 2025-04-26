@@ -1349,7 +1349,7 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
 DECLARE_MESSAGE(FeatureBaselineEntryAlreadySpecified,
                 (msg::feature, msg::value),
                 "{value} is a keyword",
-                "Feature '{feature}' was already declared as '{value}'.")
+                "'{feature}' was already declared as '{value}'")
 DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 (msg::value),
                 "{value} is a keyword",
@@ -2632,6 +2632,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
 DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
+DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),

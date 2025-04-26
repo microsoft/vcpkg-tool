@@ -73,7 +73,7 @@ namespace vcpkg
                                                 CMakeVars::CMakeVarProvider& var_provider)
     {
         CiFeatureBaseline result;
-        ParserBase parser(text, origin, {});
+        ParserBase parser(text, origin, {1, 1});
         for (;;)
         {
             parser.skip_whitespace();
@@ -198,18 +198,31 @@ namespace vcpkg
                 if (auto spec_features = spec.features.get())
                 {
                     const auto error_if_already_defined =
-                        [&](const std::set<Located<std::string>, LocatedStringLess>& set,
+                        [&](const std::set<Located<std::string>, LocatedStringLess>& conflict_set,
                             CiFeatureBaselineKeyword state) {
-                            if (auto iter = Util::find_if(*spec_features,
-                                                          [&](const Located<std::string>& feature) {
-                                                              return Util::Sets::contains(set, feature.value);
-                                                          });
-                                iter != spec_features->end())
+                            for (auto&& this_decl_feature : *spec_features)
                             {
-                                parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
-                                                             msg::feature = iter->value,
-                                                             msg::value = to_string_literal(state)),
-                                                 keyword_loc);
+                                auto conflict_decl_feature = conflict_set.find(this_decl_feature.value);
+                                if (conflict_decl_feature == conflict_set.end())
+                                {
+                                    continue;
+                                }
+
+                                if (auto added_error =
+                                        parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
+                                                                     msg::feature = this_decl_feature.value,
+                                                                     msg::value = to_string_literal(state)),
+                                                         this_decl_feature.loc))
+                                {
+                                    added_error->append_raw('\n')
+                                        .append_raw(parser.format_file_prefix(conflict_decl_feature->loc.row,
+                                                                              conflict_decl_feature->loc.column))
+                                        .append_raw(NotePrefix)
+                                        .append(msgPreviousDeclarationWasHere)
+                                        .append_raw('\n');
+                                    append_caret_line(*added_error, conflict_decl_feature->loc);
+                                }
+
                                 return true;
                             }
                             return false;

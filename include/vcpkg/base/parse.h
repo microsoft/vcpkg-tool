@@ -16,6 +16,8 @@ namespace vcpkg
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);
 
+    void append_caret_line(LocalizedString& res, const SourceLoc& loc);
+
     struct ParseMessage
     {
         SourceLoc location = {};
@@ -93,8 +95,10 @@ namespace vcpkg
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
-        void add_error(LocalizedString&& message);
-        void add_error(LocalizedString&& message, const SourceLoc& loc);
+        std::string format_file_prefix(int row, int column);
+
+        LocalizedString* add_error(LocalizedString&& message);
+        LocalizedString* add_error(LocalizedString&& message, const SourceLoc& loc);
 
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
