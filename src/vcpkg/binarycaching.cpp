@@ -1663,8 +1663,6 @@ namespace
             }
             else if (segments[0].second == "x-gha")
             {
-                // TODO: Add removal warning/error
-                // Scheme: x-gha[,<readwrite>]
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
             }
             else if (segments[0].second == "http")
