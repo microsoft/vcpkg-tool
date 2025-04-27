@@ -969,8 +969,7 @@ namespace vcpkg
 
     bool PreBuildInfo::using_vcvars() const
     {
-        return (!external_toolchain_file.has_value() || load_vcvars_env) &&
-               (cmake_system_name.empty() || cmake_system_name == "WindowsStore");
+        return load_vcvars_env && (cmake_system_name.empty() || cmake_system_name == "WindowsStore");
     }
 
     Path PreBuildInfo::toolchain_file() const
