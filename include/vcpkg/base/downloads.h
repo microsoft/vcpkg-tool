@@ -48,6 +48,7 @@ namespace vcpkg
                                 StringView this_line);
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
+                                             const Filesystem& fs,
                                              View<std::pair<std::string, Path>> url_pairs,
                                              View<std::string> headers,
                                              View<std::string> secrets);
