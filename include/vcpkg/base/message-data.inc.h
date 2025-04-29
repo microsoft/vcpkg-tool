@@ -131,6 +131,7 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
 DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllShasValid, (), "sha = sha512 of url", "All checked sha's are valid.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),
@@ -595,6 +596,12 @@ DECLARE_MESSAGE(CmdCheckSupportExample1,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg x-check-support <port name>")
 DECLARE_MESSAGE(CmdCheckSupportSynopsis, (), "", "Tests whether a port is supported without building it")
+DECLARE_MESSAGE(CmdCheckToolsShaSynopsis,
+                (),
+                "",
+                "Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes")
+DECLARE_MESSAGE(CmdCheckToolsShaSwitchFix, (), "", "Fixes the sha entry in the given file")
+DECLARE_MESSAGE(CmdCheckToolsShaSwitchOnlyWithName, (), "", "Only check entries with the given name")
 DECLARE_MESSAGE(CmdCreateExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",
@@ -1095,6 +1102,7 @@ DECLARE_MESSAGE(DownloadingFileFirstAuthoritativeSource, (msg::path, msg::url), 
 DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "Downloading {url} -> {path}")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
+DECLARE_MESSAGE(DownloadingTools, (msg::count), "", "Downloading {count} tools")
 DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
 DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
@@ -1396,6 +1404,7 @@ DECLARE_MESSAGE(FindCommandFirstArg,
                 "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.",
                 "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
+DECLARE_MESSAGE(FixedEntriesInFile, (msg::count, msg::path), "", "Fixed {count} entries in {path}.")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
 DECLARE_MESSAGE(FollowingPackagesMissingControl,
                 (),
@@ -2197,6 +2206,10 @@ DECLARE_MESSAGE(NoCoreFeatureAllowedInNonFailBaselineEntry,
                 (msg::value),
                 "{value} is a keyword",
                 "'core' is not allowed in the list of features if the entry is of type '{value}'")
+DECLARE_MESSAGE(NoEntryWithName,
+                (msg::value),
+                "{value} is the name of an entry",
+                "No entry found with name '{value}' and a url.")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),
