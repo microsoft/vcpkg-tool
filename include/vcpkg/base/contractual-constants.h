@@ -218,6 +218,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
+    inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
@@ -253,6 +254,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchNuGetVersion = "nuget-version";
     inline constexpr StringLiteral SwitchOnlyBinarycaching = "only-binarycaching";
     inline constexpr StringLiteral SwitchOnlyDownloads = "only-downloads";
+    inline constexpr StringLiteral SwitchOnlyWithName = "only-with-name";
     inline constexpr StringLiteral SwitchOsx = "osx";
     inline constexpr StringLiteral SwitchOutdated = "outdated";
     inline constexpr StringLiteral SwitchOutput = "output";
@@ -478,8 +480,6 @@ namespace vcpkg
     inline constexpr StringLiteral PolicySkipUsageInstallCheck = "PolicySkipUsageInstallCheck";
 
     // Environment variables are ALL_CAPS_WITH_UNDERSCORES
-    inline constexpr StringLiteral EnvironmentVariableActionsCacheUrl = "ACTIONS_CACHE_URL";
-    inline constexpr StringLiteral EnvironmentVariableActionsRuntimeToken = "ACTIONS_RUNTIME_TOKEN";
     inline constexpr StringLiteral EnvironmentVariableAndroidNdkHome = "ANDROID_NDK_HOME";
     inline constexpr StringLiteral EnvironmentVariableAppData = "APPDATA";
     inline constexpr StringLiteral EnvironmentVariableAppveyor = "APPVEYOR";

@@ -131,6 +131,7 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
 DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllShasValid, (), "sha = sha512 of url", "All checked sha's are valid.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
 DECLARE_MESSAGE(AlreadyInstalledNotHead,
                 (msg::spec),
@@ -596,6 +597,12 @@ DECLARE_MESSAGE(CmdCheckSupportExample1,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg x-check-support <port name>")
 DECLARE_MESSAGE(CmdCheckSupportSynopsis, (), "", "Tests whether a port is supported without building it")
+DECLARE_MESSAGE(CmdCheckToolsShaSynopsis,
+                (),
+                "",
+                "Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes")
+DECLARE_MESSAGE(CmdCheckToolsShaSwitchFix, (), "", "Fixes the sha entry in the given file")
+DECLARE_MESSAGE(CmdCheckToolsShaSwitchOnlyWithName, (), "", "Only check entries with the given name")
 DECLARE_MESSAGE(CmdCreateExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",
@@ -1096,6 +1103,7 @@ DECLARE_MESSAGE(DownloadingFileFirstAuthoritativeSource, (msg::path, msg::url), 
 DECLARE_MESSAGE(DownloadingUrlToFile, (msg::url, msg::path), "", "Downloading {url} -> {path}")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloading standalone bundle {version}.")
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
+DECLARE_MESSAGE(DownloadingTools, (msg::count), "", "Downloading {count} tools")
 DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
 DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
@@ -1403,6 +1411,7 @@ DECLARE_MESSAGE(FindCommandFirstArg,
                 "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.",
                 "The first argument to 'find' must be 'artifact' or 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
+DECLARE_MESSAGE(FixedEntriesInFile, (msg::count, msg::path), "", "Fixed {count} entries in {path}.")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
 DECLARE_MESSAGE(FollowingPackagesMissingControl,
                 (),
@@ -1426,11 +1435,11 @@ DECLARE_MESSAGE(ForMoreHelp,
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
                 "For More Help")
 DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.")
-DECLARE_MESSAGE(GHAParametersMissing,
+DECLARE_MESSAGE(GhaBinaryCacheDeprecated,
                 (msg::url),
-                "",
-                "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables "
-                "to be set. See {url} for details.")
+                "The term 'x-gha' is a vcpkg configuration option",
+                "The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching "
+                "provider instead, see extended documentation at {url}.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
 DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
                 (),
@@ -1918,10 +1927,6 @@ DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
                 "",
                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                 "preceeding '?' as the second argument")
-DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
-                (msg::binary_source),
-                "",
-                "invalid argument: binary config '{binary_source}' requires 0 or 1 argument")
 DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}")
 DECLARE_MESSAGE(
     InvalidBuiltInBaseline,
@@ -2204,6 +2209,10 @@ DECLARE_MESSAGE(NoCoreFeatureAllowedInNonFailBaselineEntry,
                 (msg::value),
                 "{value} is a keyword",
                 "'core' is not allowed in the list of features if the entry is of type '{value}'")
+DECLARE_MESSAGE(NoEntryWithName,
+                (msg::value),
+                "{value} is the name of an entry",
+                "No entry found with name '{value}' and a url.")
 DECLARE_MESSAGE(NoError, (), "", "no error")
 DECLARE_MESSAGE(NoInstalledPackages,
                 (),
@@ -2689,10 +2698,6 @@ DECLARE_MESSAGE(RestoredPackagesFromGCS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
-DECLARE_MESSAGE(RestoredPackagesFromGHA,
-                (msg::count, msg::elapsed),
-                "",
-                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromHTTP,
                 (msg::count, msg::elapsed),
                 "",
