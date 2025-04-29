@@ -266,6 +266,7 @@ namespace vcpkg
 
     LocalizedString* ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
+        LocalizedString* result;
         // avoid cascading errors by only saving the first
         if (!m_messages.error)
         {
@@ -275,12 +276,16 @@ namespace vcpkg
             res.append(message);
             res.append_raw('\n');
             append_caret_line(res, loc);
-            return &res;
+            result = &res;
+        }
+        else
+        {
+            result = nullptr;
         }
 
         // Avoid error loops by skipping to the end
         skip_to_eof();
-        return nullptr;
+        return result;
     }
 
     void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
