@@ -29,8 +29,6 @@ jobs:
           node-version: "18.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
-      - run: apt install -y cmake ninja-build
-        if: matrix.preset == 'linux-ci' || matrix.preset == 'ubuntu-24.04-arm'
       - name: Enable Problem Matchers
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'
