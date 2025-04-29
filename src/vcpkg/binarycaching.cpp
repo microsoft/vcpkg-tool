@@ -2616,6 +2616,10 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 
     BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
     default_parser.parse();
+    for (auto&& warning : default_parser.messages().warnings)
+    {
+        msg::println_warning(warning.message);
+    }
     if (auto err = default_parser.get_error())
     {
         return *err;
@@ -2625,6 +2629,10 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     const auto source = format_environment_variable("VCPKG_BINARY_SOURCES");
     BinaryConfigParser env_parser(env_string, source, &s);
     env_parser.parse();
+    for (auto&& warning : env_parser.messages().warnings)
+    {
+        msg::println_warning(warning.message);
+    }
     if (auto err = env_parser.get_error())
     {
         return *err;
