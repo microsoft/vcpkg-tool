@@ -1,13 +1,12 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.z-check-tools-sha.h>
 #include <vcpkg/tools.test.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-
-#include "vcpkg/base/downloads.h"
-#include "vcpkg/base/util.h"
 
 namespace vcpkg
 {
