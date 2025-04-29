@@ -1428,11 +1428,11 @@ DECLARE_MESSAGE(ForMoreHelp,
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
                 "For More Help")
 DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.")
-DECLARE_MESSAGE(GHAParametersMissing,
+DECLARE_MESSAGE(GhaBinaryCacheDeprecated,
                 (msg::url),
-                "",
-                "The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables "
-                "to be set. See {url} for details.")
+                "The term 'x-gha' is a vcpkg configuration option",
+                "The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching "
+                "provider instead, see extended documentation at {url}.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
 DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
                 (),
@@ -1920,10 +1920,6 @@ DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
                 "",
                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                 "preceeding '?' as the second argument")
-DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
-                (msg::binary_source),
-                "",
-                "invalid argument: binary config '{binary_source}' requires 0 or 1 argument")
 DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}")
 DECLARE_MESSAGE(
     InvalidBuiltInBaseline,
@@ -2694,10 +2690,6 @@ DECLARE_MESSAGE(RestoredPackagesFromGCS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
-DECLARE_MESSAGE(RestoredPackagesFromGHA,
-                (msg::count, msg::elapsed),
-                "",
-                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromHTTP,
                 (msg::count, msg::elapsed),
                 "",
