@@ -296,27 +296,39 @@ namespace vcpkg
         return empty_entry;
     }
 
-    bool CiFeatureBaselineEntry::will_fail(const InternalFeatureSet& internal_feature_set) const
+    bool CiFeatureBaselineEntry::expected_fail(const InternalFeatureSet& spec_features) const
     {
-        if (!failing_features.empty() && Util::any_of(internal_feature_set, [&](const std::string& feature) {
+        if (state == CiFeatureBaselineState::Fail)
+        {
+            return true;
+        }
+
+        if (!failing_features.empty() && Util::any_of(spec_features, [&](const std::string& feature) {
                 return Util::Sets::contains(failing_features, feature);
             }))
         {
             return true;
         }
-        if (std::is_sorted(internal_feature_set.begin(), internal_feature_set.end()))
+
+        if (std::is_sorted(spec_features.begin(), spec_features.end()))
         {
             return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-                return fail_configuration.value == internal_feature_set;
+                return fail_configuration.value == spec_features;
             });
         }
 
         return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-            return fail_configuration.value.size() == internal_feature_set.size() &&
-                   Util::all_of(internal_feature_set, [&](const std::string& feature) {
+            return fail_configuration.value.size() == spec_features.size() &&
+                   Util::all_of(spec_features, [&](const std::string& feature) {
                        return Util::contains(fail_configuration.value, feature);
                    });
         });
+    }
+
+    bool CiFeatureBaselineEntry::expected_cascade(const InternalFeatureSet& spec_features) const
+    {
+        return state == CiFeatureBaselineState::Cascade ||
+               (spec_features.size() >= 2 && Util::Sets::contains(cascade_features, spec_features[1]));
     }
 
     StringLiteral to_string_literal(CiFeatureBaselineState state)

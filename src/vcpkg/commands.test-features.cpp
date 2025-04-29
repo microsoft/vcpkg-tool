@@ -123,18 +123,16 @@ namespace
                                     std::string&& cascade_reason,
                                     ElapsedTime build_time)
     {
-        bool expected_cascade =
-            (baseline.state == CiFeatureBaselineState::Cascade ||
-             (spec.features.size() > 1 && Util::Sets::contains(baseline.cascade_features, spec.features[1])));
-        bool actual_cascade = (result == CiFeatureBaselineState::Cascade);
+        bool expected_cascade = baseline.expected_cascade(spec.features);
+        bool actual_cascade = result == CiFeatureBaselineState::Cascade;
         if (actual_cascade != expected_cascade)
         {
             unexpected_states.push_back(
                 UnexpectedResult{std::move(spec), result, build_time, std::move(cascade_reason)});
             return;
         }
-        bool expected_fail = (baseline.state == CiFeatureBaselineState::Fail || baseline.will_fail(spec.features));
-        bool actual_fail = (result == CiFeatureBaselineState::Fail);
+        bool expected_fail = baseline.expected_fail(spec.features);
+        bool actual_fail = result == CiFeatureBaselineState::Fail;
         if (expected_fail != actual_fail)
         {
             unexpected_states.push_back(

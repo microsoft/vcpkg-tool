@@ -31,7 +31,9 @@ namespace vcpkg
         std::vector<Located<std::vector<std::string>>> fail_configurations;
         // A list of sets of features of which exactly one must be selected
         std::vector<Located<std::vector<std::string>>> options;
-        bool will_fail(const InternalFeatureSet& internal_feature_set) const;
+
+        bool expected_fail(const InternalFeatureSet& spec_features) const;
+        bool expected_cascade(const InternalFeatureSet& spec_features) const;
     };
 
     struct CiFeatureBaseline
