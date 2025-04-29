@@ -104,6 +104,14 @@ namespace vcpkg
                                     StringView display_path,
                                     const Optional<std::string>& maybe_sha512);
 
+    bool put_blocklist(DiagnosticContext& context,
+                       StringView url,
+                       const SanitizedUrl& sanitized_url,
+                       View<std::string> headers,
+                       const Path& file,
+                       std::size_t file_size,
+                       std::size_t chunk_size);
+
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,

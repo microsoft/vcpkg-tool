@@ -429,7 +429,7 @@ namespace
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
 
-    private:
+    protected:
         std::vector<UrlTemplate> m_urls;
         std::vector<std::string> m_secrets;
     };
@@ -501,6 +501,39 @@ namespace
         Path m_buildtrees;
         UrlTemplate m_url_template;
         std::vector<std::string> m_secrets;
+    };
+
+    struct AzurBlockListBinaryProvider : HTTPPutBinaryProvider
+    {
+        AzurBlockListBinaryProvider(std::vector<UrlTemplate>&& urls, const std::vector<std::string>& secrets)
+            : HTTPPutBinaryProvider(std::move(urls), secrets)
+        {
+        }
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
+        {
+            if (!request.zip_path) return 0;
+            const auto& zip_path = *request.zip_path.get();
+            size_t count_stored = 0;
+            for (auto&& templ : m_urls)
+            {
+                auto url = templ.instantiate_variables(request);
+                PrintingDiagnosticContext pdc{msg_sink};
+                WarningDiagnosticContext wdc{pdc};
+                auto cache_size = real_filesystem.file_size(zip_path, VCPKG_LINE_INFO);
+                auto maybe_success = put_blocklist(wdc,
+                                                   url,
+                                                   SanitizedUrl{url, m_secrets},
+                                                   templ.headers,
+                                                   zip_path,
+                                                   cache_size,
+                                                   1000ULL * 1024ULL * 1024ULL);
+                if (maybe_success)
+                {
+                    count_stored++;
+                }
+            }
+            return count_stored;
+        }
     };
 
     struct NuGetSource
@@ -2493,10 +2526,16 @@ namespace vcpkg
                 m_config.write.push_back(
                     std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
             }
-            if (!s.url_templates_to_put.empty())
+            bool is_azblob = s.binary_cache_providers.find("azblob") != s.binary_cache_providers.end();
+            if (!s.url_templates_to_put.empty() && !is_azblob)
             {
                 m_config.write.push_back(
                     std::make_unique<HTTPPutBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
+            }
+            if (!s.url_templates_to_put.empty() && is_azblob)
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzurBlockListBinaryProvider>(std::move(s.url_templates_to_put), s.secrets));
             }
             if (!s.gcs_write_prefixes.empty())
             {
