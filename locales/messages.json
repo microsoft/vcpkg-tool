@@ -850,6 +850,8 @@
   "ForceSystemBinariesOnWeirdPlatforms": "Environment variable VCPKG_FORCE_SYSTEM_BINARIES must be set on arm, s390x, ppc64le and riscv platforms.",
   "FormattedParseMessageExpressionPrefix": "on expression:",
   "GetParseFailureInfo": "Use '--debug' to get more information about the parse failures.",
+  "GhaBinaryCacheDeprecated": "The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching provider instead, see extended documentation at {url}.",
+  "_GhaBinaryCacheDeprecated.comment": "The term 'x-gha' is a vcpkg configuration option An example of {url} is https://github.com/microsoft/vcpkg.",
   "GitCommandFailed": "failed to execute: {command_line}",
   "_GitCommandFailed.comment": "An example of {command_line} is vcpkg install zlib.",
   "GitCommitUpdateVersionDatabase": "git commit -m \"Update version database\"",

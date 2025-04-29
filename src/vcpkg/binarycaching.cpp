@@ -1663,7 +1663,7 @@ namespace
             }
             else if (segments[0].second == "x-gha")
             {
-                return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
+                add_warning(msg::format(msgGhaBinaryCacheDeprecated, msg::url = docs::binarycaching_url));
             }
             else if (segments[0].second == "http")
             {

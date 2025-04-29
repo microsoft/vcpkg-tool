@@ -1419,6 +1419,11 @@ DECLARE_MESSAGE(ForMoreHelp,
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
                 "For More Help")
 DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.")
+DECLARE_MESSAGE(GhaBinaryCacheDeprecated,
+                (msg::url),
+                "The term 'x-gha' is a vcpkg configuration option",
+                "The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching "
+                "provider instead, see extended documentation at {url}.")
 DECLARE_MESSAGE(GitCommandFailed, (msg::command_line), "", "failed to execute: {command_line}")
 DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
                 (),
