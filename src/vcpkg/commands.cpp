@@ -50,14 +50,13 @@
 #include <vcpkg/commands.z-applocal.h>
 #include <vcpkg/commands.z-ce.h>
 #include <vcpkg/commands.z-changelog.h>
+#include <vcpkg/commands.z-check-tools-sha.h>
 #include <vcpkg/commands.z-extract.h>
 #include <vcpkg/commands.z-generate-message-map.h>
 #include <vcpkg/commands.z-preregister-telemetry.h>
 #include <vcpkg/commands.z-print-config.h>
 #include <vcpkg/commands.z-upload-metrics.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-
-#include "vcpkg/commands.check-tools-sha.h"
 
 namespace vcpkg
 {

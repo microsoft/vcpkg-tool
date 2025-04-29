@@ -2,7 +2,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 
-#include <vcpkg/commands.check-tools-sha.h>
+#include <vcpkg/commands.z-check-tools-sha.h>
 #include <vcpkg/tools.test.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
