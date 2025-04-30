@@ -108,15 +108,8 @@ namespace
             return provider.get_control_file(arg).value_or_exit(VCPKG_LINE_INFO).source_control_file.get();
         });
     }
-    struct UnexpectedResult
-    {
-        FullPackageSpec spec;
-        CiFeatureBaselineState actual_state;
-        ElapsedTime build_time;
-        std::string cascade_reason;
-    };
 
-    void handle_feature_test_result(std::vector<UnexpectedResult>& unexpected_states,
+    void handle_feature_test_result(std::vector<LocalizedString>& unexpected_states,
                                     FullPackageSpec&& spec,
                                     CiFeatureBaselineState result,
                                     CiFeatureBaselineEntry baseline,
@@ -127,16 +120,17 @@ namespace
         bool actual_cascade = result == CiFeatureBaselineState::Cascade;
         if (actual_cascade != expected_cascade)
         {
-            unexpected_states.push_back(
-                UnexpectedResult{std::move(spec), result, build_time, std::move(cascade_reason)});
+            unexpected_states.push_back(msg::format(msgUnexpectedStateCascade, msg::feature_spec = spec)
+                                            .append_raw(" ")
+                                            .append_raw(cascade_reason));
             return;
         }
         bool expected_fail = baseline.expected_fail(spec.features);
         bool actual_fail = result == CiFeatureBaselineState::Fail;
         if (expected_fail != actual_fail)
         {
-            unexpected_states.push_back(
-                UnexpectedResult{std::move(spec), result, build_time, std::move(cascade_reason)});
+            unexpected_states.push_back(msg::format(
+                msgUnexpectedState, msg::feature_spec = spec, msg::actual = result, msg::elapsed = build_time));
         }
     }
 }
@@ -398,7 +392,7 @@ namespace vcpkg
 
         // test port features
         std::unordered_set<std::string> known_failures;
-        std::vector<UnexpectedResult> unexpected_states;
+        std::vector<LocalizedString> unexpected_states;
 
         for (std::size_t i = 0; i < install_plans.size(); ++i)
         {
@@ -605,26 +599,7 @@ namespace vcpkg
             msg::println(msgFeatureTestProblems);
             for (const auto& result : unexpected_states)
             {
-                if (result.actual_state == CiFeatureBaselineState::Cascade)
-                {
-                    if (result.cascade_reason.empty())
-                    {
-                        Checks::unreachable(VCPKG_LINE_INFO);
-                    }
-
-                    msg::println(Color::error,
-                                 msg::format(msgUnexpectedStateCascade, msg::feature_spec = result.spec)
-                                     .append_raw(" ")
-                                     .append_raw(result.cascade_reason));
-                }
-                else
-                {
-                    msg::println(Color::error,
-                                 msg::format(msgUnexpectedState,
-                                             msg::feature_spec = result.spec,
-                                             msg::actual = result.actual_state,
-                                             msg::elapsed = result.build_time));
-                }
+                msg::println(Color::error, result);
             }
         }
 
