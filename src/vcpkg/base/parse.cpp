@@ -82,12 +82,15 @@ namespace vcpkg
             line.print_to(out_sink);
         }
 
-        if (!m_good && m_error_count == 0)
+        if (!m_good)
         {
-            DiagnosticLine{DiagKind::Error, msg::format(msgWarningsTreatedAsErrors)}.print_to(out_sink);
-        }
+            if (m_error_count == 0)
+            {
+                DiagnosticLine{DiagKind::Error, msg::format(msgWarningsTreatedAsErrors)}.print_to(out_sink);
+            }
 
-        Checks::exit_fail(VCPKG_LINE_INFO);
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
     }
 
     void ParseMessages::add_line(DiagnosticLine&& line)
