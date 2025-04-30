@@ -95,7 +95,7 @@ namespace vcpkg
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
-        std::string format_file_prefix(int row, int column);
+        std::string format_file_prefix(int row, int column) const;
 
     private:
         LocalizedString& create_error_impl(LocalizedString&& message, const SourceLoc& loc);

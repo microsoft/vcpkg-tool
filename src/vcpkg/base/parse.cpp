@@ -242,7 +242,7 @@ namespace vcpkg
         return cur();
     }
 
-    std::string ParserBase::format_file_prefix(int row, int column)
+    std::string ParserBase::format_file_prefix(int row, int column) const
     {
         if (auto origin = m_origin.get())
         {
