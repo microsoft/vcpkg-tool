@@ -29,8 +29,8 @@ namespace vcpkg
             return true;
         }
 
-        static constexpr StringLiteral FAIL = "fail";
         static constexpr StringLiteral SKIP = "skip";
+        static constexpr StringLiteral FAIL = "fail";
         static constexpr StringLiteral CASCADE = "cascade";
         static constexpr StringLiteral PASS = "pass";
         static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
@@ -51,7 +51,7 @@ namespace vcpkg
         };
 
         static constexpr StringLiteral ci_feature_baseline_state_names[] = {
-            FAIL, SKIP, CASCADE, PASS, NO_TEST, OPTIONS, FEATURE_FAIL, COMBINATION_FAIL};
+            SKIP, FAIL, CASCADE, PASS, NO_TEST, OPTIONS, FEATURE_FAIL, COMBINATION_FAIL};
 
         StringLiteral to_string_literal(CiFeatureBaselineKeyword state)
         {
