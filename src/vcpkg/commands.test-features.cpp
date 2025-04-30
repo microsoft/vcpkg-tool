@@ -507,7 +507,6 @@ namespace vcpkg
                                                       *build_logs_recorder,
                                                       false);
             binary_cache.mark_all_unrestored();
-            std::string failed_dependencies;
             for (const auto& result : summary.results)
             {
                 auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
@@ -526,14 +525,7 @@ namespace vcpkg
                                                     false),
                                 VCPKG_LINE_INFO);
                         }
-                        if (result.get_spec() != spec.package_spec)
-                        {
-                            if (!failed_dependencies.empty())
-                            {
-                                Strings::append(failed_dependencies, ", ");
-                            }
-                            Strings::append(failed_dependencies, result.get_spec());
-                        }
+
                         [[fallthrough]];
                     case BuildResult::PostBuildChecksFailed:
                         known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
@@ -542,10 +534,11 @@ namespace vcpkg
                 }
             }
             const auto time_to_install = install_timer.elapsed();
-            switch (summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO).code)
+            auto& last_build_result = summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
+            switch (last_build_result.code)
             {
                 case BuildResult::Downloaded:
-                case vcpkg::BuildResult::Succeeded:
+                case BuildResult::Succeeded:
                     handle_feature_test_result(unexpected_states,
                                                std::move(spec),
                                                CiFeatureBaselineState::Pass,
@@ -553,12 +546,21 @@ namespace vcpkg
                                                {},
                                                time_to_install);
                     break;
-                case vcpkg::BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::CascadedDueToMissingDependencies:
+                    if (last_build_result.unmet_dependencies.empty())
+                    {
+                        Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
                     handle_feature_test_result(unexpected_states,
                                                std::move(spec),
                                                CiFeatureBaselineState::Cascade,
                                                baseline,
-                                               std::move(failed_dependencies),
+                                               Strings::join(",",
+                                                             Util::fmap(last_build_result.unmet_dependencies,
+                                                                        [](const FullPackageSpec& unmet_dependency) {
+                                                                            return unmet_dependency.to_string();
+                                                                        })),
                                                time_to_install);
                     break;
                 case BuildResult::BuildFailed:
@@ -603,8 +605,13 @@ namespace vcpkg
             msg::println(msgFeatureTestProblems);
             for (const auto& result : unexpected_states)
             {
-                if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
+                if (result.actual_state == CiFeatureBaselineState::Cascade)
                 {
+                    if (result.cascade_reason.empty())
+                    {
+                        Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
                     msg::println(Color::error,
                                  msg::format(msgUnexpectedStateCascade, msg::feature_spec = result.spec)
                                      .append_raw(" ")
