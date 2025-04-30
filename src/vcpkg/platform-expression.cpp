@@ -655,7 +655,7 @@ namespace vcpkg::PlatformExpression
 
         if (parser.messages().any_errors())
         {
-            return parser.messages().combine();
+            return parser.messages().join();
         }
 
         return res;

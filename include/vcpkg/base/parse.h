@@ -27,19 +27,20 @@ namespace vcpkg
     struct ParseMessages
     {
         void exit_if_errors_or_warnings() const;
-        bool good() const { return m_good; }
-        bool any_errors() const { return m_any_errors; }
+        bool good() const noexcept { return m_good; }
+        bool any_errors() const noexcept { return m_error_count != 0; }
+        size_t error_count() const noexcept { return m_error_count; }
 
         const std::vector<DiagnosticLine>& lines() const noexcept { return m_lines; }
 
         void add_line(DiagnosticLine&& line);
 
-        LocalizedString combine() const;
+        LocalizedString join() const;
 
     private:
         std::vector<DiagnosticLine> m_lines;
         bool m_good = true;
-        bool m_any_errors = false;
+        size_t m_error_count = 0;
     };
 
     struct ParserBase

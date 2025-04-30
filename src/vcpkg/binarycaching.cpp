@@ -2575,7 +2575,7 @@ ExpectedL<AssetCachingSettings> vcpkg::parse_download_configuration(const Option
     {
         auto&& messages = std::move(parser).extract_messages();
         messages.add_line(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
-        return messages.combine();
+        return messages.join();
     }
 
     if (s.azblob_templates_to_put.size() > 1)
@@ -2620,7 +2620,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     default_parser.parse();
     if (default_parser.messages().any_errors())
     {
-        return default_parser.messages().combine();
+        return default_parser.messages().join();
     }
     else
     {
@@ -2636,7 +2636,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     env_parser.parse();
     if (env_parser.messages().any_errors())
     {
-        return env_parser.messages().combine();
+        return env_parser.messages().join();
     }
     else
     {
@@ -2653,7 +2653,7 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
         arg_parser.parse();
         if (arg_parser.messages().any_errors())
         {
-            return arg_parser.messages().combine();
+            return arg_parser.messages().join();
         }
         else
         {

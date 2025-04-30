@@ -230,7 +230,7 @@ namespace vcpkg
 
         if (parser.messages().any_errors())
         {
-            return parser.messages().combine();
+            return parser.messages().join();
         }
 
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);

@@ -1320,12 +1320,12 @@ TEST_CASE ("license error messages", "[manifests][license]")
 {
     ParseMessages messages;
     parse_spdx_license_expression("", messages);
-    CHECK(messages.combine() == LocalizedString::from_raw(R"(<license string>: error: SPDX license expression was empty.
+    CHECK(messages.join() == LocalizedString::from_raw(R"(<license string>: error: SPDX license expression was empty.
   on expression: 
                  ^)"));
 
     parse_spdx_license_expression("MIT ()", messages);
-    CHECK(messages.combine() ==
+    CHECK(messages.join() ==
           LocalizedString::from_raw(
               R"(<license string>: error: Expected a compound or the end of the string, found a parenthesis.
   on expression: MIT ()
@@ -1333,14 +1333,14 @@ TEST_CASE ("license error messages", "[manifests][license]")
 
     parse_spdx_license_expression("MIT +", messages);
     CHECK(
-        messages.combine() ==
+        messages.join() ==
         LocalizedString::from_raw(
             R"(<license string>: error: SPDX license expression contains an extra '+'. These are only allowed directly after a license identifier.
   on expression: MIT +
                      ^)"));
 
     parse_spdx_license_expression("MIT AND", messages);
-    CHECK(messages.combine() ==
+    CHECK(messages.join() ==
           LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
@@ -1348,7 +1348,7 @@ TEST_CASE ("license error messages", "[manifests][license]")
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.any_errors());
     CHECK(
-        messages.combine() ==
+        messages.join() ==
         R"(<license string>: warning: Unknown license identifier 'unknownlicense'. Known values are listed at https://spdx.org/licenses/
   on expression: MIT AND unknownlicense
                          ^)");

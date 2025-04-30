@@ -82,7 +82,7 @@ namespace vcpkg
             line.print_to(out_sink);
         }
 
-        if (!m_good && !m_any_errors)
+        if (!m_good && m_error_count == 0)
         {
             DiagnosticLine{DiagKind::Error, msg::format(msgWarningsTreatedAsErrors)}.print_to(out_sink);
         }
@@ -94,7 +94,7 @@ namespace vcpkg
     {
         switch (line.kind())
         {
-            case DiagKind::Error: m_any_errors = true; [[fallthrough]];
+            case DiagKind::Error: ++m_error_count; [[fallthrough]];
             case DiagKind::Warning: m_good = false; break;
             case DiagKind::None:
             case DiagKind::Message:
@@ -105,7 +105,7 @@ namespace vcpkg
         m_lines.push_back(std::move(line));
     }
 
-    LocalizedString ParseMessages::combine() const
+    LocalizedString ParseMessages::join() const
     {
         std::string combined_messages;
         auto first = m_lines.begin();

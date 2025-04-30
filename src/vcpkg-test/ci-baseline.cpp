@@ -250,7 +250,7 @@ static void check_error(const std::string& input, const std::string& expected_er
     auto actual = parse_ci_baseline(input, "test", m);
     CHECK(actual.empty());
     CHECK(!m.good());
-    CHECK(m.combine() == LocalizedString::from_raw(expected_error));
+    CHECK(m.join() == LocalizedString::from_raw(expected_error));
 }
 
 TEST_CASE ("Parse Errors", "[ci-baseline]")
