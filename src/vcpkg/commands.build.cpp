@@ -1571,14 +1571,14 @@ namespace vcpkg
         auto& spec = action.spec;
         const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_name();
 
-        std::vector<FeatureSpec> missing_fspecs;
+        std::map<PackageSpec, std::set<std::string>> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)
         {
             for (const FeatureSpec& fspec : kv.second)
             {
                 if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
-                    missing_fspecs.emplace_back(fspec);
+                    missing_fspecs[fspec.spec()].insert(fspec.feature());
                 }
             }
         }
@@ -1588,7 +1588,12 @@ namespace vcpkg
         {
             if (!all_dependencies_satisfied)
             {
-                return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
+                return {BuildResult::CascadedDueToMissingDependencies,
+                        Util::fmap(std::move(missing_fspecs),
+                                   [](std::pair<PackageSpec, std::set<std::string>>&& missing_features) {
+                                       return FeatureSpec{std::move(missing_features.first),
+                                                          Strings::join(",", missing_features.second)};
+                                   })};
             }
 
             // assert that all_dependencies_satisfied is accurate above by checking that they're all installed
