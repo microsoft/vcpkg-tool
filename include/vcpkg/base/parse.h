@@ -97,8 +97,13 @@ namespace vcpkg
 
         std::string format_file_prefix(int row, int column);
 
-        LocalizedString* add_error(LocalizedString&& message);
-        LocalizedString* add_error(LocalizedString&& message, const SourceLoc& loc);
+    private:
+        LocalizedString& create_error_impl(LocalizedString&& message, const SourceLoc& loc);
+
+    public:
+        void add_error(LocalizedString&& message);
+        void add_error(LocalizedString&& message, const SourceLoc& loc);
+        void add_error(LocalizedString&& message, const SourceLoc& loc, const LocalizedString& additional_info);
 
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);

@@ -259,33 +259,39 @@ namespace vcpkg
         return std::string();
     }
 
-    LocalizedString* ParserBase::add_error(LocalizedString&& message)
+    LocalizedString& ParserBase::create_error_impl(LocalizedString&& message, const SourceLoc& loc)
     {
-        return add_error(std::move(message), cur_loc());
+        auto& res = m_messages.error.emplace();
+        res.append_raw(format_file_prefix(loc.row, loc.column));
+        res.append_raw(ErrorPrefix);
+        res.append(message);
+        res.append_raw('\n');
+        append_caret_line(res, loc);
+        return res;
     }
 
-    LocalizedString* ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
+    void ParserBase::add_error(LocalizedString&& message) { return add_error(std::move(message), cur_loc()); }
+
+    void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
-        LocalizedString* result;
-        // avoid cascading errors by only saving the first
         if (!m_messages.error)
         {
-            auto& res = m_messages.error.emplace();
-            res.append_raw(format_file_prefix(loc.row, loc.column));
-            res.append_raw(ErrorPrefix);
-            res.append(message);
-            res.append_raw('\n');
-            append_caret_line(res, loc);
-            result = &res;
-        }
-        else
-        {
-            result = nullptr;
+            create_error_impl(std::move(message), loc);
         }
 
         // Avoid error loops by skipping to the end
         skip_to_eof();
-        return result;
+    }
+
+    void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc, const LocalizedString& additional_info)
+    {
+        if (!m_messages.error)
+        {
+            create_error_impl(std::move(message), loc).append_raw('\n').append(additional_info);
+        }
+
+        // Avoid error loops by skipping to the end
+        skip_to_eof();
     }
 
     void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }

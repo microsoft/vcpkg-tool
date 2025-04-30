@@ -232,12 +232,7 @@ namespace vcpkg::Paragraphs
 
                 if (cur() != ' ') return;
                 auto spacing = skip_tabs_spaces();
-                if (is_lineend(cur()))
-                {
-                    add_error(msg::format(msgParagraphUnexpectedEndOfLine));
-                    return;
-                }
-
+                if (is_lineend(cur())) return add_error(msg::format(msgParagraphUnexpectedEndOfLine));
                 Strings::append(fieldvalue, "\n", spacing);
             } while (true);
         }
@@ -245,11 +240,7 @@ namespace vcpkg::Paragraphs
         void get_fieldname(std::string& fieldname)
         {
             fieldname = match_while(is_alphanumdash).to_string();
-            if (fieldname.empty())
-            {
-                add_error(msg::format(msgParagraphExpectedFieldName));
-                return;
-            }
+            if (fieldname.empty()) return add_error(msg::format(msgParagraphExpectedFieldName));
         }
 
         void get_paragraph(Paragraph& fields)
@@ -267,17 +258,9 @@ namespace vcpkg::Paragraphs
 
                 auto loc = cur_loc();
                 get_fieldname(fieldname);
-                if (cur() != ':')
-                {
-                    add_error(msg::format(msgParagraphExpectedColonAfterField));
-                    return;
-                }
+                if (cur() != ':') return add_error(msg::format(msgParagraphExpectedColonAfterField));
                 if (Util::Sets::contains(fields, fieldname))
-                {
-                    add_error(msg::format(msgParagraphDuplicateField), loc);
-                    return;
-                }
-
+                    return add_error(msg::format(msgParagraphDuplicateField), loc);
                 next();
                 skip_tabs_spaces();
                 auto rowcol = cur_rowcol();
