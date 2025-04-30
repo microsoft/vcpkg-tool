@@ -321,7 +321,7 @@ namespace vcpkg
             const auto ci_baseline_file_contents = fs.read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
-            ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
+            ci_parse_messages.exit_if_errors_or_warnings();
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 

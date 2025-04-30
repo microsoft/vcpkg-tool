@@ -24,21 +24,22 @@ namespace vcpkg
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);
 
-    struct ParseMessage
-    {
-        SourceLoc location = {};
-        LocalizedString message;
-
-        LocalizedString format(StringView origin, MessageKind kind) const;
-    };
-
     struct ParseMessages
     {
-        Optional<LocalizedString> error;
-        std::vector<ParseMessage> warnings;
+        void exit_if_errors_or_warnings() const;
+        bool good() const { return m_good; }
+        bool any_errors() const { return m_any_errors; }
 
-        void exit_if_errors_or_warnings(StringView origin) const;
-        bool good() const { return !error && warnings.empty(); }
+        const std::vector<DiagnosticLine>& lines() const noexcept { return m_lines; }
+
+        void add_line(DiagnosticLine&& line);
+
+        LocalizedString combine() const;
+
+    private:
+        std::vector<DiagnosticLine> m_lines;
+        bool m_good = true;
+        bool m_any_errors = false;
     };
 
     struct ParserBase
@@ -106,9 +107,6 @@ namespace vcpkg
 
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
-
-        const LocalizedString* get_error() const& { return m_messages.error.get(); }
-        LocalizedString* get_error() && { return m_messages.error.get(); }
 
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages&& extract_messages() { return std::move(m_messages); }

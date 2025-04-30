@@ -1019,14 +1019,14 @@ namespace vcpkg
             auto parser = SpdxLicenseExpressionParser(sv, r.origin());
             auto res = parser.parse();
 
-            for (const auto& warning : parser.messages().warnings)
+            for (auto&& line : parser.messages().lines())
             {
-                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
-            }
-            if (auto err = parser.get_error())
-            {
-                r.add_generic_error(type_name(), LocalizedString::from_raw(err->to_string()));
-                return std::string();
+                switch (line.kind())
+                {
+                    case DiagKind::Error: r.add_generic_error(type_name(), line.message_text()); return std::string();
+                    case DiagKind::Warning: r.add_warning(type_name(), line.message_text()); break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
             }
 
             return res;

@@ -653,14 +653,12 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = parser.get_error())
+        if (parser.messages().any_errors())
         {
-            return LocalizedString::from_raw(p->to_string());
+            return parser.messages().combine();
         }
-        else
-        {
-            return res;
-        }
+
+        return res;
     }
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)

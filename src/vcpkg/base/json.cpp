@@ -1076,9 +1076,9 @@ namespace vcpkg::Json
                     parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
                 }
 
-                if (const auto maybe_error = std::move(parser).get_error())
+                if (parser.messages().any_errors())
                 {
-                    return std::move(*maybe_error);
+                    return parser.messages().combine();
                 }
 
                 return ParsedJson{std::move(val), parser.style()};

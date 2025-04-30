@@ -165,7 +165,7 @@ namespace vcpkg
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().combine(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
@@ -178,7 +178,7 @@ namespace vcpkg
                 return parse_qualified_specifier(
                     parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
             });
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().combine(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -206,7 +206,7 @@ namespace vcpkg
                     return dependency;
                 });
         });
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().combine(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -280,7 +280,11 @@ namespace vcpkg::Paragraphs
                 get_paragraph(paragraphs.emplace_back());
                 match_while(is_lineend);
             }
-            if (get_error()) return LocalizedString::from_raw(get_error()->to_string());
+
+            if (messages().any_errors())
+            {
+                return messages().combine();
+            }
 
             return paragraphs;
         }
