@@ -1591,8 +1591,10 @@ namespace vcpkg
                 return {BuildResult::CascadedDueToMissingDependencies,
                         Util::fmap(std::move(missing_fspecs),
                                    [](std::pair<PackageSpec, std::set<std::string>>&& missing_features) {
-                                       return FeatureSpec{std::move(missing_features.first),
-                                                          Strings::join(",", missing_features.second)};
+                                       return FullPackageSpec{
+                                           std::move(missing_features.first),
+                                           InternalFeatureSet{std::make_move_iterator(missing_features.second.begin()),
+                                                              std::make_move_iterator(missing_features.second.end())}};
                                    })};
             }
 
@@ -2193,7 +2195,7 @@ namespace vcpkg
         : code(code), binary_control_file(std::move(bcf))
     {
     }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps)
+    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps)
         : code(code), unmet_dependencies(std::move(unmet_deps))
     {
     }
