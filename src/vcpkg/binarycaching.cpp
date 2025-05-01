@@ -2622,12 +2622,10 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     {
         return default_parser.messages().join();
     }
-    else
+
+    for (const auto& line : default_parser.messages().lines())
     {
-        for (const auto& line : default_parser.messages().lines())
-        {
-            line.print_to(out_sink);
-        }
+        line.print_to(out_sink);
     }
 
     // must live until the end of the function due to StringView in BinaryConfigParser
@@ -2638,29 +2636,24 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
     {
         return env_parser.messages().join();
     }
-    else
+
+    for (const auto& line : env_parser.messages().lines())
     {
-        for (const auto& line : env_parser.messages().lines())
-        {
-            line.print_to(out_sink);
-        }
+        line.print_to(out_sink);
     }
 
     for (auto&& arg : args)
     {
         BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
-        arg_parser.parse();
         if (arg_parser.messages().any_errors())
         {
             return arg_parser.messages().join();
         }
-        else
+
+        for (const auto& line : arg_parser.messages().lines())
         {
-            for (const auto& line : arg_parser.messages().lines())
-            {
-                line.print_to(out_sink);
-            }
+            line.print_to(out_sink);
         }
     }
 
