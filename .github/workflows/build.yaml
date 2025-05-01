@@ -29,10 +29,6 @@ jobs:
           node-version: "18.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
-      - uses: lukka/get-cmake@v3.31.0
-        with:
-          cmakeVersion: 3.22.1 # ubuntu 22.04
-          ninjaVersion: 1.11.1
       - name: Enable Problem Matchers
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'

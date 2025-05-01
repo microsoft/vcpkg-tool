@@ -8,6 +8,7 @@
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
+#include <vcpkg/base/unicode.h>
 
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/triplet.h>
@@ -98,6 +99,48 @@ namespace vcpkg
 
     std::string format_name_only_feature_spec(StringView package_name, StringView feature_name);
 
+    template<class T>
+    struct Located
+    {
+        SourceLoc loc;
+        T value;
+
+        template<class... Args>
+        explicit Located(const SourceLoc& loc, Args&&... args) : loc(loc), value(std::forward<Args>(args)...)
+        {
+        }
+
+        friend bool operator==(const Located& lhs, const Located& rhs)
+        {
+            return lhs.loc.row == rhs.loc.row && rhs.loc.column == rhs.loc.column && lhs.value == rhs.value;
+        }
+        friend bool operator!=(const Located& lhs, const Located& rhs) { return !(lhs == rhs); }
+    };
+
+    struct LocatedStringLess
+    {
+        using is_transparent = void;
+
+        bool operator()(const Located<std::string>& lhs, const Located<std::string>& rhs) const
+        {
+            return lhs.value < rhs.value;
+        }
+
+        template<class Left>
+        bool operator()(const Left& lhs, const Located<std::string>& rhs) const
+        {
+            return lhs < rhs.value;
+        }
+
+        template<class Right>
+        bool operator()(const Located<std::string>& lhs, const Right& rhs) const
+        {
+            return lhs.value < rhs;
+        }
+    };
+
+    Located<std::vector<std::string>> hoist_locations(std::vector<Located<std::string>>&& values);
+
     /// In an internal feature set, "default" represents default features and missing "core" has no semantic
     struct InternalFeatureSet : std::vector<std::string>
     {
@@ -106,7 +149,7 @@ namespace vcpkg
         bool empty_or_only_core() const;
     };
 
-    InternalFeatureSet internalize_feature_list(View<std::string> fs, ImplicitDefault id);
+    InternalFeatureSet internalize_feature_list(View<Located<std::string>> fs, ImplicitDefault id);
 
     ///
     /// <summary>
@@ -139,10 +182,12 @@ namespace vcpkg
 
     struct ParsedQualifiedSpecifier
     {
-        std::string name;
-        Optional<std::vector<std::string>> features;
-        Optional<std::string> triplet;
-        Optional<PlatformExpression::Expr> platform;
+        Located<std::string> name;
+        Optional<std::vector<Located<std::string>>> features;
+        Optional<Located<std::string>> triplet;
+        Optional<Located<PlatformExpression::Expr>> platform;
+
+        const PlatformExpression::Expr& platform_or_always_true() const;
 
         /// @param id add "default" if "core" is not present
         // Assumes AllowPlatformSpec::No

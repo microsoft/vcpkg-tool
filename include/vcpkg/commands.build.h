@@ -184,11 +184,11 @@ namespace vcpkg
     {
         explicit ExtendedBuildResult(BuildResult code);
         explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
-        ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps);
+        ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps);
         ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
         BuildResult code;
-        std::vector<FeatureSpec> unmet_dependencies;
+        std::vector<FullPackageSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
         Optional<vcpkg::Path> stdoutlog;
         std::vector<std::string> error_logs;

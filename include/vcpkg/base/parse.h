@@ -12,14 +12,6 @@
 
 namespace vcpkg
 {
-    struct SourceLoc
-    {
-        Unicode::Utf8Decoder it;
-        Unicode::Utf8Decoder start_of_line;
-        int row;
-        int column;
-    };
-
     void append_caret_line(LocalizedString& res,
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);
@@ -109,10 +101,14 @@ namespace vcpkg
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
+        void add_note(LocalizedString&& message, const SourceLoc& loc);
+
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages&& extract_messages() { return std::move(m_messages); }
 
     private:
+        void add_line(DiagKind kind, LocalizedString&& message, const SourceLoc& loc);
+
         Unicode::Utf8Decoder m_it;
         Unicode::Utf8Decoder m_start_of_line;
         int m_row;

@@ -260,38 +260,39 @@ namespace vcpkg
         // avoid cascading errors by only saving the first
         if (!m_messages.any_errors())
         {
-            message.append_raw('\n');
-            append_caret_line(message, loc);
-
-            if (auto origin = m_origin.get())
-            {
-                m_messages.add_line(
-                    DiagnosticLine{DiagKind::Error, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
-            }
-            else
-            {
-                m_messages.add_line(DiagnosticLine{DiagKind::Error, std::move(message)});
-            }
+            add_line(DiagKind::Error, std::move(message), loc);
         }
 
         // Avoid error loops by skipping to the end
         skip_to_eof();
     }
 
-    void ParserBase::add_warning(LocalizedString&& message) { add_warning(std::move(message), cur_loc()); }
+    void ParserBase::add_warning(LocalizedString&& message)
+    {
+        add_line(DiagKind::Warning, std::move(message), cur_loc());
+    }
 
     void ParserBase::add_warning(LocalizedString&& message, const SourceLoc& loc)
+    {
+        add_line(DiagKind::Warning, std::move(message), loc);
+    }
+
+    void ParserBase::add_note(LocalizedString&& message, const SourceLoc& loc)
+    {
+        add_line(DiagKind::Note, std::move(message), loc);
+    }
+
+    void ParserBase::add_line(DiagKind kind, LocalizedString&& message, const SourceLoc& loc)
     {
         message.append_raw('\n');
         append_caret_line(message, loc);
         if (auto origin = m_origin.get())
         {
-            m_messages.add_line(
-                DiagnosticLine{DiagKind::Warning, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
+            m_messages.add_line(DiagnosticLine{kind, *origin, TextRowCol{loc.row, loc.column}, std::move(message)});
         }
         else
         {
-            m_messages.add_line(DiagnosticLine{DiagKind::Warning, std::move(message)});
+            m_messages.add_line(DiagnosticLine{kind, std::move(message)});
         }
     }
 }

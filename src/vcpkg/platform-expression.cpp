@@ -759,4 +759,6 @@ namespace vcpkg::PlatformExpression
         }
         return Impl{}(*expr.underlying_, true);
     }
+
+    const Expr Expr::always_true{};
 }

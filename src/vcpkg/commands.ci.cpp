@@ -39,8 +39,8 @@ namespace
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
         {SwitchOutputHashes, msgCISettingsOptOutputHashes},
         {SwitchParentHashes, msgCISettingsOptParentHashes},
-        {SwitchKnownFailuresFrom,
-         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }}};
+        {SwitchKnownFailuresFrom, msgCISettingsOptKnownFailuresFrom},
+    };
 
     constexpr CommandSwitch CI_SWITCHES[] = {
         {SwitchDryRun, msgCISwitchOptDryRun},

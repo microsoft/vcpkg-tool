@@ -82,3 +82,15 @@ if ($firstMatch -lt 0) {
 } elseif ($output.IndexOf($expected, $firstMatch + 1) -ge 0) {
     throw 'Duplicated bad license'
 }
+
+Refresh-TestRoot
+$output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install 'vcpkg-depends-on-fail[x]' --keep-going
+Throw-IfNotFailed
+$expected = @"
+Building vcpkg-depends-on-fail[core,x]:$($Triplet)@0...
+error: building vcpkg-depends-on-fail:$($Triplet) failed with: CASCADED_DUE_TO_MISSING_DEPENDENCIES
+  due to the following missing dependencies:
+    vcpkg-fail-if-depended-upon[a,b,core]:$($Triplet)
+"@
+
+Throw-IfNonContains -Expected $expected -Actual $output

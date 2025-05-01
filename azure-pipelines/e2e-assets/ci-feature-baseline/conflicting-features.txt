@@ -1,0 +1,2 @@
+vcpkg-empty-featureful-port[a,b] = feature-fails
+vcpkg-empty-featureful-port[b,c] = cascade
