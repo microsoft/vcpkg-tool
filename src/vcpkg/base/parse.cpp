@@ -70,7 +70,7 @@ namespace vcpkg
         res.append_indent().append_raw(caret_string);
     }
 
-    static void append_caret_line(LocalizedString& res, const SourceLoc& loc)
+    void append_caret_line(LocalizedString& res, const SourceLoc& loc)
     {
         append_caret_line(res, loc.it, loc.start_of_line);
     }
@@ -242,30 +242,52 @@ namespace vcpkg
         return cur();
     }
 
-    void ParserBase::add_error(LocalizedString&& message) { add_error(std::move(message), cur_loc()); }
+    std::string ParserBase::format_file_prefix(int row, int column) const
+    {
+        if (auto origin = m_origin.get())
+        {
+            if (row == 0 && column == 0)
+            {
+                return fmt::format("{}: ", *origin);
+            }
+            else
+            {
+                return fmt::format("{}:{}:{}: ", *origin, row, column);
+            }
+        }
+
+        return std::string();
+    }
+
+    LocalizedString& ParserBase::create_error_impl(LocalizedString&& message, const SourceLoc& loc)
+    {
+        auto& res = m_messages.error.emplace();
+        res.append_raw(format_file_prefix(loc.row, loc.column));
+        res.append_raw(ErrorPrefix);
+        res.append(message);
+        res.append_raw('\n');
+        append_caret_line(res, loc);
+        return res;
+    }
+
+    void ParserBase::add_error(LocalizedString&& message) { return add_error(std::move(message), cur_loc()); }
 
     void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc)
     {
-        // avoid cascading errors by only saving the first
         if (!m_messages.error)
         {
-            auto& res = m_messages.error.emplace();
-            if (auto origin = m_origin.get())
-            {
-                if (loc.row == 0 && loc.column == 0)
-                {
-                    res.append_raw(fmt::format("{}: ", *origin));
-                }
-                else
-                {
-                    res.append_raw(fmt::format("{}:{}:{}: ", *origin, loc.row, loc.column));
-                }
-            }
+            create_error_impl(std::move(message), loc);
+        }
 
-            res.append_raw(ErrorPrefix);
-            res.append(message);
-            res.append_raw('\n');
-            append_caret_line(res, loc);
+        // Avoid error loops by skipping to the end
+        skip_to_eof();
+    }
+
+    void ParserBase::add_error(LocalizedString&& message, const SourceLoc& loc, const LocalizedString& additional_info)
+    {
+        if (!m_messages.error)
+        {
+            create_error_impl(std::move(message), loc).append_raw('\n').append(additional_info);
         }
 
         // Avoid error loops by skipping to the end

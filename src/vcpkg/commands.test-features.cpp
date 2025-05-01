@@ -113,7 +113,6 @@ namespace
 namespace vcpkg
 {
     static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
-
         {SwitchAll, msgCmdTestFeaturesAll},
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
@@ -275,9 +274,9 @@ namespace vcpkg
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}});
                 for (const auto& option_set : baseline.options)
                 {
-                    if (option_set.front() != FeatureNameCore)
+                    if (option_set.value.front() != FeatureNameCore)
                     {
-                        specs_to_test.back().features.push_back(option_set.front());
+                        specs_to_test.back().features.push_back(option_set.value.front());
                     }
                 }
             }
@@ -292,8 +291,9 @@ namespace vcpkg
                     if (!Util::Sets::contains(baseline.cascade_features, feature->name) &&
                         !Util::Sets::contains(baseline.failing_features, feature->name))
                     {
-                        if (Util::all_of(baseline.options, [&](const auto& options) {
-                                return !Util::contains(options, feature->name) || options.front() == feature->name;
+                        if (Util::all_of(baseline.options, [&](const Located<std::vector<std::string>>& options) {
+                                return !Util::contains(options.value, feature->name) ||
+                                       options.value.front() == feature->name;
                             }))
                         {
                             all_features.push_back(feature->name);
@@ -306,9 +306,10 @@ namespace vcpkg
                                                    InternalFeatureSet{{FeatureNameCore.to_string(), feature->name}});
                         for (const auto& option_set : baseline.options)
                         {
-                            if (option_set.front() != FeatureNameCore && !Util::contains(option_set, feature->name))
+                            if (option_set.value.front() != FeatureNameCore &&
+                                !Util::contains(option_set.value, feature->name))
                             {
-                                specs_to_test.back().features.push_back(option_set.front());
+                                specs_to_test.back().features.push_back(option_set.value.front());
                             }
                         }
                     }
@@ -379,7 +380,7 @@ namespace vcpkg
         const auto handle_result = [&](FullPackageSpec&& spec,
                                        CiFeatureBaselineState result,
                                        CiFeatureBaselineEntry baseline,
-                                       std::string cascade_reason,
+                                       std::string&& cascade_reason,
                                        ElapsedTime build_time) {
             bool expected_cascade =
                 (baseline.state == CiFeatureBaselineState::Cascade ||
@@ -496,7 +497,8 @@ namespace vcpkg
             std::string failed_dependencies;
             for (const auto& result : summary.results)
             {
-                switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
+                auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
+                switch (build_result.code)
                 {
                     case BuildResult::BuildFailed:
                         if (Path* logs_dir = maybe_logs_dir.get())
@@ -505,7 +507,7 @@ namespace vcpkg
                             fs.write_contents(
                                 issue_body_path,
                                 create_github_issue(args,
-                                                    result.build_result.value_or_exit(VCPKG_LINE_INFO),
+                                                    build_result,
                                                     paths,
                                                     result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
                                                     false),
@@ -550,48 +552,55 @@ namespace vcpkg
                     {
                         known_failures.insert(*abi);
                     }
-                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
+
                     if (maybe_logs_dir)
                     {
                         fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);
                         fs.write_contents(
                             *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                     }
+
+                    handle_result(std::move(spec), CiFeatureBaselineState::Fail, baseline, {}, time_to_install);
                     break;
             }
 
             msg::println();
         }
 
-        for (const auto& result : unexpected_states)
-        {
-            if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
-            {
-                msg::println(Color::error,
-                             msg::format(msgUnexpectedStateCascade,
-                                         msg::feature_spec = result.spec,
-                                         msg::actual = result.actual_state)
-                                 .append_raw(" ")
-                                 .append_raw(result.cascade_reason));
-            }
-            else
-            {
-                msg::println(Color::error,
-                             msg::format(msgUnexpectedState,
-                                         msg::feature_spec = result.spec,
-                                         msg::actual = result.actual_state,
-                                         msg::elapsed = result.build_time));
-            }
-        }
+        int exit_code;
         if (unexpected_states.empty())
         {
+            exit_code = EXIT_SUCCESS;
             msg::println(msgAllFeatureTestsPassed);
+        }
+        else
+        {
+            exit_code = EXIT_FAILURE;
+            msg::println(msgFeatureTestProblems);
+            for (const auto& result : unexpected_states)
+            {
+                if (result.actual_state == CiFeatureBaselineState::Cascade && !result.cascade_reason.empty())
+                {
+                    msg::println(Color::error,
+                                 msg::format(msgUnexpectedStateCascade, msg::feature_spec = result.spec)
+                                     .append_raw(" ")
+                                     .append_raw(result.cascade_reason));
+                }
+                else
+                {
+                    msg::println(Color::error,
+                                 msg::format(msgUnexpectedState,
+                                             msg::feature_spec = result.spec,
+                                             msg::actual = result.actual_state,
+                                             msg::elapsed = result.build_time));
+                }
+            }
         }
 
         auto it_output_file = settings.find(SwitchFailingAbiLog);
         if (it_output_file != settings.end())
         {
-            Path raw_path = it_output_file->second;
+            auto&& raw_path = it_output_file->second;
             auto content = Strings::join("\n", known_failures);
             content += '\n';
             fs.write_contents_and_dirs(raw_path, content, VCPKG_LINE_INFO);
@@ -599,6 +608,6 @@ namespace vcpkg
 
         binary_cache.wait_for_async_complete_and_join();
 
-        Checks::exit_with_code(VCPKG_LINE_INFO, unexpected_states.empty() ? EXIT_SUCCESS : EXIT_FAILURE);
+        Checks::exit_with_code(VCPKG_LINE_INFO, exit_code);
     }
 }

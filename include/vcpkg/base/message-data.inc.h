@@ -99,7 +99,7 @@ DECLARE_MESSAGE(
     "The version format of \"{package_name}\" uses \"version-string\", but the format is acceptable as a \"version\". "
     "If the versions for this port are orderable using relaxed-version rules, change the format to \"version\", and "
     "rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash "
-    "suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:\n"
+    "suffixes are sorted lexicographically before. Plus'd build tags are ignored. Examples:\n"
     "1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0\n"
     "Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0\n"
     "Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the "
@@ -510,6 +510,7 @@ DECLARE_MESSAGE(CISettingsOptCIBase,
 DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied")
 DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet")
+DECLARE_MESSAGE(CISettingsOptKnownFailuresFrom, (), "", "Path to the file of known package build failures")
 DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes")
 DECLARE_MESSAGE(CISettingsOptParentHashes,
                 (),
@@ -1236,7 +1237,12 @@ DECLARE_MESSAGE(ExpectedCharacterHere,
 DECLARE_MESSAGE(ExpectedDefaultFeaturesList, (), "", "expected ',' or end of text in default features list")
 DECLARE_MESSAGE(ExpectedDependenciesList, (), "", "expected ',' or end of text in dependencies list")
 DECLARE_MESSAGE(ExpectedDigitsAfterDecimal, (), "", "Expected digits after the decimal point")
-DECLARE_MESSAGE(ExpectedFailOrSkip, (), "", "expected 'fail', 'skip', or 'pass' here")
+DECLARE_MESSAGE(ExpectedFailSkipOrPass, (), "", "expected 'fail', 'skip', or 'pass' here")
+DECLARE_MESSAGE(ExpectedFeatureBaselineState,
+                (),
+                "",
+                "expected 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails', "
+                "or 'combination-fails' here")
 DECLARE_MESSAGE(ExpectedFeatureListTerminal, (), "", "expected ',' or ']' in feature list")
 DECLARE_MESSAGE(ExpectedFeatureName, (), "", "expected feature name (must be lowercase, digits, '-')")
 DECLARE_MESSAGE(ExpectedExplicitTriplet, (), "", "expected an explicit triplet")
@@ -1351,13 +1357,14 @@ DECLARE_MESSAGE(FailedVendorAuthentication,
 DECLARE_MESSAGE(FeatureBaselineEntryAlreadySpecified,
                 (msg::feature, msg::value),
                 "{value} is a keyword",
-                "Feature '{feature}' was already declared as '{value}'.")
+                "'{feature}' was already declared as '{value}'")
 DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 (msg::value),
                 "{value} is a keyword",
                 "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
+DECLARE_MESSAGE(FeatureTestProblems, (), "", "There are some feature test problems!")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesRelativeToTheBuildDirectoryHere, (), "", "the files are relative to the build directory here")
 DECLARE_MESSAGE(FilesRelativeToThePackageDirectoryHere,
@@ -2634,6 +2641,7 @@ DECLARE_MESSAGE(PortVersionMultipleSpecification,
 DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Version\" must be a non-negative integer")
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
+DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
 DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
@@ -2884,11 +2892,11 @@ DECLARE_MESSAGE(UnexpectedState,
                 (msg::feature_spec, msg::actual, msg::elapsed),
                 "{actual} is the actual state, e.g. 'pass', 'skip', ...",
                 "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
-DECLARE_MESSAGE(UnexpectedStateCascade,
-                (msg::feature_spec, msg::actual),
-                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
-                "{feature_spec} resulted in the unexpected state {actual} because the following "
-                "dependencies did not build:")
+DECLARE_MESSAGE(
+    UnexpectedStateCascade,
+    (msg::feature_spec),
+    "",
+    "{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
