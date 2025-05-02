@@ -1363,6 +1363,7 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
+DECLARE_MESSAGE(FeatureBaselineNoFeaturesForPass, (), "", "When using '= pass' no list of features is allowed.")
 DECLARE_MESSAGE(FeatureTestProblems, (), "", "There are some feature test problems!")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesRelativeToTheBuildDirectoryHere, (), "", "the files are relative to the build directory here")

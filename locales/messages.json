@@ -817,6 +817,7 @@
   "_FeatureBaselineExpectedFeatures.comment": "{value} is a keyword",
   "FeatureBaselineFormatted": "Succeeded in formatting the feature baseline file.",
   "FeatureBaselineNoFeaturesForFail": "When using '= fail' no list of features is allowed.",
+  "FeatureBaselineNoFeaturesForPass": "When using '= pass' no list of features is allowed.",
   "FeatureTestProblems": "There are some feature test problems!",
   "FetchingBaselineInfo": "Fetching baseline information from {package_name}...",
   "_FetchingBaselineInfo.comment": "An example of {package_name} is zlib.",

@@ -111,10 +111,10 @@ namespace
 
     void handle_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
                                             FullPackageSpec&& spec,
-                                            CiFeatureBaselineEntry baseline,
+                                            const CiFeatureBaselineEntry* baseline,
                                             std::string&& cascade_reason)
     {
-        if (!baseline.expected_cascade(spec.features))
+        if (!baseline || !baseline->expected_cascade(spec.features))
         {
             unexpected_states.push_back(msg::format(msgUnexpectedStateCascade, msg::feature_spec = spec)
                                             .append_raw(" ")
@@ -125,10 +125,10 @@ namespace
     void handle_non_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
                                                 FullPackageSpec&& spec,
                                                 CiFeatureBaselineState result,
-                                                CiFeatureBaselineEntry baseline,
+                                                const CiFeatureBaselineEntry* baseline,
                                                 ElapsedTime build_time)
     {
-        bool expected_fail = baseline.expected_fail(spec.features);
+        bool expected_fail = baseline && baseline->expected_fail(spec.features);
         bool actual_fail = result == CiFeatureBaselineState::Fail;
         if (expected_fail != actual_fail)
         {
@@ -287,8 +287,17 @@ namespace vcpkg
         std::vector<FullPackageSpec> specs_to_test;
         for (const auto port : feature_test_ports)
         {
-            const auto& baseline = feature_baseline.get_port(port->core_paragraph->name);
-            if (baseline.state == CiFeatureBaselineState::Skip) continue;
+            const auto* baseline = feature_baseline.get_port(port->core_paragraph->name);
+            CiFeatureBaselineState expected_overall_state = CiFeatureBaselineState::Pass;
+            if (baseline)
+            {
+                if (auto pstate = baseline->state.get())
+                {
+                    expected_overall_state = pstate->value;
+                }
+            }
+
+            if (expected_overall_state == CiFeatureBaselineState::Skip) continue;
             PackageSpec package_spec(port->core_paragraph->name, target_triplet);
             const auto dep_info_vars = var_provider.get_or_load_dep_info_vars(package_spec, host_triplet);
             if (!port->core_paragraph->supports_expression.evaluate(dep_info_vars))
@@ -297,14 +306,17 @@ namespace vcpkg
                     msgPortNotSupported, msg::package_name = port->core_paragraph->name, msg::triplet = target_triplet);
                 continue;
             }
-            if (test_feature_core && !Util::Sets::contains(baseline.skip_features, FeatureNameCore))
+            if (test_feature_core && (!baseline || !Util::Sets::contains(baseline->skip_features, FeatureNameCore)))
             {
                 specs_to_test.emplace_back(package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}});
-                for (const auto& option_set : baseline.options)
+                if (baseline)
                 {
-                    if (option_set.value.front() != FeatureNameCore)
+                    for (const auto& option_set : baseline->options)
                     {
-                        specs_to_test.back().features.push_back(option_set.value.front());
+                        if (option_set.value.front() != FeatureNameCore)
+                        {
+                            specs_to_test.back().features.push_back(option_set.value.front());
+                        }
                     }
                 }
             }
@@ -312,14 +324,14 @@ namespace vcpkg
             for (const auto& feature : port->feature_paragraphs)
             {
                 if (feature->supports_expression.evaluate(dep_info_vars) &&
-                    !Util::Sets::contains(baseline.skip_features, feature->name))
+                    (!baseline || !Util::Sets::contains(baseline->skip_features, feature->name)))
                 {
                     // if we expect a feature to cascade or fail don't add it the the all features test because this
                     // test will them simply cascade or fail too
-                    if (!Util::Sets::contains(baseline.cascade_features, feature->name) &&
-                        !Util::Sets::contains(baseline.failing_features, feature->name))
+                    if (baseline && !Util::Sets::contains(baseline->cascade_features, feature->name) &&
+                        !Util::Sets::contains(baseline->failing_features, feature->name))
                     {
-                        if (Util::all_of(baseline.options, [&](const Located<std::vector<std::string>>& options) {
+                        if (Util::all_of(baseline->options, [&](const Located<std::vector<std::string>>& options) {
                                 return !Util::contains(options.value, feature->name) ||
                                        options.value.front() == feature->name;
                             }))
@@ -328,16 +340,19 @@ namespace vcpkg
                         }
                     }
                     if (test_features_separately &&
-                        !Util::Sets::contains(baseline.no_separate_feature_test, feature->name))
+                        (!baseline || !Util::Sets::contains(baseline->no_separate_feature_test, feature->name)))
                     {
                         specs_to_test.emplace_back(package_spec,
                                                    InternalFeatureSet{{FeatureNameCore.to_string(), feature->name}});
-                        for (const auto& option_set : baseline.options)
+                        if (baseline)
                         {
-                            if (option_set.value.front() != FeatureNameCore &&
-                                !Util::contains(option_set.value, feature->name))
+                            for (const auto& option_set : baseline->options)
                             {
-                                specs_to_test.back().features.push_back(option_set.value.front());
+                                if (option_set.value.front() != FeatureNameCore &&
+                                    !Util::contains(option_set.value, feature->name))
+                                {
+                                    specs_to_test.back().features.push_back(option_set.value.front());
+                                }
                             }
                         }
                     }

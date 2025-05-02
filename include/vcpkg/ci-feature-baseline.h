@@ -23,7 +23,7 @@ namespace vcpkg
 
     struct CiFeatureBaselineEntry
     {
-        CiFeatureBaselineState state = CiFeatureBaselineState::Pass;
+        Optional<Located<CiFeatureBaselineState>> state;
         std::set<Located<std::string>, LocatedStringLess> skip_features;
         std::set<Located<std::string>, LocatedStringLess> no_separate_feature_test;
         std::set<Located<std::string>, LocatedStringLess> cascade_features;
@@ -39,7 +39,7 @@ namespace vcpkg
     struct CiFeatureBaseline
     {
         std::unordered_map<std::string, CiFeatureBaselineEntry> ports;
-        const CiFeatureBaselineEntry& get_port(const std::string& port_name) const;
+        const CiFeatureBaselineEntry* get_port(const std::string& port_name) const;
     };
 
     StringLiteral to_string_literal(CiFeatureBaselineState state);

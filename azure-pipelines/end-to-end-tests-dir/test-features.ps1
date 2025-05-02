@@ -13,3 +13,17 @@ $($ciFeatureBaseline):1:31: note: previous declaration was here
 "@
 
 Throw-IfNonContains -Expected $expected -Actual $output
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/conflicting-states.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-empty-featureful-port --ci-feature-baseline $ciFeatureBaseline
+Throw-IfNotFailed
+$expected = @"
+$($ciFeatureBaseline):2:1: error: 'vcpkg-empty-featureful-port' was already declared as 'pass'
+  on expression: vcpkg-empty-featureful-port = cascade
+                 ^
+$($ciFeatureBaseline):1:1: note: previous declaration was here
+  on expression: vcpkg-empty-featureful-port = pass
+                 ^
+"@
+
+Throw-IfNonContains -Expected $expected -Actual $output
