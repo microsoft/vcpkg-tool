@@ -109,22 +109,25 @@ namespace
         });
     }
 
-    void handle_feature_test_result(std::vector<LocalizedString>& unexpected_states,
-                                    FullPackageSpec&& spec,
-                                    CiFeatureBaselineState result,
-                                    CiFeatureBaselineEntry baseline,
-                                    std::string&& cascade_reason,
-                                    ElapsedTime build_time)
+    void handle_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
+                                            FullPackageSpec&& spec,
+                                            CiFeatureBaselineEntry baseline,
+                                            std::string&& cascade_reason)
     {
-        bool expected_cascade = baseline.expected_cascade(spec.features);
-        bool actual_cascade = result == CiFeatureBaselineState::Cascade;
-        if (actual_cascade != expected_cascade)
+        if (!baseline.expected_cascade(spec.features))
         {
             unexpected_states.push_back(msg::format(msgUnexpectedStateCascade, msg::feature_spec = spec)
                                             .append_raw(" ")
                                             .append_raw(cascade_reason));
-            return;
         }
+    }
+
+    void handle_non_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
+                                                FullPackageSpec&& spec,
+                                                CiFeatureBaselineState result,
+                                                CiFeatureBaselineEntry baseline,
+                                                ElapsedTime build_time)
+    {
         bool expected_fail = baseline.expected_fail(spec.features);
         bool actual_fail = result == CiFeatureBaselineState::Fail;
         if (expected_fail != actual_fail)
@@ -420,12 +423,8 @@ namespace vcpkg
                                .append_raw('\n')
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
-                handle_feature_test_result(unexpected_states,
-                                           std::move(spec),
-                                           CiFeatureBaselineState::Cascade,
-                                           baseline,
-                                           Strings::join(", ", out),
-                                           ElapsedTime{});
+                handle_cascade_feature_test_result(
+                    unexpected_states, std::move(spec), baseline, Strings::join(", ", out));
                 continue;
             }
 
@@ -438,12 +437,7 @@ namespace vcpkg
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
-                handle_feature_test_result(unexpected_states,
-                                           std::move(spec),
-                                           CiFeatureBaselineState::Cascade,
-                                           baseline,
-                                           iter->display_name(),
-                                           ElapsedTime{});
+                handle_cascade_feature_test_result(unexpected_states, std::move(spec), baseline, iter->display_name());
                 continue;
             }
 
@@ -452,12 +446,8 @@ namespace vcpkg
             if (install_plan.install_actions.empty()) // already installed
             {
                 msg::println(msgAlreadyInstalled, msg::spec = spec);
-                handle_feature_test_result(unexpected_states,
-                                           std::move(spec),
-                                           CiFeatureBaselineState::Pass,
-                                           baseline,
-                                           std::string{},
-                                           ElapsedTime{});
+                handle_non_cascade_feature_test_result(
+                    unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, ElapsedTime{});
                 continue;
             }
 
@@ -468,12 +458,8 @@ namespace vcpkg
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
                                  msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
-                    handle_feature_test_result(unexpected_states,
-                                               std::move(spec),
-                                               CiFeatureBaselineState::Pass,
-                                               baseline,
-                                               std::string{},
-                                               ElapsedTime{});
+                    handle_non_cascade_feature_test_result(
+                        unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, ElapsedTime{});
                     continue;
                 }
             }
@@ -533,12 +519,8 @@ namespace vcpkg
             {
                 case BuildResult::Downloaded:
                 case BuildResult::Succeeded:
-                    handle_feature_test_result(unexpected_states,
-                                               std::move(spec),
-                                               CiFeatureBaselineState::Pass,
-                                               baseline,
-                                               {},
-                                               time_to_install);
+                    handle_non_cascade_feature_test_result(
+                        unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, time_to_install);
                     break;
                 case BuildResult::CascadedDueToMissingDependencies:
                     if (last_build_result.unmet_dependencies.empty())
@@ -546,16 +528,15 @@ namespace vcpkg
                         Checks::unreachable(VCPKG_LINE_INFO);
                     }
 
-                    handle_feature_test_result(unexpected_states,
-                                               std::move(spec),
-                                               CiFeatureBaselineState::Cascade,
-                                               baseline,
-                                               Strings::join(",",
-                                                             Util::fmap(last_build_result.unmet_dependencies,
-                                                                        [](const FullPackageSpec& unmet_dependency) {
-                                                                            return unmet_dependency.to_string();
-                                                                        })),
-                                               time_to_install);
+                    handle_cascade_feature_test_result(
+                        unexpected_states,
+                        std::move(spec),
+                        baseline,
+                        Strings::join(",",
+                                      Util::fmap(last_build_result.unmet_dependencies,
+                                                 [](const FullPackageSpec& unmet_dependency) {
+                                                     return unmet_dependency.to_string();
+                                                 })));
                     break;
                 case BuildResult::BuildFailed:
                 case BuildResult::PostBuildChecksFailed:
@@ -575,12 +556,8 @@ namespace vcpkg
                             *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                     }
 
-                    handle_feature_test_result(unexpected_states,
-                                               std::move(spec),
-                                               CiFeatureBaselineState::Fail,
-                                               baseline,
-                                               {},
-                                               time_to_install);
+                    handle_non_cascade_feature_test_result(
+                        unexpected_states, std::move(spec), CiFeatureBaselineState::Fail, baseline, time_to_install);
                     break;
             }
 
