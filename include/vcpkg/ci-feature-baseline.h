@@ -21,6 +21,16 @@ namespace vcpkg
         Pass,
     };
 
+    enum class CiFeatureBaselineOutcome
+    {
+        Pass,
+        PortMarkedFail,
+        PortMarkedCascade,
+        FeatureFail,
+        FeatureCascade,
+        ConfigurationFail,
+    };
+
     struct CiFeatureBaselineEntry
     {
         Optional<Located<CiFeatureBaselineState>> state;
@@ -31,10 +41,10 @@ namespace vcpkg
         std::vector<Located<std::vector<std::string>>> fail_configurations;
         // A list of sets of features of which exactly one must be selected
         std::vector<Located<std::vector<std::string>>> options;
-
-        bool expected_fail(const InternalFeatureSet& spec_features) const;
-        bool expected_cascade(const InternalFeatureSet& spec_features) const;
     };
+
+    Located<CiFeatureBaselineOutcome> expected_outcome(const CiFeatureBaselineEntry* baseline,
+                                                       const InternalFeatureSet& spec_features);
 
     struct CiFeatureBaseline
     {

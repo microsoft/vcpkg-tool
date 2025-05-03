@@ -109,32 +109,171 @@ namespace
         });
     }
 
-    void handle_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
+    StringView null_to_empty(const std::string* target) noexcept
+    {
+        if (target)
+        {
+            return *target;
+        }
+
+        return {};
+    }
+
+    void handle_cascade_feature_test_result(std::vector<DiagnosticLine>& unexpected_states,
                                             FullPackageSpec&& spec,
+                                            const std::string* ci_feature_baseline_file_name,
                                             const CiFeatureBaselineEntry* baseline,
                                             std::string&& cascade_reason)
     {
-        if (!baseline || !baseline->expected_cascade(spec.features))
+        auto outcome = expected_outcome(baseline, spec.features);
+        switch (outcome.value)
         {
-            unexpected_states.push_back(msg::format(msgUnexpectedStateCascade, msg::feature_spec = spec)
-                                            .append_raw(" ")
-                                            .append_raw(cascade_reason));
+            case CiFeatureBaselineOutcome::Pass:
+            case CiFeatureBaselineOutcome::PortMarkedFail: break;
+            case CiFeatureBaselineOutcome::FeatureFail:
+            case CiFeatureBaselineOutcome::ConfigurationFail:
+                unexpected_states.push_back(
+                    DiagnosticLine{DiagKind::Error,
+                                   null_to_empty(ci_feature_baseline_file_name),
+                                   TextRowCol{outcome.loc.row, outcome.loc.column},
+                                   msg::format(msgUnexpectedStateCascade, msg::feature_spec = spec)
+                                       .append_raw(" ")
+                                       .append_raw(cascade_reason)});
+                break;
+            case CiFeatureBaselineOutcome::PortMarkedCascade:
+            case CiFeatureBaselineOutcome::FeatureCascade:
+                // this is the expected outcome, nothing to do
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
-    void handle_non_cascade_feature_test_result(std::vector<LocalizedString>& unexpected_states,
-                                                FullPackageSpec&& spec,
-                                                CiFeatureBaselineState result,
-                                                const CiFeatureBaselineEntry* baseline,
-                                                ElapsedTime build_time)
+    void handle_fail_feature_test_result(std::vector<DiagnosticLine>& unexpected_states,
+                                         FullPackageSpec&& spec,
+                                         const std::string* ci_feature_baseline_file_name,
+                                         const CiFeatureBaselineEntry* baseline,
+                                         ElapsedTime build_time)
     {
-        bool expected_fail = baseline && baseline->expected_fail(spec.features);
-        bool actual_fail = result == CiFeatureBaselineState::Fail;
-        if (expected_fail != actual_fail)
+        auto outcome = expected_outcome(baseline, spec.features);
+        switch (outcome.value)
         {
-            unexpected_states.push_back(msg::format(
-                msgUnexpectedState, msg::feature_spec = spec, msg::actual = result, msg::elapsed = build_time));
+            case CiFeatureBaselineOutcome::Pass:
+            case CiFeatureBaselineOutcome::PortMarkedCascade:
+            case CiFeatureBaselineOutcome::FeatureCascade:
+                unexpected_states.push_back(DiagnosticLine{DiagKind::Error,
+                                                           null_to_empty(ci_feature_baseline_file_name),
+                                                           TextRowCol{outcome.loc.row, outcome.loc.column},
+                                                           msg::format(msgUnexpectedState,
+                                                                       msg::feature_spec = spec,
+                                                                       msg::actual = CiFeatureBaselineState::Fail,
+                                                                       msg::elapsed = build_time)});
+                break;
+            case CiFeatureBaselineOutcome::PortMarkedFail:
+            case CiFeatureBaselineOutcome::FeatureFail:
+            case CiFeatureBaselineOutcome::ConfigurationFail:
+                // this is the expected outcome, nothing to do
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
+    }
+
+    void add_build_pass_but_marked_diagnostic(msg::MessageT<msg::feature_spec_t> message,
+                                              std::vector<DiagnosticLine>& unexpected_states,
+                                              const FullPackageSpec& spec,
+                                              const std::string* ci_feature_baseline_file_name,
+                                              const SourceLoc& loc)
+    {
+        unexpected_states.push_back(DiagnosticLine{DiagKind::Error,
+                                                   null_to_empty(ci_feature_baseline_file_name),
+                                                   TextRowCol{loc.row, loc.column},
+                                                   msg::format(message, msg::feature_spec = spec)});
+    }
+
+    void add_build_pass_but_feature_marked_diagnostics(
+        msg::MessageT<msg::feature_spec_t, msg::feature_t> message,
+        std::vector<DiagnosticLine>& unexpected_states,
+        const FullPackageSpec& spec,
+        const std::string* ci_feature_baseline_file_name,
+        const std::set<Located<std::string>, LocatedStringLess>& baseline_feature_set)
+    {
+        for (auto&& spec_feature : spec.features)
+        {
+            for (auto&& baseline_feature : baseline_feature_set)
+            {
+                if (spec_feature == baseline_feature.value)
+                {
+                    unexpected_states.push_back(
+                        DiagnosticLine{DiagKind::Error,
+                                       null_to_empty(ci_feature_baseline_file_name),
+                                       TextRowCol{baseline_feature.loc.row, baseline_feature.loc.column},
+                                       msg::format(message,
+                                                   msg::feature_spec = spec,
+                                                   msg::feature = format_name_only_feature_spec(
+                                                       spec.package_spec.name(), baseline_feature.value))});
+                }
+            }
+        }
+    }
+
+    void handle_pass_feature_test_result(std::vector<DiagnosticLine>& unexpected_states,
+                                         FullPackageSpec&& spec,
+                                         const std::string* ci_feature_baseline_file_name,
+                                         const CiFeatureBaselineEntry* baseline)
+    {
+        if (!baseline)
+        {
+            return;
+        }
+
+        if (auto pstate = baseline->state.get())
+        {
+            switch (pstate->value)
+            {
+                case CiFeatureBaselineState::Fail:
+                    add_build_pass_but_marked_diagnostic(msgUnexpectedStatePassPortMarkedFail,
+                                                         unexpected_states,
+                                                         spec,
+                                                         ci_feature_baseline_file_name,
+                                                         pstate->loc);
+                    break;
+                case CiFeatureBaselineState::Cascade:
+                    add_build_pass_but_marked_diagnostic(msgUnexpectedStatePassPortMarkedCascade,
+                                                         unexpected_states,
+                                                         spec,
+                                                         ci_feature_baseline_file_name,
+                                                         pstate->loc);
+                    break;
+                case CiFeatureBaselineState::Skip:
+                case CiFeatureBaselineState::Pass: break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        for (auto&& failing_configuration : baseline->fail_configurations)
+        {
+            if (std::is_permutation(failing_configuration.value.begin(),
+                                    failing_configuration.value.end(),
+                                    spec.features.begin(),
+                                    spec.features.end()))
+            {
+                add_build_pass_but_marked_diagnostic(msgUnexpectedStatePassPortMarkedFail,
+                                                     unexpected_states,
+                                                     spec,
+                                                     ci_feature_baseline_file_name,
+                                                     failing_configuration.loc);
+            }
+        }
+
+        add_build_pass_but_feature_marked_diagnostics(msgUnexpectedStatePassFeatureMarkedFail,
+                                                      unexpected_states,
+                                                      spec,
+                                                      ci_feature_baseline_file_name,
+                                                      baseline->failing_features);
+        add_build_pass_but_feature_marked_diagnostics(msgUnexpectedStatePassFeatureMarkedCascade,
+                                                      unexpected_states,
+                                                      spec,
+                                                      ci_feature_baseline_file_name,
+                                                      baseline->cascade_features);
     }
 }
 
@@ -244,16 +383,19 @@ namespace vcpkg
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgMutuallyExclusivePorts, msg::option = SwitchForMergeWith);
         }
 
+        // Note that the baseline file text needs to live as long as feature_baseline,
+        // because there are pointers into it.
         auto feature_baseline_iter = settings.find(SwitchCIFeatureBaseline);
+        std::string ci_feature_baseline_file_contents;
+        const std::string* ci_feature_baseline_file_name = nullptr;
         CiFeatureBaseline feature_baseline;
         if (feature_baseline_iter != settings.end())
         {
-            const auto ci_feature_baseline_file_name = feature_baseline_iter->second;
-            const auto ci_feature_baseline_file_contents =
-                fs.read_contents(ci_feature_baseline_file_name, VCPKG_LINE_INFO);
+            ci_feature_baseline_file_name = &feature_baseline_iter->second;
+            ci_feature_baseline_file_contents = fs.read_contents(*ci_feature_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             feature_baseline = parse_ci_feature_baseline(ci_feature_baseline_file_contents,
-                                                         ci_feature_baseline_file_name,
+                                                         *ci_feature_baseline_file_name,
                                                          ci_parse_messages,
                                                          target_triplet,
                                                          host_triplet,
@@ -410,7 +552,7 @@ namespace vcpkg
 
         // test port features
         std::unordered_set<std::string> known_failures;
-        std::vector<LocalizedString> unexpected_states;
+        std::vector<DiagnosticLine> unexpected_states;
 
         for (std::size_t i = 0; i < install_plans.size(); ++i)
         {
@@ -438,8 +580,11 @@ namespace vcpkg
                                .append_raw('\n')
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
-                handle_cascade_feature_test_result(
-                    unexpected_states, std::move(spec), baseline, Strings::join(", ", out));
+                handle_cascade_feature_test_result(unexpected_states,
+                                                   std::move(spec),
+                                                   ci_feature_baseline_file_name,
+                                                   baseline,
+                                                   Strings::join(", ", out));
                 continue;
             }
 
@@ -452,7 +597,8 @@ namespace vcpkg
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
-                handle_cascade_feature_test_result(unexpected_states, std::move(spec), baseline, iter->display_name());
+                handle_cascade_feature_test_result(
+                    unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline, iter->display_name());
                 continue;
             }
 
@@ -461,8 +607,8 @@ namespace vcpkg
             if (install_plan.install_actions.empty()) // already installed
             {
                 msg::println(msgAlreadyInstalled, msg::spec = spec);
-                handle_non_cascade_feature_test_result(
-                    unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, ElapsedTime{});
+                handle_pass_feature_test_result(
+                    unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline);
                 continue;
             }
 
@@ -473,8 +619,8 @@ namespace vcpkg
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
                                  msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
-                    handle_non_cascade_feature_test_result(
-                        unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, ElapsedTime{});
+                    handle_pass_feature_test_result(
+                        unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline);
                     continue;
                 }
             }
@@ -534,8 +680,8 @@ namespace vcpkg
             {
                 case BuildResult::Downloaded:
                 case BuildResult::Succeeded:
-                    handle_non_cascade_feature_test_result(
-                        unexpected_states, std::move(spec), CiFeatureBaselineState::Pass, baseline, time_to_install);
+                    handle_pass_feature_test_result(
+                        unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline);
                     break;
                 case BuildResult::CascadedDueToMissingDependencies:
                     if (last_build_result.unmet_dependencies.empty())
@@ -546,6 +692,7 @@ namespace vcpkg
                     handle_cascade_feature_test_result(
                         unexpected_states,
                         std::move(spec),
+                        ci_feature_baseline_file_name,
                         baseline,
                         Strings::join(",",
                                       Util::fmap(last_build_result.unmet_dependencies,
@@ -571,8 +718,8 @@ namespace vcpkg
                             *maybe_logs_dir.get() / FileTestedSpecDotTxt, spec.to_string(), VCPKG_LINE_INFO);
                     }
 
-                    handle_non_cascade_feature_test_result(
-                        unexpected_states, std::move(spec), CiFeatureBaselineState::Fail, baseline, time_to_install);
+                    handle_fail_feature_test_result(
+                        unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline, time_to_install);
                     break;
             }
 
@@ -591,7 +738,7 @@ namespace vcpkg
             msg::println(msgFeatureTestProblems);
             for (const auto& result : unexpected_states)
             {
-                msg::println(Color::error, result);
+                result.print_to(out_sink);
             }
         }
 

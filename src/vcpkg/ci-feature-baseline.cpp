@@ -334,49 +334,64 @@ namespace vcpkg
         return nullptr;
     }
 
-    bool CiFeatureBaselineEntry::expected_fail(const InternalFeatureSet& spec_features) const
+    Located<CiFeatureBaselineOutcome> expected_outcome(const CiFeatureBaselineEntry* baseline,
+                                                       const InternalFeatureSet& spec_features)
     {
-        if (auto pstate = state.get())
+        if (baseline)
         {
-            if (pstate->value == CiFeatureBaselineState::Fail)
+            if (auto pstate = baseline->state.get())
             {
-                return true;
+                switch (pstate->value)
+                {
+                    case CiFeatureBaselineState::Fail:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc, CiFeatureBaselineOutcome::PortMarkedFail};
+                    case CiFeatureBaselineState::Cascade:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc,
+                                                                 CiFeatureBaselineOutcome::PortMarkedCascade};
+                    case CiFeatureBaselineState::Skip:
+                    case CiFeatureBaselineState::Pass: break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            }
+
+            for (auto&& failing_configuration : baseline->fail_configurations)
+            {
+                if (std::is_permutation(failing_configuration.value.begin(),
+                                        failing_configuration.value.end(),
+                                        spec_features.begin(),
+                                        spec_features.end()))
+                {
+                    return Located<CiFeatureBaselineOutcome>{failing_configuration.loc,
+                                                             CiFeatureBaselineOutcome::ConfigurationFail};
+                }
+            }
+
+            for (auto&& spec_feature : spec_features)
+            {
+                for (auto&& failing_feature : baseline->failing_features)
+                {
+                    if (spec_feature == failing_feature.value)
+                    {
+                        return Located<CiFeatureBaselineOutcome>{failing_feature.loc,
+                                                                 CiFeatureBaselineOutcome::FeatureFail};
+                    }
+                }
+            }
+
+            for (auto&& spec_feature : spec_features)
+            {
+                for (auto&& cascading_feature : baseline->cascade_features)
+                {
+                    if (spec_feature == cascading_feature.value)
+                    {
+                        return Located<CiFeatureBaselineOutcome>{cascading_feature.loc,
+                                                                 CiFeatureBaselineOutcome::FeatureCascade};
+                    }
+                }
             }
         }
 
-        if (!failing_features.empty() && Util::any_of(spec_features, [&](const std::string& feature) {
-                return Util::Sets::contains(failing_features, feature);
-            }))
-        {
-            return true;
-        }
-
-        if (std::is_sorted(spec_features.begin(), spec_features.end()))
-        {
-            return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-                return fail_configuration.value == spec_features;
-            });
-        }
-
-        return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-            return fail_configuration.value.size() == spec_features.size() &&
-                   Util::all_of(spec_features, [&](const std::string& feature) {
-                       return Util::contains(fail_configuration.value, feature);
-                   });
-        });
-    }
-
-    bool CiFeatureBaselineEntry::expected_cascade(const InternalFeatureSet& spec_features) const
-    {
-        if (auto pstate = state.get())
-        {
-            if (pstate->value == CiFeatureBaselineState::Cascade)
-            {
-                return true;
-            }
-        }
-
-        return spec_features.size() >= 2 && Util::Sets::contains(cascade_features, spec_features[1]);
+        return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::Pass};
     }
 
     StringLiteral to_string_literal(CiFeatureBaselineState state)

@@ -2892,6 +2892,22 @@ DECLARE_MESSAGE(UnexpectedState,
                 (msg::feature_spec, msg::actual, msg::elapsed),
                 "{actual} is the actual state, e.g. 'pass', 'skip', ...",
                 "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedCascade,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedFail,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to fail")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedFail,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to fail")
 DECLARE_MESSAGE(
     UnexpectedStateCascade,
     (msg::feature_spec),
