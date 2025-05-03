@@ -2031,6 +2031,7 @@ namespace vcpkg
     {
         this->rename(old_path, new_path, ec);
         using namespace std::chrono_literals;
+        std::error_code local_ec;
         for (const auto& delay : {10ms, 100ms, 1000ms, 10000ms})
         {
             if (!ec)
@@ -2038,7 +2039,7 @@ namespace vcpkg
                 return true;
             }
             else if (ec == std::make_error_condition(std::errc::directory_not_empty) ||
-                     ec == std::make_error_condition(std::errc::file_exists) || this->exists(new_path, ec))
+                     ec == std::make_error_condition(std::errc::file_exists) || this->exists(new_path, local_ec))
             {
                 // either the rename failed with a target already exists error, or the target explicitly exists,
                 // assume another process 'won' the 'CAS'.
