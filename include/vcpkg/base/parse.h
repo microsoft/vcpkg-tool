@@ -12,17 +12,11 @@
 
 namespace vcpkg
 {
-    struct SourceLoc
-    {
-        Unicode::Utf8Decoder it;
-        Unicode::Utf8Decoder start_of_line;
-        int row;
-        int column;
-    };
-
     void append_caret_line(LocalizedString& res,
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);
+
+    void append_caret_line(LocalizedString& res, const SourceLoc& loc);
 
     struct ParseMessage
     {
@@ -101,8 +95,15 @@ namespace vcpkg
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
+        std::string format_file_prefix(int row, int column) const;
+
+    private:
+        LocalizedString& create_error_impl(LocalizedString&& message, const SourceLoc& loc);
+
+    public:
         void add_error(LocalizedString&& message);
         void add_error(LocalizedString&& message, const SourceLoc& loc);
+        void add_error(LocalizedString&& message, const SourceLoc& loc, const LocalizedString& additional_info);
 
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);

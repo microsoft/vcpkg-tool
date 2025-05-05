@@ -121,7 +121,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_error(msg::format(msgExpectedFailOrSkip));
+                parser.add_error(msg::format(msgExpectedFailSkipOrPass));
                 break;
             }
 

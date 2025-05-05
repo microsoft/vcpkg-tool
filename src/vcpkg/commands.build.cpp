@@ -59,7 +59,10 @@ namespace vcpkg
 {
     constexpr const IBuildLogsRecorder& null_build_logs_recorder = null_build_logs_recorder_instance;
 
-    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
+    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_, int64_t minimum_last_write_time_)
+        : base_path(base_path_), minimum_last_write_time(minimum_last_write_time_)
+    {
+    }
 
     void CiBuildLogsRecorder::record_build_result(const VcpkgPaths& paths,
                                                   const PackageSpec& spec,
@@ -74,6 +77,12 @@ namespace vcpkg
         const auto source_path = paths.build_dir(spec);
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+        if (minimum_last_write_time > 0)
+        {
+            Util::erase_remove_if(children, [&](Path& path) {
+                return filesystem.last_write_time(path, VCPKG_LINE_INFO) >= minimum_last_write_time;
+            });
+        }
         auto target_path = base_path / spec.name();
         (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
         if (children.empty())
@@ -1209,7 +1218,7 @@ namespace vcpkg
     {
         auto result = do_build_package(args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
 
-        if (build_options.clean_buildtrees == CleanBuildtrees::Yes)
+        if (build_options.clean_buildtrees == CleanBuildtrees::Yes && result.code == BuildResult::Succeeded)
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
@@ -1562,14 +1571,14 @@ namespace vcpkg
         auto& spec = action.spec;
         const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_name();
 
-        std::vector<FeatureSpec> missing_fspecs;
+        std::map<PackageSpec, std::set<std::string>> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)
         {
             for (const FeatureSpec& fspec : kv.second)
             {
                 if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
-                    missing_fspecs.emplace_back(fspec);
+                    missing_fspecs[fspec.spec()].insert(fspec.feature());
                 }
             }
         }
@@ -1579,7 +1588,14 @@ namespace vcpkg
         {
             if (!all_dependencies_satisfied)
             {
-                return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
+                return {BuildResult::CascadedDueToMissingDependencies,
+                        Util::fmap(std::move(missing_fspecs),
+                                   [](std::pair<PackageSpec, std::set<std::string>>&& missing_features) {
+                                       return FullPackageSpec{
+                                           std::move(missing_features.first),
+                                           InternalFeatureSet{std::make_move_iterator(missing_features.second.begin()),
+                                                              std::make_move_iterator(missing_features.second.end())}};
+                                   })};
             }
 
             // assert that all_dependencies_satisfied is accurate above by checking that they're all installed
@@ -2179,7 +2195,7 @@ namespace vcpkg
         : code(code), binary_control_file(std::move(bcf))
     {
     }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps)
+    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps)
         : code(code), unmet_dependencies(std::move(unmet_deps))
     {
     }

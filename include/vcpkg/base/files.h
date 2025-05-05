@@ -323,12 +323,10 @@ namespace vcpkg
         virtual void copy_symlink(const Path& source, const Path& destination, std::error_code& ec) const = 0;
         void copy_symlink(const Path& source, const Path& destination, LineInfo li) const;
 
-        virtual int64_t last_write_time_now() const = 0;
+        virtual int64_t file_time_now() const = 0;
 
         virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
-
-        virtual int64_t last_access_time_now() const = 0;
 
         virtual int64_t last_access_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_access_time(const Path& target, LineInfo li) const noexcept;

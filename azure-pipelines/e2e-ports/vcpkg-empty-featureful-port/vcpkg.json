@@ -1,0 +1,21 @@
+{
+  "name": "vcpkg-empty-featureful-port",
+  "version": "0",
+  "default-features": [
+    "a-default-feature"
+  ],
+  "features": {
+    "a": {
+      "description": "a feature named a"
+    },
+    "a-default-feature": {
+      "description": "a default feature"
+    },
+    "b": {
+      "description": "a feature named b"
+    },
+    "c": {
+      "description": "a feature named c"
+    }
+  }
+}
