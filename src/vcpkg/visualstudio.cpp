@@ -235,6 +235,8 @@ namespace vcpkg::VisualStudio
                 // Host arm64
                 if (fs.exists(vcvarsall_dir / "vcvarsarm64.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"arm64", CPU::ARM64, CPU::ARM64});
+                if (fs.exists(vcvarsall_dir / "vcvarsarm64_arm.bat", IgnoreErrors{}))
+                    supported_architectures.push_back({"arm64_arm", CPU::ARM64, CPU::ARM});
                 if (fs.exists(vcvarsall_dir / "vcvarsarm64_x86.bat", IgnoreErrors{}))
                     supported_architectures.push_back({"arm64_x86", CPU::ARM64, CPU::X86});
                 if (fs.exists(vcvarsall_dir / "vcvarsarm64_amd64.bat", IgnoreErrors{}))
