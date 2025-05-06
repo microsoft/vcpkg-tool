@@ -470,8 +470,8 @@ namespace vcpkg
                 {
                     // if we expect a feature to cascade or fail don't add it the the all features test because this
                     // test will them simply cascade or fail too
-                    if (baseline && !Util::Sets::contains(baseline->cascade_features, feature->name) &&
-                        !Util::Sets::contains(baseline->failing_features, feature->name))
+                    if (!baseline || (!Util::Sets::contains(baseline->cascade_features, feature->name) &&
+                        !Util::Sets::contains(baseline->failing_features, feature->name)))
                     {
                         if (Util::all_of(baseline->options, [&](const Located<std::vector<std::string>>& options) {
                                 return !Util::contains(options.value, feature->name) ||
