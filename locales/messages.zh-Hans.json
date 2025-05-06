@@ -509,7 +509,7 @@
   "ExpectedDependenciesList": "依赖项列表中应为 \",\" 或文本结尾",
   "ExpectedDigitsAfterDecimal": "小数点后的预期数字",
   "ExpectedExplicitTriplet": "应为显式三重",
-  "ExpectedFailSkipOrPass": "expected 'fail', 'skip', or 'pass' here",
+  "ExpectedFailSkipOrPass": "此处应为“失败”、“跳过”或“通过”",
   "ExpectedFeatureBaselineState": "expected 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails', or 'combination-fails' here",
   "ExpectedFeatureListTerminal": "功能列表中应为 \",\" 或 \"]\"",
   "ExpectedFeatureName": "应为功能名称(必须为小写、数字、\"-\")",
