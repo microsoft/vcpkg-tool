@@ -2888,10 +2888,39 @@ DECLARE_MESSAGE(UnexpectedPortversion,
                 (),
                 "'field' means a JSON key/value pair here",
                 "unexpected \"port-version\" without a versioning field")
-DECLARE_MESSAGE(UnexpectedState,
-                (msg::feature_spec, msg::actual, msg::elapsed),
-                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
-                "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStateFailedPass,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to pass")
+DECLARE_MESSAGE(UnexpectedStateFailedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStateFailedFeatureMarkedCascade,
+                (),
+                "",
+                "consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedPortMarkedCascade, (), "", "consider changing this `=cascade` to `=fail`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteCore,
+                (msg::package_name, msg::spec),
+                "",
+                "consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteCoreMoreFeatures,
+                (msg::package_name),
+                "",
+                "if some features are required, consider effectively always enabling those parts in portfile.cmake for "
+                "{package_name}, or consider adding `{package_name}[required-feature]=options` to include "
+                "'required-feature' in all tests")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSingleCombinationFails,
+                (msg::feature_spec),
+                "",
+                "if this feature succeeds when built with other features but not alone, consider adding "
+                "`{feature_spec}=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSingleFeatureFails,
+                (msg::feature_spec, msg::feature),
+                "",
+                "if this feature always fails, consider adding `{feature_spec}=feature-fails`, which will mark this "
+                "test as failing and also remove {feature} from combined feature testing")
 DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedCascade,
                 (msg::feature_spec, msg::feature),
                 "",

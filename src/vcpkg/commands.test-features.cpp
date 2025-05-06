@@ -148,25 +148,95 @@ namespace
         }
     }
 
+    void add_build_failed_but_marked_cascade_diagnostic(std::vector<DiagnosticLine>& unexpected_states,
+                                                        const FullPackageSpec& spec,
+                                                        StringView ci_feature_baseline_file_name,
+                                                        const SourceLoc& loc)
+    {
+        unexpected_states.push_back(
+            DiagnosticLine{DiagKind::Error,
+                           ci_feature_baseline_file_name,
+                           TextRowCol{loc.row, loc.column},
+                           msg::format(msgUnexpectedStateFailedCascade, msg::feature_spec = spec)});
+    }
+
     void handle_fail_feature_test_result(std::vector<DiagnosticLine>& unexpected_states,
                                          FullPackageSpec&& spec,
                                          const std::string* ci_feature_baseline_file_name,
-                                         const CiFeatureBaselineEntry* baseline,
-                                         ElapsedTime build_time)
+                                         const CiFeatureBaselineEntry* baseline)
     {
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
         {
             case CiFeatureBaselineOutcome::Pass:
+                unexpected_states.push_back(
+                    DiagnosticLine{DiagKind::Error,
+                                   null_to_empty(ci_feature_baseline_file_name),
+                                   msg::format(msgUnexpectedStateFailedPass, msg::feature_spec = spec)});
+                if (ci_feature_baseline_file_name)
+                {
+                    switch (spec.features.size())
+                    {
+                        case 0: Checks::unreachable(VCPKG_LINE_INFO); break;
+                        case 1:
+                            // only the core feature
+                            unexpected_states.push_back(
+                                DiagnosticLine{DiagKind::Note,
+                                               *ci_feature_baseline_file_name,
+                                               TextRowCol{outcome.loc.row, outcome.loc.column},
+                                               msg::format(msgUnexpectedStateFailedNoteCore,
+                                                           msg::package_name = spec.package_spec.name(),
+                                                           msg::spec = spec.package_spec)});
+                            unexpected_states.push_back(
+                                DiagnosticLine{DiagKind::Note,
+                                               *ci_feature_baseline_file_name,
+                                               TextRowCol{outcome.loc.row, outcome.loc.column},
+                                               msg::format(msgUnexpectedStateFailedNoteCoreMoreFeatures,
+                                                           msg::package_name = spec.package_spec.name())});
+                            break;
+                        case 2:
+                            // either a separate feature test, or a port with only 1 feature
+                            {
+                                const auto& non_core_feature =
+                                    spec.features[0] == FeatureNameCore ? spec.features[1] : spec.features[0];
+                                unexpected_states.push_back(
+                                    DiagnosticLine{DiagKind::Note,
+                                                   *ci_feature_baseline_file_name,
+                                                   TextRowCol{outcome.loc.row, outcome.loc.column},
+                                                   msg::format(msgUnexpectedStateFailedNoteSingleCombinationFails,
+                                                               msg::feature_spec = format_name_only_feature_spec(
+                                                                   spec.package_spec.name(), non_core_feature))});
+                                unexpected_states.push_back(
+                                    DiagnosticLine{DiagKind::Note,
+                                                   *ci_feature_baseline_file_name,
+                                                   TextRowCol{outcome.loc.row, outcome.loc.column},
+                                                   msg::format(msgUnexpectedStateFailedNoteSingleFeatureFails,
+                                                               msg::feature_spec = format_name_only_feature_spec(
+                                                                   spec.package_spec.name(), non_core_feature),
+                                                               msg::feature = non_core_feature)});
+                            }
+                            break;
+                        default:
+                            // no special advice
+                            break;
+                    }
+                }
+                break;
             case CiFeatureBaselineOutcome::PortMarkedCascade:
-            case CiFeatureBaselineOutcome::FeatureCascade:
-                unexpected_states.push_back(DiagnosticLine{DiagKind::Error,
+                add_build_failed_but_marked_cascade_diagnostic(
+                    unexpected_states, spec, *ci_feature_baseline_file_name, outcome.loc);
+                unexpected_states.push_back(DiagnosticLine{DiagKind::Note,
                                                            null_to_empty(ci_feature_baseline_file_name),
                                                            TextRowCol{outcome.loc.row, outcome.loc.column},
-                                                           msg::format(msgUnexpectedState,
-                                                                       msg::feature_spec = spec,
-                                                                       msg::actual = CiFeatureBaselineState::Fail,
-                                                                       msg::elapsed = build_time)});
+                                                           msg::format(msgUnexpectedStateFailedPortMarkedCascade)});
+                break;
+            case CiFeatureBaselineOutcome::FeatureCascade:
+                add_build_failed_but_marked_cascade_diagnostic(
+                    unexpected_states, spec, *ci_feature_baseline_file_name, outcome.loc);
+                unexpected_states.push_back(DiagnosticLine{DiagKind::Note,
+                                                           *ci_feature_baseline_file_name,
+                                                           TextRowCol{outcome.loc.row, outcome.loc.column},
+                                                           msg::format(msgUnexpectedStateFailedFeatureMarkedCascade)});
                 break;
             case CiFeatureBaselineOutcome::PortMarkedFail:
             case CiFeatureBaselineOutcome::FeatureFail:
@@ -471,7 +541,7 @@ namespace vcpkg
                     // if we expect a feature to cascade or fail don't add it the the all features test because this
                     // test will them simply cascade or fail too
                     if (!baseline || (!Util::Sets::contains(baseline->cascade_features, feature->name) &&
-                        !Util::Sets::contains(baseline->failing_features, feature->name)))
+                                      !Util::Sets::contains(baseline->failing_features, feature->name)))
                     {
                         if (Util::all_of(baseline->options, [&](const Located<std::vector<std::string>>& options) {
                                 return !Util::contains(options.value, feature->name) ||
@@ -635,7 +705,6 @@ namespace vcpkg
                 build_logs_recorder = &(feature_build_logs_recorder_storage.emplace(logs_dir, fs.file_time_now()));
             }
 
-            ElapsedTimer install_timer;
             install_clear_installed_packages(paths, install_plan.install_actions);
             binary_cache.fetch(install_plan.install_actions);
             const auto summary = install_execute_plan(args,
@@ -674,7 +743,7 @@ namespace vcpkg
                     default: break;
                 }
             }
-            const auto time_to_install = install_timer.elapsed();
+
             auto& last_build_result = summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
             switch (last_build_result.code)
             {
@@ -704,8 +773,6 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                case BuildResult::Removed:
-                case BuildResult::Excluded:
                     if (auto abi = summary.results.back().get_abi().get())
                     {
                         known_failures.insert(*abi);
@@ -719,8 +786,10 @@ namespace vcpkg
                     }
 
                     handle_fail_feature_test_result(
-                        unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline, time_to_install);
+                        unexpected_states, std::move(spec), ci_feature_baseline_file_name, baseline);
                     break;
+                case BuildResult::Removed:
+                case BuildResult::Excluded: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             msg::println();
