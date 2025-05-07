@@ -1,0 +1,15 @@
+{
+  "name": "bad-feature-name",
+  "version": "0",
+  "features": {
+    "a": {
+      "description": "Feature A"
+    },
+    "b_required": {
+      "description": "This feature has an invalid name"
+    },
+    "c": {
+      "description": "Feature C"
+    }
+  }
+}

@@ -46,6 +46,7 @@ namespace vcpkg::Json
         void add_expected_type_error(const LocalizedString& expected_type);
         void add_extra_field_error(const LocalizedString& type, StringView fields, StringView suggestion = {});
         void add_generic_error(const LocalizedString& type, StringView message);
+        void add_field_name_error(const LocalizedString& type, StringView field, StringView message);
 
         void add_warning(LocalizedString type, StringView msg);
 

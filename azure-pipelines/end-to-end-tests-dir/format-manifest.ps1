@@ -18,6 +18,11 @@ $testProjects | % {
     }
 }
 
+$output = Run-VcpkgAndCaptureOutput @commonArgs format-manifest "$PSScriptRoot/../e2e-assets/format-manifest-malformed/bad-feature-name.json"
+Throw-IfNotFailed
+$expected = "bad-feature-name.json: error: $.features.b_required (a feature): features must be lowercase alphanumeric+hyphens, and not one of the reserved names"
+Throw-IfNonContains -Expected $expected -Actual $output
+
 Write-Trace "test re-serializing every manifest"
 $manifestDir = "$TestingRoot/manifest-dir"
 Copy-Item -Path "$env:VCPKG_ROOT/ports" -Destination $manifestDir -recurse -Force -Filter vcpkg.json

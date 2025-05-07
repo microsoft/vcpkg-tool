@@ -1492,6 +1492,12 @@ namespace vcpkg::Json
                                .append_raw(message));
     }
 
+    void Reader::add_field_name_error(const LocalizedString& type, StringView field, StringView message)
+    {
+        PathGuard guard{m_path, field};
+        add_generic_error(type, message);
+    }
+
     void Reader::check_for_unexpected_fields(const Object& obj,
                                              View<StringLiteral> valid_fields,
                                              const LocalizedString& type_name)
