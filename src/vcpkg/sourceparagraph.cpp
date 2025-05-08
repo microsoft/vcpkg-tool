@@ -1108,7 +1108,8 @@ namespace vcpkg
                 }
                 if (!Json::IdentifierDeserializer::is_ident(pr.first))
                 {
-                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
+                    r.add_field_name_error(
+                        FeatureDeserializer::instance.type_name(), pr.first, msg::format(msgInvalidFeature));
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
