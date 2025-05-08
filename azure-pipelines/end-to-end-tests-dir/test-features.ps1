@@ -128,6 +128,9 @@ $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-por
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,fails,b-required]:$Triplet build failed but was expected to pass
+note: if vcpkg-requires-feature[fails] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,fails,b-required]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[fails] always fails, consider adding ``vcpkg-requires-feature[fails]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[fails] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,cascades,b-required]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core]:$Triplet
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0
 "@
@@ -138,21 +141,26 @@ $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-por
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core]:$Triplet build failed but was expected to pass
-$($ciFeatureBaseline): note: consider adding ``vcpkg-requires-feature=fail``, or ``vcpkg-requires-feature:$Triplet=fail``, or equivalent skips
-$($ciFeatureBaseline): note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
+note: consider adding ``vcpkg-requires-feature=fail``, or ``vcpkg-requires-feature:$Triplet=fail``, or equivalent skips
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,a]:$Triplet build failed but was expected to pass
-$($ciFeatureBaseline): note: if this feature succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[a]=combination-fails``
-$($ciFeatureBaseline): note: if this feature always fails, consider adding ``vcpkg-requires-feature[a]=feature-fails``, which will mark this test as failing and also remove a from combined feature testing
+note: if vcpkg-requires-feature[a] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,a]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[a] always fails, consider adding ``vcpkg-requires-feature[a]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[a] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,b]:$Triplet build failed but was expected to pass
-$($ciFeatureBaseline): note: if this feature succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[b]=combination-fails``
-$($ciFeatureBaseline): note: if this feature always fails, consider adding ``vcpkg-requires-feature[b]=feature-fails``, which will mark this test as failing and also remove b from combined feature testing
+note: if vcpkg-requires-feature[b] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,b]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[b] always fails, consider adding ``vcpkg-requires-feature[b]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[b] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,c]:$Triplet build failed but was expected to pass
-$($ciFeatureBaseline): note: if this feature succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[c]=combination-fails``
-$($ciFeatureBaseline): note: if this feature always fails, consider adding ``vcpkg-requires-feature[c]=feature-fails``, which will mark this test as failing and also remove c from combined feature testing
+note: if vcpkg-requires-feature[c] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,c]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[c] always fails, consider adding ``vcpkg-requires-feature[c]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[c] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,fails]:$Triplet build failed but was expected to pass
-$($ciFeatureBaseline): note: if this feature succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[fails]=combination-fails``
-$($ciFeatureBaseline): note: if this feature always fails, consider adding ``vcpkg-requires-feature[fails]=feature-fails``, which will mark this test as failing and also remove fails from combined feature testing
+note: if vcpkg-requires-feature[fails] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,fails]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[fails] always fails, consider adding ``vcpkg-requires-feature[fails]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[fails] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,a,b,b-required,c,fails]:$Triplet build failed but was expected to pass
+note: consider adding ``vcpkg-requires-feature=fail``, ``vcpkg-requires-feature:$Triplet=fail``, ``vcpkg-requires-feature[core,a,b,b-required,c,fails]:$Triplet=combination-fails``, or equivalent skips
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
 
@@ -165,3 +173,7 @@ Throw-IfFailed
 Throw-IfNonContains -Expected "Feature Test [1/3] vcpkg-empty-featureful-port[core,a,a-default-feature,b,c]:$Triplet" -Actual $output
 Throw-IfNonContains -Expected "Feature Test [2/3] vcpkg-empty-featureful-port[core,b]:$Triplet" -Actual $output
 Throw-IfNonContains -Expected "Feature Test [3/3] vcpkg-empty-featureful-port[core,a,a-default-feature,c]:$Triplet" -Actual $output
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-requires-feature-complete.txt"
+Run-Vcpkg x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-requires-feature --ci-feature-baseline $ciFeatureBaseline
+Throw-IfFailed

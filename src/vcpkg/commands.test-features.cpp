@@ -109,6 +109,49 @@ namespace
         });
     }
 
+    enum class SpecToTestKind
+    {
+        Core,
+        Separate,
+        Combined
+    };
+
+    struct SpecToTest : FullPackageSpec
+    {
+        explicit SpecToTest(const PackageSpec& package_spec, InternalFeatureSet&& features, SpecToTestKind kind)
+            : FullPackageSpec(package_spec, std::move(features)), plan(), kind(kind), separate_feature()
+        {
+        }
+
+        explicit SpecToTest(const PackageSpec& package_spec, InternalFeatureSet&& features, const std::string& feature)
+            : FullPackageSpec(package_spec, std::move(features))
+            , plan()
+            , kind(SpecToTestKind::Separate)
+            , separate_feature(feature)
+        {
+        }
+
+        FullPackageSpec non_core_spec() const
+        {
+            InternalFeatureSet non_core_features;
+            Util::copy_if(
+                non_core_features, features, [](const std::string& feature) { return feature != FeatureNameCore; });
+            return FullPackageSpec(package_spec, std::move(non_core_features));
+        }
+
+        ActionPlan plan;
+
+        SpecToTestKind kind;
+
+        // If kind == SpecToTestKind::Separate, the name of the separately tested feature; otherwise, empty string
+        std::string separate_feature;
+    };
+} // unnamed namespace
+
+VCPKG_FORMAT_WITH_TO_STRING(SpecToTest);
+
+namespace
+{
     void add_build_cascade_diagnostic(std::vector<DiagnosticLine>& diagnostics,
                                       const FullPackageSpec& spec,
                                       const std::string* ci_feature_baseline_file_name,
@@ -159,19 +202,6 @@ namespace
         }
     }
 
-    void add_build_failed_note_core(std::vector<DiagnosticLine>& diagnostics,
-                                    const FullPackageSpec& spec,
-                                    StringView ci_feature_baseline_file_name,
-                                    const SourceLoc& loc)
-    {
-        diagnostics.push_back(DiagnosticLine{DiagKind::Note,
-                                             ci_feature_baseline_file_name,
-                                             TextRowCol{loc.row, loc.column},
-                                             msg::format(msgUnexpectedStateFailedNoteCore,
-                                                         msg::package_name = spec.package_spec.name(),
-                                                         msg::spec = spec.package_spec)});
-    }
-
     void add_build_failed_but_marked_cascade_diagnostic(std::vector<DiagnosticLine>& diagnostics,
                                                         const FullPackageSpec& spec,
                                                         StringView ci_feature_baseline_file_name,
@@ -184,7 +214,7 @@ namespace
     }
 
     void handle_fail_feature_test_result(std::vector<DiagnosticLine>& diagnostics,
-                                         const FullPackageSpec& spec,
+                                         const SpecToTest& spec,
                                          const std::string* ci_feature_baseline_file_name,
                                          const CiFeatureBaselineEntry* baseline)
     {
@@ -198,53 +228,48 @@ namespace
                         DiagnosticLine{DiagKind::Error,
                                        *ci_feature_baseline_file_name,
                                        msg::format(msgUnexpectedStateFailedPass, msg::feature_spec = spec)});
-                    switch (spec.features.size())
+                    switch (spec.kind)
                     {
-                        case 0: Checks::unreachable(VCPKG_LINE_INFO); break;
-                        case 1:
-                            // only the core feature
-                            add_build_failed_note_core(diagnostics, spec, *ci_feature_baseline_file_name, outcome.loc);
+                        case SpecToTestKind::Core:
                             diagnostics.push_back(
                                 DiagnosticLine{DiagKind::Note,
-                                               *ci_feature_baseline_file_name,
-                                               TextRowCol{outcome.loc.row, outcome.loc.column},
-                                               msg::format(msgUnexpectedStateFailedNoteCoreMoreFeatures,
-                                                           msg::package_name = spec.package_spec.name())});
-                            break;
-                        case 2:
-                            // either a separate feature test, or a port with only 1 feature
-                            {
-                                const auto& non_core_feature =
-                                    spec.features[0] == FeatureNameCore ? spec.features[1] : spec.features[0];
-                                add_build_failed_note_core(
-                                    diagnostics, spec, *ci_feature_baseline_file_name, outcome.loc);
-                                diagnostics.push_back(
-                                    DiagnosticLine{DiagKind::Note,
-                                                   *ci_feature_baseline_file_name,
-                                                   TextRowCol{outcome.loc.row, outcome.loc.column},
-                                                   msg::format(msgUnexpectedStateFailedNoteSingleCombinationFails,
-                                                               msg::feature_spec = format_name_only_feature_spec(
-                                                                   spec.package_spec.name(), non_core_feature))});
-                                diagnostics.push_back(
-                                    DiagnosticLine{DiagKind::Note,
-                                                   *ci_feature_baseline_file_name,
-                                                   TextRowCol{outcome.loc.row, outcome.loc.column},
-                                                   msg::format(msgUnexpectedStateFailedNoteSingleFeatureFails,
-                                                               msg::feature_spec = format_name_only_feature_spec(
-                                                                   spec.package_spec.name(), non_core_feature),
-                                                               msg::feature = non_core_feature)});
-                            }
-                            break;
-                        default:
-                            diagnostics.push_back(
-                                DiagnosticLine{DiagKind::Note,
-                                               *ci_feature_baseline_file_name,
-                                               TextRowCol{outcome.loc.row, outcome.loc.column},
-                                               msg::format(msgUnexpectedStateFailedNoteMultiCombinationFails,
+                                               msg::format(msgUnexpectedStateFailedNoteConsiderSkippingPort,
                                                            msg::package_name = spec.package_spec.name(),
-                                                           msg::spec = spec.package_spec,
-                                                           msg::feature_spec = spec)});
+                                                           msg::spec = spec.package_spec)});
                             break;
+                        case SpecToTestKind::Separate:
+                            diagnostics.push_back(
+                                DiagnosticLine{DiagKind::Note,
+                                               msg::format(msgUnexpectedStateFailedNoteSeparateCombinationFails,
+                                                           msg::feature_spec = spec,
+                                                           msg::feature = format_name_only_feature_spec(
+                                                               spec.package_spec.name(), spec.separate_feature))});
+                            diagnostics.push_back(DiagnosticLine{
+                                DiagKind::Note,
+                                msg::format(msgUnexpectedStateFailedNoteSeparateFeatureFails,
+                                            msg::feature_spec = FullPackageSpec(
+                                                spec.package_spec, InternalFeatureSet{{spec.separate_feature}}),
+                                            msg::feature = format_name_only_feature_spec(spec.package_spec.name(),
+                                                                                         spec.separate_feature))});
+
+                            break;
+                        case SpecToTestKind::Combined:
+                            diagnostics.push_back(DiagnosticLine{
+                                DiagKind::Note,
+                                msg::format(msgUnexpectedStateFailedNoteConsiderSkippingPortOrCombination,
+                                            msg::package_name = spec.package_spec.name(),
+                                            msg::spec = spec.package_spec,
+                                            msg::feature_spec = spec)});
+                            break;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
+                    if (spec.kind != SpecToTestKind::Combined)
+                    {
+                        diagnostics.push_back(
+                            DiagnosticLine{DiagKind::Note,
+                                           msg::format(msgUnexpectedStateFailedNoteMoreFeaturesRequired,
+                                                       msg::package_name = spec.package_spec.name())});
                     }
                 }
                 else
@@ -256,18 +281,14 @@ namespace
             case CiFeatureBaselineOutcome::PortMarkedCascade:
                 add_build_failed_but_marked_cascade_diagnostic(
                     diagnostics, spec, *ci_feature_baseline_file_name, outcome.loc);
-                diagnostics.push_back(DiagnosticLine{DiagKind::Note,
-                                                     *ci_feature_baseline_file_name,
-                                                     TextRowCol{outcome.loc.row, outcome.loc.column},
-                                                     msg::format(msgUnexpectedStateFailedPortMarkedCascade)});
+                diagnostics.push_back(
+                    DiagnosticLine{DiagKind::Note, msg::format(msgUnexpectedStateFailedNotePortMarkedCascade)});
                 break;
             case CiFeatureBaselineOutcome::FeatureCascade:
                 add_build_failed_but_marked_cascade_diagnostic(
                     diagnostics, spec, *ci_feature_baseline_file_name, outcome.loc);
-                diagnostics.push_back(DiagnosticLine{DiagKind::Note,
-                                                     *ci_feature_baseline_file_name,
-                                                     TextRowCol{outcome.loc.row, outcome.loc.column},
-                                                     msg::format(msgUnexpectedStateFailedFeatureMarkedCascade)});
+                diagnostics.push_back(
+                    DiagnosticLine{DiagKind::Note, msg::format(msgUnexpectedStateFailedNoteFeatureMarkedCascade)});
                 break;
             case CiFeatureBaselineOutcome::PortMarkedFail:
             case CiFeatureBaselineOutcome::FeatureFail:
@@ -527,7 +548,7 @@ namespace vcpkg
         PortDirAbiInfoCache port_dir_abi_info_cache;
 
         // check what should be tested
-        std::vector<FullPackageSpec> specs_to_test; // this needs to record why
+        std::vector<SpecToTest> specs_to_test; // this needs to record why
         for (const auto port : feature_test_ports)
         {
             const auto* baseline = feature_baseline.get_port(port->core_paragraph->name);
@@ -552,15 +573,15 @@ namespace vcpkg
 
             if (test_feature_core && (!baseline || !Util::Sets::contains(baseline->skip_features, FeatureNameCore)))
             {
-                auto& core_spec =
-                    specs_to_test.emplace_back(package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}});
+                auto& core_test = specs_to_test.emplace_back(
+                    package_spec, InternalFeatureSet{{FeatureNameCore.to_string()}}, SpecToTestKind::Core);
                 if (baseline)
                 {
                     for (const auto& option_set : baseline->options)
                     {
                         if (option_set.value.front() != FeatureNameCore)
                         {
-                            core_spec.features.push_back(option_set.value.front());
+                            core_test.features.push_back(option_set.value.front());
                         }
                     }
                 }
@@ -605,8 +626,8 @@ namespace vcpkg
                     InternalFeatureSet separate_features{{FeatureNameCore.to_string(), feature->name}};
                     if (baseline)
                     {
-                        // For each option set, we add the first option, unless this feature is in the option set
-                        // (In which case, this feature is the selected one from that option set itself)
+                        // For each option set, we add the first option, unless this feature is in the option
+                        // set (In which case, this feature is the selected one from that option set itself)
                         for (const auto& option_set : baseline->options)
                         {
                             if (option_set.value.front() != FeatureNameCore &&
@@ -617,24 +638,24 @@ namespace vcpkg
                         }
                     }
 
-                    if (Util::none_of(specs_to_test, [&](const FullPackageSpec& spec) {
+                    if (Util::none_of(specs_to_test, [&](const SpecToTest& spec) {
                             return std::is_permutation(spec.features.begin(),
                                                        spec.features.end(),
                                                        separate_features.begin(),
                                                        separate_features.end());
                         }))
                     {
-                        specs_to_test.emplace_back(package_spec, std::move(separate_features));
+                        specs_to_test.emplace_back(package_spec, std::move(separate_features), feature->name);
                     }
                 }
             }
 
-            if (test_features_combined && Util::none_of(specs_to_test, [&](const FullPackageSpec& spec) {
+            if (test_features_combined && Util::none_of(specs_to_test, [&](const SpecToTest& test) {
                     return std::is_permutation(
-                        spec.features.begin(), spec.features.end(), combined_features.begin(), combined_features.end());
+                        test.features.begin(), test.features.end(), combined_features.begin(), combined_features.end());
                 }))
             {
-                specs_to_test.emplace_back(package_spec, combined_features);
+                specs_to_test.emplace_back(package_spec, std::move(combined_features), SpecToTestKind::Combined);
             }
         }
 
@@ -643,55 +664,53 @@ namespace vcpkg
         std::vector<FullPackageSpec> specs;
         std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
-        auto install_plans = Util::fmap(specs_to_test, [&](auto& spec) {
-            auto install_plan = create_feature_install_plan(provider,
-                                                            var_provider,
-                                                            Span<FullPackageSpec>(&spec, 1),
-                                                            {},
-                                                            packages_dir_assigner,
-                                                            install_plan_options);
-            if (install_plan.unsupported_features.empty())
+        for (auto&& test_spec : specs_to_test)
+        {
+            test_spec.plan = create_feature_install_plan(provider,
+                                                         var_provider,
+                                                         Span<FullPackageSpec>(&test_spec, 1),
+                                                         {},
+                                                         packages_dir_assigner,
+                                                         install_plan_options);
+            if (test_spec.plan.unsupported_features.empty())
             {
-                for (auto& actions : install_plan.install_actions)
+                for (auto& actions : test_spec.plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
                     port_locations.emplace_back(
                         actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
                 }
-                actions_to_check.push_back(&install_plan.install_actions.back());
+                actions_to_check.push_back(&test_spec.plan.install_actions.back());
             }
-            return std::make_pair(spec, std::move(install_plan));
-        });
+        }
+
         msg::println(msgComputeAllAbis);
         var_provider.load_tag_vars(specs, port_locations, host_triplet);
-        for (auto& [spec, install_plan] : install_plans)
+        for (auto&& test_spec : specs_to_test)
         {
-            if (install_plan.unsupported_features.empty())
+            if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, install_plan, var_provider, status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, status_db, port_dir_abi_info_cache);
             }
         }
 
         msg::println(msgPrecheckBinaryCache);
         binary_cache.precheck(actions_to_check);
 
-        Util::stable_sort(install_plans,
-                          [](const std::pair<FullPackageSpec, ActionPlan>& left,
-                             const std::pair<FullPackageSpec, ActionPlan>& right) noexcept {
-                              return left.second.install_actions.size() < right.second.install_actions.size();
-                          });
+        Util::stable_sort(specs_to_test, [](const SpecToTest& left, const SpecToTest& right) noexcept {
+            return left.plan.install_actions.size() < right.plan.install_actions.size();
+        });
 
         // test port features
         std::unordered_set<std::string> known_failures;
         std::vector<DiagnosticLine> diagnostics;
 
-        for (std::size_t i = 0; i < install_plans.size(); ++i)
+        for (std::size_t i = 0; i < specs_to_test.size(); ++i)
         {
-            auto& plan_record = install_plans[i];
-            auto& spec = plan_record.first;
-            auto& install_plan = plan_record.second;
+            auto& spec = specs_to_test[i];
+            auto& install_plan = spec.plan;
             msg::println(msgStartingFeatureTest,
-                         msg::value = fmt::format("{}/{}", i + 1, install_plans.size()),
+                         msg::value = fmt::format("{}/{}", i + 1, specs_to_test.size()),
                          msg::feature_spec = spec);
             const auto& baseline = feature_baseline.get_port(spec.package_spec.name());
             if (!install_plan.unsupported_features.empty())
