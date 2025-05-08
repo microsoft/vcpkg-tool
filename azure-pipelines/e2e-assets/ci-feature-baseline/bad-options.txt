@@ -1,0 +1,4 @@
+vcpkg-empty-featureful-port[a,b] = options
+vcpkg-empty-featureful-port[a-default-feature,b] = options
+vcpkg-empty-featureful-port[b] = options
+vcpkg-empty-featureful-port[c,b] = options

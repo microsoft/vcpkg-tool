@@ -2921,6 +2921,11 @@ DECLARE_MESSAGE(UnexpectedStateFailedNoteSingleFeatureFails,
                 "",
                 "if this feature always fails, consider adding `{feature_spec}=feature-fails`, which will mark this "
                 "test as failing and also remove {feature} from combined feature testing")
+DECLARE_MESSAGE(
+    UnexpectedStateFailedNoteMultiCombinationFails,
+    (msg::package_name, msg::spec, msg::feature_spec),
+    "",
+    "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips")
 DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedCascade,
                 (msg::feature_spec, msg::feature),
                 "",

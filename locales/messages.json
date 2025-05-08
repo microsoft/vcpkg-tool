@@ -1550,6 +1550,8 @@
   "_UnexpectedStateFailedNoteCore.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows.",
   "UnexpectedStateFailedNoteCoreMoreFeatures": "if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]=options` to include 'required-feature' in all tests",
   "_UnexpectedStateFailedNoteCoreMoreFeatures.comment": "An example of {package_name} is zlib.",
+  "UnexpectedStateFailedNoteMultiCombinationFails": "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips",
+  "_UnexpectedStateFailedNoteMultiCombinationFails.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows. An example of {feature_spec} is zlib[featurea,featureb].",
   "UnexpectedStateFailedNoteSingleCombinationFails": "if this feature succeeds when built with other features but not alone, consider adding `{feature_spec}=combination-fails`",
   "_UnexpectedStateFailedNoteSingleCombinationFails.comment": "An example of {feature_spec} is zlib[featurea,featureb].",
   "UnexpectedStateFailedNoteSingleFeatureFails": "if this feature always fails, consider adding `{feature_spec}=feature-fails`, which will mark this test as failing and also remove {feature} from combined feature testing",
