@@ -181,6 +181,7 @@ namespace
         switch (outcome.value)
         {
             case CiFeatureBaselineOutcome::Pass:
+            case CiFeatureBaselineOutcome::ConfigurationFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
                 break;
@@ -193,7 +194,6 @@ namespace
                                                      TextRowCol{outcome.loc.row, outcome.loc.column},
                                                      msg::format(msgUnexpectedStateCascadePortNote)});
                 break;
-            case CiFeatureBaselineOutcome::ConfigurationFail: break;
             case CiFeatureBaselineOutcome::PortMarkedCascade:
             case CiFeatureBaselineOutcome::FeatureCascade:
                 // this is the expected outcome, nothing to do
