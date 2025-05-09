@@ -548,7 +548,7 @@ namespace vcpkg
         PortDirAbiInfoCache port_dir_abi_info_cache;
 
         // check what should be tested
-        std::vector<SpecToTest> specs_to_test; // this needs to record why
+        std::vector<SpecToTest> specs_to_test;
         for (const auto port : feature_test_ports)
         {
             const auto* baseline = feature_baseline.get_port(port->core_paragraph->name);
