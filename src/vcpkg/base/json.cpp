@@ -15,6 +15,8 @@
 #include <atomic>
 #include <type_traits>
 
+#include <fmt/compile.h>
+
 namespace vcpkg::Json
 {
     static std::atomic<uint64_t> g_json_parsing_stats(0);
@@ -1116,6 +1118,19 @@ namespace vcpkg::Json
 
     const NaturalNumberDeserializer NaturalNumberDeserializer::instance;
 
+    LocalizedString PositiveNumberDeserializer::type_name() const { return msg::format(msgANonNegativeInteger); }
+
+    Optional<double> PositiveNumberDeserializer::visit_number(Reader&, double value) const
+    {
+        if (value <= 0)
+        {
+            return nullopt;
+        }
+        return value;
+    }
+
+    const PositiveNumberDeserializer PositiveNumberDeserializer::instance;
+
     LocalizedString BooleanDeserializer::type_name() const { return msg::format(msgABoolean); }
 
     Optional<bool> BooleanDeserializer::visit_boolean(Reader&, bool b) const { return b; }
@@ -1166,6 +1181,17 @@ namespace vcpkg::Json
         }
 
         return true;
+    }
+
+    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem& fs, const Path& json_file, std::error_code& ec)
+    {
+        auto res = fs.read_contents(json_file, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, "read_contents", {json_file});
+        }
+
+        return parse(res, json_file);
     }
 
     ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
@@ -1364,8 +1390,15 @@ namespace vcpkg::Json
                         break;
                     }
                     // TODO: switch to `to_chars` once we are able to remove support for old compilers
-                    case VK::Integer: buffer.append(std::to_string(value.integer(VCPKG_LINE_INFO))); break;
-                    case VK::Number: buffer.append(std::to_string(value.number(VCPKG_LINE_INFO))); break;
+                    case VK::Integer:
+                    {
+                        fmt::format_int str(value.integer(VCPKG_LINE_INFO));
+                        buffer.append(str.data(), str.size());
+                        break;
+                    }
+                    case VK::Number:
+                        fmt::format_to(std::back_inserter(buffer), FMT_COMPILE("{}"), value.number(VCPKG_LINE_INFO));
+                        break;
                     case VK::String:
                     {
                         append_quoted_json_string(value.string(VCPKG_LINE_INFO));
