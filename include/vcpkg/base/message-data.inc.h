@@ -2904,7 +2904,8 @@ DECLARE_MESSAGE(
     UnexpectedStateFailedNoteConsiderSkippingPortOrCombination,
     (msg::package_name, msg::spec, msg::feature_spec),
     "",
-    "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips")
+    "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or "
+    "by marking mutually exclusive features as options")
 DECLARE_MESSAGE(UnexpectedStateFailedNoteFeatureMarkedCascade,
                 (),
                 "",

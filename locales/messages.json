@@ -1547,7 +1547,7 @@
   "_UnexpectedStateFailedCascade.comment": "An example of {feature_spec} is zlib[featurea,featureb].",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips",
   "_UnexpectedStateFailedNoteConsiderSkippingPort.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows.",
-  "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips",
+  "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or by marking mutually exclusive features as options",
   "_UnexpectedStateFailedNoteConsiderSkippingPortOrCombination.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows. An example of {feature_spec} is zlib[featurea,featureb].",
   "UnexpectedStateFailedNoteFeatureMarkedCascade": "consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`",
   "UnexpectedStateFailedNoteMoreFeaturesRequired": "if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]=options` to include 'required-feature' in all tests",

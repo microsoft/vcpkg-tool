@@ -613,7 +613,9 @@ namespace vcpkg
                       !Util::Sets::contains(baseline->failing_features, feature->name) &&
                       Util::all_of(baseline->options, [&](const Located<std::vector<std::string>>& option_set) {
                           return !Util::contains(option_set.value, feature->name) ||
-                                 option_set.value.front() == feature->name;
+                                 option_set.value.front() == feature->name ||
+                                 (option_set.value.size() >= 2 && option_set.value[0] == FeatureNameCore &&
+                                  option_set.value[1] == feature->name);
                       }))))
                 {
                     combined_features.push_back(feature->name);

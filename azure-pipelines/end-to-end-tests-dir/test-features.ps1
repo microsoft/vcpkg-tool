@@ -164,6 +164,10 @@ note: consider adding ``vcpkg-requires-feature=fail``, ``vcpkg-requires-feature:
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
 
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-requires-feature-complete.txt"
+Run-Vcpkg x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-requires-feature --ci-feature-baseline $ciFeatureBaseline
+Throw-IfFailed
+
 # This checks for avoiding adding duplicate feature tests when options would turn on the same feature(s) as
 # the 'combined' test.
 
@@ -174,6 +178,29 @@ Throw-IfNonContains -Expected "Feature Test [1/3] vcpkg-empty-featureful-port[co
 Throw-IfNonContains -Expected "Feature Test [2/3] vcpkg-empty-featureful-port[core,b]:$Triplet" -Actual $output
 Throw-IfNonContains -Expected "Feature Test [3/3] vcpkg-empty-featureful-port[core,a,a-default-feature,c]:$Triplet" -Actual $output
 
-$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-requires-feature-complete.txt"
-Run-Vcpkg x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-requires-feature --ci-feature-baseline $ciFeatureBaseline
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-mutually-incompatible-features
+Throw-IfNotFailed
+Throw-IfNonContains -Expected "error: vcpkg-mutually-incompatible-features[core,a,b,c,d]:$Triplet build failed but was expected to pass" -Actual $output
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-mutually-incompatible-features-ac-only.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-mutually-incompatible-features --ci-feature-baseline $ciFeatureBaseline
+Throw-IfNotFailed
+$expected = @"
+$($ciFeatureBaseline): error: vcpkg-mutually-incompatible-features[core,a,b,d]:$Triplet build failed but was expected to pass
+note: consider adding ``vcpkg-mutually-incompatible-features=fail``, ``vcpkg-mutually-incompatible-features:$Triplet=fail``, ``vcpkg-mutually-incompatible-features[core,a,b,d]:x86-windows=combination-fails``, or equivalent skips, or by marking mutually exclusive features as options
+"@
+Throw-IfNonContains -Expected $expected -Actual $output
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-mutually-incompatible-features-bd-only.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-mutually-incompatible-features --ci-feature-baseline $ciFeatureBaseline
+Throw-IfNotFailed
+$expected = @"
+$($ciFeatureBaseline): error: vcpkg-mutually-incompatible-features[core,a,b,c]:$Triplet build failed but was expected to pass
+note: consider adding ``vcpkg-mutually-incompatible-features=fail``, ``vcpkg-mutually-incompatible-features:$Triplet=fail``, ``vcpkg-mutually-incompatible-features[core,a,b,c]:x86-windows=combination-fails``, or equivalent skips, or by marking mutually exclusive features as options
+"@
+Throw-IfNonContains -Expected $expected -Actual $output
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-mutually-incompatible-features-complete.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-mutually-incompatible-features --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
+Throw-IfNonContains -Expected "Feature Test [6/6] vcpkg-mutually-incompatible-features[core,a,b]:$Triplet" -Actual $output
