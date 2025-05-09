@@ -1040,12 +1040,14 @@ namespace
         Json::Reader r(origin);
         Baseline result;
         r.visit_in_key(*baseline_value, real_baseline, result, BaselineDeserializer::instance);
-        if (r.errors().empty())
+        if (!r.messages().any_errors())
         {
             return std::move(result);
         }
 
-        return msg::format_error(msgFailedToParseBaseline, msg::path = origin).append_raw('\n').append_raw(r.join());
+        return msg::format_error(msgFailedToParseBaseline, msg::path = origin)
+            .append_raw('\n')
+            .append_raw(r.messages().join());
     }
 
     ExpectedL<Baseline> load_baseline_versions(const ReadOnlyFilesystem& fs,
@@ -1320,11 +1322,9 @@ namespace
                 GitVersionDbEntryArrayDeserializer deserializer{};
                 Json::Reader r(versions_file_path);
                 r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
-                if (!r.errors().empty() != 0)
+                if (r.messages().any_errors())
                 {
-                    return msg::format_error(msgFailedToParseVersionFile, msg::path = versions_file_path)
-                        .append_raw('\n')
-                        .append_raw(r.join());
+                    return r.messages().join();
                 }
 
                 return db_entries;
@@ -1358,11 +1358,9 @@ namespace
                 FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
                 Json::Reader r(versions_file_path);
                 r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
-                if (!r.errors().empty() != 0)
+                if (r.messages().any_errors())
                 {
-                    return msg::format_error(msgFailedToParseVersionFile, msg::path = versions_file_path)
-                        .append_raw('\n')
-                        .append_raw(r.join());
+                    return r.messages().join();
                 }
 
                 return db_entries;

@@ -208,27 +208,21 @@ namespace vcpkg
                                     continue;
                                 }
 
-                                if (!parser.get_error())
+                                if (!parser.messages().any_errors())
                                 {
-                                    LocalizedString additional_info;
-                                    additional_info
-                                        .append_raw(parser.format_file_prefix(conflict_decl_feature->loc.row,
-                                                                              conflict_decl_feature->loc.column))
-                                        .append_raw(NotePrefix)
-                                        .append(msgPreviousDeclarationWasHere)
-                                        .append_raw('\n');
-                                    append_caret_line(additional_info, conflict_decl_feature->loc);
                                     parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
                                                                  msg::feature = this_decl_feature.value,
                                                                  msg::value = to_string_literal(state)),
-                                                     this_decl_feature.loc,
-                                                     std::move(additional_info));
+                                                     this_decl_feature.loc);
+                                    parser.add_note(msg::format(msgPreviousDeclarationWasHere),
+                                                    conflict_decl_feature->loc);
                                 }
 
                                 return true;
                             }
                             return false;
                         };
+
                     if (keyword == CiFeatureBaselineKeyword::Skip)
                     {
                         if (error_if_already_defined(entry.failing_features, CiFeatureBaselineKeyword::FeatureFail))

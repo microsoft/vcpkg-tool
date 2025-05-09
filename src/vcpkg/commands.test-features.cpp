@@ -230,7 +230,7 @@ namespace vcpkg
                                                          target_triplet,
                                                          host_triplet,
                                                          var_provider);
-            ci_parse_messages.exit_if_errors_or_warnings(ci_feature_baseline_file_name);
+            ci_parse_messages.exit_if_errors_or_warnings();
         }
 
         // to reduce number of cmake invocations

@@ -72,7 +72,7 @@ Refresh-TestRoot
 $output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install vcpkg-bad-spdx-license
 Throw-IfFailed
 $expected = @"
-vcpkg.json: warning: $.license (an SPDX license expression): warning: Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
+vcpkg.json: warning: $.license (an SPDX license expression): Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
   on expression: BSD-new
                  ^
 "@

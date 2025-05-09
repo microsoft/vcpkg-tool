@@ -249,8 +249,8 @@ static void check_error(const std::string& input, const std::string& expected_er
     ParseMessages m;
     auto actual = parse_ci_baseline(input, "test", m);
     CHECK(actual.empty());
-    CHECK(m.warnings.empty());
-    CHECK(m.error.value_or_exit(VCPKG_LINE_INFO) == LocalizedString::from_raw(expected_error));
+    CHECK(!m.good());
+    CHECK(m.join() == LocalizedString::from_raw(expected_error));
 }
 
 TEST_CASE ("Parse Errors", "[ci-baseline]")
