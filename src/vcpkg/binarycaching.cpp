@@ -26,6 +26,7 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -213,6 +214,18 @@ namespace
     Path files_archive_parent_path(const std::string& abi) { return Path(abi.substr(0, 2)); }
     Path files_archive_subpath(const std::string& abi) { return files_archive_parent_path(abi) / (abi + ".zip"); }
 
+    StringView try_extract_abi_from_zip_file(const Path& zip_file)
+    {
+        StringView file_stem = zip_file.stem();
+        auto reverse_it =
+            std::find_if(file_stem.rbegin(), file_stem.rend(), [](char ch) { return !std::isxdigit(ch); });
+        if (reverse_it != file_stem.rend() && (*reverse_it) == '_')
+        {
+            return {reverse_it.base(), file_stem.end()};
+        }
+        return {};
+    }
+
     struct FilesWriteBinaryProvider : IWriteBinaryProvider
     {
         FilesWriteBinaryProvider(const Filesystem& fs, std::vector<Path>&& dirs) : m_fs(fs), m_dirs(std::move(dirs)) { }
@@ -293,7 +306,10 @@ namespace
     // - IReadBinaryProvider::precheck()
     struct ZipReadBinaryProvider : IReadBinaryProvider
     {
-        ZipReadBinaryProvider(ZipTool zip, const Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
+        ZipReadBinaryProvider(ZipTool zip, const Filesystem& fs, Optional<Path> local_cache_folder = {})
+            : m_zip(std::move(zip)), m_fs(fs), m_local_cache_folder(std::move(local_cache_folder))
+        {
+        }
 
         void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
@@ -336,8 +352,41 @@ namespace
         {
             if (r.to_remove == RemoveWhen::always)
             {
-                m_fs.remove(r.path, IgnoreErrors{});
+                if (auto new_path = try_write_back_zip_file(r.path))
+                {
+                    Debug::print("Renamed ", r.path, " to ", *(new_path.get()), "\n");
+                }
+                else
+                {
+                    m_fs.remove(r.path, IgnoreErrors{});
+                    Debug::print("Removed ", r.path, '\n');
+                }
             }
+        }
+
+        [[nodiscard]] Optional<Path> try_write_back_zip_file(const Path& zip_file) const
+        {
+            if (!m_local_cache_folder)
+            {
+                return {};
+            }
+
+            const StringView abi = try_extract_abi_from_zip_file(zip_file);
+            if (abi.empty())
+            {
+                return {};
+            }
+
+            const Path& local_cache_folder = *m_local_cache_folder.get();
+            Path new_path = local_cache_folder / files_archive_subpath(std::string(abi));
+            if (m_fs.exists(new_path, IgnoreErrors{}))
+            {
+                return {};
+            }
+
+            m_fs.create_directories(new_path.parent_path(), IgnoreErrors{});
+            m_fs.rename(zip_file, new_path, IgnoreErrors{});
+            return new_path;
         }
 
         // For every action denoted by actions, at corresponding indicies in out_zips, stores a ZipResource indicating
@@ -350,6 +399,7 @@ namespace
     protected:
         ZipTool m_zip;
         const Filesystem& m_fs;
+        Optional<Path> m_local_cache_folder;
     };
 
     struct FilesReadBinaryProvider : ZipReadBinaryProvider
@@ -857,8 +907,9 @@ namespace
                               const Filesystem& fs,
                               const Path& buildtrees,
                               std::string&& prefix,
-                              const std::shared_ptr<const IObjectStorageTool>& tool)
-            : ZipReadBinaryProvider(std::move(zip), fs)
+                              const std::shared_ptr<const IObjectStorageTool>& tool,
+                              Optional<Path> local_cache_folder)
+            : ZipReadBinaryProvider(std::move(zip), fs, std::move(local_cache_folder))
             , m_buildtrees(buildtrees)
             , m_prefix(std::move(prefix))
             , m_tool(tool)
@@ -2253,22 +2304,28 @@ namespace vcpkg
                         std::make_unique<HttpGetBinaryProvider>(zip_tool, fs, buildtrees, std::move(url), s.secrets));
                 }
 
+                Optional<Path> local_cache_folder;
+                if (!s.archives_to_write.empty())
+                {
+                    local_cache_folder = s.archives_to_write.front();
+                }
+
                 for (auto&& prefix : s.gcs_read_prefixes)
                 {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), gcs_tool));
+                    m_config.read.push_back(std::make_unique<ObjectStorageProvider>(
+                        zip_tool, fs, buildtrees, std::move(prefix), gcs_tool, local_cache_folder));
                 }
 
                 for (auto&& prefix : s.aws_read_prefixes)
                 {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), aws_tool));
+                    m_config.read.push_back(std::make_unique<ObjectStorageProvider>(
+                        zip_tool, fs, buildtrees, std::move(prefix), aws_tool, local_cache_folder));
                 }
 
                 for (auto&& prefix : s.cos_read_prefixes)
                 {
-                    m_config.read.push_back(
-                        std::make_unique<ObjectStorageProvider>(zip_tool, fs, buildtrees, std::move(prefix), cos_tool));
+                    m_config.read.push_back(std::make_unique<ObjectStorageProvider>(
+                        zip_tool, fs, buildtrees, std::move(prefix), cos_tool, local_cache_folder));
                 }
 
                 for (auto&& src : s.upkg_templates_to_get)
