@@ -1,0 +1,2 @@
+vcpkg-mutually-incompatible-features[core,a,c] = options
+vcpkg-mutually-incompatible-features[core,b,d] = options
