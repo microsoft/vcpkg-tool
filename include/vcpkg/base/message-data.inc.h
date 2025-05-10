@@ -332,7 +332,7 @@ DECLARE_MESSAGE(AVersionOfAnyType, (), "", "a version of any type")
 DECLARE_MESSAGE(AVersionConstraint, (), "", "a version constraint")
 DECLARE_MESSAGE(AzcopyFailedToPutBlob,
                 (msg::exit_code, msg::url, msg::value),
-                "azcopy is the name of a program.",
+                "azcopy is the name of a program. {value} is an HTTP status code.",
                 "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.")
 DECLARE_MESSAGE(AzUrlAssetCacheRequiresBaseUrl,
                 (),
