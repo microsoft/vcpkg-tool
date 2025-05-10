@@ -1721,9 +1721,8 @@ namespace vcpkg
         // See examples of console output in asset-caching.ps1
 
         // Note: no secrets for the input URLs
-        std::vector<SanitizedUrl> sanitized_urls = Util::fmap(raw_urls, [&](const std::string& url) {
-            return SanitizedUrl{url, {}};
-        });
+        std::vector<SanitizedUrl> sanitized_urls =
+            Util::fmap(raw_urls, [&](const std::string& url) { return SanitizedUrl{url, {}}; });
         const auto last_sanitized_url = sanitized_urls.end();
         bool can_read_asset_cache = false;
         if (asset_cache_settings.m_read_url_template.has_value() && maybe_sha512)
