@@ -431,7 +431,7 @@ elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
-if(CMAKE_HOST_SOLARIS)
+if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
     target_link_libraries(vcpkglib PRIVATE socket)
 endif()
 

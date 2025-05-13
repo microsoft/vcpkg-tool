@@ -995,7 +995,7 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
-        else if (cmake_system_name == "Solaris")
+        else if (cmake_system_name == "SunOS")
         {
             return m_paths.scripts / "toolchains/solaris.cmake";
         }
