@@ -513,7 +513,7 @@ namespace vcpkg
                            .append_raw(' ')
                            .append_raw(target_triplet)
                            .append_raw('\n')
-                           .append(summary.format()));
+                           .append(summary.format_results()));
             const bool any_regressions = print_regressions(summary.results,
                                                            split_specs->known,
                                                            cidata,

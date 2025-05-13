@@ -130,13 +130,9 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 (msg::value),
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
-DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "No action taken because all installed packages are up-to-date.")
 DECLARE_MESSAGE(AllShasValid, (), "sha = sha512 of url", "All checked sha's are valid.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
-DECLARE_MESSAGE(AlreadyInstalledNotHead,
-                (msg::spec),
-                "'HEAD' means the most recent version of source code",
-                "{spec} is already installed -- not building from HEAD")
 DECLARE_MESSAGE(AManifest, (), "", "a manifest")
 DECLARE_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified, (), "", "a maximum of one asset read url can be specified.")
 DECLARE_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified, (), "", "a maximum of one asset write url can be specified.")
@@ -1787,6 +1783,11 @@ DECLARE_MESSAGE(InstallCopiedFile,
                 "{path_source} -> {path_destination} done")
 DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
+DECLARE_MESSAGE(InstalledPackagesHead,
+                (),
+                "",
+                "The following packages are already installed, but were requested at --head version. Their installed "
+                "contents will not be changed. To get updated versions, remove these packages first:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
 DECLARE_MESSAGE(InstallingFromFilesystemRegistry, (), "", "installing from filesystem registry here")
@@ -2812,6 +2813,10 @@ DECLARE_MESSAGE(ToRemovePackages,
                 "",
                 "To only remove outdated packages, run\n{command_name} remove --outdated")
 DECLARE_MESSAGE(TotalInstallTime, (msg::elapsed), "", "Total install time: {elapsed}")
+DECLARE_MESSAGE(TotalInstallTimeSuccess,
+                (msg::elapsed),
+                "",
+                "All requested installations completed successfully in: {elapsed}")
 DECLARE_MESSAGE(ToUpdatePackages,
                 (msg::command_name),
                 "",
