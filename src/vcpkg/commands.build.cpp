@@ -995,6 +995,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
+        else if (cmake_system_name == "Solaris")
+        {
+            return m_paths.scripts / "toolchains/solaris.cmake";
+        }
         else if (cmake_system_name == "Android")
         {
             return m_paths.scripts / "toolchains/android.cmake";
