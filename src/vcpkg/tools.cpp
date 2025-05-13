@@ -38,6 +38,7 @@ namespace
         {"linux", ToolOs::Linux},
         {"freebsd", ToolOs::FreeBsd},
         {"openbsd", ToolOs::OpenBsd},
+        {"solaris", ToolOs::Solaris},
     };
 }
 
@@ -176,6 +177,8 @@ namespace vcpkg
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::FreeBsd);
 #elif defined(__OpenBSD__)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::OpenBsd);
+#elif defined(__SVR4) && defined(__sun)
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Solaris);
 #else
         return nullopt;
 #endif
