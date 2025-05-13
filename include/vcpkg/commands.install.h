@@ -49,11 +49,11 @@ namespace vcpkg
     {
         std::vector<SpecSummary> results;
         ElapsedTime elapsed;
+        bool failed = false;
 
-        LocalizedString format() const;
+        LocalizedString format_results() const;
         void print_failed() const;
-        std::string xunit_results() const;
-        bool failed() const;
+        void print_complete_message() const;
     };
 
     struct InstallDir
