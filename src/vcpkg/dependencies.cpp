@@ -1257,17 +1257,7 @@ namespace vcpkg
 
         for (auto&& already_installed_action : action_plan.already_installed)
         {
-            std::vector<const InstallPlanAction*>* to_add;
-            if (already_installed_action.use_head_version == UseHeadVersion::Yes)
-            {
-                to_add = &already_installed_head_plans;
-            }
-            else
-            {
-                to_add = &already_installed_plans;
-            }
-
-            to_add->push_back(&already_installed_action);
+            (already_installed_action.use_head_version == UseHeadVersion::Yes ? &already_installed_head_plans : &already_installed_plans)->push_back(&already_installed_action);
         }
         for (auto&& remove_action : action_plan.remove_actions)
         {
