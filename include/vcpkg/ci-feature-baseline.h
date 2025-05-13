@@ -23,7 +23,8 @@ namespace vcpkg
 
     enum class CiFeatureBaselineOutcome
     {
-        Pass,
+        ImplicitPass,
+        ExplicitPass,
         PortMarkedFail,
         PortMarkedCascade,
         FeatureFail,
