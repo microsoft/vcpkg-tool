@@ -162,7 +162,22 @@ namespace vcpkg
         PackageSpec package_spec;
         InternalFeatureSet features;
 
-        FullPackageSpec(PackageSpec spec, InternalFeatureSet features)
+        FullPackageSpec(const PackageSpec& spec, const InternalFeatureSet& features)
+            : package_spec(spec), features(features)
+        {
+        }
+
+        FullPackageSpec(const PackageSpec& spec, InternalFeatureSet&& features)
+            : package_spec(spec), features(std::move(features))
+        {
+        }
+
+        FullPackageSpec(PackageSpec&& spec, const InternalFeatureSet& features)
+            : package_spec(std::move(spec)), features(features)
+        {
+        }
+
+        FullPackageSpec(PackageSpec&& spec, InternalFeatureSet&& features)
             : package_spec(std::move(spec)), features(std::move(features))
         {
         }

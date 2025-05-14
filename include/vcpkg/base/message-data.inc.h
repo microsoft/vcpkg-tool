@@ -1359,6 +1359,7 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
+DECLARE_MESSAGE(FeatureBaselineNoFeaturesForPass, (), "", "When using '= pass' no list of features is allowed.")
 DECLARE_MESSAGE(FeatureTestProblems, (), "", "There are some feature test problems!")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesRelativeToTheBuildDirectoryHere, (), "", "the files are relative to the build directory here")
@@ -2892,15 +2893,67 @@ DECLARE_MESSAGE(UnexpectedPortversion,
                 (),
                 "'field' means a JSON key/value pair here",
                 "unexpected \"port-version\" without a versioning field")
-DECLARE_MESSAGE(UnexpectedState,
-                (msg::feature_spec, msg::actual, msg::elapsed),
-                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
-                "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStateFailedPass,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to pass")
+DECLARE_MESSAGE(UnexpectedStateFailedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteConsiderSkippingPort,
+                (msg::package_name, msg::spec),
+                "",
+                "consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips")
+DECLARE_MESSAGE(
+    UnexpectedStateFailedNoteConsiderSkippingPortOrCombination,
+    (msg::package_name, msg::spec, msg::feature_spec),
+    "",
+    "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or "
+    "by marking mutually exclusive features as options")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteFeatureMarkedCascade,
+                (),
+                "",
+                "consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteMoreFeaturesRequired,
+                (msg::package_name),
+                "",
+                "if some features are required, consider effectively always enabling those parts in portfile.cmake for "
+                "{package_name}, or consider adding `{package_name}[required-feature]=options` to include "
+                "'required-feature' in all tests")
+DECLARE_MESSAGE(UnexpectedStateFailedNotePortMarkedCascade, (), "", "consider changing this `=cascade` to `=fail`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSeparateCombinationFails,
+                (msg::feature_spec, msg::feature),
+                "",
+                "if {feature} succeeds when built with other features but not alone, consider adding "
+                "`{feature_spec}=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSeparateFeatureFails,
+                (msg::feature_spec, msg::feature),
+                "",
+                "if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this "
+                "test as failing, and remove {feature} from combined feature testing")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedCascade,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedFail,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to fail")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedFail,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to fail")
 DECLARE_MESSAGE(
     UnexpectedStateCascade,
     (msg::feature_spec),
     "",
     "{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:")
+DECLARE_MESSAGE(UnexpectedStateCascadePortNote, (), "", "consider changing this to =cascade instead")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",

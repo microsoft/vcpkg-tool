@@ -129,6 +129,18 @@ namespace vcpkg::Util
         }
     }
 
+    template<class Target, class Range, class Pred>
+    void copy_if(Target& target, const Range& xs, Pred f)
+    {
+        for (auto&& x : xs)
+        {
+            if (f(x))
+            {
+                target.emplace_back(x);
+            }
+        }
+    }
+
     template<class Map, class Key>
     typename Map::mapped_type copy_or_default(const Map& map, Key&& key)
     {
@@ -204,15 +216,7 @@ namespace vcpkg::Util
     std::vector<ElementT<const Range&>> filter(const Range& xs, Pred f)
     {
         std::vector<ElementT<const Range&>> ret;
-
-        for (auto&& x : xs)
-        {
-            if (f(x))
-            {
-                ret.emplace_back(x);
-            }
-        }
-
+        Util::copy_if(ret, xs, f);
         return ret;
     }
 
