@@ -1019,6 +1019,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }
+        else if (cmake_system_name == "visionOS")
+        {
+            return m_paths.scripts / "toolchains/visionos.cmake";
+        }
         else
         {
             Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
