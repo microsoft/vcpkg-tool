@@ -47,6 +47,7 @@ namespace vcpkg
         Linux,
         FreeBsd,
         OpenBsd,
+        Solaris,
     };
 
     Optional<ToolOs> to_tool_os(StringView os) noexcept;
