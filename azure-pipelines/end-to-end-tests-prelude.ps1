@@ -269,6 +269,20 @@ function Throw-IfNonEndsWith {
     }
 }
 
+function Throw-IfContains {
+    Param(
+        [string]$Actual,
+        [string]$Expected
+    )
+    if ($Actual.Contains($Expected)) {
+        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
+        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
+        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
+        Write-Stack
+        throw "Expected '$Expected' to not be in '$Actual'"
+    }
+}
+
 function Throw-IfNonContains {
     Param(
         [string]$Actual,

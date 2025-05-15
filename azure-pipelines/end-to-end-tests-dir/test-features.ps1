@@ -1,5 +1,17 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+function New-TestPortsRootArg() {
+    Param([Parameter(Mandatory=$true,ValueFromRemainingArguments=$true)][string[]]$Ports)
+    $name = $Ports[0]
+    $result = "$TestingRoot/$name"
+    New-Item -ItemType Directory -Force $result | Out-Null
+    foreach ($port in $Ports) {
+        Copy-Item -Recurse -Path "$PSScriptRoot/../e2e-ports/$port" -Destination $result
+    }
+
+    return "--x-builtin-ports-root=$result"
+}
+
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/conflicting-features.txt"
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-empty-featureful-port --ci-feature-baseline $ciFeatureBaseline
 Throw-IfNotFailed
@@ -94,6 +106,17 @@ $($ciFeatureBaseline):6:29: error: vcpkg-empty-featureful-port[core,a-default-fe
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-self-cascade
+Throw-IfFailed
+Throw-IfNonContains -Expected "Feature Test [1/2] vcpkg-self-cascade[core]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected "Feature Test [2/2] vcpkg-self-cascade[core,cascade]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected @"
+Skipping testing of vcpkg-self-cascade[cascade,core,never]:$Triplet@0 because the following dependencies are not supported on $($Triplet):
+vcpkg-self-cascade[never]:$Triplet only supports windows & !windows
+"@ -Actual $output
+Throw-IfNonContains -Expected "All feature tests passed." -Actual $output
+
+$vcpkgSelfCascadePortsArg = New-TestPortsRootArg vcpkg-self-cascade
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all
 Throw-IfNotFailed
 Throw-IfNonContains -Expected "Feature Test [1/2] vcpkg-self-cascade[core]:$Triplet" -Actual $output
 Throw-IfNonContains -Expected "Feature Test [2/2] vcpkg-self-cascade[core,cascade]:$Triplet" -Actual $output
@@ -104,10 +127,12 @@ vcpkg-self-cascade[never]:$Triplet only supports windows & !windows
 Throw-IfNonContains -Expected "error: vcpkg-self-cascade[core,cascade]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-self-cascade[never]:$Triplet only supports windows & !windows" -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self-cascade.txt"
-Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-self-cascade --ci-feature-baseline $ciFeatureBaseline
+Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
 
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-requires-feature
+$vcpkgRequiresFeatureArg = New-TestPortsRootArg vcpkg-requires-feature vcpkg-fail-if-depended-upon
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg vcpkg-requires-feature
 Throw-IfNotFailed
 # is-a-default-feature should not be printed here, but we don't currently have a good way to filter out what the
 # specific dependency is when extras are brought in indirectly.
@@ -118,7 +143,25 @@ error: vcpkg-requires-feature[core,a]:$Triplet build failed but was expected to 
 error: vcpkg-requires-feature[core,b]:$Triplet build failed but was expected to pass
 error: vcpkg-requires-feature[core,c]:$Triplet build failed but was expected to pass
 error: vcpkg-requires-feature[core,fails]:$Triplet build failed but was expected to pass
-error: vcpkg-requires-feature[core,cascades]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core]:$Triplet
+"@
+Throw-IfNonContains -Expected $expected -Actual $output
+Throw-IfContains -Expected "was unexpectedly a cascading failure" -Actual $Output
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg --all
+Throw-IfNotFailed
+# is-a-default-feature should not be printed here, but we don't currently have a good way to filter out what the
+# specific dependency is when extras are brought in indirectly.
+# Also, note that there are no 'notes' explaining what might be fixable because there is no feature baseline.
+$expected = @"
+error: vcpkg-fail-if-depended-upon[core]:$Triplet build failed but was expected to pass
+error: vcpkg-fail-if-depended-upon[core,a]:$Triplet build failed but was expected to pass
+error: vcpkg-fail-if-depended-upon[core,b]:$Triplet build failed but was expected to pass
+error: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet build failed but was expected to pass
+error: vcpkg-fail-if-depended-upon[core,a,b,is-a-default-feature]:$Triplet build failed but was expected to pass
+error: vcpkg-requires-feature[core]:$Triplet build failed but was expected to pass
+error: vcpkg-requires-feature[core,c]:$Triplet build failed but was expected to pass
+error: vcpkg-requires-feature[core,fails]:$Triplet build failed but was expected to pass
+error: vcpkg-requires-feature[core,cascades]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0
 error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
@@ -131,7 +174,19 @@ $($ciFeatureBaseline): error: vcpkg-requires-feature[core,fails,b-required]:$Tri
 note: if vcpkg-requires-feature[fails] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,fails,b-required]:$Triplet=combination-fails``
 note: if vcpkg-requires-feature[fails] always fails, consider adding ``vcpkg-requires-feature[fails]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[fails] from combined feature testing
 note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
-$($ciFeatureBaseline): error: vcpkg-requires-feature[core,cascades,b-required]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core]:$Triplet
+"@
+
+Throw-IfNonContains -Expected $expected -Actual $output
+Throw-IfContains -Expected "was unexpectedly a cascading failure" -Actual $Output
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg --all --ci-feature-baseline $ciFeatureBaseline
+Throw-IfNotFailed
+$expected = @"
+$($ciFeatureBaseline): error: vcpkg-requires-feature[core,fails,b-required]:$Triplet build failed but was expected to pass
+note: if vcpkg-requires-feature[fails] succeeds when built with other features but not alone, consider adding ``vcpkg-requires-feature[core,fails,b-required]:$Triplet=combination-fails``
+note: if vcpkg-requires-feature[fails] always fails, consider adding ``vcpkg-requires-feature[fails]:$Triplet=feature-fails``, which will mark this test as failing, and remove vcpkg-requires-feature[fails] from combined feature testing
+note: if some features are required, consider effectively always enabling those parts in portfile.cmake for vcpkg-requires-feature, or consider adding ``vcpkg-requires-feature[required-feature]=options`` to include 'required-feature' in all tests
+$($ciFeatureBaseline): error: vcpkg-requires-feature[core,cascades,b-required]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0
 $($ciFeatureBaseline): error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
@@ -205,7 +260,13 @@ $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-por
 Throw-IfFailed
 Throw-IfNonContains -Expected "Feature Test [6/6] vcpkg-mutually-incompatible-features[core,a,b]:$Triplet" -Actual $output
 
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-depends-on-fail-core
+$vcpkgDependsOnFailCoreArg = New-TestPortsRootArg vcpkg-depends-on-fail-core vcpkg-fail-if-depended-upon
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg vcpkg-depends-on-fail-core
+Throw-IfFailed
+Throw-IfContains -Expected "was unexpectedly a cascading failure" -Actual $Output
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg --all
 Throw-IfNotFailed
 $expected = @"
 error: vcpkg-depends-on-fail-core[core]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[a,core]:$Triplet
@@ -213,7 +274,9 @@ error: vcpkg-depends-on-fail-core[core,x]:$Triplet was unexpectedly a cascading 
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
 
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-depends-on-fail-feature
+$vcpkgDependsOnFailFeatureArg = New-TestPortsRootArg vcpkg-depends-on-fail-feature vcpkg-fail-if-depended-upon
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailFeatureArg --all
 Throw-IfNotFailed
 $expected = @"
 error: vcpkg-depends-on-fail-feature[core,x]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[b,core]:$Triplet
@@ -221,7 +284,7 @@ error: vcpkg-depends-on-fail-feature[core,x]:$Triplet was unexpectedly a cascadi
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/unexpected-cascade-combination-fail.txt"
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-depends-on-fail-core --ci-feature-baseline $ciFeatureBaseline
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline): error: vcpkg-depends-on-fail-core[core]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[a,core]:$Triplet
@@ -230,7 +293,7 @@ $($ciFeatureBaseline):1:28: error: vcpkg-depends-on-fail-core[core,x]:$Triplet w
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/unexpected-cascade-port-fail.txt"
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-depends-on-fail-core --ci-feature-baseline $ciFeatureBaseline
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline):1:1: error: vcpkg-depends-on-fail-core[core]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[a,core]:$Triplet
@@ -241,7 +304,7 @@ $($ciFeatureBaseline):1:1: note: consider changing this to =cascade instead
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/unexpected-cascade-feature-fail.txt"
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-depends-on-fail-feature --ci-feature-baseline $ciFeatureBaseline
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailFeatureArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline):1:31: error: vcpkg-depends-on-fail-feature[core,x]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[b,core]:$Triplet

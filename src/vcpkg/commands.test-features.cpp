@@ -172,6 +172,7 @@ namespace
     }
 
     void handle_cascade_feature_test_result(std::vector<DiagnosticLine>& diagnostics,
+                                            bool enforce_marked_cascades,
                                             const FullPackageSpec& spec,
                                             const std::string* ci_feature_baseline_file_name,
                                             const CiFeatureBaselineEntry* baseline,
@@ -180,7 +181,14 @@ namespace
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
         {
-            case CiFeatureBaselineOutcome::Pass:
+            case CiFeatureBaselineOutcome::ImplicitPass:
+                if (!enforce_marked_cascades)
+                {
+                    break;
+                }
+
+                [[fallthrough]];
+            case CiFeatureBaselineOutcome::ExplicitPass:
             case CiFeatureBaselineOutcome::ConfigurationFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
@@ -221,7 +229,8 @@ namespace
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
         {
-            case CiFeatureBaselineOutcome::Pass:
+            case CiFeatureBaselineOutcome::ImplicitPass:
+            case CiFeatureBaselineOutcome::ExplicitPass:
                 if (ci_feature_baseline_file_name)
                 {
                     diagnostics.push_back(
@@ -732,7 +741,7 @@ namespace vcpkg
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
                 handle_cascade_feature_test_result(
-                    diagnostics, spec, ci_feature_baseline_file_name, baseline, Strings::join(", ", out));
+                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, Strings::join(", ", out));
                 continue;
             }
 
@@ -746,7 +755,7 @@ namespace vcpkg
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
                 handle_cascade_feature_test_result(
-                    diagnostics, spec, ci_feature_baseline_file_name, baseline, iter->display_name());
+                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, iter->display_name());
                 continue;
             }
 
@@ -835,6 +844,7 @@ namespace vcpkg
 
                     handle_cascade_feature_test_result(
                         diagnostics,
+                        all_ports,
                         spec,
                         ci_feature_baseline_file_name,
                         baseline,

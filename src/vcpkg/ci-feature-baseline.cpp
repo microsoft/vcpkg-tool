@@ -389,9 +389,17 @@ namespace vcpkg
                     }
                 }
             }
+
+            if (auto pstate = baseline->state.get())
+            {
+                if (pstate->value == CiFeatureBaselineState::Pass)
+                {
+                    return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ExplicitPass};
+                }
+            }
         }
 
-        return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::Pass};
+        return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ImplicitPass};
     }
 
     StringLiteral to_string_literal(CiFeatureBaselineState state)
