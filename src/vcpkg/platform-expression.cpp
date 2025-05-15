@@ -67,7 +67,7 @@ namespace vcpkg::PlatformExpression
             {"ios", Identifier::ios},
             {"qnx", Identifier::qnx},
             {"vxworks", Identifier::vxworks},
-            {"visionOS", Identifier::visionos},
+            {"visionos", Identifier::visionos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
