@@ -1021,7 +1021,7 @@ namespace vcpkg
         }
         else if (cmake_system_name == "visionOS")
         {
-            return m_paths.scripts / "toolchains/visionos.cmake";
+            return m_paths.scripts / "toolchains/ios.cmake";
         }
         else
         {
