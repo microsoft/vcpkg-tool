@@ -755,6 +755,7 @@ DECLARE_MESSAGE(CmdInstallExample1,
                 "This is a command line, only the <> parts should be localized",
                 "vcpkg install <port name> <port name>...")
 DECLARE_MESSAGE(CmdIntegrateSynopsis, (), "", "Integrates vcpkg with machines, projects, or shells")
+DECLARE_MESSAGE(CmdLicenseReportSynopsis, (), "", "Displays the declared licenses of all ports in the installed tree")
 DECLARE_MESSAGE(CmdListExample2,
                 (),
                 "This is a command line, only the <filter> part should be localized",
@@ -2219,6 +2220,11 @@ DECLARE_MESSAGE(NoInstalledPackages,
                 (),
                 "The name 'search' is the name of a command that is not localized.",
                 "No packages are installed. Did you mean `search`?")
+DECLARE_MESSAGE(NoInstalledPackagesLicenseReport,
+                (),
+                "",
+                "There are no installed packages, and thus no licenses of installed packages. Did you mean to install "
+                "something first?")
 DECLARE_MESSAGE(NonExactlyArgs,
                 (msg::command_name, msg::expected, msg::actual),
                 "{expected} and {actual} are integers",
@@ -2291,6 +2297,21 @@ DECLARE_MESSAGE(OverwritingFile, (msg::path), "", "File {path} was already prese
 DECLARE_MESSAGE(PackageAbi, (msg::spec, msg::package_abi), "", "{spec} package ABI: {package_abi}")
 DECLARE_MESSAGE(PackageAlreadyRemoved, (msg::spec), "", "unable to remove {spec}: already removed")
 DECLARE_MESSAGE(PackageDiscoveryHeader, (), "", "Package Discovery")
+DECLARE_MESSAGE(PackageLicenseSpdx, (), "", "Installed packages declare the following licenses:")
+DECLARE_MESSAGE(PackageLicenseSpdxThisInstall,
+                (),
+                "",
+                "Packages installed in this vcpkg installation declare the following licenses:")
+DECLARE_MESSAGE(PackageLicenseUnknown,
+                (),
+                "",
+                "Some packages did not declare an SPDX license. Check the `copyright` file for each package for more "
+                "information about their licensing.")
+DECLARE_MESSAGE(PackageLicenseWarning,
+                (),
+                "",
+                "Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant "
+                "any licenses to, third-party packages.")
 DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")
 DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages")
 DECLARE_MESSAGE(PackageFailedtWhileExtracting,

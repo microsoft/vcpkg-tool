@@ -417,3 +417,51 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     return Json::stringify(doc);
 }
+
+Optional<std::string> vcpkg::read_spdx_license(StringView text, StringView origin)
+{
+    // JsonIdPackages[0]/SpdxLicenseConcluded
+    auto maybe_parsed = Json::parse_object(text, origin);
+    auto parsed = maybe_parsed.get();
+    if (!parsed)
+    {
+        return nullopt;
+    }
+
+    auto maybe_packages_value = parsed->get(JsonIdPackages);
+    if (!maybe_packages_value)
+    {
+        return nullopt;
+    }
+
+    auto maybe_packages_array = maybe_packages_value->maybe_array();
+    if (!maybe_packages_array || maybe_packages_array->size() == 0)
+    {
+        return nullopt;
+    }
+
+    auto maybe_first_package_object = maybe_packages_array->operator[](0).maybe_object();
+    if (!maybe_first_package_object)
+    {
+        return nullopt;
+    }
+
+    auto maybe_license_concluded_value = maybe_first_package_object->get(SpdxLicenseConcluded);
+    if (!maybe_license_concluded_value)
+    {
+        return nullopt;
+    }
+
+    auto maybe_license_concluded = maybe_license_concluded_value->maybe_string();
+    if (!maybe_license_concluded)
+    {
+        return nullopt;
+    }
+
+    if (maybe_license_concluded->empty() || *maybe_license_concluded == SpdxNoAssertion)
+    {
+        return nullopt;
+    }
+
+    return std::move(*maybe_license_concluded);
+}
