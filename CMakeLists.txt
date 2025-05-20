@@ -431,6 +431,10 @@ elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+    target_link_libraries(vcpkglib PRIVATE socket)
+endif()
+
 if(ANDROID AND CMAKE_SYSTEM_VERSION LESS "28")
     # pkg install libandroid-spawn
     target_link_libraries(vcpkglib PRIVATE android-spawn)

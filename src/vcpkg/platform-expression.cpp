@@ -27,6 +27,7 @@ namespace vcpkg::PlatformExpression
         linux,
         freebsd,
         openbsd,
+        solaris,
         osx,
         uwp,
         xbox,
@@ -58,6 +59,7 @@ namespace vcpkg::PlatformExpression
             {"linux", Identifier::linux},
             {"freebsd", Identifier::freebsd},
             {"openbsd", Identifier::openbsd},
+            {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
             {"xbox", Identifier::xbox},
@@ -560,6 +562,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
                         case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
                         case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
+                        case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
