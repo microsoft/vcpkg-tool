@@ -1054,8 +1054,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
-    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
-    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
+    REQUIRE(pgh.feature_paragraphs[1]->license == parse_spdx_license_expression_required("MIT"));
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }

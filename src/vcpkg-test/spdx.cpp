@@ -368,7 +368,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     cpgh.summary = {"summary"};
     cpgh.description = {"description"};
     cpgh.homepage = "homepage";
-    cpgh.license = "MIT";
+    cpgh.license = parse_spdx_license_expression_required("MIT");
     cpgh.version_scheme = VersionScheme::Relaxed;
     cpgh.version = Version{"1.0", 5};
 

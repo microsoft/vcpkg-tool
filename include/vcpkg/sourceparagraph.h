@@ -85,6 +85,46 @@ namespace vcpkg
                                                      Triplet host,
                                                      const std::unordered_map<std::string, std::string>& cmake_vars);
 
+    struct NullTag
+    {
+    };
+
+    enum class ParsedSpdxLicenseDeclarationKind
+    {
+        NotPresent,
+        Null,
+        String
+    };
+
+    struct ParsedSpdxLicenseDeclaration
+    {
+        ParsedSpdxLicenseDeclaration();
+        ParsedSpdxLicenseDeclaration(NullTag);
+        ParsedSpdxLicenseDeclaration(std::string&& license_text, std::vector<std::string>&& applicable_licenses);
+
+        ParsedSpdxLicenseDeclaration(const ParsedSpdxLicenseDeclaration&) = default;
+        ParsedSpdxLicenseDeclaration(ParsedSpdxLicenseDeclaration&&) = default;
+        ParsedSpdxLicenseDeclaration& operator=(const ParsedSpdxLicenseDeclaration&) = default;
+        ParsedSpdxLicenseDeclaration& operator=(ParsedSpdxLicenseDeclaration&&) = default;
+
+        std::string to_string() const;
+        void to_string(std::string& target) const;
+
+        friend bool operator==(const ParsedSpdxLicenseDeclaration& lhs,
+                               const ParsedSpdxLicenseDeclaration& rhs) noexcept;
+        friend bool operator!=(const ParsedSpdxLicenseDeclaration& lhs,
+                               const ParsedSpdxLicenseDeclaration& rhs) noexcept;
+
+        ParsedSpdxLicenseDeclarationKind kind() const noexcept { return m_kind; }
+        const std::string& license_text() const noexcept { return m_license_text; }
+        const std::vector<std::string>& applicable_licenses() const noexcept { return m_applicable_licenses; }
+
+    private:
+        ParsedSpdxLicenseDeclarationKind m_kind;
+        std::string m_license_text;
+        std::vector<std::string> m_applicable_licenses;
+    };
+
     /// <summary>
     /// Port metadata of additional feature in a package (part of CONTROL file)
     /// </summary>
@@ -94,10 +134,7 @@ namespace vcpkg
         std::vector<std::string> description;
         std::vector<Dependency> dependencies;
         PlatformExpression::Expr supports_expression;
-        // there are two distinct "empty" states here
-        // "user did not provide a license" -> nullopt
-        // "user provided license = null" -> {""}
-        Optional<std::string> license; // SPDX license expression
+        ParsedSpdxLicenseDeclaration license;
 
         Json::Object extra_info;
 
@@ -122,10 +159,7 @@ namespace vcpkg
         std::vector<DependencyOverride> overrides;
         std::vector<DependencyRequestedFeature> default_features;
 
-        // there are two distinct "empty" states here
-        // "user did not provide a license" -> nullopt
-        // "user provided license = null" -> {""}
-        Optional<std::string> license; // SPDX license expression
+        ParsedSpdxLicenseDeclaration license;
 
         Optional<std::string> builtin_baseline;
         Optional<Json::Object> vcpkg_configuration;
@@ -259,7 +293,8 @@ namespace vcpkg
 
     void print_error_message(const LocalizedString& message);
 
-    std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages);
+    ParsedSpdxLicenseDeclaration parse_spdx_license_expression(StringView sv, ParseMessages& messages);
+    ParsedSpdxLicenseDeclaration parse_spdx_license_expression_required(StringView sv);
 
     // Exposed for testing
     ExpectedL<std::vector<Dependency>> parse_dependencies_list(const std::string& str,

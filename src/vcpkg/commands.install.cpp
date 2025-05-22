@@ -616,13 +616,17 @@ namespace vcpkg
             {
                 if (auto scfl = action.source_control_file_and_location.get())
                 {
-                    if (auto license = scfl->source_control_file->core_paragraph->license.get())
+                    auto& license = scfl->source_control_file->core_paragraph->license;
+                    switch (license.kind())
                     {
-                        summary.license_report.named_licenses.insert(*license);
-                    }
-                    else
-                    {
-                        summary.license_report.any_unknown_licenses = true;
+                        case ParsedSpdxLicenseDeclarationKind::NotPresent:
+                        case ParsedSpdxLicenseDeclarationKind::Null:
+                            summary.license_report.any_unknown_licenses = true;
+                            break;
+                        case ParsedSpdxLicenseDeclarationKind::String:
+                            summary.license_report.named_licenses.insert(license.license_text());
+                            break;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
                     }
                 }
             }

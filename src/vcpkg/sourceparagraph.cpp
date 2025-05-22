@@ -907,7 +907,7 @@ namespace vcpkg
             }
         }
 
-        std::string parse()
+        ParsedSpdxLicenseDeclaration parse()
         {
             if (cur() == Unicode::end_of_file)
             {
@@ -993,11 +993,11 @@ namespace vcpkg
                 add_error(msg::format(msgLicenseExpressionExpectExceptionFoundEof));
             }
 
-            return result;
+            return ParsedSpdxLicenseDeclaration{std::move(result), std::vector<std::string>{}};
         }
     };
 
-    std::string parse_spdx_license_expression(StringView sv, ParseMessages& messages)
+    ParsedSpdxLicenseDeclaration parse_spdx_license_expression(StringView sv, ParseMessages& messages)
     {
         auto license_string = msg::format(msgLicenseExpressionString); // must live through parse
         auto parser = SpdxLicenseExpressionParser(sv, license_string);
@@ -1006,15 +1006,26 @@ namespace vcpkg
         return result;
     }
 
-    struct LicenseExpressionDeserializer final : Json::IDeserializer<std::string>
+    ParsedSpdxLicenseDeclaration parse_spdx_license_expression_required(StringView sv)
+    {
+        ParseMessages messages;
+        auto result = parse_spdx_license_expression(sv, messages);
+        messages.exit_if_errors_or_warnings();
+        return result;
+    }
+
+    struct LicenseExpressionDeserializer final : Json::IDeserializer<ParsedSpdxLicenseDeclaration>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAnSpdxLicenseExpression); }
 
-        virtual Optional<std::string> visit_null(Json::Reader&) const override { return {std::string()}; }
+        virtual Optional<ParsedSpdxLicenseDeclaration> visit_null(Json::Reader&) const override
+        {
+            return ParsedSpdxLicenseDeclaration{NullTag{}};
+        }
 
         // if `sv` is a valid SPDX license expression, returns sv,
         // but with whitespace normalized
-        virtual Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override
+        virtual Optional<ParsedSpdxLicenseDeclaration> visit_string(Json::Reader& r, StringView sv) const override
         {
             auto parser = SpdxLicenseExpressionParser(sv, r.origin());
             auto res = parser.parse();
@@ -1023,7 +1034,9 @@ namespace vcpkg
             {
                 switch (line.kind())
                 {
-                    case DiagKind::Error: r.add_generic_error(type_name(), line.message_text()); return std::string();
+                    case DiagKind::Error:
+                        r.add_generic_error(type_name(), line.message_text());
+                        return ParsedSpdxLicenseDeclaration{};
                     case DiagKind::Warning: r.add_warning(type_name(), line.message_text()); break;
                     default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
@@ -1070,7 +1083,7 @@ namespace vcpkg
                 obj, JsonIdDependencies, feature->dependencies, DependencyArrayDeserializer::instance);
             r.optional_object_field(
                 obj, JsonIdSupports, feature->supports_expression, PlatformExprDeserializer::instance);
-            std::string license;
+            ParsedSpdxLicenseDeclaration license;
             if (r.optional_object_field(obj, JsonIdLicense, license, LicenseExpressionDeserializer::instance))
             {
                 feature->license = {std::move(license)};
@@ -1208,7 +1221,7 @@ namespace vcpkg
             r.optional_object_field(obj, JsonIdHomepage, spgh.homepage, UrlDeserializer::instance);
             r.optional_object_field(obj, JsonIdDocumentation, spgh.documentation, UrlDeserializer::instance);
 
-            std::string license;
+            ParsedSpdxLicenseDeclaration license;
             if (r.optional_object_field(obj, JsonIdLicense, license, LicenseExpressionDeserializer::instance))
             {
                 spgh.license = {std::move(license)};
@@ -1636,6 +1649,49 @@ namespace vcpkg
                dep.constraint.type == VersionConstraintKind::None && !dep.host;
     }
 
+    ParsedSpdxLicenseDeclaration::ParsedSpdxLicenseDeclaration()
+        : m_kind(ParsedSpdxLicenseDeclarationKind::NotPresent), m_license_text(), m_applicable_licenses()
+    {
+    }
+    ParsedSpdxLicenseDeclaration::ParsedSpdxLicenseDeclaration(NullTag)
+        : m_kind(ParsedSpdxLicenseDeclarationKind::Null), m_license_text(), m_applicable_licenses()
+    {
+    }
+    ParsedSpdxLicenseDeclaration::ParsedSpdxLicenseDeclaration(std::string&& license_text,
+                                                               std::vector<std::string>&& applicable_licenses)
+        : m_kind(ParsedSpdxLicenseDeclarationKind::String)
+        , m_license_text(std::move(license_text))
+        , m_applicable_licenses(std::move(applicable_licenses))
+    {
+    }
+
+    std::string ParsedSpdxLicenseDeclaration::to_string() const { return adapt_to_string(*this); }
+    void ParsedSpdxLicenseDeclaration::to_string(std::string& target) const
+    {
+        switch (m_kind)
+        {
+            case ParsedSpdxLicenseDeclarationKind::NotPresent: break;
+            case ParsedSpdxLicenseDeclarationKind::Null: target.append("null"); break;
+            case ParsedSpdxLicenseDeclarationKind::String:
+                target.push_back('"');
+                target.append(m_license_text);
+                target.push_back('"');
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    bool operator==(const ParsedSpdxLicenseDeclaration& lhs, const ParsedSpdxLicenseDeclaration& rhs) noexcept
+    {
+        return lhs.m_kind == rhs.m_kind && lhs.m_license_text == rhs.m_license_text &&
+               lhs.m_applicable_licenses == rhs.m_applicable_licenses;
+    }
+
+    bool operator!=(const ParsedSpdxLicenseDeclaration& lhs, const ParsedSpdxLicenseDeclaration& rhs) noexcept
+    {
+        return !(lhs == rhs);
+    }
+
     Json::Object serialize_manifest(const SourceControlFile& scf)
     {
         auto serialize_paragraph =
@@ -1716,17 +1772,15 @@ namespace vcpkg
         };
 
         auto serialize_license =
-            [&](Json::Object& obj, StringLiteral name, const Optional<std::string>& maybe_license) {
-                if (auto license = maybe_license.get())
+            [&](Json::Object& obj, StringLiteral name, const ParsedSpdxLicenseDeclaration& maybe_license) {
+                switch (maybe_license.kind())
                 {
-                    if (license->empty())
-                    {
-                        obj.insert(name, Json::Value::null(nullptr));
-                    }
-                    else
-                    {
-                        obj.insert(name, Json::Value::string(*license));
-                    }
+                    case ParsedSpdxLicenseDeclarationKind::NotPresent: break;
+                    case ParsedSpdxLicenseDeclarationKind::Null: obj.insert(name, Json::Value::null(nullptr)); break;
+                    case ParsedSpdxLicenseDeclarationKind::String:
+                        obj.insert(name, Json::Value::string(maybe_license.license_text()));
+                        break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             };
 

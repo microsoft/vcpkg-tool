@@ -90,17 +90,15 @@ static std::string fix_ref_version(StringView ref, StringView version)
     return replace_cmake_var(ref, CMakeVariableVersion, version);
 }
 
-static ZStringView conclude_license(const Optional<std::string>& maybe_license)
+static ZStringView conclude_license(const ParsedSpdxLicenseDeclaration& maybe_license)
 {
-    if (auto license = maybe_license.get())
+    switch (maybe_license.kind())
     {
-        if (!license->empty())
-        {
-            return *license;
-        }
+        case ParsedSpdxLicenseDeclarationKind::NotPresent:
+        case ParsedSpdxLicenseDeclarationKind::Null: return SpdxNoAssertion;
+        case ParsedSpdxLicenseDeclarationKind::String: return maybe_license.license_text();
+        default: Checks::unreachable(VCPKG_LINE_INFO);
     }
-
-    return SpdxNoAssertion;
 }
 
 static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj, StringView property)
