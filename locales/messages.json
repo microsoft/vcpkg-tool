@@ -1150,7 +1150,6 @@
   "LicenseExpressionExpectLicenseFoundCompound": "Expected a license name, found the compound {value}.",
   "_LicenseExpressionExpectLicenseFoundCompound.comment": "Example of {value} is 'AND'",
   "LicenseExpressionExpectLicenseFoundEof": "Expected a license name, found the end of the string.",
-  "LicenseExpressionExpectLicenseFoundParen": "Expected a license name, found a parenthesis.",
   "LicenseExpressionImbalancedParens": "There was a close parenthesis without an opening parenthesis.",
   "LicenseExpressionString": "<license string>",
   "LicenseExpressionUnknownException": "Unknown license exception identifier '{value}'. Known values are listed at https://spdx.org/licenses/exceptions-index.html",

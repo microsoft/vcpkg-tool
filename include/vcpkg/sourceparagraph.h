@@ -89,18 +89,41 @@ namespace vcpkg
     {
     };
 
-    enum class ParsedSpdxLicenseDeclarationKind
+    enum class SpdxLicenseDeclarationKind
     {
         NotPresent,
         Null,
         String
     };
 
+    struct SpdxApplicableLicenseExpression
+    {
+        std::string license_text;   // the expression text
+        bool needs_and_parenthesis; // if true, when combined with AND, extra ()s need to be added
+
+        std::string to_string() const;
+        void to_string(std::string& target) const;
+
+        friend bool operator==(const SpdxApplicableLicenseExpression& lhs,
+                               const SpdxApplicableLicenseExpression& rhs) noexcept;
+        friend bool operator!=(const SpdxApplicableLicenseExpression& lhs,
+                               const SpdxApplicableLicenseExpression& rhs) noexcept;
+        friend bool operator<(const SpdxApplicableLicenseExpression& lhs,
+                              const SpdxApplicableLicenseExpression& rhs) noexcept;
+        friend bool operator<=(const SpdxApplicableLicenseExpression& lhs,
+                               const SpdxApplicableLicenseExpression& rhs) noexcept;
+        friend bool operator>(const SpdxApplicableLicenseExpression& lhs,
+                              const SpdxApplicableLicenseExpression& rhs) noexcept;
+        friend bool operator>=(const SpdxApplicableLicenseExpression& lhs,
+                               const SpdxApplicableLicenseExpression& rhs) noexcept;
+    };
+
     struct ParsedSpdxLicenseDeclaration
     {
         ParsedSpdxLicenseDeclaration();
         ParsedSpdxLicenseDeclaration(NullTag);
-        ParsedSpdxLicenseDeclaration(std::string&& license_text, std::vector<std::string>&& applicable_licenses);
+        ParsedSpdxLicenseDeclaration(std::string&& license_text,
+                                     std::vector<SpdxApplicableLicenseExpression>&& applicable_licenses);
 
         ParsedSpdxLicenseDeclaration(const ParsedSpdxLicenseDeclaration&) = default;
         ParsedSpdxLicenseDeclaration(ParsedSpdxLicenseDeclaration&&) = default;
@@ -115,14 +138,17 @@ namespace vcpkg
         friend bool operator!=(const ParsedSpdxLicenseDeclaration& lhs,
                                const ParsedSpdxLicenseDeclaration& rhs) noexcept;
 
-        ParsedSpdxLicenseDeclarationKind kind() const noexcept { return m_kind; }
+        SpdxLicenseDeclarationKind kind() const noexcept { return m_kind; }
         const std::string& license_text() const noexcept { return m_license_text; }
-        const std::vector<std::string>& applicable_licenses() const noexcept { return m_applicable_licenses; }
+        const std::vector<SpdxApplicableLicenseExpression>& applicable_licenses() const noexcept
+        {
+            return m_applicable_licenses;
+        }
 
     private:
-        ParsedSpdxLicenseDeclarationKind m_kind;
+        SpdxLicenseDeclarationKind m_kind;
         std::string m_license_text;
-        std::vector<std::string> m_applicable_licenses;
+        std::vector<SpdxApplicableLicenseExpression> m_applicable_licenses;
     };
 
     /// <summary>

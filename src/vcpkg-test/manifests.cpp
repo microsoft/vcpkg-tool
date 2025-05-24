@@ -1315,6 +1315,25 @@ TEST_CASE ("license serialization", "[manifests][license]")
     CHECK(test_serialized_license("uNkNoWnLiCeNsE") == "uNkNoWnLiCeNsE");
 }
 
+TEST_CASE ("license-list-extraction", "[manifests]")
+{
+    ParseMessages messages;
+    const auto mit = parse_spdx_license_expression("MIT", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit.license_text() == "MIT");
+    REQUIRE(mit.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto mit_and_boost = parse_spdx_license_expression("MIT AND BSL-1.0", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit_and_boost.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit_and_boost.license_text() == "MIT AND BSL-1.0");
+    REQUIRE(mit_and_boost.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                                                         SpdxApplicableLicenseExpression{"MIT", false}});
+}
+
 TEST_CASE ("license error messages", "[manifests][license]")
 {
     ParseMessages messages;
@@ -1343,6 +1362,12 @@ TEST_CASE ("license error messages", "[manifests][license]")
           LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
+
+    parse_spdx_license_expression("MIT MIT", messages);
+    CHECK(messages.join() ==
+          LocalizedString::from_raw(R"(<license string>: error: Expected either AND, OR, or WITH, found a license or exception name: 'MIT'.
+  on expression: MIT MIT
+                     ^)"));
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.any_errors());

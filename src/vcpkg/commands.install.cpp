@@ -616,17 +616,35 @@ namespace vcpkg
             {
                 if (auto scfl = action.source_control_file_and_location.get())
                 {
-                    auto& license = scfl->source_control_file->core_paragraph->license;
+                    const auto& scf = *scfl->source_control_file;
+                    auto& license = scf.core_paragraph->license;
                     switch (license.kind())
                     {
-                        case ParsedSpdxLicenseDeclarationKind::NotPresent:
-                        case ParsedSpdxLicenseDeclarationKind::Null:
+                        case SpdxLicenseDeclarationKind::NotPresent:
+                        case SpdxLicenseDeclarationKind::Null:
                             summary.license_report.any_unknown_licenses = true;
                             break;
-                        case ParsedSpdxLicenseDeclarationKind::String:
-                            summary.license_report.named_licenses.insert(license.license_text());
+                        case SpdxLicenseDeclarationKind::String:
+                            for (auto&& applicable_license : license.applicable_licenses())
+                            {
+                                summary.license_report.named_licenses.insert(applicable_license.to_string());
+                            }
                             break;
                         default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
+                    for (const auto& feature_name : action.feature_list)
+                    {
+                        if (feature_name == FeatureNameCore)
+                        {
+                            continue;
+                        }
+
+                        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
+                        for (auto&& applicable_license : feature.license.applicable_licenses())
+                        {
+                            summary.license_report.named_licenses.insert(applicable_license.to_string());
+                        }
                     }
                 }
             }

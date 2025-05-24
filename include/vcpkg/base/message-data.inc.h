@@ -2089,7 +2089,6 @@ DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundCompound,
                 "Example of {value} is 'AND'",
                 "Expected a license name, found the compound {value}.")
 DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundEof, (), "", "Expected a license name, found the end of the string.")
-DECLARE_MESSAGE(LicenseExpressionExpectLicenseFoundParen, (), "", "Expected a license name, found a parenthesis.")
 DECLARE_MESSAGE(LicenseExpressionImbalancedParens,
                 (),
                 "",

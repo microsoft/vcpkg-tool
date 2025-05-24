@@ -47,10 +47,29 @@ namespace vcpkg
             auto maybe_spdx_content = fs.try_read_contents(spdx_file);
             if (auto spdx_content = maybe_spdx_content.get())
             {
-                auto maybe_parsed_license = read_spdx_license(spdx_content->content, spdx_content->origin);
-                if (auto parsed_license = maybe_parsed_license.get())
+                auto maybe_license_text = read_spdx_license_text(spdx_content->content, spdx_content->origin);
+                if (auto license_text = maybe_license_text.get())
                 {
-                    report.named_licenses.insert(*parsed_license);
+                    ParseMessages pm;
+                    auto parsed = parse_spdx_license_expression(*license_text, pm);
+                    pm.print_errors_or_warnings();
+                    if (pm.any_errors())
+                    {
+                        report.any_unknown_licenses = true;
+                    }
+
+                    for (auto&& applicable_license : parsed.applicable_licenses())
+                    {
+                        if (applicable_license.license_text == SpdxLicenseRefVcpkgNull)
+                        {
+                            report.any_unknown_licenses = true;
+                        }
+                        else
+                        {
+                            report.named_licenses.insert(applicable_license.to_string());
+                        }
+                    }
+
                     continue;
                 }
             }

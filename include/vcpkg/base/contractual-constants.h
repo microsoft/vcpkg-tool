@@ -139,6 +139,7 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
     inline constexpr StringLiteral SpdxLicenseDeclared = "licenseDeclared";
+    inline constexpr StringLiteral SpdxLicenseRefVcpkgNull = "LicenseRef-vcpkg-null";
     inline constexpr StringLiteral SpdxNoAssertion = "NOASSERTION";
     inline constexpr StringLiteral SpdxNone = "NONE";
     inline constexpr StringLiteral SpdxPackageFileName = "packageFileName";

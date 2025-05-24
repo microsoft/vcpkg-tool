@@ -515,7 +515,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
 
-    CHECK(read_spdx_license(expected_text, "test") == "MIT");
+    CHECK(read_spdx_license_text(expected_text, "test") == "MIT");
 }
 
 TEST_CASE ("spdx minimum serialization", "[spdx]")
@@ -645,7 +645,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     auto expected = Json::parse(expected_text, "test").value(VCPKG_LINE_INFO);
     auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
-    CHECK(!read_spdx_license(expected_text, "test").has_value());
+    CHECK(!read_spdx_license_text(expected_text, "test").has_value());
 }
 
 TEST_CASE ("spdx concat resources", "[spdx]")
@@ -754,7 +754,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 
 TEST_CASE ("spdx license parse edge cases", "[spdx]")
 {
-    CHECK(!read_spdx_license("this is not json", "test").has_value());
+    CHECK(!read_spdx_license_text("this is not json", "test").has_value());
 
     static constexpr StringLiteral missing_packages = R"json(
 {
@@ -835,7 +835,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(missing_packages, "test").has_value());
+    CHECK(!read_spdx_license_text(missing_packages, "test").has_value());
 
     static constexpr StringLiteral empty_packages = R"json(
 {
@@ -917,7 +917,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(empty_packages, "test").has_value());
+    CHECK(!read_spdx_license_text(empty_packages, "test").has_value());
 
     static constexpr StringLiteral wrong_packages_type = R"json(
 {
@@ -999,7 +999,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(wrong_packages_type, "test").has_value());
+    CHECK(!read_spdx_license_text(wrong_packages_type, "test").has_value());
 
     static constexpr StringLiteral wrong_packages_zero_type = R"json(
 {
@@ -1081,7 +1081,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(wrong_packages_zero_type, "test").has_value());
+    CHECK(!read_spdx_license_text(wrong_packages_zero_type, "test").has_value());
 
     static constexpr StringLiteral missing_license_block = R"json(
 {
@@ -1172,7 +1172,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(missing_license_block, "test").has_value());
+    CHECK(!read_spdx_license_text(missing_license_block, "test").has_value());
 
     static constexpr StringLiteral wrong_license_type = R"json(
 {
@@ -1265,7 +1265,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(wrong_license_type, "test").has_value());
+    CHECK(!read_spdx_license_text(wrong_license_type, "test").has_value());
 
     static constexpr StringLiteral empty_license = R"json(
 {
@@ -1368,5 +1368,5 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   ]
 })json";
 
-    CHECK(!read_spdx_license(empty_license, "test").has_value());
+    CHECK(!read_spdx_license_text(empty_license, "test").has_value());
 }

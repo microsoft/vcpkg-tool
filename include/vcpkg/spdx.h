@@ -34,7 +34,9 @@ namespace vcpkg
                                  std::string document_namespace,
                                  std::vector<Json::Object>&& resource_docs);
 
-    Optional<std::string> read_spdx_license(StringView text, StringView origin);
+    std::string calculate_spdx_license(const InstallPlanAction& action);
+
+    Optional<std::string> read_spdx_license_text(StringView text, StringView origin);
 
     Json::Object run_resource_heuristics(StringView contents, StringView version_text);
 }
