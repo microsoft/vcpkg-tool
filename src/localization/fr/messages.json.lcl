@@ -930,12 +930,12 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
+          <Val><![CDATA[No action taken because all installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Tous les packages installés sont à jour.]]></Val>
+            <Val><![CDATA[Aucune action n’a été effectuée, car l’ensemble des packages installés sont à jour.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+            <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -954,15 +954,6 @@
           <Val><![CDATA[{spec} is already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} est déjà installé]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} est déjà installé - ne pas générer à partir de HEAD]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5737,14 +5728,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
+          <Val><![CDATA[failed to parse configuration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Échec de l'analyse de la configuration : {path}]]></Val>
+            <Val><![CDATA[nous n’avons pas pu analyser la configuration]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+            <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5772,15 +5763,6 @@
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[vérification de l’intégrité]5D; Échec de l’analyse d’un paragraphe binaire sérialisé.]A;Ouvrez un problème à https://github.com/microsoft/vcpkg, avec la sortie suivante :]A;{error_msg}]A;paragraphe binaire sérialisé :]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Échec de l’analyse du fichier de version : {chemin}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5904,6 +5886,15 @@
           <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Lorsque vous utilisez « = fail », aucune liste de fonctionnalités n’est autorisée.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForPass" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= pass' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Lorsque vous utilisez '= pass', aucune liste de fonctionnalités n’est autorisée.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7254,6 +7245,15 @@
           <Val><![CDATA[The following packages are already installed:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Les packages suivants sont déjà installés :]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstalledPackagesHead" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les packages suivants sont déjà installés, mais ont été demandés en version --head. Leur contenu installé ne sera pas modifié. Si vous souhaitez obtenir les versions mises à jour, supprimez d’abord ces packages :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10537,6 +10537,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TotalInstallTimeSuccess" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All requested installations completed successfully in: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Toutes les installations demandées se sont correctement terminées en : {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TrailingCommaInArray" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Trailing comma in array]]></Val>
@@ -11026,15 +11035,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{feature_spec} a entraîné l’état inattendu {actual} après {elapsed}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:]]></Val>
@@ -11044,6 +11044,132 @@
           <Prev Cat="Text">
             <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascadePortNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this to =cascade instead]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[envisagez de remplacer ceci par =cascade à la place]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[la build de {feature_spec} a échoué, alors qu’elle était censée être un échec en cascade]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[envisagez d’ajouter `{package_name}=fail`, ou `{spec}=fail`, ou des sauts équivalents]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPortOrCombination" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or by marking mutually exclusive features as options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[envisagez d’ajouter `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, ou des sauts équivalents, ou en marquant les fonctionnalités qui s’excluent mutuellement comme options]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteFeatureMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[envisagez de remplacer `=cascade` par `=feature-fails` et/ou un ou plusieurs `=combination-fails`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteMoreFeaturesRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]5D;=options` to include 'required-feature' in all tests]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[si certaines fonctionnalités sont nécessaires, envisagez d’activer systématiquement ces parties dans portfile.cmake pour {package_name}, ou envisagez d’ajouter `{package_name}[required-feature]5D;=options` pour inclure 'required-feature' dans tous les tests]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNotePortMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=fail`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[envisagez de remplace ce `=cascade` par `=fail`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateCombinationFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} succeeds when built with other features but not alone, consider adding `{feature_spec}=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[si {feature} réussit lors d’une construction avec d’autres fonctionnalités mais pas seule, envisagez d’ajouter `{feature_spec}=combination-fails`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateFeatureFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this test as failing, and remove {feature} from combined feature testing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[si {feature} échoue toujours, envisagez d’ajouter `{feature_spec}=feature-fails`, ce qui marque ce test comme ayant échoué et supprime {feature} des tests de fonctionnalités combinés]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to pass]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[la build de {feature_spec} a échoué, alors qu’elle était censée réussir]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} a réussi, mais {feature} a été marquée comme devant être un échec en cascade]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} a réussi, mais {feature} a été marquée comme devant échouer]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} a réussi, mais a été marquée comme devant être un échec en cascade]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} a réussi, mais a été marquée comme devant échouer]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -12168,15 +12294,6 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[en attente du verrouillage du système de fichiers sur {path}...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[J'ai trouvé les avertissements suivants dans la configuration {path} :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
