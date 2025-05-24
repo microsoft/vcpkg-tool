@@ -16,23 +16,23 @@ namespace vcpkg
                            const Unicode::Utf8Decoder& it,
                            const Unicode::Utf8Decoder& start_of_line);
 
-    void append_caret_line(LocalizedString& res, const SourceLoc& loc);
-
-    struct ParseMessage
-    {
-        SourceLoc location = {};
-        LocalizedString message;
-
-        LocalizedString format(StringView origin, MessageKind kind) const;
-    };
-
     struct ParseMessages
     {
-        Optional<LocalizedString> error;
-        std::vector<ParseMessage> warnings;
+        void exit_if_errors_or_warnings() const;
+        bool good() const noexcept { return m_good; }
+        bool any_errors() const noexcept { return m_error_count != 0; }
+        size_t error_count() const noexcept { return m_error_count; }
 
-        void exit_if_errors_or_warnings(StringView origin) const;
-        bool good() const { return !error && warnings.empty(); }
+        const std::vector<DiagnosticLine>& lines() const noexcept { return m_lines; }
+
+        void add_line(DiagnosticLine&& line);
+
+        LocalizedString join() const;
+
+    private:
+        std::vector<DiagnosticLine> m_lines;
+        bool m_good = true;
+        size_t m_error_count = 0;
     };
 
     struct ParserBase
@@ -95,26 +95,20 @@ namespace vcpkg
         char32_t next();
         bool at_eof() const { return m_it == m_it.end(); }
 
-        std::string format_file_prefix(int row, int column) const;
-
-    private:
-        LocalizedString& create_error_impl(LocalizedString&& message, const SourceLoc& loc);
-
-    public:
         void add_error(LocalizedString&& message);
         void add_error(LocalizedString&& message, const SourceLoc& loc);
-        void add_error(LocalizedString&& message, const SourceLoc& loc, const LocalizedString& additional_info);
 
         void add_warning(LocalizedString&& message);
         void add_warning(LocalizedString&& message, const SourceLoc& loc);
 
-        const LocalizedString* get_error() const& { return m_messages.error.get(); }
-        LocalizedString* get_error() && { return m_messages.error.get(); }
+        void add_note(LocalizedString&& message, const SourceLoc& loc);
 
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages&& extract_messages() { return std::move(m_messages); }
 
     private:
+        void add_line(DiagKind kind, LocalizedString&& message, const SourceLoc& loc);
+
         Unicode::Utf8Decoder m_it;
         Unicode::Utf8Decoder m_start_of_line;
         int m_row;

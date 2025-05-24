@@ -163,27 +163,28 @@ namespace vcpkg
 
     DiagnosticLine DiagnosticLine::reduce_to_warning() const&
     {
-        return DiagnosticLine{m_kind == DiagKind::Error ? DiagKind::Warning : m_kind, m_origin, m_position, m_message};
+        return DiagnosticLine{
+            InternalTag{}, m_kind == DiagKind::Error ? DiagKind::Warning : m_kind, m_origin, m_position, m_message};
     }
     DiagnosticLine DiagnosticLine::reduce_to_warning() &&
     {
-        return DiagnosticLine{m_kind == DiagKind::Error ? DiagKind::Warning : m_kind,
+        return DiagnosticLine{InternalTag{},
+                              m_kind == DiagKind::Error ? DiagKind::Warning : m_kind,
                               std::move(m_origin),
                               m_position,
                               std::move(m_message)};
     }
 
-    DiagnosticLine::DiagnosticLine(DiagKind kind,
+    DiagnosticLine::DiagnosticLine(InternalTag,
+                                   DiagKind kind,
                                    const Optional<std::string>& origin,
                                    TextRowCol position,
                                    const LocalizedString& message)
         : m_kind(kind), m_origin(origin), m_position(position), m_message(message)
     {
     }
-    DiagnosticLine::DiagnosticLine(DiagKind kind,
-                                   Optional<std::string>&& origin,
-                                   TextRowCol position,
-                                   LocalizedString&& message)
+    DiagnosticLine::DiagnosticLine(
+        InternalTag, DiagKind kind, Optional<std::string>&& origin, TextRowCol position, LocalizedString&& message)
         : m_kind(kind), m_origin(std::move(origin)), m_position(position), m_message(std::move(message))
     {
     }

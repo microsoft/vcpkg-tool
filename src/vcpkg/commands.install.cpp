@@ -330,10 +330,6 @@ namespace vcpkg
         const InstallPlanType& plan_type = action.plan_type;
         if (plan_type == InstallPlanType::ALREADY_INSTALLED)
         {
-            if (action.use_head_version == UseHeadVersion::Yes)
-                msg::println(Color::warning, msgAlreadyInstalledNotHead, msg::spec = action.spec);
-            else
-                msg::println(Color::success, msgAlreadyInstalled, msg::spec = action.spec);
             return ExtendedBuildResult{BuildResult::Succeeded};
         }
 
@@ -438,7 +434,7 @@ namespace vcpkg
             .append_raw(result.timing.to_string());
     }
 
-    LocalizedString InstallSummary::format() const
+    LocalizedString InstallSummary::format_results() const
     {
         LocalizedString to_print;
         to_print.append(msgResultsHeader).append_raw('\n');
@@ -478,26 +474,16 @@ namespace vcpkg
         msg::print(output);
     }
 
-    bool InstallSummary::failed() const
+    void InstallSummary::print_complete_message() const
     {
-        for (const auto& result : this->results)
+        if (failed)
         {
-            switch (result.build_result.value_or_exit(VCPKG_LINE_INFO).code)
-            {
-                case BuildResult::Succeeded:
-                case BuildResult::Removed:
-                case BuildResult::Downloaded:
-                case BuildResult::Excluded: continue;
-                case BuildResult::BuildFailed:
-                case BuildResult::PostBuildChecksFailed:
-                case BuildResult::FileConflicts:
-                case BuildResult::CascadedDueToMissingDependencies:
-                case BuildResult::CacheMissing: return true;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
+            msg::println(msgTotalInstallTime, msg::elapsed = elapsed);
         }
-
-        return false;
+        else
+        {
+            msg::println(Color::success, msgTotalInstallTimeSuccess, msg::elapsed = elapsed);
+        }
     }
 
     struct TrackedPackageInstallGuard
@@ -580,29 +566,29 @@ namespace vcpkg
                                         const IBuildLogsRecorder& build_logs_recorder,
                                         bool include_manifest_in_github_issue)
     {
-        const ElapsedTimer timer;
-        std::vector<SpecSummary> results;
+        ElapsedTimer timer;
+        InstallSummary summary;
         const size_t action_count = action_plan.remove_actions.size() + action_plan.install_actions.size();
         size_t action_index = 1;
 
         auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, summary.results, action);
             remove_package(fs, paths.installed(), action.spec, status_db);
-            results.back().build_result.emplace(BuildResult::Removed);
+            summary.results.back().build_result.emplace(BuildResult::Removed);
         }
 
         for (auto&& action : action_plan.already_installed)
         {
-            results.emplace_back(action).build_result.emplace(perform_install_plan_action(
+            summary.results.emplace_back(action).build_result.emplace(perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
         }
 
         for (auto&& action : action_plan.install_actions)
         {
             binary_cache.print_updates();
-            TrackedPackageInstallGuard this_install(action_index++, action_count, results, action);
+            TrackedPackageInstallGuard this_install(action_index++, action_count, summary.results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
             if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
@@ -625,11 +611,25 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
+            switch (result.code)
+            {
+                case BuildResult::Succeeded:
+                case BuildResult::Removed:
+                case BuildResult::Downloaded:
+                case BuildResult::Excluded: break;
+                case BuildResult::BuildFailed:
+                case BuildResult::PostBuildChecksFailed:
+                case BuildResult::FileConflicts:
+                case BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::CacheMissing: summary.failed = true; break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
             this_install.current_summary.build_result.emplace(std::move(result));
         }
 
         database_load_collapse(fs, paths.installed());
-        return InstallSummary{std::move(results), timer.elapsed()};
+        summary.elapsed = timer.elapsed();
+        return summary;
     }
 
     static constexpr CommandSwitch INSTALL_SWITCHES[] = {
@@ -1384,7 +1384,7 @@ namespace vcpkg
         // success.
         if (keep_going == KeepGoing::Yes)
         {
-            msg::print(summary.format());
+            msg::print(summary.format_results());
         }
 
         auto it_xunit = options.settings.find(SwitchXXUnit);
@@ -1419,7 +1419,8 @@ namespace vcpkg
             }
         }
         binary_cache.wait_for_async_complete_and_join();
-        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed());
+        summary.print_complete_message();
+        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed);
     }
 
     SpecSummary::SpecSummary(const InstallPlanAction& action)

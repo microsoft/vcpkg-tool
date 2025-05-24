@@ -1019,14 +1019,14 @@ namespace vcpkg
             auto parser = SpdxLicenseExpressionParser(sv, r.origin());
             auto res = parser.parse();
 
-            for (const auto& warning : parser.messages().warnings)
+            for (auto&& line : parser.messages().lines())
             {
-                r.add_warning(type_name(), warning.format("", MessageKind::Warning));
-            }
-            if (auto err = parser.get_error())
-            {
-                r.add_generic_error(type_name(), LocalizedString::from_raw(err->to_string()));
-                return std::string();
+                switch (line.kind())
+                {
+                    case DiagKind::Error: r.add_generic_error(type_name(), line.message_text()); return std::string();
+                    case DiagKind::Warning: r.add_warning(type_name(), line.message_text()); break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
             }
 
             return res;
@@ -1108,7 +1108,8 @@ namespace vcpkg
                 }
                 if (!Json::IdentifierDeserializer::is_ident(pr.first))
                 {
-                    r.add_generic_error(type_name(), msg::format(msgInvalidFeature));
+                    r.add_field_name_error(
+                        FeatureDeserializer::instance.type_name(), pr.first, msg::format(msgInvalidFeature));
                     continue;
                 }
                 std::unique_ptr<FeatureParagraph> v;
@@ -1341,31 +1342,41 @@ namespace vcpkg
         Json::Reader reader(origin);
         auto res = ManifestConfigurationDeserializer::instance.visit(reader, manifest);
 
-        if (!reader.warnings().empty())
+        bool print_docs_notes = false;
+        LocalizedString result_error;
+        for (auto&& line : reader.messages().lines())
         {
-            warningsSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
-            for (auto&& warning : reader.warnings())
+            if (line.kind() == DiagKind::Error)
             {
-                warningsSink.println(Color::warning, LocalizedString::from_raw(warning));
+                if (!result_error.empty())
+                {
+                    result_error.append_raw('\n');
+                }
+
+                result_error.append_raw(result_error.to_string());
             }
-            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            warningsSink.println(Color::warning, msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            else
+            {
+                line.print_to(warningsSink);
+                print_docs_notes = true;
+            }
         }
 
-        if (!reader.errors().empty())
+        if (print_docs_notes)
         {
-            LocalizedString ret;
-            ret.append(msgFailedToParseConfig, msg::path = origin);
-            ret.append_raw('\n');
-            for (auto&& err : reader.errors())
-            {
-                ret.append_indent().append(err).append_raw("\n");
-            }
-            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-            ret.append_raw('\n');
-            ret.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
-            ret.append_raw('\n');
-            return std::move(ret);
+            DiagnosticLine{DiagKind::Note, msg::format(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url)}
+                .print_to(warningsSink);
+            DiagnosticLine{DiagKind::Note, msg::format(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)}
+                .print_to(warningsSink);
+        }
+
+        if (!result_error.empty())
+        {
+            result_error.append_raw('\n').append(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
+            result_error.append_raw('\n');
+            result_error.append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url);
+            result_error.append_raw('\n');
+            return std::move(result_error);
         }
 
         return std::move(res).value_or_exit(VCPKG_LINE_INFO);
@@ -1393,40 +1404,35 @@ namespace vcpkg
 
         auto res = ManifestDeserializerType::instance.visit(reader, manifest);
 
-        for (auto&& w : reader.warnings())
+        LocalizedString result_error;
+        for (auto&& line : reader.messages().lines())
         {
-            warnings_sink.println(Color::warning, w);
-        }
-
-        switch (reader.errors().size())
-        {
-            case 0:
-                if (auto p = res.get())
-                {
-                    return std::move(*p);
-                }
-                else
-                {
-                    Checks::unreachable(VCPKG_LINE_INFO);
-                }
-            case 1: return reader.errors()[0];
-            default:
+            if (line.kind() == DiagKind::Error)
             {
-                LocalizedString result;
-                auto first = reader.errors().begin();
-                const auto last = reader.errors().end();
-                for (;;)
+                if (!result_error.empty())
                 {
-                    result.append(*first);
-                    if (++first == last)
-                    {
-                        return result;
-                    }
-
-                    result.append_raw('\n');
+                    result_error.append_raw('\n');
                 }
+
+                result_error.append_raw(line.to_string());
+            }
+            else
+            {
+                line.print_to(warnings_sink);
             }
         }
+
+        if (result_error.empty())
+        {
+            if (auto p = res.get())
+            {
+                return std::move(*p);
+            }
+
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        return result_error;
     }
 
     ExpectedL<std::unique_ptr<SourceControlFile>> SourceControlFile::parse_project_manifest_object(

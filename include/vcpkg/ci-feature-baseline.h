@@ -21,9 +21,20 @@ namespace vcpkg
         Pass,
     };
 
+    enum class CiFeatureBaselineOutcome
+    {
+        ImplicitPass,
+        ExplicitPass,
+        PortMarkedFail,
+        PortMarkedCascade,
+        FeatureFail,
+        FeatureCascade,
+        ConfigurationFail,
+    };
+
     struct CiFeatureBaselineEntry
     {
-        CiFeatureBaselineState state = CiFeatureBaselineState::Pass;
+        Optional<Located<CiFeatureBaselineState>> state;
         std::set<Located<std::string>, LocatedStringLess> skip_features;
         std::set<Located<std::string>, LocatedStringLess> no_separate_feature_test;
         std::set<Located<std::string>, LocatedStringLess> cascade_features;
@@ -31,13 +42,15 @@ namespace vcpkg
         std::vector<Located<std::vector<std::string>>> fail_configurations;
         // A list of sets of features of which exactly one must be selected
         std::vector<Located<std::vector<std::string>>> options;
-        bool will_fail(const InternalFeatureSet& internal_feature_set) const;
     };
+
+    Located<CiFeatureBaselineOutcome> expected_outcome(const CiFeatureBaselineEntry* baseline,
+                                                       const InternalFeatureSet& spec_features);
 
     struct CiFeatureBaseline
     {
         std::unordered_map<std::string, CiFeatureBaselineEntry> ports;
-        const CiFeatureBaselineEntry& get_port(const std::string& port_name) const;
+        const CiFeatureBaselineEntry* get_port(const std::string& port_name) const;
     };
 
     StringLiteral to_string_literal(CiFeatureBaselineState state);

@@ -258,9 +258,9 @@ namespace vcpkg
             }
         }
 
-        if (auto e = parser.get_error())
+        if (parser.messages().any_errors())
         {
-            return LocalizedString::from_raw(e->to_string());
+            return parser.messages().join();
         }
 
         return std::move(maybe_pqs).value_or_exit(VCPKG_LINE_INFO);

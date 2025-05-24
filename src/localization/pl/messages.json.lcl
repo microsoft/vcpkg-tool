@@ -810,10 +810,13 @@
       </Item>
       <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexicographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Format wersji „{package_name}” używa ciągu „version-string”, ale format jest dopuszczalny jako „version”. Jeśli wersje tego portu można uporządkować przy użyciu reguł swobodnej wersji, zmień format na „version” i uruchom ponownie to polecenie. Reguły swobodnej wersji porządkują wersje według każdego składnika liczbowego. Następnie wersje z przyrostkami w postaci myślnika są sortowane leksekograficznie wcześniej. Tagi kompilacji Plus'd są ignorowane. Przykłady:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Zwróć uwagę na to, że przyrostki w postaci myślnika sortuje się *przed*, a nie po. 1.0-anything < 1.0]A;Należy pamiętać, że ta kolejność sortowania jest taka sama jak wybrana w semantycznym przechowywaniu wersji (zobacz https://semver.org), mimo że faktycznie części semantyczne nie mają zastosowania.]A;Jeśli wersje dla tego portu nie są uporządkowane według tych reguł, wyłącz to sprawdzenie, uruchamiając ponownie to polecenie i dodając polecenie --skip-version-format-check.]]></Val>
+            <Val><![CDATA[Format wersji „{package_name}” używa ciągu „version-string”, ale format jest dopuszczalny jako „version”. Jeśli wersje tego portu można uporządkować przy użyciu reguł swobodnej wersji, zmień format na „version” i uruchom ponownie to polecenie. Reguły swobodnej wersji porządkują wersje według każdego składnika liczbowego. Następnie wersje z przyrostkami w postaci łącznika są sortowane leksykograficznie. Tagi kompilacji Plus'd są ignorowane. Przykłady:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Zwróć uwagę na to, że przyrostki w postaci myślnika sortuje się *przed*, a nie po. 1.0-anything < 1.0]A;Należy pamiętać, że ta kolejność sortowania jest taka sama jak wybrana w semantycznym przechowywaniu wersji (zobacz https://semver.org), mimo że faktycznie części semantyczne nie mają zastosowania.]A;Jeśli wersje dla tego portu nie są uporządkowane według tych reguł, wyłącz to sprawdzenie, uruchamiając ponownie to polecenie i dodając polecenie --skip-version-format-check.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -934,6 +937,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AllShasValid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All checked sha's are valid.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wszystkie zaznaczone funkcje agenta kondycji systemu są prawidłowe.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2014,6 +2026,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CISettingsOptKnownFailuresFrom" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the file of known package build failures]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ścieżka do pliku znanych błędów kompilacji pakietu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CISettingsOptOutputHashes" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[File to output all determined package hashes]]></Val>
@@ -2559,6 +2580,33 @@
           <Val><![CDATA[Tests whether a port is supported without building it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Sprawdza, czy port jest obsługiwany bez kompilowania go]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchFix" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixes the sha entry in the given file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Naprawia wpis agenta kondycji systemu w danym pliku]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchOnlyWithName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only check entries with the given name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sprawdź tylko wpisy o podanej nazwie]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sprawdza wpisy szyfru SHA-512 w pliku danych narzędzi, pobierając wszystkie wpisy i obliczając skróty]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4645,6 +4693,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingTools" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {count} tools]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pobieranie {count} narzędzi]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading {url} -> {path}]]></Val>
@@ -5287,15 +5344,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExpectedFailSkipOrPass" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[oczekiwano tutaj instrukcji „fail”, „skip” lub „pass”]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureBaselineState" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails', or 'combination-fails' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[oczekiwano wartości „fail”, „skip”, „pass”, „cascade”, „no-separate-feature-test”, „options”, „feature-fails” lub „combination-fails”]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5808,10 +5871,13 @@
       </Item>
       <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Val><![CDATA['{feature}' was already declared as '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Funkcja „{feature}” została już zadeklarowana jako „{value}”.]]></Val>
+            <Val><![CDATA[Funkcja „{feature}” została już zadeklarowana jako wartość „{value}”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5838,6 +5904,15 @@
           <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[W przypadku używania elementu „= fail” nie jest dozwolona lista funkcji.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureTestProblems" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are some feature test problems!]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Wystąpiły pewne problemy z testem funkcji.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6004,6 +6079,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FixedEntriesInFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixed {count} entries in {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Usunięto następującą liczbę wpisów: {count} w ścieżce {path}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FloatingPointConstTooBig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Floating point constant too big: {count}]]></Val>
@@ -6097,20 +6181,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Źródło binarne GHA wymaga ustawienia zmiennych środowiskowych ACTIONS_RUNTIME_TOKEN i ACTIONS_CACHE_URL. Aby uzyskać szczegółowe informacje, zobacz {url}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Użyj polecenia „--debug”, aby uzyskać więcej informacji o błędach analizy.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GhaBinaryCacheDeprecated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching provider instead, see extended documentation at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Usunięto binarne zaplecze buforowania „x-png”. Zastanów się nad użyciem dostawcy buforowania plików binarnych opartego na bibliotece NuGet. Więcej informacji znajdziesz w rozszerzonej dokumentacji pod adresem {url}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7525,15 +7609,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[nieprawidłowy argument: konfiguracja binarna „{binary_source}” wymaga argumentu 0 lub 1]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";InvalidArtifactId$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid artifact id '${p0}']]></Val>
@@ -8607,6 +8682,15 @@
           <Val><![CDATA['core' is not allowed in the list of features if the entry is of type '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Element „core” jest niedozwolony na liście funkcji, jeśli wpis jest typu „{value}”]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NoEntryWithName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No entry found with name '{value}' and a url.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nie znaleziono wpisu o nazwie „{value}” i adresie URL.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9823,6 +9907,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PreviousDeclarationWasHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[previous declaration was here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[tutaj była poprzednia deklaracja]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -10023,15 +10116,6 @@
           <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Przywrócono następującą liczbę pakietów: {count} z GCS w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Przywrócono następującą liczbę pakietów: {count} z pamięci podręcznej funkcji GitHub Actions w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10953,10 +11037,13 @@
       </Item>
       <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Val><![CDATA[{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Element {feature_spec} spowodował nieoczekiwany stan {actual}, ponieważ następujące zależności nie zostały skompilowane:]]></Val>
+            <Val><![CDATA[Funkcja {feature_spec} nieoczekiwanie zakończyła się niepowodzeniem kaskadowym, ponieważ następujące zależności są niedostępne:]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
