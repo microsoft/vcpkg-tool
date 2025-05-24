@@ -975,12 +975,6 @@ namespace vcpkg
             return result;
         }
 
-        struct MatchResult
-        {
-            std::string license_text;
-            std::vector<SpdxApplicableLicenseExpression> applicable_licenses;
-        };
-
         enum class TryMatchOutcome
         {
             Failure,
@@ -988,15 +982,20 @@ namespace vcpkg
             SuccessMatchedWith
         };
 
-        TryMatchOutcome try_match_or_expression(MatchResult& result,
-                                                const std::vector<SpdxLicenseToken>& tokens,
+        struct TryMatchResult
+        {
+            TryMatchOutcome outcome;
+            std::string license_text;
+            std::vector<SpdxApplicableLicenseExpression> applicable_licenses;
+            bool needs_parens = false;
+        };
+
+        TryMatchResult try_match_or_expression(const std::vector<SpdxLicenseToken>& tokens,
+                                               std::vector<SpdxLicenseToken>::const_iterator& current_token);
+        TryMatchResult try_match_and_expression(const std::vector<SpdxLicenseToken>& tokens,
                                                 std::vector<SpdxLicenseToken>::const_iterator& current_token);
-        TryMatchOutcome try_match_and_expression(MatchResult& result,
-                                                 const std::vector<SpdxLicenseToken>& tokens,
+        TryMatchResult try_match_with_expression(const std::vector<SpdxLicenseToken>& tokens,
                                                  std::vector<SpdxLicenseToken>::const_iterator& current_token);
-        TryMatchOutcome try_match_with_expression(MatchResult& result,
-                                                  const std::vector<SpdxLicenseToken>& tokens,
-                                                  std::vector<SpdxLicenseToken>::const_iterator& current_token);
 
         ParsedSpdxLicenseDeclaration parse()
         {
@@ -1006,11 +1005,10 @@ namespace vcpkg
                 return {};
             }
 
-            MatchResult result;
             auto tokens = tokenize();
             auto current_token = tokens.begin();
-            auto match_outcome = try_match_or_expression(result, tokens, current_token);
-            if (match_outcome == TryMatchOutcome::Failure)
+            auto result = try_match_or_expression(tokens, current_token);
+            if (result.outcome == TryMatchOutcome::Failure)
             {
                 return {};
             }
@@ -1032,13 +1030,13 @@ namespace vcpkg
                 case SpdxLicenseTokenKind::ExceptionId:
                 case SpdxLicenseTokenKind::UnknownId:
                     // note that the 'empty' case got handled emitting msgEmptyLicenseExpression above
-                    if (match_outcome == TryMatchOutcome::Success)
+                    if (result.outcome == TryMatchOutcome::Success)
                     {
                         add_error(msg::format(msgLicenseExpressionExpectCompoundOrWithFoundWord,
                                               msg::value = current_token->text),
                                   current_token->loc);
                     }
-                    else if (match_outcome == TryMatchOutcome::SuccessMatchedWith)
+                    else if (result.outcome == TryMatchOutcome::SuccessMatchedWith)
                     {
                         add_error(
                             msg::format(msgLicenseExpressionExpectCompoundFoundWord, msg::value = current_token->text),
@@ -1067,61 +1065,60 @@ namespace vcpkg
         }
     };
 
-    static void append_with_text(std::string& target, StringView suffix)
-    {
-        target.append(" WITH ");
-        target.append(suffix.data(), suffix.size());
-    }
-
-    SpdxLicenseExpressionParser::TryMatchOutcome SpdxLicenseExpressionParser::try_match_with_expression(
-        MatchResult& result,
-        const std::vector<SpdxLicenseToken>& tokens,
-        std::vector<SpdxLicenseToken>::const_iterator& current_token)
+    SpdxLicenseExpressionParser::TryMatchResult SpdxLicenseExpressionParser::try_match_with_expression(
+        const std::vector<SpdxLicenseToken>& tokens, std::vector<SpdxLicenseToken>::const_iterator& current_token)
     {
         switch (current_token->kind)
         {
             case SpdxLicenseTokenKind::LParen:
+            {
                 ++current_token;
-                result.license_text.push_back('(');
-                if (try_match_or_expression(result, tokens, current_token) == TryMatchOutcome::Failure)
+                TryMatchResult inner_or_result = try_match_or_expression(tokens, current_token);
+                if (inner_or_result.outcome == TryMatchOutcome::Failure)
                 {
-                    return TryMatchOutcome::Failure;
+                    return inner_or_result;
                 }
 
                 if (current_token->kind != SpdxLicenseTokenKind::RParen)
                 {
                     add_error(msg::format(msgLicenseExpressionImbalancedParens), current_token->loc);
-                    return TryMatchOutcome::Failure;
+                    return {TryMatchOutcome::Failure};
                 }
 
                 ++current_token;
-                result.license_text.push_back(')');
-                return TryMatchOutcome::Success;
+                if (inner_or_result.needs_parens)
+                {
+                    inner_or_result.license_text.insert(0, 1, '(');
+                    inner_or_result.license_text.push_back(')');
+                    inner_or_result.needs_parens = false;
+                }
+
+                return inner_or_result;
+            }
             case SpdxLicenseTokenKind::RParen:
                 add_error(msg::format(msgLicenseExpressionImbalancedParens), current_token->loc);
-                return TryMatchOutcome::Failure;
+                return {TryMatchOutcome::Failure};
             case SpdxLicenseTokenKind::Plus:
                 add_error(msg::format(msgLicenseExpressionContainsExtraPlus), current_token->loc);
-                return TryMatchOutcome::Failure;
+                return {TryMatchOutcome::Failure};
             case SpdxLicenseTokenKind::And:
             case SpdxLicenseTokenKind::Or:
             case SpdxLicenseTokenKind::With:
                 add_error(msg::format(msgLicenseExpressionExpectLicenseFoundCompound, msg::value = current_token->text),
                           current_token->loc);
-                return TryMatchOutcome::Failure;
+                return {TryMatchOutcome::Failure};
             case SpdxLicenseTokenKind::ExceptionId:
             case SpdxLicenseTokenKind::UnknownId:
                 add_warning(msg::format(msgLicenseExpressionUnknownLicense, msg::value = current_token->text),
                             current_token->loc);
                 [[fallthrough]];
             case SpdxLicenseTokenKind::LicenseId:
-                result.license_text.append(current_token->text.data(), current_token->text.size());
-                result.applicable_licenses.push_back({current_token->text.to_string(), false});
+            {
+                TryMatchResult this_result{TryMatchOutcome::Success, current_token->text.to_string()};
                 ++current_token;
                 if (current_token->kind == SpdxLicenseTokenKind::Plus)
                 {
-                    result.license_text.push_back('+');
-                    result.applicable_licenses.back().license_text.push_back('+');
+                    this_result.license_text.push_back('+');
                     ++current_token;
                 }
 
@@ -1133,73 +1130,86 @@ namespace vcpkg
                         case SpdxLicenseTokenKind::LParen:
                         case SpdxLicenseTokenKind::RParen:
                             add_error(msg::format(msgLicenseExpressionExpectExceptionFoundParen), current_token->loc);
-                            return TryMatchOutcome::Failure;
+                            return {TryMatchOutcome::Failure};
                         case SpdxLicenseTokenKind::Plus:
                             add_error(msg::format(msgLicenseExpressionContainsExtraPlus), current_token->loc);
-                            return TryMatchOutcome::Failure;
+                            return {TryMatchOutcome::Failure};
                         case SpdxLicenseTokenKind::And:
                         case SpdxLicenseTokenKind::Or:
                         case SpdxLicenseTokenKind::With:
                             add_error(msg::format(msgLicenseExpressionExpectExceptionFoundCompound,
                                                   msg::value = current_token->text),
                                       current_token->loc);
-                            return TryMatchOutcome::Failure;
+                            return {TryMatchOutcome::Failure};
                         case SpdxLicenseTokenKind::LicenseId:
                         case SpdxLicenseTokenKind::UnknownId:
                             add_warning(
                                 msg::format(msgLicenseExpressionUnknownException, msg::value = current_token->text),
-                                current_token[2].loc);
+                                current_token->loc);
                             [[fallthrough]];
                         case SpdxLicenseTokenKind::ExceptionId:
-                            append_with_text(result.license_text, current_token->text);
-                            append_with_text(result.applicable_licenses.back().license_text, current_token->text);
+                            this_result.license_text.append(" WITH ");
+                            this_result.license_text.append(current_token->text.data(), current_token->text.size());
                             ++current_token;
-                            return TryMatchOutcome::SuccessMatchedWith;
+                            this_result.outcome = TryMatchOutcome::SuccessMatchedWith;
+                            break;
                         case SpdxLicenseTokenKind::End:
                             add_error(msg::format(msgLicenseExpressionExpectExceptionFoundEof), current_token->loc);
-                            return TryMatchOutcome::Failure;
+                            return {TryMatchOutcome::Failure};
                         default: Checks::unreachable(VCPKG_LINE_INFO);
                     }
                 }
 
-                return TryMatchOutcome::Success;
+                this_result.applicable_licenses.push_back({this_result.license_text, false});
+                return this_result;
+            }
             case SpdxLicenseTokenKind::End:
                 add_error(msg::format(msgLicenseExpressionExpectLicenseFoundEof), current_token->loc);
-                return TryMatchOutcome::Failure;
+                return {TryMatchOutcome::Failure};
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
-    SpdxLicenseExpressionParser::TryMatchOutcome SpdxLicenseExpressionParser::try_match_and_expression(
-        MatchResult& result,
-        const std::vector<SpdxLicenseToken>& tokens,
-        std::vector<SpdxLicenseToken>::const_iterator& current_token)
+    SpdxLicenseExpressionParser::TryMatchResult SpdxLicenseExpressionParser::try_match_and_expression(
+        const std::vector<SpdxLicenseToken>& tokens, std::vector<SpdxLicenseToken>::const_iterator& current_token)
     {
-        auto outcome = try_match_with_expression(result, tokens, current_token);
-        while (outcome != TryMatchOutcome::Failure && current_token->kind == SpdxLicenseTokenKind::And)
+        auto result = try_match_with_expression(tokens, current_token);
+        while (result.outcome != TryMatchOutcome::Failure && current_token->kind == SpdxLicenseTokenKind::And)
         {
-            result.license_text.append(" AND ");
             ++current_token;
-            outcome = try_match_with_expression(result, tokens, current_token);
+            auto result2 = try_match_with_expression(tokens, current_token);
+            result.outcome = result2.outcome;
+            result.license_text.append(" AND ");
+            result.license_text.append(result2.license_text);
+            Util::Vectors::append(result.applicable_licenses, std::move(result2.applicable_licenses));
         }
 
-        return outcome;
+        return result;
     }
 
-    SpdxLicenseExpressionParser::TryMatchOutcome SpdxLicenseExpressionParser::try_match_or_expression(
-        MatchResult& result,
-        const std::vector<SpdxLicenseToken>& tokens,
-        std::vector<SpdxLicenseToken>::const_iterator& current_token)
+    SpdxLicenseExpressionParser::TryMatchResult SpdxLicenseExpressionParser::try_match_or_expression(
+        const std::vector<SpdxLicenseToken>& tokens, std::vector<SpdxLicenseToken>::const_iterator& current_token)
     {
-        auto outcome = try_match_and_expression(result, tokens, current_token);
-        while (outcome != TryMatchOutcome::Failure && current_token->kind == SpdxLicenseTokenKind::Or)
+        auto result = try_match_and_expression(tokens, current_token);
+        if (result.outcome != TryMatchOutcome::Failure && current_token->kind == SpdxLicenseTokenKind::Or)
         {
-            result.license_text.append(" OR ");
-            ++current_token;
-            outcome = try_match_and_expression(result, tokens, current_token);
+            result.needs_parens = true;
+            result.applicable_licenses.clear();
+
+            do
+            {
+                ++current_token;
+                auto result2 = try_match_and_expression(tokens, current_token);
+                result.outcome = result2.outcome;
+                result.license_text.append(" OR ");
+                result.license_text.append(result2.license_text);
+            } while (result.outcome != TryMatchOutcome::Failure && current_token->kind == SpdxLicenseTokenKind::Or);
+
+            // the whole block of OR'd licenses gets smashed together
+            result.applicable_licenses.push_back(SpdxApplicableLicenseExpression{result.license_text, true});
         }
 
-        return outcome;
+        return result;
     }
 
     ParsedSpdxLicenseDeclaration parse_spdx_license_expression(StringView sv, ParseMessages& messages)
@@ -1886,7 +1896,7 @@ namespace vcpkg
             return true;
         }
 
-        if (lhs.needs_and_parenthesis < rhs.needs_and_parenthesis)
+        if (lhs.license_text == rhs.license_text && lhs.needs_and_parenthesis < rhs.needs_and_parenthesis)
         {
             return true;
         }
