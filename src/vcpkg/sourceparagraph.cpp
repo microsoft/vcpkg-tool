@@ -972,7 +972,7 @@ namespace vcpkg
             }
 
             auto tokens = tokenize();
-            auto current_token = tokens.begin();
+            auto current_token = tokens.cbegin();
             auto result = try_match_or_expression(tokens, current_token);
             if (result.outcome == TryMatchOutcome::Failure)
             {
