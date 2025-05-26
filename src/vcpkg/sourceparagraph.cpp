@@ -797,17 +797,6 @@ namespace vcpkg
     {
         SpdxLicenseExpressionParser(StringView sv, StringView origin) : ParserBase(sv, origin, {0, 0}) { }
 
-        static const StringLiteral* case_insensitive_find(View<StringLiteral> lst, StringView id)
-        {
-            auto it =
-                Util::find_if(lst, [id](StringLiteral el) { return Strings::case_insensitive_ascii_equals(id, el); });
-            if (it == lst.end())
-            {
-                return nullptr;
-            }
-
-            return it;
-        }
         static constexpr bool is_idstring_element(char32_t ch) { return is_alphanumdash(ch) || ch == '.'; }
 
         enum class SpdxLicenseTokenKind
@@ -818,9 +807,7 @@ namespace vcpkg
             And,
             Or,
             With,
-            LicenseId,
-            ExceptionId,
-            UnknownId,
+            IdString,
             End
         };
 
@@ -830,6 +817,28 @@ namespace vcpkg
             StringView text;
             SourceLoc loc;
         };
+
+        StringView match_idstring_to_allowlist(StringView token,
+                                               const SourceLoc& loc,
+                                               msg::MessageT<msg::value_t> error_message,
+                                               View<StringLiteral> valid_ids)
+        {
+            if (token.starts_with("LicenseRef-"))
+            {
+                return token;
+            }
+
+            auto it = Util::find_if(
+                valid_ids, [token](StringLiteral el) { return Strings::case_insensitive_ascii_equals(token, el); });
+            if (it == valid_ids.end())
+            {
+                add_warning(msg::format(error_message, msg::value = token), loc);
+                return token;
+            }
+
+            // case normalization
+            return *it;
+        }
 
         std::vector<SpdxLicenseToken> tokenize()
         {
@@ -913,51 +922,7 @@ namespace vcpkg
                                 break;
                             }
 
-                            if (auto matched_license = case_insensitive_find(VALID_LICENSES, token))
-                            {
-                                // case normalization
-                                result.push_back({SpdxLicenseTokenKind::LicenseId, *matched_license, loc});
-                                if (cur() == '+')
-                                {
-                                    // note that + must not be preceeded by whitespace
-                                    result.push_back(
-                                        {SpdxLicenseTokenKind::Plus, StringView{it().pointer_to_current(), 1}, loc});
-                                    next();
-                                }
-
-                                break;
-                            }
-
-                            if (auto matched_exception = case_insensitive_find(VALID_EXCEPTIONS, token))
-                            {
-                                // case normalization
-                                result.push_back({SpdxLicenseTokenKind::ExceptionId, *matched_exception, loc});
-                                if (cur() == '+')
-                                {
-                                    // note that + must not be preceeded by whitespace
-                                    result.push_back(
-                                        {SpdxLicenseTokenKind::Plus, StringView{it().pointer_to_current(), 1}, loc});
-                                    next();
-                                }
-
-                                break;
-                            }
-
-                            if (token.starts_with("LicenseRef-"))
-                            {
-                                result.push_back({SpdxLicenseTokenKind::LicenseId, token, loc});
-                                if (cur() == '+')
-                                {
-                                    // note that + must not be preceeded by whitespace
-                                    result.push_back(
-                                        {SpdxLicenseTokenKind::Plus, StringView{it().pointer_to_current(), 1}, loc});
-                                    next();
-                                }
-
-                                break;
-                            }
-
-                            result.push_back({SpdxLicenseTokenKind::UnknownId, token, loc});
+                            result.push_back({SpdxLicenseTokenKind::IdString, token, loc});
                             if (cur() == '+')
                             {
                                 // note that + must not be preceeded by whitespace
@@ -965,6 +930,7 @@ namespace vcpkg
                                     {SpdxLicenseTokenKind::Plus, StringView{it().pointer_to_current(), 1}, loc});
                                 next();
                             }
+
                             break;
                     }
                 }
@@ -1026,9 +992,7 @@ namespace vcpkg
                     // note that the 'empty' case got handled emitting msgEmptyLicenseExpression above
                     add_error(msg::format(msgLicenseExpressionExpectCompoundFoundWith), current_token->loc);
                     return {};
-                case SpdxLicenseTokenKind::LicenseId:
-                case SpdxLicenseTokenKind::ExceptionId:
-                case SpdxLicenseTokenKind::UnknownId:
+                case SpdxLicenseTokenKind::IdString:
                     // note that the 'empty' case got handled emitting msgEmptyLicenseExpression above
                     if (result.outcome == TryMatchOutcome::Success)
                     {
@@ -1107,14 +1071,11 @@ namespace vcpkg
                 add_error(msg::format(msgLicenseExpressionExpectLicenseFoundCompound, msg::value = current_token->text),
                           current_token->loc);
                 return {TryMatchOutcome::Failure};
-            case SpdxLicenseTokenKind::ExceptionId:
-            case SpdxLicenseTokenKind::UnknownId:
-                add_warning(msg::format(msgLicenseExpressionUnknownLicense, msg::value = current_token->text),
-                            current_token->loc);
-                [[fallthrough]];
-            case SpdxLicenseTokenKind::LicenseId:
+            case SpdxLicenseTokenKind::IdString:
             {
-                TryMatchResult this_result{TryMatchOutcome::Success, current_token->text.to_string()};
+                auto matched_license = match_idstring_to_allowlist(
+                    current_token->text, current_token->loc, msgLicenseExpressionUnknownLicense, VALID_LICENSES);
+                TryMatchResult this_result{TryMatchOutcome::Success, matched_license.to_string()};
                 ++current_token;
                 if (current_token->kind == SpdxLicenseTokenKind::Plus)
                 {
@@ -1141,18 +1102,18 @@ namespace vcpkg
                                                   msg::value = current_token->text),
                                       current_token->loc);
                             return {TryMatchOutcome::Failure};
-                        case SpdxLicenseTokenKind::LicenseId:
-                        case SpdxLicenseTokenKind::UnknownId:
-                            add_warning(
-                                msg::format(msgLicenseExpressionUnknownException, msg::value = current_token->text),
-                                current_token->loc);
-                            [[fallthrough]];
-                        case SpdxLicenseTokenKind::ExceptionId:
+                        case SpdxLicenseTokenKind::IdString:
+                        {
+                            auto matched_exception = match_idstring_to_allowlist(current_token->text,
+                                                                                 current_token->loc,
+                                                                                 msgLicenseExpressionUnknownException,
+                                                                                 VALID_EXCEPTIONS);
                             this_result.license_text.append(" WITH ");
-                            this_result.license_text.append(current_token->text.data(), current_token->text.size());
+                            this_result.license_text.append(matched_exception.data(), matched_exception.size());
                             ++current_token;
                             this_result.outcome = TryMatchOutcome::SuccessMatchedWith;
                             break;
+                        }
                         case SpdxLicenseTokenKind::End:
                             add_error(msg::format(msgLicenseExpressionExpectExceptionFoundEof), current_token->loc);
                             return {TryMatchOutcome::Failure};
