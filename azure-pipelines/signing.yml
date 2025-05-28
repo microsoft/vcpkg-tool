@@ -5,40 +5,14 @@
 trigger: none
 
 parameters:
-- name: SignTypeOverride
-  displayName: Signing Type (default is real for the main branch and test otherwise)
-  type: string
-  default: default
-  values:
-  - default
-  - test
-  - real
 - name: VcpkgBaseVersionOverride
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
   default: default
-- name: PublishTo
-  displayName: 'Publish To'
-  type: string
-  default: 'GitHub and NuGet'
-  values:
-  - 'GitHub and NuGet'
-  - 'NuGet Only'
-  - 'None'
 variables:
 - group: vcpkg Terrapin URLs
 - name: TeamName
   value: vcpkg
-  # If the user didn't override the signing type, then only real-sign on main.
-- ${{ if ne(parameters.SignTypeOverride, 'default') }}:
-  - name: SignType
-    value: ${{ parameters.SignTypeOverride }}
-- ${{ if and(eq(parameters.SignTypeOverride, 'default'), or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags'))) }}:
-  - name: SignType
-    value: real
-- ${{ if and(eq(parameters.SignTypeOverride, 'default'), not(or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags')))) }}:
-  - name: SignType
-    value: test
 resources:
   repositories:
   - repository: MicroBuildTemplate
@@ -81,7 +55,7 @@ extends:
             signing:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-              signType: $(SignType)
+              signType: 'real'
               zipSources: false
           outputs:
           - output: pipelineArtifact
@@ -371,7 +345,7 @@ extends:
             signing:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-              signType: $(SignType)
+              signType: 'real'
               zipSources: false
           inputs:
           - input: pipelineArtifact
@@ -400,13 +374,11 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
             artifactName: 'vs-insertion'
             publishLocation: 'Container'
-            condition: ${{ or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')) }}
           - output: nuget
             displayName: 'NuGet publish for VS Insertion'
             packageParentPath: '$(Build.ArtifactStagingDirectory)'
             packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
             publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
-            condition: ${{ and(or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')), eq(variables.SignType, 'real')) }}
         steps:
         - task: CmdLine@2
           displayName: "Build vcpkg amd64 with CMake"
@@ -452,16 +424,7 @@ extends:
             solution: 'azure-pipelines\binary-signing.signproj'
             msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
         - task: MicroBuildSignMacFiles@1
-          displayName: 'Developer Sign Mac Binaries'
-          condition: and(eq(variables.SignType, 'test'), succeeded())
-          inputs:
-            SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
-            SigningCert: '8005'
-            SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-            SigningPluginVersion: 'latest'
-        - task: MicroBuildSignMacFiles@1
           displayName: 'Sign and Harden Mac Binaries'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
             SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8025'
@@ -469,7 +432,6 @@ extends:
             SigningPluginVersion: 'latest'
         - task: MicroBuildSignMacFiles@1
           displayName: 'Notarize Mac Binaries'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
             SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8020'
@@ -530,8 +492,7 @@ extends:
               copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.exe"
               copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.pdb"
         - task: CmdLine@2
-          displayName: 'Add Drop PGP Signatures (real sign only)'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
+          displayName: 'Add Drop PGP Signatures'
           inputs:
             failOnStderr: true
             script: |
@@ -564,16 +525,14 @@ extends:
             targetType: 'F'
             targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
             result: 'PoliCheck.xml'
-        - ${{ if ne(parameters.PublishTo, 'None') }}:
-          - task: MicroBuildArchiveSymbols@5
-            displayName: 'Upload Symbols'
-            inputs:
-              SymbolsFeatureName: 'vcpkg'
-              SymbolsProject: 'VS'
-              SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
+        - task: MicroBuildArchiveSymbols@5
+          displayName: 'Upload Symbols'
+          inputs:
+            SymbolsFeatureName: 'vcpkg'
+            SymbolsProject: 'VS'
+            SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
       - job: github_release
         displayName: 'Publish GitHub Release'
-        condition: and(succeeded(), eq(variables.SignType, 'real'), ${{ eq(parameters.PublishTo, 'GitHub and NuGet') }})
         dependsOn:
         - arch_independent
         - windows_and_sign
