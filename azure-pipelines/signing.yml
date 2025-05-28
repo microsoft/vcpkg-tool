@@ -238,7 +238,7 @@ extends:
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-mariner-1espt'
+          name: 'vcpkg-pme-mariner-2-amd64-1espt-pool'
           os: linux
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
@@ -259,8 +259,8 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
         - bash: |
-            az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-            az acr login --name vcpkgdockercontainers
+            az login --identity --username 8f065f63-a5c0-480e-8b73-2dfd0191eaeb
+            az acr login --name vcpkgpmeofficialbuilders
           displayName: 'Set up managed identity'
         - task: CmdLine@2
           displayName: "Build vcpkg in Mariner with Ubuntu 16.04 Libraries"
@@ -268,12 +268,12 @@ extends:
             failOnStderr: false
             script: |
               mkdir -p "$(Agent.TempDirectory)/build"
-              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-linux/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders.azurecr.io/vcpkg/vcpkg-build-linux-amd64:2024-03-21 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-linux/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
               mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
       - job: muslc_build
         displayName: 'muslc (Alpine) Build'
         pool:
-          name: 'vcpkg-mariner-1espt'
+          name: 'vcpkg-pme-mariner-2-amd64-1espt-pool'
           os: linux
         dependsOn:
         - arch_independent
@@ -296,8 +296,8 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
         - bash: |
-            az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-            az acr login --name vcpkgdockercontainers
+            az login --identity --username 8f065f63-a5c0-480e-8b73-2dfd0191eaeb
+            az acr login --name vcpkgpmeofficialbuilders
           displayName: 'Set up managed identity'
         - task: CmdLine@2
           displayName: "Build vcpkg in Alpine"
@@ -305,14 +305,14 @@ extends:
             failOnStderr: false
             script: |
               mkdir -p "$(Agent.TempDirectory)/build"
-              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders.azurecr.io/vcpkg/vcpkg-build-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
               mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
       - job: glibc_arm64_build
         displayName: 'glibc Arm64 Build'
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-mariner-aarch64-1espt'
+          name: 'vcpkg-pme-mariner-2-aarch64-1espt-pool'
           os: linux
           hostArchitecture: Arm64
         variables:
@@ -334,8 +334,8 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
           - bash: |
-              az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-              az acr login --name vcpkgdockercontainers
+              az login --identity --username 8f065f63-a5c0-480e-8b73-2dfd0191eaeb
+              az acr login --name vcpkgpmeofficialbuilders
             displayName: 'Set up managed identity'
           - task: CmdLine@2
             displayName: "Run Docker build for arm64 Linux binary"
@@ -343,7 +343,7 @@ extends:
               failOnStderr: false
               script: |
                 mkdir -p "$(Agent.TempDirectory)/build"
-                docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-arm64-linux:2025-03-18 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-arm64/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+                docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders.azurecr.io/vcpkg/vcpkg-build-linux-arm64:2025-03-18 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-arm64/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
                 mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc-arm64"
       - job: windows_and_sign
         displayName: 'Build Windows binaries and Sign'
