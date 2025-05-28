@@ -56,6 +56,7 @@ extends:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
               signType: 'real'
+              signWithProd: true
               zipSources: false
           outputs:
           - output: pipelineArtifact
@@ -341,6 +342,7 @@ extends:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
               signType: 'real'
+              signWithProd: true
               zipSources: false
           inputs:
           - input: pipelineArtifact
