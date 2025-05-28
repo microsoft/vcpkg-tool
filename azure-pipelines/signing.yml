@@ -334,6 +334,8 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
           - bash: |
+              tdnf install ca-certificates
+              tdnf install azure-cli
               az login --identity --username 8f065f63-a5c0-480e-8b73-2dfd0191eaeb
               az acr login --name vcpkgpmeofficialbuilders
             displayName: 'Set up managed identity'
