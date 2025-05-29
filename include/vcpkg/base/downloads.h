@@ -116,6 +116,16 @@ namespace vcpkg
                               const Path& file_to_put,
                               StringView sha512);
 
+    bool store_to_azblob_cache(DiagnosticContext& context,
+                               const Filesystem& fs,
+                               StringView raw_url,
+                               const SanitizedUrl& sanitized_url,
+                               View<std::string> headers,
+                               const Path& file,
+                               size_t file_size,
+                               size_t max_single_write,
+                               size_t block_size);
+
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 
     struct CurlProgressData
