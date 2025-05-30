@@ -317,6 +317,27 @@ namespace vcpkg
         return InstallResult::SUCCESS;
     }
 
+    void LicenseReport::print_license_report(const msg::MessageT<>& named_license_heading) const
+    {
+        if (any_unknown_licenses || !named_licenses.empty())
+        {
+            msg::println(msgPackageLicenseWarning);
+            if (any_unknown_licenses)
+            {
+                msg::println(msgPackageLicenseUnknown);
+            }
+
+            if (!named_licenses.empty())
+            {
+                msg::println(named_license_heading);
+                for (auto&& license : named_licenses)
+                {
+                    msg::print(LocalizedString::from_raw(license).append_raw('\n'));
+                }
+            }
+        }
+    }
+
     static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
                                                            const VcpkgPaths& paths,
                                                            Triplet host_triplet,
@@ -591,7 +612,43 @@ namespace vcpkg
             TrackedPackageInstallGuard this_install(action_index++, action_count, summary.results, action);
             auto result = perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code != BuildResult::Succeeded && build_options.keep_going == KeepGoing::No)
+            if (result.code == BuildResult::Succeeded)
+            {
+                if (auto scfl = action.source_control_file_and_location.get())
+                {
+                    const auto& scf = *scfl->source_control_file;
+                    auto& license = scf.core_paragraph->license;
+                    switch (license.kind())
+                    {
+                        case SpdxLicenseDeclarationKind::NotPresent:
+                        case SpdxLicenseDeclarationKind::Null:
+                            summary.license_report.any_unknown_licenses = true;
+                            break;
+                        case SpdxLicenseDeclarationKind::String:
+                            for (auto&& applicable_license : license.applicable_licenses())
+                            {
+                                summary.license_report.named_licenses.insert(applicable_license.to_string());
+                            }
+                            break;
+                        default: Checks::unreachable(VCPKG_LINE_INFO);
+                    }
+
+                    for (const auto& feature_name : action.feature_list)
+                    {
+                        if (feature_name == FeatureNameCore)
+                        {
+                            continue;
+                        }
+
+                        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
+                        for (auto&& applicable_license : feature.license.applicable_licenses())
+                        {
+                            summary.license_report.named_licenses.insert(applicable_license.to_string());
+                        }
+                    }
+                }
+            }
+            else if (build_options.keep_going == KeepGoing::No)
             {
                 this_install.print_elapsed_time();
                 print_user_troubleshooting_message(
@@ -624,6 +681,7 @@ namespace vcpkg
                 case BuildResult::CacheMissing: summary.failed = true; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
+
             this_install.current_summary.build_result.emplace(std::move(result));
         }
 
@@ -1404,6 +1462,8 @@ namespace vcpkg
 
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
         }
+
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
 
         if (print_cmake_usage)
         {

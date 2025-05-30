@@ -18,6 +18,7 @@ namespace vcpkg
 
     struct ParseMessages
     {
+        void print_errors_or_warnings() const;
         void exit_if_errors_or_warnings() const;
         bool good() const noexcept { return m_good; }
         bool any_errors() const noexcept { return m_error_count != 0; }
