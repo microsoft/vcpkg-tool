@@ -890,6 +890,43 @@ namespace vcpkg
         return true;
     }
 
+    bool azcopy_to_asset_cache(DiagnosticContext& context,
+                               StringView raw_url,
+                               const SanitizedUrl& sanitized_url,
+                               const Path& file)
+    {
+        auto azcopy_cmd = Command{"azcopy"};
+        azcopy_cmd.string_arg("copy");
+        azcopy_cmd.string_arg("--from-to").string_arg("LocalBlob");
+        azcopy_cmd.string_arg("--log-level").string_arg("NONE");
+        azcopy_cmd.string_arg(file);
+        azcopy_cmd.string_arg(raw_url.to_string());
+
+        int code = 0;
+        auto res = cmd_execute_and_stream_lines(context, azcopy_cmd, [&code](StringView line) {
+            static constexpr StringLiteral response_marker = "RESPONSE ";
+            if (line.starts_with(response_marker))
+            {
+                code = std::strtol(line.data() + response_marker.size(), nullptr, 10);
+            }
+        });
+
+        auto pres = res.get();
+        if (!pres)
+        {
+            return false;
+        }
+
+        if (*pres != 0)
+        {
+            context.report_error(msg::format(
+                msgAzcopyFailedToPutBlob, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
+            return false;
+        }
+
+        return true;
+    }
+
     std::string format_url_query(StringView base_url, View<std::string> query_params)
     {
         if (query_params.empty())
