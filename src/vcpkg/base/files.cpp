@@ -3363,7 +3363,8 @@ namespace vcpkg
             }
 
             auto mkdir_error = errno;
-            if (mkdir_error == EEXIST)
+            // mkdir returns ENOSYS on Solaris/illumos autofs mount points
+            if (mkdir_error == EEXIST || mkdir_error == ENOSYS)
             {
                 struct stat s;
                 if (::stat(new_directory, &s) == 0)

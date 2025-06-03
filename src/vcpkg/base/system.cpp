@@ -769,6 +769,8 @@ namespace vcpkg
         return "freebsd";
 #elif defined(__OpenBSD__)
         return "openbsd";
+#elif defined(__SVR4) && defined(__sun)
+        return "solaris";
 #elif defined(__ANDROID__)
         return "android";
 #elif defined(__linux__)
