@@ -289,6 +289,8 @@ namespace vcpkg
             }
         }
 
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
+
         if (print_usage == PrintUsage::Yes)
         {
             // Note that this differs from the behavior of `vcpkg install` in that it will print usage information for

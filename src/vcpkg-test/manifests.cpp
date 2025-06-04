@@ -1054,8 +1054,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
-    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
-    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
+    REQUIRE(pgh.feature_paragraphs[1]->license == parse_spdx_license_expression_required("MIT"));
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }
@@ -1313,7 +1312,70 @@ TEST_CASE ("license serialization", "[manifests][license]")
     CHECK(test_serialized_license("MIT") == "MIT");
     CHECK(test_serialized_license("mit") == "MIT");
     CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("MiT    AND (BsL-1.0) AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") ==
+          "MIT AND BSL-1.0 AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 AND (BSL-1.0) \tOR   \n gpl-2.0+)") ==
+          "MIT AND (Apache-2.0 AND BSL-1.0 OR GPL-2.0+)");
     CHECK(test_serialized_license("uNkNoWnLiCeNsE") == "uNkNoWnLiCeNsE");
+}
+
+TEST_CASE ("license-list-extraction", "[manifests]")
+{
+    ParseMessages messages;
+    const auto mit = parse_spdx_license_expression("MIT", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit.license_text() == "MIT");
+    REQUIRE(mit.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto mit_and_boost = parse_spdx_license_expression("MIT AND BSL-1.0", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit_and_boost.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit_and_boost.license_text() == "MIT AND BSL-1.0");
+    REQUIRE(mit_and_boost.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                                                         SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto parens = parse_spdx_license_expression("(MIT) AND (BSL-1.0 AND Apache-2.0)", messages);
+    REQUIRE(messages.good());
+    REQUIRE(parens.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(parens.license_text() == "MIT AND BSL-1.0 AND Apache-2.0");
+    REQUIRE(parens.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"Apache-2.0", false},
+                                                         SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                                                         SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto complex =
+        parse_spdx_license_expression("MiT    AND (aPACHe-2.0 AND (BSL-1.0) \tOR   \n gpl-2.0+)", messages);
+    REQUIRE(messages.good());
+    REQUIRE(complex.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(complex.license_text() == "MIT AND (Apache-2.0 AND BSL-1.0 OR GPL-2.0+)");
+    REQUIRE(complex.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"Apache-2.0 AND BSL-1.0 OR GPL-2.0+", true},
+                SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto complex2 = parse_spdx_license_expression(
+        "MIT AND BSL-1.0 AND (Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause))", messages);
+    REQUIRE(messages.good());
+    REQUIRE(complex2.license_text() ==
+            "MIT AND BSL-1.0 AND (Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause))");
+    REQUIRE(complex2.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause)", true},
+                SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                SpdxApplicableLicenseExpression{"MIT", false}});
+
+    // note that these ORs could be collapsed together, but we don't attempt that
+    const auto many_or = parse_spdx_license_expression("MIT OR BSL-1.0 OR Apache-2.0", messages);
+    REQUIRE(messages.good());
+    REQUIRE(many_or.license_text() == "MIT OR BSL-1.0 OR Apache-2.0");
+    // note that 'requires parens' is true because when combining these ORs for the overall AND that
+    // goes into an SBOM, putting parens around it are required
+    REQUIRE(many_or.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"MIT OR BSL-1.0 OR Apache-2.0", true}});
 }
 
 TEST_CASE ("license error messages", "[manifests][license]")
@@ -1344,6 +1406,13 @@ TEST_CASE ("license error messages", "[manifests][license]")
           LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
+
+    parse_spdx_license_expression("MIT MIT", messages);
+    CHECK(messages.join() ==
+          LocalizedString::from_raw(
+              R"(<license string>: error: Expected either AND, OR, or WITH, found a license or exception name: 'MIT'.
+  on expression: MIT MIT
+                     ^)"));
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.any_errors());
