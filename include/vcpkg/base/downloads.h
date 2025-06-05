@@ -116,6 +116,11 @@ namespace vcpkg
                               const Path& file_to_put,
                               StringView sha512);
 
+    bool azcopy_to_asset_cache(DiagnosticContext& context,
+                               StringView raw_url,
+                               const SanitizedUrl& sanitized_url,
+                               const Path& file);
+
     Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
 
     struct CurlProgressData
