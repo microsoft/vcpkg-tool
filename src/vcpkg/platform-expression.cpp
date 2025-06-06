@@ -36,6 +36,7 @@ namespace vcpkg::PlatformExpression
         ios,
         qnx,
         vxworks,
+        visionos,
 
         static_link,
         static_crt,
@@ -68,6 +69,7 @@ namespace vcpkg::PlatformExpression
             {"ios", Identifier::ios},
             {"qnx", Identifier::qnx},
             {"vxworks", Identifier::vxworks},
+            {"visionos", Identifier::visionos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
@@ -575,6 +577,8 @@ namespace vcpkg::PlatformExpression
                         case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::mips64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "mips64");
+                        case Identifier::visionos:
+                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
                         case Identifier::static_crt: return true_if_exists_and_equal("VCPKG_CRT_LINKAGE", "static");
