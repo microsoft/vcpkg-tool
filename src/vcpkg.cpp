@@ -31,6 +31,11 @@
 #pragma comment(lib, "shell32")
 #endif
 
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#define TEST_LIBCURL_AVAILABLE
+#include <dlfcn.h>
+#endif
+
 using namespace vcpkg;
 
 namespace
@@ -50,6 +55,43 @@ namespace
                 .append_raw('\n'));
         msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    struct LibCurlDetails
+    {
+        std::string version;
+    };
+
+    LibCurlDetails detect_libcurl()
+    {
+        // Determine if libcurl is installed in the system by attempting to load it
+        // At the moment we don't do anything with it, but we're tracking availability
+        // of libcurl to replace the current download/upload implementation
+#if defined(TEST_LIBCURL_AVAILABLE)
+        const auto libcurl_names = {
+            "libcurl.so",
+            "libcurl.so.4",
+            "libcurl.so.3",
+            "libcurl.so.2",
+            "libcurl.so.1",
+        };
+
+        for (const auto& libcurl_name : libcurl_names)
+        {
+            if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
+            {
+                std::string detected_version = "unknown";
+                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+                if (curl_version_fn)
+                {
+                    detected_version = curl_version_fn();
+                }
+                dlclose(handle);
+                return {std::move(detected_version)};
+            }
+        }
+#endif
+        return {"unknown"};
     }
 
     bool detect_container(const Filesystem& fs)
@@ -120,6 +162,8 @@ namespace
         }
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl().version);
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
