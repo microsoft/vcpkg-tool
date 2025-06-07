@@ -1,5 +1,6 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -680,6 +681,7 @@ namespace vcpkg
     {
 #define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
         static constexpr StringLiteral guid_marker = GUID_MARKER;
+        // TODO: Replace with libcurl code.
         Command prefix_cmd{"curl"};
         if (!prefixArgs.empty())
         {
