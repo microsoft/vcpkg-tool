@@ -211,6 +211,8 @@
   "AvailableHelpTopics": "Available help topics:",
   "AzUrlAssetCacheRequiresBaseUrl": "unexpected arguments: asset config 'azurl' requires a base url",
   "AzUrlAssetCacheRequiresLessThanFour": "unexpected arguments: asset config 'azurl' requires fewer than 4 arguments",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "_AzcopyFailedToPutBlob.comment": "azcopy is the name of a program. {value} is an HTTP status code. An example of {exit_code} is 127. An example of {url} is https://github.com/microsoft/vcpkg.",
   "BaselineConflict": "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.\nPlease remove one of these conflicting settings.",
   "BaselineGitShowFailed": "while checking out baseline from commit '{commit_sha}', failed to `git show` versions/baseline.json. This may be fixed by fetching commits with `git fetch`.",
   "_BaselineGitShowFailed.comment": "An example of {commit_sha} is 7cfad47ae9f68b183983090afd6337cd60fd4949.",
