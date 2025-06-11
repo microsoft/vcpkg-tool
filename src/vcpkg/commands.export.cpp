@@ -250,6 +250,7 @@ namespace
         bool zip = false;
         bool seven_zip = false;
         bool all_installed = false;
+        bool hydrate_symlinks = false;
 
         Optional<std::string> maybe_output;
         Path output_dir;
@@ -268,6 +269,7 @@ namespace
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
+        {SwitchHydrateSymlinks, msgCmdExportOptHydrateSymlinks},
     };
 
     constexpr CommandSetting EXPORT_SETTINGS[] = {
@@ -294,6 +296,7 @@ namespace
         ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
         ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
+        ret.hydrate_symlinks = Util::Sets::contains(options.switches, SwitchHydrateSymlinks);
 
         if (paths.manifest_mode_enabled())
         {
@@ -431,7 +434,12 @@ namespace
                     files.push_back(paths.installed().root() / suffix);
                 }
 
-                install_files_and_write_listfile(fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
+                install_files_and_write_listfile(fs,
+                                                 paths.installed().triplet_dir(action.spec.triplet()),
+                                                 files,
+                                                 dirs,
+                                                 opts.hydrate_symlinks ? SymlinkHydrate::CopyData
+                                                                       : SymlinkHydrate::CopySymlinks);
             }
         }
 

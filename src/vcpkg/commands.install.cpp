@@ -55,12 +55,13 @@ namespace vcpkg
                            Strings::concat("Source directory ", source_dir, "does not exist"));
         auto files = fs.get_files_recursive(source_dir, VCPKG_LINE_INFO);
         Util::erase_remove_if(files, [](Path& path) { return path.filename() == FileDotDsStore; });
-        install_files_and_write_listfile(fs, source_dir, files, destination_dir);
+        install_files_and_write_listfile(fs, source_dir, files, destination_dir, SymlinkHydrate::CopySymlinks);
     }
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
-                                          const InstallDir& destination_dir)
+                                          const InstallDir& destination_dir,
+                                          const SymlinkHydrate hydrate)
     {
         std::vector<std::string> output;
 
@@ -77,7 +78,14 @@ namespace vcpkg
         for (auto&& file : files)
         {
             std::error_code ec;
-            const auto status = fs.symlink_status(file, ec);
+            vcpkg::FileType status;
+            switch (hydrate)
+            {
+                case SymlinkHydrate::CopySymlinks: status = fs.symlink_status(file, ec); break;
+                case SymlinkHydrate::CopyData: status = fs.status(file, ec); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
             if (ec)
             {
                 msg::println_warning(format_filesystem_call_error(ec, "symlink_status", {file}));

@@ -228,6 +228,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostExclude = "host-exclude";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
+    inline constexpr StringLiteral SwitchHydrateSymlinks = "hydrate-symlinks";
     inline constexpr StringLiteral SwitchIgnoreLockFailures = "ignore-lock-failures";
     inline constexpr StringLiteral SwitchInclude = "include";
     inline constexpr StringLiteral SwitchInstalledBinDir = "installed-bin-dir";
