@@ -390,6 +390,7 @@
   "_CmdExportExample1.comment": "This is a command line, only <port names> and the out_dir part should be localized",
   "CmdExportOpt7Zip": "Exports to a 7zip (.7z) file",
   "CmdExportOptDryRun": "Does not actually export",
+  "CmdExportOptHydrateSymlinks": "Copies symlinks as regular files and directories in the exported results",
   "CmdExportOptInstalled": "Exports all installed packages",
   "CmdExportOptNuget": "Exports a NuGet package",
   "CmdExportOptRaw": "Exports to an uncompressed directory",
