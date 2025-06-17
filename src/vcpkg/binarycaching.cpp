@@ -506,6 +506,57 @@ namespace
         std::vector<std::string> m_secrets;
     };
 
+    struct AzureBlobPutBinaryProvider : IWriteBinaryProvider
+    {
+        AzureBlobPutBinaryProvider(const Filesystem& fs,
+                                   std::vector<UrlTemplate>&& urls,
+                                   const std::vector<std::string>& secrets)
+            : m_fs(fs), m_urls(std::move(urls)), m_secrets(secrets)
+        {
+        }
+
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
+        {
+            if (!request.zip_path) return 0;
+
+            const auto& zip_path = *request.zip_path.get();
+
+            size_t count_stored = 0;
+            const auto file_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+            if (file_size == 0) return count_stored;
+
+            // cf.
+            // https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json
+            constexpr size_t max_single_write = 5000000000;
+            bool use_azcopy = file_size > max_single_write;
+
+            PrintingDiagnosticContext pdc{msg_sink};
+            WarningDiagnosticContext wdc{pdc};
+
+            for (auto&& templ : m_urls)
+            {
+                auto url = templ.instantiate_variables(request);
+                auto maybe_success =
+                    use_azcopy
+                        ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
+                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                if (maybe_success)
+                {
+                    count_stored++;
+                }
+            }
+            return count_stored;
+        }
+
+        bool needs_nuspec_data() const override { return false; }
+        bool needs_zip_file() const override { return true; }
+
+    private:
+        const Filesystem& m_fs;
+        std::vector<UrlTemplate> m_urls;
+        std::vector<std::string> m_secrets;
+    };
+
     struct NuGetSource
     {
         StringLiteral option;
@@ -1497,7 +1548,9 @@ namespace
                         segments[0].first);
                 }
 
-                if (!Strings::starts_with(segments[1].second, "https://"))
+                if (!Strings::starts_with(segments[1].second, "https://") &&
+                    // Allow unencrypted Azurite for testing (not reflected in error msg)
+                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
                                                  msg::base_url = "https://",
@@ -1538,7 +1591,7 @@ namespace
                 if (read) state->url_templates_to_get.push_back(url_template);
                 auto headers = azure_blob_headers();
                 url_template.headers.assign(headers.begin(), headers.end());
-                if (write) state->url_templates_to_put.push_back(url_template);
+                if (write) state->azblob_templates_to_put.push_back(url_template);
 
                 state->binary_cache_providers.insert("azblob");
             }
@@ -2286,6 +2339,11 @@ namespace vcpkg
             {
                 m_config.write.push_back(
                     std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
+            }
+            if (!s.azblob_templates_to_put.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzureBlobPutBinaryProvider>(fs, std::move(s.azblob_templates_to_put), s.secrets));
             }
             if (!s.url_templates_to_put.empty())
             {
