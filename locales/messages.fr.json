@@ -161,6 +161,7 @@
   "AvailableHelpTopics": "Rubriques d’aide disponibles :",
   "AzUrlAssetCacheRequiresBaseUrl": "arguments inattendus : la configuration de la ressource ’azurl’ nécessite une URL de base",
   "AzUrlAssetCacheRequiresLessThanFour": "arguments inattendus : la configuration de la ressource 'azurl' requiert moins de 4 arguments",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
   "BaselineConflict": "La spécification de vcpkg-configuration.default-registry dans un fichier manifeste est en conflit avec la ligne de base intégrée.\nSupprimez l’un de ces paramètres en conflit.",
   "BaselineGitShowFailed": "lors de l’extraction de la ligne de base à partir de la ’{commit_sha}’ de validation, échec de ’git show’ versions/baseline.json. Pour résoudre ce problème, récupérez les validations avec ’git fetch’.",
   "BaselineMissing": "{package_name} n’a pas de version attribuée",

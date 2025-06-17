@@ -161,6 +161,7 @@
   "AvailableHelpTopics": "Mevcut yardım konuları:",
   "AzUrlAssetCacheRequiresBaseUrl": "beklenmeyen bağımsız değişkenler: varlık yapılandırması 'azurl', bir temel url gerektiriyor",
   "AzUrlAssetCacheRequiresLessThanFour": "beklenmeyen bağımsız değişkenler: varlık yapılandırması 'azurl' 4'den az bağımsız değişken gerektirir",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
   "BaselineConflict": "Bildirim dosyasında vcpkg-configuration.default-registry belirtilmesi, yerleşik taban çizgisiyle çakışıyor.\nLütfen bu çakışan ayarlardan birini kaldırın.",
   "BaselineGitShowFailed": "'{commit_sha}' işlemesinden temeli kullanıma alırken `git show` versions/baseline.json başarısız oldu. Bu, `git fetch` ile işlemeler getirilerek düzeltilebilir.",
   "BaselineMissing": "{package_name}'e bir sürüm atanmadı",
