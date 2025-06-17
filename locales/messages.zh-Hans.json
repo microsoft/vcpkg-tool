@@ -161,6 +161,7 @@
   "AvailableHelpTopics": "可用的帮助主题:",
   "AzUrlAssetCacheRequiresBaseUrl": "意外参数: 资产配置“azurl”需要基 URL",
   "AzUrlAssetCacheRequiresLessThanFour": "意外参数: 资产配置 \"azurl\" 需要的参数少于 4 个",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
   "BaselineConflict": "在清单文件中指定 vcpkg-configuration.default-registry 的操作与内置基线冲突。\n请删除其中一个冲突设置。",
   "BaselineGitShowFailed": "提交 '{commit_sha}' 签出基线时，无法“git show”版本/基线.json。可以通过使用“git fetch”提取提交来修复此问题。",
   "BaselineMissing": "{package_name} 未分配版本",

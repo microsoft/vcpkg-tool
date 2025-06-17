@@ -161,6 +161,7 @@
   "AvailableHelpTopics": "Dostupná témata nápovědy:",
   "AzUrlAssetCacheRequiresBaseUrl": "Neočekávané argumenty: konfigurace prostředku azurl vyžaduje základní adresu URL.",
   "AzUrlAssetCacheRequiresLessThanFour": "Neočekávané argumenty: konfigurace prostředku azurl vyžaduje méně než 4 argumenty.",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
   "BaselineConflict": "Zadání vcpkg-configuration.default-registry v souboru manifestu je v konfliktu s předdefinovanými standardními hodnotami.\nOdeberte jedno z těchto konfliktních nastavení.",
   "BaselineGitShowFailed": "Při rezervaci směrného plánu ze zápisu {commit_sha} se nepovedlo Git show versions/baseline.json. To může být opraveno načtením zápisu pomocí příkazu načtení Git.",
   "BaselineMissing": "{package_name} nemá přiřazenou verzi",

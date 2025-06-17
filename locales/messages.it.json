@@ -161,6 +161,7 @@
   "AvailableHelpTopics": "Argomenti della guida disponibili:",
   "AzUrlAssetCacheRequiresBaseUrl": "argomenti imprevisti: la configurazione dell'asset 'azurl' richiede un URL di base",
   "AzUrlAssetCacheRequiresLessThanFour": "argomenti imprevisti: la configurazione dell'asset 'azurl' richiede meno di 4 argomenti",
+  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
   "BaselineConflict": "La specifica di vcpkg-configuration.default-registry in un file manifesto entra in conflitto con la baseline predefinita.\nRimuovere una di queste impostazioni in conflitto.",
   "BaselineGitShowFailed": "durante il checkout della baseline dal commit '{commit_sha}' non è stato possibile eseguire 'git show' versions/baseline.json. È possibile risolvere il problema recuperando i commit con 'git fetch'.",
   "BaselineMissing": "A {package_name} non è assegnata una versione",
