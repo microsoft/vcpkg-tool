@@ -130,13 +130,9 @@ DECLARE_MESSAGE(AllFormatArgsUnbalancedBraces,
                 (msg::value),
                 "example of {value} is 'foo bar {'",
                 "unbalanced brace in format string \"{value}\"")
-DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "All installed packages are up-to-date.")
+DECLARE_MESSAGE(AllPackagesAreUpdated, (), "", "No action taken because all installed packages are up-to-date.")
 DECLARE_MESSAGE(AllShasValid, (), "sha = sha512 of url", "All checked sha's are valid.")
 DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed")
-DECLARE_MESSAGE(AlreadyInstalledNotHead,
-                (msg::spec),
-                "'HEAD' means the most recent version of source code",
-                "{spec} is already installed -- not building from HEAD")
 DECLARE_MESSAGE(AManifest, (), "", "a manifest")
 DECLARE_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified, (), "", "a maximum of one asset read url can be specified.")
 DECLARE_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified, (), "", "a maximum of one asset write url can be specified.")
@@ -1331,8 +1327,7 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 "",
                 "Failed to parse CMake console output to locate block start/end markers.")
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
-DECLARE_MESSAGE(FailedToParseConfig, (msg::path), "", "Failed to parse configuration: {path}")
-DECLARE_MESSAGE(FailedToParseVersionFile, (msg::path), "", "Failed to parse version file: {path}")
+DECLARE_MESSAGE(FailedToParseConfig, (), "", "failed to parse configuration")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
@@ -1364,6 +1359,7 @@ DECLARE_MESSAGE(FeatureBaselineExpectedFeatures,
                 "When using '{value}' a list of features must be specified.")
 DECLARE_MESSAGE(FeatureBaselineFormatted, (), "", "Succeeded in formatting the feature baseline file.")
 DECLARE_MESSAGE(FeatureBaselineNoFeaturesForFail, (), "", "When using '= fail' no list of features is allowed.")
+DECLARE_MESSAGE(FeatureBaselineNoFeaturesForPass, (), "", "When using '= pass' no list of features is allowed.")
 DECLARE_MESSAGE(FeatureTestProblems, (), "", "There are some feature test problems!")
 DECLARE_MESSAGE(FileIsNotExecutable, (), "", "this file does not appear to be executable")
 DECLARE_MESSAGE(FilesRelativeToTheBuildDirectoryHere, (), "", "the files are relative to the build directory here")
@@ -1788,6 +1784,11 @@ DECLARE_MESSAGE(InstallCopiedFile,
                 "{path_source} -> {path_destination} done")
 DECLARE_MESSAGE(InstalledBy, (msg::path), "", "Installed by {path}")
 DECLARE_MESSAGE(InstalledPackages, (), "", "The following packages are already installed:")
+DECLARE_MESSAGE(InstalledPackagesHead,
+                (),
+                "",
+                "The following packages are already installed, but were requested at --head version. Their installed "
+                "contents will not be changed. To get updated versions, remove these packages first:")
 DECLARE_MESSAGE(InstalledRequestedPackages, (), "", "All requested packages are currently installed.")
 DECLARE_MESSAGE(InstallFailed, (msg::path, msg::error_msg), "", "failed: {path}: {error_msg}")
 DECLARE_MESSAGE(InstallingFromFilesystemRegistry, (), "", "installing from filesystem registry here")
@@ -2813,6 +2814,10 @@ DECLARE_MESSAGE(ToRemovePackages,
                 "",
                 "To only remove outdated packages, run\n{command_name} remove --outdated")
 DECLARE_MESSAGE(TotalInstallTime, (msg::elapsed), "", "Total install time: {elapsed}")
+DECLARE_MESSAGE(TotalInstallTimeSuccess,
+                (msg::elapsed),
+                "",
+                "All requested installations completed successfully in: {elapsed}")
 DECLARE_MESSAGE(ToUpdatePackages,
                 (msg::command_name),
                 "",
@@ -2888,15 +2893,67 @@ DECLARE_MESSAGE(UnexpectedPortversion,
                 (),
                 "'field' means a JSON key/value pair here",
                 "unexpected \"port-version\" without a versioning field")
-DECLARE_MESSAGE(UnexpectedState,
-                (msg::feature_spec, msg::actual, msg::elapsed),
-                "{actual} is the actual state, e.g. 'pass', 'skip', ...",
-                "{feature_spec} resulted in the unexpected state {actual} after {elapsed}")
+DECLARE_MESSAGE(UnexpectedStateFailedPass,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to pass")
+DECLARE_MESSAGE(UnexpectedStateFailedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} build failed but was expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteConsiderSkippingPort,
+                (msg::package_name, msg::spec),
+                "",
+                "consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips")
+DECLARE_MESSAGE(
+    UnexpectedStateFailedNoteConsiderSkippingPortOrCombination,
+    (msg::package_name, msg::spec, msg::feature_spec),
+    "",
+    "consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or "
+    "by marking mutually exclusive features as options")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteFeatureMarkedCascade,
+                (),
+                "",
+                "consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteMoreFeaturesRequired,
+                (msg::package_name),
+                "",
+                "if some features are required, consider effectively always enabling those parts in portfile.cmake for "
+                "{package_name}, or consider adding `{package_name}[required-feature]=options` to include "
+                "'required-feature' in all tests")
+DECLARE_MESSAGE(UnexpectedStateFailedNotePortMarkedCascade, (), "", "consider changing this `=cascade` to `=fail`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSeparateCombinationFails,
+                (msg::feature_spec, msg::feature),
+                "",
+                "if {feature} succeeds when built with other features but not alone, consider adding "
+                "`{feature_spec}=combination-fails`")
+DECLARE_MESSAGE(UnexpectedStateFailedNoteSeparateFeatureFails,
+                (msg::feature_spec, msg::feature),
+                "",
+                "if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this "
+                "test as failing, and remove {feature} from combined feature testing")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedCascade,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassFeatureMarkedFail,
+                (msg::feature_spec, msg::feature),
+                "",
+                "{feature_spec} passed but {feature} was marked expected to fail")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedCascade,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to be a cascaded failure")
+DECLARE_MESSAGE(UnexpectedStatePassPortMarkedFail,
+                (msg::feature_spec),
+                "",
+                "{feature_spec} passed but was marked expected to fail")
 DECLARE_MESSAGE(
     UnexpectedStateCascade,
     (msg::feature_spec),
     "",
     "{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:")
+DECLARE_MESSAGE(UnexpectedStateCascadePortNote, (), "", "consider changing this to =cascade instead")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
@@ -3271,7 +3328,6 @@ DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                 "",
                 "Waiting for {count} remaining binary cache submissions...")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
-DECLARE_MESSAGE(WarnOnParseConfig, (msg::path), "", "Found the following warnings in configuration {path}:")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 (msg::package_name, msg::git_tree_sha),

@@ -545,7 +545,9 @@ namespace vcpkg
                         system32_env,
                         "\\Wbem;",
                         system32_env,
-                        "\\WindowsPowerShell\\v1.0\\");
+                        "\\WindowsPowerShell\\v1.0\\;",
+                        system32_env,
+                        "\\OpenSSH\\");
 
         std::vector<std::string> env_strings = {
             "ALLUSERSPROFILE",

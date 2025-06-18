@@ -169,7 +169,7 @@ namespace
             std::vector<std::pair<SourceLoc, std::string>> segments;
             parse_segments(segments);
 
-            if (get_error())
+            if (messages().any_errors())
             {
                 return {};
             }
@@ -1399,7 +1399,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (messages().any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -1844,7 +1844,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (messages().any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -2628,12 +2628,11 @@ ExpectedL<AssetCachingSettings> vcpkg::parse_download_configuration(const Option
     const auto source = format_environment_variable(EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
-    if (auto err = parser.get_error())
+    if (parser.messages().any_errors())
     {
-        return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgSeeURL, msg::url = docs::assetcaching_url);
+        auto&& messages = std::move(parser).extract_messages();
+        messages.add_line(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
+        return messages.join();
     }
 
     if (s.azblob_templates_to_put.size() > 1)
@@ -2676,35 +2675,42 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 
     BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
     default_parser.parse();
-    for (auto&& warning : default_parser.messages().warnings)
+    if (default_parser.messages().any_errors())
     {
-        msg::println_warning(warning.message);
+        return default_parser.messages().join();
     }
-    if (auto err = default_parser.get_error())
+
+    for (const auto& line : default_parser.messages().lines())
     {
-        return *err;
+        line.print_to(out_sink);
     }
 
     // must live until the end of the function due to StringView in BinaryConfigParser
     const auto source = format_environment_variable("VCPKG_BINARY_SOURCES");
     BinaryConfigParser env_parser(env_string, source, &s);
     env_parser.parse();
-    for (auto&& warning : env_parser.messages().warnings)
+    if (env_parser.messages().any_errors())
     {
-        msg::println_warning(warning.message);
+        return env_parser.messages().join();
     }
-    if (auto err = env_parser.get_error())
+
+    for (const auto& line : env_parser.messages().lines())
     {
-        return *err;
+        line.print_to(out_sink);
     }
 
     for (auto&& arg : args)
     {
         BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
-        if (auto err = arg_parser.get_error())
+        if (arg_parser.messages().any_errors())
         {
-            return *err;
+            return arg_parser.messages().join();
+        }
+
+        for (const auto& line : arg_parser.messages().lines())
+        {
+            line.print_to(out_sink);
         }
     }
 

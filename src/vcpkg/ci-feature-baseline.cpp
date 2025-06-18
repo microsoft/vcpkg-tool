@@ -7,64 +7,80 @@
 
 using namespace vcpkg;
 
-namespace vcpkg
+namespace
 {
-
-    namespace
+    bool respect_entry(const ParsedQualifiedSpecifier& entry,
+                       Triplet triplet,
+                       Triplet host_triplet,
+                       CMakeVars::CMakeVarProvider& var_provider)
     {
-        bool respect_entry(const ParsedQualifiedSpecifier& entry,
-                           Triplet triplet,
-                           Triplet host_triplet,
-                           CMakeVars::CMakeVarProvider& var_provider)
+        if (auto maybe_triplet = entry.triplet.get())
         {
-            if (auto maybe_triplet = entry.triplet.get())
-            {
-                return maybe_triplet->value == triplet;
-            }
-            else if (auto maybe_platform = entry.platform.get())
-            {
-                return maybe_platform->value.evaluate(
-                    var_provider.get_or_load_dep_info_vars(PackageSpec{entry.name.value, triplet}, host_triplet));
-            }
-            return true;
+            return maybe_triplet->value == triplet;
+        }
+        else if (auto maybe_platform = entry.platform.get())
+        {
+            return maybe_platform->value.evaluate(
+                var_provider.get_or_load_dep_info_vars(PackageSpec{entry.name.value, triplet}, host_triplet));
+        }
+        return true;
+    }
+
+    static constexpr StringLiteral SKIP = "skip";
+    static constexpr StringLiteral FAIL = "fail";
+    static constexpr StringLiteral CASCADE = "cascade";
+    static constexpr StringLiteral PASS = "pass";
+    static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
+    static constexpr StringLiteral OPTIONS = "options";
+    static constexpr StringLiteral FEATURE_FAIL = "feature-fails";
+    static constexpr StringLiteral COMBINATION_FAIL = "combination-fails";
+
+    enum class CiFeatureBaselineKeyword
+    {
+        Skip,
+        Fail,
+        Cascade,
+        Pass,
+        NoTest,
+        Options,
+        FeatureFail,
+        CombinationFail,
+    };
+
+    static constexpr StringLiteral ci_feature_baseline_state_names[] = {
+        SKIP, FAIL, CASCADE, PASS, NO_TEST, OPTIONS, FEATURE_FAIL, COMBINATION_FAIL};
+
+    StringLiteral to_string_literal(CiFeatureBaselineKeyword state)
+    {
+        auto as_int = static_cast<unsigned int>(state);
+        if (as_int >= std::size(ci_feature_baseline_state_names))
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        static constexpr StringLiteral SKIP = "skip";
-        static constexpr StringLiteral FAIL = "fail";
-        static constexpr StringLiteral CASCADE = "cascade";
-        static constexpr StringLiteral PASS = "pass";
-        static constexpr StringLiteral NO_TEST = "no-separate-feature-test";
-        static constexpr StringLiteral OPTIONS = "options";
-        static constexpr StringLiteral FEATURE_FAIL = "feature-fails";
-        static constexpr StringLiteral COMBINATION_FAIL = "combination-fails";
+        return ci_feature_baseline_state_names[as_int];
+    }
 
-        enum class CiFeatureBaselineKeyword
+    CiFeatureBaselineState convert_keyword_to_state(CiFeatureBaselineKeyword keyword)
+    {
+        switch (keyword)
         {
-            Skip,
-            Fail,
-            Cascade,
-            Pass,
-            NoTest,
-            Options,
-            FeatureFail,
-            CombinationFail,
-        };
-
-        static constexpr StringLiteral ci_feature_baseline_state_names[] = {
-            SKIP, FAIL, CASCADE, PASS, NO_TEST, OPTIONS, FEATURE_FAIL, COMBINATION_FAIL};
-
-        StringLiteral to_string_literal(CiFeatureBaselineKeyword state)
-        {
-            auto as_int = static_cast<unsigned int>(state);
-            if (as_int >= std::size(ci_feature_baseline_state_names))
-            {
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            return ci_feature_baseline_state_names[as_int];
+            case CiFeatureBaselineKeyword::Skip: return CiFeatureBaselineState::Skip;
+            case CiFeatureBaselineKeyword::Fail: return CiFeatureBaselineState::Fail;
+            case CiFeatureBaselineKeyword::Cascade: return CiFeatureBaselineState::Cascade;
+            case CiFeatureBaselineKeyword::Pass: return CiFeatureBaselineState::Pass;
+            case CiFeatureBaselineKeyword::NoTest:
+            case CiFeatureBaselineKeyword::Options:
+            case CiFeatureBaselineKeyword::FeatureFail:
+            case CiFeatureBaselineKeyword::CombinationFail:
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
+} // unnamed namespace
+
+namespace vcpkg
+{
     CiFeatureBaseline parse_ci_feature_baseline(StringView text,
                                                 StringView origin,
                                                 ParseMessages& messages,
@@ -80,6 +96,7 @@ namespace vcpkg
             if (parser.at_eof())
             {
                 // success
+                messages = std::move(parser).extract_messages();
                 return result;
             }
 
@@ -110,17 +127,21 @@ namespace vcpkg
 
             auto keyword_loc = parser.cur_loc();
             CiFeatureBaselineKeyword keyword;
-            if (parser.try_match_keyword(FAIL))
-            {
-                keyword = CiFeatureBaselineKeyword::Fail;
-            }
-            else if (parser.try_match_keyword(SKIP))
+            if (parser.try_match_keyword(SKIP))
             {
                 keyword = CiFeatureBaselineKeyword::Skip;
+            }
+            else if (parser.try_match_keyword(FAIL))
+            {
+                keyword = CiFeatureBaselineKeyword::Fail;
             }
             else if (parser.try_match_keyword(CASCADE))
             {
                 keyword = CiFeatureBaselineKeyword::Cascade;
+            }
+            else if (parser.try_match_keyword(PASS))
+            {
+                keyword = CiFeatureBaselineKeyword::Pass;
             }
             else if (parser.try_match_keyword(NO_TEST))
             {
@@ -166,6 +187,11 @@ namespace vcpkg
                     parser.add_error(msg::format(msgFeatureBaselineNoFeaturesForFail), keyword_loc);
                     break;
                 }
+                if (keyword == CiFeatureBaselineKeyword::Pass)
+                {
+                    parser.add_error(msg::format(msgFeatureBaselineNoFeaturesForPass), keyword_loc);
+                    break;
+                }
                 if (keyword != CiFeatureBaselineKeyword::CombinationFail &&
                     keyword != CiFeatureBaselineKeyword::Options)
                 {
@@ -192,95 +218,101 @@ namespace vcpkg
                 break;
             }
 
-            if (respect_entry(spec, triplet, host_triplet, var_provider))
+            if (!respect_entry(spec, triplet, host_triplet, var_provider))
             {
-                auto& entry = result.ports[spec.name.value];
-                if (auto spec_features = spec.features.get())
-                {
-                    const auto error_if_already_defined =
-                        [&](const std::set<Located<std::string>, LocatedStringLess>& conflict_set,
-                            CiFeatureBaselineKeyword state) {
-                            for (auto&& this_decl_feature : *spec_features)
+                continue;
+            }
+
+            auto& entry = result.ports[spec.name.value];
+            if (auto spec_features = spec.features.get())
+            {
+                const auto error_if_already_defined =
+                    [&](const std::set<Located<std::string>, LocatedStringLess>& conflict_set,
+                        CiFeatureBaselineKeyword state) {
+                        for (auto&& this_decl_feature : *spec_features)
+                        {
+                            auto conflict_decl_feature = conflict_set.find(this_decl_feature.value);
+                            if (conflict_decl_feature == conflict_set.end())
                             {
-                                auto conflict_decl_feature = conflict_set.find(this_decl_feature.value);
-                                if (conflict_decl_feature == conflict_set.end())
-                                {
-                                    continue;
-                                }
-
-                                if (!parser.get_error())
-                                {
-                                    LocalizedString additional_info;
-                                    additional_info
-                                        .append_raw(parser.format_file_prefix(conflict_decl_feature->loc.row,
-                                                                              conflict_decl_feature->loc.column))
-                                        .append_raw(NotePrefix)
-                                        .append(msgPreviousDeclarationWasHere)
-                                        .append_raw('\n');
-                                    append_caret_line(additional_info, conflict_decl_feature->loc);
-                                    parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
-                                                                 msg::feature = this_decl_feature.value,
-                                                                 msg::value = to_string_literal(state)),
-                                                     this_decl_feature.loc,
-                                                     std::move(additional_info));
-                                }
-
-                                return true;
+                                continue;
                             }
-                            return false;
-                        };
-                    if (keyword == CiFeatureBaselineKeyword::Skip)
+
+                            if (!parser.messages().any_errors())
+                            {
+                                parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
+                                                             msg::feature = this_decl_feature.value,
+                                                             msg::value = to_string_literal(state)),
+                                                 this_decl_feature.loc);
+                                parser.add_note(msg::format(msgPreviousDeclarationWasHere), conflict_decl_feature->loc);
+                            }
+
+                            return true;
+                        }
+                        return false;
+                    };
+
+                if (keyword == CiFeatureBaselineKeyword::Skip)
+                {
+                    if (error_if_already_defined(entry.failing_features, CiFeatureBaselineKeyword::FeatureFail)) break;
+                    if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
+                    entry.skip_features.insert(spec_features->begin(), spec_features->end());
+                }
+                else if (keyword == CiFeatureBaselineKeyword::Cascade)
+                {
+                    if (error_if_already_defined(entry.failing_features, CiFeatureBaselineKeyword::FeatureFail)) break;
+                    if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
+                    entry.cascade_features.insert(spec_features->begin(), spec_features->end());
+                }
+                else if (keyword == CiFeatureBaselineKeyword::CombinationFail)
+                {
+                    if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
+                    if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
+                    auto failing_features = hoist_locations(std::move(*spec_features));
+                    failing_features.value.emplace_back(FeatureNameCore);
+                    Util::sort_unique_erase(failing_features.value);
+                    entry.fail_configurations.push_back(std::move(failing_features));
+                }
+                else if (keyword == CiFeatureBaselineKeyword::FeatureFail)
+                {
+                    if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
+                    if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
+                    entry.failing_features.insert(spec_features->begin(), spec_features->end());
+                }
+                else if (keyword == CiFeatureBaselineKeyword::NoTest)
+                {
+                    entry.no_separate_feature_test.insert(spec_features->begin(), spec_features->end());
+                }
+                else if (keyword == CiFeatureBaselineKeyword::Options)
+                {
+                    entry.options.push_back(hoist_locations(std::move(*spec_features)));
+                }
+            }
+            else
+            {
+                const CiFeatureBaselineState this_decl_state = convert_keyword_to_state(keyword);
+                if (auto existing_state = entry.state.get())
+                {
+                    if (existing_state->value == this_decl_state)
                     {
-                        if (error_if_already_defined(entry.failing_features, CiFeatureBaselineKeyword::FeatureFail))
-                            break;
-                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
-                        entry.skip_features.insert(spec_features->begin(), spec_features->end());
+                        parser.add_warning(msg::format(msgFeatureBaselineEntryAlreadySpecified,
+                                                       msg::feature = spec.name.value,
+                                                       msg::value = to_string_literal(existing_state->value)),
+                                           spec.name.loc);
+                        parser.add_note(msg::format(msgPreviousDeclarationWasHere), existing_state->loc);
                     }
-                    else if (keyword == CiFeatureBaselineKeyword::Cascade)
+                    else
                     {
-                        if (error_if_already_defined(entry.failing_features, CiFeatureBaselineKeyword::FeatureFail))
-                            break;
-                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
-                        entry.cascade_features.insert(spec_features->begin(), spec_features->end());
-                    }
-                    else if (keyword == CiFeatureBaselineKeyword::CombinationFail)
-                    {
-                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
-                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
-                        auto failing_features = hoist_locations(std::move(*spec_features));
-                        failing_features.value.emplace_back(FeatureNameCore);
-                        Util::sort_unique_erase(failing_features.value);
-                        entry.fail_configurations.push_back(std::move(failing_features));
-                    }
-                    else if (keyword == CiFeatureBaselineKeyword::FeatureFail)
-                    {
-                        if (error_if_already_defined(entry.skip_features, CiFeatureBaselineKeyword::Skip)) break;
-                        if (error_if_already_defined(entry.cascade_features, CiFeatureBaselineKeyword::Cascade)) break;
-                        entry.failing_features.insert(spec_features->begin(), spec_features->end());
-                    }
-                    else if (keyword == CiFeatureBaselineKeyword::NoTest)
-                    {
-                        entry.no_separate_feature_test.insert(spec_features->begin(), spec_features->end());
-                    }
-                    else if (keyword == CiFeatureBaselineKeyword::Options)
-                    {
-                        entry.options.push_back(hoist_locations(std::move(*spec_features)));
+                        parser.add_error(msg::format(msgFeatureBaselineEntryAlreadySpecified,
+                                                     msg::feature = spec.name.value,
+                                                     msg::value = to_string_literal(existing_state->value)),
+                                         spec.name.loc);
+                        parser.add_note(msg::format(msgPreviousDeclarationWasHere), existing_state->loc);
+                        break;
                     }
                 }
                 else
                 {
-                    switch (keyword)
-                    {
-                        case CiFeatureBaselineKeyword::Skip: entry.state = CiFeatureBaselineState::Skip; break;
-                        case CiFeatureBaselineKeyword::Fail: entry.state = CiFeatureBaselineState::Fail; break;
-                        case CiFeatureBaselineKeyword::Cascade: entry.state = CiFeatureBaselineState::Cascade; break;
-                        case CiFeatureBaselineKeyword::Pass: entry.state = CiFeatureBaselineState::Pass; break;
-                        case CiFeatureBaselineKeyword::NoTest:
-                        case CiFeatureBaselineKeyword::Options:
-                        case CiFeatureBaselineKeyword::FeatureFail:
-                        case CiFeatureBaselineKeyword::CombinationFail:
-                        default: Checks::unreachable(VCPKG_LINE_INFO);
-                    }
+                    entry.state.emplace(spec.name.loc, this_decl_state);
                 }
             }
         }
@@ -291,38 +323,83 @@ namespace vcpkg
         return result;
     }
 
-    const CiFeatureBaselineEntry& CiFeatureBaseline::get_port(const std::string& port_name) const
+    const CiFeatureBaselineEntry* CiFeatureBaseline::get_port(const std::string& port_name) const
     {
         auto iter = ports.find(port_name);
         if (iter != ports.end())
         {
-            return iter->second;
+            return &iter->second;
         }
-        static CiFeatureBaselineEntry empty_entry;
-        return empty_entry;
+
+        return nullptr;
     }
 
-    bool CiFeatureBaselineEntry::will_fail(const InternalFeatureSet& internal_feature_set) const
+    Located<CiFeatureBaselineOutcome> expected_outcome(const CiFeatureBaselineEntry* baseline,
+                                                       const InternalFeatureSet& spec_features)
     {
-        if (!failing_features.empty() && Util::any_of(internal_feature_set, [&](const std::string& feature) {
-                return Util::Sets::contains(failing_features, feature);
-            }))
+        if (baseline)
         {
-            return true;
-        }
-        if (std::is_sorted(internal_feature_set.begin(), internal_feature_set.end()))
-        {
-            return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-                return fail_configuration.value == internal_feature_set;
-            });
+            if (auto pstate = baseline->state.get())
+            {
+                switch (pstate->value)
+                {
+                    case CiFeatureBaselineState::Fail:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc, CiFeatureBaselineOutcome::PortMarkedFail};
+                    case CiFeatureBaselineState::Cascade:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc,
+                                                                 CiFeatureBaselineOutcome::PortMarkedCascade};
+                    case CiFeatureBaselineState::Skip:
+                    case CiFeatureBaselineState::Pass: break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
+            }
+
+            for (auto&& failing_configuration : baseline->fail_configurations)
+            {
+                if (std::is_permutation(failing_configuration.value.begin(),
+                                        failing_configuration.value.end(),
+                                        spec_features.begin(),
+                                        spec_features.end()))
+                {
+                    return Located<CiFeatureBaselineOutcome>{failing_configuration.loc,
+                                                             CiFeatureBaselineOutcome::ConfigurationFail};
+                }
+            }
+
+            for (auto&& spec_feature : spec_features)
+            {
+                for (auto&& failing_feature : baseline->failing_features)
+                {
+                    if (spec_feature == failing_feature.value)
+                    {
+                        return Located<CiFeatureBaselineOutcome>{failing_feature.loc,
+                                                                 CiFeatureBaselineOutcome::FeatureFail};
+                    }
+                }
+            }
+
+            for (auto&& spec_feature : spec_features)
+            {
+                for (auto&& cascading_feature : baseline->cascade_features)
+                {
+                    if (spec_feature == cascading_feature.value)
+                    {
+                        return Located<CiFeatureBaselineOutcome>{cascading_feature.loc,
+                                                                 CiFeatureBaselineOutcome::FeatureCascade};
+                    }
+                }
+            }
+
+            if (auto pstate = baseline->state.get())
+            {
+                if (pstate->value == CiFeatureBaselineState::Pass)
+                {
+                    return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ExplicitPass};
+                }
+            }
         }
 
-        return Util::any_of(fail_configurations, [&](const Located<std::vector<std::string>>& fail_configuration) {
-            return fail_configuration.value.size() == internal_feature_set.size() &&
-                   Util::all_of(internal_feature_set, [&](const std::string& feature) {
-                       return Util::contains(fail_configuration.value, feature);
-                   });
-        });
+        return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ImplicitPass};
     }
 
     StringLiteral to_string_literal(CiFeatureBaselineState state)

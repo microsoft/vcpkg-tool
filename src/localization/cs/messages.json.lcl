@@ -930,12 +930,12 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
+          <Val><![CDATA[No action taken because all installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Všechny nainstalované balíčky jsou aktuální.]]></Val>
+            <Val><![CDATA[Nebyla provedena žádná akce, protože všechny nainstalované balíčky jsou aktuální.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+            <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -954,15 +954,6 @@
           <Val><![CDATA[{spec} is already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec} je už nainstalováno.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec} už je nainstalovaný – nesestavuje se z HEAD.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5737,14 +5728,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
+          <Val><![CDATA[failed to parse configuration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nepovedlo se parsovat konfiguraci: {path}.]]></Val>
+            <Val><![CDATA[nepovedlo se parsovat konfiguraci]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+            <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5772,15 +5763,6 @@
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[kontrola správnosti]5D; Nepovedlo se parsovat serializovaný binární odstavec.]A;Otevřete prosím problém na https://github.com/microsoft/vcpkg s následujícím výstupem:]A;{error_msg}]A;Serializovaný binární odstavec:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nepovedlo se parsovat soubor verze: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5904,6 +5886,15 @@
           <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Při použití = fail není povolený žádný seznam funkcí.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForPass" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= pass' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Při použití = pass není povolený žádný seznam funkcí.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7254,6 +7245,15 @@
           <Val><![CDATA[The following packages are already installed:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Následující balíčky jsou již nainstalovány:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InstalledPackagesHead" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Následující balíčky jsou už nainstalované, ale byly požadovány ve verzi --head. Jejich nainstalovaný obsah nebude změněn. Chcete-li získat aktualizované verze, nejdříve tyto balíčky odeberte:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10540,6 +10540,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TotalInstallTimeSuccess" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All requested installations completed successfully in: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Všechny požadované instalace byly úspěšně dokončeny za: {elapsed}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TrailingCommaInArray" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Trailing comma in array]]></Val>
@@ -11029,15 +11038,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{feature_spec} má za následek neočekávaný stav {actual} po {elapsed}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:]]></Val>
@@ -11047,6 +11047,132 @@
           <Prev Cat="Text">
             <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascadePortNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this to =cascade instead]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvažte změnu této možnosti na =cascade.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sestavení {feature_spec} selhalo, ale očekávalo se, že se bude jednat o kaskádové selhání.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvažte přidání {package_name}=fail, {spec}=fail nebo ekvivalentních přeskočení.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPortOrCombination" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or by marking mutually exclusive features as options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvažte přidání {package_name}=fail, {spec}=fail, {feature_spec}=combination-fails nebo ekvivalentních přeskočení nebo označení vzájemně se vylučujících funkcí jako možností.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteFeatureMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvažte možnost změnit =cascade na =feature-fails a/nebo jeden nebo více =combination-fails]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteMoreFeaturesRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]5D;=options` to include 'required-feature' in all tests]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pokud se vyžadují některé funkce, zvažte možnost vždy povolit tyto části v souboru portfile.cmake pro {package_name}, nebo zvažte přidání {package_name}[required-feature]5D;=options tak, aby zahrnovaly required-feature ve všech testech.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNotePortMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=fail`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Zvažte zde změnu z =cascade na =fail.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateCombinationFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} succeeds when built with other features but not alone, consider adding `{feature_spec}=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[V případě úspěchu funkce {feature} při sestavování s jinými funkcemi, ale ne samostatně, doporučujeme přidat {feature_spec}=combination-fails.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateFeatureFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this test as failing, and remove {feature} from combined feature testing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Pokud {feature} vždy selže, doporučujeme přidat {feature_spec}=feature-fails, které označí tento test jako neúspěšný, a odeberte {feature} z kombinovaného testování funkcí.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to pass]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sestavení {feature_spec} selhalo, ale očekávalo se, že bude úspěšné.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sestavení {feature_spec} proběhlo úspěšně, ale u {feature} bylo označeno, že se očekávalo kaskádové selhání.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sestavení {feature_spec} proběhlo úspěšně, ale u {feature} bylo označeno, že očekávalo se, že bude neúspěšné.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} proběhlo úspěšně, ale bylo označeno, že se očekávalo kaskádové selhání.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Sestavení {feature_spec} proběhlo úspěšně, ale označilo se, že očekávalo se, že bude neúspěšné.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -12171,15 +12297,6 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[čeká se na uzamčení systému souborů na {path}…]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[V konfiguraci {path} se našla následující upozornění:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -354,7 +354,14 @@ namespace vcpkg
             auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
-                std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
+                StringView p_https_proxy_view = *p_https_proxy;
+                if (p_https_proxy_view.size() != 0 && p_https_proxy_view.back() == '/')
+                {
+                    // remove trailing slash
+                    p_https_proxy_view = p_https_proxy_view.substr(0, p_https_proxy_view.size() - 1);
+                }
+
+                std::wstring env_proxy_settings = Strings::to_utf16(p_https_proxy_view);
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();

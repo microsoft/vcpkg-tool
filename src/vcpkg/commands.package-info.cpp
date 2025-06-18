@@ -112,9 +112,9 @@ namespace vcpkg
                 {
                     parser.add_error(msg::format(msgExpectedPortName));
                 }
-                if (auto err = parser.get_error())
+                if (parser.messages().any_errors())
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
+                    parser.messages().exit_if_errors_or_warnings();
                 }
 
                 auto& pkg = *maybe_pkg.get();

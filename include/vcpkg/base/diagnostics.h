@@ -68,12 +68,20 @@ namespace vcpkg
         DiagnosticLine reduce_to_warning() const&;
         DiagnosticLine reduce_to_warning() &&;
 
+        const LocalizedString& message_text() const noexcept { return m_message; }
+
     private:
-        DiagnosticLine(DiagKind kind,
+        struct InternalTag
+        {
+        };
+
+        DiagnosticLine(InternalTag,
+                       DiagKind kind,
                        const Optional<std::string>& origin,
                        TextRowCol position,
                        const LocalizedString& message);
-        DiagnosticLine(DiagKind kind, Optional<std::string>&& origin, TextRowCol position, LocalizedString&& message);
+        DiagnosticLine(
+            InternalTag, DiagKind kind, Optional<std::string>&& origin, TextRowCol position, LocalizedString&& message);
 
         DiagKind m_kind;
         Optional<std::string> m_origin;

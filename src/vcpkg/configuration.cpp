@@ -380,10 +380,10 @@ namespace
     {
         auto extract_string = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             std::string value;
-            const auto errors_count = r.errors();
+            const auto errors_count = r.messages().error_count();
             if (r.optional_object_field(obj, key, value, Json::UntypedStringDeserializer::instance))
             {
-                if (errors_count != r.errors()) return;
+                if (errors_count != r.messages().error_count()) return;
                 put_into.insert_or_replace(key, std::move(value));
             }
         };
@@ -402,10 +402,10 @@ namespace
         };
         auto extract_dictionary = [&](const Json::Object& obj, StringView key, Json::Object& put_into) {
             Json::Object value;
-            const auto errors_count = r.errors();
+            const auto errors_count = r.messages().error_count();
             if (r.optional_object_field(obj, key, value, DictionaryDeserializer::instance))
             {
-                if (errors_count != r.errors()) return;
+                if (errors_count != r.messages().error_count()) return;
                 put_into.insert_or_replace(key, value);
             }
         };
@@ -856,32 +856,22 @@ namespace vcpkg
     {
         Json::Reader reader(origin);
         auto maybe_configuration = ConfigurationDeserializer::instance.visit(reader, obj);
-        bool has_warnings = !reader.warnings().empty();
-        bool has_errors = !reader.errors().empty();
-        if (has_warnings || has_errors)
+        if (!reader.messages().good())
         {
-            if (has_errors)
+            if (reader.messages().any_errors())
             {
-                messageSink.println(Color::error, msgFailedToParseConfig, msg::path = origin);
-            }
-            else
-            {
-                messageSink.println(Color::warning, msgWarnOnParseConfig, msg::path = origin);
+                DiagnosticLine{DiagKind::Error, origin, msg::format(msgFailedToParseConfig)}.print_to(messageSink);
             }
 
-            for (auto&& msg : reader.errors())
+            for (auto&& line : reader.messages().lines())
             {
-                messageSink.println(Color::error, LocalizedString().append_indent().append_raw(msg));
+                line.print_to(messageSink);
             }
 
-            for (auto&& msg : reader.warnings())
-            {
-                messageSink.println(Color::warning, LocalizedString().append_indent().append(msg));
-            }
+            DiagnosticLine{DiagKind::Note, msg::format(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url)}
+                .print_to(messageSink);
 
-            msg::println(msgExtendedDocumentationAtUrl, msg::url = docs::registries_url);
-
-            if (has_errors) return nullopt;
+            if (reader.messages().any_errors()) return nullopt;
         }
         return maybe_configuration;
     }
