@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "利用可能なヘルプ トピック:",
   "AzUrlAssetCacheRequiresBaseUrl": "予期しない引数: アセット構成 'azurl' にはベース URL が必要です",
   "AzUrlAssetCacheRequiresLessThanFour": "予期しない引数: アセット構成 'azurl' には 4 個未満の引数が必要です",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "azcopy は、ファイルを {url} にアップロードできませんでした。終了コード: {exit_code}、http コード: {value}。",
   "BaselineConflict": "マニフェスト ファイルで vcpkg-configuration.default-registry を指定すると、組み込みのベースラインと競合します。\nこれらの競合する設定のいずれかを削除してください。",
   "BaselineGitShowFailed": "コミット '{commit_sha}' からベースラインをチェックアウトしているときに、`git show` versions/baseline.json に失敗しました。これは、'git fetch' を使用してコミットをフェッチすることで修正できる可能性があります。",
   "BaselineMissing": "{package_name} にはバージョンが割り当てられていません",

@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "可用的說明主題:",
   "AzUrlAssetCacheRequiresBaseUrl": "未預期的引數: 資產設定 'azurl' 需要基底 URL",
   "AzUrlAssetCacheRequiresLessThanFour": "未預期的引數: 資產設定 'azurl' 需要少於 4 個引數",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "Azcopy 無法將檔案上傳到 {url}，結束代碼為 {exit_code}，HTTP 代碼為{value}。",
   "BaselineConflict": "在資訊清單檔案中指定 vcpkg-configuration.default-registry 與內建基準衝突。\n請移除其中一個衝突設定。",
   "BaselineGitShowFailed": "從認可 '{commit_sha}' 中簽出基準時，無法 `git show` versions/baseline.json。使用 `git fetch` 擷取認可以修正這個問題。",
   "BaselineMissing": "{package_name} 未獲指派版本",
