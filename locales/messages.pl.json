@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "Dostępne tematy pomocy:",
   "AzUrlAssetCacheRequiresBaseUrl": "nieoczekiwane argumenty: konfiguracja zasobu „azurl” wymaga podstawowego adresu URL",
   "AzUrlAssetCacheRequiresLessThanFour": "nieoczekiwane argumenty: konfiguracja zasobu „azurl” wymaga mniej niż 4 argumenty",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "Program azcopy nie może przekazać pliku do adresu {url}. Kod zakończenia: {exit_code} i kod HTTP {value}.",
   "BaselineConflict": "Określenie pliku vcpkg-configuration.default-registry w pliku manifestu powoduje konflikt z wbudowanym punkt odniesienia.\nUsuń jedno z tych ustawień powodujących konflikt.",
   "BaselineGitShowFailed": "podczas wyewidencjonowywania punktu odniesienia z „{commit_sha}” zatwierdzania nie można wykonać operacji „git show” versions/baseline.json. Ten problem można naprawić, pobierając zatwierdzenia za pomocą polecenia „git fetch”.",
   "BaselineMissing": "Pakiet {package_name} nie ma przypisanej wersji",
