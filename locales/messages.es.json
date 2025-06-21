@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "Temas de ayuda disponibles:",
   "AzUrlAssetCacheRequiresBaseUrl": "argumentos inesperados: la configuración de recursos \"azurl\" requiere una URL base",
   "AzUrlAssetCacheRequiresLessThanFour": "argumentos inesperados: la configuración de recursos \"azurl\" requiere menos de 4 argumentos",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "azcopy no pudo cargar un archivo en {url} con el código de salida {exit_code} y el código HTTP {value}.",
   "BaselineConflict": "La especificación de vcpkg-configuration.default-registry en un archivo de manifiesto entra en conflicto con la línea base.\nQuite una de estas configuraciones en conflicto.",
   "BaselineGitShowFailed": "Error en `git show` versions/baseline.json al restaurar la línea base de la confirmación \"{commit_sha}\". Esto puede solucionarse recuperando las confirmaciones con `git fetch`.",
   "BaselineMissing": "{package_name} no tiene asignada una versión",

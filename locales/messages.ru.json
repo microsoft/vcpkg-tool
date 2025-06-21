@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "Доступные разделы справки:",
   "AzUrlAssetCacheRequiresBaseUrl": "непредвиденные аргументы: для конфигурации ресурса \"azurl\" требуется базовый URL-адрес",
   "AzUrlAssetCacheRequiresLessThanFour": "непредвиденные аргументы: для конфигурации ресурса \"azurl\" требуется менее 4 аргументов",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "Решению azcopy не удалось отправить файл по адресу {url}. Код завершения: {exit_code}, код HTTP: {value}.",
   "BaselineConflict": "Указание vcpkg-configuration.default-registry в файле манифеста конфликтует со встроенным базовым планом.\nУдалите один из этих конфликтующих параметров.",
   "BaselineGitShowFailed": "при проверке базовых показателей из фиксации \"{commit_sha}\" не удалось \"git show\" versions/baseline.json. Это можно исправить путем получения фиксаций с помощью \"git fetch\".",
   "BaselineMissing": "Для {package_name} не назначена версия",

@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "사용 가능한 도움말 항목:",
   "AzUrlAssetCacheRequiresBaseUrl": "예기치 않은 인수: 자산 구성 'azurl'에는 기본 URL이 필요",
   "AzUrlAssetCacheRequiresLessThanFour": "예기치 않은 인수: 자산 구성 'azurl'에는 4개 미만의 인수가 필요",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "azcopy가 종료 코드 {exit_code} 및 HTTP 코드 {value}(으)로 파일을 {url}에 업로드하지 못했습니다.",
   "BaselineConflict": "매니페스트 파일에서 vcpkg-configuration.default-registry를 지정하면 기본 제공 기준과 충돌합니다.\n충돌하는 설정 중 하나를 제거하세요.",
   "BaselineGitShowFailed": "'{commit_sha}' 커밋에서 기준을 체크 아웃하는 동안 `git show` versions/baseline.json에 실패했습니다. 이 문제는 'git fetch'로 커밋을 페치하여 해결할 수 있습니다.",
   "BaselineMissing": "{package_name}에 버전이 할당되지 않았습니다.",
