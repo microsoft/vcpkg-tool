@@ -112,7 +112,7 @@ namespace vcpkg
 
         friend bool operator==(const Located& lhs, const Located& rhs)
         {
-            return lhs.loc.row == rhs.loc.row && rhs.loc.column == rhs.loc.column && lhs.value == rhs.value;
+            return lhs.loc.row == rhs.loc.row && lhs.loc.column == rhs.loc.column && lhs.value == rhs.value;
         }
         friend bool operator!=(const Located& lhs, const Located& rhs) { return !(lhs == rhs); }
     };
