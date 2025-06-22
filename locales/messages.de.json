@@ -161,7 +161,7 @@
   "AvailableHelpTopics": "Verfügbare Hilfethemen:",
   "AzUrlAssetCacheRequiresBaseUrl": "Unerwartete Argumente: Die Ressourcenkonfiguration \"azurl\" erfordert eine Basis-URL.",
   "AzUrlAssetCacheRequiresLessThanFour": "Unerwartete Argumente: Die Ressourcenkonfiguration \"azurl\" erfordert weniger als 4 Argumente.",
-  "AzcopyFailedToPutBlob": "azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.",
+  "AzcopyFailedToPutBlob": "azCopy konnte die Datei nicht unter {url} mit dem Exitcode {exit_code} und dem HTTP-Code {value} hochladen.",
   "BaselineConflict": "Die Angabe von \"vcpkg-configuration.default-registry\" in einer Manifestdatei verursacht einen Konflikt mit der integrierten Baseline.\nEntfernen Sie eine dieser widersprüchlichen Einstellungen.",
   "BaselineGitShowFailed": "Beim Auschecken der Baseline aus dem Commit \"{commit_sha}\" konnte \"git show\" versions/baseline.json nicht ausgeführt werden. Dies kann behoben werden, indem Commits mit \"git fetch\" abgerufen werden.",
   "BaselineMissing": "„{package_name}“ ist keine Version zugewiesen.",
