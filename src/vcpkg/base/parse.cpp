@@ -9,13 +9,14 @@ namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
-        if (row == 0 && column == 0)
+        if (row == 0)
         {
+            if (column != 0)
+            {
+                ++column;
+            }
+
             return;
-        }
-        else if (row == 0 || column == 0)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         if (ch == '\t')
