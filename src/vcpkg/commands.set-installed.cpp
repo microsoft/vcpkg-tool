@@ -287,7 +287,8 @@ namespace vcpkg
         adjust_action_plan_to_status_db(action_plan, status_db);
         if (used_cached_compiler_info)
         {
-            Checks::check_exit(VCPKG_LINE_INFO, action_plan.empty());
+            Checks::check_exit(VCPKG_LINE_INFO,
+                               action_plan.install_actions.empty() && action_plan.remove_actions.empty());
         }
 
         print_plan(action_plan);

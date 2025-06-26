@@ -200,9 +200,6 @@ namespace vcpkg
         virtual FileType symlink_status(const Path& target, std::error_code& ec) const = 0;
         FileType symlink_status(const Path& target, LineInfo li) const noexcept;
 
-        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
-        int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
-
         // absolute/system_complete + lexically_normal + fixup_win32_path_case
         // we don't use real canonical due to issues like:
         // https://github.com/microsoft/vcpkg/issues/16614 (canonical breaking on some older Windows Server containers)

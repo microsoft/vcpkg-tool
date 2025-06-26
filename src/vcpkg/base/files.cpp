@@ -1850,18 +1850,6 @@ namespace vcpkg
         return result;
     }
 
-    int64_t ReadOnlyFilesystem::last_write_time(const Path& target, LineInfo li) const noexcept
-    {
-        std::error_code ec;
-        auto result = this->last_write_time(target, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
-
-        return result;
-    }
-
     Path ReadOnlyFilesystem::almost_canonical(const Path& target, LineInfo li) const
     {
         std::error_code ec;
@@ -3169,28 +3157,6 @@ namespace vcpkg
 
             ec.assign(errno, std::generic_category());
             return FileType::unknown;
-#endif // ^^^ !_WIN32
-        }
-
-        virtual int64_t last_write_time(const Path& target, std::error_code& ec) const override
-        {
-#if defined(_WIN32)
-            auto result = stdfs::last_write_time(to_stdfs_path(target), ec);
-            return result.time_since_epoch().count();
-#else // ^^^ _WIN32 // !_WIN32 vvv
-            struct stat s;
-            if (::lstat(target.c_str(), &s) == 0)
-            {
-                ec.clear();
-#ifdef __APPLE__
-                return s.st_mtimespec.tv_sec * 1'000'000'000 + s.st_mtimespec.tv_nsec;
-#else
-                return s.st_mtim.tv_sec * 1'000'000'000 + s.st_mtim.tv_nsec;
-#endif
-            }
-
-            ec.assign(errno, std::generic_category());
-            return {};
 #endif // ^^^ !_WIN32
         }
 
