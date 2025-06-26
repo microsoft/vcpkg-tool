@@ -1,0 +1,26 @@
+{
+  "name": "vcpkg-license-features",
+  "version": "0",
+  "features": {
+    "apache-2": {
+      "description": "Apache 2.0 license feature",
+      "license": "Apache-2.0"
+    },
+    "boost": {
+      "description": "Boost license feature",
+      "license": "BSL-1.0"
+    },
+    "bsd-3-clause": {
+      "description": "BSD-3-Clause license feature",
+      "license": "BSD-3-Clause"
+    },
+    "mit": {
+      "description": "MIT license feature",
+      "license": "MIT"
+    },
+    "null": {
+      "description": "Null license feature",
+      "license": null
+    }
+  }
+}

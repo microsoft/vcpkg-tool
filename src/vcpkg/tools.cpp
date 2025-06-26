@@ -38,6 +38,7 @@ namespace
         {"linux", ToolOs::Linux},
         {"freebsd", ToolOs::FreeBsd},
         {"openbsd", ToolOs::OpenBsd},
+        {"solaris", ToolOs::Solaris},
     };
 }
 
@@ -121,9 +122,9 @@ namespace vcpkg
             .then([&](Json::Object&& as_object) -> ExpectedL<std::vector<ToolDataEntry>> {
                 Json::Reader r(origin);
                 auto maybe_tool_data = ToolDataFileDeserializer::instance.visit(r, as_object);
-                if (!r.errors().empty() || !r.warnings().empty())
+                if (!r.messages().good())
                 {
-                    return r.join();
+                    return r.messages().join();
                 }
 
                 return maybe_tool_data.value_or_exit(VCPKG_LINE_INFO);
@@ -176,6 +177,8 @@ namespace vcpkg
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::FreeBsd);
 #elif defined(__OpenBSD__)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::OpenBsd);
+#elif defined(__SVR4) && defined(__sun)
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Solaris);
 #else
         return nullopt;
 #endif

@@ -1,0 +1,6 @@
+vcpkg-empty-featureful-port[c] = combination-fails
+vcpkg-empty-featureful-port[a] = cascade
+vcpkg-empty-featureful-port[b] = feature-fails
+vcpkg-empty-featureful-port[default-feature] = feature-fails
+vcpkg-empty-featureful-port = fail
+vcpkg-empty-featureful-port[core,a-default-feature,c] = combination-fails

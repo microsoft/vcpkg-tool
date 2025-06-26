@@ -19,26 +19,38 @@ namespace vcpkg
         Fail,
         Cascade,
         Pass,
-        FirstFree // only a marker for the last enum entry
+    };
+
+    enum class CiFeatureBaselineOutcome
+    {
+        ImplicitPass,
+        ExplicitPass,
+        PortMarkedFail,
+        PortMarkedCascade,
+        FeatureFail,
+        FeatureCascade,
+        ConfigurationFail,
     };
 
     struct CiFeatureBaselineEntry
     {
-        CiFeatureBaselineState state = CiFeatureBaselineState::Pass;
-        std::set<std::string, std::less<>> skip_features;
-        std::set<std::string, std::less<>> no_separate_feature_test;
-        std::set<std::string, std::less<>> cascade_features;
-        std::set<std::string, std::less<>> failing_features;
-        std::vector<std::vector<std::string>> fail_configurations;
-        // A list of sets of features of which excatly one must be selected
-        std::vector<std::vector<std::string>> options;
-        bool will_fail(const InternalFeatureSet& internal_feature_set) const;
+        Optional<Located<CiFeatureBaselineState>> state;
+        std::set<Located<std::string>, LocatedStringLess> skip_features;
+        std::set<Located<std::string>, LocatedStringLess> no_separate_feature_test;
+        std::set<Located<std::string>, LocatedStringLess> cascade_features;
+        std::set<Located<std::string>, LocatedStringLess> failing_features;
+        std::vector<Located<std::vector<std::string>>> fail_configurations;
+        // A list of sets of features of which exactly one must be selected
+        std::vector<Located<std::vector<std::string>>> options;
     };
+
+    Located<CiFeatureBaselineOutcome> expected_outcome(const CiFeatureBaselineEntry* baseline,
+                                                       const InternalFeatureSet& spec_features);
 
     struct CiFeatureBaseline
     {
         std::unordered_map<std::string, CiFeatureBaselineEntry> ports;
-        const CiFeatureBaselineEntry& get_port(const std::string& port_name) const;
+        const CiFeatureBaselineEntry* get_port(const std::string& port_name) const;
     };
 
     StringLiteral to_string_literal(CiFeatureBaselineState state);

@@ -810,10 +810,13 @@
       </Item>
       <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexicographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{package_name}"의 버전 형식은 "version-string"을 사용하지만 형식은 "version"으로 허용됩니다. 이 포트의 버전이 완화 버전 규칙을 사용하여 정렬 가능한 경우 형식을 "version"으로 변경하고 이 명령을 다시 실행합니다. 완화된 버전 규칙은 각 숫자 구성 요소별로 버전을 정렬합니다. 그런 다음 대시 접미사가 있는 버전은 먼저 어휘순으로 정렬됩니다. 더하기 빌드 태그는 무시됩니다. 예:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;특히 대시 접미사는 이후가 아니라 *먼저* 정렬됩니다. 1.0-anything < 1.0]A;실제로 의미 체계 부분이 적용되지 않더라도 이 정렬 순서는 의미 체계 버전 관리에서 선택한 순서와 동일합니다(https://semver.org 참조).]A;이 포트의 버전이 이러한 규칙에 따라 정렬되지 않은 경우 이 명령을 다시 실행하고 --skip-version-format-check를 추가하여 이 검사를 사용하지 않도록 설정합니다.]]></Val>
+            <Val><![CDATA["{package_name}"의 버전 형식은 "version-string"을 사용하지만 형식은 "version"으로 허용됩니다. 이 포트의 버전이 완화 버전 규칙을 사용하여 정렬 가능한 경우 형식을 "version"으로 변경하고 이 명령을 다시 실행합니다. 완화된 버전 규칙은 각 숫자 구성 요소별로 버전을 정렬합니다. 그런 다음 대시 접미사가 있는 버전은 먼저 어휘순으로 정렬됩니다. 더하기 빌드 태그는 무시됩니다. 예:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;특히 대시 접미사는 이후가 아니라 *먼저* 정렬됩니다. 1.0-anything < 1.0]A;실제로 의미 체계 부분이 적용되지 않더라도 이 정렬 순서는 유의적 버전 관리에서 선택한 순서와 동일합니다(https://semver.org 참조).]A;이 포트의 버전이 이러한 규칙에 따라 정렬되지 않은 경우 이 명령을 다시 실행하고 --skip-version-format-check를 추가하여 이 검사를 사용하지 않도록 설정합니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -927,13 +930,22 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
+          <Val><![CDATA[No action taken because all installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[설치된 모든 패키지가 최신 상태입니다.]]></Val>
+            <Val><![CDATA[설치된 모든 패키지가 최신 상태이므로 아무 작업도 수행되지 않았습니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+            <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AllShasValid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All checked sha's are valid.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[선택한 모든 SHA가 유효합니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -942,15 +954,6 @@
           <Val><![CDATA[{spec} is already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{spec}이(가) 이미 설치되어 있습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{spec}은(는) 이미 설치되어 있습니다 -- HEAD에서 빌드하지 않음]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1672,6 +1675,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AzcopyFailedToPutBlob" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[azcopy가 종료 코드 {exit_code} 및 HTTP 코드 {value}(으)로 파일을 {url}에 업로드하지 못했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BaselineConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.]A;Please remove one of these conflicting settings.]]></Val>
@@ -2010,6 +2022,15 @@
           <Val><![CDATA[Comma separated list of ports to skip for the host triplet]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[호스트 3자리 ID에 대해 건너뛸 포트를 쉼표로 구분한 목록]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CISettingsOptKnownFailuresFrom" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the file of known package build failures]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[알려진 패키지 빌드 실패 파일의 경로]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2559,6 +2580,33 @@
           <Val><![CDATA[Tests whether a port is supported without building it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[포트를 빌드하지 않고도 지원되는지 테스트]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchFix" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixes the sha entry in the given file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[지정된 파일의 SHA 항목 수정]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchOnlyWithName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only check entries with the given name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[지정된 이름의 항목만 확인]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[모든 항목을 다운로드하고 해시를 계산하여 도구 데이터 파일의 sha512 항목을 확인합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3231,6 +3279,15 @@
           <Val><![CDATA[Integrates vcpkg with machines, projects, or shells]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg를 컴퓨터, 프로젝트 또는 셸과 통합합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdLicenseReportSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Displays the declared licenses of all ports in the installed tree]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 트리에 있는 모든 포트의 선언된 라이선스를 표시합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4645,6 +4702,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingTools" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {count} tools]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{count}개의 도구 다운로드 중]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading {url} -> {path}]]></Val>
@@ -5287,15 +5353,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExpectedFailSkipOrPass" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[여기에는 'fail', 'skip' 또는 'pass'가 필요합니다.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureBaselineState" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails', or 'combination-fails' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[여기에는 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails' 또는 'combination-fails'가 필요합니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5674,14 +5746,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
+          <Val><![CDATA[failed to parse configuration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[구성 {path}을(를) 구문 분석하지 못했습니다.]]></Val>
+            <Val><![CDATA[구성을 구문 분석하지 못했습니다]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+            <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5709,15 +5781,6 @@
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[정상 검사]5D; 직렬화된 이진 단락을 구문 분석하지 못했습니다.]A;https://github.com/microsoft/vcpkg에서 다음 출력과 함께 문제를 여세요.]A;{error_msg}]A;직렬화된 이진 단락:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[버전 파일을 구문 분석하지 못했습니다. {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5808,10 +5871,13 @@
       </Item>
       <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Val><![CDATA['{feature}' was already declared as '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[기능 '{feature}'이(가) 이미 '{value}'(으)로 선언되었습니다.]]></Val>
+            <Val><![CDATA['{feature}'이(가) 이미 '{value}'(으)로 선언되었습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5838,6 +5904,24 @@
           <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['= fail'을 사용하는 경우 기능 목록이 허용되지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForPass" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= pass' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[`= pass`를 사용하는 경우 기능 목록을 사용할 수 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureTestProblems" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are some feature test problems!]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기능 테스트 문제가 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6004,6 +6088,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FixedEntriesInFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixed {count} entries in {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path}에서 {count} 항목을 수정했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FloatingPointConstTooBig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Floating point constant too big: {count}]]></Val>
@@ -6097,20 +6190,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[GHA 이진 원본을 사용하려면 ACTIONS_RUNTIME_TOKEN 및 ACTIONS_CACHE_URL 환경 변수를 설정해야 합니다. 자세한 내용은 {url}을(를) 참조하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA['--debug'를 사용하여 구문 분석 실패에 대한 자세한 정보를 가져옵니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GhaBinaryCacheDeprecated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching provider instead, see extended documentation at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA['x-gha' 이진 캐싱 백엔드가 제거되었습니다. 대신 NuGet 기반 이진 캐싱 공급자를 사용하는 것이 좋습니다. 자세한 내용은 {url}의 확장 문서를 참조하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7174,6 +7267,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstalledPackagesHead" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다음 패키지는 이미 설치되어 있지만 --head 버전에서 요청되었습니다. 설치된 내용은 변경되지 않습니다. 업데이트된 버전을 받으려면 먼저 다음 패키지를 제거하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstalledRequestedPackages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[All requested packages are currently installed.]]></Val>
@@ -7521,15 +7623,6 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[잘못된 인수: 이진 구성 '{binary_source}'에는 두 번째 인수로 앞에 '?'가 없는 SAS 토큰이 필요함]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[잘못된 인수: 이진 구성 '{binary_source}'에는 0개 또는 1개의 인수가 필요함]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8113,15 +8206,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LicenseExpressionExpectLicenseFoundParen" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected a license name, found a parenthesis.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[라이선스 이름이 필요하고 괄호를 찾았습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LicenseExpressionImbalancedParens" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There was a close parenthesis without an opening parenthesis.]]></Val>
@@ -8611,6 +8695,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoEntryWithName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No entry found with name '{value}' and a url.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이름 '{value}' 및 URL이 포함된 항목을 찾을 수 없습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8625,6 +8718,15 @@
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[패키지가 설치되어 있지 않습니다. 의도한 명령이 `search`인가요?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NoInstalledPackagesLicenseReport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are no installed packages, and thus no licenses of installed packages. Did you mean to install something first?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 패키지가 없으므로 설치된 패키지의 라이선스가 없습니다. 먼저 설치할 항목이 있나요?]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8976,6 +9078,42 @@
           <Val><![CDATA[Package Installation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[패키지 설치]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdx" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed packages declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 패키지는 다음과 같은 라이선스를 선언합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdxThisInstall" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Packages installed in this vcpkg installation declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 vcpkg 설치에 설치된 패키지는 다음 라이선스를 선언합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseUnknown" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[일부 패키지에서 SPDX 라이선스를 선언하지 않았습니다. 각 패키지의 'copyright' 파일을 확인하여 라이선스에 대한 자세한 정보를 확인하세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 콘텐츠에 대한 라이선스는 소유자가 부여합니다. Microsoft는 타사 패키지에 대해 책임을 지지 않으며 라이선스를 부여하지도 않습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9823,6 +9961,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PreviousDeclarationWasHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[previous declaration was here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이전 선언 참조가 있음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -10023,15 +10170,6 @@
           <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{elapsed} 후 GCS의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{elapsed} 후 GitHub Actions 캐시에서 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10449,6 +10587,15 @@
           <Val><![CDATA[Total install time: {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[총 설치 시간: {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TotalInstallTimeSuccess" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All requested installations completed successfully in: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[요청된 모든 설치를 완료했습니다({elapsed}).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10942,20 +11089,140 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
+          <Val><![CDATA[{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{feature_spec}에서 {elapsed} 후 예기치 않은 상태 {actual}이(가) 발생했습니다.]]></Val>
+            <Val><![CDATA[{feature_spec}가 다음 종속성을 사용할 수 없으므로 예기치 않게 연속 오류가 발생했습니다.]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascadePortNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this to =cascade instead]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이것을 =cascade로 변경하는 것을 고려해 보세요.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UnexpectedStateFailedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Val><![CDATA[{feature_spec} build failed but was expected to be a cascaded failure]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[다음 종속성이 빌드되지 않아 {feature_spec}에서 예기치 않은 상태 {actual}이(가) 발생했습니다.]]></Val>
+            <Val><![CDATA[{feature_spec} 빌드에 실패했지만 연속 오류여야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}=fail`, {spec}=fail` 또는 동등한 건너뛰기를 추가하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPortOrCombination" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or by marking mutually exclusive features as options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}=fail`, {spec}=fail`, {feature_spec}=combination-fails` 또는 동등한 건너뛰기를 추가하거나 상호 배타적인 기능을 옵션으로 표시해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteFeatureMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 `=cascade`를 `=feature-fails` 및/또는 하나 이상의 `=combination-fails`로 변경하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteMoreFeaturesRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]5D;=options` to include 'required-feature' in all tests]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[일부 기능이 필요한 경우, {package_name}의 portfile.cmake에서 해당 부분을 항상 활성화하거나 모든 테스트에 'required-feature'를 포함하도록 {package_name}[required-feature]5D;=options`를 추가하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNotePortMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=fail`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이 '=cascade'를 '=fail'로 변경하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateCombinationFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} succeeds when built with other features but not alone, consider adding `{feature_spec}=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[다른 기능으로 빌드되었지만 단독으로는 {feature}가 성공하는 경우, {feature_spec}=combination-fails`를 추가하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateFeatureFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this test as failing, and remove {feature} from combined feature testing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature}가 항상 실패하는 경우, {feature_spec}=feature-fails`를 추가하여 이 테스트를 실패로 표시하고 결합된 기능 테스트에서 {feature}를 제거하는 것을 고려해 보세요.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to pass]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 빌드에 실패했지만 통과해야 합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec}이(가) 통과했지만 {feature}이(가) 연속 오류로 표시되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec}이(가) 통과했지만 {feature}가 실패로 표시되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec}이(가) 통과했지만 연속 오류로 표시되었습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec}이(가) 통과했지만 실패로 표시되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12081,15 +12348,6 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path}에 대한 파일 시스템 잠금을 기다리는 중...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[구성 {path}에서 다음 경고가 발견되었습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

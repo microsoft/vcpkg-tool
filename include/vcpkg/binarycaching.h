@@ -148,6 +148,8 @@ namespace vcpkg
         std::vector<UrlTemplate> url_templates_to_get;
         std::vector<UrlTemplate> url_templates_to_put;
 
+        std::vector<UrlTemplate> azblob_templates_to_put;
+
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
 
@@ -157,9 +159,6 @@ namespace vcpkg
 
         std::vector<std::string> cos_read_prefixes;
         std::vector<std::string> cos_write_prefixes;
-
-        bool gha_write = false;
-        bool gha_read = false;
 
         std::vector<AzureUpkgSource> upkg_templates_to_get;
         std::vector<AzureUpkgSource> upkg_templates_to_put;

@@ -1076,9 +1076,9 @@ namespace vcpkg::Json
                     parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
                 }
 
-                if (const auto maybe_error = std::move(parser).get_error())
+                if (parser.messages().any_errors())
                 {
-                    return std::move(*maybe_error);
+                    return parser.messages().join();
                 }
 
                 return ParsedJson{std::move(val), parser.style()};
@@ -1467,10 +1467,10 @@ namespace vcpkg::Json
     }
     void Reader::add_expected_type_error(const LocalizedString& expected_type)
     {
-        m_errors.push_back(LocalizedString::from_raw(m_origin)
-                               .append_raw(": ")
-                               .append_raw(ErrorPrefix)
-                               .append(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type));
+        m_messages.add_line(
+            DiagnosticLine{DiagKind::Error,
+                           m_origin,
+                           msg::format(msgMismatchedType, msg::json_field = path(), msg::json_type = expected_type)});
     }
     void Reader::add_extra_field_error(const LocalizedString& type, StringView field, StringView suggestion)
     {
@@ -1486,14 +1486,16 @@ namespace vcpkg::Json
     }
     void Reader::add_generic_error(const LocalizedString& type, StringView message)
     {
-        m_errors.push_back(LocalizedString::from_raw(m_origin)
-                               .append_raw(": ")
-                               .append_raw(ErrorPrefix)
-                               .append_raw(path())
-                               .append_raw(" (")
-                               .append(type)
-                               .append_raw("): ")
-                               .append_raw(message));
+        m_messages.add_line(DiagnosticLine{
+            DiagKind::Error,
+            m_origin,
+            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(message)});
+    }
+
+    void Reader::add_field_name_error(const LocalizedString& type, StringView field, StringView message)
+    {
+        PathGuard guard{m_path, field};
+        add_generic_error(type, message);
     }
 
     void Reader::check_for_unexpected_fields(const Object& obj,
@@ -1523,32 +1525,12 @@ namespace vcpkg::Json
         }
     }
 
-    void Reader::add_warning(LocalizedString type, StringView msg)
+    void Reader::add_warning(LocalizedString type, StringView message)
     {
-        m_warnings.push_back(LocalizedString::from_raw(m_origin)
-                                 .append_raw(": ")
-                                 .append_raw(WarningPrefix)
-                                 .append_raw(path())
-                                 .append_raw(" (")
-                                 .append(type)
-                                 .append_raw("): ")
-                                 .append_raw(msg));
-    }
-
-    LocalizedString Reader::join() const
-    {
-        LocalizedString res;
-        for (const auto& e : m_errors)
-        {
-            if (!res.empty()) res.append_raw("\n");
-            res.append(e);
-        }
-        for (const auto& w : m_warnings)
-        {
-            if (!res.empty()) res.append_raw("\n");
-            res.append(w);
-        }
-        return res;
+        m_messages.add_line(DiagnosticLine{
+            DiagKind::Warning,
+            m_origin,
+            LocalizedString::from_raw(path()).append_raw(" (").append(type).append_raw("): ").append_raw(message)});
     }
 
     std::string Reader::path() const noexcept

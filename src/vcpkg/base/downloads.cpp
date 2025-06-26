@@ -354,7 +354,14 @@ namespace vcpkg
             auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
             if (auto p_https_proxy = maybe_https_proxy_env.get())
             {
-                std::wstring env_proxy_settings = Strings::to_utf16(*p_https_proxy);
+                StringView p_https_proxy_view = *p_https_proxy;
+                if (p_https_proxy_view.size() != 0 && p_https_proxy_view.back() == '/')
+                {
+                    // remove trailing slash
+                    p_https_proxy_view = p_https_proxy_view.substr(0, p_https_proxy_view.size() - 1);
+                }
+
+                std::wstring env_proxy_settings = Strings::to_utf16(p_https_proxy_view);
                 WINHTTP_PROXY_INFO proxy;
                 proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
                 proxy.lpszProxy = env_proxy_settings.data();
@@ -877,6 +884,43 @@ namespace vcpkg
         {
             context.report_error(msg::format(
                 msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
+            return false;
+        }
+
+        return true;
+    }
+
+    bool azcopy_to_asset_cache(DiagnosticContext& context,
+                               StringView raw_url,
+                               const SanitizedUrl& sanitized_url,
+                               const Path& file)
+    {
+        auto azcopy_cmd = Command{"azcopy"};
+        azcopy_cmd.string_arg("copy");
+        azcopy_cmd.string_arg("--from-to").string_arg("LocalBlob");
+        azcopy_cmd.string_arg("--log-level").string_arg("NONE");
+        azcopy_cmd.string_arg(file);
+        azcopy_cmd.string_arg(raw_url.to_string());
+
+        int code = 0;
+        auto res = cmd_execute_and_stream_lines(context, azcopy_cmd, [&code](StringView line) {
+            static constexpr StringLiteral response_marker = "RESPONSE ";
+            if (line.starts_with(response_marker))
+            {
+                code = std::strtol(line.data() + response_marker.size(), nullptr, 10);
+            }
+        });
+
+        auto pres = res.get();
+        if (!pres)
+        {
+            return false;
+        }
+
+        if (*pres != 0)
+        {
+            context.report_error(msg::format(
+                msgAzcopyFailedToPutBlob, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
             return false;
         }
 

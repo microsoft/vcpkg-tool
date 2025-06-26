@@ -168,7 +168,7 @@ namespace
             std::vector<std::pair<SourceLoc, std::string>> segments;
             parse_segments(segments);
 
-            if (get_error())
+            if (messages().any_errors())
             {
                 return {};
             }
@@ -221,6 +221,8 @@ namespace
         {
             const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             size_t count_stored = 0;
+            // Can't rename if zip_path should be coppied to multiple locations;
+            // otherwise, the original file would be gone.
             const bool can_attempt_rename = m_dirs.size() == 1 && request.unique_write_provider;
             for (const auto& archives_root_dir : m_dirs)
             {
@@ -231,15 +233,16 @@ namespace
                 std::error_code ec;
                 if (can_attempt_rename)
                 {
-                    // if we are already on the same filesystem we can just rename into place
                     m_fs.rename_or_delete(zip_path, archive_path, ec);
                 }
 
                 if (!can_attempt_rename || (ec && ec == std::make_error_condition(std::errc::cross_device_link)))
                 {
-                    // either we need to make a copy or the rename failed because because buildtrees and the binary
+                    // either we need to make a copy or the rename failed because buildtrees and the binary
                     // cache write target are on different filesystems, copy to a sibling in that directory and rename
                     // into place
+                    // First copy to temporary location to avoid race between different vcpkg instances trying to upload
+                    // the same archive, e.g. if 2 machines try to upload to a shared binary cache.
                     m_fs.copy_file(zip_path, archive_temp_path, CopyOptions::overwrite_existing, ec);
                     if (!ec)
                     {
@@ -500,6 +503,57 @@ namespace
 
         Path m_buildtrees;
         UrlTemplate m_url_template;
+        std::vector<std::string> m_secrets;
+    };
+
+    struct AzureBlobPutBinaryProvider : IWriteBinaryProvider
+    {
+        AzureBlobPutBinaryProvider(const Filesystem& fs,
+                                   std::vector<UrlTemplate>&& urls,
+                                   const std::vector<std::string>& secrets)
+            : m_fs(fs), m_urls(std::move(urls)), m_secrets(secrets)
+        {
+        }
+
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
+        {
+            if (!request.zip_path) return 0;
+
+            const auto& zip_path = *request.zip_path.get();
+
+            size_t count_stored = 0;
+            const auto file_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
+            if (file_size == 0) return count_stored;
+
+            // cf.
+            // https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json
+            constexpr size_t max_single_write = 5000000000;
+            bool use_azcopy = file_size > max_single_write;
+
+            PrintingDiagnosticContext pdc{msg_sink};
+            WarningDiagnosticContext wdc{pdc};
+
+            for (auto&& templ : m_urls)
+            {
+                auto url = templ.instantiate_variables(request);
+                auto maybe_success =
+                    use_azcopy
+                        ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
+                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                if (maybe_success)
+                {
+                    count_stored++;
+                }
+            }
+            return count_stored;
+        }
+
+        bool needs_nuspec_data() const override { return false; }
+        bool needs_zip_file() const override { return true; }
+
+    private:
+        const Filesystem& m_fs;
+        std::vector<UrlTemplate> m_urls;
         std::vector<std::string> m_secrets;
     };
 
@@ -812,186 +866,6 @@ namespace
             m_fs.remove(nupkg_path, IgnoreErrors{});
             return count_stored;
         }
-    };
-
-    struct GHABinaryProvider : ZipReadBinaryProvider
-    {
-        GHABinaryProvider(
-            ZipTool zip, const Filesystem& fs, const Path& buildtrees, const std::string& url, const std::string& token)
-            : ZipReadBinaryProvider(std::move(zip), fs)
-            , m_buildtrees(buildtrees)
-            , m_url(url + "_apis/artifactcache/cache")
-            , m_secrets()
-            , m_token_header("Authorization: Bearer " + token)
-        {
-            m_secrets.emplace_back(token);
-        }
-
-        std::string lookup_cache_entry(StringView name, const std::string& abi) const
-        {
-            const auto url = format_url_query(m_url, {{"keys=" + name + "-" + abi, "version=" + abi}});
-            const std::string headers[] = {
-                m_content_type_header.to_string(),
-                m_token_header,
-                m_accept_header.to_string(),
-            };
-
-            WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "GET", headers, url, m_secrets);
-            if (auto p = res.get())
-            {
-                auto maybe_json = Json::parse_object(*p, m_url);
-                if (auto json = maybe_json.get())
-                {
-                    if (auto archive_location = json->get(JsonIdArchiveCapitalLocation))
-                    {
-                        if (auto archive_location_string = archive_location->maybe_string())
-                        {
-                            return *archive_location_string;
-                        }
-                    }
-                }
-            }
-            return {};
-        }
-
-        void acquire_zips(View<const InstallPlanAction*> actions,
-                          Span<Optional<ZipResource>> out_zip_paths) const override
-        {
-            std::vector<std::pair<std::string, Path>> url_paths;
-            std::vector<size_t> url_indices;
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
-                auto&& action = *actions[idx];
-                const auto& package_name = action.spec.name();
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                auto url = lookup_cache_entry(package_name, abi);
-                if (url.empty()) continue;
-
-                url_paths.emplace_back(std::move(url), make_temp_archive_path(m_buildtrees, action.spec, abi));
-                url_indices.push_back(idx);
-            }
-
-            WarningDiagnosticContext wdc{console_diagnostic_context};
-            const auto codes = download_files_no_cache(wdc, url_paths, {}, m_secrets);
-            for (size_t i = 0; i < codes.size(); ++i)
-            {
-                if (codes[i] == 200)
-                {
-                    out_zip_paths[url_indices[i]].emplace(std::move(url_paths[i].second), RemoveWhen::always);
-                }
-            }
-        }
-
-        void precheck(View<const InstallPlanAction*>, Span<CacheAvailability>) const override { }
-
-        LocalizedString restored_message(size_t count,
-                                         std::chrono::high_resolution_clock::duration elapsed) const override
-        {
-            return msg::format(msgRestoredPackagesFromGHA, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
-        }
-
-        Path m_buildtrees;
-        std::string m_url;
-        std::vector<std::string> m_secrets;
-        std::string m_token_header;
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
-        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
-    };
-
-    struct GHABinaryPushProvider : IWriteBinaryProvider
-    {
-        GHABinaryPushProvider(const Filesystem& fs, const std::string& url, const std::string& token)
-            : m_fs(fs)
-            , m_url(url + "_apis/artifactcache/caches")
-            , m_secrets()
-            , m_token_header("Authorization: Bearer " + token)
-        {
-            m_secrets.emplace_back(token);
-        }
-
-        Optional<int64_t> reserve_cache_entry(const std::string& name, const std::string& abi, int64_t cacheSize) const
-        {
-            Json::Object payload;
-            payload.insert(JsonIdKey, name + "-" + abi);
-            payload.insert(JsonIdVersion, abi);
-            payload.insert(JsonIdCacheCapitalSize, Json::Value::integer(cacheSize));
-
-            const std::string headers[] = {
-                m_accept_header.to_string(),
-                m_content_type_header.to_string(),
-                m_token_header,
-            };
-
-            WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto res = invoke_http_request(wdc, "POST", headers, m_url, m_secrets, stringify(payload));
-            if (auto p = res.get())
-            {
-                auto maybe_json = Json::parse_object(*p, m_url);
-                if (auto json = maybe_json.get())
-                {
-                    auto cache_id = json->get(JsonIdCacheCapitalId);
-                    if (cache_id && cache_id->is_integer())
-                    {
-                        return cache_id->integer(VCPKG_LINE_INFO);
-                    }
-                }
-            }
-            return {};
-        }
-
-        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
-        {
-            if (!request.zip_path) return 0;
-
-            const auto& zip_path = *request.zip_path.get();
-            const ElapsedTimer timer;
-            const auto& abi = request.package_abi;
-
-            size_t upload_count = 0;
-            auto cache_size = m_fs.file_size(zip_path, VCPKG_LINE_INFO);
-            if (cache_size == 0) return upload_count;
-
-            if (auto cacheId = reserve_cache_entry(request.spec.name(), abi, cache_size))
-            {
-                const std::string custom_headers[] = {
-                    m_token_header,
-                    m_accept_header.to_string(),
-                    "Content-Type: application/octet-stream",
-                    fmt::format("Content-Range: bytes 0-{}/{}", cache_size - 1, cache_size),
-                };
-
-                PrintingDiagnosticContext pdc{msg_sink};
-                WarningDiagnosticContext wdc{pdc};
-                const auto raw_url = m_url + "/" + std::to_string(*cacheId.get());
-                if (store_to_asset_cache(wdc, raw_url, SanitizedUrl{raw_url, {}}, "PATCH", custom_headers, zip_path))
-                {
-                    Json::Object commit;
-                    commit.insert("size", std::to_string(cache_size));
-                    const std::string headers[] = {
-                        m_accept_header.to_string(),
-                        m_content_type_header.to_string(),
-                        m_token_header,
-                    };
-
-                    if (invoke_http_request(wdc, "POST", headers, raw_url, m_secrets, stringify(commit)))
-                    {
-                        ++upload_count;
-                    }
-                }
-            }
-            return upload_count;
-        }
-
-        bool needs_nuspec_data() const override { return false; }
-        bool needs_zip_file() const override { return true; }
-
-        const Filesystem& m_fs;
-        std::string m_url;
-        std::vector<std::string> m_secrets;
-        std::string m_token_header;
-        static constexpr StringLiteral m_content_type_header = "Content-Type: application/json";
-        static constexpr StringLiteral m_accept_header = "Accept: application/json;api-version=6.0-preview.1";
     };
 
     template<class ResultOnSuccessType>
@@ -1525,7 +1399,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (messages().any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -1674,7 +1548,9 @@ namespace
                         segments[0].first);
                 }
 
-                if (!Strings::starts_with(segments[1].second, "https://"))
+                if (!Strings::starts_with(segments[1].second, "https://") &&
+                    // Allow unencrypted Azurite for testing (not reflected in error msg)
+                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
                                                  msg::base_url = "https://",
@@ -1715,7 +1591,7 @@ namespace
                 if (read) state->url_templates_to_get.push_back(url_template);
                 auto headers = azure_blob_headers();
                 url_template.headers.assign(headers.begin(), headers.end());
-                if (write) state->url_templates_to_put.push_back(url_template);
+                if (write) state->azblob_templates_to_put.push_back(url_template);
 
                 state->binary_cache_providers.insert("azblob");
             }
@@ -1843,17 +1719,7 @@ namespace
             }
             else if (segments[0].second == "x-gha")
             {
-                // Scheme: x-gha[,<readwrite>]
-                if (segments.size() > 2)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "gha"),
-                        segments[2].first);
-                }
-
-                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
-
-                state->binary_cache_providers.insert("gha");
+                add_warning(msg::format(msgGhaBinaryCacheDeprecated, msg::url = docs::binarycaching_url));
             }
             else if (segments[0].second == "http")
             {
@@ -1980,7 +1846,7 @@ namespace
             auto all_segments = parse_all_segments();
             for (auto&& x : all_segments)
             {
-                if (get_error()) return;
+                if (messages().any_errors()) return;
                 handle_segments(std::move(x));
             }
         }
@@ -2424,20 +2290,8 @@ namespace vcpkg
                 cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
 
-            if (s.gha_read || s.gha_write)
-            {
-                if (!args.actions_cache_url.has_value() || !args.actions_runtime_token.has_value())
-                {
-                    status_sink.println(
-                        Color::error,
-                        msg::format_error(msgGHAParametersMissing, msg::url = docs::binarycaching_gha_url));
-                    return false;
-                }
-            }
-
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || s.gha_read ||
-                !s.upkg_templates_to_get.empty())
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
@@ -2475,13 +2329,6 @@ namespace vcpkg
                     m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
                         zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
                 }
-
-                if (s.gha_read)
-                {
-                    const auto& url = *args.actions_cache_url.get();
-                    const auto& token = *args.actions_runtime_token.get();
-                    m_config.read.push_back(std::make_unique<GHABinaryProvider>(zip_tool, fs, buildtrees, url, token));
-                }
             }
             if (!s.upkg_templates_to_put.empty())
             {
@@ -2492,6 +2339,11 @@ namespace vcpkg
             {
                 m_config.write.push_back(
                     std::make_unique<FilesWriteBinaryProvider>(fs, std::move(s.archives_to_write)));
+            }
+            if (!s.azblob_templates_to_put.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzureBlobPutBinaryProvider>(fs, std::move(s.azblob_templates_to_put), s.secrets));
             }
             if (!s.url_templates_to_put.empty())
             {
@@ -2512,12 +2364,6 @@ namespace vcpkg
             {
                 m_config.write.push_back(
                     std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
-            }
-            if (s.gha_write)
-            {
-                const auto& url = *args.actions_cache_url.get();
-                const auto& token = *args.actions_runtime_token.get();
-                m_config.write.push_back(std::make_unique<GHABinaryPushProvider>(fs, url, token));
             }
 
             if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
@@ -2783,12 +2629,11 @@ ExpectedL<AssetCachingSettings> vcpkg::parse_download_configuration(const Option
     const auto source = format_environment_variable(EnvironmentVariableXVcpkgAssetSources);
     AssetSourcesParser parser(*arg.get(), source, &s);
     parser.parse();
-    if (auto err = parser.get_error())
+    if (parser.messages().any_errors())
     {
-        return LocalizedString::from_raw(err->to_string()) // note that this already contains error:
-            .append_raw('\n')
-            .append_raw(NotePrefix)
-            .append(msgSeeURL, msg::url = docs::assetcaching_url);
+        auto&& messages = std::move(parser).extract_messages();
+        messages.add_line(DiagnosticLine{DiagKind::Note, msg::format(msgSeeURL, msg::url = docs::assetcaching_url)});
+        return messages.join();
     }
 
     if (s.azblob_templates_to_put.size() > 1)
@@ -2831,27 +2676,42 @@ ExpectedL<BinaryConfigParserState> vcpkg::parse_binary_provider_configs(const st
 
     BinaryConfigParser default_parser("default,readwrite", "<defaults>", &s);
     default_parser.parse();
-    if (auto err = default_parser.get_error())
+    if (default_parser.messages().any_errors())
     {
-        return *err;
+        return default_parser.messages().join();
+    }
+
+    for (const auto& line : default_parser.messages().lines())
+    {
+        line.print_to(out_sink);
     }
 
     // must live until the end of the function due to StringView in BinaryConfigParser
     const auto source = format_environment_variable("VCPKG_BINARY_SOURCES");
     BinaryConfigParser env_parser(env_string, source, &s);
     env_parser.parse();
-    if (auto err = env_parser.get_error())
+    if (env_parser.messages().any_errors())
     {
-        return *err;
+        return env_parser.messages().join();
+    }
+
+    for (const auto& line : env_parser.messages().lines())
+    {
+        line.print_to(out_sink);
     }
 
     for (auto&& arg : args)
     {
         BinaryConfigParser arg_parser(arg, nullopt, &s);
         arg_parser.parse();
-        if (auto err = arg_parser.get_error())
+        if (arg_parser.messages().any_errors())
         {
-            return *err;
+            return arg_parser.messages().join();
+        }
+
+        for (const auto& line : arg_parser.messages().lines())
+        {
+            line.print_to(out_sink);
         }
     }
 

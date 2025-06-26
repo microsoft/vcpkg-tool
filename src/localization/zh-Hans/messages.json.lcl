@@ -810,10 +810,13 @@
       </Item>
       <Item ItemId=";AddVersionSuggestVersionRelaxed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexicographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[“{package_name}”的版本格式使用了 “version-string”，但可以接受该格式作为 “version”。如果此端口的版本可使用宽松版本规则进行排序，请将格式更改为 “version”，然后重新运行此命令。宽松版本规则按每个数字组件对版本进行排序。然后，具有短划线后缀的版本按字典顺序排在前面。加号内部版本标记将被忽略。示例:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+内部版本 = 1.2 < 2.0]A;请特别注意，短划线后缀排在 *前面*，而不是后面。1.0-任何内容 < 1.0]A;请注意，此排序顺序与语义版本控制中选择的排序顺序相同(请参阅 https://semver.org)，即使语义部分实际上并不适用。]A;如果此端口的版本未按这些规则排序，请通过重新运行此命令并添加 --skip-version-format-check 来禁用此检查。]]></Val>
+            <Val><![CDATA[“{package_name}”的版本格式使用了 “version-string”，但可以接受该格式作为 “version”。如果此端口的版本可使用宽松版本规则进行排序，请将格式更改为 “version”，然后重新运行此命令。宽松版本规则按每个数字组件对版本进行排序。然后，带有短划线后缀的版本按字典顺序排序（排在其他版本之前）。加号内部版本标记将被忽略。示例:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+内部版本 = 1.2 < 2.0]A;请特别注意，短划线后缀排在 *前面*，而不是后面。1.0-任何内容 < 1.0]A;请注意，此排序顺序与语义版本控制中选择的排序顺序相同(请参阅 https://semver.org)，即使语义部分实际上并不适用。]A;如果此端口的版本未按这些规则排序，请通过重新运行此命令并添加 --skip-version-format-check 来禁用此检查。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[The version format of "{package_name}" uses "version-string", but the format is acceptable as a "version". If the versions for this port are orderable using relaxed-version rules, change the format to "version", and rerun this command. Relaxed-version rules order versions by each numeric component. Then, versions with dash suffixes are sorted lexcographically before. Plus'd build tags are ignored. Examples:]A;1.0 < 1.1-alpha < 1.1-b < 1.1 < 1.1.1 < 1.2+build = 1.2 < 2.0]A;Note in particular that dashed suffixes sort *before*, not after. 1.0-anything < 1.0]A;Note that this sort order is the same as chosen in Semantic Versioning (see https://semver.org), even though the actually semantic parts do not apply.]A;If versions for this port are not ordered by these rules, disable this check by rerunning this command and adding --skip-version-format-check .]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -927,13 +930,22 @@
       </Item>
       <Item ItemId=";AllPackagesAreUpdated" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[All installed packages are up-to-date.]]></Val>
+          <Val><![CDATA[No action taken because all installed packages are up-to-date.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[所有已安装的包都是最新的。]]></Val>
+            <Val><![CDATA[未执行任何操作，因为所有已安装的包都是最新的。]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[All installed packages are up-to-date with the local portfile.]]></Val>
+            <Val><![CDATA[All installed packages are up-to-date.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AllShasValid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All checked sha's are valid.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[所有已检查的 sha 均有效。]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -942,15 +954,6 @@
           <Val><![CDATA[{spec} is already installed]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[已安装 {spec}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AlreadyInstalledNotHead" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{spec} is already installed -- not building from HEAD]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已安装 {spec} - 未从 HEAD 生成]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1672,6 +1675,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";AzcopyFailedToPutBlob" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[azcopy 未能将文件上传到 {url}，退出代码为 {exit_code}，http 代码为 {value}。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BaselineConflict" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in baseline.]A;Please remove one of these conflicting settings.]]></Val>
@@ -2010,6 +2022,15 @@
           <Val><![CDATA[Comma separated list of ports to skip for the host triplet]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[主机三元组要跳过的端口列表(端口间以逗号分隔)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CISettingsOptKnownFailuresFrom" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Path to the file of known package build failures]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已知包生成失败的文件的路径]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2559,6 +2580,33 @@
           <Val><![CDATA[Tests whether a port is supported without building it]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[测试在不生成端口的情况下是否支持端口]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchFix" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixes the sha entry in the given file]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[修复给定文件中的 sha 条目]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSwitchOnlyWithName" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Only check entries with the given name]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[仅检查具有给定名称的条目]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdCheckToolsShaSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Checks the sha512 entries in a tools data file by downloading all entries and computing the hashes]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[通过下载所有条目并计算哈希来检查工具数据文件中的 sha512 条目]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3231,6 +3279,15 @@
           <Val><![CDATA[Integrates vcpkg with machines, projects, or shells]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[将 vcpkg 与计算机、项目或 shell 集成]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdLicenseReportSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Displays the declared licenses of all ports in the installed tree]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[显示已安装树中所有端口的声明许可证]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4645,6 +4702,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadingTools" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Downloading {count} tools]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[正在下载 {count} 个工具]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadingUrlToFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Downloading {url} -> {path}]]></Val>
@@ -5287,15 +5353,21 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedFailOrSkip" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";ExpectedFailSkipOrPass" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[expected 'fail', 'skip', or 'pass' here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[此处应为“失败”、“跳过”或“通过”]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[expected 'fail' or 'skip' here]]></Val>
-          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExpectedFeatureBaselineState" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[expected 'fail', 'skip', 'pass', 'cascade', 'no-separate-feature-test', 'options', 'feature-fails', or 'combination-fails' here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此处应为 'fail'、'skip'、'pass'、'cascade'、'no-separate-feature-test'、'options'、'feature-fails'、或 'combination-fails']]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5674,14 +5746,14 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";FailedToParseConfig" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
+          <Val><![CDATA[failed to parse configuration]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法分析配置: {path}]]></Val>
+            <Val><![CDATA[未能分析配置]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Failed to parse configuration {path}]]></Val>
+            <Val><![CDATA[Failed to parse configuration: {path}]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -5709,15 +5781,6 @@
           <Val><![CDATA[[sanity check]5D; Failed to parse a serialized binary paragraph.]A;Please open an issue at https://github.com/microsoft/vcpkg, with the following output:]A;{error_msg}]A;Serialized Binary Paragraph:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[健全性检查]5D;无法分析序列化二进制段落。]A;请在 https://github.com/microsoft/vcpkg 提出问题，附加以下输出: ]A;{error_msg}]A;序列化二进制段落:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToParseVersionFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to parse version file: {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[未能分析版本文件: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5808,10 +5871,13 @@
       </Item>
       <Item ItemId=";FeatureBaselineEntryAlreadySpecified" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          <Val><![CDATA['{feature}' was already declared as '{value}']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[功能“{feature}”已声明为“{value}”。]]></Val>
+            <Val><![CDATA[“{feature}”已声明为“{value}”]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Feature '{feature}' was already declared as '{value}'.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -5838,6 +5904,24 @@
           <Val><![CDATA[When using '= fail' no list of features is allowed.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[使用 ‘= fail’ 时，不允许使用功能列表。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureBaselineNoFeaturesForPass" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[When using '= pass' no list of features is allowed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[使用 '= pass' 时，不允许使用功能列表。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";FeatureTestProblems" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are some feature test problems!]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[存在一些功能测试问题!]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6004,6 +6088,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";FixedEntriesInFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Fixed {count} entries in {path}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[修复了 {path} 中的 {count} 个条目。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";FloatingPointConstTooBig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Floating point constant too big: {count}]]></Val>
@@ -6097,20 +6190,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GHAParametersMissing" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The GHA binary source requires the ACTIONS_RUNTIME_TOKEN and ACTIONS_CACHE_URL environment variables to be set. See {url} for details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[GHA 二进制源要求设置 ACTIONS_RUNTIME_TOKEN 和 ACTIONS_CACHE_URL 环境变量。有关详细信息，请参阅 {url}。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GetParseFailureInfo" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Use '--debug' to get more information about the parse failures.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[使用 “--debug” 获取有关分析失败的详细信息。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";GhaBinaryCacheDeprecated" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching provider instead, see extended documentation at {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已移除 ‘x-gh’ 二进制缓存后端。请考虑改用基于 NuGet 的二进制缓存提供程序，请参阅 {url} 中的扩展文档。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7174,6 +7267,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InstalledPackagesHead" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[以下包已安装，但请求的是 --head 版本。不会更改其已安装的内容。要获取更新后的版本，请先移除这些包:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InstalledRequestedPackages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[All requested packages are currently installed.]]></Val>
@@ -7521,15 +7623,6 @@
           <Val><![CDATA[invalid argument: binary config '{binary_source}' requires a SAS token without a preceeding '?' as the second argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[参数无效: 二进制配置“{binary_source}”需要 SAS 令牌，不需要将前面的“?”作为第二个参数]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";InvalidArgumentRequiresZeroOrOneArgument" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[invalid argument: binary config '{binary_source}' requires 0 or 1 argument]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[参数无效: 二进制配置“{binary_source}”需要 0 或 1 个参数]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8113,15 +8206,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LicenseExpressionExpectLicenseFoundParen" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected a license name, found a parenthesis.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[应为许可证名称，找到一个括号。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LicenseExpressionImbalancedParens" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There was a close parenthesis without an opening parenthesis.]]></Val>
@@ -8614,6 +8698,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoEntryWithName" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[No entry found with name '{value}' and a url.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[找不到包含名称“{value}”和 URL 的条目。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoError" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[no error]]></Val>
@@ -8628,6 +8721,15 @@
           <Val><![CDATA[No packages are installed. Did you mean `search`?]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[未安装任何包。你指的是“search”吗?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NoInstalledPackagesLicenseReport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are no installed packages, and thus no licenses of installed packages. Did you mean to install something first?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[没有已安装的包，因此没有已安装包的许可证。是否想先安装一些内容？]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8979,6 +9081,42 @@
           <Val><![CDATA[Package Installation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[包安装]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdx" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed packages declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已安装的包声明以下许可证：]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdxThisInstall" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Packages installed in this vcpkg installation declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[此 vcpkg 安装中安装的包声明以下许可证：]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseUnknown" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[某些包未声明 SPDX 许可证。有关其许可的详细信息，请检查每个程序包的“版权”文件。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已安装的内容由所有者向你授予许可。Microsoft 既不对第三方包负责，也不授予其许可证。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9826,6 +9964,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PreviousDeclarationWasHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[previous declaration was here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[上一个声明在此处]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Previous integration file was not removed.]]></Val>
@@ -10026,15 +10173,6 @@
           <Val><![CDATA[Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{elapsed} 后从 GCS 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";RestoredPackagesFromGHA" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{elapsed} 后从 GitHub Actions Cache 还原了 {count} 个包。使用 --debug 了解更多详细信息。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10452,6 +10590,15 @@
           <Val><![CDATA[Total install time: {elapsed}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[总安装时间: {elapsed}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TotalInstallTimeSuccess" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All requested installations completed successfully in: {elapsed}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已在 {elapsed} 内成功完成所有请求的安装]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10945,20 +11092,140 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedState" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} after {elapsed}]]></Val>
+          <Val><![CDATA[{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{feature_spec} 导致 {elapsed} 后出现意外状态 {actual}]]></Val>
+            <Val><![CDATA[{feature_spec} 意外发生级联故障，因为以下依赖项不可用:]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateCascadePortNote" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this to =cascade instead]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[请考虑将此项更改为 =cascade]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedStateCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UnexpectedStateFailedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{feature_spec} resulted in the unexpected state {actual} because the following dependencies did not build:]]></Val>
+          <Val><![CDATA[{feature_spec} build failed but was expected to be a cascaded failure]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{feature_spec} 导致意外状态 {actual}，因为以下依赖项未生成:]]></Val>
+            <Val><![CDATA[{feature_spec} 生成失败，但应该是级联失效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, or `{spec}=fail`, or equivalent skips]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[请考虑添加 `{package_name}=fail`、`{spec}=fail` 或等效的跳过选项]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteConsiderSkippingPortOrCombination" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider adding `{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails`, or equivalent skips, or by marking mutually exclusive features as options]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[请考虑添加 `{package_name}=fail`、`{spec}=fail`、`{feature_spec}=combination-fails` 或等效的跳过选项，或者通过将互斥功能标记为选项来处理]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteFeatureMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=feature-fails` and/or one or more `=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[请考虑将此 `=cascade` 更改为 `=feature-fails` 和/或一个或多个 `=combination-fails`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteMoreFeaturesRequired" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if some features are required, consider effectively always enabling those parts in portfile.cmake for {package_name}, or consider adding `{package_name}[required-feature]5D;=options` to include 'required-feature' in all tests]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[如果某些功能是必需的，请考虑在 portfile.cmake 中始终为 {package_name} 启用这些部分，或者考虑添加 `{package_name}[required-feature]5D;=options` 以在所有测试中包含 'required-feature']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNotePortMarkedCascade" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[consider changing this `=cascade` to `=fail`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[请考虑将 `=cascade` 更改为 `=fail`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateCombinationFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} succeeds when built with other features but not alone, consider adding `{feature_spec}=combination-fails`]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[如果 {feature} 在与其他功能一起构建时成功，但单独构建时失败，请考虑添加 `{feature_spec}=combination-fails`]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedNoteSeparateFeatureFails" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[if {feature} always fails, consider adding `{feature_spec}=feature-fails`, which will mark this test as failing, and remove {feature} from combined feature testing]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[如果 {feature} 始终失败，请考虑添加 `{feature_spec}=feature-fails`，它将把此测试标记为失败，并从组合功能测试中删除 {feature}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStateFailedPass" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} build failed but was expected to pass]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 生成失败，但预计会通过]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 通过了，但 {feature} 被标记为应为级联失效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassFeatureMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but {feature} was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 通过了，但 {feature} 被标记为应失败]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to be a cascaded failure]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 通过了，但被标记为应为级联失效]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnexpectedStatePassPortMarkedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{feature_spec} passed but was marked expected to fail]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{feature_spec} 通过了，但被标记为应失败]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12084,15 +12351,6 @@
           <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[正在等待锁定 {path} 上的文件系统...]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";WarnOnParseConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found the following warnings in configuration {path}:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[在配置 {path} 中发现以下警告:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

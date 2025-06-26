@@ -27,6 +27,7 @@ namespace vcpkg::PlatformExpression
         linux,
         freebsd,
         openbsd,
+        solaris,
         osx,
         uwp,
         xbox,
@@ -35,6 +36,7 @@ namespace vcpkg::PlatformExpression
         ios,
         qnx,
         vxworks,
+        visionos,
 
         static_link,
         static_crt,
@@ -58,6 +60,7 @@ namespace vcpkg::PlatformExpression
             {"linux", Identifier::linux},
             {"freebsd", Identifier::freebsd},
             {"openbsd", Identifier::openbsd},
+            {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
             {"xbox", Identifier::xbox},
@@ -66,6 +69,7 @@ namespace vcpkg::PlatformExpression
             {"ios", Identifier::ios},
             {"qnx", Identifier::qnx},
             {"vxworks", Identifier::vxworks},
+            {"visionos", Identifier::visionos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
@@ -560,6 +564,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
                         case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
                         case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
+                        case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
@@ -572,6 +577,8 @@ namespace vcpkg::PlatformExpression
                         case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::mips64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "mips64");
+                        case Identifier::visionos:
+                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
                         case Identifier::static_crt: return true_if_exists_and_equal("VCPKG_CRT_LINKAGE", "static");
@@ -653,14 +660,12 @@ namespace vcpkg::PlatformExpression
         ExpressionParser parser(expression, multiple_binary_operators);
         auto res = parser.parse();
 
-        if (auto p = parser.get_error())
+        if (parser.messages().any_errors())
         {
-            return LocalizedString::from_raw(p->to_string());
+            return parser.messages().join();
         }
-        else
-        {
-            return res;
-        }
+
+        return res;
     }
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)
@@ -761,4 +766,6 @@ namespace vcpkg::PlatformExpression
         }
         return Impl{}(*expr.underlying_, true);
     }
+
+    const Expr Expr::always_true{};
 }
