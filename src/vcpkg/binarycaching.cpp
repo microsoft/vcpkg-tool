@@ -301,20 +301,29 @@ namespace
             std::vector<Optional<ZipResource>> zip_paths(actions.size(), nullopt);
             acquire_zips(actions, zip_paths);
 
-            std::vector<Command> jobs;
+            std::vector<std::pair<Command, uint64_t>> jobs_with_size;
             std::vector<size_t> action_idxs;
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 if (!zip_paths[i]) continue;
                 const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
                 clean_prepare_dir(m_fs, pkg_path);
-                jobs.push_back(m_zip.decompress_zip_archive_cmd(pkg_path, zip_paths[i].get()->path));
+                jobs_with_size.emplace_back(m_zip.decompress_zip_archive_cmd(pkg_path, zip_paths[i].get()->path),
+                                            m_fs.file_size(zip_paths[i].get()->path, VCPKG_LINE_INFO));
                 action_idxs.push_back(i);
             }
+            std::sort(jobs_with_size.begin(), jobs_with_size.end(), [](const auto& l, const auto& r) {
+                return l.second > r.second;
+            });
 
-            auto job_results = decompress_in_parallel(jobs);
+            std::vector<Command> sorted_jobs;
+            for (auto&& e : jobs_with_size)
+            {
+                sorted_jobs.push_back(std::move(e.first));
+            }
+            auto job_results = decompress_in_parallel(sorted_jobs);
 
-            for (size_t j = 0; j < jobs.size(); ++j)
+            for (size_t j = 0; j < sorted_jobs.size(); ++j)
             {
                 const auto i = action_idxs[j];
                 const auto& zip_path = zip_paths[i].value_or_exit(VCPKG_LINE_INFO);
