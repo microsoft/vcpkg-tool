@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <random>
+#include <thread>
 #include <vector>
 
 #if !defined(_WIN32)
@@ -166,6 +167,8 @@ namespace
     const Filesystem& setup()
     {
         std::error_code ec;
+        real_filesystem.remove_all(base_temporary_directory(), ec);
+        CHECK_EC_ON_FILE(base_temporary_directory(), ec);
         real_filesystem.create_directory(base_temporary_directory(), ec);
         CHECK_EC_ON_FILE(base_temporary_directory(), ec);
 
@@ -1043,6 +1046,37 @@ TEST_CASE ("copy_symlink", "[files]")
 
     REQUIRE_FALSE(fs.exists(temp_dir, ec));
     CHECK_EC_ON_FILE(temp_dir, ec);
+}
+
+TEST_CASE ("file times", "[files]")
+{
+    urbg_t urbg;
+
+    auto& fs = setup();
+
+    auto temp_file = base_temporary_directory() / get_random_filename(urbg, "_file_times");
+    INFO("temp file is: " << temp_file.native());
+    std::error_code ec;
+    fs.write_contents(temp_file, "some file contents", VCPKG_LINE_INFO);
+    auto last_write = fs.last_write_time(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    fs.write_contents(temp_file, "new file content", VCPKG_LINE_INFO);
+    auto last_write_new = fs.last_write_time(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    REQUIRE(last_write <= last_write_new);
+    auto last_access = fs.last_access_time(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    using namespace std::chrono;
+    last_access -= duration_cast<nanoseconds>(hours(50)).count();
+    fs.last_access_time(temp_file, last_access, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    auto new_last_access = fs.last_access_time(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
+    REQUIRE(last_access == new_last_access);
+
+    fs.remove(temp_file, ec);
+    CHECK_EC_ON_FILE(temp_file, ec);
 }
 
 TEST_CASE ("LinesCollector", "[files]")
