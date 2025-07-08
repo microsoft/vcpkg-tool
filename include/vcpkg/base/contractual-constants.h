@@ -521,6 +521,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableProgramFilesX86 = "ProgramFiles(x86)";
     inline constexpr StringLiteral EnvironmentVariableProgramW6432 = "ProgramW6432";
     inline constexpr StringLiteral EnvironmentVariablePythonPath = "PYTHONPATH";
+    inline constexpr StringLiteral EnvironmentVariableSystemDrive = "SystemDrive";
     inline constexpr StringLiteral EnvironmentVariableSystemRoot = "SystemRoot";
     inline constexpr StringLiteral EnvironmentVariableTeamcityVersion = "TEAMCITY_VERSION";
     inline constexpr StringLiteral EnvironmentVariableTfBuild = "TF_BUILD";
