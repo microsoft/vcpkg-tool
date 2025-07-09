@@ -72,7 +72,7 @@ namespace vcpkg::Json
 
         private:
             template<class T>
-            ValueImpl& internal_assign(ValueKind vk, T ValueImpl::*mp, ValueImpl& other) noexcept
+            ValueImpl& internal_assign(ValueKind vk, T ValueImpl::* mp, ValueImpl& other) noexcept
             {
                 if (tag == vk)
                 {
