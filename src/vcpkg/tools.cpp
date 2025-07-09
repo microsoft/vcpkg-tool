@@ -347,7 +347,7 @@ namespace vcpkg
             if (const auto appdata_local = maybe_appdata_local.get())
             {
                 // as installed by WinGet
-                out_candidate_paths.push_back(*appdata_local / "Microsoft\\WinGet\\Links");
+                out_candidate_paths.push_back(*appdata_local / "Microsoft\\WinGet\\Links\\azcopy.exe");
             }
 
             // other common installation locations
@@ -355,9 +355,9 @@ namespace vcpkg
             if (auto system_drive = maybe_system_drive.get())
             {
                 // https://devdiv.visualstudio.com/XlabImageFactory/_git/XlabImageFactory?path=/artifacts/windows-azcopy-downloadfile/windows-azcopy-downloadfile.ps1&version=GBmain&_a=contents&line=54&lineStyle=plain&lineEnd=55&lineStartColumn=1&lineEndColumn=1
-                out_candidate_paths.emplace_back(*system_drive / "AzCopy10");
+                out_candidate_paths.emplace_back(*system_drive / "\\AzCopy10\\azcopy.exe");
                 // https://devdiv.visualstudio.com/XlabImageFactory/_git/XlabImageFactory?path=/artifacts/windows-AZCopy10/windows-AzCopy10.ps1&version=GBmain&_a=contents&line=8&lineStyle=plain&lineEnd=8&lineStartColumn=1&lineEndColumn=79
-                out_candidate_paths.emplace_back(*system_drive / "AzCopy10\\AZCopy");
+                out_candidate_paths.emplace_back(*system_drive / "\\AzCopy10\\AZCopy\\azcopy.exe");
             }
         }
 #endif
