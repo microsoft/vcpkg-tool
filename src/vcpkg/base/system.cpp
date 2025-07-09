@@ -208,8 +208,8 @@ namespace vcpkg
         const HMODULE hKernel32 = ::GetModuleHandleW(L"kernel32.dll");
         if (hKernel32)
         {
-            BOOL(__stdcall* const isWow64Process2)
-            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
+            BOOL(__stdcall* const isWow64Process2)(
+                HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
                 reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
             if (isWow64Process2)
             {
