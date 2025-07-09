@@ -1,6 +1,4 @@
 BasedOnStyle: WebKit
-Language: Cpp
-Standard: Cpp11
 
 UseTab: Never
 IndentWidth: 4
@@ -75,3 +73,8 @@ IncludeCategories:
     Priority: 6
   - Regex: '^<[a-z0-9_]*>$' # C++ standard library
     Priority: 7
+
+---
+
+Language: Cpp
+Standard: c++17

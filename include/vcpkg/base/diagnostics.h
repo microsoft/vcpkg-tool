@@ -311,9 +311,8 @@ namespace vcpkg
 
     // The overload for functors that return Optional<T>
     template<class Fn, class... Args>
-    auto adapt_context_to_expected(Fn functor, Args&&... args)
-        -> ExpectedL<
-            typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+    auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
+        typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
     {
         using Unwrapper = AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>;
         using ReturnType = ExpectedL<typename Unwrapper::type>;
@@ -381,9 +380,8 @@ namespace vcpkg
 
     // The overload for functors that return std::unique_ptr<T>
     template<class Fn, class... Args>
-    auto adapt_context_to_expected(Fn functor, Args&&... args)
-        -> ExpectedL<
-            typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+    auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
+        typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
     {
         using ReturnType = ExpectedL<
             typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>;
