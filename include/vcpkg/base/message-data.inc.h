@@ -2816,10 +2816,6 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
-DECLARE_MESSAGE(SystemRootMustAlwaysBePresent,
-                (),
-                "",
-                "Expected the SystemRoot environment variable to be always set on Windows.")
 DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}")
 DECLARE_MESSAGE(
     ToolHashMismatch,
@@ -3370,5 +3366,6 @@ DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 "while parsing versions for {package_name} from {path}")
 DECLARE_MESSAGE(WhileRunningAssetCacheScriptCommandLine, (), "", "while running asset cache script command line")
 DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}")
+DECLARE_MESSAGE(WindowsEnvMustAlwaysBePresent, (msg::env_var), "", "Expected {env_var} to be always set on Windows.")
 DECLARE_MESSAGE(WindowsOnlyCommand, (), "", "This command only supports Windows.")
 DECLARE_MESSAGE(WroteNuGetPkgConfInfo, (msg::path), "", "Wrote NuGet package config information to {path}")
