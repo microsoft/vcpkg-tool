@@ -10495,15 +10495,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SystemRootMustAlwaysBePresent" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[預期永遠在 Windows 上設定 SystemRoot 環境變數。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to install system targets file to {path}]]></Val>
@@ -12462,6 +12453,15 @@
           <Val><![CDATA[while validating version: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[驗證版本時: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WindowsEnvMustAlwaysBePresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {env_var} to be always set on Windows.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[應一律在 Windows 上設定 {env_var}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

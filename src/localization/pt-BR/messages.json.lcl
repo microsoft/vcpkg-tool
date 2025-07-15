@@ -10492,15 +10492,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";SystemRootMustAlwaysBePresent" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Espera-se que a variável de ambiente SystemRoot seja sempre definida no Windows.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed to install system targets file to {path}]]></Val>
@@ -12459,6 +12450,15 @@
           <Val><![CDATA[while validating version: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ao validar a versão: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WindowsEnvMustAlwaysBePresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {env_var} to be always set on Windows.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Espera-se que {env_var} sempre seja definido no Windows.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
