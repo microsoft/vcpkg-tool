@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "分析来自 {path} 的 {package_name} 版本时",
   "WhileRunningAssetCacheScriptCommandLine": "运行资产缓存脚本命令行时",
   "WhileValidatingVersion": "验证版本: {version} 时",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "应始终在 Windows 上设置 {env_var}。",
   "WindowsOnlyCommand": "此命令仅支持 Windows。",
   "WroteNuGetPkgConfInfo": "已将 NuGet 包配置信息写入 {path}",
   "FatalTheRootFolder$CannotBeCreated": "严重: 无法创建根文件夹“${p0}”",

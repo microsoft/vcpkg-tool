@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "{path} öğesinden {package_name} için sürümler ayrıştırılırken",
   "WhileRunningAssetCacheScriptCommandLine": "varlık önbelleği betiği komut satırı çalıştırılırken",
   "WhileValidatingVersion": "sürüm doğrulanırken: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "{env_var} ortam değişkeninin her zaman Windows'ta ayarlanması bekleniyor.",
   "WindowsOnlyCommand": "Bu komut yalnızca Windows'u destekler.",
   "WroteNuGetPkgConfInfo": "NuGet paketi yapılandırma bilgilerini {path} öğesine yazdı",
   "FatalTheRootFolder$CannotBeCreated": "Önemli: '${p0}' kök klasörü oluşturulamıyor",

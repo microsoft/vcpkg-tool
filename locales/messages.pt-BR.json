@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "ao analisar versões para {package_name} de {path}",
   "WhileRunningAssetCacheScriptCommandLine": "ao executar a linha de comando do script do cache de ativos",
   "WhileValidatingVersion": "ao validar a versão: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "Espera-se que {env_var} sempre seja definido no Windows.",
   "WindowsOnlyCommand": "Este comando oferece suporte apenas ao Windows.",
   "WroteNuGetPkgConfInfo": "Escreveu as informações de configuração do pacote NuGet para {path}",
   "FatalTheRootFolder$CannotBeCreated": "Fatal: não é possível criar a pasta raiz \"${p0}\"",

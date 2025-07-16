@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "podczas analizowania wersji dla pakietu {package_name} ze ścieżki {path}",
   "WhileRunningAssetCacheScriptCommandLine": "podczas uruchamiania wiersza polecenia skryptu pamięci podręcznej zasobów",
   "WhileValidatingVersion": "podczas walidacji wersji: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "Oczekiwano, że element {env_var} będzie zawsze ustawiony w systemie Windows.",
   "WindowsOnlyCommand": "To polecenie obsługuje tylko system Windows.",
   "WroteNuGetPkgConfInfo": "Zapisano informacje o konfiguracji pakietu NuGet w ścieżce {path}",
   "FatalTheRootFolder$CannotBeCreated": "Krytyczny: nie można utworzyć folderu głównego „${p0}”",

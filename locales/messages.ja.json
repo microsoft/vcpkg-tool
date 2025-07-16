@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "{path} からの {package_name} のバージョンの解析中",
   "WhileRunningAssetCacheScriptCommandLine": "資産キャッシュ スクリプトコマンド ラインの実行中",
   "WhileValidatingVersion": "バージョンの検証中に: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "{env_var} は常に Windows で設定される必要があります。",
   "WindowsOnlyCommand": "このコマンドは Windows のみをサポートします。",
   "WroteNuGetPkgConfInfo": "NuGet パッケージ構成情報を {path} に書き込みました",
   "FatalTheRootFolder$CannotBeCreated": "致命的エラー: ルート フォルダー '${p0}' を作成できません",

@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "beim Parsen von Versionen für das Paket {package_name} aus {path}",
   "WhileRunningAssetCacheScriptCommandLine": "während der Ausführung der Skriptbefehlszeile für den Ressourcencache",
   "WhileValidatingVersion": "beim Überprüfen der Version: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "Es wurde erwartet, dass die {env_var}-Umgebungsvariable immer unter Windows festgelegt ist.",
   "WindowsOnlyCommand": "Dieser Befehl unterstützt nur Windows.",
   "WroteNuGetPkgConfInfo": "NuGet-Paketkonfigurationsinformationen wurden in {path} geschrieben.",
   "FatalTheRootFolder$CannotBeCreated": "Schwerwiegend: Der Stammordner \"${p0}\" kann nicht erstellt werden.",
