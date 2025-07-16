@@ -1180,7 +1180,7 @@
   "WhileParsingVersionsForPort": "při parsování verzí pro {package_name} z {path}",
   "WhileRunningAssetCacheScriptCommandLine": "při spuštění příkazového řádku skriptu mezipaměti prostředků",
   "WhileValidatingVersion": "při ověřování verze: {version}",
-  "WindowsEnvMustAlwaysBePresent": "Expected {env_var} to be always set on Windows.",
+  "WindowsEnvMustAlwaysBePresent": "Očekává se, že proměnná {env_var} bude ve Windows vždy nastavená.",
   "WindowsOnlyCommand": "Tento příkaz podporuje jenom Windows.",
   "WroteNuGetPkgConfInfo": "Do {path} se zapsaly informace o konfiguraci balíčku NuGet",
   "FatalTheRootFolder$CannotBeCreated": "Závažné: Kořenovou složku ${p0} nejde vytvořit",
