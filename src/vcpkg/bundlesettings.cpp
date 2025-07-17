@@ -83,11 +83,11 @@ namespace vcpkg
 
         BundleSettings ret;
         Optional<std::string> maybe_deployment_string;
-        if (!parse_optional_json_bool(*doc, "readonly", ret.read_only) ||
-            !parse_optional_json_bool(*doc, "usegitregistry", ret.use_git_registry) ||
-            !parse_optional_json_string(*doc, "embeddedsha", ret.embedded_git_sha) ||
-            !parse_optional_json_string(*doc, "deployment", maybe_deployment_string) ||
-            !parse_optional_json_string(*doc, "vsversion", ret.vsversion))
+        if (!parse_optional_json_bool(doc->object, "readonly", ret.read_only) ||
+            !parse_optional_json_bool(doc->object, "usegitregistry", ret.use_git_registry) ||
+            !parse_optional_json_string(doc->object, "embeddedsha", ret.embedded_git_sha) ||
+            !parse_optional_json_string(doc->object, "deployment", maybe_deployment_string) ||
+            !parse_optional_json_string(doc->object, "vsversion", ret.vsversion))
         {
             return msg::format(msgInvalidBundleDefinition);
         }

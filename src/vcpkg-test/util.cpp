@@ -276,8 +276,8 @@ namespace vcpkg::Test
 
     Optional<std::string> diff_lines(StringView a, StringView b)
     {
-        auto lines_a = Strings::split_keep_empty(a, '\n');
-        auto lines_b = Strings::split_keep_empty(b, '\n');
+        auto lines_a = Strings::split_lines_keep_empty(a);
+        auto lines_b = Strings::split_lines_keep_empty(b);
 
         std::vector<std::vector<size_t>> edits;
         auto& first_row = edits.emplace_back();

@@ -113,9 +113,9 @@ namespace vcpkg
 
         if (!url_to_fixed_sha.empty() && Util::Sets::contains(parsed.switches, SwitchFix))
         {
-            Json::Object as_object = Json::parse_object(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
+            Json::ParsedObject as_object = Json::parse_object(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
             int fixed = 0;
-            for (auto&& entry : as_object["tools"].array(VCPKG_LINE_INFO))
+            for (auto&& entry : as_object.object["tools"].array(VCPKG_LINE_INFO))
             {
                 auto maybe_url = entry.object(VCPKG_LINE_INFO).get("url");
                 if (maybe_url)

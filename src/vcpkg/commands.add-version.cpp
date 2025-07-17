@@ -499,7 +499,7 @@ namespace vcpkg
                 if (scfl->control_path.filename() == FileVcpkgDotJson)
                 {
                     const auto json = serialize_manifest(*scfl->source_control_file);
-                    const auto formatted_content = Json::stringify(json);
+                    const auto formatted_content = Json::stringify(json, Json::JsonStyle::with_lf());
                     if (load_result.on_disk_contents != formatted_content)
                     {
                         std::string command_line = "vcpkg format-manifest ";

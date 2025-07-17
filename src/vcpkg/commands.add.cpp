@@ -92,7 +92,7 @@ namespace vcpkg
             }
 
             auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest.object, out_sink);
             auto pmanifest_scf = maybe_manifest_scf.get();
             if (!pmanifest_scf)
             {
@@ -162,7 +162,7 @@ namespace vcpkg
             }
 
             paths.get_filesystem().write_contents(
-                manifest->path, Json::stringify(serialize_manifest(manifest_scf)), VCPKG_LINE_INFO);
+                manifest->path, Json::stringify(serialize_manifest(manifest_scf), manifest->manifest.style), VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceeded);
 
             auto command_args_hash =

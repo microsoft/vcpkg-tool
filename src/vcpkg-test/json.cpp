@@ -25,8 +25,8 @@ using Json::Value;
 TEST_CASE ("JSON stringify weird strings", "[json]")
 {
     std::string str = U8_STR("😀 😁 😂 🤣 😃 😄 😅 😆 😉");
-    REQUIRE(Json::stringify(Value::string(str)) == ('"' + str + "\"\n"));
-    REQUIRE(Json::stringify(Value::string("\xED\xA0\x80")) == "\"\\ud800\"\n"); // unpaired surrogate
+    REQUIRE_LINES(Json::stringify(Value::string(str)), ('"' + str + "\"\n"));
+    REQUIRE_LINES(Json::stringify(Value::string("\xED\xA0\x80")), "\"\\ud800\"\n"); // unpaired surrogate
 }
 
 TEST_CASE ("JSON parse keywords", "[json]")

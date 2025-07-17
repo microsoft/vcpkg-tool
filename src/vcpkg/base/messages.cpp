@@ -469,8 +469,8 @@ namespace vcpkg::msg
         {
             auto file = embedded_filesystem.open(*locale_path);
             StringView sv{file.begin(), file.end()};
-            return Json::parse_object(sv, *locale_path).map([&](Json::Object&& parsed_file) {
-                return MessageMapAndFile{std::move(parsed_file), sv};
+            return Json::parse_object(sv, *locale_path).map([&](Json::ParsedObject&& parsed_file) {
+                return MessageMapAndFile{std::move(parsed_file.object), sv};
             });
         }
 

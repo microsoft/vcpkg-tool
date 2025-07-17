@@ -83,7 +83,7 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
-        bool has_builtin_baseline = manifest.manifest.contains(JsonIdBuiltinBaseline);
+        bool has_builtin_baseline = manifest.manifest.object.contains(JsonIdBuiltinBaseline);
 
         if (add_builtin_baseline && !has_manifest)
         {
@@ -103,7 +103,7 @@ namespace vcpkg
 
             RegistryConfig synthesized_registry;
             synthesized_registry.kind = JsonIdBuiltin.to_string();
-            if (auto p = manifest.manifest.get(JsonIdBuiltinBaseline))
+            if (auto p = manifest.manifest.object.get(JsonIdBuiltinBaseline))
             {
                 synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
@@ -112,7 +112,7 @@ namespace vcpkg
 
             if (auto p = synthesized_registry.baseline.get())
             {
-                manifest.manifest.insert_or_replace(JsonIdBuiltinBaseline, std::move(*p));
+                manifest.manifest.object.insert_or_replace(JsonIdBuiltinBaseline, std::move(*p));
             }
         }
 
@@ -128,7 +128,7 @@ namespace vcpkg
 
         if (configuration.source == ConfigurationSource::ManifestFile)
         {
-            manifest.manifest.insert_or_replace(JsonIdVcpkgConfiguration, configuration.config.serialize());
+            manifest.manifest.object.insert_or_replace(JsonIdVcpkgConfiguration, configuration.config.serialize());
         }
 
         if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
@@ -140,7 +140,7 @@ namespace vcpkg
 
         if (!dry_run && has_manifest)
         {
-            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
+            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest.object, manifest.manifest.style), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

@@ -42,7 +42,7 @@ namespace
             return;
         }
 
-        if (auto acquired_artifacts = pparsed->get(JsonIdAcquiredArtifacts))
+        if (auto acquired_artifacts = pparsed->object.get(JsonIdAcquiredArtifacts))
         {
             if (auto maybe_acquired_string = acquired_artifacts->maybe_string())
             {
@@ -58,7 +58,7 @@ namespace
             Debug::println("No artifacts acquired.");
         }
 
-        if (auto activated_artifacts = pparsed->get(JsonIdActivatedArtifacts))
+        if (auto activated_artifacts = pparsed->object.get(JsonIdActivatedArtifacts))
         {
             if (auto maybe_activated_string = activated_artifacts->maybe_string())
             {

@@ -254,5 +254,5 @@ TEST_CASE ("payload smoke test", "[metrics]")
   }
 ]
 )json";
-    REQUIRE(expected == actual);
+    REQUIRE_LINES(expected, actual);
 }

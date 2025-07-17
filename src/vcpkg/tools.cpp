@@ -119,9 +119,9 @@ namespace vcpkg
     ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin)
     {
         return Json::parse_object(contents, origin)
-            .then([&](Json::Object&& as_object) -> ExpectedL<std::vector<ToolDataEntry>> {
+            .then([&](Json::ParsedObject&& parsed_object) -> ExpectedL<std::vector<ToolDataEntry>> {
                 Json::Reader r(origin);
-                auto maybe_tool_data = ToolDataFileDeserializer::instance.visit(r, as_object);
+                auto maybe_tool_data = ToolDataFileDeserializer::instance.visit(r, parsed_object.object);
                 if (!r.messages().good())
                 {
                     return r.messages().join();

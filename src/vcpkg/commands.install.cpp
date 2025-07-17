@@ -1207,7 +1207,7 @@ namespace vcpkg
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
+                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest.object, out_sink);
             if (!maybe_manifest_scf)
             {
                 msg::println(Color::error,

@@ -1026,7 +1026,7 @@ namespace
         }
 
         auto real_baseline = baseline.size() == 0 ? StringView{JsonIdDefault} : baseline;
-        auto baseline_value = object->get(real_baseline);
+        auto baseline_value = object->object.get(real_baseline);
         if (!baseline_value)
         {
             return LocalizedString::from_raw(origin)
@@ -1311,8 +1311,8 @@ namespace
         }
 
         return Json::parse_object(contents, versions_file_path)
-            .then([&](Json::Object&& versions_json) -> ExpectedL<Optional<std::vector<GitVersionDbEntry>>> {
-                auto maybe_versions_array = versions_json.get(JsonIdVersions);
+            .then([&](Json::ParsedObject&& versions_json) -> ExpectedL<Optional<std::vector<GitVersionDbEntry>>> {
+                auto maybe_versions_array = versions_json.object.get(JsonIdVersions);
                 if (!maybe_versions_array || !maybe_versions_array->is_array())
                 {
                     return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
@@ -1347,8 +1347,8 @@ namespace
         }
 
         return Json::parse_object(contents, versions_file_path)
-            .then([&](Json::Object&& versions_json) -> ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> {
-                auto maybe_versions_array = versions_json.get(JsonIdVersions);
+            .then([&](Json::ParsedObject&& versions_json) -> ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> {
+                auto maybe_versions_array = versions_json.object.get(JsonIdVersions);
                 if (!maybe_versions_array || !maybe_versions_array->is_array())
                 {
                     return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
