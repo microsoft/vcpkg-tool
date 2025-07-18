@@ -130,6 +130,12 @@ $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self
 Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
 
+# Ensure that the baseline without a feature can be overwritten by feature specific baselines.
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-fail-or-cascade.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-fail-feature-cascades --ci-feature-baseline $ciFeatureBaseline
+Throw-IfFailed
+Throw-IfNonContains -Expected "All feature tests passed." -Actual $output
+
 $vcpkgRequiresFeatureArg = New-TestPortsRootArg vcpkg-requires-feature vcpkg-fail-if-depended-upon
 
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg vcpkg-requires-feature
