@@ -467,7 +467,7 @@ Optional<std::string> vcpkg::read_spdx_license_text(StringView text, StringView 
         return nullopt;
     }
 
-    auto maybe_packages_value = parsed->get(JsonIdPackages);
+    auto maybe_packages_value = parsed->object.get(JsonIdPackages);
     if (!maybe_packages_value)
     {
         return nullopt;

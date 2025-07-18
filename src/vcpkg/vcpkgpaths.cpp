@@ -93,7 +93,7 @@ namespace
     {
         if (auto manifest = manifest_doc.get())
         {
-            return parse_manifest_configuration(manifest->manifest, manifest->path, out_sink)
+            return parse_manifest_configuration(manifest->manifest.object, manifest->path, out_sink)
                 .value_or_exit(VCPKG_LINE_INFO);
         }
         return nullopt;
@@ -537,7 +537,7 @@ namespace
         auto maybe_lock_data = Json::parse_object(lockfile_disk_contents, p);
         if (auto lock_data = maybe_lock_data.get())
         {
-            ret.lockdata = lockdata_from_json_object(*lock_data);
+            ret.lockdata = lockdata_from_json_object(lock_data->object);
             return ret;
         }
 

@@ -1845,12 +1845,12 @@ namespace vcpkg
         const auto maybe_manifest = paths.get_manifest();
         if (auto manifest = maybe_manifest.get())
         {
-            if (include_manifest || manifest->manifest.contains("builtin-baseline"))
+            if (include_manifest || manifest->manifest.object.contains("builtin-baseline"))
             {
                 fmt::format_to(
                     std::back_inserter(postfix),
                     "**Additional context**\n\n<details><summary>vcpkg.json</summary>\n\n```\n{}\n```\n</details>\n",
-                    Json::stringify(manifest->manifest));
+                    Json::stringify(manifest->manifest.object, Json::JsonStyle::with_lf()));
             }
         }
 

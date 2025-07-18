@@ -184,7 +184,7 @@ namespace vcpkg::Strings
 
     [[nodiscard]] std::vector<std::string> split(StringView s, const char delimiter);
 
-    [[nodiscard]] std::vector<std::string> split_keep_empty(StringView s, const char delimiter);
+    [[nodiscard]] std::vector<std::string> split_lines_keep_empty(StringView s);
 
     [[nodiscard]] std::vector<std::string> split_paths(StringView s);
 

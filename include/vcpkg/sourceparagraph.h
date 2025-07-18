@@ -19,7 +19,7 @@ namespace vcpkg
 {
     struct ManifestAndPath
     {
-        Json::Object manifest;
+        Json::ParsedObject manifest;
         Path path;
     };
 
