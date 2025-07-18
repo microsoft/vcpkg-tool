@@ -684,7 +684,8 @@ namespace
                                          msg::vendor = "NuGet",
                                          msg::url = docs::troubleshoot_binary_cache_url);
                     }
-                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos ||
+                             res.output.find("for example \"-ApiKey **api-key-removed**\"") != std::string::npos)
                     {
                         auto real_cmd = cmd;
                         real_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
