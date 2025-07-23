@@ -36,7 +36,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <numeric>
+#include <iterator>
 
 using namespace vcpkg;
 
@@ -1830,6 +1830,8 @@ namespace vcpkg
                     std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
             }
         }
+        fmt::format_to(
+            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version(Tools::CMAKE, null_sink));
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),
