@@ -213,7 +213,7 @@ extends:
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-pme-mariner-2-amd64-1espt-pool'
+          name: 'vcpkg-pme-azurelinux3-amd64-1espt-pool'
           os: linux
         variables:
           VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
@@ -247,7 +247,7 @@ extends:
       - job: muslc_build
         displayName: 'muslc (Alpine) Build'
         pool:
-          name: 'vcpkg-pme-mariner-2-amd64-1espt-pool'
+          name: 'vcpkg-pme-azurelinux3-amd64-1espt-pool'
           os: linux
         dependsOn:
         - arch_independent
@@ -285,7 +285,7 @@ extends:
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-pme-mariner-2-aarch64-1espt-pool'
+          name: 'vcpkg-pme-azurelinux3-aarch64-1espt-pool'
           os: linux
           hostArchitecture: Arm64
         variables:
