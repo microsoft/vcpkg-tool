@@ -37,7 +37,7 @@ export class Demands extends EntityMap<YAMLDictionary, DemandBlock> {
       if (!isMap(demandBlock.node)) {
         yield {
           message: `Conditional demand '${mediaQuery}' is not an object`,
-          range: demandBlock.node!.range || [0, 0, 0],
+          range: (<any>demandBlock.node).range || [0, 0, 0],
           category: ErrorKind.IncorrectType
         };
         continue;
@@ -100,7 +100,7 @@ export class DemandBlock extends Entity {
     value = value.replace(/\$\$/g, '\uffff');
 
     // $0 ... $9 -> replace contents with the values from the artifact
-    value = value.replace(/\$([0-9])/g, (match, index) => this.discoveredData[match] || match);
+    value = value.replace(/\$([0-9])/g, (match) => this.discoveredData[match] || match);
 
     // restore escaped $
     return value.replace(/\uffff/g, '$');

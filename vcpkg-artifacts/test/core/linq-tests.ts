@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { length, linq } from '../../util/linq';
 import * as assert from 'assert';
+import { length, linq } from '../../util/linq';
 
 const anArray = ['A', 'B', 'C', 'D', 'E'];
 
@@ -21,10 +21,10 @@ describe('Linq', () => {
     };
 
     const result = linq.values(dic).distinct().toArray();
-    assert.strictEqual(length(distinct), 3);
+    assert.strictEqual(result, ['one', 'two', 'three']);
   });
 
-  it('iterating thru collections', async () => {
+  it('iterating through collections', async () => {
     // items are items.
     assert.strictEqual([...linq.values(anArray)].join(','), anArray.join(','));
     assert.strictEqual(linq.values(anArray).count(), 5);

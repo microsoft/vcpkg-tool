@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { Installer } from '../interfaces/metadata/installers/Installer';
 import { MetadataFile } from '../amf/metadata-file';
 import { Demands } from '../interfaces/metadata/demands';
 import { VersionReference } from '../interfaces/metadata/version-reference';
@@ -24,15 +25,15 @@ export class SetOfDemands {
     }
   }
 
-  get installer() {
-    const install = linq.entries(this._demands).where(([query, demand]) => demand.install.length > 0).toArray();
+  get installer(): Iterable<Installer> {
+    const install = linq.entries(this._demands).where(([, demand]) => demand.install.length > 0).toArray();
 
     if (install.length > 1) {
       // bad. There should only ever be one install block.
       throw new MultipleInstallsMatched(install.map(each => each[0]));
     }
 
-    return install[0]?.[1].install || [];
+    return install[0]?.[1].install || <Array<Installer>>[];
   }
 
   get errors() {
