@@ -1,8 +1,9 @@
+# The authoritative version of this file is in https://devdiv.visualstudio.com/DevDiv/_git/vcpkg-pme-utils
 # This infrastructure is adapted from that the .NET team uses, see
 # https://github.com/dotnet/dotnet-buildtools-prereqs-docker
 # and
 # https://github.com/dotnet/runtime/blob/main/docs/workflow/building/coreclr/linux-instructions.md
-FROM mcr.microsoft.com/cbl-mariner/base/core:2.0
+FROM mcr.microsoft.com/azurelinux/base/core:3.0
 
 RUN tdnf install -y \
         # Common utilities
@@ -56,3 +57,6 @@ RUN chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" 
     chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" && \
     chroot /crossrootfs/x64 symlinks -cr /usr && \
     chroot /crossrootfs/x64 apt-get clean
+
+RUN tdnf clean all && \
+    tdnf upgrade -y
