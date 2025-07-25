@@ -328,29 +328,25 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
             "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/@vercel/ncc/dist/ncc/cli.js"
                 build "main.ts"
                 --out "${VCPKG_ARTIFACTS_BUILD_DIR}"
+        COMMAND
+            "${CMAKE_COMMAND}" ARGS -E copy "${VCPKG_ARTIFACTS_BUILD_DIR}/index.js" "${VCPKG_ARTIFACTS_BINARY}"
         WORKING_DIRECTORY
             "${VCPKG_ARTIFACTS_SOURCE_DIR}"
         DEPENDS
+            npm-restore
             ${VCPKG_ARTIFACTS_SOURCES}
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/.mocharc.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy "${VCPKG_ARTIFACTS_BUILD_DIR}/index.js" "${VCPKG_ARTIFACTS_BINARY}"
         COMMENT
             "Building vcpkg-artifacts..."
         VERBATIM
         )
 
-    add_custom_target(vcpkg-artifacts-target
-        ALL
-        DEPENDS
-            ${VCPKG_ARTIFACTS_BINARY}
-            npm-restore
-        )
+    add_custom_target(vcpkg-artifacts-target ALL DEPENDS "${VCPKG_ARTIFACTS_BINARY}")
 endif()
 
 set(CPP_ATOMIC_LIBRARY "")
@@ -484,10 +480,12 @@ if (BUILD_TESTING)
        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
-    add_test(NAME default COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
-
-    if (VCPKG_BUILD_BENCHMARKING)
+    add_test(NAME vcpkg-test COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
+    if(VCPKG_BUILD_BENCHMARKING)
         target_compile_options(vcpkg-test PRIVATE -DCATCH_CONFIG_ENABLE_BENCHMARKING)
+    endif()
+    if(VCPKG_ARTIFACTS_DEVELOPMENT)
+        add_test(NAME artifacts COMMAND "${NODEJS}" "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/mocha/bin/mocha.js" "--import=tsx" WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}")
     endif()
 endif()
 

@@ -8,8 +8,7 @@
   "scripts": {
     "eslint-fix": "eslint  . --fix --ext .ts",
     "eslint": "eslint  . --ext .ts",
-    "build": "tsc -p .",
-    "test": "mocha --config ./mocha-config.yaml"
+    "test": "mocha --import=tsx"
   },
   "keywords": [
     "vcpkg-artifacts",
@@ -34,6 +33,7 @@
     "mocha": "11.7.1",
     "source-map-support": "0.5.21",
     "translate-strings": "1.1.15",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.37.0"
   },

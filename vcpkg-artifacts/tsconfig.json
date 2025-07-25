@@ -4,6 +4,7 @@
     "forceConsistentCasingInFileNames": true,
     "module": "es2022",
     "moduleResolution": "node",
+    "noEmit": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
