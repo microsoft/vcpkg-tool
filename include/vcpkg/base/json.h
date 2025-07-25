@@ -24,7 +24,12 @@ namespace vcpkg::Json
         {
             Lf,
             CrLf
-        } newline_kind = Newline::Lf;
+        } newline_kind =
+#ifdef _WIN32
+            Newline::CrLf;
+#else
+            Newline::Lf;
+#endif
 
         constexpr JsonStyle() noexcept = default;
 
@@ -33,6 +38,12 @@ namespace vcpkg::Json
         {
             vcpkg::Checks::check_exit(VCPKG_LINE_INFO, indent != SIZE_MAX);
             return JsonStyle{indent};
+        }
+        static JsonStyle with_lf() noexcept
+        {
+            JsonStyle style;
+            style.newline_kind = Newline::Lf;
+            return style;
         }
 
         void set_tabs() noexcept { this->indent = SIZE_MAX; }
@@ -335,9 +346,15 @@ namespace vcpkg::Json
         JsonStyle style;
     };
 
+    struct ParsedObject
+    {
+        Object object;
+        JsonStyle style;
+    };
+
     ExpectedL<ParsedJson> parse(StringView text, StringView origin);
     ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
-    ExpectedL<Json::Object> parse_object(StringView text, StringView origin);
+    ExpectedL<ParsedObject> parse_object(StringView text, StringView origin);
 
     std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);
@@ -345,6 +362,7 @@ namespace vcpkg::Json
     std::string stringify(const Object&, JsonStyle style);
     std::string stringify(const Array&);
     std::string stringify(const Array&, JsonStyle style);
+    std::string stringify(const ParsedObject&);
 
     std::string stringify_object_member(StringLiteral member_name,
                                         const Array& arr,

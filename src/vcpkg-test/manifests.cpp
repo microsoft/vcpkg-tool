@@ -191,7 +191,7 @@ TEST_CASE ("manifest versioning", "[manifests]")
     {
         auto portManifest = Json::parse_object(std::get<0>(v), "test").value_or_exit(VCPKG_LINE_INFO);
         { // project manifest
-            auto projectManifest = portManifest;
+            auto projectManifest = portManifest.object;
             projectManifest.remove("name");
             auto m_pgh = test_parse_project_manifest(projectManifest);
             REQUIRE(m_pgh.has_value());
@@ -202,10 +202,10 @@ TEST_CASE ("manifest versioning", "[manifests]")
         }
 
         { // port manifest
-            auto m_pgh = test_parse_port_manifest(portManifest);
+            auto m_pgh = test_parse_port_manifest(portManifest.object);
             REQUIRE(m_pgh.has_value());
             auto& pgh = **m_pgh.get();
-            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest));
+            CHECK(Json::stringify(serialize_manifest(pgh)) == Json::stringify(portManifest.object));
             CHECK(pgh.core_paragraph->version_scheme == std::get<1>(v));
             CHECK(pgh.core_paragraph->version == Version{std::get<2>(v), 0});
         }
@@ -461,7 +461,7 @@ TEST_CASE ("manifest constraints", "[manifests]")
     auto& pgh = **m_pgh.get();
     REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
     REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
-    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
+    REQUIRE_LINES(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)), raw);
     REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
     REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
     REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
@@ -753,7 +753,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
 
         REQUIRE(m_pgh.has_value());
         auto& pgh = **m_pgh.get();
-        REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == v.reserialized);
+        REQUIRE_LINES(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)), v.reserialized);
         REQUIRE(pgh.core_paragraph->overrides.size() == 1);
         const auto& first_override = pgh.core_paragraph->overrides[0];
         REQUIRE(first_override.version == Version{v.override_version_text, 0});
@@ -806,7 +806,7 @@ TEST_CASE ("manifest overrides", "[manifests]")
 
     REQUIRE(m_pgh.has_value());
     auto& pgh = **m_pgh.get();
-    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == R"json({
+    REQUIRE_LINES(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)), R"json({
     "name": "zlib",
     "version-string": "abcd",
     "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
@@ -1151,7 +1151,7 @@ TEST_CASE ("SourceParagraph manifest construct host dependencies", "[manifests]"
     REQUIRE(pgh.core_paragraph->dependencies[1].name == "libb");
     REQUIRE(!pgh.core_paragraph->dependencies[1].host);
 
-    REQUIRE(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)) == raw);
+    REQUIRE_LINES(Json::stringify(serialize_manifest(pgh), Json::JsonStyle::with_spaces(4)), raw);
 }
 
 TEST_CASE ("SourceParagraph manifest default features", "[manifests]")

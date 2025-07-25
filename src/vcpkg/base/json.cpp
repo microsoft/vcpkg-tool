@@ -1182,13 +1182,13 @@ namespace vcpkg::Json
 
     ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
 
-    ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
+    ExpectedL<Json::ParsedObject> parse_object(StringView text, StringView origin)
     {
-        return parse(text, origin).then([&](ParsedJson&& mabeValueIsh) -> ExpectedL<Json::Object> {
+        return parse(text, origin).then([&](ParsedJson&& mabeValueIsh) -> ExpectedL<Json::ParsedObject> {
             auto& asValue = mabeValueIsh.value;
             if (auto as_object = asValue.maybe_object())
             {
-                return std::move(*as_object);
+                return Json::ParsedObject{ std::move(*as_object), mabeValueIsh.style };
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
@@ -1391,7 +1391,7 @@ namespace vcpkg::Json
     {
         std::string res;
         Stringifier{style, res}.stringify(value, 0);
-        res.push_back('\n');
+        res += style.newline();
         return res;
     }
     std::string stringify(const Object& obj) { return stringify(obj, JsonStyle{}); }
@@ -1399,7 +1399,7 @@ namespace vcpkg::Json
     {
         std::string res;
         Stringifier{style, res}.stringify_object(obj, 0);
-        res.push_back('\n');
+        res += style.newline();
         return res;
     }
     std::string stringify(const Array& arr) { return stringify(arr, JsonStyle{}); }
@@ -1407,9 +1407,10 @@ namespace vcpkg::Json
     {
         std::string res;
         Stringifier{style, res}.stringify_array(arr, 0);
-        res.push_back('\n');
+        res += style.newline();
         return res;
     }
+    std::string stringify(const ParsedObject& obj) { return stringify(obj.object, obj.style); }
     // } auto stringify()
 
     std::string stringify_object_member(StringLiteral member_name,
@@ -1421,7 +1422,7 @@ namespace vcpkg::Json
         Stringifier stringifier{style, res};
         stringifier.append_indent(initial_indent);
         stringifier.stringify_object_member(member_name, arr, initial_indent);
-        res.push_back('\n');
+        res += style.newline();
         return res;
     }
 
