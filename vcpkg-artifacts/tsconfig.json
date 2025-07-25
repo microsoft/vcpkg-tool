@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "./dist",
     "alwaysStrict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "es2022",
@@ -26,8 +24,6 @@
       "ES2022",
       "DOM"
     ],
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "newLine": "LF"
   },
   "include": [
