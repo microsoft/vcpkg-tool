@@ -101,7 +101,7 @@ extends:
             # This script must be kept in sync with vcpkg-artifacts-target in CMakeLists.txt
             mkdir "$(Build.BinariesDirectory)"
             node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\@vercel\ncc\dist\ncc\cli.js" build "$(Build.SourcesDirectory)\vcpkg-artifacts\main.ts" --out "$(Build.BinariesDirectory)\vcpkg-artifacts-build"
-            copy "$(Build.BinariesDirectory)\vcpkg-artifacts-build\index.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs"
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts-build\index.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.js"
           displayName: 'Build vcpkg-artifacts'
         - script: |
             mkdir "$(Build.BinariesDirectory)\scripts"
@@ -125,7 +125,7 @@ extends:
           # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
         - script: |
             copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
-          displayName: 'Duplicate Install Scripts'
+          displayName: 'Duplicate Install Script'
         - task: Powershell@2
           displayName: 'Build One-Liner vcpkg-standalone-bundle.tar.gz'
           inputs:
@@ -143,7 +143,7 @@ extends:
             move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psd1"
-            move "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs"
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts.js" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs"
           displayName: 'Arrange Architecture-independent Files for Staging'
         - task: Powershell@2
           displayName: Generate Arch-independent SHA512s
@@ -448,6 +448,7 @@ extends:
               move "$(Build.ArtifactStagingDirectory)\stagingGlibcArm64\vcpkg-glibc-arm64" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc-arm64"
               move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-artifacts.mjs" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-artifacts.mjs"
 
               move "$(Build.BinariesDirectory)\amd64\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
               copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
