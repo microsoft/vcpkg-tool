@@ -42,6 +42,7 @@ export async function anyWhere<T>(from: Iterable<Promise<T>>, predicate: (value:
           // oh, it returned and it was a failure.
           failed.push(each);
         }
+        return undefined;
       });
     }
     // we found one that passes muster!

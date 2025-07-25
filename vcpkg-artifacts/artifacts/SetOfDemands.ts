@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Installer } from '../interfaces/metadata/installers/Installer';
 import { MetadataFile } from '../amf/metadata-file';
 import { Demands } from '../interfaces/metadata/demands';
+import { Installer } from '../interfaces/metadata/installers/Installer';
 import { VersionReference } from '../interfaces/metadata/version-reference';
 import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
@@ -33,7 +33,7 @@ export class SetOfDemands {
       throw new MultipleInstallsMatched(install.map(each => each[0]));
     }
 
-    return install[0]?.[1].install || <Array<Installer>>[];
+    return install[0]?.[1].install || [];
   }
 
   get errors() {
