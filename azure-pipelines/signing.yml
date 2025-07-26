@@ -98,7 +98,6 @@ extends:
           inputs:
             sourceScanPath: vcpkg-artifacts
         - script: |
-            # This script must be kept in sync with vcpkg-artifacts-target in CMakeLists.txt
             mkdir "$(Build.BinariesDirectory)"
             node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\@vercel\ncc\dist\ncc\cli.js" build "$(Build.SourcesDirectory)\vcpkg-artifacts\main.ts" --out "$(Build.BinariesDirectory)\vcpkg-artifacts-build"
             move "$(Build.BinariesDirectory)\vcpkg-artifacts-build\index.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.js"
@@ -125,7 +124,8 @@ extends:
           # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
         - script: |
             copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
-          displayName: 'Duplicate Install Script'
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs"
+          displayName: 'Arrange Signed Bits'
         - task: Powershell@2
           displayName: 'Build One-Liner vcpkg-standalone-bundle.tar.gz'
           inputs:
@@ -143,7 +143,7 @@ extends:
             move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psd1"
-            move "$(Build.BinariesDirectory)\vcpkg-artifacts.js" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs"
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs"
           displayName: 'Arrange Architecture-independent Files for Staging'
         - task: Powershell@2
           displayName: Generate Arch-independent SHA512s
