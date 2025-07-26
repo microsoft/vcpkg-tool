@@ -28,10 +28,10 @@ import { Session } from './session';
 // parse the command line
 const commandline = new CommandLine(argv.slice(2));
 
-
 setLocale(commandline.language);
 
 export let session: Session;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('./exports');
 
 async function main() {
@@ -44,31 +44,31 @@ async function main() {
   // create our session for this process.
   session = new Session(process.cwd(), commandline.context, <any>commandline);
 
-  initStyling(commandline, session);
+  initStyling(session);
 
   // start up the session and init the channel listeners.
   await session.init();
 
-  const find = new FindCommand(commandline);
-  const list = new ListCommand(commandline);
+  commandline.addCommand(new FindCommand(commandline));
+  commandline.addCommand(new ListCommand(commandline));
 
-  const add = new AddCommand(commandline);
-  const acquire_project = new AcquireProjectCommand(commandline);
-  const acquire = new AcquireCommand(commandline);
-  const use = new UseCommand(commandline);
+  commandline.addCommand(new AddCommand(commandline));
+  commandline.addCommand(new AcquireProjectCommand(commandline));
+  commandline.addCommand(new AcquireCommand(commandline));
+  commandline.addCommand(new UseCommand(commandline));
 
-  const remove = new RemoveCommand(commandline);
-  const del = new DeleteCommand(commandline);
+  commandline.addCommand(new RemoveCommand(commandline));
+  commandline.addCommand(new DeleteCommand(commandline));
 
-  const activate = new ActivateCommand(commandline);
-  const activate_msbuildprops = new GenerateMSBuildPropsCommand(commandline);
-  const deactivate = new DeactivateCommand(commandline);
+  commandline.addCommand(new ActivateCommand(commandline));
+  commandline.addCommand(new GenerateMSBuildPropsCommand(commandline));
+  commandline.addCommand(new DeactivateCommand(commandline));
 
-  const regenerate = new RegenerateCommand(commandline);
-  const update = new UpdateCommand(commandline);
+  commandline.addCommand(new RegenerateCommand(commandline));
+  commandline.addCommand(new UpdateCommand(commandline));
 
-  const cache = new CacheCommand(commandline);
-  const clean = new CleanCommand(commandline);
+  commandline.addCommand(new CacheCommand(commandline));
+  commandline.addCommand(new CleanCommand(commandline));
 
   const command = commandline.command;
   if (!command) {

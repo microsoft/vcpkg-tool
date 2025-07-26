@@ -3,6 +3,7 @@
 
 import { MetadataFile } from '../amf/metadata-file';
 import { Demands } from '../interfaces/metadata/demands';
+import { Installer } from '../interfaces/metadata/installers/Installer';
 import { VersionReference } from '../interfaces/metadata/version-reference';
 import { parseQuery } from '../mediaquery/media-query';
 import { Session } from '../session';
@@ -24,8 +25,8 @@ export class SetOfDemands {
     }
   }
 
-  get installer() {
-    const install = linq.entries(this._demands).where(([query, demand]) => demand.install.length > 0).toArray();
+  get installer(): Iterable<Installer> {
+    const install = linq.entries(this._demands).where(([, demand]) => demand.install.length > 0).toArray();
 
     if (install.length > 1) {
       // bad. There should only ever be one install block.

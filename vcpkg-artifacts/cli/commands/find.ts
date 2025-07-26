@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 
-import { cyan } from 'chalk';
+import chalk from 'chalk';
 import { buildRegistryResolver } from '../../artifacts/artifact';
 import { i } from '../../i18n';
 import { session } from '../../main';
@@ -49,7 +49,7 @@ export class FindCommand extends Command {
     }
 
     if (!anyEntries) {
-      error(i`No artifacts found matching criteria: ${cyan.bold(this.inputs.join(', '))}`);
+      error(i`No artifacts found matching criteria: ${chalk.cyan.bold(this.inputs.join(', '))}`);
       return false;
     }
 

@@ -12,7 +12,7 @@ import { vcpkgFetch } from '../vcpkg';
 
 export async function installEspIdf(session: Session, events: Partial<UnpackEvents>, targetLocation: Uri) {
   // check for some file that espressif installs to see if it's installed.
-  if (await targetLocation.exists('.espressif')) { return; }
+  if (await targetLocation.exists('.espressif')) { return true; }
 
   // create the .espressif folder for the espressif installation
   const dotEspidf = await targetLocation.createDirectory('.espressif');

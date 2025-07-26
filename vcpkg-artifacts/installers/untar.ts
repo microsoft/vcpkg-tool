@@ -16,5 +16,6 @@ export async function installUnTar(session: Session, name: string, version: stri
     session,
     file.fsPath,
     targetLocation.fsPath,
-   install.strip);
+    install.strip
+  );
 }

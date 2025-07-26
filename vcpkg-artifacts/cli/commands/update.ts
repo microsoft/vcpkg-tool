@@ -42,7 +42,7 @@ export class UpdateCommand extends Command {
   override async run() {
     const resolver = session.globalRegistryResolver.with(
       await buildRegistryResolver(session, (await this.project.manifest)?.metadata.registries));
-    
+
     if (this.all.active) {
       for (const registryUri of session.registryDatabase.getAllUris()) {
         if (schemeOf(registryUri) != 'https') { continue; }
@@ -67,10 +67,11 @@ export class UpdateCommand extends Command {
 
         continue;
       }
-      
+
       const scheme = schemeOf(registryInput);
       switch (scheme) {
         case 'https':
+        {
           const registryInputAsUri = session.fileSystem.parseUri(registryInput);
           const registryByUri = resolver.getRegistryByUri(registryInputAsUri)
             ?? new RemoteRegistry(session, registryInputAsUri);
@@ -79,7 +80,7 @@ export class UpdateCommand extends Command {
           }
 
           continue;
-
+        }
         case 'file':
           error(i`The x-update-registry command downloads new registry information and thus cannot be used with local registries. Did you mean x-regenerate ${registryInput}?`);
           return false;

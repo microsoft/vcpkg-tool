@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Channels } from '../../util/channels';
 import { strictEqual } from 'assert';
+import { Channels } from '../../util/channels';
 import { SuiteLocal } from './SuiteLocal';
 
 describe('StreamTests', () => {
@@ -15,7 +15,7 @@ describe('StreamTests', () => {
 
     const session = local.session;
     const m = new Channels(session);
-    m.on('message', (message, msec) => {
+    m.on('message', (message) => {
       // check that each message comes in order
       strictEqual(message, expected[i], 'messages should be in order');
       i++;

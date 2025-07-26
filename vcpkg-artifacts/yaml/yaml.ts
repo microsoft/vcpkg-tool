@@ -4,7 +4,7 @@
 import { Document, Node, Pair, parseDocument, Scalar, visit, YAMLMap, YAMLSeq } from 'yaml';
 
 /** @internal */
-export const createNode = (v: any, b = true) => parseDocument('', { prettyErrors: false }).createNode(v, {});
+export const createNode = (v: any, _b = true) => parseDocument('', { prettyErrors: false }).createNode(v, {});
 
 /** @internal */
 export function getOrCreateMap(node: Document.Parsed | YAMLMap, name: string): YAMLMap {
@@ -53,7 +53,7 @@ export function getPair(from: YAMLMap, name: string): Pair<Node, string> | undef
 export function serialize(value: any) {
   const document = new Document(value);
   visit(document, {
-    Seq: (k, n, p) => {
+    Seq: (_k, n, _p) => {
       // set arrays to [ ... ] instead of one value per line.
       n.flow = true;
     }

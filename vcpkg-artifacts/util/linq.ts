@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-export type IndexOf<T> = T extends Map<T, infer V> ? T : T extends Array<infer V> ? number : string;
+export type IndexOf<T> = T extends Map<T, infer _V> ? T : T extends Array<infer _V> ? number : string; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 /** performs a truthy check on the value, and calls onTrue when the condition is true,and onFalse when it's not */
 export function when<T>(value: T, onTrue: (value: NonNullable<T>) => void, onFalse: () => void = () => { /* */ }) {

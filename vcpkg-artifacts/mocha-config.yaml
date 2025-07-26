@@ -1,9 +1,0 @@
-color: true
-monkeyPatch: true
-spec: ./test/**/*.js
-ignore:
-  - "./test/**/*.d.ts"
-
-# this section enables npm watch-test to work right
-watch-files: ./**/*.js
-

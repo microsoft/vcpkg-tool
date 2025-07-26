@@ -25,17 +25,15 @@ export interface ExecResult {
   args: Array<string>,
 }
 
-export function cmdlineToArray(text: string, result: Array<string> = [], matcher = /[^\s"]+|"([^"]*)"/gi, count = 0): Array<string> {
+export function cmdlineToArray(text: string, result: Array<string> = [], matcher = /[^\s"]+|"([^"]*)"/gi): Array<string> {
   text = text.replace(/\\"/g, '\ufffe');
   const match = matcher.exec(text);
-  return match
-    ? cmdlineToArray(
-      text,
-      result,
-      matcher,
-      result.push(match[1] ? match[1].replace(/\ufffe/g, '\\"') : match[0].replace(/\ufffe/g, '\\"')),
-    )
-    : result;
+  if (match) {
+    result.push(match[1] ? match[1].replace(/\ufffe/g, '\\"') : match[0].replace(/\ufffe/g, '\\"'));
+    return cmdlineToArray(text, result, matcher);
+  }
+
+  return result;
 }
 
 export async function execute(command: string, cmdlineargs: Array<string>, options: ExecOptions = {}): Promise<ExecResult> {
@@ -45,7 +43,7 @@ export async function execute(command: string, cmdlineargs: Array<string>, optio
     if (k.isDirectory()) {
       throw new Error(`Unable to call ${command} ${cmdlineargs.join(' ')} -- ${command} is a directory`);
     }
-  } catch (e) {
+  } catch {
     throw new Error(`Unable to call ${command} ${cmdlineargs.join(' ')} - -- ${command} is not a file `);
 
   }
@@ -56,8 +54,8 @@ export async function execute(command: string, cmdlineargs: Array<string>, optio
       options.onCreate(cp);
     }
 
-    options.onStdOutData ? cp.stdout.on('data', options.onStdOutData) : cp;
-    options.onStdErrData ? cp.stderr.on('data', options.onStdErrData) : cp;
+    if (options.onStdOutData) { cp.stdout.on('data', options.onStdOutData); }
+    if (options.onStdErrData) { cp.stderr.on('data', options.onStdErrData); }
 
     let err = '';
     let out = '';
@@ -75,7 +73,7 @@ export async function execute(command: string, cmdlineargs: Array<string>, optio
       reject(err);
     });
 
-    cp.on('close', (code, signal) => {
+    cp.on('close', (code) => {
       return resolve({
         env: options.env,
         stdout: out,
