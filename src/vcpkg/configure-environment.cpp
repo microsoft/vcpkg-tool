@@ -176,7 +176,7 @@ namespace vcpkg
         auto exe_path = get_exe_path_of_current_process();
         Optional<std::string> script_sha512;
 #if defined(VCPKG_ARTIFACTS_SHA)
-        script_sha512.emplace(VCPKG_ARTIFACTS_SHA);
+        script_sha512.emplace(MACRO_TO_STRING(VCPKG_ARTIFACTS_SHA));
 #endif
 
         auto maybe_vcpkg_artifacts_path = provision_node_component(console_diagnostic_context,

@@ -4,6 +4,7 @@
 
 #include <vcpkg/archives.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
+#include <vcpkg/commands.version.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
