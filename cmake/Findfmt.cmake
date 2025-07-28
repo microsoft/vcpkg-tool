@@ -16,6 +16,14 @@ if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
+set(OLD_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(SKIP_WARNINGS OFF)
+if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang"))
+    set(SKIP_WARNINGS ON)
+    # fmt\format.h(1058) : warning C6240: (<expression> && <non-zero constant>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) 
+    string(APPEND CMAKE_CXX_FLAGS " /wd6240")
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     fmt
@@ -31,4 +39,8 @@ if(VCPKG_DEPENDENCY_EXTERNAL_FMT)
     find_package(fmt CONFIG REQUIRED)
 else()
     FetchContent_MakeAvailable(fmt)
+endif()
+
+if(SKIP_WARNINGS)
+    set(CMAKE_CXX_FLAGS "${OLD_CXX_FLAGS}")
 endif()
