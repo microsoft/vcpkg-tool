@@ -124,21 +124,22 @@ namespace vcpkg
         }
 
         const char* url_prefix;
-        std::string filename;
+        std::string filename = script_name.to_string();
+        filename.push_back('-');
         if (auto sha = script_sha512.get())
         {
             // this is an official release
             url_prefix = "https://github.com/microsoft/vcpkg-tool/releases/download/" VCPKG_BASE_VERSION_AS_STRING;
-            filename = fmt::format("{}_{}.mjs", script_name, *sha);
+            filename.append(sha->data(), sha->size());
         }
         else
         {
             // not an official release, always use latest
             url_prefix = "https://github.com/microsoft/vcpkg-tool/releases/latest/download";
-            int pid = vcpkg::get_process_id();
-            filename = fmt::format("{}_{}.mjs", script_name, pid);
+            fmt::format_to(std::back_inserter(filename), "{}", vcpkg::get_process_id());
         }
 
+        filename.append(".mjs");
         Path download_path = download_root / filename;
         if (auto sha = script_sha512.get())
         {
@@ -157,7 +158,7 @@ namespace vcpkg
         }
 
         fs.remove(download_path, VCPKG_LINE_INFO);
-        std::string url = fmt::format("{}/{}", url_prefix, filename);
+        std::string url = fmt::format("{}/{}.mjs", url_prefix, script_name);
         if (download_file_asset_cached(
                 context, null_sink, asset_cache_settings, fs, url, {}, download_path, filename, script_sha512))
         {
