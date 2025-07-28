@@ -29,6 +29,23 @@ if (-not $IsMacOS -and -not $IsLinux) {
         "archive": "7z1900-x64.msi"
     },
     {
+      "name": "7zip",
+      "os": "windows",
+      "version": "24.09",
+      "executable": "7z.exe",
+      "url": "https://github.com/ip7z/7zip/releases/download/24.09/7z2409.exe",
+      "sha512": "a39a84b13b383ac5fca20eb6d92ec6b8bc85f1b6a545c441efdbe054d8d12c9ebe97d366235bdf1383bbdb2a9666d18d0145b10b6e589180502c0c2dfa26ef14",
+      "archive": "7z2409.7z.exe"
+    },
+    {
+      "name": "7zr",
+      "os": "windows",
+      "version": "24.09",
+      "executable": "7zr.exe",
+      "url": "https://github.com/ip7z/7zip/releases/download/24.09/7zr.exe",
+      "sha512": "44d8504a693ad4d6b79631b653fc19b572de6bbe38713b53c45d9c9d5d3710aa8df93ee867a2a24419ebe883b8255fd18f30f8cf374b2242145fd6acb2189659"
+    },
+    {
         "name": "ninja-testing",
         "os": "windows",
         "version": "1.10.2",

@@ -325,14 +325,8 @@ std::vector<std::string> Strings::split_lines_keep_empty(StringView s)
         auto next = std::find_if(first, last, [=](const char c) { return c == '\r' || c == '\n'; });
         output.emplace_back(first, next);
         if (next == last) return output;
-        if (next + 1 != last && next[0] == '\r' && next[1] == '\n')
-        {
-            first = next + 2;
-        }
-        else
-        {
-            first = next + 1;
-        }
+        first = next + 1;
+        if (first != last && *next == '\r' && *first == '\n') { ++first; }
     } while (1);
 }
 

@@ -39,8 +39,7 @@
             "name": "windows",
             "hidden": true,
             "cacheVariables": {
-                "VCPKG_BUILD_TLS12_DOWNLOADER": true,
-                "CMAKE_CXX_COMPILER": "cl.exe", "CMAKE_C_COMPILER": "cl.exe"
+                "VCPKG_BUILD_TLS12_DOWNLOADER": true
             },
             "vendor": {
                 "microsoft.com/VisualStudioSettings/CMake/1.0": {
@@ -48,8 +47,7 @@
                         "Windows"
                     ]
                 }
-            },
-            "toolset": { "value": "host=x64", "strategy": "external" }
+            }
         },
         {
             "name": "artifacts",
