@@ -487,6 +487,10 @@ DECLARE_MESSAGE(CiBaselineRegression,
                 (msg::spec, msg::build_result, msg::path),
                 "",
                 "REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.")
+DECLARE_MESSAGE(CiBaselineRegressionNoPath,
+                (msg::spec, msg::build_result),
+                "",
+                "REGRESSION: {spec} failed with {build_result}.")
 DECLARE_MESSAGE(CiBaselineRegressionHeader,
                 (),
                 "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",

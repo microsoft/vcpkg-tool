@@ -221,7 +221,7 @@ namespace
     bool print_regressions(const std::vector<SpecSummary>& results,
                            const std::map<PackageSpec, BuildResult>& known,
                            const CiBaselineData& cidata,
-                           const std::string& ci_baseline_file_name,
+                           const std::string* ci_baseline_file_name,
                            const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
     {
@@ -304,6 +304,7 @@ namespace vcpkg
         parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
         parse_exclusions(settings, SwitchHostExclude, host_triplet, exclusions_map);
         auto baseline_iter = settings.find(SwitchCIBaseline);
+        const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
         CiBaselineData cidata;
         if (baseline_iter == settings.end())
@@ -317,10 +318,10 @@ namespace vcpkg
         {
             auto skip_failures =
                 Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
-            const auto& ci_baseline_file_name = baseline_iter->second;
-            const auto ci_baseline_file_contents = fs.read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
+            ci_baseline_file_name = &baseline_iter->second;
+            const auto ci_baseline_file_contents = fs.read_contents(*ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
-            const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
+            const auto lines = parse_ci_baseline(ci_baseline_file_contents, *ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings();
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
@@ -517,7 +518,7 @@ namespace vcpkg
             const bool any_regressions = print_regressions(summary.results,
                                                            split_specs->known,
                                                            cidata,
-                                                           baseline_iter->second,
+                                                           ci_baseline_file_name,
                                                            not_supported_regressions,
                                                            allow_unexpected_passing);
 
