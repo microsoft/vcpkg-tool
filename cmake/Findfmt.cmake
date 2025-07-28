@@ -20,8 +20,15 @@ set(OLD_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(SKIP_WARNINGS OFF)
 if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang"))
     set(SKIP_WARNINGS ON)
+    # fmt\base.h(451): warning C6239: (<non-zero constant> && <expression>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) operator? If not, consider removing the redundant '<non-zero constant>' and the `&&` operator.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6239")
     # fmt\format.h(1058) : warning C6240: (<expression> && <non-zero constant>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) 
     string(APPEND CMAKE_CXX_FLAGS " /wd6240")
+    # This one is guarded by an assert
+    # fmt\os.h(377): warning C6326: Potential comparison of a constant with another constant.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6326")
+    # fmt\format-inl.h(294): warning C6385: Reading invalid data from 'pow10_significands'.: Lines: 265, 267, 294
+    string(APPEND CMAKE_CXX_FLAGS " /wd6385")
 endif()
 
 include(FetchContent)
