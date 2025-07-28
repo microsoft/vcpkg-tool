@@ -1188,7 +1188,7 @@ namespace vcpkg::Json
             auto& asValue = mabeValueIsh.value;
             if (auto as_object = asValue.maybe_object())
             {
-                return Json::ParsedObject{ std::move(*as_object), mabeValueIsh.style };
+                return Json::ParsedObject{std::move(*as_object), mabeValueIsh.style};
             }
 
             return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);

@@ -735,7 +735,8 @@ test: error: $.overlay-triplets[0]: mismatched type: expected a triplet path
         //   demands
         // Object values in `demands` are also sorted recursively.
         auto config = parse_test_configuration(raw);
-        Test::check_json_eq(Json::parse_object(formatted, "test").value_or_exit(VCPKG_LINE_INFO).object, config.serialize());
+        Test::check_json_eq(Json::parse_object(formatted, "test").value_or_exit(VCPKG_LINE_INFO).object,
+                            config.serialize());
     }
 }
 

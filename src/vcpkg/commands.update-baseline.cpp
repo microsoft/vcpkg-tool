@@ -140,7 +140,8 @@ namespace vcpkg
 
         if (!dry_run && has_manifest)
         {
-            paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest.object, manifest.manifest.style), VCPKG_LINE_INFO);
+            paths.get_filesystem().write_contents(
+                manifest.path, Json::stringify(manifest.manifest.object, manifest.manifest.style), VCPKG_LINE_INFO);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

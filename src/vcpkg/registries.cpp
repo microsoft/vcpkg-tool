@@ -1347,24 +1347,25 @@ namespace
         }
 
         return Json::parse_object(contents, versions_file_path)
-            .then([&](Json::ParsedObject&& versions_json) -> ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> {
-                auto maybe_versions_array = versions_json.object.get(JsonIdVersions);
-                if (!maybe_versions_array || !maybe_versions_array->is_array())
-                {
-                    return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
-                }
+            .then(
+                [&](Json::ParsedObject&& versions_json) -> ExpectedL<Optional<std::vector<FilesystemVersionDbEntry>>> {
+                    auto maybe_versions_array = versions_json.object.get(JsonIdVersions);
+                    if (!maybe_versions_array || !maybe_versions_array->is_array())
+                    {
+                        return msg::format_error(msgFailedToParseNoVersionsArray, msg::path = versions_file_path);
+                    }
 
-                std::vector<FilesystemVersionDbEntry> db_entries;
-                FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
-                Json::Reader r(versions_file_path);
-                r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
-                if (r.messages().any_errors())
-                {
-                    return r.messages().join();
-                }
+                    std::vector<FilesystemVersionDbEntry> db_entries;
+                    FilesystemVersionDbEntryArrayDeserializer deserializer{registry_root};
+                    Json::Reader r(versions_file_path);
+                    r.visit_in_key(*maybe_versions_array, JsonIdVersions, db_entries, deserializer);
+                    if (r.messages().any_errors())
+                    {
+                        return r.messages().join();
+                    }
 
-                return db_entries;
-            });
+                    return db_entries;
+                });
     }
 } // unnamed namespace
 

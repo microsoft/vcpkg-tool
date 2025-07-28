@@ -162,7 +162,9 @@ namespace vcpkg
             }
 
             paths.get_filesystem().write_contents(
-                manifest->path, Json::stringify(serialize_manifest(manifest_scf), manifest->manifest.style), VCPKG_LINE_INFO);
+                manifest->path,
+                Json::stringify(serialize_manifest(manifest_scf), manifest->manifest.style),
+                VCPKG_LINE_INFO);
             msg::println(msgAddPortSucceeded);
 
             auto command_args_hash =

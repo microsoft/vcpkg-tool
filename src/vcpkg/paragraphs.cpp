@@ -375,7 +375,8 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
         return Json::parse_object(text, control_path).then([&](Json::ParsedObject&& parsed_object) {
-            return SourceControlFile::parse_project_manifest_object(control_path, std::move(parsed_object.object), warning_sink);
+            return SourceControlFile::parse_project_manifest_object(
+                control_path, std::move(parsed_object.object), warning_sink);
         });
     }
 
@@ -385,7 +386,8 @@ namespace vcpkg::Paragraphs
     {
         StatsTimer timer(g_load_ports_stats);
         return Json::parse_object(text, control_path).then([&](Json::ParsedObject&& parsed_object) {
-            return SourceControlFile::parse_port_manifest_object(control_path, std::move(parsed_object.object), warning_sink);
+            return SourceControlFile::parse_port_manifest_object(
+                control_path, std::move(parsed_object.object), warning_sink);
         });
     }
 

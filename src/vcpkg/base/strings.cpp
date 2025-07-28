@@ -326,7 +326,10 @@ std::vector<std::string> Strings::split_lines_keep_empty(StringView s)
         output.emplace_back(first, next);
         if (next == last) return output;
         first = next + 1;
-        if (first != last && *next == '\r' && *first == '\n') { ++first; }
+        if (first != last && *next == '\r' && *first == '\n')
+        {
+            ++first;
+        }
     } while (1);
 }
 
