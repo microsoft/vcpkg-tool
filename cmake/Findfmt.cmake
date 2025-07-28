@@ -20,6 +20,8 @@ set(OLD_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(SKIP_WARNINGS OFF)
 if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang"))
     set(SKIP_WARNINGS ON)
+    # base.h(1711) : warning C6294: Ill-defined for-loop.  Loop body not executed.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6294")
     # fmt\base.h(451): warning C6239: (<non-zero constant> && <expression>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) operator? If not, consider removing the redundant '<non-zero constant>' and the `&&` operator.
     string(APPEND CMAKE_CXX_FLAGS " /wd6239")
     # fmt\format.h(1058) : warning C6240: (<expression> && <non-zero constant>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) 
