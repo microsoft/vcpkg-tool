@@ -150,6 +150,9 @@ namespace vcpkg
 
         std::vector<UrlTemplate> azblob_templates_to_put;
 
+        std::vector<std::string> azcopy_read_templates;
+        std::vector<std::string> azcopy_write_templates;
+
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
 

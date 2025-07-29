@@ -925,7 +925,7 @@ namespace
         {
         }
 
-        static std::string make_object_path(const std::string& prefix, const std::string& abi)
+        virtual std::string make_object_path(const std::string& prefix, const std::string& abi) const
         {
             return Strings::concat(prefix, abi, ".zip");
         }
@@ -988,7 +988,7 @@ namespace
         {
         }
 
-        static std::string make_object_path(const std::string& prefix, const std::string& abi)
+        virtual std::string make_object_path(const std::string& prefix, const std::string& abi) const
         {
             return Strings::concat(prefix, abi, ".zip");
         }
@@ -1018,6 +1018,36 @@ namespace
 
         std::vector<std::string> m_prefixes;
         std::shared_ptr<const IObjectStorageTool> m_tool;
+    };
+
+    struct AzCopyStorageProvider : ObjectStorageProvider
+    {
+        AzCopyStorageProvider(ZipTool zip,
+                              const Filesystem& fs,
+                              const Path& buildtrees,
+                              std::string&& prefix,
+                              const std::shared_ptr<const IObjectStorageTool>& tool)
+            : ObjectStorageProvider(std::move(zip), fs, buildtrees, std::move(prefix), tool)
+        {
+        }
+
+        std::string make_object_path(const std::string& prefix, const std::string& abi) const override
+        {
+            return Strings::replace_all(prefix, "{sha}", abi);
+        }
+    };
+    struct AzCopyStoragePushProvider : ObjectStoragePushProvider
+    {
+        AzCopyStoragePushProvider(std::vector<std::string>&& prefixes,
+                                  const std::shared_ptr<const IObjectStorageTool>& tool)
+            : ObjectStoragePushProvider(std::move(prefixes), tool)
+        {
+        }
+
+        std::string make_object_path(const std::string& prefix, const std::string& abi) const override
+        {
+            return Strings::replace_all(prefix, "{sha}", abi);
+        }
     };
 
     struct GcsStorageTool : IObjectStorageTool
@@ -1171,6 +1201,66 @@ namespace
             return flatten(
                 cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(archive).string_arg(object)),
                 Tools::COSCLI);
+        }
+
+        Path m_tool;
+    };
+
+    struct AzCopyTool : IObjectStorageTool
+    {
+        AzCopyTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::AZCOPY, sink)) { }
+
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(
+                msgRestoredPackagesFromAzureStorage, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
+
+        ExpectedL<CacheAvailability> stat(StringView url) const override
+        {
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}.string_arg("list").string_arg(url));
+            if (auto output = maybe_output.get())
+            {
+                if (output->exit_code == 0)
+                {
+                    return output->output.empty() ? CacheAvailability::unavailable : CacheAvailability::available;
+                }
+
+                return msg::format_error(msgProgramReturnedNonzeroExitCode,
+                                         msg::tool_name = Tools::AZCOPY,
+                                         msg::exit_code = output->exit_code)
+                    .append_raw('\n')
+                    .append_raw(output->output);
+            }
+
+            return msg::format_error(msgLaunchingProgramFailed, msg::tool_name = Tools::AZCOPY)
+                .append_raw(' ')
+                .append_raw(maybe_output.error().to_string());
+        }
+
+        ExpectedL<RestoreResult> download_file(StringView url, const Path& archive) const override
+        {
+            auto maybe_result = stat(url);
+            if (auto result = maybe_result.get())
+            {
+                if (*result != CacheAvailability::available)
+                {
+                    return RestoreResult::unavailable;
+                }
+            }
+
+            return flatten_generic(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("copy").string_arg(url).string_arg(archive)),
+                Tools::AZCOPY,
+                RestoreResult::restored);
+        }
+
+        ExpectedL<Unit> upload_file(StringView url, const Path& archive) const override
+        {
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("copy").string_arg(archive).string_arg(url)),
+                Tools::AZCOPY);
         }
 
         Path m_tool;
@@ -1814,6 +1904,55 @@ namespace
                 handle_readwrite(
                     state->upkg_templates_to_get, state->upkg_templates_to_put, std::move(upkg_template), segments, 4);
             }
+            else if (segments[0].second == "x-azcopy")
+            {
+                // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
+                if (segments.size() < 3)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "azcopy"),
+                        segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "https://") &&
+                    // Allow unencrypted Azurite for testing (not reflected in error msg)
+                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = "azcopy"),
+                                     segments[1].first);
+                }
+
+                // TODO: Make SAS optional when using azcopy with Microsoft Entra ID authentication
+                if (Strings::starts_with(segments[2].second, "?"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azcopy"),
+                                     segments[2].first);
+                }
+
+                if (segments.size() > 4)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "azcopy"),
+                        segments[4].first);
+                }
+
+                // {url}/{sha}.zip?{sas}
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+                p.append("{sha}.zip");
+                p.push_back('?');
+                p.append(segments[2].second);
+
+                state->secrets.push_back(segments[2].second);
+                state->binary_cache_providers.insert("azcopy");
+                handle_readwrite(
+                    state->azcopy_read_templates, state->azcopy_write_templates, std::move(p), segments, 3);
+            }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
@@ -2248,6 +2387,7 @@ namespace vcpkg
             static const std::map<StringLiteral, DefineMetric> metric_names{
                 {"aws", DefineMetric::BinaryCachingAws},
                 {"azblob", DefineMetric::BinaryCachingAzBlob},
+                {"azcopy", DefineMetric::BinaryCachingAzCopy},
                 {"cos", DefineMetric::BinaryCachingCos},
                 {"default", DefineMetric::BinaryCachingDefault},
                 {"files", DefineMetric::BinaryCachingFiles},
@@ -2298,9 +2438,15 @@ namespace vcpkg
             {
                 cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
+            std::shared_ptr<const AzCopyTool> azcopy_tool;
+            if (!s.azcopy_read_templates.empty() || !s.azcopy_write_templates.empty())
+            {
+                azcopy_tool = std::make_shared<AzCopyTool>(tools, out_sink);
+            }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty())
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty() ||
+                !s.azcopy_read_templates.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
@@ -2337,6 +2483,12 @@ namespace vcpkg
                 {
                     m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
                         zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
+                }
+
+                for (auto&& prefix : s.azcopy_read_templates)
+                {
+                    m_config.read.push_back(std::make_unique<AzCopyStorageProvider>(
+                        zip_tool, fs, buildtrees, std::move(prefix), azcopy_tool));
                 }
             }
             if (!s.upkg_templates_to_put.empty())
@@ -2391,6 +2543,12 @@ namespace vcpkg
                     m_config.write.push_back(std::make_unique<NugetBinaryPushProvider>(
                         nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
                 }
+            }
+
+            if (!s.azcopy_write_templates.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzCopyStoragePushProvider>(std::move(s.azcopy_write_templates), azcopy_tool));
             }
         }
 

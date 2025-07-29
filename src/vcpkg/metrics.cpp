@@ -92,6 +92,7 @@ namespace vcpkg
         {DefineMetric::AssetSource, "asset-source"},
         {DefineMetric::BinaryCachingAws, "binarycaching_aws"},
         {DefineMetric::BinaryCachingAzBlob, "binarycaching_azblob"},
+        {DefineMetric::BinaryCachingAzCopy, "binarycaching_azcopy"},
         {DefineMetric::BinaryCachingCos, "binarycaching_cos"},
         {DefineMetric::BinaryCachingDefault, "binarycaching_default"},
         {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
