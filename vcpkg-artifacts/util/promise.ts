@@ -24,10 +24,7 @@ export async function anyWhere<T>(from: Iterable<Promise<T>>, predicate: (value:
   const first = await Promise.any(from);
   let success: T | undefined;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
-
-    //
     for (const each of from) {
       // if we had a winner, return now.
       await Promise.any([each, waiting]).then(antecedent => {
@@ -68,7 +65,7 @@ export async function anyWhere<T>(from: Iterable<Promise<T>>, predicate: (value:
 
   // if we get here, then we're
   // everything completed, but nothing passed the predicate
-  // give them the first to suceed
+  // give them the first to succeed
   return first;
 }
 
@@ -105,7 +102,10 @@ export class Queue {
   }
 
   private next() {
-    (--this.active) || this.whenZero?.resolve(0);
+    if (!(--this.active)) {
+      this.whenZero?.resolve(0);
+    }
+
     if (this.queue.length) {
       this.queue.pop()?.execute().catch(async (e) => { this.rejections.push(e); throw e; }).finally(() => this.next());
     }

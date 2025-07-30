@@ -44,6 +44,7 @@ export abstract class ArtifactRegistry implements Registry {
     // reset the index to blank.
     this.index = new Index(ArtifactIndex);
 
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const repo = this;
     const q = new Queue();
     const session = this.session;

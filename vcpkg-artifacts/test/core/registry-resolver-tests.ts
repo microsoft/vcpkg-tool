@@ -13,14 +13,14 @@ class FakeRegistry implements Registry {
 
   get count() { return 1; }
 
-  async search(criteria?: SearchCriteria): Promise<Array<[string, Array<Artifact>]>> {
+  async search(_criteria?: SearchCriteria): Promise<Array<[string, Array<Artifact>]>> {
     throw new Error('not implemented');
   }
 
-  load(force?: boolean): Promise<void> { return Promise.resolve(); }
+  load(_force?: boolean): Promise<void> { return Promise.resolve(); }
   save(): Promise<void> { return Promise.resolve(); }
-  update(displayName?: string): Promise<void> { return Promise.resolve(); }
-  regenerate(normalize?: boolean): Promise<void> { return Promise.resolve(); }
+  update(_displayName?: string): Promise<void> { return Promise.resolve(); }
+  regenerate(_normalize?: boolean): Promise<void> { return Promise.resolve(); }
 }
 
 describe('Registry resolver', () => {

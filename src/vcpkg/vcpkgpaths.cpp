@@ -840,16 +840,6 @@ namespace vcpkg
 
     Path VcpkgPaths::baselines_output() const { return buildtrees() / "versioning_" / "baselines"; }
     Path VcpkgPaths::versions_output() const { return buildtrees() / "versioning_" / "versions"; }
-    bool VcpkgPaths::try_provision_vcpkg_artifacts() const
-    {
-        switch (m_pimpl->m_bundle.deployment)
-        {
-            case DeploymentKind::Git: return true;
-            case DeploymentKind::OneLiner: return false;     // handled by z-boostrap-standalone
-            case DeploymentKind::VisualStudio: return false; // bundled in VS itself
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
 
     ExpectedL<Path> VcpkgPaths::versions_dot_git_dir() const
     {
