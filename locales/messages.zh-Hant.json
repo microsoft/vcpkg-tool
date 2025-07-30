@@ -222,6 +222,7 @@
   "CiBaselineIndependentRegression": "迴歸: 獨立 {spec} 失敗，發生 {build_result}。",
   "CiBaselineRegression": "迴歸: {spec} 失敗，{build_result}。如果預期，將 {spec}=fail 新增到 {path}。",
   "CiBaselineRegressionHeader": "迴歸:",
+  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
   "CiBaselineUnexpectedFail": "迴歸: {spec} 標示為失敗，但 {triplet} 不支援。",
   "CiBaselineUnexpectedFailCascade": "迴歸: {spec} 標示為失敗，但 {triplet} 不支援一個相依性。",
   "CiBaselineUnexpectedPass": "通過，從失敗清單移除: {spec} ({path})。",

@@ -222,6 +222,7 @@
   "CiBaselineIndependentRegression": "REGRESSION: 独立 {spec} 失败，出现 {build_result}。",
   "CiBaselineRegression": "REGRESSION: {spec} 失败，结果为 {build_result}。如果在预期之内，则添加 {spec}=fail to {path}。",
   "CiBaselineRegressionHeader": "回归测试:",
+  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
   "CiBaselineUnexpectedFail": "REGRESSION: {spec} 被标记为失败，但 {triplet} 不支持。",
   "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} 被标记为失败，但 {triplet} 不支持一个依赖项。",
   "CiBaselineUnexpectedPass": "正在通过，从失败列表中删除: {spec} ({path})。",
