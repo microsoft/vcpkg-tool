@@ -222,6 +222,7 @@
   "CiBaselineIndependentRegression": "회귀: {build_result}(으)로 독립 {spec}이(가) 실패했습니다.",
   "CiBaselineRegression": "회귀: {spec}이(가) {build_result}(으)로 실패했습니다. 필요한 경우 {spec}=fail를 {path}에 추가합니다.",
   "CiBaselineRegressionHeader": "회귀:",
+  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
   "CiBaselineUnexpectedFail": "회귀: {spec}이(가) 실패로 표시되었지만 {triplet}에는 지원되지 않습니다.",
   "CiBaselineUnexpectedFailCascade": "회귀: {spec}이(가) 실패로 표시되었지만 {triplet}에 대해 하나의 종속성이 지원되지 않습니다.",
   "CiBaselineUnexpectedPass": "통과, FAIL LIST에서 제거: {spec}({path}).",
