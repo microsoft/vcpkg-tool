@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "Zastosowano integrację na poziomie użytkownika dla tego katalogu głównego menedżera vcpkg.",
   "ApplocalProcessing": "wdrażanie zależności",
   "ArtifactsBootstrapFailed": "Element vcpkg-artifacts nie jest zainstalowany i nie można go uruchomić.",
-  "ArtifactsNotInstalledReadonlyRoot": "Element vcpkg-artifacts nie jest zainstalowany i nie można go zainstalować, ponieważ zakłada się, że VCPKG_ROOT jest tylko do odczytu. Ponowne zainstalowanie programu vcpkg przy użyciu polecenia „one liner” może rozwiązać ten problem.",
   "ArtifactsOptionIncompatibility": "Opcja --{option} nie ma wpływu na znajdowanie artefaktu.",
   "ArtifactsOptionJson": "Pełna ścieżka do pliku JSON, w którym są rejestrowane zmienne środowiskowe i inne właściwości",
   "ArtifactsOptionMSBuildProps": "Pełna ścieżka do pliku, w którym zostaną zapisane właściwości programu MSBuild",

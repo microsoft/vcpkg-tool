@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "Die benutzerweite Integration für diesen vcpkg-Stamm wurde angewendet.",
   "ApplocalProcessing": "Bereitstellen von Abhängigkeiten",
   "ArtifactsBootstrapFailed": "vcpkg-artifacts ist nicht installiert und konnte nicht mit dem Bootstrapping ausgeführt werden.",
-  "ArtifactsNotInstalledReadonlyRoot": "vcpkg-artifacts ist nicht installiert und kann nicht installiert werden, da VCPKG_ROOT als schreibgeschützt angenommen wird. Dieses Problem kann möglicherweise durch erneutes Installieren von vcpkg mithilfe des One Liners behoben werden.",
   "ArtifactsOptionIncompatibility": "--{option} hat keine Auswirkungen auf \"Artefakt suchen\".",
   "ArtifactsOptionJson": "Vollständiger Pfad zur JSON-Datei, in der Umgebungsvariablen und andere Eigenschaften aufgezeichnet werden.",
   "ArtifactsOptionMSBuildProps": "Vollständiger Pfad zu der Datei, in die MSBuild-Eigenschaften geschrieben werden",

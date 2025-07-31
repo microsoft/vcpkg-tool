@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "Integrazione a livello di utente applicata per questa radice vcpkg.",
   "ApplocalProcessing": "distribuzione delle dipendenze",
   "ArtifactsBootstrapFailed": "Vcpkg-artifacts non è installato e non ne è stato possibile eseguire il bootstrap.",
-  "ArtifactsNotInstalledReadonlyRoot": "vcpkg-artifacts non è installato e non può essere installato perché si presuppone che VCPKG_ROOT sia di sola lettura. La reinstallazione di vcpkg con 'one liner' potrebbe risolvere il problema.",
   "ArtifactsOptionIncompatibility": "--{option} non ha alcun effetto sulla ricerca dell'artefatto.",
   "ArtifactsOptionJson": "Percorso completo del file JSON in cui vengono registrate le variabili di ambiente e altre proprietà",
   "ArtifactsOptionMSBuildProps": "Percorso completo del file in cui verranno scritte le proprietà di MSBuild",

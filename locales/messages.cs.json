@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "Pro tento kořen vcpkg byla použita integrace na úrovni uživatele.",
   "ApplocalProcessing": "nasazování závislostí",
   "ArtifactsBootstrapFailed": "vcpkg-artifacts není nainstalovaný a nelze jej spustit.",
-  "ArtifactsNotInstalledReadonlyRoot": "vcpkg-artifacts není nainstalovaný a nedá se nainstalovat, protože se předpokládá, že VCPKG_ROOT je jen pro čtení. Tento problém můžete vyřešit přeinstalací balíčku vcpkg pomocí one-lineru.",
   "ArtifactsOptionIncompatibility": "--{option} nemá žádný vliv na artefakt hledání.",
   "ArtifactsOptionJson": "Úplná cesta k souboru JSON, kde se zaznamenávají proměnné prostředí a další vlastnosti",
   "ArtifactsOptionMSBuildProps": "Úplná cesta k souboru, do kterého se zapíší vlastnosti nástroje MSBuild.",

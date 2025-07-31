@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "Integración aplicada en todo el usuario para esta raíz vcpkg.",
   "ApplocalProcessing": "implementar dependencias",
   "ArtifactsBootstrapFailed": "vcpkg-artifacts no está instalado y no se pudo arrancar.",
-  "ArtifactsNotInstalledReadonlyRoot": "vcpkg-artifacts no está instalado y no se puede instalar porque se supone que VCPKG_ROOT es de solo lectura. La reinstalación de vcpkg mediante el \"un liner\" puede solucionar este problema.",
   "ArtifactsOptionIncompatibility": "--{option} no tiene ningún efecto en la búsqueda de artefactos.",
   "ArtifactsOptionJson": "Ruta de acceso completa al archivo JSON donde se registran las variables de entorno y otras propiedades",
   "ArtifactsOptionMSBuildProps": "Ruta de acceso completa al archivo en el que se escribirán las propiedades de MSBuild",
