@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "이 vcpkg 루트에 대한 사용자 차원의 통합을 적용했습니다.",
   "ApplocalProcessing": "종속성을 배포하는 중",
   "ArtifactsBootstrapFailed": "vcpkg-artifacts가 설치되어 있지 않으며 부트스트랩할 수 없습니다.",
-  "ArtifactsNotInstalledReadonlyRoot": "vcpkg-artifacts가 설치되어 있지 않으며, VCPKG_ROOT가 읽기 전용으로 간주되어 vcpkg-artifacts를 설치할 수 없습니다. 'one liner'를 사용하여 vcpkg를 다시 설치하여 이 문제를 해결할 수 있습니다.",
   "ArtifactsOptionIncompatibility": "--{option}은(는) 아티팩트 찾기에 영향을 주지 않습니다.",
   "ArtifactsOptionJson": "환경 변수 및 기타 속성이 기록되는 JSON 파일의 전체 경로",
   "ArtifactsOptionMSBuildProps": "MSBuild 속성이 기록될 파일의 전체 경로",

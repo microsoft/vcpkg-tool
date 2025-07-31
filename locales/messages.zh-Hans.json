@@ -113,7 +113,6 @@
   "AppliedUserIntegration": "已为此 vcpkg 根应用用户范围的集成。",
   "ApplocalProcessing": "正在部署依赖项",
   "ArtifactsBootstrapFailed": "vcpkg-artifacts 未安装，无法启动。",
-  "ArtifactsNotInstalledReadonlyRoot": "未安装 vcpkg-artifacts，也无法安装，因为假定 VCPKG_ROOT 是只读的。使用“一行代码”重新安装 vcpkg 可能会解决此问题。",
   "ArtifactsOptionIncompatibility": "--{option} 对查找项目没有影响。",
   "ArtifactsOptionJson": "记录环境变量和其他属性的 JSON 文件的完整路径",
   "ArtifactsOptionMSBuildProps": "将写入 MSBuild 属性的文件的完整路径",
