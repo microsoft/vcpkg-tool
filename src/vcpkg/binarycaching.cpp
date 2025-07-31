@@ -1907,6 +1907,45 @@ namespace
             else if (segments[0].second == "x-azcopy")
             {
                 // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
+                if (segments.size() < 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "azcopy"),
+                        segments[0].first);
+                }
+
+                if (!Strings::starts_with(segments[1].second, "https://") &&
+                    // Allow unencrypted Azurite for testing (not reflected in error msg)
+                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = "azcopy"),
+                                     segments[1].first);
+                }
+
+                if (segments.size() > 3)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "azcopy"),
+                        segments[3].first);
+                }
+
+                // {url}/{sha}.zip
+                auto p = segments[1].second;
+                if (p.back() != '/')
+                {
+                    p.push_back('/');
+                }
+                p.append("{sha}.zip");
+
+                state->binary_cache_providers.insert("azcopy");
+                handle_readwrite(
+                    state->azcopy_read_templates, state->azcopy_write_templates, std::move(p), segments, 2);
+            }
+            else if (segments[0].second == "x-azcopy-sas")
+            {
+                // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
                 if (segments.size() < 3)
                 {
                     return add_error(
@@ -1924,8 +1963,7 @@ namespace
                                      segments[1].first);
                 }
 
-                // TODO: Make SAS optional when using azcopy with Microsoft Entra ID authentication
-                if (Strings::starts_with(segments[2].second, "?"))
+                if (segments[2].second.empty() || Strings::starts_with(segments[2].second, "?"))
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azcopy"),
                                      segments[2].first);
