@@ -1509,94 +1509,129 @@ namespace
             }
         }
 
+    private:
+        bool check_azure_base_url(const std::pair<SourceLoc, std::string>& candidate_segment,
+                                  StringLiteral binary_source)
+        {
+            if (!Strings::starts_with(candidate_segment.second, "https://") &&
+                // Allow unencrypted Azurite for testing (not reflected in error msg)
+                !Strings::starts_with(candidate_segment.second, "http://127.0.0.1"))
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                      msg::base_url = "https://",
+                                      msg::binary_source = binary_source),
+                          candidate_segment.first);
+                return false;
+            }
+
+            return true;
+        }
+
+        std::string blob_storage_url_template(const std::pair<SourceLoc, std::string>& candidate_segment)
+        {
+            // <url>/{sha}.zip[?<sas>]
+            auto p = candidate_segment.second;
+            if (p.back() != '/')
+            {
+                p.push_back('/');
+            }
+
+            p.append("{sha}.zip");
+            return p;
+        }
+
+        bool try_append_sas_segment(const std::pair<SourceLoc, std::string>& sas_segment,
+                                    std::string& url_template,
+                                    StringLiteral binary_source)
+        {
+            const auto& sas = sas_segment.second;
+            if (sas.empty() || Strings::starts_with(sas, "?"))
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = binary_source),
+                          sas_segment.first);
+                return false;
+            }
+
+            state->secrets.push_back(sas);
+            url_template.push_back('?');
+            url_template.append(sas);
+            return true;
+        }
+
+        void handle_azcopy_segments(const std::vector<std::pair<SourceLoc, std::string>>& segments)
+        {
+            // Scheme: x-azcopy,<baseurl>[readwrite>]
+            if (segments.size() < 2)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                      msg::base_url = "https://",
+                                      msg::binary_source = "x-azcopy"),
+                          segments[0].first);
+                return;
+            }
+
+            if (segments.size() > 3)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "x-azcopy"),
+                          segments[3].first);
+                return;
+            }
+
+            // handle base URL
+            if (!check_azure_base_url(segments[1], "x-azcopy"))
+            {
+                return;
+            }
+
+            handle_readwrite(state->azcopy_read_templates,
+                             state->azcopy_write_templates,
+                             blob_storage_url_template(segments[1]),
+                             segments,
+                             2);
+
+            // We count azcopy and azcopy-sas as the same provider
+            state->binary_cache_providers.insert("azcopy");
+        }
+
+        void handle_azcopy_sas_segments(const std::vector<std::pair<SourceLoc, std::string>>& segments)
+        {
+            // Scheme: x-azcopy-sas,<baseurl>,<sas>[,<readwrite>]
+            if (segments.size() < 3)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "x-azcopy-sas"),
+                          segments[0].first);
+                return;
+            }
+
+            if (segments.size() > 4)
+            {
+                add_error(
+                    msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "x-azcopy-sas"),
+                    segments[4].first);
+                return;
+            }
+
+            if (!check_azure_base_url(segments[1], "x-azcopy-sas"))
+            {
+                return;
+            }
+
+            auto url_template = blob_storage_url_template(segments[1]);
+            if (!try_append_sas_segment(segments[2], url_template, "x-azcopy-sas"))
+            {
+                return;
+            }
+
+            handle_readwrite(
+                state->azcopy_read_templates, state->azcopy_write_templates, std::move(url_template), segments, 3);
+
+            // We count azcopy and azcopy-sas as the same provider
+            state->binary_cache_providers.insert("azcopy");
+        }
+
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
             Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
-
-            auto handle_azcopy_segments = [&](StringView azcopy_source, bool requires_sas) {
-                const size_t min_segments = requires_sas ? 3 : 2;
-                const size_t max_segments = requires_sas ? 4 : 3;
-
-                if (requires_sas)
-                {
-                    if (segments.size() < min_segments)
-                    {
-                        return add_error(
-                            msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = azcopy_source),
-                            segments[0].first);
-                    }
-
-                    if (segments.size() > max_segments)
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments,
-                                                     msg::binary_source = azcopy_source),
-                                         segments[max_segments].first);
-                    }
-                }
-                else
-                {
-                    if (segments.size() < min_segments)
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                     msg::base_url = "https://",
-                                                     msg::binary_source = azcopy_source),
-                                         segments[0].first);
-                    }
-
-                    if (segments.size() > max_segments)
-                    {
-                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
-                                                     msg::binary_source = azcopy_source),
-                                         segments[max_segments].first);
-                    }
-                }
-
-                // handle base URL
-                if (!Strings::starts_with(segments[1].second, "https://") &&
-                    // Allow unencrypted Azurite for testing (not reflected in error msg)
-                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = azcopy_source),
-                                     segments[1].first);
-                }
-
-                // <url>/{sha}.zip[?<sas>]
-                auto url_template = segments[1].second;
-                if (url_template.back() != '/')
-                {
-                    url_template.push_back('/');
-                }
-                url_template.append("{sha}.zip");
-
-                // handle SAS token
-                if (requires_sas)
-                {
-                    const auto& sas = segments[2].second;
-                    if (sas.empty() || Strings::starts_with(sas, "?"))
-                    {
-                        return add_error(
-                            msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = azcopy_source),
-                            segments[2].first);
-                    }
-
-                    state->secrets.push_back(sas);
-                    url_template.push_back('?');
-                    url_template.append(sas);
-                }
-
-                const size_t rw_segment_idx = max_segments - 1;
-                handle_readwrite(state->azcopy_read_templates,
-                                 state->azcopy_write_templates,
-                                 std::move(url_template),
-                                 segments,
-                                 rw_segment_idx);
-
-                // We count azcopy and azcopy-sas as the same provider
-                state->binary_cache_providers.insert("azcopy");
-            };
-
             if (segments[0].second == "clear")
             {
                 if (segments.size() != 1)
@@ -1738,21 +1773,13 @@ namespace
                         segments[0].first);
                 }
 
-                if (!Strings::starts_with(segments[1].second, "https://") &&
-                    // Allow unencrypted Azurite for testing (not reflected in error msg)
-                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
+                if (!check_azure_base_url(segments[1], "azblob"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "azblob"),
-                                     segments[1].first);
+                    return;
                 }
 
-                if (Strings::starts_with(segments[2].second, "?"))
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azblob"),
-                                     segments[2].first);
-                }
+                auto p = blob_storage_url_template(segments[1]);
+                try_append_sas_segment(segments[2], p, "azblob");
 
                 if (segments.size() > 4)
                 {
@@ -1761,21 +1788,7 @@ namespace
                         segments[4].first);
                 }
 
-                auto p = segments[1].second;
-                if (p.back() != '/')
-                {
-                    p.push_back('/');
-                }
-
-                p.append("{sha}.zip");
-                if (!Strings::starts_with(segments[2].second, "?"))
-                {
-                    p.push_back('?');
-                }
-
-                p.append(segments[2].second);
-                state->secrets.push_back(segments[2].second);
-                UrlTemplate url_template = {p};
+                UrlTemplate url_template = {std::move(p)};
                 bool read = false, write = false;
                 handle_readwrite(read, write, segments, 3);
                 if (read) state->url_templates_to_get.push_back(url_template);
@@ -1997,13 +2010,11 @@ namespace
             }
             else if (segments[0].second == "x-azcopy")
             {
-                // Scheme: x-azcopy,<baseurl>[readwrite>]
-                handle_azcopy_segments("x-azcopy", false);
+                handle_azcopy_segments(segments);
             }
             else if (segments[0].second == "x-azcopy-sas")
             {
-                // Scheme: x-azcopy-sas,<baseurl>,<sas>[,<readwrite>]
-                handle_azcopy_segments("x-azcopy-sas", true);
+                handle_azcopy_sas_segments(segments);
             }
             else
             {
