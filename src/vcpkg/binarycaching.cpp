@@ -1998,12 +1998,12 @@ namespace
             else if (segments[0].second == "x-azcopy")
             {
                 // Scheme: x-azcopy,<baseurl>[readwrite>]
-                handle_azcopy_segments("azcopy", false);
+                handle_azcopy_segments("x-azcopy", false);
             }
             else if (segments[0].second == "x-azcopy-sas")
             {
-                // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
-                handle_azcopy_segments("azcopy-sas", true);
+                // Scheme: x-azcopy-sas,<baseurl>,<sas>[,<readwrite>]
+                handle_azcopy_segments("x-azcopy-sas", true);
             }
             else
             {
