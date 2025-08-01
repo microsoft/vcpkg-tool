@@ -570,3 +570,21 @@ TEST_CASE ("invalid alternate expressions", "[platform-expression]")
     CHECK_FALSE(parse_expr("not! windows"));
     CHECK_FALSE(parse_expr("notx64 windows"));
 }
+
+TEST_CASE ("negate expression", "[platform-expression]")
+{
+    auto m_expr = parse_expr("uwp & !xbox, (windows | osx)");
+    REQUIRE(m_expr);
+    m_expr.get()->negate();
+    to_string(*m_expr.get());
+
+    CHECK(to_string(*m_expr.get()) == "(!uwp | xbox) & (!windows & !osx)");
+}
+
+TEST_CASE ("simplify expression", "[platform-expression]")
+{
+    auto m_expr = parse_expr("(uwp & (xbox & (uwp & xbox))) , !windows | (uwp, !windows)");
+    REQUIRE(m_expr);
+    m_expr.get()->simplify();
+    CHECK(to_string(*m_expr.get()) == "(uwp & xbox), !windows, uwp");
+}

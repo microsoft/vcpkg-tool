@@ -118,6 +118,117 @@ namespace vcpkg::PlatformExpression
                 return std::make_unique<ExprImpl>(
                     ExprImpl{kind, identifier, Util::fmap(exprs, [](auto&& p) { return p->clone(); })});
             }
+
+            bool operator==(const ExprImpl& other) const
+            {
+                struct Impl
+                {
+                    bool operator()(const std::unique_ptr<detail::ExprImpl>& lhs,
+                                    const std::unique_ptr<detail::ExprImpl>& rhs) const
+                    {
+                        return (*this)(*lhs, *rhs);
+                    }
+                    bool operator()(const detail::ExprImpl& lhs, const detail::ExprImpl& rhs) const
+                    {
+                        if (lhs.kind != rhs.kind) return false;
+
+                        if (lhs.kind == ExprKind::identifier)
+                        {
+                            return lhs.identifier == rhs.identifier;
+                        }
+                        else
+                        {
+                            const auto& exprs_l = lhs.exprs;
+                            const auto& exprs_r = rhs.exprs;
+                            return std::equal(exprs_l.begin(), exprs_l.end(), exprs_r.begin(), exprs_r.end(), *this);
+                        }
+                    }
+                };
+                return Impl{}(*this, other);
+            }
+            bool operator!=(const ExprImpl& other) const { return !(*this == other); }
+
+            void negate()
+            {
+                switch (kind)
+                {
+                    case ExprKind::identifier:
+                    {
+                        exprs.push_back(std::make_unique<ExprImpl>(std::move(*this)));
+                        kind = ExprKind::op_not;
+                        break;
+                    }
+                    case ExprKind::op_not:
+                    {
+                        auto sub_expr = std::move(*exprs.at(0));
+                        *this = std::move(sub_expr);
+                        break;
+                    }
+                    case ExprKind::op_and:
+                    case ExprKind::op_or:
+                    case ExprKind::op_list:
+                    {
+                        kind = (kind == ExprKind::op_and ? ExprKind::op_or : ExprKind::op_and);
+                        for (auto& expr : exprs)
+                        {
+                            expr->negate();
+                        }
+                        break;
+                    }
+                    case ExprKind::op_empty:
+                    case ExprKind::op_invalid: break;
+                }
+            }
+
+            void simplify()
+            {
+                switch (kind)
+                {
+                    case ExprKind::op_not:
+                    {
+                        if (exprs.at(0)->kind == ExprKind::op_not)
+                        {
+                            auto sub_sub_expr = std::move(*exprs.at(0)->exprs.at(0));
+                            *this = std::move(sub_sub_expr);
+                            simplify();
+                        }
+                        break;
+                    }
+                    case ExprKind::op_and:
+                    case ExprKind::op_or:
+                    case ExprKind::op_list:
+                    {
+                        auto add_if_different = [this](std::unique_ptr<ExprImpl>&& new_expr) {
+                            if (Util::all_of(exprs, [&](auto& expr) { return *expr != *new_expr; }))
+                            {
+                                exprs.push_back(std::move(new_expr));
+                            }
+                        };
+                        auto old_exprs = std::move(exprs);
+                        for (auto&& expr : old_exprs)
+                        {
+                            expr->simplify();
+                            if ((kind == ExprKind::op_and && expr->kind == ExprKind::op_and) ||
+                                ((kind == ExprKind::op_or || kind == ExprKind::op_list) &&
+                                 (expr->kind == ExprKind::op_or || expr->kind == ExprKind::op_list)))
+                            {
+                                for (auto&& sub_expr : expr->exprs)
+                                {
+                                    add_if_different(std::move(sub_expr));
+                                }
+                            }
+                            else
+                            {
+                                add_if_different(std::move(expr));
+                            }
+                        }
+                        break;
+                    }
+                    case ExprKind::identifier:
+                    case ExprKind::op_empty:
+                    case ExprKind::op_invalid: break;
+                }
+            }
         };
 
         struct ExpressionParser : ParserBase
@@ -655,6 +766,18 @@ namespace vcpkg::PlatformExpression
         return Impl{}(underlying_);
     }
 
+    Expr& Expr::negate()
+    {
+        underlying_->negate();
+        return *this;
+    }
+
+    Expr& Expr::simplify()
+    {
+        underlying_->simplify();
+        return *this;
+    }
+
     ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
     {
         ExpressionParser parser(expression, multiple_binary_operators);
@@ -670,30 +793,6 @@ namespace vcpkg::PlatformExpression
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)
     {
-        struct Impl
-        {
-            bool operator()(const std::unique_ptr<detail::ExprImpl>& lhs,
-                            const std::unique_ptr<detail::ExprImpl>& rhs) const
-            {
-                return (*this)(*lhs, *rhs);
-            }
-            bool operator()(const detail::ExprImpl& lhs, const detail::ExprImpl& rhs) const
-            {
-                if (lhs.kind != rhs.kind) return false;
-
-                if (lhs.kind == ExprKind::identifier)
-                {
-                    return lhs.identifier == rhs.identifier;
-                }
-                else
-                {
-                    const auto& exprs_l = lhs.exprs;
-                    const auto& exprs_r = rhs.exprs;
-                    return std::equal(exprs_l.begin(), exprs_l.end(), exprs_r.begin(), exprs_r.end(), *this);
-                }
-            }
-        };
-
         if (lhs.is_empty())
         {
             return rhs.is_empty();
@@ -702,7 +801,7 @@ namespace vcpkg::PlatformExpression
         {
             return false;
         }
-        return Impl{}(lhs.underlying_, rhs.underlying_);
+        return *lhs.underlying_ == *rhs.underlying_;
     }
 
     int compare(const Expr& lhs, const Expr& rhs)
