@@ -221,7 +221,7 @@
   "CiBaselineIndependentRegression": "РЕГРЕССИЯ: сбой независимого объекта {spec} с {build_result}.",
   "CiBaselineRegression": "РЕГРЕССИЯ: {spec} с ошибкой {build_result}. Если требуется, добавьте {spec}=fail в {path}.",
   "CiBaselineRegressionHeader": "РЕГРЕССИИ:",
-  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
+  "CiBaselineRegressionNoPath": "РЕГРЕССИЯ: сбой {spec} с {build_result}.",
   "CiBaselineUnexpectedFail": "РЕГРЕССИЯ: {spec} помечен как сбой, но не поддерживается для {triplet}.",
   "CiBaselineUnexpectedFailCascade": "РЕГРЕССИЯ: {spec} помечен как сбой, но одна зависимость не поддерживается для {triplet}.",
   "CiBaselineUnexpectedPass": "ПЕРЕДАЧА, УДАЛЕНИЕ ИЗ СПИСКА СБОЕВ: {spec} ({path}).",

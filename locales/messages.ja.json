@@ -221,7 +221,7 @@
   "CiBaselineIndependentRegression": "回帰: 独立した {spec} が {build_result} で失敗しました。",
   "CiBaselineRegression": "回帰: {spec} は {build_result} で失敗しました。必要な場合は、{spec}=fail を {path} に追加します。",
   "CiBaselineRegressionHeader": "回帰:",
-  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
+  "CiBaselineRegressionNoPath": "回帰: {spec} は {build_result} で失敗しました。",
   "CiBaselineUnexpectedFail": "回帰: {spec} は失敗とマークされていますが、{triplet} ではサポートされていません。",
   "CiBaselineUnexpectedFailCascade": "回帰: {spec} は失敗とマークされていますが、1 つの依存関係が {triplet} ではサポートされていません。",
   "CiBaselineUnexpectedPass": "成功、失敗リストから削除: {spec} ({path})。",
