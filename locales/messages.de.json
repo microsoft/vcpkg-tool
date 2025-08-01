@@ -221,7 +221,7 @@
   "CiBaselineIndependentRegression": "REGRESSION: Fehler bei unabhängigem {spec} mit {build_result}.",
   "CiBaselineRegression": "REGRESSION: {spec} ist mit {build_result} fehlgeschlagen. Falls erwartet, fügen Sie {spec}=fail zu {path} hinzu.",
   "CiBaselineRegressionHeader": "REGRESSIONEN:",
-  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
+  "CiBaselineRegressionNoPath": "REGRESSION: Fehler bei {spec} mit {build_result}.",
   "CiBaselineUnexpectedFail": "REGRESSION: {spec} ist als Fehler markiert, wird aber für {triplet} nicht unterstützt.",
   "CiBaselineUnexpectedFailCascade": "REGRESSION: {spec} ist als Fehler markiert, aber eine Abhängigkeit wird für {triplet} nicht unterstützt.",
   "CiBaselineUnexpectedPass": "BESTANDEN, VON DER FEHLERLISTE ENTFERNEN: {spec} ({Pfad}).",

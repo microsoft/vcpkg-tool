@@ -221,7 +221,7 @@
   "CiBaselineIndependentRegression": "REGRESSION: Bağımsız {spec}, {build_result} ile başarısız oldu.",
   "CiBaselineRegression": "GERİLEME: {spec}, {build_result} ile başarısız oldu. Bekleniyorsa, {spec}=fail öğesini {path} yoluna ekleyin.",
   "CiBaselineRegressionHeader": "GERİLEMELER:",
-  "CiBaselineRegressionNoPath": "REGRESSION: {spec} failed with {build_result}.",
+  "CiBaselineRegressionNoPath": "REGRESYON: {spec} {build_result} ile başarısız oldu.",
   "CiBaselineUnexpectedFail": "REGRESYON: {spec} başarısız olarak işaretlenmiş ancak {triplet} için desteklenmiyor.",
   "CiBaselineUnexpectedFailCascade": "REGRESYON: {spec} başarısız olarak işaretlenmiş ancak bir bağımlılık {triplet} için desteklenmiyor.",
   "CiBaselineUnexpectedPass": "GEÇİRİLİYOR, HATA LİSTESİNDEN KALDIR: {spec} ({path}).",
