@@ -1506,6 +1506,91 @@ namespace
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
             Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
+
+            auto handle_azcopy_segments = [&](StringView azcopy_source, bool requires_sas) {
+                const size_t min_segments = requires_sas ? 3 : 2;
+                const size_t max_segments = requires_sas ? 4 : 3;
+
+                if (requires_sas)
+                {
+                    if (segments.size() < min_segments)
+                    {
+                        return add_error(
+                            msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = azcopy_source),
+                            segments[0].first);
+                    }
+
+                    if (segments.size() > max_segments)
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments,
+                                                     msg::binary_source = azcopy_source),
+                                         segments[max_segments].first);
+                    }
+                }
+                else
+                {
+                    if (segments.size() < min_segments)
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                     msg::base_url = "https://",
+                                                     msg::binary_source = azcopy_source),
+                                         segments[0].first);
+                    }
+
+                    if (segments.size() > max_segments)
+                    {
+                        return add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments,
+                                                     msg::binary_source = azcopy_source),
+                                         segments[max_segments].first);
+                    }
+                }
+
+                // handle base URL
+                if (!Strings::starts_with(segments[1].second, "https://") &&
+                    // Allow unencrypted Azurite for testing (not reflected in error msg)
+                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
+                {
+                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                                 msg::base_url = "https://",
+                                                 msg::binary_source = azcopy_source),
+                                     segments[1].first);
+                }
+
+                // <url>/{sha}.zip[?<sas>]
+                auto url_template = segments[1].second;
+                if (url_template.back() != '/')
+                {
+                    url_template.push_back('/');
+                }
+                url_template.append("{sha}.zip");
+
+                // handle SAS token
+                if (requires_sas)
+                {
+                    const auto& sas = segments[2].second;
+                    if (sas.empty() || Strings::starts_with(sas, "?"))
+                    {
+                        return add_error(
+                            msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = azcopy_source),
+                            segments[2].first);
+                    }
+
+                    state->secrets.push_back(sas);
+                    url_template.push_back('?');
+                    url_template.append(sas);
+                }
+
+                const size_t rw_segment_idx = max_segments - 1;
+                handle_readwrite(state->azcopy_read_templates,
+                                 state->azcopy_write_templates,
+                                 std::move(url_template),
+                                 segments,
+                                 rw_segment_idx);
+
+                // We count azcopy and azcopy-sas as the same provider
+                state->binary_cache_providers.insert("azcopy");
+            };
+
             if (segments[0].second == "clear")
             {
                 if (segments.size() != 1)
@@ -1906,90 +1991,13 @@ namespace
             }
             else if (segments[0].second == "x-azcopy")
             {
-                // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
-                if (segments.size() < 2)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "azcopy"),
-                        segments[0].first);
-                }
-
-                if (!Strings::starts_with(segments[1].second, "https://") &&
-                    // Allow unencrypted Azurite for testing (not reflected in error msg)
-                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "azcopy"),
-                                     segments[1].first);
-                }
-
-                if (segments.size() > 3)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "azcopy"),
-                        segments[3].first);
-                }
-
-                // {url}/{sha}.zip
-                auto p = segments[1].second;
-                if (p.back() != '/')
-                {
-                    p.push_back('/');
-                }
-                p.append("{sha}.zip");
-
-                state->binary_cache_providers.insert("azcopy");
-                handle_readwrite(
-                    state->azcopy_read_templates, state->azcopy_write_templates, std::move(p), segments, 2);
+                // Scheme: x-azcopy,<baseurl>[readwrite>]
+                handle_azcopy_segments("azcopy", false);
             }
             else if (segments[0].second == "x-azcopy-sas")
             {
                 // Scheme: x-azcopy,<baseurl>,<sas>[,<readwrite>]
-                if (segments.size() < 3)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "azcopy"),
-                        segments[0].first);
-                }
-
-                if (!Strings::starts_with(segments[1].second, "https://") &&
-                    // Allow unencrypted Azurite for testing (not reflected in error msg)
-                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "azcopy"),
-                                     segments[1].first);
-                }
-
-                if (segments[2].second.empty() || Strings::starts_with(segments[2].second, "?"))
-                {
-                    return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azcopy"),
-                                     segments[2].first);
-                }
-
-                if (segments.size() > 4)
-                {
-                    return add_error(
-                        msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "azcopy"),
-                        segments[4].first);
-                }
-
-                // {url}/{sha}.zip?{sas}
-                auto p = segments[1].second;
-                if (p.back() != '/')
-                {
-                    p.push_back('/');
-                }
-                p.append("{sha}.zip");
-                p.push_back('?');
-                p.append(segments[2].second);
-
-                state->secrets.push_back(segments[2].second);
-                state->binary_cache_providers.insert("azcopy");
-                handle_readwrite(
-                    state->azcopy_read_templates, state->azcopy_write_templates, std::move(p), segments, 3);
+                handle_azcopy_segments("azcopy-sas", true);
             }
             else
             {
