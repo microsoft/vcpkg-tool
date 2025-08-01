@@ -1219,7 +1219,13 @@ namespace
 
         ExpectedL<CacheAvailability> stat(StringView url) const override
         {
-            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}.string_arg("list").string_arg(url));
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
+                                                                   .string_arg("list")
+                                                                   .string_arg("--log-level")
+                                                                   .string_arg("ERROR")
+                                                                   .string_arg("--output-level")
+                                                                   .string_arg("ESSENTIAL")
+                                                                   .string_arg(url));
             if (auto output = maybe_output.get())
             {
                 if (output->exit_code == 0)
