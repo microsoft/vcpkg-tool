@@ -1039,13 +1039,12 @@ namespace
         void acquire_zips(View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            // precheck
-            std::vector<CacheAvailability> cache_result{actions.size(), CacheAvailability::unknown};
-            precheck(actions, cache_result);
+            std::vector<CacheAvailability> precheck_results{actions.size(), CacheAvailability::unknown};
+            precheck(actions, precheck_results);
 
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
-                if (cache_result[idx] != CacheAvailability::available)
+                if (precheck_results[idx] != CacheAvailability::available)
                 {
                     continue;
                 }
