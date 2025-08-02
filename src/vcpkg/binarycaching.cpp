@@ -990,7 +990,7 @@ namespace
         {
         }
 
-        virtual std::string make_object_path(const std::string& prefix, const std::string& abi) const
+        static std::string make_object_path(const std::string& prefix, const std::string& abi)
         {
             return Strings::concat(prefix, abi, ".zip");
         }
