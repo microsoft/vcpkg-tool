@@ -909,6 +909,8 @@ namespace
         virtual ExpectedL<CacheAvailability> stat(StringView url) const = 0;
         virtual ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
+
+        virtual Path tool_path() const = 0;
     };
 
     struct ObjectStorageProvider : ZipReadBinaryProvider
@@ -1020,9 +1022,167 @@ namespace
         std::shared_ptr<const IObjectStorageTool> m_tool;
     };
 
+    struct AzCopyStorageProvider : ZipReadBinaryProvider
+    {
+        AzCopyStorageProvider(ZipTool zip,
+                              const Filesystem& fs,
+                              const Path& buildtrees,
+                              AzCopyUrl&& az_url,
+                              const std::shared_ptr<const IObjectStorageTool>& tool)
+            : ZipReadBinaryProvider(std::move(zip), fs)
+            , m_buildtrees(buildtrees)
+            , m_url(std::move(az_url))
+            , m_tool(tool)
+        {
+        }
+
+        void acquire_zips(View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
+        {
+            std::vector<CacheAvailability> precheck_results{actions.size(), CacheAvailability::unknown};
+            precheck(actions, precheck_results);
+
+            std::map<std::string, size_t> abis_to_download;
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                if (precheck_results[idx] != CacheAvailability::available)
+                {
+                    continue;
+                }
+
+                auto&& action = *actions[idx];
+                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                abis_to_download[abi] = idx;
+            }
+
+            if (abis_to_download.empty())
+            {
+                return;
+            }
+
+            auto tmp_downloads_location = m_buildtrees / ".azcopy";
+            auto maybe_output =
+                cmd_execute(Command{m_tool->tool_path()}
+                                .string_arg("copy")
+                                .string_arg("--from-to")
+                                .string_arg("BlobLocal")
+                                .string_arg("--log-level")
+                                .string_arg("ERROR")
+                                .string_arg("--output-level")
+                                .string_arg("QUIET")
+                                .string_arg("--overwrite")
+                                .string_arg("true")
+                                .string_arg(m_url.make_container_path())
+                                .string_arg(tmp_downloads_location)
+                                .string_arg("--include-path")
+                                .string_arg(Strings::join(";", Util::fmap(abis_to_download, [](const auto& pair) {
+                                                              return pair.first + ".zip";
+                                                          }))));
+
+            auto output = maybe_output.get();
+            if (!output)
+            {
+                // If the command failed, we assume that the cache is unavailable.
+                // We don't return on a non-zero exit code because the command may have
+                // only failed to restore some of the requested packages.
+                msg::println_warning(maybe_output.error());
+                return;
+            }
+
+            for (auto&& file : m_fs.get_files_recursive(tmp_downloads_location, VCPKG_LINE_INFO))
+            {
+                auto filename = file.stem().to_string();
+                auto it = abis_to_download.find(filename);
+                if (it != abis_to_download.end())
+                {
+                    out_zip_paths[it->second].emplace(std::move(file), RemoveWhen::always);
+                }
+            }
+        }
+
+        void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
+        {
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool->tool_path()}
+                                                                   .string_arg("list")
+                                                                   .string_arg("--log-level")
+                                                                   .string_arg("ERROR")
+                                                                   .string_arg("--output-level")
+                                                                   .string_arg("ESSENTIAL")
+                                                                   .string_arg(m_url.make_container_path()));
+            auto output = maybe_output.get();
+            if (!output || output->exit_code != 0)
+            {
+                // If the command failed, we assume that the cache is unavailable.
+                std::fill(cache_status.begin(), cache_status.end(), CacheAvailability::unavailable);
+                return;
+            }
+
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                auto&& action = *actions[idx];
+                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+
+                if (output->output.find(abi + ".zip") != std::string::npos)
+                {
+                    cache_status[idx] = CacheAvailability::available;
+                }
+                else
+                {
+                    cache_status[idx] = CacheAvailability::unavailable;
+                }
+            }
+        }
+
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return m_tool->restored_message(count, elapsed);
+        }
+
+        Path m_buildtrees;
+        AzCopyUrl m_url;
+        std::shared_ptr<const IObjectStorageTool> m_tool;
+    };
+    struct AzCopyStoragePushProvider : IWriteBinaryProvider
+    {
+        AzCopyStoragePushProvider(std::vector<AzCopyUrl>&& containers,
+                                  const std::shared_ptr<const IObjectStorageTool>& tool)
+            : m_containers(std::move(containers)), m_tool(tool)
+        {
+        }
+
+        size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
+        {
+            if (!request.zip_path) return 0;
+            const auto& zip_path = *request.zip_path.get();
+            size_t upload_count = 0;
+            for (const auto& container : m_containers)
+            {
+                auto res = m_tool->upload_file(container.make_object_path(request.package_abi), zip_path);
+                if (res)
+                {
+                    ++upload_count;
+                }
+                else
+                {
+                    msg_sink.println(warning_prefix().append(std::move(res).error()));
+                }
+            }
+            return upload_count;
+        }
+
+        bool needs_nuspec_data() const override { return false; }
+        bool needs_zip_file() const override { return true; }
+
+        std::vector<AzCopyUrl> m_containers;
+        std::shared_ptr<const IObjectStorageTool> m_tool;
+    };
+
     struct GcsStorageTool : IObjectStorageTool
     {
         GcsStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::GSUTIL, sink)) { }
+
+        Path tool_path() const override { return m_tool; }
 
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
@@ -1064,6 +1224,8 @@ namespace
             : m_tool(cache.get_tool_path(Tools::AWSCLI, sink)), m_no_sign_request(no_sign_request)
         {
         }
+
+        Path tool_path() const override { return m_tool; }
 
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
@@ -1145,6 +1307,8 @@ namespace
     {
         CosStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::COSCLI, sink)) { }
 
+        Path tool_path() const override { return m_tool; }
+
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
         {
@@ -1171,6 +1335,95 @@ namespace
             return flatten(
                 cmd_execute_and_capture_output(Command{m_tool}.string_arg("cp").string_arg(archive).string_arg(object)),
                 Tools::COSCLI);
+        }
+
+        Path m_tool;
+    };
+
+    struct AzCopyTool : IObjectStorageTool
+    {
+        AzCopyTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::AZCOPY, sink)) { }
+
+        Path tool_path() const override { return m_tool; }
+
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(
+                msgRestoredPackagesFromAzureStorage, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
+
+        ExpectedL<CacheAvailability> stat(StringView url) const override
+        {
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
+                                                                   .string_arg("list")
+                                                                   .string_arg("--log-level")
+                                                                   .string_arg("ERROR")
+                                                                   .string_arg("--output-level")
+                                                                   .string_arg("ESSENTIAL")
+                                                                   .string_arg(url));
+            if (auto output = maybe_output.get())
+            {
+                if (output->exit_code == 0)
+                {
+                    return output->output.empty() ? CacheAvailability::unavailable : CacheAvailability::available;
+                }
+
+                return msg::format_error(msgProgramReturnedNonzeroExitCode,
+                                         msg::tool_name = Tools::AZCOPY,
+                                         msg::exit_code = output->exit_code)
+                    .append_raw('\n')
+                    .append_raw(output->output);
+            }
+
+            return msg::format_error(msgLaunchingProgramFailed, msg::tool_name = Tools::AZCOPY)
+                .append_raw(' ')
+                .append_raw(maybe_output.error().to_string());
+        }
+
+        ExpectedL<RestoreResult> download_file(StringView url, const Path& archive) const override
+        {
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
+                                                                   .string_arg("copy")
+                                                                   .string_arg("--log-level")
+                                                                   .string_arg("ERROR")
+                                                                   .string_arg("--output-level")
+                                                                   .string_arg("ESSENTIAL")
+                                                                   .string_arg(url)
+                                                                   .string_arg(archive));
+
+            auto output = maybe_output.get();
+            if (!output)
+            {
+                return msg::format_error(msgLaunchingProgramFailed, msg::tool_name = "azcopy")
+                    .append_raw(' ')
+                    .append_raw(maybe_output.error().to_string());
+            }
+
+            if (output->exit_code == 0)
+            {
+                return RestoreResult::restored;
+            }
+
+            // unknown if azcopy's output is always in English, we may need another method to detect this
+            if (Strings::trim(output->output) ==
+                "failed to perform copy command due to error: failed to initialize enumerator: The "
+                "specified file was not found.")
+            {
+                return RestoreResult::unavailable;
+            }
+
+            return msg::format_error(
+                       msgProgramReturnedNonzeroExitCode, msg::tool_name = "azcopy", msg::exit_code = output->exit_code)
+                .append_raw('\n')
+                .append_raw(output->output);
+        }
+
+        ExpectedL<Unit> upload_file(StringView url, const Path& archive) const override
+        {
+            return flatten(
+                cmd_execute_and_capture_output(Command{m_tool}.string_arg("copy").string_arg(archive).string_arg(url)),
+                Tools::AZCOPY);
         }
 
         Path m_tool;
@@ -1413,6 +1666,95 @@ namespace
             }
         }
 
+    private:
+        bool check_azure_base_url(const std::pair<SourceLoc, std::string>& candidate_segment,
+                                  StringLiteral binary_source)
+        {
+            if (!Strings::starts_with(candidate_segment.second, "https://") &&
+                // Allow unencrypted Azurite for testing (not reflected in error msg)
+                !Strings::starts_with(candidate_segment.second, "http://127.0.0.1"))
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                      msg::base_url = "https://",
+                                      msg::binary_source = binary_source),
+                          candidate_segment.first);
+                return false;
+            }
+
+            return true;
+        }
+
+        void handle_azcopy_segments(const std::vector<std::pair<SourceLoc, std::string>>& segments)
+        {
+            // Scheme: x-azcopy,<baseurl>[readwrite>]
+            if (segments.size() < 2)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
+                                      msg::base_url = "https://",
+                                      msg::binary_source = "x-azcopy"),
+                          segments[0].first);
+                return;
+            }
+
+            if (segments.size() > 3)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "x-azcopy"),
+                          segments[3].first);
+                return;
+            }
+
+            // handle base URL
+            if (!check_azure_base_url(segments[1], "x-azcopy"))
+            {
+                return;
+            }
+
+            handle_readwrite(
+                state->azcopy_read_templates, state->azcopy_write_templates, {segments[1].second, ""}, segments, 2);
+
+            // We count azcopy and azcopy-sas as the same provider
+            state->binary_cache_providers.insert("azcopy");
+        }
+
+        void handle_azcopy_sas_segments(const std::vector<std::pair<SourceLoc, std::string>>& segments)
+        {
+            // Scheme: x-azcopy-sas,<baseurl>,<sas>[,<readwrite>]
+            if (segments.size() < 3)
+            {
+                add_error(msg::format(msgInvalidArgumentRequiresBaseUrlAndToken, msg::binary_source = "x-azcopy-sas"),
+                          segments[0].first);
+                return;
+            }
+
+            if (segments.size() > 4)
+            {
+                add_error(
+                    msg::format(msgInvalidArgumentRequiresTwoOrThreeArguments, msg::binary_source = "x-azcopy-sas"),
+                    segments[4].first);
+                return;
+            }
+
+            if (!check_azure_base_url(segments[1], "x-azcopy-sas"))
+            {
+                return;
+            }
+
+            // handle SAS token
+            const auto& sas = segments[2].second;
+            if (sas.empty() || Strings::starts_with(sas, "?"))
+            {
+                return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "x-azcopy-sas"),
+                                 segments[2].first);
+            }
+            state->secrets.push_back(sas);
+
+            handle_readwrite(
+                state->azcopy_read_templates, state->azcopy_write_templates, {segments[1].second, sas}, segments, 3);
+
+            // We count azcopy and azcopy-sas as the same provider
+            state->binary_cache_providers.insert("azcopy");
+        }
+
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
         {
             Checks::check_exit(VCPKG_LINE_INFO, !segments.empty());
@@ -1557,21 +1899,23 @@ namespace
                         segments[0].first);
                 }
 
-                if (!Strings::starts_with(segments[1].second, "https://") &&
-                    // Allow unencrypted Azurite for testing (not reflected in error msg)
-                    !Strings::starts_with(segments[1].second, "http://127.0.0.1"))
+                if (!check_azure_base_url(segments[1], "azblob"))
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
-                                                 msg::base_url = "https://",
-                                                 msg::binary_source = "azblob"),
-                                     segments[1].first);
+                    return;
                 }
 
-                if (Strings::starts_with(segments[2].second, "?"))
+                // <url>/{sha}.zip[?<sas>]
+                AzCopyUrl p;
+                p.url = segments[1].second;
+
+                const auto& sas = segments[2].second;
+                if (sas.empty() || Strings::starts_with(sas, "?"))
                 {
                     return add_error(msg::format(msgInvalidArgumentRequiresValidToken, msg::binary_source = "azblob"),
                                      segments[2].first);
                 }
+                state->secrets.push_back(sas);
+                p.sas = sas;
 
                 if (segments.size() > 4)
                 {
@@ -1580,21 +1924,7 @@ namespace
                         segments[4].first);
                 }
 
-                auto p = segments[1].second;
-                if (p.back() != '/')
-                {
-                    p.push_back('/');
-                }
-
-                p.append("{sha}.zip");
-                if (!Strings::starts_with(segments[2].second, "?"))
-                {
-                    p.push_back('?');
-                }
-
-                p.append(segments[2].second);
-                state->secrets.push_back(segments[2].second);
-                UrlTemplate url_template = {p};
+                UrlTemplate url_template = {p.make_object_path("{sha}")};
                 bool read = false, write = false;
                 handle_readwrite(read, write, segments, 3);
                 if (read) state->url_templates_to_get.push_back(url_template);
@@ -1814,6 +2144,14 @@ namespace
                 handle_readwrite(
                     state->upkg_templates_to_get, state->upkg_templates_to_put, std::move(upkg_template), segments, 4);
             }
+            else if (segments[0].second == "x-azcopy")
+            {
+                handle_azcopy_segments(segments);
+            }
+            else if (segments[0].second == "x-azcopy-sas")
+            {
+                handle_azcopy_sas_segments(segments);
+            }
             else
             {
                 return add_error(msg::format(msgUnknownBinaryProviderType), segments[0].first);
@@ -2005,6 +2343,14 @@ namespace vcpkg
                                  })
             .value_or_exit(VCPKG_LINE_INFO);
     }
+
+    std::string AzCopyUrl::make_object_path(const std::string& abi) const
+    {
+        const auto base_url = url.back() == '/' ? url : Strings::concat(url, "/");
+        return sas.empty() ? Strings::concat(base_url, abi, ".zip") : Strings::concat(base_url, abi, ".zip?", sas);
+    }
+
+    std::string AzCopyUrl::make_container_path() const { return sas.empty() ? url : Strings::concat(url, "?", sas); }
 
     static NuGetRepoInfo get_nuget_repo_info_from_env(const VcpkgCmdArguments& args)
     {
@@ -2248,6 +2594,7 @@ namespace vcpkg
             static const std::map<StringLiteral, DefineMetric> metric_names{
                 {"aws", DefineMetric::BinaryCachingAws},
                 {"azblob", DefineMetric::BinaryCachingAzBlob},
+                {"azcopy", DefineMetric::BinaryCachingAzCopy},
                 {"cos", DefineMetric::BinaryCachingCos},
                 {"default", DefineMetric::BinaryCachingDefault},
                 {"files", DefineMetric::BinaryCachingFiles},
@@ -2298,9 +2645,15 @@ namespace vcpkg
             {
                 cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
+            std::shared_ptr<const AzCopyTool> azcopy_tool;
+            if (!s.azcopy_read_templates.empty() || !s.azcopy_write_templates.empty())
+            {
+                azcopy_tool = std::make_shared<AzCopyTool>(tools, out_sink);
+            }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
-                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty())
+                !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty() ||
+                !s.azcopy_read_templates.empty())
             {
                 ZipTool zip_tool;
                 zip_tool.setup(tools, out_sink);
@@ -2337,6 +2690,12 @@ namespace vcpkg
                 {
                     m_config.read.push_back(std::make_unique<AzureUpkgGetBinaryProvider>(
                         zip_tool, fs, tools, out_sink, std::move(src), buildtrees));
+                }
+
+                for (auto&& prefix : s.azcopy_read_templates)
+                {
+                    m_config.read.push_back(std::make_unique<AzCopyStorageProvider>(
+                        zip_tool, fs, buildtrees, std::move(prefix), azcopy_tool));
                 }
             }
             if (!s.upkg_templates_to_put.empty())
@@ -2391,6 +2750,12 @@ namespace vcpkg
                     m_config.write.push_back(std::make_unique<NugetBinaryPushProvider>(
                         nuget_base, std::move(s.sources_to_write), std::move(s.configs_to_write)));
                 }
+            }
+
+            if (!s.azcopy_write_templates.empty())
+            {
+                m_config.write.push_back(
+                    std::make_unique<AzCopyStoragePushProvider>(std::move(s.azcopy_write_templates), azcopy_tool));
             }
         }
 
