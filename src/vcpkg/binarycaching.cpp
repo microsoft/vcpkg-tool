@@ -1042,6 +1042,7 @@ namespace
             std::vector<CacheAvailability> precheck_results{actions.size(), CacheAvailability::unknown};
             precheck(actions, precheck_results);
 
+            std::map<std::string, size_t> abis_to_download;
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 if (precheck_results[idx] != CacheAvailability::available)
@@ -1051,18 +1052,50 @@ namespace
 
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                auto tmp = make_temp_archive_path(m_buildtrees, action.spec, abi);
-                auto res = m_tool->download_file(m_url.make_object_path(abi), tmp);
-                if (auto cache_result = res.get())
+                abis_to_download[abi] = idx;
+            }
+
+            if (abis_to_download.empty())
+            {
+                return;
+            }
+
+            auto tmp_downloads_location = m_buildtrees / ".azcopy";
+            auto maybe_output =
+                cmd_execute(Command{m_tool->tool_path()}
+                                .string_arg("copy")
+                                .string_arg("--from-to")
+                                .string_arg("BlobLocal")
+                                .string_arg("--log-level")
+                                .string_arg("ERROR")
+                                .string_arg("--output-level")
+                                .string_arg("QUIET")
+                                .string_arg("--overwrite")
+                                .string_arg("true")
+                                .string_arg(m_url.make_container_path())
+                                .string_arg(tmp_downloads_location)
+                                .string_arg("--include-path")
+                                .string_arg(Strings::join(";", Util::fmap(abis_to_download, [](const auto& pair) {
+                                                              return pair.first + ".zip";
+                                                          }))));
+
+            auto output = maybe_output.get();
+            if (!output)
+            {
+                // If the command failed, we assume that the cache is unavailable.
+                // We don't return on a non-zero exit code because the command may have
+                // only failed to restore some of the requested packages.
+                msg::println_warning(maybe_output.error());
+                return;
+            }
+
+            for (auto&& file : m_fs.get_files_recursive(tmp_downloads_location, VCPKG_LINE_INFO))
+            {
+                auto filename = file.stem().to_string();
+                auto it = abis_to_download.find(filename);
+                if (it != abis_to_download.end())
                 {
-                    if (*cache_result == RestoreResult::restored)
-                    {
-                        out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
-                    }
-                }
-                else
-                {
-                    msg::println_warning(res.error());
+                    out_zip_paths[it->second].emplace(std::move(file), RemoveWhen::always);
                 }
             }
         }
