@@ -1024,16 +1024,50 @@ namespace
 
     struct AzCopyStorageProvider : ZipReadBinaryProvider
     {
-        AzCopyStorageProvider(ZipTool zip,
-                              const Filesystem& fs,
-                              const Path& buildtrees,
-                              AzCopyUrl&& az_url,
-                              const std::shared_ptr<const IObjectStorageTool>& tool)
+        AzCopyStorageProvider(
+            ZipTool zip, const Filesystem& fs, const Path& buildtrees, AzCopyUrl&& az_url, const Path& tool)
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_buildtrees(buildtrees)
             , m_url(std::move(az_url))
             , m_tool(tool)
         {
+        }
+
+        static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
+                                                                       const size_t fixed_len)
+        {
+            constexpr size_t ABI_ENTRY_LEN = 68; // 64 for SHA256 + 4 for ".zip"
+            const size_t available_len = Command::maximum_allowed - fixed_len;
+
+            // Not enough space for even one entry
+            if (available_len < ABI_ENTRY_LEN)
+            {
+                return {};
+            }
+
+            std::vector<std::vector<std::string>> batches;
+            std::vector<std::string> current_batch;
+            size_t current_len = 0;
+            for (size_t i = 0; i < abis.size(); ++i)
+            {
+                // For the first entry, no separator; for others, add 1 for ';'
+                size_t entry_len = ABI_ENTRY_LEN + (current_batch.empty() ? 0 : 1);
+
+                if (current_len + entry_len > available_len && !current_batch.empty())
+                {
+                    batches.push_back(std::move(current_batch));
+                    current_batch.clear();
+                    current_len = 0;
+                    entry_len = ABI_ENTRY_LEN; // reset for first in batch
+                }
+                current_batch.push_back(abis[i] + ".zip");
+                current_len += entry_len;
+            }
+            if (!current_batch.empty())
+            {
+                batches.push_back(std::move(current_batch));
+            }
+            return batches;
         }
 
         void acquire_zips(View<const InstallPlanAction*> actions,
@@ -1042,7 +1076,8 @@ namespace
             std::vector<CacheAvailability> precheck_results{actions.size(), CacheAvailability::unknown};
             precheck(actions, precheck_results);
 
-            std::map<std::string, size_t> abis_to_download;
+            std::vector<std::string> abis;
+            std::map<std::string, size_t> abi_index_map;
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 if (precheck_results[idx] != CacheAvailability::available)
@@ -1052,17 +1087,17 @@ namespace
 
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                abis_to_download[abi] = idx;
+                abi_index_map[abi] = idx;
+                abis.push_back(abi);
             }
 
-            if (abis_to_download.empty())
+            if (abi_index_map.empty())
             {
                 return;
             }
 
-            auto tmp_downloads_location = m_buildtrees / ".azcopy";
-            auto maybe_output =
-                cmd_execute(Command{m_tool->tool_path()}
+            const auto tmp_downloads_location = m_buildtrees / ".azcopy";
+            auto base_cmd = Command{m_tool}
                                 .string_arg("copy")
                                 .string_arg("--from-to")
                                 .string_arg("BlobLocal")
@@ -1074,26 +1109,25 @@ namespace
                                 .string_arg("true")
                                 .string_arg(m_url.make_container_path())
                                 .string_arg(tmp_downloads_location)
-                                .string_arg("--include-path")
-                                .string_arg(Strings::join(";", Util::fmap(abis_to_download, [](const auto& pair) {
-                                                              return pair.first + ".zip";
-                                                          }))));
+                                .string_arg("--include-path");
 
-            auto output = maybe_output.get();
-            if (!output)
+            const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + EOL
+            for (auto&& batch : batch_azcopy_args(abis, fixed_len))
             {
-                // If the command failed, we assume that the cache is unavailable.
-                // We don't return on a non-zero exit code because the command may have
+                auto maybe_output = cmd_execute(Command{base_cmd}.string_arg(Strings::join(";", batch)));
+                // We don't return on a failure because the command may have
                 // only failed to restore some of the requested packages.
-                msg::println_warning(maybe_output.error());
-                return;
+                if (!maybe_output.has_value())
+                {
+                    msg::println_warning(maybe_output.error());
+                }
             }
 
             for (auto&& file : m_fs.get_files_recursive(tmp_downloads_location, VCPKG_LINE_INFO))
             {
                 auto filename = file.stem().to_string();
-                auto it = abis_to_download.find(filename);
-                if (it != abis_to_download.end())
+                auto it = abi_index_map.find(filename);
+                if (it != abi_index_map.end())
                 {
                     out_zip_paths[it->second].emplace(std::move(file), RemoveWhen::always);
                 }
@@ -1102,7 +1136,7 @@ namespace
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
         {
-            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool->tool_path()}
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
                                                                    .string_arg("list")
                                                                    .string_arg("--log-level")
                                                                    .string_arg("ERROR")
@@ -1136,19 +1170,35 @@ namespace
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
         {
-            return m_tool->restored_message(count, elapsed);
+            return msg::format(
+                msgRestoredPackagesFromAzureStorage, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
         }
 
         Path m_buildtrees;
         AzCopyUrl m_url;
-        std::shared_ptr<const IObjectStorageTool> m_tool;
+        Path m_tool;
     };
     struct AzCopyStoragePushProvider : IWriteBinaryProvider
     {
-        AzCopyStoragePushProvider(std::vector<AzCopyUrl>&& containers,
-                                  const std::shared_ptr<const IObjectStorageTool>& tool)
+        AzCopyStoragePushProvider(std::vector<AzCopyUrl>&& containers, const Path& tool)
             : m_containers(std::move(containers)), m_tool(tool)
         {
+        }
+
+        vcpkg::ExpectedL<Unit> upload_file(StringView url, const Path& archive) const
+        {
+            auto upload_cmd = Command{m_tool}
+                                  .string_arg("copy")
+                                  .string_arg("--from-to")
+                                  .string_arg("LocalBlob")
+                                  .string_arg("--log-level")
+                                  .string_arg("ERROR")
+                                  .string_arg("--output-level")
+                                  .string_arg("QUIET")
+                                  .string_arg(archive)
+                                  .string_arg(url);
+
+            return flatten(cmd_execute_and_capture_output(upload_cmd), Tools::AZCOPY);
         }
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
@@ -1158,7 +1208,7 @@ namespace
             size_t upload_count = 0;
             for (const auto& container : m_containers)
             {
-                auto res = m_tool->upload_file(container.make_object_path(request.package_abi), zip_path);
+                auto res = upload_file(container.make_object_path(request.package_abi), zip_path);
                 if (res)
                 {
                     ++upload_count;
@@ -1175,7 +1225,7 @@ namespace
         bool needs_zip_file() const override { return true; }
 
         std::vector<AzCopyUrl> m_containers;
-        std::shared_ptr<const IObjectStorageTool> m_tool;
+        Path m_tool;
     };
 
     struct GcsStorageTool : IObjectStorageTool
@@ -1244,14 +1294,14 @@ namespace
             auto maybe_exit = cmd_execute_and_capture_output(cmd);
 
             // When the file is not found, "aws s3 ls" prints nothing, and returns exit code 1.
-            // flatten_generic() would treat this as an error, but we want to treat it as a (silent) cache miss instead,
-            // so we handle this special case before calling flatten_generic().
-            // See https://github.com/aws/aws-cli/issues/5544 for the related aws-cli bug report.
+            // flatten_generic() would treat this as an error, but we want to treat it as a (silent) cache miss
+            // instead, so we handle this special case before calling flatten_generic(). See
+            // https://github.com/aws/aws-cli/issues/5544 for the related aws-cli bug report.
             if (auto exit = maybe_exit.get())
             {
-                // We want to return CacheAvailability::unavailable even if aws-cli starts to return exit code 0 with an
-                // empty output when the file is missing. This way, both the current and possible future behavior of
-                // aws-cli is covered.
+                // We want to return CacheAvailability::unavailable even if aws-cli starts to return exit code 0
+                // with an empty output when the file is missing. This way, both the current and possible future
+                // behavior of aws-cli is covered.
                 if (exit->exit_code == 0 || exit->exit_code == 1)
                 {
                     if (Strings::trim(exit->output).empty())
@@ -1340,95 +1390,6 @@ namespace
         Path m_tool;
     };
 
-    struct AzCopyTool : IObjectStorageTool
-    {
-        AzCopyTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::AZCOPY, sink)) { }
-
-        Path tool_path() const override { return m_tool; }
-
-        LocalizedString restored_message(size_t count,
-                                         std::chrono::high_resolution_clock::duration elapsed) const override
-        {
-            return msg::format(
-                msgRestoredPackagesFromAzureStorage, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
-        }
-
-        ExpectedL<CacheAvailability> stat(StringView url) const override
-        {
-            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
-                                                                   .string_arg("list")
-                                                                   .string_arg("--log-level")
-                                                                   .string_arg("ERROR")
-                                                                   .string_arg("--output-level")
-                                                                   .string_arg("ESSENTIAL")
-                                                                   .string_arg(url));
-            if (auto output = maybe_output.get())
-            {
-                if (output->exit_code == 0)
-                {
-                    return output->output.empty() ? CacheAvailability::unavailable : CacheAvailability::available;
-                }
-
-                return msg::format_error(msgProgramReturnedNonzeroExitCode,
-                                         msg::tool_name = Tools::AZCOPY,
-                                         msg::exit_code = output->exit_code)
-                    .append_raw('\n')
-                    .append_raw(output->output);
-            }
-
-            return msg::format_error(msgLaunchingProgramFailed, msg::tool_name = Tools::AZCOPY)
-                .append_raw(' ')
-                .append_raw(maybe_output.error().to_string());
-        }
-
-        ExpectedL<RestoreResult> download_file(StringView url, const Path& archive) const override
-        {
-            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
-                                                                   .string_arg("copy")
-                                                                   .string_arg("--log-level")
-                                                                   .string_arg("ERROR")
-                                                                   .string_arg("--output-level")
-                                                                   .string_arg("ESSENTIAL")
-                                                                   .string_arg(url)
-                                                                   .string_arg(archive));
-
-            auto output = maybe_output.get();
-            if (!output)
-            {
-                return msg::format_error(msgLaunchingProgramFailed, msg::tool_name = "azcopy")
-                    .append_raw(' ')
-                    .append_raw(maybe_output.error().to_string());
-            }
-
-            if (output->exit_code == 0)
-            {
-                return RestoreResult::restored;
-            }
-
-            // unknown if azcopy's output is always in English, we may need another method to detect this
-            if (Strings::trim(output->output) ==
-                "failed to perform copy command due to error: failed to initialize enumerator: The "
-                "specified file was not found.")
-            {
-                return RestoreResult::unavailable;
-            }
-
-            return msg::format_error(
-                       msgProgramReturnedNonzeroExitCode, msg::tool_name = "azcopy", msg::exit_code = output->exit_code)
-                .append_raw('\n')
-                .append_raw(output->output);
-        }
-
-        ExpectedL<Unit> upload_file(StringView url, const Path& archive) const override
-        {
-            return flatten(
-                cmd_execute_and_capture_output(Command{m_tool}.string_arg("copy").string_arg(archive).string_arg(url)),
-                Tools::AZCOPY);
-        }
-
-        Path m_tool;
-    };
-
     struct AzureUpkgTool
     {
         AzureUpkgTool(const ToolCache& cache, MessageSink& sink) { az_cli = cache.get_tool_path(Tools::AZCLI, sink); }
@@ -1492,8 +1453,8 @@ namespace
                     }
 
                     // az command line error message: Before you can run Azure DevOps commands, you need to
-                    // run the login command(az login if using AAD/MSA identity else az devops login if using PAT token)
-                    // to setup credentials.
+                    // run the login command(az login if using AAD/MSA identity else az devops login if using PAT
+                    // token) to setup credentials.
                     if (res.output.find("you need to run the login command") != std::string::npos)
                     {
                         sink.println(Color::warning,
@@ -2645,10 +2606,10 @@ namespace vcpkg
             {
                 cos_tool = std::make_shared<CosStorageTool>(tools, out_sink);
             }
-            std::shared_ptr<const AzCopyTool> azcopy_tool;
+            Path azcopy_tool;
             if (!s.azcopy_read_templates.empty() || !s.azcopy_write_templates.empty())
             {
-                azcopy_tool = std::make_shared<AzCopyTool>(tools, out_sink);
+                azcopy_tool = tools.get_tool_path(Tools::AZCOPY, out_sink);
             }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
