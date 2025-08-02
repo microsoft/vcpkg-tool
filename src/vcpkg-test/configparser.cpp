@@ -491,7 +491,12 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
 
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
+
             CHECK(state.azcopy_write_templates.empty());
             REQUIRE(state.secrets.empty());
         }
@@ -501,7 +506,12 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
 
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
+
             CHECK(state.azcopy_write_templates.empty());
             REQUIRE(state.secrets.empty());
         }
@@ -512,7 +522,11 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             CHECK(state.azcopy_read_templates.empty());
             REQUIRE(state.azcopy_write_templates.size() == 1);
-            CHECK(state.azcopy_write_templates.front() == "https://azure/container/{sha}.zip");
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas.empty());
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container");
             REQUIRE(state.secrets.empty());
         }
         {
@@ -521,9 +535,17 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
 
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
             REQUIRE(state.azcopy_write_templates.size() == 1);
-            CHECK(state.azcopy_write_templates.front() == "https://azure/container/{sha}.zip");
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas.empty());
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container");
             REQUIRE(state.secrets.empty());
         }
         {
@@ -559,7 +581,11 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip?sas");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
             CHECK(state.azcopy_write_templates.empty());
             REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         }
@@ -568,7 +594,11 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip?sas");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
             CHECK(state.azcopy_write_templates.empty());
             REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         }
@@ -578,7 +608,11 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             CHECK(state.azcopy_read_templates.empty());
             REQUIRE(state.azcopy_write_templates.size() == 1);
-            CHECK(state.azcopy_write_templates.front() == "https://azure/container/{sha}.zip?sas");
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas == "sas");
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container?sas");
             REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         }
         {
@@ -586,9 +620,17 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
             REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
-            CHECK(state.azcopy_read_templates.front() == "https://azure/container/{sha}.zip?sas");
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
             REQUIRE(state.azcopy_write_templates.size() == 1);
-            CHECK(state.azcopy_write_templates.front() == "https://azure/container/{sha}.zip?sas");
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas == "sas");
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container?sas");
             REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         }
         {
