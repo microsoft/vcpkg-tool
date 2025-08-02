@@ -1891,7 +1891,7 @@ namespace
                         segments[4].first);
                 }
 
-                UrlTemplate url_template = {std::move(p.make_object_path("{sha}"))};
+                UrlTemplate url_template = {p.make_object_path("{sha}")};
                 bool read = false, write = false;
                 handle_readwrite(read, write, segments, 3);
                 if (read) state->url_templates_to_get.push_back(url_template);
