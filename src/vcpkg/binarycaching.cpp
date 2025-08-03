@@ -1713,7 +1713,7 @@ namespace
                 state->azcopy_read_templates, state->azcopy_write_templates, {segments[1].second, sas}, segments, 3);
 
             // We count azcopy and azcopy-sas as the same provider
-            state->binary_cache_providers.insert("azcopy");
+            state->binary_cache_providers.insert("azcopy-sas");
         }
 
         void handle_segments(std::vector<std::pair<SourceLoc, std::string>>&& segments)
@@ -2556,6 +2556,7 @@ namespace vcpkg
                 {"aws", DefineMetric::BinaryCachingAws},
                 {"azblob", DefineMetric::BinaryCachingAzBlob},
                 {"azcopy", DefineMetric::BinaryCachingAzCopy},
+                {"azcopy-sas", DefineMetric::BinaryCachingAzCopySas},
                 {"cos", DefineMetric::BinaryCachingCos},
                 {"default", DefineMetric::BinaryCachingDefault},
                 {"files", DefineMetric::BinaryCachingFiles},

@@ -579,7 +579,7 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
         {
             auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas", {});
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
             const auto& azcopy_read = state.azcopy_read_templates.front();
             CHECK(azcopy_read.url == "https://azure/container");
@@ -592,7 +592,7 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
         {
             auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,read", {});
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
             const auto& azcopy_read = state.azcopy_read_templates.front();
             CHECK(azcopy_read.url == "https://azure/container");
@@ -605,7 +605,7 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
         {
             auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,write", {});
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
             CHECK(state.azcopy_read_templates.empty());
             REQUIRE(state.azcopy_write_templates.size() == 1);
             const auto& azcopy_write = state.azcopy_write_templates.front();
@@ -618,7 +618,7 @@ TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
         {
             auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,readwrite", {});
             auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
-            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
             REQUIRE(state.azcopy_read_templates.size() == 1);
             const auto& azcopy_read = state.azcopy_read_templates.front();
             CHECK(azcopy_read.url == "https://azure/container");
