@@ -1033,6 +1033,7 @@ namespace
         {
         }
 
+        // Batch the azcopy arguments to fit within the maximum allowed command line length.
         static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
                                                                        const size_t fixed_len)
         {
@@ -1101,8 +1102,6 @@ namespace
                                 .string_arg("copy")
                                 .string_arg("--from-to")
                                 .string_arg("BlobLocal")
-                                .string_arg("--log-level")
-                                .string_arg("ERROR")
                                 .string_arg("--output-level")
                                 .string_arg("QUIET")
                                 .string_arg("--overwrite")
@@ -1114,7 +1113,8 @@ namespace
             const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + EOL
             for (auto&& batch : batch_azcopy_args(abis, fixed_len))
             {
-                auto maybe_output = cmd_execute(Command{base_cmd}.string_arg(Strings::join(";", batch)));
+                auto maybe_output =
+                    cmd_execute_and_capture_output(Command{base_cmd}.string_arg(Strings::join(";", batch)));
                 // We don't return on a failure because the command may have
                 // only failed to restore some of the requested packages.
                 if (!maybe_output.has_value())
@@ -1138,8 +1138,6 @@ namespace
         {
             auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
                                                                    .string_arg("list")
-                                                                   .string_arg("--log-level")
-                                                                   .string_arg("ERROR")
                                                                    .string_arg("--output-level")
                                                                    .string_arg("ESSENTIAL")
                                                                    .string_arg(m_url.make_container_path()));
@@ -1191,10 +1189,6 @@ namespace
                                   .string_arg("copy")
                                   .string_arg("--from-to")
                                   .string_arg("LocalBlob")
-                                  .string_arg("--log-level")
-                                  .string_arg("ERROR")
-                                  .string_arg("--output-level")
-                                  .string_arg("QUIET")
                                   .string_arg(archive)
                                   .string_arg(url);
 
