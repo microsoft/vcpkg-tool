@@ -909,8 +909,6 @@ namespace
         virtual ExpectedL<CacheAvailability> stat(StringView url) const = 0;
         virtual ExpectedL<RestoreResult> download_file(StringView object, const Path& archive) const = 0;
         virtual ExpectedL<Unit> upload_file(StringView object, const Path& archive) const = 0;
-
-        virtual Path tool_path() const = 0;
     };
 
     struct ObjectStorageProvider : ZipReadBinaryProvider
@@ -1226,8 +1224,6 @@ namespace
     {
         GcsStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::GSUTIL, sink)) { }
 
-        Path tool_path() const override { return m_tool; }
-
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
         {
@@ -1268,8 +1264,6 @@ namespace
             : m_tool(cache.get_tool_path(Tools::AWSCLI, sink)), m_no_sign_request(no_sign_request)
         {
         }
-
-        Path tool_path() const override { return m_tool; }
 
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
@@ -1350,8 +1344,6 @@ namespace
     struct CosStorageTool : IObjectStorageTool
     {
         CosStorageTool(const ToolCache& cache, MessageSink& sink) : m_tool(cache.get_tool_path(Tools::COSCLI, sink)) { }
-
-        Path tool_path() const override { return m_tool; }
 
         LocalizedString restored_message(size_t count,
                                          std::chrono::high_resolution_clock::duration elapsed) const override
