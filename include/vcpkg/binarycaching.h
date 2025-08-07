@@ -135,6 +135,15 @@ namespace vcpkg
         std::string feed;
     };
 
+    struct AzCopyUrl
+    {
+        std::string url;
+        std::string sas;
+
+        std::string make_object_path(const std::string& abi) const;
+        std::string make_container_path() const;
+    };
+
     struct BinaryConfigParserState
     {
         bool nuget_interactive = false;
@@ -149,6 +158,9 @@ namespace vcpkg
         std::vector<UrlTemplate> url_templates_to_put;
 
         std::vector<UrlTemplate> azblob_templates_to_put;
+
+        std::vector<AzCopyUrl> azcopy_read_templates;
+        std::vector<AzCopyUrl> azcopy_write_templates;
 
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;

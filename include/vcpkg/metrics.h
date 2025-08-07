@@ -17,6 +17,8 @@ namespace vcpkg
         AssetSource,
         BinaryCachingAws,
         BinaryCachingAzBlob,
+        BinaryCachingAzCopy,
+        BinaryCachingAzCopySas,
         BinaryCachingCos,
         BinaryCachingDefault,
         BinaryCachingFiles,
