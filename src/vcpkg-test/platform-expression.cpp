@@ -581,7 +581,7 @@ TEST_CASE ("negate expression", "[platform-expression]")
     CHECK(to_string(*m_expr.get()) == "(!uwp | xbox) & (!windows & !osx)");
 }
 
-std::string simplyfy(StringView expr)
+static std::string simplyfy(StringView expr)
 {
     auto m_expr = parse_expr(expr);
     REQUIRE(m_expr);
