@@ -1069,6 +1069,63 @@ namespace
             return batches;
         }
 
+        // Check for valid cache file names. The format is `<abi>.zip`. WHere `abi` is a 64-character hex string
+        static bool is_cache_file(StringView filename)
+        {
+            static constexpr size_t ABI_LENGTH = 64;
+
+            if (filename.size() != ABI_LENGTH + 4) return false;
+            for (size_t idx = 0; idx < ABI_LENGTH && ParserBase::is_hex_digit(filename[idx]); ++idx)
+            {
+                if (!ParserBase::is_hex_digit(filename[idx]))
+                {
+                    return false;
+                }
+            }
+            if (filename.substr(ABI_LENGTH) != ".zip") return false;
+            return true;
+        }
+
+        std::vector<std::string> azcopy_list() const
+        {
+            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
+                                                                   .string_arg("list")
+                                                                   .string_arg("--output-level")
+                                                                   .string_arg("ESSENTIAL")
+                                                                   .string_arg(m_url.make_container_path()));
+
+            auto output = maybe_output.get();
+            if (!output)
+            {
+                msg::println_warning(maybe_output.error());
+                return {};
+            }
+
+            if (output->exit_code != 0)
+            {
+                msg::println_warning(LocalizedString::from_raw(output->output));
+                return {};
+            }
+
+            std::vector<std::string> abis;
+            for (auto&& line : Strings::split(output->output, '\n'))
+            {
+                if (line.empty()) continue;
+                // `azcopy list` output uses format `<filename>; Content Length: <size>`, we only need the filename
+                auto parts = Strings::split(line, ';');
+                if (parts.size() > 1)
+                {
+                    auto&& abifile = Strings::trim(parts[0]);
+                    if (is_cache_file(abifile))
+                    {
+                        // remove ".zip" extension
+                        abis.emplace_back(abifile.substr(0, abifile.size() - 4).to_string());
+                    }
+                }
+            }
+            return abis;
+        }
+
         void acquire_zips(View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
@@ -1079,10 +1136,7 @@ namespace
             std::map<std::string, size_t> abi_index_map;
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
-                if (precheck_results[idx] != CacheAvailability::available)
-                {
-                    continue;
-                }
+                if (precheck_results[idx] != CacheAvailability::available) continue;
 
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
@@ -1090,10 +1144,7 @@ namespace
                 abis.push_back(abi);
             }
 
-            if (abi_index_map.empty())
-            {
-                return;
-            }
+            if (abi_index_map.empty()) return;
 
             const auto tmp_downloads_location = m_buildtrees / ".azcopy";
             auto base_cmd = Command{m_tool}
@@ -1108,7 +1159,7 @@ namespace
                                 .string_arg(tmp_downloads_location)
                                 .string_arg("--include-path");
 
-            const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + EOL
+            const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + terminator
             for (auto&& batch : batch_azcopy_args(abis, fixed_len))
             {
                 auto maybe_output =
@@ -1134,13 +1185,8 @@ namespace
 
         void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> cache_status) const override
         {
-            auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
-                                                                   .string_arg("list")
-                                                                   .string_arg("--output-level")
-                                                                   .string_arg("ESSENTIAL")
-                                                                   .string_arg(m_url.make_container_path()));
-            auto output = maybe_output.get();
-            if (!output || output->exit_code != 0)
+            auto abis = azcopy_list();
+            if (abis.empty())
             {
                 // If the command failed, we assume that the cache is unavailable.
                 std::fill(cache_status.begin(), cache_status.end(), CacheAvailability::unavailable);
@@ -1151,15 +1197,8 @@ namespace
             {
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-
-                if (output->output.find(abi + ".zip") != std::string::npos)
-                {
-                    cache_status[idx] = CacheAvailability::available;
-                }
-                else
-                {
-                    cache_status[idx] = CacheAvailability::unavailable;
-                }
+                cache_status[idx] =
+                    Util::contains(abis, abi) ? CacheAvailability::available : CacheAvailability::unavailable;
             }
         }
 
