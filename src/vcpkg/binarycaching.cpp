@@ -1039,13 +1039,10 @@ namespace
             const ptrdiff_t available_len = static_cast<ptrdiff_t>(Command::maximum_allowed) - fixed_len;
 
             // Not enough space for even one entry
-            if (available_len < ABI_ENTRY_LEN)
-            {
-                return {};
-            }
+            if (available_len < ABI_ENTRY_LEN) return {};
 
             const size_t entries_per_batch =
-                1 + // the first entry with no ;
+                1 +                                                    // the first entry with no ;
                 (available_len - ABI_ENTRY_LEN) / (ABI_ENTRY_LEN + 1); // all remaining entries with a ;
 
             auto first = abis.begin();
@@ -1053,10 +1050,11 @@ namespace
             std::vector<std::vector<std::string>> batches;
             while (first != last)
             {
-                auto end_of_batch = first + (std::min)(last - first, entries_per_batch);
+                auto end_of_batch = first + std::min(static_cast<size_t>(last - first), entries_per_batch);
                 std::vector<std::string> current_batch;
-                while (++first != end_of_batch) {
-                    current_batch.emplace_back(abi + ".zip");
+                while (first != end_of_batch)
+                {
+                    current_batch.emplace_back(*(first++) + ".zip");
                 }
                 batches.emplace_back(std::move(current_batch));
                 first = end_of_batch;
@@ -1108,10 +1106,10 @@ namespace
             {
                 if (line.empty()) continue;
                 // `azcopy list` output uses format `<filename>; Content Length: <size>`, we only need the filename
-                auto parts = Strings::split(line, ';');
-                if (parts.size() > 1)
+                auto first_part_end = std::find(line.begin(), line.end(), ';');
+                if (first_part_end != line.end())
                 {
-                    auto&& abifile = Strings::trim(parts[0]);
+                    StringView abifile = Strings::trim(std::string{line.begin(), first_part_end});
                     if (is_cache_file(abifile))
                     {
                         // remove ".zip" extension
@@ -1125,22 +1123,15 @@ namespace
         void acquire_zips(View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            std::vector<CacheAvailability> precheck_results{actions.size(), CacheAvailability::unknown};
-            precheck(actions, precheck_results);
-
             std::vector<std::string> abis;
             std::map<std::string, size_t> abi_index_map;
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
-                if (precheck_results[idx] != CacheAvailability::available) continue;
-
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
-                abi_index_map[abi] = idx;
                 abis.push_back(abi);
+                abi_index_map[abi] = idx;
             }
-
-            if (abi_index_map.empty()) return;
 
             const auto tmp_downloads_location = m_buildtrees / ".azcopy";
             auto base_cmd = Command{m_tool}
@@ -1168,7 +1159,10 @@ namespace
                 }
             }
 
-            for (auto&& file : m_fs.get_files_recursive(tmp_downloads_location, VCPKG_LINE_INFO))
+            const auto& container_url = m_url.url;
+            const auto last_slash = std::find(container_url.rbegin(), container_url.rend(), '/');
+            const auto container_name = std::string{last_slash.base(), container_url.end()};
+            for (auto&& file : m_fs.get_files_non_recursive(tmp_downloads_location / container_name, VCPKG_LINE_INFO))
             {
                 auto filename = file.stem().to_string();
                 auto it = abi_index_map.find(filename);
