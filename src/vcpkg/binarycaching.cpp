@@ -1035,8 +1035,8 @@ namespace
         static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
                                                                        const size_t fixed_len)
         {
-            constexpr size_t ABI_ENTRY_LEN = 68; // 64 for SHA256 + 4 for ".zip"
-            const size_t available_len = Command::maximum_allowed - fixed_len;
+            constexpr ptrdiff_t ABI_ENTRY_LEN = 68; // 64 for SHA256 + 4 for ".zip"
+            const ptrdiff_t available_len = static_cast<ptrdiff_t>(Command::maximum_allowed) - fixed_len;
 
             // Not enough space for even one entry
             if (available_len < ABI_ENTRY_LEN)
@@ -1044,28 +1044,24 @@ namespace
                 return {};
             }
 
-            std::vector<std::vector<std::string>> batches;
-            std::vector<std::string> current_batch;
-            size_t current_len = 0;
-            for (size_t i = 0; i < abis.size(); ++i)
-            {
-                // For the first entry, no separator; for others, add 1 for ';'
-                size_t entry_len = ABI_ENTRY_LEN + (current_batch.empty() ? 0 : 1);
+            const size_t entries_per_batch =
+                1 + // the first entry with no ;
+                (available_len - ABI_ENTRY_LEN) / (ABI_ENTRY_LEN + 1); // all remaining entries with a ;
 
-                if (current_len + entry_len > available_len && !current_batch.empty())
-                {
-                    batches.push_back(std::move(current_batch));
-                    current_batch.clear();
-                    current_len = 0;
-                    entry_len = ABI_ENTRY_LEN; // reset for first in batch
-                }
-                current_batch.push_back(abis[i] + ".zip");
-                current_len += entry_len;
-            }
-            if (!current_batch.empty())
+            auto first = abis.begin();
+            const auto last = abis.end();
+            std::vector<std::vector<std::string>> batches;
+            while (first != last)
             {
-                batches.push_back(std::move(current_batch));
+                auto end_of_batch = first + (std::min)(last - first, entries_per_batch);
+                std::vector<std::string> current_batch;
+                while (++first != end_of_batch) {
+                    current_batch.emplace_back(abi + ".zip");
+                }
+                batches.emplace_back(std::move(current_batch));
+                first = end_of_batch;
             }
+
             return batches;
         }
 
@@ -1075,7 +1071,7 @@ namespace
             static constexpr size_t ABI_LENGTH = 64;
 
             if (filename.size() != ABI_LENGTH + 4) return false;
-            for (size_t idx = 0; idx < ABI_LENGTH && ParserBase::is_hex_digit(filename[idx]); ++idx)
+            for (size_t idx = 0; idx < ABI_LENGTH; ++idx)
             {
                 if (!ParserBase::is_hex_digit(filename[idx]))
                 {
@@ -1234,8 +1230,7 @@ namespace
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
-            if (!request.zip_path) return 0;
-            const auto& zip_path = *request.zip_path.get();
+            const auto& zip_path = request.zip_path.value_or_exit(VCPKG_LINE_INFO);
             size_t upload_count = 0;
             for (const auto& container : m_containers)
             {
