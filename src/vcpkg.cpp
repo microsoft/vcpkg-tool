@@ -89,12 +89,9 @@ namespace
                     continue;
                 }
 
-                const auto len = std::strlen(curl_version);
-                std::string buff;
-                buff.resize(len);
-                std::memcpy(buff.data(), curl_version, len);
+                std::string ret{curl_version};
                 dlclose(handle);
-                return buff;
+                return ret;
             }
         }
 #endif
@@ -169,9 +166,7 @@ namespace
         }
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
-
-        auto libcurl_version = detect_libcurl();
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, libcurl_version);
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl());
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
