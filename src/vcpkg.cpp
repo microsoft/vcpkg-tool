@@ -31,7 +31,7 @@
 #pragma comment(lib, "shell32")
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 #define TEST_LIBCURL_AVAILABLE
 #include <dlfcn.h>
 #endif
@@ -57,43 +57,24 @@ namespace
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    std::string detect_libcurl()
+    Optional<std::string> detect_libcurl()
     {
-        // Determine if libcurl is installed in the system by attempting to load it
+        // Determine if libcurl.so.4 is installed in the system by attempting to load it
         // At the moment we don't do anything with it, but we're tracking availability
         // of libcurl to replace the current download/upload implementation
 #if defined(TEST_LIBCURL_AVAILABLE)
-        static const auto libcurl_names = {
-            "libcurl.so",
-            "libcurl.so.4",
-            "libcurl.so.3",
-            "libcurl.so.2",
-            "libcurl.so.1",
-        };
-
-        for (auto&& libcurl_name : libcurl_names)
+        // calling dlclose on the curl handle after calling curl_version causes memory leaks
+        // so we intentionally don't unload the library
+        if (auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL))
         {
-            // calling dlclose on the curl handle after calling curl_version causes memory leaks
-            // so we intentionally don't unload the library
-            if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
+            auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+            if (!dlerror() && curl_version_fn)
             {
-                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
-                if (dlerror() || !curl_version_fn)
-                {
-                    continue;
-                }
-
-                auto curl_version = curl_version_fn();
-                if (!curl_version)
-                {
-                    continue;
-                }
-
-                return {curl_version};
+                return {curl_version_fn()};
             }
         }
 #endif
-        return "unknown";
+        return nullopt;
     }
 
     bool detect_container(const Filesystem& fs)
@@ -164,7 +145,8 @@ namespace
         }
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl());
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
+                                                    detect_libcurl().value_or("unknown"));
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
