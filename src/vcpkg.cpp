@@ -170,7 +170,8 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl());
+        auto libcurl_version = detect_libcurl();
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, libcurl_version);
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
