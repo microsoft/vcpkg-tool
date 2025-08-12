@@ -165,7 +165,7 @@ namespace vcpkg
     {
         auto parser = ParserBase(str, origin, textrowcol);
         auto opt = parse_list_until_eof<std::string>(msgExpectedDefaultFeaturesList, parser, &parse_feature_name);
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().join(), expected_right_tag};
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
     ExpectedL<std::vector<ParsedQualifiedSpecifier>> parse_qualified_specifier_list(const std::string& str,
@@ -178,7 +178,7 @@ namespace vcpkg
                 return parse_qualified_specifier(
                     parser, AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
             });
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().join(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -191,22 +191,25 @@ namespace vcpkg
             return parse_qualified_specifier(
                        parser, AllowFeatures::Yes, ParseExplicitTriplet::Forbid, AllowPlatformSpec::Yes)
                 .then([&](ParsedQualifiedSpecifier&& pqs) -> Optional<Dependency> {
-                    Dependency dependency{pqs.name, {}, pqs.platform.value_or({})};
-                    for (const auto& feature : pqs.features.value_or({}))
+                    Dependency dependency{pqs.name.value, {}, pqs.platform_or_always_true()};
+                    if (auto pfeatures = pqs.features.get())
                     {
-                        if (feature == FeatureNameCore)
+                        for (auto&& feature : std::move(*pfeatures))
                         {
-                            dependency.default_features = false;
-                        }
-                        else
-                        {
-                            dependency.features.push_back({feature});
+                            if (feature.value == FeatureNameCore)
+                            {
+                                dependency.default_features = false;
+                            }
+                            else
+                            {
+                                dependency.features.push_back({std::move(feature).value});
+                            }
                         }
                     }
                     return dependency;
                 });
         });
-        if (!opt) return {LocalizedString::from_raw(parser.get_error()->to_string()), expected_right_tag};
+        if (!opt) return {parser.messages().join(), expected_right_tag};
 
         return {std::move(opt).value_or_exit(VCPKG_LINE_INFO), expected_left_tag};
     }
@@ -280,7 +283,11 @@ namespace vcpkg::Paragraphs
                 get_paragraph(paragraphs.emplace_back());
                 match_while(is_lineend);
             }
-            if (get_error()) return LocalizedString::from_raw(get_error()->to_string());
+
+            if (messages().any_errors())
+            {
+                return messages().join();
+            }
 
             return paragraphs;
         }

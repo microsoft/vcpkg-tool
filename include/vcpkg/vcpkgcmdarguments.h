@@ -236,8 +236,6 @@ namespace vcpkg
 
         std::vector<std::string> cli_binary_sources;
         Optional<std::string> env_binary_sources;
-        Optional<std::string> actions_cache_url;
-        Optional<std::string> actions_runtime_token;
         Optional<std::string> nuget_id_prefix;
         Optional<bool> use_nuget_cache;
         Optional<std::string> vcpkg_nuget_repository;

@@ -5,40 +5,14 @@
 trigger: none
 
 parameters:
-- name: SignTypeOverride
-  displayName: Signing Type (default is real for the main branch and test otherwise)
-  type: string
-  default: default
-  values:
-  - default
-  - test
-  - real
 - name: VcpkgBaseVersionOverride
   displayName: vcpkg Base Version (default is today's date in ISO 8601)
   type: string
   default: default
-- name: PublishTo
-  displayName: 'Publish To'
-  type: string
-  default: 'GitHub and NuGet'
-  values:
-  - 'GitHub and NuGet'
-  - 'NuGet Only'
-  - 'None'
 variables:
 - group: vcpkg Terrapin URLs
 - name: TeamName
   value: vcpkg
-  # If the user didn't override the signing type, then only real-sign on main.
-- ${{ if ne(parameters.SignTypeOverride, 'default') }}:
-  - name: SignType
-    value: ${{ parameters.SignTypeOverride }}
-- ${{ if and(eq(parameters.SignTypeOverride, 'default'), or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags'))) }}:
-  - name: SignType
-    value: real
-- ${{ if and(eq(parameters.SignTypeOverride, 'default'), not(or(eq(variables['Build.SourceBranchName'], 'main'), startsWith(variables['Build.SourceBranch'], 'refs/tags')))) }}:
-  - name: SignType
-    value: test
 resources:
   repositories:
   - repository: MicroBuildTemplate
@@ -81,7 +55,8 @@ extends:
             signing:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-              signType: $(SignType)
+              signType: 'real'
+              signWithProd: true
               zipSources: false
           outputs:
           - output: pipelineArtifact
@@ -124,30 +99,9 @@ extends:
             sourceScanPath: vcpkg-artifacts
         - script: |
             mkdir "$(Build.BinariesDirectory)"
-            mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts"
-            node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\typescript\bin\tsc" -p "$(Build.SourcesDirectory)\vcpkg-artifacts" --outDir "$(Build.BinariesDirectory)\vcpkg-artifacts"
-          displayName: Build TypeScript
-        - task: Npm@1
-          inputs:
-            command: 'custom'
-            workingDir: 'vcpkg-artifacts'
-            customCommand: 'ci --omit=dev'
-            customRegistry: 'useFeed'
-            customFeed: '0bdbc590-a062-4c3f-b0f6-9383f67865ee/105b4584-173c-41aa-8061-612294abe099'
-          displayName: Restore vcpkg-artifacts Prod Dependencies
-        - script: | # This script must be kept in sync with vcpkg-artifacts-target in CMakeLists.txt
-            rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test"
-            rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\test_resources"
-            mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\locales"
-            mkdir "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
-            xcopy /F /E "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules" "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules"
-            :: to avoid signing 'semver' .ps1s
-            rmdir /s /q "$(Build.BinariesDirectory)\vcpkg-artifacts\node_modules\.bin"
-            copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package.json"
-            copy "$(Build.SourcesDirectory)\vcpkg-artifacts\package-lock.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\package-lock.json"
-            copy "$(Build.SourcesDirectory)\vcpkg-artifacts\.npmrc" "$(Build.BinariesDirectory)\vcpkg-artifacts\.npmrc"
-            copy "$(Build.SourcesDirectory)\vcpkg-artifacts\locales\messages.json" "$(Build.BinariesDirectory)\vcpkg-artifacts\locales\messages.json"
-          displayName: Delete Tests, Store Dependencies and Static Components for Signing
+            node "$(Build.SourcesDirectory)\vcpkg-artifacts\node_modules\@vercel\ncc\dist\ncc\cli.js" build "$(Build.SourcesDirectory)\vcpkg-artifacts\main.ts" --out "$(Build.BinariesDirectory)\vcpkg-artifacts-build"
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts-build\index.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.js"
+          displayName: 'Build vcpkg-artifacts'
         - script: |
             mkdir "$(Build.BinariesDirectory)\scripts"
             xcopy /F /E "$(Build.SourcesDirectory)\scripts" "$(Build.BinariesDirectory)\scripts"
@@ -170,7 +124,8 @@ extends:
           # Note that signing must happen before packing steps because the packs contain files that are themselves signed.
         - script: |
             copy "$(Build.BinariesDirectory)\vcpkg-init.ps1" "$(Build.BinariesDirectory)\vcpkg-init.cmd"
-          displayName: 'Duplicate Install Scripts'
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts.js" "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs"
+          displayName: 'Arrange Signed Bits'
         - task: Powershell@2
           displayName: 'Build One-Liner vcpkg-standalone-bundle.tar.gz'
           inputs:
@@ -188,7 +143,7 @@ extends:
             move "$(Build.BinariesDirectory)\scripts\addPoshVcpkgToPowershellProfile.ps1" "$(Build.ArtifactStagingDirectory)\staging\scripts\addPoshVcpkgToPowershellProfile.ps1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psm1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psm1"
             move "$(Build.BinariesDirectory)\scripts\posh-vcpkg.psd1" "$(Build.ArtifactStagingDirectory)\staging\scripts\posh-vcpkg.psd1"
-            move "$(Build.BinariesDirectory)\vcpkg-artifacts" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts"
+            move "$(Build.BinariesDirectory)\vcpkg-artifacts.mjs" "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs"
           displayName: 'Arrange Architecture-independent Files for Staging'
         - task: Powershell@2
           displayName: Generate Arch-independent SHA512s
@@ -199,6 +154,8 @@ extends:
             script: |
               $standaloneBundleSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-standalone-bundle.tar.gz" -Algorithm SHA512).Hash.ToLowerInvariant()
               Write-Host "##vso[task.setvariable variable=VCPKG_STANDALONE_BUNDLE_SHA;isOutput=true]$standaloneBundleSha"
+              $vcpkgArtifactsSha = (Get-FileHash "$(Build.ArtifactStagingDirectory)\staging\vcpkg-artifacts.mjs" -Algorithm SHA512).Hash.ToLowerInvariant()
+              Write-Host "##vso[task.setvariable variable=VCPKG_ARTIFACTS_SHA;isOutput=true]$vcpkgArtifactsSha"
       - job: macos_build
         displayName: 'MacOS Build'
         dependsOn:
@@ -208,8 +165,9 @@ extends:
           vmImage: macOS-14
           os: macOS
         variables:
-          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_ARTIFACTS_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_ARTIFACTS_SHA'] ]
         templateContext:
           sdl:
             codeql:
@@ -230,7 +188,7 @@ extends:
           inputs:
             failOnStderr: true
             script: |
-              cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" -B "$(Build.BinariesDirectory)/build" 2>&1
+              cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" "-DVCPKG_ARTIFACTS_SHA=$VCPKG_ARTIFACTS_SHA" -B "$(Build.BinariesDirectory)/build" 2>&1
               make -j 8 -C "$(Build.BinariesDirectory)/build"
               zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
       - job: glibc_build
@@ -238,11 +196,12 @@ extends:
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-mariner-1espt'
+          name: 'vcpkg-pme-azurelinux3-amd64-1espt-pool'
           os: linux
         variables:
-          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_ARTIFACTS_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_ARTIFACTS_SHA'] ]
         templateContext:
           sdl:
             codeql:
@@ -258,28 +217,28 @@ extends:
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
-        - bash: |
-            az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-            az acr login --name vcpkgdockercontainers
-          displayName: 'Set up managed identity'
-        - task: CmdLine@2
+        - task: AzureCLI@2
           displayName: "Build vcpkg in Mariner with Ubuntu 16.04 Libraries"
           inputs:
-            failOnStderr: false
-            script: |
+            azureSubscription: 'vcpkg-pme-official-builders'
+            scriptType: bash
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az acr login --name vcpkgpmeofficialbuilders --resource-group vcpkg-tool-official-builds --subscription c0f11a1f-38f5-4908-8698-1aa5df75baf3
               mkdir -p "$(Agent.TempDirectory)/build"
-              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-linux:2024-03-21 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-linux/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders-c7ajd0chdtfugffn.azurecr.io/vcpkg/vcpkg-build-linux-amd64:2025-07-28 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-linux/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
               mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc"
       - job: muslc_build
         displayName: 'muslc (Alpine) Build'
         pool:
-          name: 'vcpkg-mariner-1espt'
+          name: 'vcpkg-pme-azurelinux3-amd64-1espt-pool'
           os: linux
         dependsOn:
         - arch_independent
         variables:
-          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_ARTIFACTS_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_ARTIFACTS_SHA'] ]
         templateContext:
           sdl:
             codeql:
@@ -295,29 +254,29 @@ extends:
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
-        - bash: |
-            az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-            az acr login --name vcpkgdockercontainers
-          displayName: 'Set up managed identity'
-        - task: CmdLine@2
+        - task: AzureCLI@2
           displayName: "Build vcpkg in Alpine"
           inputs:
-            failOnStderr: false
-            script: |
+            azureSubscription: 'vcpkg-pme-official-builders'
+            scriptType: bash
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az acr login --name vcpkgpmeofficialbuilders --resource-group vcpkg-tool-official-builds --subscription c0f11a1f-38f5-4908-8698-1aa5df75baf3
               mkdir -p "$(Agent.TempDirectory)/build"
-              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+              docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders-c7ajd0chdtfugffn.azurecr.io/vcpkg/vcpkg-build-alpine:3.16 sh -c "cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_CXX_FLAGS=\"-static -s -static-libgcc -static-libstdc++\" -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
               mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-muslc"
       - job: glibc_arm64_build
         displayName: 'glibc Arm64 Build'
         dependsOn:
         - arch_independent
         pool:
-          name: 'vcpkg-mariner-aarch64-1espt'
+          name: 'vcpkg-pme-azurelinux3-aarch64-1espt-pool'
           os: linux
           hostArchitecture: Arm64
         variables:
-          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_ARTIFACTS_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_ARTIFACTS_SHA'] ]
         templateContext:
           sdl:
             codeql:
@@ -333,17 +292,16 @@ extends:
             publishLocation: 'Container'
             targetPath: '$(Build.ArtifactStagingDirectory)'
         steps:
-          - bash: |
-              az login --identity --username 29a4d3e7-c7d5-41c7-b5a0-fee8cf466371
-              az acr login --name vcpkgdockercontainers
-            displayName: 'Set up managed identity'
-          - task: CmdLine@2
+          - task: AzureCLI@2
             displayName: "Run Docker build for arm64 Linux binary"
             inputs:
-              failOnStderr: false
-              script: |
+              azureSubscription: 'vcpkg-pme-official-builders'
+              scriptType: bash
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az acr login --name vcpkgpmeofficialbuilders --resource-group vcpkg-tool-official-builds --subscription c0f11a1f-38f5-4908-8698-1aa5df75baf3
                 mkdir -p "$(Agent.TempDirectory)/build"
-                docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgdockercontainers.azurecr.io/vcpkg/vcpkg-arm64-linux:2025-03-18 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-arm64/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
+                docker run --rm --mount "type=bind,source=$(Build.Repository.LocalPath),target=/source,readonly" --mount "type=bind,source=$(Agent.TempDirectory)/build,target=/build" vcpkgpmeofficialbuilders-c7ajd0chdtfugffn.azurecr.io/vcpkg/vcpkg-build-linux-arm64:2025-07-28 sh -c "cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=/source/azure-pipelines/vcpkg-arm64/toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url) -DVCPKG_FMT_URL=$(fmt-tarball-url) -DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA) -DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA) -DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION) -DVCPKG_VERSION=$(Build.SourceVersion) -S /source -B /build 2>&1 && ninja -C /build"
                 mv "$(Agent.TempDirectory)/build/vcpkg" "$(Build.ArtifactStagingDirectory)/vcpkg-glibc-arm64"
       - job: windows_and_sign
         displayName: 'Build Windows binaries and Sign'
@@ -357,9 +315,10 @@ extends:
         pool:
           name: 'VSEngSS-MicroBuild2022-1ES'
         variables:
-          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
           VCPKG_FULL_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_FULL_VERSION'] ]
+          VCPKG_STANDALONE_BUNDLE_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_STANDALONE_BUNDLE_SHA'] ]
+          VCPKG_ARTIFACTS_SHA: $[ dependencies.arch_independent.outputs['shas.VCPKG_ARTIFACTS_SHA'] ]
         templateContext:
           sdl:
             codeql:
@@ -369,7 +328,8 @@ extends:
             signing:
               enabled: true
               feedSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-              signType: $(SignType)
+              signType: 'real'
+              signWithProd: true
               zipSources: false
           inputs:
           - input: pipelineArtifact
@@ -398,13 +358,11 @@ extends:
             targetPath: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop'
             artifactName: 'vs-insertion'
             publishLocation: 'Container'
-            condition: ${{ or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')) }}
           - output: nuget
             displayName: 'NuGet publish for VS Insertion'
             packageParentPath: '$(Build.ArtifactStagingDirectory)'
             packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
             publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
-            condition: ${{ and(or(eq(parameters.PublishTo, 'GitHub and NuGet'),eq(parameters.PublishTo, 'NuGet Only')), eq(variables.SignType, 'real')) }}
         steps:
         - task: CmdLine@2
           displayName: "Build vcpkg amd64 with CMake"
@@ -413,7 +371,7 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
+              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\amd64"
         - task: CmdLine@2
           displayName: "Build vcpkg arm64 with CMake"
@@ -422,7 +380,7 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
+              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\arm64"
         - task: NuGetToolInstaller@1
           inputs:
@@ -450,16 +408,7 @@ extends:
             solution: 'azure-pipelines\binary-signing.signproj'
             msbuildArguments: '/p:OutDir=$(Build.BinariesDirectory)\ /p:IntermediateOutputPath=$(Build.BinariesDirectory)\'
         - task: MicroBuildSignMacFiles@1
-          displayName: 'Developer Sign Mac Binaries'
-          condition: and(eq(variables.SignType, 'test'), succeeded())
-          inputs:
-            SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
-            SigningCert: '8005'
-            SigningPluginSource: 'https://devdiv.pkgs.visualstudio.com/DefaultCollection/_packaging/MicroBuildToolset/nuget/v3/index.json'
-            SigningPluginVersion: 'latest'
-        - task: MicroBuildSignMacFiles@1
           displayName: 'Sign and Harden Mac Binaries'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
             SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8025'
@@ -467,7 +416,6 @@ extends:
             SigningPluginVersion: 'latest'
         - task: MicroBuildSignMacFiles@1
           displayName: 'Notarize Mac Binaries'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
           inputs:
             SigningTarget: '$(Build.ArtifactStagingDirectory)\stagingMacOS\vcpkg-macos.zip'
             SigningCert: '8020'
@@ -500,6 +448,7 @@ extends:
               move "$(Build.ArtifactStagingDirectory)\stagingGlibcArm64\vcpkg-glibc-arm64" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-glibc-arm64"
               move "$(Build.ArtifactStagingDirectory)\stagingMuslc\vcpkg-muslc" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-muslc"
               move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-standalone-bundle.tar.gz" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-standalone-bundle.tar.gz"
+              move "$(Build.ArtifactStagingDirectory)\stagingArchIndependent\vcpkg-artifacts.mjs" "$(Build.ArtifactStagingDirectory)\drop\vcpkg-artifacts.mjs"
 
               move "$(Build.BinariesDirectory)\amd64\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe"
               copy "$(Build.ArtifactStagingDirectory)\drop\vcpkg.exe" "$(Build.ArtifactStagingDirectory)\vs-insertion\staging\vcpkg.exe"
@@ -528,8 +477,7 @@ extends:
               copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.exe" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.exe"
               copy "$(Build.ArtifactStagingDirectory)\drop\tls12-download-arm64.pdb" "$(Build.ArtifactStagingDirectory)\symbols\tls12-download-arm64.pdb"
         - task: CmdLine@2
-          displayName: 'Add Drop PGP Signatures (real sign only)'
-          condition: and(eq(variables.SignType, 'real'), succeeded())
+          displayName: 'Add Drop PGP Signatures'
           inputs:
             failOnStderr: true
             script: |
@@ -562,16 +510,14 @@ extends:
             targetType: 'F'
             targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
             result: 'PoliCheck.xml'
-        - ${{ if ne(parameters.PublishTo, 'None') }}:
-          - task: MicroBuildArchiveSymbols@5
-            displayName: 'Upload Symbols'
-            inputs:
-              SymbolsFeatureName: 'vcpkg'
-              SymbolsProject: 'VS'
-              SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
+        - task: MicroBuildArchiveSymbols@5
+          displayName: 'Upload Symbols'
+          inputs:
+            SymbolsFeatureName: 'vcpkg'
+            SymbolsProject: 'VS'
+            SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
       - job: github_release
         displayName: 'Publish GitHub Release'
-        condition: and(succeeded(), eq(variables.SignType, 'real'), ${{ eq(parameters.PublishTo, 'GitHub and NuGet') }})
         dependsOn:
         - arch_independent
         - windows_and_sign

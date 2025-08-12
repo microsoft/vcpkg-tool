@@ -16,7 +16,7 @@ import { replaceCurlyBraces } from '../util/curly-replacements';
 import { linq } from '../util/linq';
 import { Queue } from '../util/promise';
 import { Uri } from '../util/uri';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const XMLWriterImpl = require('xml-writer');
 
 export interface XmlWriter {
@@ -401,7 +401,7 @@ export class Activation {
       return text;
     }
 
-    return text.replace(/(\$\$)|(\$)([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)|(\$)([a-zA-Z_][a-zA-Z0-9_]*)/g, (wholeMatch, isDoubleDollar, isObjectMember, obj, member, isSimple, variable) => {
+    return text.replace(/(\$\$)|(\$)([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_][a-zA-Z0-9_]*)|(\$)([a-zA-Z_][a-zA-Z0-9_]*)/g, (_wholeMatch, isDoubleDollar, isObjectMember, obj, member, _isSimple, variable) => {
       return isDoubleDollar ? '$' : isObjectMember ? this.getValueForVariableSubstitution(obj, member, locals, refcheck) : this.resolveVariables(locals[variable], locals, refcheck);
     });
   }
@@ -505,10 +505,10 @@ export class Activation {
   }
 
   expandPathLikeVariableExpressions(value: string): Array<string> {
-    let n = undefined;
+    let n : number | undefined = undefined;
     const parts = value.split(/(\$[a-zA-Z0-9_.]+)/g).filter(each => each).map((part, i) => {
 
-      const value = this.resolveVariables(part).replace(/\{(.*?)\}/g, (match, expression) => expression);
+      const value = this.resolveVariables(part).replace(/\{(.*?)\}/g, (_match, expression) => expression);
 
       if (value.indexOf(delimiter) !== -1) {
         n = i;

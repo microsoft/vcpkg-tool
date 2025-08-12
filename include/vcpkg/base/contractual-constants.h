@@ -139,6 +139,7 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
     inline constexpr StringLiteral SpdxLicenseDeclared = "licenseDeclared";
+    inline constexpr StringLiteral SpdxLicenseRefVcpkgNull = "LicenseRef-vcpkg-null";
     inline constexpr StringLiteral SpdxNoAssertion = "NOASSERTION";
     inline constexpr StringLiteral SpdxNone = "NONE";
     inline constexpr StringLiteral SpdxPackageFileName = "packageFileName";
@@ -218,6 +219,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
+    inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
@@ -253,6 +255,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchNuGetVersion = "nuget-version";
     inline constexpr StringLiteral SwitchOnlyBinarycaching = "only-binarycaching";
     inline constexpr StringLiteral SwitchOnlyDownloads = "only-downloads";
+    inline constexpr StringLiteral SwitchOnlyWithName = "only-with-name";
     inline constexpr StringLiteral SwitchOsx = "osx";
     inline constexpr StringLiteral SwitchOutdated = "outdated";
     inline constexpr StringLiteral SwitchOutput = "output";
@@ -478,8 +481,6 @@ namespace vcpkg
     inline constexpr StringLiteral PolicySkipUsageInstallCheck = "PolicySkipUsageInstallCheck";
 
     // Environment variables are ALL_CAPS_WITH_UNDERSCORES
-    inline constexpr StringLiteral EnvironmentVariableActionsCacheUrl = "ACTIONS_CACHE_URL";
-    inline constexpr StringLiteral EnvironmentVariableActionsRuntimeToken = "ACTIONS_RUNTIME_TOKEN";
     inline constexpr StringLiteral EnvironmentVariableAndroidNdkHome = "ANDROID_NDK_HOME";
     inline constexpr StringLiteral EnvironmentVariableAppData = "APPDATA";
     inline constexpr StringLiteral EnvironmentVariableAppveyor = "APPVEYOR";
@@ -520,6 +521,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableProgramFilesX86 = "ProgramFiles(x86)";
     inline constexpr StringLiteral EnvironmentVariableProgramW6432 = "ProgramW6432";
     inline constexpr StringLiteral EnvironmentVariablePythonPath = "PYTHONPATH";
+    inline constexpr StringLiteral EnvironmentVariableSystemDrive = "SystemDrive";
     inline constexpr StringLiteral EnvironmentVariableSystemRoot = "SystemRoot";
     inline constexpr StringLiteral EnvironmentVariableTeamcityVersion = "TEAMCITY_VERSION";
     inline constexpr StringLiteral EnvironmentVariableTfBuild = "TF_BUILD";

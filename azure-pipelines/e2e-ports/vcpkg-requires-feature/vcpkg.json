@@ -1,0 +1,30 @@
+{
+  "name": "vcpkg-requires-feature",
+  "version": "0",
+  "features": {
+    "a": {
+      "description": "Feature A"
+    },
+    "b": {
+      "description": "Feature B"
+    },
+    "b-required": {
+      "description": "This feature needs to be turned on for the port to build"
+    },
+    "c": {
+      "description": "Feature C"
+    },
+    "cascades": {
+      "description": "This feature always cascades",
+      "dependencies": [
+        {
+          "name": "vcpkg-fail-if-depended-upon",
+          "default-features": false
+        }
+      ]
+    },
+    "fails": {
+      "description": "This feature always fails"
+    }
+  }
+}

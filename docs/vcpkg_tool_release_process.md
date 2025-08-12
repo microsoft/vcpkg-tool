@@ -3,8 +3,8 @@
 This document describes the acceptance criteria / process we use when doing a vcpkg-tool update,
 such as https://github.com/microsoft/vcpkg/pull/23757
 
-1. Update `$/vcpkg-init/vcpkg-scripts-sha.txt` to the current `master` branch SHA in the registry
-  repo.
+1. Run `$/vcpkg-init/update-scripts-sha.ps1` to update `$/vcpkg-init/vcpkg-scripts-sha.txt` to the
+  current `master` branch SHA in the registry repo.
 1. Verify that all tests etc. are passing in the vcpkg-tool repo's `main` branch, and that the
   contents therein are acceptable for release. (Steps after this will sign code there, so this
   review is responsible gating what has access to code signing.)

@@ -70,8 +70,8 @@ namespace vcpkg
                                 arg, AllowFeatures::No, ParseExplicitTriplet::Require, AllowPlatformSpec::No)
                                 .value_or_exit(VCPKG_LINE_INFO);
                 // intentionally no triplet name check
-                specs_to_write.emplace_back(qpkg.name,
-                                            Triplet::from_canonical_name(qpkg.triplet.value_or_exit(VCPKG_LINE_INFO)));
+                specs_to_write.emplace_back(
+                    qpkg.name.value, Triplet::from_canonical_name(qpkg.triplet.value_or_exit(VCPKG_LINE_INFO).value));
             }
 
             Json::Object response;
@@ -112,9 +112,9 @@ namespace vcpkg
                 {
                     parser.add_error(msg::format(msgExpectedPortName));
                 }
-                if (auto err = parser.get_error())
+                if (parser.messages().any_errors())
                 {
-                    Checks::exit_with_message(VCPKG_LINE_INFO, err->to_string());
+                    parser.messages().exit_if_errors_or_warnings();
                 }
 
                 auto& pkg = *maybe_pkg.get();

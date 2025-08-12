@@ -1,0 +1,22 @@
+{
+  "name": "vcpkg-self-cascade",
+  "version": "0",
+  "features": {
+    "cascade": {
+      "description": "Depends on the never feature",
+      "dependencies": [
+        {
+          "name": "vcpkg-self-cascade",
+          "default-features": false,
+          "features": [
+            "never"
+          ]
+        }
+      ]
+    },
+    "never": {
+      "description": "This feature never succeeds",
+      "supports": "windows & !windows"
+    }
+  }
+}

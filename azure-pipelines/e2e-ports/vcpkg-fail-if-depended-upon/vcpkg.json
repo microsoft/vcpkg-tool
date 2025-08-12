@@ -1,4 +1,18 @@
 {
   "name": "vcpkg-fail-if-depended-upon",
-  "version": "0"
+  "version": "0",
+  "default-features": [
+    "is-a-default-feature"
+  ],
+  "features": {
+    "a": {
+      "description": "feature a"
+    },
+    "b": {
+      "description": "feature b"
+    },
+    "is-a-default-feature": {
+      "description": "this is a default feature"
+    }
+  }
 }
