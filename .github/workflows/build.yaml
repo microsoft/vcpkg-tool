@@ -82,3 +82,4 @@ jobs:
           ${{ github.workspace }}/azure-pipelines/end-to-end-tests.ps1 -RunArtifactsTests
         env:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg-root
+          LSAN_OPTIONS: "suppressions=${{ github.workspace}}/azure-pipelines/lsan.supp:print_suppressions=0"
