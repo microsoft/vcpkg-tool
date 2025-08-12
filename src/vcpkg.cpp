@@ -68,7 +68,7 @@ namespace
         // At the moment we don't do anything with it, but we're tracking availability
         // of libcurl to replace the current download/upload implementation
 #if defined(TEST_LIBCURL_AVAILABLE)
-        const auto libcurl_names = {
+        static const auto libcurl_names = {
             "libcurl.so",
             "libcurl.so.4",
             "libcurl.so.3",
@@ -76,18 +76,12 @@ namespace
             "libcurl.so.1",
         };
 
-        for (const auto& libcurl_name : libcurl_names)
+        for (auto&& libcurl_name : libcurl_names)
         {
             if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
             {
-                std::string detected_version = "unknown";
-                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
-                if (curl_version_fn)
-                {
-                    detected_version = curl_version_fn();
-                }
                 dlclose(handle);
-                return {std::move(detected_version)};
+                return {libcurl_name};
             }
         }
 #endif
