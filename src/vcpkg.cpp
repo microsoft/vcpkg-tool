@@ -57,12 +57,7 @@ namespace
         Checks::exit_fail(VCPKG_LINE_INFO);
     }
 
-    struct LibCurlDetails
-    {
-        std::string version;
-    };
-
-    LibCurlDetails detect_libcurl()
+    std::string detect_libcurl()
     {
         // Determine if libcurl is installed in the system by attempting to load it
         // At the moment we don't do anything with it, but we're tracking availability
@@ -80,22 +75,30 @@ namespace
         {
             if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
             {
-                using curl_version_fn_t = const char* (*)();
-                auto curl_version_fn = reinterpret_cast<curl_version_fn_t>(dlsym(handle, "curl_version"));
-
-                if (!curl_version_fn)
+                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+                if (dlerror() || !curl_version_fn)
                 {
                     dlclose(handle);
                     continue;
                 }
 
-                std::string version = curl_version_fn();
+                auto curl_version = curl_version_fn();
+                if (!curl_version)
+                {
+                    dlclose(handle);
+                    continue;
+                }
+
+                const auto len = std::strlen(curl_version);
+                std::string buff;
+                buff.resize(len);
+                std::memcpy(buff.data(), curl_version, len);
                 dlclose(handle);
-                return { version };
+                return buff;
             }
         }
 #endif
-        return {"unknown"};
+        return "unknown";
     }
 
     bool detect_container(const Filesystem& fs)
@@ -167,7 +170,7 @@ namespace
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl().version);
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detect_libcurl());
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {

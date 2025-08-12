@@ -1,0 +1,5 @@
+# To suppress LSAN issues 
+# export LSAN_OPTIONS="suppressions=/path/to/asan.supp:print_suppressions=0"
+
+# known leak caused by dynamically loading curl_version
+#leak:detect_libcurl
