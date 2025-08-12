@@ -1877,10 +1877,9 @@ namespace vcpkg
 
     static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
-        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
-                               spec_name,
-                               "]+Build+error+on+",
-                               triplet,
+        auto title = fmt::format("[{}] build error on {}", spec_name, triplet);
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=",
+                               Strings::percent_encode(title),
                                "&body=",
                                Strings::percent_encode(body));
     }
@@ -2014,9 +2013,9 @@ namespace vcpkg
         {
             result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[")
+                            "new?template=report-package-build-failure.md&title=%5B")
                 .append_raw(spec_name)
-                .append_raw("]+Build+error+on+")
+                .append_raw("%5D+Build+error+on+")
                 .append_raw(triplet_name)
                 .append_raw("\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
