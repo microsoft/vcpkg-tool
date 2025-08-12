@@ -80,8 +80,18 @@ namespace
         {
             if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
             {
+                using curl_version_fn_t = const char* (*)();
+                auto curl_version_fn = reinterpret_cast<curl_version_fn_t>(dlsym(handle, "curl_version"));
+
+                if (!curl_version_fn)
+                {
+                    dlclose(handle);
+                    continue;
+                }
+
+                std::string version = curl_version_fn();
                 dlclose(handle);
-                return {libcurl_name};
+                return { version };
             }
         }
 #endif
