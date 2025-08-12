@@ -73,19 +73,11 @@ namespace
 
         for (auto&& libcurl_name : libcurl_names)
         {
-            struct DlopenHandleGuard
+            // calling dlclose on the curl handle after calling curl_version causes memory leaks
+            // so we intentionally don't unload the library
+            if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
             {
-                DlopenHandleGuard(void* handle) : handle(handle) { }
-                ~DlopenHandleGuard()
-                {
-                    // if (handle) dlclose(handle);
-                }
-                void* handle;
-            } dlopen_guard{dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL)};
-
-            if (dlopen_guard.handle)
-            {
-                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(dlopen_guard.handle, "curl_version"));
+                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
                 if (dlerror() || !curl_version_fn)
                 {
                     continue;
@@ -97,8 +89,7 @@ namespace
                     continue;
                 }
 
-                std::string ret{curl_version};
-                return ret;
+                return {curl_version};
             }
         }
 #endif

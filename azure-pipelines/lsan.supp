@@ -1,8 +1,0 @@
-# To debug LSAN issues
-# export LSAN_OPTIONS="verbosity=1:log_threads=1:fast_unwind_on_malloc=0"
-
-# To suppress LSAN issues 
-# export LSAN_OPTIONS="suppressions=/path/to/lsan.supp:print_suppressions=0"
-
-# known leak caused by dynamically loading curl_version
-leak:detect_libcurl
