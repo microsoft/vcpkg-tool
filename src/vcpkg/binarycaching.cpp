@@ -1063,23 +1063,6 @@ namespace
             return batches;
         }
 
-        // Check for valid cache file names. The format is `<abi>.zip`. WHere `abi` is a 64-character hex string
-        static bool is_cache_file(StringView filename)
-        {
-            static constexpr size_t ABI_LENGTH = 64;
-
-            if (filename.size() != ABI_LENGTH + 4) return false;
-            for (size_t idx = 0; idx < ABI_LENGTH; ++idx)
-            {
-                if (!ParserBase::is_hex_digit(filename[idx]))
-                {
-                    return false;
-                }
-            }
-            if (filename.substr(ABI_LENGTH) != ".zip") return false;
-            return true;
-        }
-
         std::vector<std::string> azcopy_list() const
         {
             auto maybe_output = cmd_execute_and_capture_output(Command{m_tool}
@@ -1101,19 +1084,24 @@ namespace
                 return {};
             }
 
+            static constexpr size_t ABI_LENGTH = 64;
             std::vector<std::string> abis;
-            for (auto&& line : Strings::split(output->output, '\n'))
+            for (const auto& line : Strings::split(output->output, '\n'))
             {
                 if (line.empty()) continue;
                 // `azcopy list` output uses format `<filename>; Content Length: <size>`, we only need the filename
                 auto first_part_end = std::find(line.begin(), line.end(), ';');
                 if (first_part_end != line.end())
                 {
-                    StringView abifile = Strings::trim(std::string{line.begin(), first_part_end});
-                    if (is_cache_file(abifile))
+                    std::string abifile{line.begin(), first_part_end};
+
+                    // Check file names with the format `<abi>.zip`. WHere `abi` is a 64-character hex string
+                    if (abifile.size() == ABI_LENGTH + 4 &&
+                        std::all_of(abifile.begin(), abifile.begin() + ABI_LENGTH, ParserBase::is_hex_digit) &&
+                        abifile.substr(ABI_LENGTH) == ".zip")
                     {
                         // remove ".zip" extension
-                        abis.emplace_back(abifile.substr(0, abifile.size() - 4).to_string());
+                        abis.emplace_back(abifile.substr(0, abifile.size() - 4));
                     }
                 }
             }
