@@ -73,24 +73,31 @@ namespace
 
         for (auto&& libcurl_name : libcurl_names)
         {
-            if (auto handle = dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL))
+            struct DlopenHandleGuard
             {
-                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+                DlopenHandleGuard(void* handle) : handle(handle) { }
+                ~DlopenHandleGuard()
+                {
+                    // if (handle) dlclose(handle);
+                }
+                void* handle;
+            } dlopen_guard{dlopen(libcurl_name, RTLD_NOW | RTLD_LOCAL)};
+
+            if (dlopen_guard.handle)
+            {
+                auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(dlopen_guard.handle, "curl_version"));
                 if (dlerror() || !curl_version_fn)
                 {
-                    dlclose(handle);
                     continue;
                 }
 
                 auto curl_version = curl_version_fn();
                 if (!curl_version)
                 {
-                    dlclose(handle);
                     continue;
                 }
 
                 std::string ret{curl_version};
-                dlclose(handle);
                 return ret;
             }
         }
