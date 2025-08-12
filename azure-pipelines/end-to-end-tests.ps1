@@ -144,6 +144,7 @@ for ($n = 1; $n -le $allTestsCount; $n++)
             }
         }
         $env:VCPKG_ROOT = $VcpkgRoot
+        $env:LSAN_OPTIONS = "suppressions=$PSScriptRoot/lsan.supp:print_suppressions=0:fast_unwind_on_malloc=0"
         & $Test
         $lastTestExitCode = $LASTEXITCODE
     }
