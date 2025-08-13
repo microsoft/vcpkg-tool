@@ -33,6 +33,9 @@ using namespace vcpkg;
 
 namespace
 {
+    // The length of an ABI in the binary cache
+    static constexpr size_t ABI_LENGTH = 64;
+
     struct ConfigSegmentsParser : ParserBase
     {
         using ParserBase::ParserBase;
@@ -1035,7 +1038,7 @@ namespace
         static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
                                                                        const size_t fixed_len)
         {
-            constexpr ptrdiff_t ABI_ENTRY_LEN = 68; // 64 for SHA256 + 4 for ".zip"
+            constexpr ptrdiff_t ABI_ENTRY_LEN = ABI_LENGTH + 4; // 64 for SHA256 + 4 for ".zip"
             const ptrdiff_t available_len = static_cast<ptrdiff_t>(Command::maximum_allowed) - fixed_len;
 
             // Not enough space for even one entry
@@ -1084,7 +1087,6 @@ namespace
                 return {};
             }
 
-            static constexpr size_t ABI_LENGTH = 64;
             std::vector<std::string> abis;
             for (const auto& line : Strings::split(output->output, '\n'))
             {
@@ -1095,7 +1097,7 @@ namespace
                 {
                     std::string abifile{line.begin(), first_part_end};
 
-                    // Check file names with the format `<abi>.zip`. WHere `abi` is a 64-character hex string
+                    // Check file names with the format `<abi>.zip`
                     if (abifile.size() == ABI_LENGTH + 4 &&
                         std::all_of(abifile.begin(), abifile.begin() + ABI_LENGTH, ParserBase::is_hex_digit) &&
                         abifile.substr(ABI_LENGTH) == ".zip")
@@ -1204,6 +1206,8 @@ namespace
                                   .string_arg("copy")
                                   .string_arg("--from-to")
                                   .string_arg("LocalBlob")
+                                  .string_arg("--overwrite")
+                                  .string_arg("true")
                                   .string_arg(archive)
                                   .string_arg(url);
 
@@ -1649,7 +1653,7 @@ namespace
 
         void handle_azcopy_segments(const std::vector<std::pair<SourceLoc, std::string>>& segments)
         {
-            // Scheme: x-azcopy,<baseurl>[readwrite>]
+            // Scheme: x-azcopy,<baseurl>[,<readwrite>]
             if (segments.size() < 2)
             {
                 add_error(msg::format(msgInvalidArgumentRequiresBaseUrl,
