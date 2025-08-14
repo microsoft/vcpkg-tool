@@ -329,6 +329,16 @@ namespace
                 const auto& zip_path = zip_paths[i].value_or_exit(VCPKG_LINE_INFO);
                 if (job_results[j])
                 {
+#ifdef _WIN32
+                    // On windows the ziptool does restore file times, we don't want that because this breaks file time
+                    // based change detection.
+                    const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
+                    auto now = m_fs.file_time_now();
+                    for (auto&& path : m_fs.get_files_recursive(pkg_path, VCPKG_LINE_INFO))
+                    {
+                        m_fs.last_write_time(path, now, VCPKG_LINE_INFO);
+                    }
+#endif
                     Debug::print("Restored ", zip_path.path, '\n');
                     out_status[i] = RestoreResult::restored;
                 }
