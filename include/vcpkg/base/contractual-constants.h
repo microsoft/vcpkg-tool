@@ -578,6 +578,7 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
     inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
+    inline constexpr StringLiteral AbiTagSbomInfo = "sbom_info";
 
     inline constexpr StringLiteral StatusDeinstall = "deinstall";
     inline constexpr StringLiteral StatusError = "error";
