@@ -63,8 +63,8 @@ namespace
         // At the moment we don't do anything with it, but we're tracking availability
         // of libcurl to replace the current download/upload implementation
 #if defined(TEST_LIBCURL_AVAILABLE)
-        // calling dlclose on the curl handle after calling curl_version causes memory leaks
-        // so we intentionally don't unload the library
+        // calling dlclose() on the handle after calling curl_version() causes asan to
+        // report a false leak, so we intentionally don't unload the library
         if (auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL))
         {
             auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
