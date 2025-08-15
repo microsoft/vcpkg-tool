@@ -1055,14 +1055,29 @@ namespace vcpkg
 
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / action.spec.name() / FileVcpkgSpdxJson;
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, abi.relative_port_files, abi.relative_port_hashes, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
+        const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
+        // Gather all the files in the package directory
+        // Note: For packages with many files, this sequential hashing may be slow
+        const auto relative_package_files =
+            fs.get_regular_files_recursive_lexically_proximate(package_dir, VCPKG_LINE_INFO);
+        std::vector<std::string> package_hashes;
+        for (const auto& file : relative_package_files)
+        {
+            auto hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
+            package_hashes.push_back(hash.value_or_exit(VCPKG_LINE_INFO));
+        }
+        fs.write_contents_and_dirs(json_path,
+                                   create_spdx_sbom(action,
+                                                    abi.relative_port_files,
+                                                    abi.relative_port_hashes,
+                                                    relative_package_files,
+                                                    package_hashes,
+                                                    now,
+                                                    doc_ns,
+                                                    std::move(heuristic_resources)),
+                                   VCPKG_LINE_INFO);
     }
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
@@ -1456,6 +1471,7 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back(AbiTagPortsDotCMake, paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back(AbiTagPostBuildChecks, "2");
+        abi_tag_entries.emplace_back(AbiTagSbomInfo, "1");
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
