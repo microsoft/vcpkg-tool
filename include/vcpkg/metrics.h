@@ -62,6 +62,7 @@ namespace vcpkg
         CommandName,
         DeploymentKind,
         DetectedCiEnvironment,
+        DetectedLibCurlVersion,
         DevDeviceId,
         ExitCode,
         ExitLocation,
