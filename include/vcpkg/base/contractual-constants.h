@@ -125,7 +125,6 @@ namespace vcpkg
     // would use in other contexts.
     inline constexpr StringLiteral SpdxCCZero = "CC0-1.0";
     inline constexpr StringLiteral SpdxChecksumValue = "checksumValue";
-    inline constexpr StringLiteral SpdxContainedBy = "CONTAINED_BY";
     inline constexpr StringLiteral SpdxContains = "CONTAINS";
     inline constexpr StringLiteral SpdxCopyrightText = "copyrightText";
     inline constexpr StringLiteral SpdxCreationInfo = "creationInfo";
@@ -135,7 +134,6 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
     inline constexpr StringLiteral SpdxElementId = "spdxElementId";
     inline constexpr StringLiteral SpdxFileName = "fileName";
-    inline constexpr StringLiteral SpdxGeneratedFrom = "GENERATED_FROM";
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
     inline constexpr StringLiteral SpdxLicenseDeclared = "licenseDeclared";
@@ -580,6 +578,7 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
     inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
+    inline constexpr StringLiteral AbiTagSbomInfo = "sbom_info";
 
     inline constexpr StringLiteral StatusDeinstall = "deinstall";
     inline constexpr StringLiteral StatusError = "error";

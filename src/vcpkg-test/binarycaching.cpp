@@ -530,20 +530,21 @@ TEST_CASE ("Synchronizer operations", "[BinaryCache]")
     }
 }
 
-TEST_CASE ("Test batch_command_arguments", "[batch-arguments]")
+TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]")
 {
     static constexpr std::size_t MAX_LEN = 100;
     static constexpr std::size_t FIXED_LEN = 10;
 
     std::vector<std::string> entries;
-    for (std::size_t i = 0; i < 10; entries.push_back(fmt::format("entryidx_{}", i)), ++i)
-        ;
+    for (std::size_t i = 0; i < 10; ++i)
+        entries.push_back(fmt::format("entryidx_{}", i));
 
     SECTION ("no-separator")
     {
         static constexpr StringLiteral NO_SEPARATOR = "";
 
-        auto batches = batch_command_arguments(entries, FIXED_LEN, MAX_LEN, entries[0].length(), NO_SEPARATOR.size());
+        auto batches = batch_command_arguments_with_fixed_length(
+            entries, FIXED_LEN, MAX_LEN, entries[0].length(), NO_SEPARATOR.size());
 
         REQUIRE(batches.size() == 2);
         REQUIRE(batches[0].size() == 9);
@@ -573,7 +574,7 @@ TEST_CASE ("Test batch_command_arguments", "[batch-arguments]")
         static constexpr StringLiteral SEPARATOR = ";";
         static constexpr StringLiteral EXTENSION = ".zip";
 
-        auto batches = batch_command_arguments(
+        auto batches = batch_command_arguments_with_fixed_length(
             entries, FIXED_LEN, MAX_LEN, entries[0].length() + EXTENSION.size(), SEPARATOR.size());
 
         REQUIRE(batches.size() == 2);
@@ -605,13 +606,40 @@ TEST_CASE ("Test batch_command_arguments", "[batch-arguments]")
 
     SECTION ("too-long-entry")
     {
-        auto batches = batch_command_arguments(entries, FIXED_LEN, MAX_LEN, MAX_LEN - FIXED_LEN + 1, 0);
-        REQUIRE(batches.size() == 0);
+        auto batches =
+            batch_command_arguments_with_fixed_length(entries, FIXED_LEN, MAX_LEN, MAX_LEN - FIXED_LEN + 1, 0);
+        REQUIRE(batches.empty());
     }
 
     SECTION ("too-long-fixed-length")
     {
-        auto batches = batch_command_arguments(entries, MAX_LEN, MAX_LEN, entries[0].length(), 0);
-        REQUIRE(batches.size() == 0);
+        auto batches = batch_command_arguments_with_fixed_length(entries, MAX_LEN, MAX_LEN, entries[0].length(), 0);
+        REQUIRE(batches.empty());
+    }
+
+    SECTION ("empty-entries")
+    {
+        std::vector<std::string> entries;
+        auto batches = batch_command_arguments_with_fixed_length(entries, FIXED_LEN, MAX_LEN, 1, 0);
+        REQUIRE(batches.empty());
+    }
+
+    SECTION ("single-entry-fits")
+    {
+        std::vector<std::string> entries = {"single"};
+        auto batches = batch_command_arguments_with_fixed_length(entries, FIXED_LEN, MAX_LEN, entries[0].length(), 0);
+        REQUIRE(batches.size() == 1);
+        REQUIRE(batches[0].size() == 1);
+        CHECK(batches[0][0] == "single");
+    }
+
+    SECTION ("all entries fit in one batch")
+    {
+        std::vector<std::string> entries;
+        for (std::size_t i = 0; i < 3; ++i)
+            entries.push_back(fmt::format("entry_{}", i));
+        auto batches = batch_command_arguments_with_fixed_length(entries, FIXED_LEN, MAX_LEN, entries[0].length(), 0);
+        REQUIRE(batches.size() == 1);
+        REQUIRE(batches[0].size() == 3);
     }
 }

@@ -320,6 +320,9 @@ namespace vcpkg
         virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
 
+        virtual void last_write_time(const Path& target, int64_t new_time, std::error_code& ec) const = 0;
+        void last_write_time(const Path& target, int64_t new_time, LineInfo li) const noexcept;
+
         using ReadOnlyFilesystem::current_path;
         virtual void current_path(const Path& new_current_path, std::error_code&) const = 0;
         void current_path(const Path& new_current_path, LineInfo li) const;

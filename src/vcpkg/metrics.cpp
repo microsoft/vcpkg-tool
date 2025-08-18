@@ -139,6 +139,7 @@ namespace vcpkg
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},
+        {StringMetric::DetectedLibCurlVersion, "detected_libcurl_version", "libcurl/8.5.0 OpenSSL/3.0.13"},
         {StringMetric::DevDeviceId, "devdeviceid", "00000000-0000-0000-0000-000000000000"},
         {StringMetric::ExitCode, "exit_code", "0"},
         {StringMetric::ExitLocation,

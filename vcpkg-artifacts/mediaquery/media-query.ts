@@ -147,7 +147,6 @@ class Query {
   static parse(cursor: Scanner): Query {
     const result = new Array<Expression>();
     takeWhitespace(cursor);
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       result.push(Expression.parse(cursor));
       takeWhitespace(cursor);

@@ -24,7 +24,7 @@ export class LocalRegistry extends ArtifactRegistry {
     this.installationFolder = session.installFolder.join(this.localName);
   }
 
-  update(displayName?: string): Promise<void> {
+  update(): Promise<void> {
     return this.regenerate();
   }
 

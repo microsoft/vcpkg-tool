@@ -22,6 +22,8 @@ namespace vcpkg
     /// @param action Install action to be represented by this manifest
     /// @param relative_paths Must contain relative paths of all files in the port directory (from the port directory)
     /// @param hashes Must contain ordered hashes of `relative_paths`
+    /// @param relative_package_files Must contain relative paths of all files in the package directory
+    /// @param package_hashes Must contain ordered hashes of `relative_package_files`
     /// @param created_time SPDX creation time in YYYY-MM-DDThh:mm:ssZ format
     /// @param document_namespace Universally unique URI representing this SPDX document. See
     /// https://spdx.github.io/spdx-spec/document-creation-information/#65-spdx-document-namespace-field
@@ -30,6 +32,8 @@ namespace vcpkg
     std::string create_spdx_sbom(const InstallPlanAction& action,
                                  View<Path> relative_paths,
                                  View<std::string> hashes,
+                                 View<Path> relative_package_files,
+                                 View<std::string> package_hashes,
                                  std::string created_time,
                                  std::string document_namespace,
                                  std::vector<Json::Object>&& resource_docs);

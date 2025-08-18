@@ -332,6 +332,16 @@ namespace
                 const auto& zip_path = zip_paths[i].value_or_exit(VCPKG_LINE_INFO);
                 if (job_results[j])
                 {
+#ifdef _WIN32
+                    // On windows the ziptool does restore file times, we don't want that because this breaks file time
+                    // based change detection.
+                    const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
+                    auto now = m_fs.file_time_now();
+                    for (auto&& path : m_fs.get_files_recursive(pkg_path, VCPKG_LINE_INFO))
+                    {
+                        m_fs.last_write_time(path, now, VCPKG_LINE_INFO);
+                    }
+#endif
                     Debug::print("Restored ", zip_path.path, '\n');
                     out_status[i] = RestoreResult::restored;
                 }
@@ -1036,13 +1046,13 @@ namespace
 
         // Batch the azcopy arguments to fit within the maximum allowed command line length.
         static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
-                                                                       const size_t fixed_len)
+                                                                       const size_t reserved_len)
         {
-            return batch_command_arguments(abis,
-                                           fixed_len,
-                                           Command::maximum_allowed,
-                                           ABI_LENGTH + 4, // ABI_LENGTH for SHA256 + 4 for ".zip"
-                                           1);             // the separator length is 1 for ';'
+            return batch_command_arguments_with_fixed_length(abis,
+                                                             reserved_len,
+                                                             Command::maximum_allowed,
+                                                             ABI_LENGTH + 4, // ABI_LENGTH for SHA256 + 4 for ".zip"
+                                                             1);             // the separator length is 1 for ';'
         }
 
         std::vector<std::string> azcopy_list() const
@@ -1115,8 +1125,9 @@ namespace
                                 .string_arg(tmp_downloads_location)
                                 .string_arg("--include-path");
 
-            const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + terminator
-            for (auto&& batch : batch_azcopy_args(abis, fixed_len))
+            const size_t reserved_len =
+                base_cmd.command_line().size() + 4; // for space + surrounding quotes + terminator
+            for (auto&& batch : batch_azcopy_args(abis, reserved_len))
             {
                 auto maybe_output = cmd_execute_and_capture_output(Command{base_cmd}.string_arg(
                     Strings::join(";", Util::fmap(batch, [](const auto& abi) { return abi + ".zip"; }))));
@@ -1555,7 +1566,6 @@ namespace
     };
 
     ExpectedL<Path> default_cache_path_impl()
-
     {
         auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
         if (auto p_str = maybe_cachepath.get())
@@ -3234,18 +3244,19 @@ FeedReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView p
         action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }
 
-std::vector<std::vector<std::string>> vcpkg::batch_command_arguments(const std::vector<std::string>& entries,
-                                                                     const std::size_t fixed_len,
-                                                                     const std::size_t max_len,
-                                                                     const std::size_t entry_len,
-                                                                     const std::size_t separator_len)
+std::vector<std::vector<std::string>> vcpkg::batch_command_arguments_with_fixed_length(
+    const std::vector<std::string>& entries,
+    const std::size_t reserved_len,
+    const std::size_t max_len,
+    const std::size_t fixed_len,
+    const std::size_t separator_len)
 {
-    const auto available_len = static_cast<ptrdiff_t>(max_len) - fixed_len;
+    const auto available_len = static_cast<ptrdiff_t>(max_len) - reserved_len;
 
     // Not enough space for even one entry
-    if (available_len < entry_len) return {};
+    if (available_len < fixed_len) return {};
 
-    const size_t entries_per_batch = 1 + (available_len - entry_len) / (entry_len + separator_len);
+    const size_t entries_per_batch = 1 + (available_len - fixed_len) / (fixed_len + separator_len);
 
     auto first = entries.begin();
     const auto last = entries.end();

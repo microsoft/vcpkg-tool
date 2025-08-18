@@ -2257,6 +2257,16 @@ namespace vcpkg
         return result;
     }
 
+    void Filesystem::last_write_time(const Path& target, int64_t new_time, vcpkg::LineInfo li) const noexcept
+    {
+        std::error_code ec;
+        this->last_write_time(target, new_time, ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {target});
+        }
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const
     {
         std::error_code ec;
@@ -3861,6 +3871,32 @@ namespace vcpkg
 
             ec.assign(errno, std::generic_category());
             return {};
+#endif // ^^^ !_WIN32
+        }
+
+        void last_write_time(const Path& target, int64_t new_time, std::error_code& ec) const override
+        {
+#if defined(_WIN32)
+            stdfs::last_write_time(to_stdfs_path(target),
+                                   stdfs::file_time_type::time_point{stdfs::file_time_type::time_point::duration {
+                                       new_time
+                                   }},
+                                   ec);
+
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd fd(target.c_str(), O_WRONLY, ec);
+            if (ec)
+            {
+                return;
+            }
+            timespec times[2]; // last access and modification time
+            times[0].tv_nsec = UTIME_OMIT;
+            times[1].tv_nsec = new_time % 1'000'000'000;
+            times[1].tv_sec = new_time / 1'000'000'000;
+            if (futimens(fd.get(), times))
+            {
+                ec.assign(errno, std::system_category());
+            }
 #endif // ^^^ !_WIN32
         }
 
