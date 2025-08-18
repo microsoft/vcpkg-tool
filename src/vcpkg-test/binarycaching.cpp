@@ -535,14 +535,13 @@ TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]"
     static constexpr std::size_t MAX_LEN = 100;
     static constexpr std::size_t FIXED_LEN = 10;
 
-    std::vector<std::string> entries;
-    for (std::size_t i = 0; i < 10; ++i)
-        entries.push_back(fmt::format("entryidx_{}", i));
-
     SECTION ("no-separator")
     {
         static constexpr StringLiteral NO_SEPARATOR = "";
 
+        std::vector<std::string> entries;
+        for (std::size_t i = 0; i < 10; ++i)
+            entries.push_back(fmt::format("entryidx_{}", i));
         auto batches = batch_command_arguments_with_fixed_length(
             entries, FIXED_LEN, MAX_LEN, entries[0].length(), NO_SEPARATOR.size());
 
@@ -574,6 +573,9 @@ TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]"
         static constexpr StringLiteral SEPARATOR = ";";
         static constexpr StringLiteral EXTENSION = ".zip";
 
+        std::vector<std::string> entries;
+        for (std::size_t i = 0; i < 10; ++i)
+            entries.push_back(fmt::format("entryidx_{}", i));
         auto batches = batch_command_arguments_with_fixed_length(
             entries, FIXED_LEN, MAX_LEN, entries[0].length() + EXTENSION.size(), SEPARATOR.size());
 
@@ -606,6 +608,9 @@ TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]"
 
     SECTION ("too-long-entry")
     {
+        std::vector<std::string> entries;
+        for (std::size_t i = 0; i < 3; ++i)
+            entries.push_back(fmt::format("entry_{}", i));
         auto batches =
             batch_command_arguments_with_fixed_length(entries, FIXED_LEN, MAX_LEN, MAX_LEN - FIXED_LEN + 1, 0);
         REQUIRE(batches.empty());
@@ -613,6 +618,9 @@ TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]"
 
     SECTION ("too-long-fixed-length")
     {
+        std::vector<std::string> entries;
+        for (std::size_t i = 0; i < 3; ++i)
+            entries.push_back(fmt::format("entry_{}", i));
         auto batches = batch_command_arguments_with_fixed_length(entries, MAX_LEN, MAX_LEN, entries[0].length(), 0);
         REQUIRE(batches.empty());
     }

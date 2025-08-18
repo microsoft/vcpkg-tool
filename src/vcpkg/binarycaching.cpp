@@ -1509,7 +1509,7 @@ namespace
                                    const Filesystem& fs,
                                    const ToolCache& cache,
                                    MessageSink& sink,
-                                   const AzureUpkgSource& source,
+                                   AzureUpkgSource&& source,
                                    const Path& buildtrees)
             : ZipReadBinaryProvider(std::move(zip), fs)
             , m_azure_tool(cache, sink)
