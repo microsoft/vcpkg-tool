@@ -315,4 +315,10 @@ namespace vcpkg
 
     LocalizedString format_help_topic_asset_caching();
     LocalizedString format_help_topic_binary_caching();
+
+    std::vector<std::vector<std::string>> batch_command_arguments(const std::vector<std::string>& entries,
+                                                                  const std::size_t fixed_len,
+                                                                  const std::size_t max_len,
+                                                                  const std::size_t entry_len,
+                                                                  const std::size_t separator_len);
 }

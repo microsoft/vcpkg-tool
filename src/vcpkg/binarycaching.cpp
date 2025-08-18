@@ -1038,32 +1038,11 @@ namespace
         static std::vector<std::vector<std::string>> batch_azcopy_args(const std::vector<std::string>& abis,
                                                                        const size_t fixed_len)
         {
-            constexpr ptrdiff_t ABI_ENTRY_LEN = ABI_LENGTH + 4; // 64 for SHA256 + 4 for ".zip"
-            const ptrdiff_t available_len = static_cast<ptrdiff_t>(Command::maximum_allowed) - fixed_len;
-
-            // Not enough space for even one entry
-            if (available_len < ABI_ENTRY_LEN) return {};
-
-            const size_t entries_per_batch =
-                1 +                                                    // the first entry with no ;
-                (available_len - ABI_ENTRY_LEN) / (ABI_ENTRY_LEN + 1); // all remaining entries with a ;
-
-            auto first = abis.begin();
-            const auto last = abis.end();
-            std::vector<std::vector<std::string>> batches;
-            while (first != last)
-            {
-                auto end_of_batch = first + std::min(static_cast<size_t>(last - first), entries_per_batch);
-                std::vector<std::string> current_batch;
-                while (first != end_of_batch)
-                {
-                    current_batch.emplace_back(*(first++) + ".zip");
-                }
-                batches.emplace_back(std::move(current_batch));
-                first = end_of_batch;
-            }
-
-            return batches;
+            return batch_command_arguments(abis,
+                                           fixed_len,
+                                           Command::maximum_allowed,
+                                           ABI_LENGTH + 4, // ABI_LENGTH for SHA256 + 4 for ".zip"
+                                           1);             // the separator length is 1 for ';'
         }
 
         std::vector<std::string> azcopy_list() const
@@ -1139,8 +1118,8 @@ namespace
             const size_t fixed_len = base_cmd.command_line().size() + 4; // for space + surrounding quotes + terminator
             for (auto&& batch : batch_azcopy_args(abis, fixed_len))
             {
-                auto maybe_output =
-                    cmd_execute_and_capture_output(Command{base_cmd}.string_arg(Strings::join(";", batch)));
+                auto maybe_output = cmd_execute_and_capture_output(Command{base_cmd}.string_arg(
+                    Strings::join(";", Util::fmap(batch, [](const auto& abi) { return abi + ".zip"; }))));
                 // We don't return on a failure because the command may have
                 // only failed to restore some of the requested packages.
                 if (!maybe_output.has_value())
@@ -1576,6 +1555,7 @@ namespace
     };
 
     ExpectedL<Path> default_cache_path_impl()
+
     {
         auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
         if (auto p_str = maybe_cachepath.get())
@@ -3252,4 +3232,34 @@ FeedReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView p
 {
     return ::make_feedref(
         action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
+}
+
+std::vector<std::vector<std::string>> vcpkg::batch_command_arguments(const std::vector<std::string>& entries,
+                                                                     const std::size_t fixed_len,
+                                                                     const std::size_t max_len,
+                                                                     const std::size_t entry_len,
+                                                                     const std::size_t separator_len)
+{
+    const auto available_len = static_cast<ptrdiff_t>(max_len) - fixed_len;
+
+    // Not enough space for even one entry
+    if (available_len < entry_len) return {};
+
+    const size_t entries_per_batch = 1 + (available_len - entry_len) / (entry_len + separator_len);
+
+    auto first = entries.begin();
+    const auto last = entries.end();
+    std::vector<std::vector<std::string>> batches;
+    while (first != last)
+    {
+        auto end_of_batch = first + std::min(static_cast<size_t>(last - first), entries_per_batch);
+        std::vector<std::string> current_batch;
+        while (first != end_of_batch)
+        {
+            current_batch.emplace_back(*(first++));
+        }
+        batches.emplace_back(std::move(current_batch));
+        first = end_of_batch;
+    }
+    return batches;
 }
