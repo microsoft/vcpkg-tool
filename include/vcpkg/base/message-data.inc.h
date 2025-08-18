@@ -1086,7 +1086,7 @@ DECLARE_MESSAGE(
     "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "
     "proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77\n"
     "The value set by your proxy might be wrong, or have same `https://` prefix issue.\n"
-    "3. Your proxy's remote server is our of service.\n"
+    "3. Your proxy's remote server is out of service.\n"
     "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this "
     "file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues")
 DECLARE_MESSAGE(DownloadingPortableToolVersionX,
