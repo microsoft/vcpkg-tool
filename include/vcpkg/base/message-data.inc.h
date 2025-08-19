@@ -2705,6 +2705,10 @@ DECLARE_MESSAGE(RestoredPackagesFromAWS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromAzureStorage,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromAZUPKG,
                 (msg::count, msg::elapsed),
                 "",
