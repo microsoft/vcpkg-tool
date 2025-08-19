@@ -98,13 +98,11 @@ try {
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
 
     # None of the standalone bundles support classic mode, so turn that off in the bundled copy of the props
-    $propsContent = Get-Content "$PSScriptRoot/vcpkg.props" -Raw -Encoding Ascii
+    $propsContent = Get-Content "out/scripts/buildsystems/msbuild/vcpkg.props" -Raw -Encoding Ascii
     $classicEnabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">true</VcpkgEnableClassic>"
     $classicDisabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">false</VcpkgEnableClassic>"
     $propsContent = $propsContent.Replace($classicEnabledLine, $classicDisabledLine)
     Set-Content -Path "out/scripts/buildsystems/msbuild/vcpkg.props" -Value $propsContent -NoNewline -Encoding Ascii
-
-    Copy-Item -Path "$PSScriptRoot/vcpkg.targets" -Destination 'out/scripts/buildsystems/msbuild/vcpkg.targets'
 
     New-Item -Path 'out/scripts/posh-vcpkg/' -ItemType 'Directory' -Force
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/posh-vcpkg.psm1'
