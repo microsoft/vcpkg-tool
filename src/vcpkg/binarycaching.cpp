@@ -3264,12 +3264,7 @@ std::vector<std::vector<std::string>> vcpkg::batch_command_arguments_with_fixed_
     while (first != last)
     {
         auto end_of_batch = first + std::min(static_cast<size_t>(last - first), entries_per_batch);
-        std::vector<std::string> current_batch;
-        while (first != end_of_batch)
-        {
-            current_batch.emplace_back(*(first++));
-        }
-        batches.emplace_back(std::move(current_batch));
+        batches.emplace_back(first, end_of_batch);
         first = end_of_batch;
     }
     return batches;
