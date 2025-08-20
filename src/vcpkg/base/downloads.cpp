@@ -673,9 +673,11 @@ namespace vcpkg
         return true;
     }
 
-    static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* file)
+    static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
-        return static_cast<WriteFilePointer*>(file)->write(contents, size, nmemb);
+        auto* file = static_cast<WriteFilePointer*>(param);
+        // printf("Writing to %s\nCurrent position is %lld\n", file->path().generic_u8string().c_str(), file->tell());
+        return file->write(contents, size, nmemb);
     }
 
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
@@ -721,11 +723,12 @@ namespace vcpkg
             }
 
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
             if (!outputs[i].empty() && maybe_fs)
             {
                 // Set the write function to write to the file
                 std::error_code ec;
-                auto* file = new WriteFilePointer(Path{outputs[i].c_str()}, Append::NO, ec);
+                auto* file = new WriteFilePointer(Path{outputs[i].c_str()}, Append::YES, ec);
                 if (ec)
                 {
                     context.report_error(format_filesystem_call_error(ec, "fopen", {outputs[i]}));
