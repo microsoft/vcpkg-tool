@@ -968,6 +968,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "Przywrócono następującą liczbę pakietów: {count} z platformy AWS w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
   "RestoredPackagesFromAZUPKG": "Przywrócono {count} pakietów z usługi Universal Packages w {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
+  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
   "RestoredPackagesFromCOS": "Przywrócono następującą liczbę pakietów: {count} z COS w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
   "RestoredPackagesFromFiles": "Przywrócono następującą liczbę pakietów: {count} ze {path} w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
   "RestoredPackagesFromGCS": "Przywrócono następującą liczbę pakietów: {count} z GCS w ciągu {elapsed}. Użyj opcji --debug, aby wyświetlić więcej szczegółów.",
