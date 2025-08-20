@@ -197,4 +197,15 @@ namespace vcpkg::Unicode
         const char* next_;
         const char* last_;
     };
+} // namespace vcpkg::Unicode
+
+namespace vcpkg
+{
+    struct SourceLoc
+    {
+        Unicode::Utf8Decoder it;
+        Unicode::Utf8Decoder start_of_line;
+        int row;
+        int column;
+    };
 }

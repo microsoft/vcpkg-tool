@@ -62,6 +62,8 @@ namespace vcpkg::PlatformExpression
 
         friend std::string to_string(const Expr& expr);
 
+        static const Expr always_true;
+
     private:
         std::unique_ptr<detail::ExprImpl> underlying_;
     };

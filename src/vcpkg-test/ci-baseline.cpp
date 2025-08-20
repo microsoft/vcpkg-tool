@@ -249,8 +249,8 @@ static void check_error(const std::string& input, const std::string& expected_er
     ParseMessages m;
     auto actual = parse_ci_baseline(input, "test", m);
     CHECK(actual.empty());
-    CHECK(m.warnings.empty());
-    CHECK(m.error.value_or_exit(VCPKG_LINE_INFO) == LocalizedString::from_raw(expected_error));
+    CHECK(!m.good());
+    CHECK(m.join() == LocalizedString::from_raw(expected_error));
 }
 
 TEST_CASE ("Parse Errors", "[ci-baseline]")
@@ -329,11 +329,11 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
     constexpr const char cascademsg[] = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
     constexpr const char passmsg[] = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
-
+    std::string cifile = "cifile";
     SECTION ("SUCCEEDED")
     {
         const auto test = [&](PackageSpec s, bool allow_unexpected_passing) {
-            return format_ci_result(s, BuildResult::Succeeded, cidata, "cifile", allow_unexpected_passing, false);
+            return format_ci_result(s, BuildResult::Succeeded, cidata, &cifile, allow_unexpected_passing, false);
         };
         CHECK(test({"pass", Test::X64_UWP}, true) == "");
         CHECK(test({"pass", Test::X64_UWP}, false) == "");
@@ -347,7 +347,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("BUILD_FAILED")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::BuildFailed, cidata, "cifile", false, false);
+            return format_ci_result(s, BuildResult::BuildFailed, cidata, &cifile, false, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(failmsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");
@@ -357,7 +357,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, "cifile", false, false);
+            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");

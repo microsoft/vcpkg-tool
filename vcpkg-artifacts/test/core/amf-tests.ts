@@ -1,15 +1,12 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { MetadataFile } from '../../amf/metadata-file';
 import { strict } from 'assert';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import * as s from '../sequence-equal';
+import { MetadataFile } from '../../amf/metadata-file';
+import { strictSequenceEqual } from '../sequence-equal';
 import { SuiteLocal } from './SuiteLocal';
-
-// forces the global function for sequence equal to be added to strict before this exectues:
-s;
 
 // sample test using decorators.
 describe('Amf', () => {
@@ -22,7 +19,7 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
     strict.ok(doc.isFormatValid);
-    strict.sequenceEqual(doc.validate(), []);
+    strictSequenceEqual(doc.validate(), []);
 
     strict.equal(doc.id, 'sample1', 'name incorrect');
     strict.equal(doc.version, '1.2.3', 'version incorrect');
@@ -33,7 +30,7 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./windows.json', content, local.session);
 
     strict.ok(doc.isFormatValid);
-    strict.sequenceEqual(doc.validate(), []);
+    strictSequenceEqual(doc.validate(), []);
   });
 
   it('load/persist an artifact', async () => {
@@ -41,7 +38,7 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./example-artifact.json', content, local.session);
 
     strict.ok(doc.isFormatValid);
-    strict.sequenceEqual(doc.validate(), []);
+    strictSequenceEqual(doc.validate(), []);
   });
 
   it('profile checks', async () => {
@@ -49,18 +46,18 @@ describe('Amf', () => {
     const doc = await MetadataFile.parseConfiguration('./sample1.json', content, local.session);
 
     strict.ok(doc.isFormatValid, 'Ensure that it is valid json');
-    strict.sequenceEqual(doc.validate(), []);
+    strictSequenceEqual(doc.validate(), []);
 
-    strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['fallguy', 'otherguy'], 'Should return the two roles');
+    strictSequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['fallguy', 'otherguy'], 'Should return the two roles');
     doc.contacts.get('Bob Smith')!.roles.delete('fallguy');
 
-    strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['otherguy'], 'Should return the remaining role');
+    strictSequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['otherguy'], 'Should return the remaining role');
 
     doc.contacts.get('Bob Smith')!.roles.add('the dude');
 
     doc.contacts.get('Bob Smith')!.roles.add('the dude'); // shouldn't add this one
 
-    strict.sequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['otherguy', 'the dude'], 'Should return only two roles');
+    strictSequenceEqual(doc.contacts.get('Bob Smith')!.roles, ['otherguy', 'the dude'], 'Should return only two roles');
 
     const k = doc.contacts.add('James Brown');
 
@@ -99,16 +96,16 @@ describe('Amf', () => {
     doc.exports.tools.delete('CXX');
     strict.equal(doc.exports.tools.keys.length, 2, 'should only have two tools now');
 
-    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc'], 'variables should be an array');
-    strict.sequenceEqual(doc.exports.environment.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
+    strictSequenceEqual(doc.exports.environment.get('test'), ['abc'], 'variables should be an array');
+    strictSequenceEqual(doc.exports.environment.get('cxxflags'), ['foo=bar', 'bar=baz'], 'variables should be an array');
 
     doc.exports.environment.add('test').add('another value');
-    strict.sequenceEqual(doc.exports.environment.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
+    strictSequenceEqual(doc.exports.environment.get('test'), ['abc', 'another value'], 'variables should be an array of two items now');
 
     doc.exports.paths.add('bin').add('hello/there');
     strict.deepEqual(doc.exports.paths.get('bin')?.length, 3, 'there should be three paths in bin now');
 
-    strict.sequenceEqual(doc.conditionalDemands.keys, ['windows and arm'], 'should have one conditional demand');
+    strictSequenceEqual(doc.conditionalDemands.keys, ['windows and arm'], 'should have one conditional demand');
   });
 
   it('read invalid json file', async () => {
@@ -129,7 +126,7 @@ describe('Amf', () => {
     strict.ok(doc.isFormatValid);
 
     const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
-    strict.sequenceEqual(validationErrors, [
+    strictSequenceEqual(validationErrors, [
       './empty.json:1:1 FieldMissing, Missing identity \'id\'',
       './empty.json:1:1 FieldMissing, Missing version \'version\''
     ]);
@@ -144,7 +141,7 @@ describe('Amf', () => {
     strict.ok(doc.isFormatValid);
 
     const validationErrors = Array.from(doc.validate(), (error) => doc.formatVMessage(error));
-    strict.sequenceEqual(validationErrors,[
+    strictSequenceEqual(validationErrors,[
       './validation-errors.json:5:15 InvalidChild, Unexpected \'goober )\' found in $',
       './validation-errors.json:8:13 InvalidChild, Unexpected \'goober\' found in $',
       './validation-errors.json:11:13 InvalidChild, Unexpected \'floopy\' found in $',

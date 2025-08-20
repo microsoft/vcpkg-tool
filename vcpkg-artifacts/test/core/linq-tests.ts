@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { length, linq } from '../../util/linq';
 import * as assert from 'assert';
+import { linq } from '../../util/linq';
 
 const anArray = ['A', 'B', 'C', 'D', 'E'];
 
@@ -10,8 +10,8 @@ describe('Linq', () => {
   it('distinct', async () => {
 
     const items = ['one', 'two', 'two', 'three'];
-    const distinct = linq.values(items).distinct().toArray();
-    assert.strictEqual(length(distinct), 3);
+    const distinctArray = linq.values(items).distinct().toArray();
+    assert.deepStrictEqual(distinctArray, ['one', 'two', 'three']);
 
     const dic = {
       happy: 'hello',
@@ -20,11 +20,11 @@ describe('Linq', () => {
       maybe: 'foo',
     };
 
-    const result = linq.values(dic).distinct().toArray();
-    assert.strictEqual(length(distinct), 3);
+    const distinctDictionaryValues = linq.values(dic).distinct().toArray();
+    assert.deepStrictEqual(distinctDictionaryValues, ['hello', 'name', 'foo']);
   });
 
-  it('iterating thru collections', async () => {
+  it('iterating through collections', async () => {
     // items are items.
     assert.strictEqual([...linq.values(anArray)].join(','), anArray.join(','));
     assert.strictEqual(linq.values(anArray).count(), 5);

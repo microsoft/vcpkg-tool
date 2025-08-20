@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
 import { Table } from '../console-table';
@@ -18,7 +17,7 @@ export class ListCommand extends Command {
       const artifacts = await session.getInstalledArtifacts();
       const table = new Table('Artifact', 'Version', 'Summary');
 
-      for (const { artifact, id, folder } of artifacts) {
+      for (const { artifact, id } of artifacts) {
         const name = artifactIdentity('<registry-name-goes-here>', id, artifact.shortName); //todo: fixme
         table.push(name, artifact.version, artifact.metadata.summary || '');
       }

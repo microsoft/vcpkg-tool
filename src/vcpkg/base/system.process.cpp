@@ -26,6 +26,12 @@ extern char** environ;
 #include <sys/wait.h>
 #endif
 
+#if defined(__SVR4) && defined(__sun)
+extern char** environ;
+#include <stdio.h>
+#include <unistd.h>
+#endif
+
 #if defined(_WIN32)
 #include <Psapi.h>
 #include <TlHelp32.h>
@@ -249,6 +255,13 @@ namespace vcpkg
         char* exePath(realpath(argv[0], buf));
         Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
         return Path(exePath);
+#elif defined(__SVR4) && defined(__sun)
+        char procpath[PATH_MAX];
+        (void)snprintf(procpath, sizeof(procpath), "/proc/%d/path/a.out", getpid());
+        char buf[PATH_MAX];
+        auto written = readlink(procpath, buf, sizeof(buf));
+        Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
+        return Path(buf, written);
 #else /* LINUX */
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
@@ -545,7 +558,9 @@ namespace vcpkg
                         system32_env,
                         "\\Wbem;",
                         system32_env,
-                        "\\WindowsPowerShell\\v1.0\\");
+                        "\\WindowsPowerShell\\v1.0\\;",
+                        system32_env,
+                        "\\OpenSSH\\");
 
         std::vector<std::string> env_strings = {
             "ALLUSERSPROFILE",

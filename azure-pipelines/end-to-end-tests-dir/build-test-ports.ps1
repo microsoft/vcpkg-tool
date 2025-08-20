@@ -64,15 +64,16 @@ The following packages are already installed:
 
 $output = Run-VcpkgAndCaptureOutput @commonArgs --overlay-ports="$PSScriptRoot/../e2e-ports" install vcpkg-internal-e2e-test-port3 --head
 Throw-IfFailed
-if ($output -notmatch 'vcpkg-internal-e2e-test-port3:[^ ]+ is already installed -- not building from HEAD') {
-    throw 'Wrong already installed message for --head'
-}
+Throw-IfNonContains -Expected @"
+The following packages are already installed, but were requested at --head version. Their installed contents will not be changed. To get updated versions, remove these packages first:
+    vcpkg-internal-e2e-test-port3:$Triplet@1.0.0
+"@ -Actual $output
 
 Refresh-TestRoot
 $output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install vcpkg-bad-spdx-license
 Throw-IfFailed
 $expected = @"
-vcpkg.json: warning: $.license (an SPDX license expression): warning: Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
+vcpkg.json: warning: $.license (an SPDX license expression): Unknown license identifier 'BSD-new'. Known values are listed at https://spdx.org/licenses/
   on expression: BSD-new
                  ^
 "@
@@ -82,3 +83,15 @@ if ($firstMatch -lt 0) {
 } elseif ($output.IndexOf($expected, $firstMatch + 1) -ge 0) {
     throw 'Duplicated bad license'
 }
+
+Refresh-TestRoot
+$output = Run-VcpkgAndCaptureOutput @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports" install 'vcpkg-depends-on-fail[x]' --keep-going
+Throw-IfNotFailed
+$expected = @"
+Building vcpkg-depends-on-fail[core,x]:$($Triplet)@0...
+error: building vcpkg-depends-on-fail:$($Triplet) failed with: CASCADED_DUE_TO_MISSING_DEPENDENCIES
+  due to the following missing dependencies:
+    vcpkg-fail-if-depended-upon[a,b,core]:$($Triplet)
+"@
+
+Throw-IfNonContains -Expected $expected -Actual $output

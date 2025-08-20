@@ -1,8 +1,9 @@
+# The authoritative version of this file is in https://devdiv.visualstudio.com/DevDiv/_git/vcpkg-pme-utils
 # This infrastructure is adapted from that the .NET team uses, see
 # https://github.com/dotnet/dotnet-buildtools-prereqs-docker
 # and
 # https://github.com/dotnet/runtime/blob/main/docs/workflow/building/coreclr/linux-instructions.md
-FROM mcr.microsoft.com/cbl-mariner/base/core:2.0
+FROM mcr.microsoft.com/azurelinux/base/core:3.0
 
 RUN tdnf install -y \
         # Common utilities
@@ -10,10 +11,12 @@ RUN tdnf install -y \
         git \
         tar \
         curl \
+        patch \
         # Build tools
         binutils \
         cmake \
         ninja-build \
+        gcc-c++ \
         # Rootfs build dependencies
         bzip2-devel \
         debootstrap \
@@ -56,3 +59,22 @@ RUN chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" 
     chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" && \
     chroot /crossrootfs/x64 symlinks -cr /usr && \
     chroot /crossrootfs/x64 apt-get clean
+
+# Workaround GCC 13 incompatibility in libstdc++-9
+# In file included from /crossrootfs/x64/usr/include/c++/9/memory:80,
+#                  from /source/include/vcpkg/base/files.h:22,
+#                  from /source/src/vcpkg.cpp:5:
+# /crossrootfs/x64/usr/include/c++/9/bits/unique_ptr.h:432:15: error: expected identifier before '__remove_cv'
+#   432 |         using __remove_cv = typename remove_cv<_Up>::type;
+#       |               ^~~~~~~~~~~
+# /crossrootfs/x64/usr/include/c++/9/bits/unique_ptr.h:432:27: error: expected '(' before '=' token
+#   432 |         using __remove_cv = typename remove_cv<_Up>::type;
+#       |                           ^
+#       |                           (
+# /crossrootfs/x64/usr/include/c++/9/bits/unique_ptr.h:432:27: error: expected type-specifier before '=' token
+# /crossrootfs/x64/usr/include/c++/9/bits/unique_ptr.h:432:27: error: expected unqualified-id before '=' token
+COPY libstdcpp9-fix.diff .
+RUN patch /crossrootfs/x64/usr/include/c++/9/bits/unique_ptr.h libstdcpp9-fix.diff
+
+RUN tdnf clean all && \
+    tdnf upgrade -y

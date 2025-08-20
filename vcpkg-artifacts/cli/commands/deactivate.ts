@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 import { deactivate } from '../../artifacts/activation';
-import { i } from '../../i18n';
 import { session } from '../../main';
 import { Command } from '../command';
 

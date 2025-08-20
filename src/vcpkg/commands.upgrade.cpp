@@ -216,10 +216,11 @@ namespace vcpkg
         msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         if (keep_going == KeepGoing::Yes)
         {
-            msg::print(summary.format());
+            msg::print(summary.format_results());
         }
 
         binary_cache.wait_for_async_complete_and_join();
+        summary.print_complete_message();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

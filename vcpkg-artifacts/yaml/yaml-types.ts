@@ -175,13 +175,13 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
 
   /** if this node has any data, this should return false */
   get empty(): boolean {
-      if (isCollection(this.node)) {
-          return !(this.node?.items.length);
-      } else if (isScalar(this.node)) {
-          return !isNullish(this.node.value);
-      }
+    if (isCollection(this.node)) {
+      return !(this.node?.items.length);
+    } else if (isScalar(this.node)) {
+      return !isNullish(this.node.value);
+    }
 
-      return false;
+    return false;
   }
 
   /** @internal */ exists(): this is Yaml<ThisType> & { node: ThisType } {
@@ -255,8 +255,8 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
     if (isSeq(node)) {
       // child is in some kind of collection.
       // we should be able to find the child's index and remove it.
-        const items = node.items;
-        for (let i = 0; i < items.length; i++) {
+      const items = node.items;
+      for (let i = 0; i < items.length; i++) {
         if (items[i] === child.node) {
           node.delete(i);
           child.dispose(true, false);
@@ -268,7 +268,6 @@ export /** @internal */ abstract class Yaml<ThisType extends Node = Node> {
       // if we get here, we didn't find the child.
       // but, it's not in the object, so we're good I guess
       throw new Error('Child Node not found trying to delete');
-      // return;
     }
 
     throw new Error('this node does not have children.');
@@ -351,6 +350,7 @@ export /** @internal */ interface EntityFactory<TNode extends Node, TEntity exte
   /**@internal*/ new(node: TNode, parent?: Yaml, key?: string): TEntity;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export /** @internal */ interface NodeFactory<TNode extends Node> extends Function {
   /**@internal*/ create(): TNode;
 }

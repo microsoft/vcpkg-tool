@@ -40,7 +40,7 @@ namespace vcpkg
         else
         {
             parser.add_error(msg::format(msgExpectedWantField), want_start);
-            return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+            return parser.messages().join();
         }
 
         if (parser.require_text(" ok "))
@@ -62,7 +62,7 @@ namespace vcpkg
             else
             {
                 parser.add_error(msg::format(msgExpectedInstallStateField), state_start);
-                return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+                return parser.messages().join();
             }
 
             if (parser.messages().good())
@@ -71,7 +71,7 @@ namespace vcpkg
             }
         }
 
-        return parser.extract_messages().error.value_or_exit(VCPKG_LINE_INFO);
+        return parser.messages().join();
     }
 
     void serialize(const StatusParagraph& pgh, std::string& out)

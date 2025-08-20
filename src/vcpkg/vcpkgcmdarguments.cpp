@@ -568,8 +568,6 @@ namespace vcpkg
         from_env(get_env, EnvironmentVariableXVcpkgRegistriesCache, registries_cache_dir);
         from_env(get_env, EnvironmentVariableVcpkgVisualStudioPath, default_visual_studio_path);
         from_env(get_env, EnvironmentVariableVcpkgBinarySources, env_binary_sources);
-        from_env(get_env, EnvironmentVariableActionsCacheUrl, actions_cache_url);
-        from_env(get_env, EnvironmentVariableActionsRuntimeToken, actions_runtime_token);
         from_env(get_env, EnvironmentVariableXVcpkgNuGetIDPrefix, nuget_id_prefix);
         use_nuget_cache = get_env(EnvironmentVariableVcpkgUseNuGetCache).map([](const std::string& s) {
             return Strings::case_insensitive_ascii_equals(s, "true") || s == "1";

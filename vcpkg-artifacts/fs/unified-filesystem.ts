@@ -102,7 +102,7 @@ export class UnifiedFileSystem extends FileSystem {
     return source.fileSystem.rename(source, target, options);
   }
 
-  copy(source: Uri, target: Uri, options?: { overwrite?: boolean | undefined; }): Promise<number> {
+  copy(source: Uri, target: Uri, _options?: { overwrite?: boolean | undefined; }): Promise<number> {
     return target.fileSystem.copy(source, target);
   }
 

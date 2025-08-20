@@ -1,0 +1,2 @@
+vcpkg-fail-feature-cascades = fail
+vcpkg-fail-feature-cascades[cascade] = cascade

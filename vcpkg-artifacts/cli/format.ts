@@ -1,56 +1,56 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { bold, cyan, gray, green, greenBright, grey, underline, whiteBright, yellow, yellowBright } from 'chalk';
+import chalk from 'chalk';
 import { Uri } from '../util/uri';
 
 export function projectFile(uri: Uri): string {
-  return cyan(uri.fsPath);
+  return chalk.cyan(uri.fsPath);
 }
 
 export function prettyRegistryName(registryName: string) {
-  return `${whiteBright(registryName)}`;
+  return `${chalk.whiteBright(registryName)}`;
 }
 
 export function artifactIdentity(registryName: string, identity: string, shortName: string) : string {
-  return `${whiteBright(registryName)}:${yellow.dim(identity.substr(0, identity.length - shortName.length))}${yellowBright(shortName)}`;
+  return `${chalk.whiteBright(registryName)}:${chalk.yellow.dim(identity.substr(0, identity.length - shortName.length))}${chalk.yellowBright(shortName)}`;
 }
 
 export function addVersionToArtifactIdentity(identity: string, version: string) {
-  return version && version !== '*' ? `${identity}-${gray(version)}` : identity;
+  return version && version !== '*' ? `${identity}-${chalk.gray(version)}` : identity;
 }
 
 export function heading(text: string, level = 1) {
   switch (level) {
     case 1:
-      return `${underline.bold(text)}`;
+      return `${chalk.underline.bold(text)}`;
     case 2:
-      return `${greenBright(text)}`;
+      return `${chalk.greenBright(text)}`;
     case 3:
-      return `${green(text)}`;
+      return `${chalk.green(text)}`;
   }
-  return `${bold(text)}`;
+  return `${chalk.bold(text)}`;
 }
 
 export function optional(text: string) {
-  return gray(text);
+  return chalk.gray(text);
 }
 export function cmdSwitch(text: string) {
   return optional(`--${text}`);
 }
 
 export function command(text: string) {
-  return whiteBright.bold(text);
+  return chalk.whiteBright.bold(text);
 }
 
 export function hint(text: string) {
-  return green.dim(text);
+  return chalk.green.dim(text);
 }
 
 export function count(num: number) {
-  return grey(`${num}`);
+  return chalk.grey(`${num}`);
 }
 
 export function position(text: string) {
-  return grey(`${text}`);
+  return chalk.grey(`${text}`);
 }

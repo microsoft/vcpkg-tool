@@ -45,15 +45,23 @@ namespace vcpkg
         PackageSpec m_spec;
     };
 
+    struct LicenseReport
+    {
+        bool any_unknown_licenses = false;
+        std::set<std::string> named_licenses;
+        void print_license_report(const msg::MessageT<>& named_license_heading) const;
+    };
+
     struct InstallSummary
     {
         std::vector<SpecSummary> results;
         ElapsedTime elapsed;
+        LicenseReport license_report;
+        bool failed = false;
 
-        LocalizedString format() const;
+        LocalizedString format_results() const;
         void print_failed() const;
-        std::string xunit_results() const;
-        bool failed() const;
+        void print_complete_message() const;
     };
 
     struct InstallDir

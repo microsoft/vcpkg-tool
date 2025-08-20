@@ -39,8 +39,8 @@ namespace
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
         {SwitchOutputHashes, msgCISettingsOptOutputHashes},
         {SwitchParentHashes, msgCISettingsOptParentHashes},
-        {SwitchKnownFailuresFrom,
-         []() { return LocalizedString::from_raw("Path to the file of known package build failures"); }}};
+        {SwitchKnownFailuresFrom, msgCISettingsOptKnownFailuresFrom},
+    };
 
     constexpr CommandSwitch CI_SWITCHES[] = {
         {SwitchDryRun, msgCISwitchOptDryRun},
@@ -221,7 +221,7 @@ namespace
     bool print_regressions(const std::vector<SpecSummary>& results,
                            const std::map<PackageSpec, BuildResult>& known,
                            const CiBaselineData& cidata,
-                           const std::string& ci_baseline_file_name,
+                           const std::string* ci_baseline_file_name,
                            const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
     {
@@ -304,6 +304,7 @@ namespace vcpkg
         parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
         parse_exclusions(settings, SwitchHostExclude, host_triplet, exclusions_map);
         auto baseline_iter = settings.find(SwitchCIBaseline);
+        const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
         CiBaselineData cidata;
         if (baseline_iter == settings.end())
@@ -317,11 +318,11 @@ namespace vcpkg
         {
             auto skip_failures =
                 Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
-            const auto& ci_baseline_file_name = baseline_iter->second;
-            const auto ci_baseline_file_contents = fs.read_contents(ci_baseline_file_name, VCPKG_LINE_INFO);
+            ci_baseline_file_name = &baseline_iter->second;
+            const auto ci_baseline_file_contents = fs.read_contents(*ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
-            const auto lines = parse_ci_baseline(ci_baseline_file_contents, ci_baseline_file_name, ci_parse_messages);
-            ci_parse_messages.exit_if_errors_or_warnings(ci_baseline_file_name);
+            const auto lines = parse_ci_baseline(ci_baseline_file_contents, *ci_baseline_file_name, ci_parse_messages);
+            ci_parse_messages.exit_if_errors_or_warnings();
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
@@ -345,8 +346,8 @@ namespace vcpkg
                 msg::println(msgCreateFailureLogsDir, msg::path = it_failure_logs->second);
                 Path raw_path = it_failure_logs->second;
                 fs.create_directories(raw_path, VCPKG_LINE_INFO);
-                build_logs_recorder =
-                    &(build_logs_recorder_storage.emplace(fs.almost_canonical(raw_path, VCPKG_LINE_INFO)));
+                build_logs_recorder = &(build_logs_recorder_storage.emplace(
+                    fs.almost_canonical(raw_path, VCPKG_LINE_INFO), fs.file_time_now()));
             }
         }
 
@@ -513,11 +514,11 @@ namespace vcpkg
                            .append_raw(' ')
                            .append_raw(target_triplet)
                            .append_raw('\n')
-                           .append(summary.format()));
+                           .append(summary.format_results()));
             const bool any_regressions = print_regressions(summary.results,
                                                            split_specs->known,
                                                            cidata,
-                                                           baseline_iter->second,
+                                                           ci_baseline_file_name,
                                                            not_supported_regressions,
                                                            allow_unexpected_passing);
 

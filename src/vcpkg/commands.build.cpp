@@ -36,7 +36,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <numeric>
+#include <iterator>
 
 using namespace vcpkg;
 
@@ -59,7 +59,10 @@ namespace vcpkg
 {
     constexpr const IBuildLogsRecorder& null_build_logs_recorder = null_build_logs_recorder_instance;
 
-    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_) : base_path(base_path_) { }
+    CiBuildLogsRecorder::CiBuildLogsRecorder(const Path& base_path_, int64_t minimum_last_write_time_)
+        : base_path(base_path_), minimum_last_write_time(minimum_last_write_time_)
+    {
+    }
 
     void CiBuildLogsRecorder::record_build_result(const VcpkgPaths& paths,
                                                   const PackageSpec& spec,
@@ -74,6 +77,12 @@ namespace vcpkg
         const auto source_path = paths.build_dir(spec);
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
+        if (minimum_last_write_time > 0)
+        {
+            Util::erase_remove_if(children, [&](Path& path) {
+                return filesystem.last_write_time(path, VCPKG_LINE_INFO) < minimum_last_write_time;
+            });
+        }
         auto target_path = base_path / spec.name();
         (void)filesystem.create_directories(target_path, VCPKG_LINE_INFO);
         if (children.empty())
@@ -986,6 +995,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
+        else if (cmake_system_name == "SunOS")
+        {
+            return m_paths.scripts / "toolchains/solaris.cmake";
+        }
         else if (cmake_system_name == "Android")
         {
             return m_paths.scripts / "toolchains/android.cmake";
@@ -1009,6 +1022,10 @@ namespace vcpkg
         else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
             return m_paths.scripts / "toolchains/windows.cmake";
+        }
+        else if (cmake_system_name == "visionOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
         }
         else
         {
@@ -1038,14 +1055,29 @@ namespace vcpkg
 
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / action.spec.name() / FileVcpkgSpdxJson;
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, abi.relative_port_files, abi.relative_port_hashes, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
+        const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
+        // Gather all the files in the package directory
+        // Note: For packages with many files, this sequential hashing may be slow
+        const auto relative_package_files =
+            fs.get_regular_files_recursive_lexically_proximate(package_dir, VCPKG_LINE_INFO);
+        std::vector<std::string> package_hashes;
+        for (const auto& file : relative_package_files)
+        {
+            auto hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
+            package_hashes.push_back(hash.value_or_exit(VCPKG_LINE_INFO));
+        }
+        fs.write_contents_and_dirs(json_path,
+                                   create_spdx_sbom(action,
+                                                    abi.relative_port_files,
+                                                    abi.relative_port_hashes,
+                                                    relative_package_files,
+                                                    package_hashes,
+                                                    now,
+                                                    doc_ns,
+                                                    std::move(heuristic_resources)),
+                                   VCPKG_LINE_INFO);
     }
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
@@ -1209,7 +1241,7 @@ namespace vcpkg
     {
         auto result = do_build_package(args, paths, host_triplet, build_options, action, all_dependencies_satisfied);
 
-        if (build_options.clean_buildtrees == CleanBuildtrees::Yes)
+        if (build_options.clean_buildtrees == CleanBuildtrees::Yes && result.code == BuildResult::Succeeded)
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
@@ -1439,6 +1471,7 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back(AbiTagPortsDotCMake, paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back(AbiTagPostBuildChecks, "2");
+        abi_tag_entries.emplace_back(AbiTagSbomInfo, "1");
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
@@ -1562,14 +1595,14 @@ namespace vcpkg
         auto& spec = action.spec;
         const std::string& name = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_name();
 
-        std::vector<FeatureSpec> missing_fspecs;
+        std::map<PackageSpec, std::set<std::string>> missing_fspecs;
         for (const auto& kv : action.feature_dependencies)
         {
             for (const FeatureSpec& fspec : kv.second)
             {
                 if (!status_db.is_installed(fspec) && !(fspec.port() == name && fspec.triplet() == spec.triplet()))
                 {
-                    missing_fspecs.emplace_back(fspec);
+                    missing_fspecs[fspec.spec()].insert(fspec.feature());
                 }
             }
         }
@@ -1579,7 +1612,14 @@ namespace vcpkg
         {
             if (!all_dependencies_satisfied)
             {
-                return {BuildResult::CascadedDueToMissingDependencies, std::move(missing_fspecs)};
+                return {BuildResult::CascadedDueToMissingDependencies,
+                        Util::fmap(std::move(missing_fspecs),
+                                   [](std::pair<PackageSpec, std::set<std::string>>&& missing_features) {
+                                       return FullPackageSpec{
+                                           std::move(missing_features.first),
+                                           InternalFeatureSet{std::make_move_iterator(missing_features.second.begin()),
+                                                              std::make_move_iterator(missing_features.second.end())}};
+                                   })};
             }
 
             // assert that all_dependencies_satisfied is accurate above by checking that they're all installed
@@ -1806,6 +1846,8 @@ namespace vcpkg
                     std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
             }
         }
+        fmt::format_to(
+            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version(Tools::CMAKE, null_sink));
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),
@@ -1851,10 +1893,9 @@ namespace vcpkg
 
     static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
-        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
-                               spec_name,
-                               "]+Build+error+on+",
-                               triplet,
+        auto title = fmt::format("[{}] build error on {}", spec_name, triplet);
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=",
+                               Strings::percent_encode(title),
                                "&body=",
                                Strings::percent_encode(body));
     }
@@ -1988,9 +2029,9 @@ namespace vcpkg
         {
             result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[")
+                            "new?template=report-package-build-failure.md&title=%5B")
                 .append_raw(spec_name)
-                .append_raw("]+Build+error+on+")
+                .append_raw("%5D+Build+error+on+")
                 .append_raw(triplet_name)
                 .append_raw("\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
@@ -2179,7 +2220,7 @@ namespace vcpkg
         : code(code), binary_control_file(std::move(bcf))
     {
     }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FeatureSpec>&& unmet_deps)
+    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps)
         : code(code), unmet_dependencies(std::move(unmet_deps))
     {
     }

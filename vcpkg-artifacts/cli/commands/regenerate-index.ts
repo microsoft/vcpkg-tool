@@ -2,12 +2,10 @@
 // Licensed under the MIT License.
 
 import { resolve } from 'path';
-import { registryIndexFile } from '../../constants';
 import { i } from '../../i18n';
 import { session } from '../../main';
 import { LocalRegistry } from '../../registries/LocalRegistry';
 import { Command } from '../command';
-import { cli } from '../constants';
 import { error, log } from '../styling';
 import { Normalize } from '../switches/normalize';
 

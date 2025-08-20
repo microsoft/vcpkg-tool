@@ -11,7 +11,7 @@
 template<size_t Sz>
 static auto u8_string_to_char_string(const char8_t (&literal)[Sz]) -> const char (&)[Sz]
 {
-    return reinterpret_cast<const char(&)[Sz]>(literal);
+    return reinterpret_cast<const char (&)[Sz]>(literal);
 }
 
 #define U8_STR(s) (u8_string_to_char_string(u8"" s))

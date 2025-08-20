@@ -256,7 +256,7 @@ export function sanitizeUri(u: string) {
 }
 
 export class ProjectManifest extends ArtifactBase {
-  loadActivationSettings(activation: Activation) {
+  loadActivationSettings(_activation: Activation) {
     return Promise.resolve(true);
   }
 }

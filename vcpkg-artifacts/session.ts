@@ -7,7 +7,6 @@ import { MetadataFile } from './amf/metadata-file';
 import { Artifact, InstalledArtifact } from './artifacts/artifact';
 import { configurationName, defaultConfig } from './constants';
 import { FileSystem } from './fs/filesystem';
-import { HttpsFileSystem } from './fs/http-filesystem';
 import { LocalFileSystem } from './fs/local-filesystem';
 import { UnifiedFileSystem } from './fs/unified-filesystem';
 import { VsixLocalFilesystem } from './fs/vsix-local-filesystem';
@@ -21,6 +20,7 @@ import { Installer } from './interfaces/metadata/installers/Installer';
 import { RegistryDatabase, RegistryResolver } from './registries/registries';
 import { Channels, Stopwatch } from './util/channels';
 import { Uri } from './util/uri';
+import { HttpsFileSystem } from './fs/http-filesystem';
 
 /** The definition for an installer tool function */
 type InstallerTool<T extends Installer = any> = (
@@ -116,8 +116,7 @@ export class Session {
     this.fileSystem = new UnifiedFileSystem(this).
       register('file', new LocalFileSystem(this)).
       register('vsix', new VsixLocalFilesystem(this)).
-      register('https', new HttpsFileSystem(this)
-      );
+      register('https', new HttpsFileSystem(this));
 
     this.channels = new Channels(this);
 
@@ -210,7 +209,7 @@ export class Session {
     if (! await this.installFolder.exists()) {
       return result;
     }
-    for (const [folder, stat] of await this.installFolder.readDirectory(undefined, { recursive: true })) {
+    for (const [folder] of await this.installFolder.readDirectory(undefined, { recursive: true })) {
       try {
         const artifactJsonPath = folder.join('artifact.json');
         const metadata = await MetadataFile.parseMetadata(artifactJsonPath.fsPath, artifactJsonPath, this);

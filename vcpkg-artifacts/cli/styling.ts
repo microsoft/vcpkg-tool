@@ -1,11 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { cyan, red, yellow } from 'chalk';
+import chalk from 'chalk';
 import { argv } from 'process';
 import { i } from '../i18n';
 import { Session } from '../session';
-import { CommandLine } from './command-line';
 
 function formatTime(t: number) {
   return (
@@ -26,15 +25,15 @@ export function indent(text: string | Array<string>): string | Array<string> {
 export const log: (message?: any) => void = console.log;
 export const error: (message?: any) => void = (text) => {
   const errorLocalized = i`error:`;
-  return console.log(`${red.bold(errorLocalized)} ${text}`);
+  return console.log(`${chalk.red.bold(errorLocalized)} ${text}`);
 };
 export const warning: (message?: any) => void = (text) => {
   const warningLocalized = i`warning:`;
-  return console.log(`${yellow.bold(warningLocalized)} ${text}`);
+  return console.log(`${chalk.yellow.bold(warningLocalized)} ${text}`);
 };
 export const debug: (message?: any) => void = (text) => {
   if (argv.any(arg => arg === '--debug')) {
-    console.log(`${cyan.bold('debug: ')}${text}`);
+    console.log(`${chalk.cyan.bold('debug: ')}${text}`);
   }
 };
 
@@ -47,21 +46,21 @@ export function writeException(e: any) {
   debug(e && e.toString ? e.toString() : e);
 }
 
-export function initStyling(commandline: CommandLine, session: Session) {
+export function initStyling(session: Session) {
 
-  session.channels.on('message', (text: string, msec: number) => {
+  session.channels.on('message', (text: string, _msec: number) => {
     log(text);
   });
 
-  session.channels.on('error', (text: string, msec: number) => {
+  session.channels.on('error', (text: string, _msec: number) => {
     error(text);
   });
 
   session.channels.on('debug', (text: string, msec: number) => {
-    debug(`${cyan.bold(`[${formatTime(msec)}]`)} ${text}`);
+    debug(`${chalk.cyan.bold(`[${formatTime(msec)}]`)} ${text}`);
   });
 
-  session.channels.on('warning', (text: string, msec: number) => {
+  session.channels.on('warning', (text: string, _msec: number) => {
     warning(text);
   });
 }

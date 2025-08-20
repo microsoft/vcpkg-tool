@@ -18,10 +18,13 @@
 
 namespace vcpkg
 {
-    Optional<Path> download_vcpkg_standalone_bundle(DiagnosticContext& context,
-                                                    const AssetCachingSettings& asset_cache_settings,
-                                                    const Filesystem& fs,
-                                                    const Path& download_root);
+    Optional<Path> provision_node_component(DiagnosticContext& context,
+                                            Path exe_path,
+                                            const AssetCachingSettings& asset_cache_settings,
+                                            const Filesystem& fs,
+                                            const Path& download_root,
+                                            StringLiteral script_name,
+                                            const Optional<std::string>& script_sha512);
 
     int run_configure_environment_command(const VcpkgPaths& paths, View<std::string> args);
 

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import { strict } from 'assert';
-import { red } from 'chalk';
+import chalk from 'chalk';
 import stripAnsi from 'strip-ansi';
 
 function leftPad(text: string, length: number) {
@@ -39,7 +39,7 @@ export class Table {
     const formattedRows = new Array<string>();
     const thisFormattedRow = new Array<string>(this.columnNames.length);
     for (let colNum = 0; colNum < this.columnNames.length; ++colNum) {
-      thisFormattedRow[colNum] = red(leftPad(this.columnNames[colNum], lengths[colNum]));
+      thisFormattedRow[colNum] = chalk.red(leftPad(this.columnNames[colNum], lengths[colNum]));
     }
 
     formattedRows.push(thisFormattedRow.join(' '));

@@ -121,7 +121,7 @@ namespace vcpkg
             }
             else
             {
-                parser.add_error(msg::format(msgExpectedFailOrSkip));
+                parser.add_error(msg::format(msgExpectedFailSkipOrPass));
                 break;
             }
 
@@ -202,7 +202,7 @@ namespace vcpkg
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
                                      const CiBaselineData& cidata,
-                                     StringView cifile,
+                                     const std::string* cifile,
                                      bool allow_unexpected_passing,
                                      bool is_independent)
     {
@@ -219,25 +219,30 @@ namespace vcpkg
                                            msg::spec = spec,
                                            msg::build_result = to_string_locale_invariant(result));
                     }
-                    else
+
+                    if (cifile)
                     {
                         return msg::format(msgCiBaselineRegression,
                                            msg::spec = spec,
                                            msg::build_result = to_string_locale_invariant(result),
-                                           msg::path = cifile);
+                                           msg::path = *cifile);
                     }
+
+                    return msg::format(msgCiBaselineRegressionNoPath,
+                                       msg::spec = spec,
+                                       msg::build_result = to_string_locale_invariant(result));
                 }
                 break;
             case BuildResult::Succeeded:
                 if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
                 {
-                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
+                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *cifile);
                 }
                 break;
             case BuildResult::CascadedDueToMissingDependencies:
                 if (cidata.required_success.contains(spec))
                 {
-                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
                 }
             default: break;
         }

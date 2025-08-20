@@ -1,0 +1,2 @@
+vcpkg-empty-featureful-port = pass
+vcpkg-empty-featureful-port = cascade

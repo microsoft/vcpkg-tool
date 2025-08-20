@@ -24,12 +24,11 @@
  * @param primary primary object - members from this will have precedence.
  * @param secondary secondary object - members from this will be used if primary does not have a member
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export function intersect<T extends object, T2 extends object>(primary: T, secondary: T2, filters = ['constructor']): T & T2 {
   // eslint-disable-next-line keyword-spacing
   return <T & T2><any>new Proxy({ primary, secondary }, <any>{
     // member get proxy handler
-    get(target: { primary: T, secondary: T2 }, property: string | symbol, receiver: any) {
+    get(target: { primary: T, secondary: T2 }, property: string | symbol) {
       // check for properties on the objects first
       const propertyName = property.toString();
 
@@ -80,13 +79,12 @@ export function intersect<T extends object, T2 extends object>(primary: T, secon
       }
       return undefined;
     },
-    ownKeys(target: { primary: T, secondary: T2 }): ArrayLike<string | symbol> {
+    ownKeys(): ArrayLike<string | symbol> {
       return [...new Set([
         ...Object.getOwnPropertyNames(Object.getPrototypeOf(primary)),
         ...Object.getOwnPropertyNames(primary),
         ...Object.getOwnPropertyNames(Object.getPrototypeOf(secondary)),
         ...Object.getOwnPropertyNames(secondary)].filter(each => filters.indexOf(each) === -1))];
     }
-
   });
 }

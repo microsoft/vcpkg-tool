@@ -28,6 +28,8 @@ namespace vcpkg
 #ifdef _WIN32
     const ExpectedL<Path>& get_appdata_local() noexcept;
 
+    const ExpectedL<Path>& get_system_drive() noexcept;
+
     const ExpectedL<Path>& get_system_root() noexcept;
 
     const ExpectedL<Path>& get_system32() noexcept;

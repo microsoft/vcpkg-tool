@@ -1225,14 +1225,21 @@ namespace vcpkg
         }
     }
 
+    LocalizedString FormattedPlan::all_text() const
+    {
+        auto result = warning_text;
+        result.append(normal_text);
+        return result;
+    }
+
     FormattedPlan format_plan(const ActionPlan& action_plan)
     {
         FormattedPlan ret;
         if (action_plan.remove_actions.empty() && action_plan.already_installed.empty() &&
             action_plan.install_actions.empty())
         {
-            ret.text = msg::format(msgInstalledRequestedPackages);
-            ret.text.append_raw('\n');
+            ret.normal_text = msg::format(msgInstalledRequestedPackages);
+            ret.normal_text.append_raw('\n');
             return ret;
         }
 
@@ -1240,6 +1247,7 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> rebuilt_plans;
         std::vector<const InstallPlanAction*> new_plans;
         std::vector<const InstallPlanAction*> already_installed_plans;
+        std::vector<const InstallPlanAction*> already_installed_head_plans;
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
@@ -1247,63 +1255,74 @@ namespace vcpkg
                 return action.request_type != RequestType::USER_REQUESTED;
             });
 
+        for (auto&& already_installed_action : action_plan.already_installed)
+        {
+            (already_installed_action.use_head_version == UseHeadVersion::Yes ? &already_installed_head_plans
+                                                                              : &already_installed_plans)
+                ->push_back(&already_installed_action);
+        }
+
         for (auto&& remove_action : action_plan.remove_actions)
         {
             remove_specs.emplace(remove_action.spec);
         }
+
         for (auto&& install_action : action_plan.install_actions)
         {
             // remove plans are guaranteed to come before install plans, so we know the plan will be contained
             // if at all.
             auto it = remove_specs.find(install_action.spec);
-            if (it != remove_specs.end())
+            if (it == remove_specs.end())
+            {
+                (install_action.plan_type == InstallPlanType::EXCLUDED ? &excluded : &new_plans)
+                    ->push_back(&install_action);
+            }
+            else
             {
                 remove_specs.erase(it);
                 rebuilt_plans.push_back(&install_action);
             }
-            else
-            {
-                if (install_action.plan_type == InstallPlanType::EXCLUDED)
-                    excluded.push_back(&install_action);
-                else
-                    new_plans.push_back(&install_action);
-            }
         }
-        already_installed_plans = Util::fmap(action_plan.already_installed, [](auto&& action) { return &action; });
 
-        std::sort(rebuilt_plans.begin(), rebuilt_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(new_plans.begin(), new_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(already_installed_plans.begin(), already_installed_plans.end(), &InstallPlanAction::compare_by_name);
-        std::sort(excluded.begin(), excluded.end(), &InstallPlanAction::compare_by_name);
+        Util::sort(rebuilt_plans, &InstallPlanAction::compare_by_name);
+        Util::sort(new_plans, &InstallPlanAction::compare_by_name);
+        Util::sort(already_installed_plans, &InstallPlanAction::compare_by_name);
+        Util::sort(already_installed_head_plans, &InstallPlanAction::compare_by_name);
+        Util::sort(excluded, &InstallPlanAction::compare_by_name);
 
         if (!excluded.empty())
         {
-            format_plan_block(ret.text, msgExcludedPackages, false, excluded);
+            format_plan_block(ret.warning_text, msgExcludedPackages, false, excluded);
+        }
+
+        if (!already_installed_head_plans.empty())
+        {
+            format_plan_block(ret.warning_text, msgInstalledPackagesHead, false, already_installed_head_plans);
         }
 
         if (!already_installed_plans.empty())
         {
-            format_plan_block(ret.text, msgInstalledPackages, false, already_installed_plans);
+            format_plan_block(ret.normal_text, msgInstalledPackages, false, already_installed_plans);
         }
 
         if (!remove_specs.empty())
         {
-            format_plan_block(ret.text, msgPackagesToRemove, remove_specs);
+            format_plan_block(ret.normal_text, msgPackagesToRemove, remove_specs);
         }
 
         if (!rebuilt_plans.empty())
         {
-            format_plan_block(ret.text, msgPackagesToRebuild, true, rebuilt_plans);
+            format_plan_block(ret.normal_text, msgPackagesToRebuild, true, rebuilt_plans);
         }
 
         if (!new_plans.empty())
         {
-            format_plan_block(ret.text, msgPackagesToInstall, true, new_plans);
+            format_plan_block(ret.normal_text, msgPackagesToInstall, true, new_plans);
         }
 
         if (has_non_user_requested_packages)
         {
-            ret.text.append(msgPackagesToModify).append_raw('\n');
+            ret.normal_text.append(msgPackagesToModify).append_raw('\n');
         }
 
         ret.has_removals = !remove_specs.empty() || !rebuilt_plans.empty();
@@ -1313,7 +1332,12 @@ namespace vcpkg
     FormattedPlan print_plan(const ActionPlan& action_plan)
     {
         auto formatted = format_plan(action_plan);
-        msg::print(formatted.text);
+        if (!formatted.warning_text.empty())
+        {
+            msg::print(Color::warning, formatted.warning_text);
+        }
+
+        msg::print(formatted.normal_text);
         return formatted;
     }
 

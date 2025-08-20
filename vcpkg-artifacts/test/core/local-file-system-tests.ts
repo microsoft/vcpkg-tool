@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { FileType } from '../../fs/filesystem';
-import { hash } from '../../util/hash';
 import { strict } from 'assert';
 import { pipeline as origPipeline, Writable } from 'stream';
 import { promisify } from 'util';
+import { FileType } from '../../fs/filesystem';
+import { hash } from '../../util/hash';
 import { SuiteLocal } from './SuiteLocal';
 
 const pipeline = promisify(origPipeline);
@@ -76,7 +76,6 @@ describe('LocalFileSystemTests', () => {
   });
 
   it('readDirectory', async () => {
-    const tmp = local.tempFolderUri;
     const thisFolder = fs.file(__dirname);
 
     // look in the current folder
@@ -118,7 +117,6 @@ describe('LocalFileSystemTests', () => {
   });
 
   it('calculate hashes', async () => {
-    const tmp = local.tempFolderUri;
     const path = local.resourcesFolderUri.join('small-file.txt');
 
     strict.equal(await hash(await fs.readStream(path), path, 0, 'sha256', {}), '9cfed8b9e45f47e735098c399fb523755e4e993ac64d81171c93efbb523a57e6', 'hash should match');

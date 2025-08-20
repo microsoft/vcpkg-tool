@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-22.04
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-ADD https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb /packages-microsoft-prod.deb
-ADD https://deb.nodesource.com/setup_20.x /nodesource_setup.sh
+ADD https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb /packages-microsoft-prod.deb
+ADD https://deb.nodesource.com/setup_24.x /nodesource_setup.sh
 
 ENV APT_PACKAGES="git curl zip unzip tar build-essential cmake ninja-build powershell nodejs mono-complete"
 

@@ -1,6 +1,6 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$ciFeatureBaselines = (Get-Item "$PSScriptRoot/../e2e-assets/ci-feature-baseline").FullName
+$ciFeatureBaselines = (Get-Item "$PSScriptRoot/../e2e-assets/format-feature-baseline").FullName
 $testProjects = Get-ChildItem "$ciFeatureBaselines/*.txt" -File
 $testProjects | % {
     $asItem = Get-Item $_

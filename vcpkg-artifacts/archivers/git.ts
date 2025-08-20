@@ -53,7 +53,7 @@ export class Git {
    * @returns Boolean representing whether the execution was completed without error, this is not necessarily
    *  a guarantee that the fetch did what we expected.
    */
-  async fetch(remoteName: string, events: Partial<UnpackEvents>, options: { commit?: string, depth?: number } = {}) {
+  async fetch(remoteName: string, _events: Partial<UnpackEvents>, options: { commit?: string, depth?: number } = {}) {
     const result = await execute(this.#toolPath, [
       '-C',
       this.#targetFolder.fsPath,

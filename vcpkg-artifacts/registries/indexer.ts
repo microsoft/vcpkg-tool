@@ -7,8 +7,6 @@ import { i } from '../i18n';
 import { isIterable } from '../util/checks';
 import { entries, ManyMap } from '../util/linq';
 
-/* eslint-disable @typescript-eslint/ban-types */
-
 /** Keys have to support toString so that we can serialize them */
 interface HasToString {
   toString(): string;
@@ -20,7 +18,7 @@ interface HasToString {
  * @param TGraph The type of object to create an index for
  * @param TIndexSchema the custom index schema (layout).
  */
-export class Index<TGraph extends Object, TIndexSchema extends IndexSchema<TGraph, TIndexSchema>> {
+export class Index<TGraph extends object, TIndexSchema extends IndexSchema<TGraph, TIndexSchema>> {
   /** @internal */
   indexSchema: TIndexSchema;
   /** @internal */
@@ -75,7 +73,6 @@ export class Index<TGraph extends Object, TIndexSchema extends IndexSchema<TGrap
   /** inserts an object into the index */
   insert(content: TGraph, target: string) {
     const n = this.indexOfTargets.push(target) - 1;
-    const start = process.uptime() * 1000;
     for (const indexKey of this.indexSchema.mapOfKeyObjects.values()) {
       indexKey.insert(content, n);
     }
@@ -91,7 +88,7 @@ export class Index<TGraph extends Object, TIndexSchema extends IndexSchema<TGrap
 /**
  * A Key is a means to creating a searchable, sortable index
  */
-abstract class Key<TGraph extends Object, TKey extends HasToString, TIndexSchema extends IndexSchema<TGraph, any>> {
+abstract class Key<TGraph extends object, TKey extends HasToString, TIndexSchema extends IndexSchema<TGraph, any>> {
 
   /** child class must implement a standard compare function */
   abstract compare(a: TKey, b: TKey): number;
@@ -334,7 +331,7 @@ abstract class Key<TGraph extends Object, TKey extends HasToString, TIndexSchema
 }
 
 /** An  key for string values. */
-export class StringKey<TGraph extends Object, TIndexSchema extends IndexSchema<TGraph, any>> extends Key<TGraph, string, TIndexSchema> {
+export class StringKey<TGraph extends object, TIndexSchema extends IndexSchema<TGraph, any>> extends Key<TGraph, string, TIndexSchema> {
 
   compare(a: string, b: string): number {
     if (a && b) {
@@ -364,7 +361,7 @@ function shortName(value: string, n: number) {
   return v.slice(p).join('/');
 }
 
-export class IdentityKey<TGraph extends Object, TIndexSchema extends IndexSchema<TGraph, any>> extends StringKey<TGraph, TIndexSchema> {
+export class IdentityKey<TGraph extends object, TIndexSchema extends IndexSchema<TGraph, any>> extends StringKey<TGraph, TIndexSchema> {
 
   protected identities = new BTree<string, Set<number>>(undefined, this.compare);
   protected idShortName = new Map<string, string>();
@@ -428,7 +425,7 @@ export class IdentityKey<TGraph extends Object, TIndexSchema extends IndexSchema
 }
 
 /** An key for string values. Does not support 'word' searches */
-export class SemverKey<TGraph extends Object, TIndex extends IndexSchema<TGraph, any>> extends Key<TGraph, SemVer, TIndex> {
+export class SemverKey<TGraph extends object, TIndex extends IndexSchema<TGraph, any>> extends Key<TGraph, SemVer, TIndex> {
   compare(a: SemVer, b: SemVer): number {
     return a.compare(b);
   }
@@ -438,12 +435,11 @@ export class SemverKey<TGraph extends Object, TIndex extends IndexSchema<TGraph,
     }
     return value;
   }
-  protected override  addWord(each: SemVer, n: number) {
+  protected override addWord(_each: SemVer, _n: number) {
     // no parts
   }
 
   rangeMatch(value: Range | string) {
-
     // This could be faster if we stored a reverse lookup
     // array that had the id for each key, but .. I don't
     // think the perf will suffer much doing it this way.
@@ -481,7 +477,7 @@ export class SemverKey<TGraph extends Object, TIndex extends IndexSchema<TGraph,
  * @param TGraph - the object kind to be indexing
  * @param TSelf - the child class that is being constructed.
  */
-export abstract class IndexSchema<TGraph extends Object, TSelf extends IndexSchema<TGraph, any>> {
+export abstract class IndexSchema<TGraph extends object, TSelf extends IndexSchema<TGraph, any>> {
   /** the collection of keys in this IndexSchema */
   readonly mapOfKeyObjects = new Map<string, Key<TGraph, any, TSelf>>();
 

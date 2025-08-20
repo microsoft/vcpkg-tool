@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-/* eslint-disable @typescript-eslint/ban-types */
-
 import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'stream';
 import { Session } from '../session';
@@ -239,7 +237,7 @@ export abstract class FileSystem extends EventEmitter {
    * @param uri The uri of the file to retrieve metadata about.
    * @return The file metadata about the file.
    */
-  abstract stat(uri: Uri, options?: {}): Promise<FileStat>;
+  abstract stat(uri: Uri, options?: object): Promise<FileStat>;
 
   /**
    * Retrieve all entries of a [directory](#FileType.Directory).
@@ -257,7 +255,7 @@ export abstract class FileSystem extends EventEmitter {
    *
    * @param uri The uri of the new folder.
    */
-  abstract createDirectory(uri: Uri, options?: {}): Promise<void>;
+  abstract createDirectory(uri: Uri, options?: object): Promise<void>;
 
   /**
    * Read the entire contents of a file.
@@ -265,7 +263,7 @@ export abstract class FileSystem extends EventEmitter {
    * @param uri The uri of the file.
    * @return An array of bytes or a Promise that resolves to such.
    */
-  abstract readFile(uri: Uri, options?: {}): Promise<Uint8Array>;
+  abstract readFile(uri: Uri, options?: object): Promise<Uint8Array>;
 
   /**
    * Creates a stream to read a file from the filesystem
@@ -325,7 +323,7 @@ export abstract class FileSystem extends EventEmitter {
   async exists(uri: Uri) {
     try {
       return !!(await this.stat(uri));
-    } catch (e) {
+    } catch {
       // if this fails, we're assuming false
     }
     return false;
@@ -396,15 +394,4 @@ export abstract class FileSystem extends EventEmitter {
   protected directoryCreated(path: Uri, context?: any) {
     this.emit('directoryCreated', path, context, this.session.stopwatch.total);
   }
-}
-
-
-/** Event definitions for FileSystem events */
-interface FileSystemEvents {
-  read(path: Uri, context: any, msec: number): void;
-  write(path: Uri, context: any, msec: number): void;
-  deleted(path: Uri, context: any, msec: number): void;
-  renamed(path: Uri, context: any, msec: number): void;
-  directoryRead(path: Uri, contents: Promise<Array<[Uri, FileType]>> | undefined, msec: number): void;
-  directoryCreated(path: Uri, context: any, msec: number): void;
 }

@@ -1,0 +1,2 @@
+# This is a comment to get the line to be 2
+vcpkg-empty-featureful-port = cascade
