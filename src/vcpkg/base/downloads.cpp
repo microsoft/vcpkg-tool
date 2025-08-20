@@ -673,10 +673,26 @@ namespace vcpkg
         return true;
     }
 
+    struct WriteFileCallbackData
+    {
+        DiagnosticContext& context;
+        const Filesystem* fs;
+        const char* output;
+
+        WriteFileCallbackData(DiagnosticContext& context, const Filesystem* fs, const char* output)
+            : context(context), fs(fs), output(output)
+        {
+        }
+    };
+    static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* file)
+    {
+        return static_cast<WriteFilePointer*>(file)->write(contents, size, nmemb);
+    }
+
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
                                                    const Filesystem* maybe_fs,
                                                    View<std::string> urls,
-                                                   View<std::string> outputs,
+                                                   View<Path> outputs,
                                                    View<std::string> headers,
                                                    View<std::string> secrets)
     {
@@ -693,18 +709,17 @@ namespace vcpkg
         {
             return {};
         }
-        const auto& fs = *maybe_fs;
 
         std::vector<int> ret;
         ret.reserve(urls.size());
 
-        CURLM* multi_handle = curl_multi_init();
+        CURLM* multi_handle = get_global_curl_handle();
         if (!multi_handle)
         {
             return ret;
         }
 
-        std::vector<CURL*> easy_handles;
+        size_t transfers_count = 0;
         std::vector<curl_slist*> header_lists;
 
         for (size_t i = 0; i < urls.size(); ++i)
@@ -716,24 +731,23 @@ namespace vcpkg
                 continue;
             }
 
-            curl_easy_setopt(curl, CURLOPT_URL, url);
-            if (!outputs[i].empty())
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            if (!outputs[i].empty() && maybe_fs)
             {
                 // Set the write function to write to the file
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, outputs[i].c_str());
-                curl_easy_setopt(
-                    curl, CURLOPT_WRITEFUNCTION, [&](void* contents, size_t size, size_t nmemb, void* param) -> size_t {
-                        const char* filename = static_cast<const char*>(param);
-                        std::error_code ec;
-                        WriteFilePointer file = fs.open_for_write(static_cast<const char*>(filename), Append::YES, ec);
-                        if (ec)
-                        {
-                            context.report_error(format_filesystem_call_error(ec, "fopen", {filename}));
-                            return 0;
-                        }
-
-                        return file.write(contents, size, nmemb);
-                    });
+                std::error_code ec;
+                auto* file = new WriteFilePointer(Path{outputs[i].c_str()}, Append::NO, ec);
+                if (ec)
+                {
+                    context.report_error(format_filesystem_call_error(ec, "fopen", {outputs[i]}));
+                    delete file;
+                }
+                else
+                {
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+                    curl_easy_setopt(curl, CURLOPT_PRIVATE, file);
+                }
             }
 
             curl_slist* curl_headers = nullptr;
@@ -746,8 +760,8 @@ namespace vcpkg
             // Add the easy handle to the multi handle
             curl_multi_add_handle(multi_handle, curl);
 
-            easy_handles.push_back(curl);
             header_lists.push_back(curl_headers);
+            ++transfers_count;
         }
 
         int still_running = 0;
@@ -756,39 +770,50 @@ namespace vcpkg
             CURLMcode mc = curl_multi_perform(multi_handle, &still_running);
             if (mc != CURLM_OK)
             {
+                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
                 break;
             }
-            curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
+
+            mc = curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
+            if (mc != CURLM_OK)
+            {
+                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
+                break;
+            }
         } while (still_running);
 
-        for (size_t i = 0; i < easy_handles.size(); ++i)
+        int messages_left = 0;
+        size_t processed = 0;
+        do
         {
-            CURL* curl = easy_handles[i];
-            long http_code = 0;
-
-            CURLcode res = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-            if (res != CURLE_OK)
+            while (auto* msg = curl_multi_info_read(multi_handle, &messages_left))
             {
-                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(res)));
-                ret.push_back(-1);
-            }
-            else
-            {
-                ret.push_back(static_cast<int>(http_code));
-            }
+                if (msg->msg == CURLMSG_DONE)
+                {
+                    auto* handle = msg->easy_handle;
+                    if (msg->data.result != CURLE_OK)
+                    {
+                        context.report_error(
+                            msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(msg->data.result)));
+                    }
+                    ret.push_back(static_cast<int>(msg->data.result));
 
-            // Clean up headers for this operation
-            if (header_lists[i])
-            {
-                curl_slist_free_all(header_lists[i]);
-            }
+                    WriteFilePointer* data = nullptr;
+                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
+                    delete data;
 
-            // Remove and clean up the easy handle
-            curl_multi_remove_handle(multi_handle, curl);
-            curl_easy_cleanup(curl);
+                    curl_multi_remove_handle(multi_handle, handle);
+                    curl_easy_cleanup(handle);
+                    ++processed;
+                }
+            }
+        } while (processed < transfers_count);
+
+        for (auto* header_list : header_lists)
+        {
+            curl_slist_free_all(header_list);
         }
 
-        curl_multi_cleanup(multi_handle);
         return ret;
     }
 
@@ -890,7 +915,7 @@ namespace vcpkg
         return libcurl_bulk_operation(context,
                                       &fs,
                                       Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.first; }),
-                                      Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.second.generic_u8string(); }),
+                                      Util::fmap(url_pairs, [](auto&& kv) -> Path { return kv.second; }),
                                       headers,
                                       secrets);
     }

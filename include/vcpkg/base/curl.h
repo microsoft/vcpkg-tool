@@ -5,7 +5,13 @@
 #endif
 
 #include <curl/curl.h>
+#include <curl/multi.h>
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+namespace vcpkg
+{
+    CURLM* get_global_curl_handle() noexcept;
+}

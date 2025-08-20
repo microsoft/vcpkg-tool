@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -83,7 +84,7 @@ namespace vcpkg
         bool has_sha_error = false;
         for (auto& urlAndPath : urlAndPaths)
         {
-            if (*http_codes_iter == 200)
+            if (*http_codes_iter == CURLE_OK)
             {
                 auto sha =
                     Hash::get_file_hash(fs, urlAndPath.second, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);

@@ -192,7 +192,6 @@ namespace vcpkg::Checks
         get_global_metrics_collector().track_elapsed_us(elapsed_us_inner);
         Debug::g_debugging = false;
         flush_global_metrics(real_filesystem);
-        curl_global_cleanup();
 
 #if defined(_WIN32)
         if (g_init_console_initialized)
@@ -309,8 +308,6 @@ int main(const int argc, const char* const* const argv)
         Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgForceSystemBinariesOnWeirdPlatforms);
     }
 #endif
-
-    curl_global_init(CURL_GLOBAL_DEFAULT);
 
     VcpkgCmdArguments args = VcpkgCmdArguments::create_from_command_line(real_filesystem, argc, argv);
     if (const auto p = args.debug.get()) Debug::g_debugging = *p;
