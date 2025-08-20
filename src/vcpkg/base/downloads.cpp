@@ -673,17 +673,6 @@ namespace vcpkg
         return true;
     }
 
-    struct WriteFileCallbackData
-    {
-        DiagnosticContext& context;
-        const Filesystem* fs;
-        const char* output;
-
-        WriteFileCallbackData(DiagnosticContext& context, const Filesystem* fs, const char* output)
-            : context(context), fs(fs), output(output)
-        {
-        }
-    };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* file)
     {
         return static_cast<WriteFilePointer*>(file)->write(contents, size, nmemb);
