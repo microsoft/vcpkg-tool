@@ -723,7 +723,7 @@ namespace vcpkg
             }
 
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L);
             if (!outputs[i].empty() && maybe_fs)
             {
                 // Set the write function to write to the file
@@ -788,7 +788,8 @@ namespace vcpkg
                         context.report_error(
                             msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(msg->data.result)));
                     }
-                    ret.push_back(static_cast<int>(msg->data.result));
+
+                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &ret.emplace_back());
 
                     WriteFilePointer* data = nullptr;
                     curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);

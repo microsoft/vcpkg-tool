@@ -84,7 +84,7 @@ namespace vcpkg
         bool has_sha_error = false;
         for (auto& urlAndPath : urlAndPaths)
         {
-            if (*http_codes_iter == CURLE_OK)
+            if (*http_codes_iter == 200)
             {
                 auto sha =
                     Hash::get_file_hash(fs, urlAndPath.second, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
