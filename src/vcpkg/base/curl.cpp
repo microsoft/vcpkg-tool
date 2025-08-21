@@ -8,19 +8,9 @@ namespace vcpkg
         ~CurlGlobalInit() { curl_global_cleanup(); }
     };
 
-    static CurlGlobalInit& perform_global_init()
-    {
-        static CurlGlobalInit g_curl_global_init;
-        return g_curl_global_init;
-    }
-
     struct CurlHandle
     {
-        CurlHandle()
-        {
-            perform_global_init();
-            handle = get_global_curl_handle();
-        }
+        CurlHandle() : handle(curl_multi_init()) { }
         CurlHandle(const CurlHandle&) = delete;
         CurlHandle& operator=(const CurlHandle&) = delete;
         ~CurlHandle() { curl_multi_cleanup(handle); }
@@ -28,6 +18,7 @@ namespace vcpkg
         CURLM* get() const { return handle; }
 
     private:
+        static CurlGlobalInit global_init;
         CURLM* handle;
     };
 
