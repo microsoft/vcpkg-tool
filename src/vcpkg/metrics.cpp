@@ -84,6 +84,33 @@ namespace
         return "unknown";
 #endif
     }
+
+    static void libcurl_upload_metrics(const std::string& payload)
+    {
+        CURL* curl = curl_easy_init();
+        if (!curl) return;
+
+        curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+
+        curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, payload.length());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        // disable output and gnore all data
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, [](void*, size_t size, size_t nmemb, void*) -> size_t {
+            return size * nmemb;
+        });
+
+        curl_easy_perform(curl);
+
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+    }
 }
 
 namespace vcpkg
@@ -472,7 +499,7 @@ namespace vcpkg
 #if defined(NDEBUG)
         true
 #else
-        false
+        true
 #endif
         ;
     std::atomic<bool> g_should_print_metrics = false;
@@ -602,40 +629,7 @@ namespace vcpkg
             return;
         }
 
-        const Path temp_folder_path = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-        const Path vcpkg_metrics_txt_path = temp_folder_path / ("vcpkg" + generate_random_UUID() + ".txt");
-        Debug::println("Uploading metrics ", vcpkg_metrics_txt_path);
-        std::error_code ec;
-        fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
-        if (ec) return;
-
-#if defined(_WIN32)
-        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
-        fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
-        if (ec) return;
-        Command builder;
-        builder.string_arg(temp_folder_path_exe);
-        builder.string_arg("z-upload-metrics");
-        builder.string_arg(vcpkg_metrics_txt_path);
-        cmd_execute_background(builder);
-#else
-        // TODO: replace with libcurl code here too
-        cmd_execute_background(Command("curl")
-                                   .string_arg("https://dc.services.visualstudio.com/v2/track")
-                                   .string_arg("--max-time")
-                                   .string_arg("60")
-                                   .string_arg("-H")
-                                   .string_arg("Content-Type: application/json")
-                                   .string_arg("-X")
-                                   .string_arg("POST")
-                                   .string_arg("--tlsv1.2")
-                                   .string_arg("--data")
-                                   .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
-                                   .raw_arg(">/dev/null")
-                                   .raw_arg("2>&1")
-                                   .raw_arg(";")
-                                   .string_arg("rm")
-                                   .string_arg(vcpkg_metrics_txt_path));
-#endif
+        std::thread metrics_upload_thread(libcurl_upload_metrics, payload);
+        metrics_upload_thread.detach();
     }
 }
