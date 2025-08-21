@@ -581,10 +581,8 @@ namespace vcpkg::PlatformExpression
                         case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::mips64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "mips64");
-                        case Identifier::tvos:
-                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "tvOS");
-                        case Identifier::watchos:
-                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS");
+                        case Identifier::tvos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "tvOS");
+                        case Identifier::watchos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS");
                         case Identifier::visionos:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
                         case Identifier::static_link:
