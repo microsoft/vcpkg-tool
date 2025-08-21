@@ -2132,7 +2132,7 @@ namespace
             url_templates_to_get.clear();
             azblob_templates_to_put.clear();
             secrets.clear();
-            script = nullopt;
+            script.clear();
         }
     };
 

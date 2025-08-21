@@ -99,7 +99,7 @@ namespace vcpkg
         if (has_builtin_baseline || add_builtin_baseline)
         {
             // remove default_reg, since that's filled in with the builtin-baseline
-            configuration.config.default_reg = nullopt;
+            configuration.config.default_reg.clear();
 
             RegistryConfig synthesized_registry;
             synthesized_registry.kind = JsonIdBuiltin.to_string();
