@@ -677,18 +677,6 @@ namespace vcpkg
     {
         size_t request_index = 0;
         std::unique_ptr<WriteFilePointer> file = nullptr;
-
-        // CurlRequestPrivateData() = default;
-        // CurlRequestPrivateData(CurlRequestPrivateData&&) = default;
-        // CurlRequestPrivateData(const size_t idx) : request_index(idx), file(nullptr) { }
-        // ~CurlRequestPrivateData()
-        // {
-        //     if (file)
-        //     {
-        //         delete file;
-        //         file = nullptr;
-        //     }
-        // }
     };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
@@ -896,6 +884,12 @@ namespace vcpkg
         return false;
     }
 
+    static size_t read_file_callback(char* buffer, size_t size, size_t nitems, void* param)
+    {
+        auto* file = static_cast<ReadFilePointer*>(param);
+        return file->read(buffer, size, nitems);
+    }
+
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
@@ -903,7 +897,8 @@ namespace vcpkg
                               View<std::string> headers,
                               const Path& file)
     {
-        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+        // static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
+        (void)method;
 
         if (raw_url.starts_with("ftp://"))
         {
@@ -928,30 +923,43 @@ namespace vcpkg
             return false;
         }
 
-        // TODO: Replace with libcurl code
-        auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
-        add_curl_headers(http_cmd, headers);
-        http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
-        http_cmd.string_arg(raw_url);
-        http_cmd.string_arg("-T").string_arg(file);
-        int code = 0;
-        auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
-            if (line.starts_with(guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-        });
-
-        auto pres = res.get();
-        if (!pres)
+        std::error_code ec;
+        auto fileptr = std::make_unique<ReadFilePointer>(file, ec);
+        if (ec)
         {
+            context.report_error(format_filesystem_call_error(ec, "fopen", {file}));
             return false;
         }
+        auto file_size = fileptr->size(VCPKG_LINE_INFO);
 
-        if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+        CURL* curl = curl_easy_init();
+        if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
+
+        curl_slist* request_headers = nullptr;
+        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
+        for (auto&& header : headers)
+            request_headers = curl_slist_append(request_headers, header.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
+        curl_easy_setopt(curl, CURLOPT_URL, raw_url.to_string().c_str());
+        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+        curl_easy_setopt(curl, CURLOPT_READDATA, fileptr.get());
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
+        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
+
+        auto result = curl_easy_perform(curl);
+        if (result != CURLE_OK)
         {
-            context.report_error(msg::format(
-                msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(result)));
+            return false;
+        }
+        long response_code = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        if ((response_code >= 100 && response_code < 200) || response_code >= 300)
+        {
+            context.report_error(msg::format(msgCurlFailedToPutHttp,
+                                             msg::exit_code = curl_easy_strerror(result),
+                                             msg::url = sanitized_url,
+                                             msg::value = response_code));
             return false;
         }
 
