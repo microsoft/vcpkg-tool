@@ -968,6 +968,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "Počet obnovených balíčků z AWS: {count} za {elapsed} Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
   "RestoredPackagesFromAZUPKG": "Počet obnovených balíčků z Universal Packages za uplynulý čas ({elapsed}): {count}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
+  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
   "RestoredPackagesFromCOS": "Počet obnovených balíčků z COS: {count} za {elapsed}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
   "RestoredPackagesFromFiles": "Počet obnovených balíčků z cesty {path} za {elapsed}: {count} Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
   "RestoredPackagesFromGCS": "Počet obnovených balíčků z GCS: {count} za {elapsed}. Pokud si chcete zobrazit další podrobnosti, použijte --debug.",
