@@ -35,6 +35,14 @@ namespace
             cmd.string_arg("-H").string_arg(header);
         }
     }
+
+    void set_common_curl_options(CURL* handle, const char* url, curl_slist* request_headers)
+    {
+        curl_easy_setopt(handle, CURLOPT_URL, url);
+        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
+        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, request_headers);
+        curl_easy_setopt(handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+    }
 }
 
 namespace vcpkg
@@ -718,9 +726,7 @@ namespace vcpkg
             CURL* curl = curl_easy_init();
             if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
 
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
+            set_common_curl_options(curl, url.c_str(), request_headers);
             curl_easy_setopt(curl, CURLOPT_PRIVATE, &data);
             if (outputs.size() > request_index)
             {
@@ -931,19 +937,24 @@ namespace vcpkg
         if (result != CURLE_OK)
         {
             context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(result)));
+            curl_easy_cleanup(curl);
             return false;
         }
+
         long response_code = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
         if ((response_code >= 100 && response_code < 200) || response_code >= 300)
         {
             context.report_error(msg::format(msgCurlFailedToPutHttp,
                                              msg::exit_code = curl_easy_strerror(result),
                                              msg::url = sanitized_url,
                                              msg::value = response_code));
+            curl_easy_cleanup(curl);
             return false;
         }
 
+        curl_easy_cleanup(curl);
         return true;
     }
 
@@ -1284,12 +1295,9 @@ namespace vcpkg
         auto curl = curl_easy_init();
         if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
 
-        curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(raw_url).c_str());
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
+        set_common_curl_options(curl, url_encode_spaces(raw_url).c_str(), request_headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fileptr.get());
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
-        curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
         // TODO: Add progress
         (void)machine_readable_progress;
 
