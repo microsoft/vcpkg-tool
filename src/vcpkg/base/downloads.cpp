@@ -897,31 +897,7 @@ namespace vcpkg
                               View<std::string> headers,
                               const Path& file)
     {
-        // static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
         (void)method;
-
-        if (raw_url.starts_with("ftp://"))
-        {
-            // TODO: Replace with libcurl code
-            // HTTP headers are ignored for FTP clients
-            auto ftp_cmd = Command{"curl"};
-            ftp_cmd.string_arg(url_encode_spaces(raw_url));
-            ftp_cmd.string_arg("-T").string_arg(file);
-            auto maybe_res = cmd_execute_and_capture_output(context, ftp_cmd);
-            if (auto res = maybe_res.get())
-            {
-                if (res->exit_code == 0)
-                {
-                    return true;
-                }
-
-                context.report_error_with_log(
-                    res->output, msgCurlFailedToPut, msg::exit_code = res->exit_code, msg::url = sanitized_url);
-                return false;
-            }
-
-            return false;
-        }
 
         std::error_code ec;
         auto fileptr = std::make_unique<ReadFilePointer>(file, ec);
@@ -936,11 +912,16 @@ namespace vcpkg
         if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
 
         curl_slist* request_headers = nullptr;
-        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
-        for (auto&& header : headers)
-            request_headers = curl_slist_append(request_headers, header.c_str());
+        if (!raw_url.starts_with("ftp://"))
+        {
+            request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
+            for (auto&& header : headers)
+                request_headers = curl_slist_append(request_headers, header.c_str());
+        }
+
+        auto upload_url = url_encode_spaces(raw_url);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
-        curl_easy_setopt(curl, CURLOPT_URL, raw_url.to_string().c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(curl, CURLOPT_READDATA, fileptr.get());
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
