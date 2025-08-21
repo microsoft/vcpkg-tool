@@ -677,6 +677,18 @@ namespace vcpkg
     {
         size_t request_index = 0;
         WriteFilePointer* file = nullptr;
+
+        CurlRequestPrivateData() = default;
+        CurlRequestPrivateData(CurlRequestPrivateData&&) = default;
+        CurlRequestPrivateData(const size_t idx) : request_index(idx), file(nullptr) { }
+        ~CurlRequestPrivateData()
+        {
+            if (file)
+            {
+                delete file;
+                file = nullptr;
+            }
+        }
     };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
@@ -795,8 +807,6 @@ namespace vcpkg
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
                     ++processed;
-                    delete data->file;
-                    data->file = nullptr;
                 }
             }
         } while (processed < urls.size());

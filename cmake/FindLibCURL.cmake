@@ -1,10 +1,4 @@
-set(VCPKG_DEFAULT_LIBCURL_USE_SYSTEM OFF)
-if (NOT WIN32)
-    set(VCPKG_DEFAULT_LIBCURL_USE_SYSTEM ON)
-endif()
-
-
-option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" VCPKG_DEFAULT_LIBCURL_USE_SYSTEM)
+option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
 
 # This option exists to allow the URI to be replaced with a Microsoft-internal URI in official
 # builds which have restricted internet access; see azure-pipelines/signing.yml
