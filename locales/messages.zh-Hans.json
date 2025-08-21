@@ -968,6 +968,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "{elapsed} 后从 AWS 还原了 {count} 个包。使用 --debug 了解更多详细信息。",
   "RestoredPackagesFromAZUPKG": "{elapsed}内从 Universal Packages 还原了 {count} 个包。使用 --debug 了解更多详细信息。",
+  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
   "RestoredPackagesFromCOS": "{elapsed} 后从 COS 还原了 {count} 个包。使用 --debug 了解更多详细信息。",
   "RestoredPackagesFromFiles": "{elapsed} 后从 {path} 还原了 {count} 个包。使用 --debug 了解更多详细信息。",
   "RestoredPackagesFromGCS": "{elapsed} 后从 GCS 还原了 {count} 个包。使用 --debug 了解更多详细信息。",
