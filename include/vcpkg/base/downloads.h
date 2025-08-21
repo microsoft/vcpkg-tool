@@ -58,12 +58,12 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
 
-    Optional<std::string> invoke_http_request(DiagnosticContext& context,
-                                              StringLiteral method,
-                                              View<std::string> headers,
-                                              StringView url,
-                                              View<std::string> secrets,
-                                              StringView data = {});
+    // Optional<std::string> invoke_http_request(DiagnosticContext& context,
+    //                                           StringLiteral method,
+    //                                           View<std::string> headers,
+    //                                           StringView url,
+    //                                           View<std::string> secrets,
+    //                                           StringView data = {});
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 

@@ -994,34 +994,33 @@ namespace vcpkg
         return fmt::format(FMT_COMPILE("{}?{}"), base_url, fmt::join(query_params, "&"));
     }
 
-    Optional<std::string> invoke_http_request(DiagnosticContext& context,
-                                              StringLiteral method,
-                                              View<std::string> headers,
-                                              StringView raw_url,
-                                              View<std::string> secrets,
-                                              StringView data)
-    {
-        // TODO: Replace with libcurl code
-        auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
-        add_curl_headers(cmd, headers);
+    // Optional<std::string> invoke_http_request(DiagnosticContext& context,
+    //                                           StringLiteral method,
+    //                                           View<std::string> headers,
+    //                                           StringView raw_url,
+    //                                           View<std::string> secrets,
+    //                                           StringView data)
+    // {
+    //     auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
+    //     add_curl_headers(cmd, headers);
 
-        cmd.string_arg("-X").string_arg(method);
+    //     cmd.string_arg("-X").string_arg(method);
 
-        if (!data.empty())
-        {
-            cmd.string_arg("--data-raw").string_arg(data);
-        }
+    //     if (!data.empty())
+    //     {
+    //         cmd.string_arg("--data-raw").string_arg(data);
+    //     }
 
-        cmd.string_arg(url_encode_spaces(raw_url));
+    //     cmd.string_arg(url_encode_spaces(raw_url));
 
-        auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-        if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
-        {
-            return *output;
-        }
+    //     auto maybe_output = cmd_execute_and_capture_output(context, cmd);
+    //     if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
+    //     {
+    //         return *output;
+    //     }
 
-        return nullopt;
-    }
+    //     return nullopt;
+    // }
 
 #if defined(_WIN32)
     static WinHttpTrialResult download_winhttp_trial(DiagnosticContext& context,
@@ -1269,85 +1268,69 @@ namespace vcpkg
             fs.create_directories(dir, VCPKG_LINE_INFO);
         }
 
-        // TODO: Replace with libcurl code
-        auto cmd = Command{"curl"}
-                       .string_arg("--fail")
-                       .string_arg("--retry")
-                       .string_arg("3")
-                       .string_arg("-L")
-                       .string_arg(url_encode_spaces(raw_url))
-                       .string_arg("--create-dirs")
-                       .string_arg("--output")
-                       .string_arg(download_path_part_path);
-        add_curl_headers(cmd, headers);
-        bool seen_any_curl_errors = false;
-        // if seen_any_curl_errors, contains the curl error lines starting with "curl:"
-        // otherwise, contains all curl's output unless it is the machine readable output
-        std::vector<std::string> likely_curl_errors;
-        auto maybe_exit_code = cmd_execute_and_stream_lines(context, cmd, [&](StringView line) {
-            const auto maybe_parsed = try_parse_curl_progress_data(line);
-            if (const auto parsed = maybe_parsed.get())
-            {
-                machine_readable_progress.println(Color::none,
-                                                  LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
-                return;
-            }
-
-            static constexpr StringLiteral WarningColon = "warning: ";
-            if (Strings::case_insensitive_ascii_starts_with(line, WarningColon))
-            {
-                context.statusln(
-                    DiagnosticLine{DiagKind::Warning, LocalizedString::from_raw(line.substr(WarningColon.size()))}
-                        .to_message_line());
-                return;
-            }
-
-            // clang-format off
-            // example:
-            //   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: nonexistent.example.com
-            // clang-format on
-            static constexpr StringLiteral CurlColon = "curl:";
-            auto curl_start = std::search(line.begin(), line.end(), CurlColon.begin(), CurlColon.end());
-            if (curl_start == line.end())
-            {
-                if (seen_any_curl_errors)
-                {
-                    return;
-                }
-
-                curl_start = line.begin();
-            }
-            else
-            {
-                if (!seen_any_curl_errors)
-                {
-                    seen_any_curl_errors = true;
-                    likely_curl_errors.clear();
-                }
-            }
-
-            likely_curl_errors.emplace_back(curl_start, line.end());
-        });
-
-        const auto exit_code = maybe_exit_code.get();
-        if (!exit_code)
+        std::error_code ec;
+        auto fileptr = std::make_unique<WriteFilePointer>(download_path_part_path, Append::YES, ec);
+        if (ec)
         {
+            context.report_error(format_filesystem_call_error(ec, "fopen", {download_path_part_path}));
             return DownloadPrognosis::OtherError;
         }
 
-        if (*exit_code != 0)
+        curl_slist* request_headers = nullptr;
+        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
+        for (auto&& header : headers)
+            request_headers = curl_slist_append(request_headers, header.c_str());
+
+        auto curl = curl_easy_init();
+        if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
+
+        curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(raw_url).c_str());
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fileptr.get());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
+        curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+        // TODO: Add progress
+        (void)machine_readable_progress;
+
+        // Retry on transient errors:
+        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or 504
+        // response code.
+        // We retry after 10, 100, and 1000 seconds.
+        bool curl_success = false;
+        bool should_retry = true;
+        size_t retries_count = 0;
+
+        using namespace std::chrono_literals;
+        static constexpr std::array<std::chrono::seconds, 4> retry_delays = {0s, 10s, 100s, 1000s};
+        do
         {
-            std::set<StringView> seen_errors;
-            for (StringView likely_curl_error : likely_curl_errors)
+            // blocking transfer
+            std::this_thread::sleep_for(retry_delays[retries_count]);
+            auto ec = curl_easy_perform(curl);
+            if (ec == CURLE_OK)
             {
-                auto seen_position = seen_errors.lower_bound(likely_curl_error);
-                if (seen_position == seen_errors.end() || *seen_position != likely_curl_error)
+                long response_code = -1;
+                if (CURLE_OK == curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))
                 {
-                    seen_errors.emplace_hint(seen_position, likely_curl_error);
-                    context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(likely_curl_error)});
+                    curl_success = (response_code >= 200 && response_code < 300) || response_code == 0;
+                    should_retry = (response_code == 429 || response_code == 408 || response_code == 500 ||
+                                    response_code == 502 || response_code == 503 || response_code == 504);
                 }
             }
+            else
+            {
+                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(ec)));
+                should_retry = (ec == CURLE_COULDNT_CONNECT || ec == CURLE_OPERATION_TIMEDOUT);
+            }
+        } while (!curl_success && should_retry && retries_count++ < retry_delays.size());
 
+        curl_easy_cleanup(curl);
+        curl_slist_free_all(request_headers);
+        fileptr.reset();
+
+        if (!curl_success)
+        {
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
