@@ -1023,6 +1023,14 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }
+        else if (cmake_system_name == "tvOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
+        else if (cmake_system_name == "watchOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
         else if (cmake_system_name == "visionOS")
         {
             return m_paths.scripts / "toolchains/ios.cmake";
