@@ -1259,11 +1259,7 @@ namespace vcpkg
                 obj, JsonIdDependencies, feature->dependencies, DependencyArrayDeserializer::instance);
             r.optional_object_field(
                 obj, JsonIdSupports, feature->supports_expression, PlatformExprDeserializer::instance);
-            ParsedSpdxLicenseDeclaration license;
-            if (r.optional_object_field(obj, JsonIdLicense, license, LicenseExpressionDeserializer::instance))
-            {
-                feature->license = {std::move(license)};
-            }
+            r.optional_object_field(obj, JsonIdLicense, feature->license, LicenseExpressionDeserializer::instance);
 
             return std::move(feature); // gcc-7 bug workaround redundant move
         }
@@ -1397,21 +1393,14 @@ namespace vcpkg
             r.optional_object_field(obj, JsonIdHomepage, spgh.homepage, UrlDeserializer::instance);
             r.optional_object_field(obj, JsonIdDocumentation, spgh.documentation, UrlDeserializer::instance);
 
-            ParsedSpdxLicenseDeclaration license;
-            if (r.optional_object_field(obj, JsonIdLicense, license, LicenseExpressionDeserializer::instance))
-            {
-                spgh.license = {std::move(license)};
-            }
+            r.optional_object_field(obj, JsonIdLicense, spgh.license, LicenseExpressionDeserializer::instance);
 
             r.optional_object_field(obj, JsonIdDependencies, spgh.dependencies, DependencyArrayDeserializer::instance);
             r.optional_object_field(
                 obj, JsonIdOverrides, spgh.overrides, DependencyOverrideArrayDeserializer::instance);
 
-            std::string baseline;
-            if (r.optional_object_field(obj, JsonIdBuiltinBaseline, baseline, BaselineCommitDeserializer::instance))
-            {
-                spgh.builtin_baseline = std::move(baseline);
-            }
+            r.optional_object_field_emplace(
+                obj, JsonIdBuiltinBaseline, spgh.builtin_baseline, BaselineCommitDeserializer::instance);
 
             r.optional_object_field(obj, JsonIdSupports, spgh.supports_expression, PlatformExprDeserializer::instance);
             r.optional_object_field(
@@ -1507,16 +1496,9 @@ namespace vcpkg
         {
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
-            if (!r.optional_object_field(
-                    obj, JsonIdVcpkgConfiguration, ret.config.emplace(), configuration_deserializer))
-            {
-                ret.config = nullopt;
-            }
-            if (!r.optional_object_field(
-                    obj, JsonIdBuiltinBaseline, ret.builtin_baseline.emplace(), BaselineCommitDeserializer::instance))
-            {
-                ret.builtin_baseline = nullopt;
-            }
+            r.optional_object_field_emplace(obj, JsonIdVcpkgConfiguration, ret.config, configuration_deserializer);
+            r.optional_object_field_emplace(
+                obj, JsonIdBuiltinBaseline, ret.builtin_baseline, BaselineCommitDeserializer::instance);
             return x;
         }
 
