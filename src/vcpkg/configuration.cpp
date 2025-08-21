@@ -538,16 +538,12 @@ namespace
 
         RegistryConfig* default_registry = r.optional_object_field_emplace(
             obj, JsonIdDefaultRegistry, ret.default_reg, RegistryConfigDeserializer::instance);
-        if (default_registry)
+        if (default_registry && default_registry->kind.value_or("") == JsonIdArtifact)
         {
-            if (default_registry->kind.value_or("") == JsonIdArtifact)
-            {
-                r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
-            }
+            r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
         }
 
         r.optional_object_field(obj, JsonIdRegistries, ret.registries, RegistriesArrayDeserializer::instance);
-
         for (auto&& warning : collect_package_pattern_warnings(ret.registries))
         {
             r.add_warning(type_name(), warning);
