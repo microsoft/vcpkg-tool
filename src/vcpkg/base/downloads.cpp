@@ -27,15 +27,6 @@ namespace
     constexpr StringLiteral vcpkg_curl_user_agent_header =
         "User-Agent: vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
 
-    void add_curl_headers(Command& cmd, View<std::string> headers)
-    {
-        cmd.string_arg("-H").string_arg(vcpkg_curl_user_agent_header);
-        for (auto&& header : headers)
-        {
-            cmd.string_arg("-H").string_arg(header);
-        }
-    }
-
     void set_common_curl_options(CURL* handle, const char* url, curl_slist* request_headers)
     {
         curl_easy_setopt(handle, CURLOPT_URL, url);
@@ -771,6 +762,7 @@ namespace vcpkg
             {
                 if (msg->msg == CURLMSG_DONE)
                 {
+                    ++processed;
                     CURL* handle = msg->easy_handle;
                     if (msg->data.result != CURLE_OK)
                     {
@@ -796,7 +788,6 @@ namespace vcpkg
                     ret[idx] = static_cast<int>(response_code);
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
-                    ++processed;
                 }
             }
         } while (processed < urls.size());
@@ -840,8 +831,6 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
-        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
-
         std::string uri;
         if (auto github_server_url = maybe_github_server_url.get())
         {
@@ -856,38 +845,47 @@ namespace vcpkg
         fmt::format_to(
             std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
-        // TODO: Replace with libcurl code
-        auto cmd = Command{"curl"};
-        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
-        cmd.string_arg("-X").string_arg("POST");
+        // Use libcurl for POST request
+        CURL* curl = curl_easy_init();
+        if (!curl)
         {
-            std::string headers[] = {
-                "Accept: application/vnd.github+json",
-                "Authorization: Bearer " + github_token,
-                "X-GitHub-Api-Version: 2022-11-28",
-            };
-            add_curl_headers(cmd, headers);
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = "curl_easy_init failed"));
+            return false;
         }
 
-        cmd.string_arg(uri);
-        cmd.string_arg("-d").string_arg("@-");
+        // Prepare request data
+        std::string post_data = Json::stringify(snapshot);
 
-        RedirectedProcessLaunchSettings settings;
-        settings.stdin_content = Json::stringify(snapshot);
-        int code = 0;
-        auto result = cmd_execute_and_stream_lines(context, cmd, settings, [&code](StringView line) {
-            if (line.starts_with(guid_marker))
-            {
-                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
-            }
-        });
+        // Prepare headers
+        curl_slist* request_headers = nullptr;
+        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
+        request_headers = curl_slist_append(request_headers, "Accept: application/vnd.github+json");
+        request_headers = curl_slist_append(request_headers, ("Authorization: Bearer " + github_token).c_str());
+        request_headers = curl_slist_append(request_headers, "X-GitHub-Api-Version: 2022-11-28");
+        request_headers = curl_slist_append(request_headers, "Content-Type: application/json");
 
-        auto r = result.get();
-        if (r && *r == 0 && code >= 200 && code < 300)
+        // Set curl options
+        set_common_curl_options(curl, uri.c_str(), request_headers);
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
+
+        // Perform the request
+        CURLcode result = curl_easy_perform(curl);
+        long response_code = 0;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+
+        // Cleanup
+        curl_slist_free_all(request_headers);
+        curl_easy_cleanup(curl);
+
+        if (result != CURLE_OK)
         {
-            return true;
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(result)));
+            return false;
         }
-        return false;
+
+        return response_code >= 200 && response_code < 300;
     }
 
     static size_t read_file_callback(char* buffer, size_t size, size_t nitems, void* param)
@@ -1004,34 +1002,6 @@ namespace vcpkg
 
         return fmt::format(FMT_COMPILE("{}?{}"), base_url, fmt::join(query_params, "&"));
     }
-
-    // Optional<std::string> invoke_http_request(DiagnosticContext& context,
-    //                                           StringLiteral method,
-    //                                           View<std::string> headers,
-    //                                           StringView raw_url,
-    //                                           View<std::string> secrets,
-    //                                           StringView data)
-    // {
-    //     auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
-    //     add_curl_headers(cmd, headers);
-
-    //     cmd.string_arg("-X").string_arg(method);
-
-    //     if (!data.empty())
-    //     {
-    //         cmd.string_arg("--data-raw").string_arg(data);
-    //     }
-
-    //     cmd.string_arg(url_encode_spaces(raw_url));
-
-    //     auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-    //     if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
-    //     {
-    //         return *output;
-    //     }
-
-    //     return nullopt;
-    // }
 
 #if defined(_WIN32)
     static WinHttpTrialResult download_winhttp_trial(DiagnosticContext& context,

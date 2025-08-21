@@ -12,6 +12,7 @@ namespace vcpkg
     {
         CurlHandle() : handle(curl_multi_init()) { }
         CurlHandle(const CurlHandle&) = delete;
+        CurlHandle(CurlHandle&&) = delete;
         CurlHandle& operator=(const CurlHandle&) = delete;
         ~CurlHandle() { curl_multi_cleanup(handle); }
 
