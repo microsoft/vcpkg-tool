@@ -678,6 +678,10 @@ DECLARE_MESSAGE(CmdExportExample1,
                 "This is a command line, only <port names> and the out_dir part should be localized",
                 "vcpkg export <port names> [--nuget] [--output-dir=out_dir]")
 DECLARE_MESSAGE(CmdExportOpt7Zip, (), "", "Exports to a 7zip (.7z) file")
+DECLARE_MESSAGE(CmdExportOptDereferenceSymlinks,
+                (),
+                "",
+                "Copies symlinks as regular files and directories in the exported results")
 DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
 DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
 DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")

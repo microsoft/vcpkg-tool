@@ -80,7 +80,8 @@ namespace vcpkg
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<Path>& files,
-                                          const InstallDir& destination_dir);
+                                          const InstallDir& destination_dir,
+                                          const SymlinkHydrate hydrate);
 
     struct CMakeUsageInfo
     {

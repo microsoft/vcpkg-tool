@@ -392,6 +392,7 @@
   "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "_CmdExportExample1.comment": "This is a command line, only <port names> and the out_dir part should be localized",
   "CmdExportOpt7Zip": "Exports to a 7zip (.7z) file",
+  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
   "CmdExportOptDryRun": "Does not actually export",
   "CmdExportOptInstalled": "Exports all installed packages",
   "CmdExportOptNuget": "Exports a NuGet package",
