@@ -76,7 +76,7 @@ namespace vcpkg
         }
 
         msg::println(msgDownloadingTools, msg::count = urlAndPaths.size());
-        auto result = download_files_no_cache(console_diagnostic_context, fs, urlAndPaths, {}, {});
+        auto result = download_files_no_cache(console_diagnostic_context, urlAndPaths, {}, {});
 
         std::unordered_map<std::string, std::string> url_to_fixed_sha;
         auto http_codes_iter = result.begin();

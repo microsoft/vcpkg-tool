@@ -486,7 +486,7 @@ namespace
             }
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto codes = download_files_no_cache(wdc, m_fs, url_paths, m_url_template.headers, m_secrets);
+            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers, m_secrets);
             for (size_t i = 0; i < codes.size(); ++i)
             {
                 if (codes[i] == 200)

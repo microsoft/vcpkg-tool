@@ -673,15 +673,19 @@ namespace vcpkg
         return true;
     }
 
+    struct CurlRequestPrivateData
+    {
+        size_t request_index = 0;
+        WriteFilePointer* file = nullptr;
+    };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
-        auto* file = static_cast<WriteFilePointer*>(param);
-        // printf("Writing to %s\nCurrent position is %lld\n", file->path().generic_u8string().c_str(), file->tell());
+        auto* file = reinterpret_cast<WriteFilePointer*>(param);
+        if (!file) return 0;
         return file->write(contents, size, nmemb);
     }
 
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
-                                                   const Filesystem* maybe_fs,
                                                    View<std::string> urls,
                                                    View<Path> outputs,
                                                    View<std::string> headers,
@@ -690,70 +694,51 @@ namespace vcpkg
         // TODO: handle secret replacement when error messages are implemented
         (void)secrets;
 
-        if (urls.size() != outputs.size())
-        {
-            return {};
-        }
-
-        // Filesystem is required for writing output files
-        if (outputs.size() && !maybe_fs)
-        {
-            return {};
-        }
-
-        std::vector<int> ret;
-        ret.reserve(urls.size());
+        if (!outputs.empty() && outputs.size() != urls.size()) return {};
 
         CURLM* multi_handle = get_global_curl_handle();
-        if (!multi_handle)
+        if (!multi_handle) Checks::unreachable(VCPKG_LINE_INFO);
+
+        std::vector<int> ret(urls.size(), 0);
+        std::vector<CurlRequestPrivateData> private_data;
+        private_data.reserve(urls.size());
+
+        curl_slist* request_headers = nullptr;
+        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
+        for (auto&& header : headers)
         {
-            return ret;
+            request_headers = curl_slist_append(request_headers, header.c_str());
         }
 
-        size_t transfers_count = 0;
-        std::vector<curl_slist*> header_lists;
-
-        for (size_t i = 0; i < urls.size(); ++i)
+        for (size_t request_index = 0; request_index < urls.size(); ++request_index)
         {
-            const auto& url = urls[i];
+            auto& data = private_data.emplace_back(CurlRequestPrivateData{request_index});
+            const auto& url = urls[request_index];
+
             CURL* curl = curl_easy_init();
-            if (!curl)
-            {
-                continue;
-            }
+            if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
 
             curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L);
-            if (!outputs[i].empty() && maybe_fs)
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
+            curl_easy_setopt(curl, CURLOPT_PRIVATE, &data);
+            if (outputs.size() > request_index)
             {
-                // Set the write function to write to the file
+                const auto& output = outputs[request_index];
+
                 std::error_code ec;
-                auto* file = new WriteFilePointer(Path{outputs[i].c_str()}, Append::YES, ec);
-                if (ec)
+                data.file = new WriteFilePointer(output, Append::YES, ec);
+                if (!ec)
                 {
-                    context.report_error(format_filesystem_call_error(ec, "fopen", {outputs[i]}));
-                    delete file;
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file);
+                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
                 }
                 else
                 {
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-                    curl_easy_setopt(curl, CURLOPT_PRIVATE, file);
+                    context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
                 }
             }
-
-            curl_slist* curl_headers = nullptr;
-            for (const auto& header : headers)
-            {
-                curl_headers = curl_slist_append(curl_headers, header.c_str());
-            }
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
-
-            // Add the easy handle to the multi handle
             curl_multi_add_handle(multi_handle, curl);
-
-            header_lists.push_back(curl_headers);
-            ++transfers_count;
         }
 
         int still_running = 0;
@@ -763,49 +748,60 @@ namespace vcpkg
             if (mc != CURLM_OK)
             {
                 context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
-                break;
             }
 
             mc = curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
                 context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
-                break;
             }
         } while (still_running);
 
-        int messages_left = 0;
+        int messages_in_queue = 0;
         size_t processed = 0;
         do
         {
-            while (auto* msg = curl_multi_info_read(multi_handle, &messages_left))
+            while (auto* msg = curl_multi_info_read(multi_handle, &messages_in_queue))
             {
                 if (msg->msg == CURLMSG_DONE)
                 {
-                    auto* handle = msg->easy_handle;
+                    CURL* handle = msg->easy_handle;
                     if (msg->data.result != CURLE_OK)
                     {
                         context.report_error(
                             msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(msg->data.result)));
+                        continue;
                     }
 
-                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &ret.emplace_back());
+                    CurlRequestPrivateData* data = nullptr;
+                    CURLcode ec = curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
+                    if (ec != CURLE_OK)
+                    {
+                        context.report_error(
+                            msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(ec)));
+                        continue;
+                    }
+                    if (!data) Checks::unreachable(VCPKG_LINE_INFO);
 
-                    WriteFilePointer* data = nullptr;
-                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
-                    delete data;
+                    auto idx = data->request_index;
 
+                    long response_code = 0;
+                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
+                    if (response_code != 200)
+                    {
+                        context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = response_code));
+                    }
+                    ret[idx] = static_cast<int>(response_code);
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
                     ++processed;
+                    delete data->file;
+                    data->file = nullptr;
                 }
             }
-        } while (processed < transfers_count);
+        } while (processed < urls.size());
 
-        for (auto* header_list : header_lists)
-        {
-            curl_slist_free_all(header_list);
-        }
+        curl_slist_free_all(request_headers);
 
         return ret;
     }
@@ -815,81 +811,8 @@ namespace vcpkg
                                                View<std::string> headers,
                                                View<std::string> secrets)
     {
-        return libcurl_bulk_operation(context, nullptr, urls, {}, headers, secrets);
+        return libcurl_bulk_operation(context, urls, {}, headers, secrets);
     }
-
-    /*static std::vector<int> curl_bulk_operation(DiagnosticContext& context,
-                                                View<Command> operation_args,
-                                                StringLiteral prefixArgs,
-                                                View<std::string> headers,
-                                                View<std::string> secrets)
-    {
-#define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
-        static constexpr StringLiteral guid_marker = GUID_MARKER;
-        // TODO: Replace with libcurl code.
-        Command prefix_cmd{"curl"};
-        if (!prefixArgs.empty())
-        {
-            prefix_cmd.raw_arg(prefixArgs);
-        }
-
-        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-sS").string_arg("-w").string_arg(
-            GUID_MARKER "%{http_code} %{exitcode} %{errormsg}\\n");
-#undef GUID_MARKER
-
-        std::vector<int> ret;
-        ret.reserve(operation_args.size());
-        add_curl_headers(prefix_cmd, headers);
-        while (ret.size() != operation_args.size())
-        {
-            // there's an edge case that we aren't handling here where not even one operation fits with the configured
-            // headers but this seems unlikely
-
-            // form a maximum length command line of operations:
-            auto batch_cmd = prefix_cmd;
-            size_t last_try_op = ret.size();
-            while (last_try_op != operation_args.size() && batch_cmd.try_append(operation_args[last_try_op]))
-            {
-                ++last_try_op;
-            }
-
-            // actually run curl
-            bool new_curl_seen = false;
-            std::vector<std::string> debug_lines;
-            auto maybe_this_batch_exit_code = cmd_execute_and_stream_lines(context, batch_cmd, [&](StringView line) {
-                debug_lines.emplace_back(line.data(), line.size());
-                new_curl_seen |= parse_curl_status_line(context, ret, guid_marker, line);
-            });
-
-            if (auto this_batch_exit_code = maybe_this_batch_exit_code.get())
-            {
-                if (!new_curl_seen)
-                {
-                    // old version of curl, we only have the result code for the last operation
-                    context.report_error(msgCurlFailedGeneric, msg::exit_code = *this_batch_exit_code);
-                }
-
-                if (ret.size() != last_try_op)
-                {
-                    // curl didn't process everything we asked of it; this usually means curl crashed
-                    auto command_line = std::move(batch_cmd).extract();
-                    replace_secrets(command_line, secrets);
-                    context.report_error_with_log(Strings::join("\n", debug_lines),
-                                                  msgCurlFailedToReturnExpectedNumberOfExitCodes,
-                                                  msg::exit_code = *this_batch_exit_code,
-                                                  msg::command_line = command_line);
-                    return ret;
-                }
-            }
-            else
-            {
-                // couldn't even launch curl, record this as the last fatal error and give up
-                return ret;
-            }
-        }
-
-        return ret;
-    }*/
 
     std::vector<int> url_heads(DiagnosticContext& context,
                                View<std::string> urls,
@@ -900,13 +823,11 @@ namespace vcpkg
     }
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
-                                             const Filesystem& fs,
                                              View<std::pair<std::string, Path>> url_pairs,
                                              View<std::string> headers,
                                              View<std::string> secrets)
     {
         return libcurl_bulk_operation(context,
-                                      &fs,
                                       Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.first; }),
                                       Util::fmap(url_pairs, [](auto&& kv) -> Path { return kv.second; }),
                                       headers,
