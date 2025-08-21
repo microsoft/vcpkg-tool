@@ -676,19 +676,19 @@ namespace vcpkg
     struct CurlRequestPrivateData
     {
         size_t request_index = 0;
-        WriteFilePointer* file = nullptr;
+        std::unique_ptr<WriteFilePointer> file = nullptr;
 
-        CurlRequestPrivateData() = default;
-        CurlRequestPrivateData(CurlRequestPrivateData&&) = default;
-        CurlRequestPrivateData(const size_t idx) : request_index(idx), file(nullptr) { }
-        ~CurlRequestPrivateData()
-        {
-            if (file)
-            {
-                delete file;
-                file = nullptr;
-            }
-        }
+        // CurlRequestPrivateData() = default;
+        // CurlRequestPrivateData(CurlRequestPrivateData&&) = default;
+        // CurlRequestPrivateData(const size_t idx) : request_index(idx), file(nullptr) { }
+        // ~CurlRequestPrivateData()
+        // {
+        //     if (file)
+        //     {
+        //         delete file;
+        //         file = nullptr;
+        //     }
+        // }
     };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
@@ -739,10 +739,10 @@ namespace vcpkg
                 const auto& output = outputs[request_index];
 
                 std::error_code ec;
-                data.file = new WriteFilePointer(output, Append::YES, ec);
+                data.file.reset(new WriteFilePointer(output, Append::YES, ec));
                 if (!ec)
                 {
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file);
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file.get());
                     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
                 }
                 else
@@ -799,10 +799,6 @@ namespace vcpkg
 
                     long response_code = 0;
                     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
-                    if (response_code != 200)
-                    {
-                        context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = response_code));
-                    }
                     ret[idx] = static_cast<int>(response_code);
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
