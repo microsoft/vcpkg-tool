@@ -965,6 +965,18 @@ DECLARE_MESSAGE(CurlFailedGeneric,
                 (msg::exit_code, msg::error_msg),
                 "curl is the name of a program, see curl.se.",
                 "curl operation failed with error code {exit_code} ({error_msg}).")
+DECLARE_MESSAGE(CurlFailedGenericWithRetry,
+                (msg::exit_code, msg::error_msg, msg::count, msg::value),
+                "curl is the name of a program, see curl.se. {value} is the maximum amount of retries.",
+                "curl operation failed with error code {exit_code} ({error_msg}) retry {count} of {value}.")
+DECLARE_MESSAGE(CurlFailedHttpResponse,
+                (msg::exit_code),
+                "curl is the name of a program, see curl.se.",
+                "curl operation failed with HTTP response code {exit_code}.")
+DECLARE_MESSAGE(CurlFailedHttpResponseWithRetry,
+                (msg::exit_code, msg::count, msg::value),
+                "curl is the name of a program, see curl.se. {value} is the maximum amount of retries.",
+                "curl operation failed with HTTP response code {exit_code} retry {count} of {value}.")
 DECLARE_MESSAGE(CurlFailedToPutHttp,
                 (msg::exit_code, msg::error_msg, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",

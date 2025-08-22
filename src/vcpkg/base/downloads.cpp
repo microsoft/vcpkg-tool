@@ -1286,30 +1286,58 @@ namespace vcpkg
         size_t retries_count = 0;
 
         using namespace std::chrono_literals;
-        static constexpr std::array<std::chrono::seconds, 4> retry_delays = {0s, 10s, 100s, 1000s};
+        static constexpr std::array<std::chrono::seconds, 3> retry_delay = {0s, 1s, 2s};
         do
         {
             // blocking transfer
-            std::this_thread::sleep_for(retry_delays[retries_count]);
+            should_retry = false;
+            std::this_thread::sleep_for(retry_delay[retries_count++]);
             auto curl_code = curl_easy_perform(curl);
             if (curl_code == CURLE_OK)
             {
                 long response_code = -1;
                 if (CURLE_OK == curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))
                 {
-                    curl_success = (response_code >= 200 && response_code < 300) || response_code == 0;
-                    should_retry = (response_code == 429 || response_code == 408 || response_code == 500 ||
-                                    response_code == 502 || response_code == 503 || response_code == 504);
+                    if ((response_code >= 200 && response_code < 300) || response_code == 0)
+                    {
+                        curl_success = true;
+                        break;
+                    }
+                    else if (response_code == 429 || response_code == 408 || response_code == 500 ||
+                             response_code == 502 || response_code == 503 || response_code == 504)
+                    {
+                        should_retry = true;
+                        context.report_error(msg::format(msgCurlFailedHttpResponseWithRetry,
+                                                         msg::exit_code = static_cast<int>(curl_code),
+                                                         msg::count = retries_count,
+                                                         msg::value = retry_delay.size()));
+                    }
+                    else
+                    {
+                        context.report_error(
+                            msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
+                    }
                 }
             }
             else
             {
-                context.report_error(msg::format(msgCurlFailedGeneric,
-                                                 msg::exit_code = static_cast<int>(curl_code),
-                                                 msg::error_msg = curl_easy_strerror(curl_code)));
-                should_retry = (curl_code == CURLE_COULDNT_CONNECT || curl_code == CURLE_OPERATION_TIMEDOUT);
+                if (curl_code == CURLE_OPERATION_TIMEDOUT)
+                {
+                    should_retry = true;
+                    context.report_error(msg::format(msgCurlFailedGenericWithRetry,
+                                                     msg::exit_code = static_cast<int>(curl_code),
+                                                     msg::error_msg = curl_easy_strerror(curl_code),
+                                                     msg::count = retries_count,
+                                                     msg::value = retry_delay.size()));
+                }
+                else
+                {
+                    context.report_error(msg::format(msgCurlFailedGeneric,
+                                                     msg::exit_code = static_cast<int>(curl_code),
+                                                     msg::error_msg = curl_easy_strerror(curl_code)));
+                }
             }
-        } while (!curl_success && should_retry && retries_count++ < retry_delays.size() - 1);
+        } while (should_retry && retries_count < retry_delay.size());
 
         curl_easy_cleanup(curl);
         curl_slist_free_all(request_headers);
