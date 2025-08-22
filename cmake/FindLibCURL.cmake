@@ -1,4 +1,3 @@
-
 if (WIN32)
     option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
 else()

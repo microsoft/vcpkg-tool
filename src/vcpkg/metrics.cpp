@@ -85,32 +85,32 @@ namespace
 #endif
     }
 
-    // static void libcurl_upload_metrics(const std::string& payload)
-    // {
-    //     CURL* curl = curl_easy_init();
-    //     if (!curl) return;
+    static void libcurl_upload_metrics(const std::string& payload)
+    {
+        CURL* curl = curl_easy_init();
+        if (!curl) return;
 
-    //     curl_slist* headers = nullptr;
-    //     headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_slist* headers = nullptr;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
 
-    //     curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
-    //     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-    //     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, payload.length());
-    //     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    //     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-    //     curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-    //     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    //     // disable output and ignore all data
-    //     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-    //     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, [](void*, size_t size, size_t nmemb, void*) -> size_t {
-    //         return size * nmemb;
-    //     });
+        curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, payload.length());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        // disable output and ignore all data
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, [](void*, size_t size, size_t nmemb, void*) -> size_t {
+            return size * nmemb;
+        });
 
-    //     curl_easy_perform(curl);
+        curl_easy_perform(curl);
 
-    //     curl_slist_free_all(headers);
-    //     curl_easy_cleanup(curl);
-    // }
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+    }
 }
 
 namespace vcpkg
@@ -499,7 +499,7 @@ namespace vcpkg
 #if defined(NDEBUG)
         true
 #else
-        true
+        false
 #endif
         ;
     std::atomic<bool> g_should_print_metrics = false;
@@ -629,7 +629,7 @@ namespace vcpkg
             return;
         }
 
-        // std::thread metrics_upload_thread(libcurl_upload_metrics, payload);
-        // metrics_upload_thread.detach();
+        std::thread metrics_upload_thread(libcurl_upload_metrics, payload);
+        metrics_upload_thread.detach();
     }
 }
