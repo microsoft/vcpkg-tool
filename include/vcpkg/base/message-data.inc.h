@@ -962,24 +962,13 @@ DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
 DECLARE_MESSAGE(CurlFailedGeneric,
-                (msg::exit_code),
+                (msg::exit_code, msg::error_msg),
                 "curl is the name of a program, see curl.se.",
-                "curl operation failed with error code {exit_code}.")
-DECLARE_MESSAGE(CurlFailedToPut,
-                (msg::exit_code, msg::url),
-                "curl is the name of a program, see curl.se",
-                "curl failed to put file to {url} with exit code {exit_code}.")
+                "curl operation failed with error code {exit_code} ({error_msg}).")
 DECLARE_MESSAGE(CurlFailedToPutHttp,
-                (msg::exit_code, msg::url, msg::value),
+                (msg::exit_code, msg::error_msg, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
-                "curl failed to put file to {url} with exit code {exit_code} and http code {value}.")
-DECLARE_MESSAGE(
-    CurlFailedToReturnExpectedNumberOfExitCodes,
-    (msg::exit_code, msg::command_line),
-    "",
-    "curl failed to return the expected number of exit codes; this can happen if something terminates curl "
-    "before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, "
-    "but may be the result of a crash. The command line was {command_line}, and all output is below:")
+                "curl failed to put file to {url} with exit code {exit_code} ({error_msg}) and http code {value}.")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",

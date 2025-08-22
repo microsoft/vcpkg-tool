@@ -744,13 +744,17 @@ namespace vcpkg
             CURLMcode mc = curl_multi_perform(multi_handle, &still_running);
             if (mc != CURLM_OK)
             {
-                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
+                context.report_error(msg::format(msgCurlFailedGeneric,
+                                                 msg::exit_code = static_cast<int>(mc),
+                                                 msg::error_msg = curl_multi_strerror(mc)));
             }
 
             mc = curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
-                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_multi_strerror(mc)));
+                context.report_error(msg::format(msgCurlFailedGeneric,
+                                                 msg::exit_code = static_cast<int>(mc),
+                                                 msg::error_msg = curl_multi_strerror(mc)));
             }
         } while (still_running);
 
@@ -767,8 +771,9 @@ namespace vcpkg
 
                     if (msg->data.result != CURLE_OK)
                     {
-                        context.report_error(
-                            msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(msg->data.result)));
+                        context.report_error(msg::format(msgCurlFailedGeneric,
+                                                         msg::exit_code = static_cast<int>(msg->data.result),
+                                                         msg::error_msg = curl_easy_strerror(msg->data.result)));
                         continue;
                     }
 
@@ -776,8 +781,9 @@ namespace vcpkg
                     CURLcode ec = curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
                     if (ec != CURLE_OK)
                     {
-                        context.report_error(
-                            msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(ec)));
+                        context.report_error(msg::format(msgCurlFailedGeneric,
+                                                         msg::exit_code = static_cast<int>(ec),
+                                                         msg::error_msg = curl_easy_strerror(ec)));
                         continue;
                     }
                     if (!data) Checks::unreachable(VCPKG_LINE_INFO);
@@ -850,7 +856,8 @@ namespace vcpkg
         CURL* curl = curl_easy_init();
         if (!curl)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = "curl_easy_init failed"));
+            context.report_error(
+                msg::format(msgCurlFailedGeneric, msg::exit_code = -1, msg::error_msg = "curl_easy_init failed"));
             return false;
         }
 
@@ -882,7 +889,9 @@ namespace vcpkg
 
         if (result != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(result)));
+            context.report_error(msg::format(msgCurlFailedGeneric,
+                                             msg::exit_code = static_cast<int>(result),
+                                             msg::error_msg = curl_easy_strerror(result)));
             return false;
         }
 
@@ -935,7 +944,9 @@ namespace vcpkg
         auto result = curl_easy_perform(curl);
         if (result != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(result)));
+            context.report_error(msg::format(msgCurlFailedGeneric,
+                                             msg::exit_code = static_cast<int>(result),
+                                             msg::error_msg = curl_easy_strerror(result)));
             curl_easy_cleanup(curl);
             return false;
         }
@@ -946,7 +957,8 @@ namespace vcpkg
         if ((response_code >= 100 && response_code < 200) || response_code >= 300)
         {
             context.report_error(msg::format(msgCurlFailedToPutHttp,
-                                             msg::exit_code = curl_easy_strerror(result),
+                                             msg::exit_code = static_cast<int>(result),
+                                             msg::error_msg = curl_easy_strerror(result),
                                              msg::url = sanitized_url,
                                              msg::value = response_code));
             curl_easy_cleanup(curl);
@@ -1299,7 +1311,9 @@ namespace vcpkg
             }
             else
             {
-                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(curl_code)));
+                context.report_error(msg::format(msgCurlFailedGeneric,
+                                                 msg::exit_code = static_cast<int>(curl_code),
+                                                 msg::error_msg = curl_easy_strerror(curl_code)));
                 should_retry = (curl_code == CURLE_COULDNT_CONNECT || curl_code == CURLE_OPERATION_TIMEDOUT);
             }
         } while (!curl_success && should_retry && retries_count++ < retry_delays.size() - 1);
@@ -1326,89 +1340,6 @@ namespace vcpkg
     {
         static std::string s_headers[2] = {"x-ms-version: 2020-04-08", "x-ms-blob-type: BlockBlob"};
         return s_headers;
-    }
-
-    bool parse_curl_status_line(DiagnosticContext& context,
-                                std::vector<int>& http_codes,
-                                StringLiteral prefix,
-                                StringView this_line)
-    {
-        if (!this_line.starts_with(prefix))
-        {
-            return false;
-        }
-
-        auto first = this_line.begin();
-        const auto last = this_line.end();
-        first += prefix.size();
-        const auto first_http_code = first;
-
-        int http_code;
-        for (;; ++first)
-        {
-            if (first == last)
-            {
-                // this output is broken, even if we don't know %{exit_code} or ${errormsg}, the spaces in front
-                // of them should still be printed.
-                return false;
-            }
-
-            if (!ParserBase::is_ascii_digit(*first))
-            {
-                http_code = Strings::strto<int>(StringView{first_http_code, first}).value_or_exit(VCPKG_LINE_INFO);
-                break;
-            }
-        }
-
-        if (*first != ' ' || ++first == last)
-        {
-            // didn't see the space after the http_code
-            return false;
-        }
-
-        if (*first == ' ')
-        {
-            // old curl that doesn't understand %{exit_code}, this is the space after it
-            http_codes.emplace_back(http_code);
-            return false;
-        }
-
-        if (!ParserBase::is_ascii_digit(*first))
-        {
-            // not exit_code
-            return false;
-        }
-
-        const auto first_exit_code = first;
-        for (;;)
-        {
-            if (++first == last)
-            {
-                // didn't see the space after %{exit_code}
-                return false;
-            }
-
-            if (*first == ' ')
-            {
-                // the space after exit_code, everything after this space is the error message if any
-                http_codes.emplace_back(http_code);
-                auto exit_code = Strings::strto<int>(StringView{first_exit_code, first}).value_or_exit(VCPKG_LINE_INFO);
-                // note that this gets the space out of the output :)
-                if (exit_code != 0)
-                {
-                    context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = exit_code)
-                                             .append_raw(StringView{first, last}));
-                }
-
-                return true;
-            }
-
-            if (!ParserBase::is_ascii_digit(*first))
-            {
-                // non numeric exit_code?
-                return false;
-            }
-        }
     }
 
     static DownloadPrognosis download_file_azurl_asset_cache(DiagnosticContext& context,
