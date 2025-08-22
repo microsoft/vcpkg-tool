@@ -769,30 +769,23 @@ namespace vcpkg
                     ++processed;
                     CURL* handle = msg->easy_handle;
 
-                    if (msg->data.result != CURLE_OK)
+                    if (msg->data.result == CURLE_OK)
+                    {
+                        CurlRequestPrivateData* data = nullptr;
+                        curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
+                        if (!data) Checks::unreachable(VCPKG_LINE_INFO);
+
+                        auto idx = data->request_index;
+                        long response_code = -1;
+                        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
+                        ret[idx] = static_cast<int>(response_code);
+                    }
+                    else
                     {
                         context.report_error(msg::format(msgCurlFailedGeneric,
                                                          msg::exit_code = static_cast<int>(msg->data.result),
                                                          msg::error_msg = curl_easy_strerror(msg->data.result)));
-                        continue;
                     }
-
-                    CurlRequestPrivateData* data = nullptr;
-                    CURLcode ec = curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
-                    if (ec != CURLE_OK)
-                    {
-                        context.report_error(msg::format(msgCurlFailedGeneric,
-                                                         msg::exit_code = static_cast<int>(ec),
-                                                         msg::error_msg = curl_easy_strerror(ec)));
-                        continue;
-                    }
-                    if (!data) Checks::unreachable(VCPKG_LINE_INFO);
-
-                    auto idx = data->request_index;
-
-                    long response_code = -1;
-                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
-                    ret[idx] = static_cast<int>(response_code);
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
                 }
