@@ -178,17 +178,17 @@ TEST_CASE ("parse_curl_status_line", "[downloads]")
 TEST_CASE ("download_files", "[downloads]")
 {
     auto const dst = Test::base_temporary_directory() / "download_files";
-    auto const url = [&](std::string l) -> auto { return std::pair(l, dst); };
-    (void)url;
+    real_filesystem.create_directories(dst, VCPKG_LINE_INFO);
+
+    static const std::vector<std::pair<std::string, Path>> test_downloads{
+        {"unknown://localhost:9/secret", dst / "test1"},
+        {"http://localhost:9/not-exists/secret", dst / "test2"},
+    };
 
     FullyBufferedDiagnosticContext bdc;
     std::vector<std::string> headers;
     std::vector<std::string> secrets;
-    auto results = download_files_no_cache(
-        bdc,
-        std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
-        headers,
-        secrets);
+    auto results = download_files_no_cache(bdc, test_downloads, headers, secrets);
     REQUIRE(results == std::vector<int>{0, 0});
     auto all_errors = bdc.to_string();
     REQUIRE(all_errors == "error: curl operation failed with error code Unsupported protocol.\n"

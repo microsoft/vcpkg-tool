@@ -22,6 +22,7 @@ namespace vcpkg
         static CurlGlobalInit global_init;
         CURLM* handle;
     };
+    CurlGlobalInit CurlHandle::global_init;
 
     CURLM* get_global_curl_handle() noexcept
     {

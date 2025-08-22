@@ -1584,7 +1584,6 @@ namespace vcpkg
 
         return st.st_size;
 #endif
-        return 0;
     }
 
     WriteFilePointer::WriteFilePointer() noexcept = default;

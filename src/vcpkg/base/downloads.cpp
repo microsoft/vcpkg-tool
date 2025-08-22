@@ -698,7 +698,7 @@ namespace vcpkg
         CURLM* multi_handle = get_global_curl_handle();
         if (!multi_handle) Checks::unreachable(VCPKG_LINE_INFO);
 
-        std::vector<int> ret(urls.size(), 0);
+        std::vector<int> ret(urls.size(), -1);
         std::vector<CurlRequestPrivateData> private_data;
         private_data.reserve(urls.size());
 
@@ -724,15 +724,15 @@ namespace vcpkg
                 const auto& output = outputs[request_index];
 
                 std::error_code ec;
-                data.file.reset(new WriteFilePointer(output, Append::YES, ec));
-                if (!ec)
+                data.file.reset(new WriteFilePointer(output, Append::NO, ec));
+                if (ec)
                 {
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file.get());
-                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+                    context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
                 }
                 else
                 {
-                    context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file.get());
+                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
                 }
             }
             curl_multi_add_handle(multi_handle, curl);
@@ -764,6 +764,7 @@ namespace vcpkg
                 {
                     ++processed;
                     CURL* handle = msg->easy_handle;
+
                     if (msg->data.result != CURLE_OK)
                     {
                         context.report_error(
@@ -783,7 +784,7 @@ namespace vcpkg
 
                     auto idx = data->request_index;
 
-                    long response_code = 0;
+                    long response_code = -1;
                     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
                     ret[idx] = static_cast<int>(response_code);
                     curl_multi_remove_handle(multi_handle, handle);
@@ -1285,8 +1286,8 @@ namespace vcpkg
         {
             // blocking transfer
             std::this_thread::sleep_for(retry_delays[retries_count]);
-            auto ec = curl_easy_perform(curl);
-            if (ec == CURLE_OK)
+            auto curl_code = curl_easy_perform(curl);
+            if (curl_code == CURLE_OK)
             {
                 long response_code = -1;
                 if (CURLE_OK == curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))
@@ -1298,8 +1299,8 @@ namespace vcpkg
             }
             else
             {
-                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(ec)));
-                should_retry = (ec == CURLE_COULDNT_CONNECT || ec == CURLE_OPERATION_TIMEDOUT);
+                context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(curl_code)));
+                should_retry = (curl_code == CURLE_COULDNT_CONNECT || curl_code == CURLE_OPERATION_TIMEDOUT);
             }
         } while (!curl_success && should_retry && retries_count++ < retry_delays.size());
 

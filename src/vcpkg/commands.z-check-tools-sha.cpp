@@ -107,7 +107,7 @@ namespace vcpkg
             ++http_codes_iter;
         }
 
-        if (!has_sha_error)
+        if (!has_http_error && !has_sha_error)
         {
             msg::println(msgAllShasValid);
         }

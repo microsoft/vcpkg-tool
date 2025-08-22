@@ -230,7 +230,7 @@ target_compile_definitions(vcpkglib PUBLIC
     _FILE_OFFSET_BITS=64
 )
 
-target_link_libraries(vcpkglib PRIVATE CURL::libcurl)
+target_link_libraries(vcpkglib PUBLIC CURL::libcurl)
 
 if(VCPKG_STANDALONE_BUNDLE_SHA)
     target_compile_definitions(vcpkglib PUBLIC
@@ -480,7 +480,6 @@ if (BUILD_TESTING)
 
     if(CMAKE_VERSION GREATER_EQUAL "3.16")
         target_precompile_headers(vcpkg-test REUSE_FROM vcpkglib)
-        target_compile_definitions(vcpkg-test PRIVATE CURL_STATICLIB)
    elseif(NOT MSVC)
        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
