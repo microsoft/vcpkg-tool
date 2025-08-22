@@ -1302,7 +1302,7 @@ namespace vcpkg
                 context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = curl_easy_strerror(curl_code)));
                 should_retry = (curl_code == CURLE_COULDNT_CONNECT || curl_code == CURLE_OPERATION_TIMEDOUT);
             }
-        } while (!curl_success && should_retry && retries_count++ < retry_delays.size());
+        } while (!curl_success && should_retry && retries_count++ < retry_delays.size() - 1);
 
         curl_easy_cleanup(curl);
         curl_slist_free_all(request_headers);
