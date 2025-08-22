@@ -1,4 +1,11 @@
-option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
+
+if (WIN32)
+    option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
+else()
+    option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
+endif()
+
+option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
 
 # This option exists to allow the URI to be replaced with a Microsoft-internal URI in official
 # builds which have restricted internet access; see azure-pipelines/signing.yml
