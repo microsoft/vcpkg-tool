@@ -189,7 +189,7 @@ TEST_CASE ("download_files", "[downloads]")
     std::vector<std::string> headers;
     std::vector<std::string> secrets;
     auto results = download_files_no_cache(bdc, test_downloads, headers, secrets);
-    REQUIRE(results == std::vector<int>{0, 0});
+    REQUIRE(results == std::vector<int>{-1, -1});
     auto all_errors = bdc.to_string();
     REQUIRE(all_errors == "error: curl operation failed with error code Unsupported protocol.\n"
                           "error: curl operation failed with error code Couldn't connect to server.");
