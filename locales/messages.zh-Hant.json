@@ -279,6 +279,7 @@
   "CmdExportEmptyPlan": "拒絕建立零套件的匯出。匯出之前請先安裝套件。",
   "CmdExportExample1": "vcpkg export <連接埠名稱> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "匯出至 7zip (.7z) 檔案",
+  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
   "CmdExportOptDryRun": "實際上不匯出",
   "CmdExportOptInstalled": "匯出所有已安裝的套件",
   "CmdExportOptNuget": "匯出 NuGet 套件",
