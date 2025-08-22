@@ -1253,7 +1253,7 @@ namespace vcpkg
         }
 
         std::error_code ec;
-        auto fileptr = std::make_unique<WriteFilePointer>(download_path_part_path, Append::YES, ec);
+        auto fileptr = std::make_unique<WriteFilePointer>(download_path_part_path, Append::NO, ec);
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, "fopen", {download_path_part_path}));
