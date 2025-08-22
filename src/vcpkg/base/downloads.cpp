@@ -24,15 +24,16 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral vcpkg_curl_user_agent_header =
-        "User-Agent: vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
+    constexpr StringLiteral vcpkg_curl_user_agent =
+        "vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
 
     void set_common_curl_options(CURL* handle, const char* url, curl_slist* request_headers)
     {
+        curl_easy_setopt(handle, CURLOPT_USERAGENT, vcpkg_curl_user_agent.c_str());
         curl_easy_setopt(handle, CURLOPT_URL, url);
         curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
         curl_easy_setopt(handle, CURLOPT_HTTPHEADER, request_headers);
-        curl_easy_setopt(handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
+        curl_easy_setopt(handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
     }
 }
 
@@ -703,7 +704,6 @@ namespace vcpkg
         private_data.reserve(urls.size());
 
         curl_slist* request_headers = nullptr;
-        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
         for (auto&& header : headers)
         {
             request_headers = curl_slist_append(request_headers, header.c_str());
@@ -856,13 +856,13 @@ namespace vcpkg
         std::string post_data = Json::stringify(snapshot);
 
         curl_slist* request_headers = nullptr;
-        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
         request_headers = curl_slist_append(request_headers, "Accept: application/vnd.github+json");
         request_headers = curl_slist_append(request_headers, ("Authorization: Bearer " + github_token).c_str());
         request_headers = curl_slist_append(request_headers, "X-GitHub-Api-Version: 2022-11-28");
         request_headers = curl_slist_append(request_headers, "Content-Type: application/json");
 
         set_common_curl_options(curl, uri.c_str(), request_headers);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent.data());
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
@@ -915,12 +915,12 @@ namespace vcpkg
         curl_slist* request_headers = nullptr;
         if (!raw_url.starts_with("ftp://"))
         {
-            request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
             for (auto&& header : headers)
                 request_headers = curl_slist_append(request_headers, header.c_str());
         }
 
         auto upload_url = url_encode_spaces(raw_url);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent.data());
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
         curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
@@ -1261,7 +1261,6 @@ namespace vcpkg
         }
 
         curl_slist* request_headers = nullptr;
-        request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
         for (auto&& header : headers)
             request_headers = curl_slist_append(request_headers, header.c_str());
 

@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
-#include <vcpkg/base/curl.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
