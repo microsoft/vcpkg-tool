@@ -845,7 +845,6 @@ namespace vcpkg
         fmt::format_to(
             std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
-        // Use libcurl for POST request
         CURL* curl = curl_easy_init();
         if (!curl)
         {
@@ -854,10 +853,8 @@ namespace vcpkg
             return false;
         }
 
-        // Prepare request data
         std::string post_data = Json::stringify(snapshot);
 
-        // Prepare headers
         curl_slist* request_headers = nullptr;
         request_headers = curl_slist_append(request_headers, vcpkg_curl_user_agent_header.c_str());
         request_headers = curl_slist_append(request_headers, "Accept: application/vnd.github+json");
@@ -865,18 +862,15 @@ namespace vcpkg
         request_headers = curl_slist_append(request_headers, "X-GitHub-Api-Version: 2022-11-28");
         request_headers = curl_slist_append(request_headers, "Content-Type: application/json");
 
-        // Set curl options
         set_common_curl_options(curl, uri.c_str(), request_headers);
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
 
-        // Perform the request
         CURLcode result = curl_easy_perform(curl);
         long response_code = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
-        // Cleanup
         curl_slist_free_all(request_headers);
         curl_easy_cleanup(curl);
 
@@ -941,6 +935,7 @@ namespace vcpkg
                                              msg::exit_code = static_cast<int>(result),
                                              msg::error_msg = curl_easy_strerror(result)));
             curl_easy_cleanup(curl);
+            curl_slist_free_all(request_headers);
             return false;
         }
 
@@ -955,10 +950,12 @@ namespace vcpkg
                                              msg::url = sanitized_url,
                                              msg::value = response_code));
             curl_easy_cleanup(curl);
+            curl_slist_free_all(request_headers);
             return false;
         }
 
         curl_easy_cleanup(curl);
+        curl_slist_free_all(request_headers);
         return true;
     }
 
