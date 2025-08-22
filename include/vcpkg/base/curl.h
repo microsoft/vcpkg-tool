@@ -13,5 +13,6 @@
 
 namespace vcpkg
 {
-    CURLM* get_global_curl_handle() noexcept;
+    CURLcode curl_global_init_status() noexcept;
+    CURLM* get_global_curl_multi_handle() noexcept;
 }

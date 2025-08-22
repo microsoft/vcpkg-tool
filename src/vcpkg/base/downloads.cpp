@@ -696,7 +696,7 @@ namespace vcpkg
 
         if (!outputs.empty() && outputs.size() != urls.size()) return {};
 
-        CURLM* multi_handle = get_global_curl_handle();
+        CURLM* multi_handle = get_global_curl_multi_handle();
         if (!multi_handle) Checks::unreachable(VCPKG_LINE_INFO);
 
         std::vector<int> ret(urls.size(), -1);

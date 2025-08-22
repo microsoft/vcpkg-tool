@@ -18,7 +18,7 @@ namespace vcpkg
         CURLcode init_status;
     };
 
-    static CURLcode curl_init_status()
+    CURLcode curl_global_init_status() noexcept
     {
         static CurlGlobalInit g_curl_global_init;
         return g_curl_global_init.get_init_status();
@@ -40,9 +40,9 @@ namespace vcpkg
         CURLM* handle;
     };
 
-    CURLM* get_global_curl_handle() noexcept
+    CURLM* get_global_curl_multi_handle() noexcept
     {
-        if (curl_init_status() == CURLE_OK)
+        if (curl_global_init_status() == CURLE_OK)
         {
             static CurlHandle g_curl_handle;
             return g_curl_handle.get();
