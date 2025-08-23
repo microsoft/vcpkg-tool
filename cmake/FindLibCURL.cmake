@@ -4,8 +4,6 @@ else()
     option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
 endif()
 
-option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
-
 # This option exists to allow the URI to be replaced with a Microsoft-internal URI in official
 # builds which have restricted internet access; see azure-pipelines/signing.yml
 # Note that the SHA512 is the same, so vcpkg-tool contributors need not be concerned that we built
