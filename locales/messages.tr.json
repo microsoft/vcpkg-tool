@@ -969,7 +969,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "{elapsed} içinde AWS kaynağından {count} paket geri yüklendi. Daha fazla ayrıntı için --debug kullanın.",
   "RestoredPackagesFromAZUPKG": "{elapsed} içinde Universal Packages’dan {count} paket geri yüklendi. Daha fazla ayrıntı için --debug komutunu kullanın.",
-  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
+  "RestoredPackagesFromAzureStorage": "{elapsed} içinde Microsoft Azure Depolama'dan {count} paket geri yüklendi. Daha fazla ayrıntı için --debug komutunu kullanın.",
   "RestoredPackagesFromCOS": "{elapsed} içinde COS kaynağından {count} paket geri yüklendi. Daha fazla ayrıntı için --debug kullanın.",
   "RestoredPackagesFromFiles": "{elapsed} içinde {path} kaynağından {count} paket geri yüklendi. Daha fazla ayrıntı için --debug kullanın.",
   "RestoredPackagesFromGCS": "{elapsed} içinde GCS kaynağından {count} paket geri yüklendi. Daha fazla ayrıntı için --debug kullanın.",

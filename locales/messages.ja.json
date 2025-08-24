@@ -969,7 +969,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "{elapsed} で AWS から {count} パッケージを復元しました。--debug を使用して詳細を表示します。",
   "RestoredPackagesFromAZUPKG": "{elapsed} の Universal Packages から {count} 個のパッケージを復元しました。--debug を使用して詳細を表示します。",
-  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
+  "RestoredPackagesFromAzureStorage": "{count} 個のパッケージを、Azure Storage から {elapsed} で復元しました。詳細を表示するには --debug を使用してください。",
   "RestoredPackagesFromCOS": "{elapsed} の COS から {count} パッケージを復元しました。--debug を使用して詳細を表示します。",
   "RestoredPackagesFromFiles": "{elapsed} の {path} から {count} パッケージを復元しました。--debug を使用して詳細を表示します。",
   "RestoredPackagesFromGCS": "{elapsed} の GCS から {count} パッケージを復元しました。--debug を使用して詳細を表示します。",
