@@ -109,18 +109,8 @@
     },
     {
       "description": "Only one of configuration or vcpkg-configuration may be used. (They are aliases of the same field)",
-      "oneOf": [
-        {
-          "properties": {
-            "configuration": {}
-          }
-        },
-        {
-          "properties": {
-            "vcpkg-configuration": {}
-          }
-        }
-      ]
+      "if": {"required": ["configuration"]},
+      "then": {"not": {"required": ["vcpkg-configuration"]}}
     }
   ]
 }
