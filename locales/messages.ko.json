@@ -969,7 +969,7 @@
   "ResponseFileCode": "@response_file",
   "RestoredPackagesFromAWS": "{elapsed} 후 AWS의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
   "RestoredPackagesFromAZUPKG": "{elapsed} 만에 범용 패키지에서 {count}개의 패키지를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
-  "RestoredPackagesFromAzureStorage": "Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.",
+  "RestoredPackagesFromAzureStorage": "{elapsed} 후 Azure Storage의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
   "RestoredPackagesFromCOS": "{elapsed} 후 COS의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
   "RestoredPackagesFromFiles": "{elapsed} 후 {path}의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
   "RestoredPackagesFromGCS": "{elapsed} 후 GCS의 패키지 {count}개를 복원했습니다. 자세한 내용을 보려면 --debug를 사용하세요.",
