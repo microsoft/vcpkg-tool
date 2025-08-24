@@ -136,11 +136,11 @@ DECLARE_MESSAGE(AlreadyInstalled, (msg::spec), "", "{spec} is already installed"
 DECLARE_MESSAGE(AManifest, (), "", "a manifest")
 DECLARE_MESSAGE(AMaximumOfOneAssetReadUrlCanBeSpecified, (), "", "a maximum of one asset read url can be specified.")
 DECLARE_MESSAGE(AMaximumOfOneAssetWriteUrlCanBeSpecified, (), "", "a maximum of one asset write url can be specified.")
-DECLARE_MESSAGE(AmbiguousConfigDeleteConfigFile,
-                (msg::path),
+DECLARE_MESSAGE(AmbiguousConfig,
+                (msg::json_field),
                 "",
-                "Ambiguous vcpkg configuration provided by both manifest and configuration file.\n-- Delete "
-                "configuration file {path}")
+                "Ambiguous vcpkg configuration provided by both manifest and configuration file. Choose one by "
+                "deleting this file or deleting \"{json_field}\" from the manifest file.")
 DECLARE_MESSAGE(AnArtifactsGitRegistryUrl, (), "", "an artifacts git registry URL")
 DECLARE_MESSAGE(AnArtifactsRegistry, (), "", "an artifacts registry")
 DECLARE_MESSAGE(AnArrayOfDefaultFeatures, (), "", "an array of default features")
@@ -920,6 +920,10 @@ DECLARE_MESSAGE(ConfigurationNestedDemands,
                 (msg::json_field),
                 "",
                 "[\"{json_field}\"] contains a nested `demands` object (nested `demands` have no effect)")
+DECLARE_MESSAGE(ConflictingEmbeddedConfiguration,
+                (),
+                "",
+                "only one of {{\"configuration\", \"vcpkg-configuration\"}} may be used")
 DECLARE_MESSAGE(ConflictingFiles,
                 (msg::path, msg::spec),
                 "",
@@ -1013,10 +1017,6 @@ DECLARE_MESSAGE(
 DECLARE_MESSAGE(DefaultFeatureIdentifier, (), "", "the names of default features must be identifiers")
 DECLARE_MESSAGE(DefaultFlag, (msg::option), "", "Defaulting to --{option} being on.")
 DECLARE_MESSAGE(DefaultRegistryIsArtifact, (), "", "The default registry cannot be an artifact registry.")
-DECLARE_MESSAGE(DeleteVcpkgConfigFromManifest,
-                (msg::path),
-                "",
-                "-- Or remove \"vcpkg-configuration\" from the manifest file {path}.")
 DECLARE_MESSAGE(
     DependencyFeatureCore,
     (),
@@ -1133,10 +1133,6 @@ DECLARE_MESSAGE(DuplicatePackagePatternRegistry, (msg::url), "", "registry: {url
 DECLARE_MESSAGE(ElapsedForPackage, (msg::spec, msg::elapsed), "", "Elapsed time to handle {spec}: {elapsed}")
 DECLARE_MESSAGE(ElapsedTimeForChecks, (msg::elapsed), "", "Time to determine pass/fail: {elapsed}")
 DECLARE_MESSAGE(EmailVcpkgTeam, (msg::url), "", "Send an email to {url} with any feedback.")
-DECLARE_MESSAGE(EmbeddingVcpkgConfigInManifest,
-                (),
-                "",
-                "Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.")
 DECLARE_MESSAGE(EmptyLicenseExpression, (), "", "SPDX license expression was empty.")
 DECLARE_MESSAGE(EndOfStringInCodeUnit, (), "", "found end of string in middle of code point")
 DECLARE_MESSAGE(EnvInvalidMaxConcurrency,
@@ -2125,6 +2121,7 @@ DECLARE_MESSAGE(LoadingDependencyInformation,
                 "",
                 "Loading dependency information for {count} packages...")
 DECLARE_MESSAGE(LocalPortfileVersion, (), "", "Using local port versions. To update the local ports, use `git pull`.")
+DECLARE_MESSAGE(ManifestHere, (), "", "the manifest file is here")
 DECLARE_MESSAGE(ManifestConflict2, (), "", "Found both a manifest and CONTROL files; please rename one or the other")
 DECLARE_MESSAGE(ManifestFormatCompleted, (), "", "Succeeded in formatting the manifest files.")
 DECLARE_MESSAGE(MismatchedBinParagraphs,
