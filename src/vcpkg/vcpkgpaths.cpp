@@ -155,33 +155,25 @@ namespace
         {
             if (auto config = manifest->config.get())
             {
-                msg::write_unlocalized_text_to_stderr(Color::warning,
-                                                      LocalizedString::from_raw(WarningPrefix)
-                                                          .append(msgEmbeddingVcpkgConfigInManifest)
-                                                          .append_raw('\n'));
-
                 if (manifest->builtin_baseline && config->default_reg)
                 {
                     Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgBaselineConflict);
                 }
 
                 config->validate_as_active();
-
                 if (config_data.has_value())
                 {
-                    msg::write_unlocalized_text_to_stderr(
-                        Color::error,
-                        LocalizedString::from_raw(ErrorPrefix)
-                            .append(msgAmbiguousConfigDeleteConfigFile,
-                                    msg::path = config_dir / "vcpkg-configuration.json")
-                            .append_raw('\n')
-                            .append(msgDeleteVcpkgConfigFromManifest, msg::path = manifest_dir / "vcpkg.json")
-                            .append_raw('\n'));
-
+                    DiagnosticLine{DiagKind::Error,
+                                   config_dir / FileVcpkgConfigurationDotJson,
+                                   msg::format(msgAmbiguousConfig,
+                                               msg::json_field = configuration_source_field(manifest->config_source))}
+                        .print_to(stderr_sink);
+                    DiagnosticLine{DiagKind::Note, manifest_dir / FileVcpkgDotJson, msg::format(msgManifestHere)}
+                        .print_to(stderr_sink);
                     Checks::exit_fail(VCPKG_LINE_INFO);
                 }
 
-                ret = ConfigurationAndSource{std::move(*config), config_dir, ConfigurationSource::ManifestFile};
+                ret = ConfigurationAndSource{std::move(*config), config_dir, manifest->config_source};
             }
         }
 
@@ -215,15 +207,15 @@ namespace
                 else
                 {
                     auto& default_reg = ret.config.default_reg.emplace();
-                    default_reg.kind = "builtin";
-                    default_reg.baseline = std::move(*p_baseline);
+                    default_reg.kind.emplace(JsonIdBuiltin);
+                    default_reg.baseline.emplace(std::move(*p_baseline));
                 }
             }
         }
 
         const auto& final_config = ret.config;
         const bool has_ports_registries =
-            Util::any_of(final_config.registries, [](auto&& reg) { return reg.kind != "artifact"; });
+            Util::any_of(final_config.registries, [](const RegistryConfig& reg) { return reg.kind != JsonIdArtifact; });
         if (has_ports_registries)
         {
             const auto default_registry = final_config.default_reg.get();
@@ -231,9 +223,7 @@ namespace
             const bool has_baseline = (default_registry) ? default_registry->baseline.has_value() : false;
             if (!is_null_default && !has_baseline)
             {
-                auto origin =
-                    ret.directory /
-                    ((ret.source == ConfigurationSource::ManifestFile) ? "vcpkg.json" : "vcpkg-configuration.json");
+                auto origin = ret.directory / configuration_source_file_name(ret.source);
                 msg::write_unlocalized_text_to_stderr(Color::error,
                                                       msg::format(msgConfigurationErrorRegistriesWithoutBaseline,
                                                                   msg::path = origin,

@@ -30,6 +30,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdCacheCapitalSize = "cacheSize";
     inline constexpr StringLiteral JsonIdChecksums = "checksums";
     inline constexpr StringLiteral JsonIdComment = "comment";
+    inline constexpr StringLiteral JsonIdConfiguration = "configuration";
     inline constexpr StringLiteral JsonIdContacts = "contacts";
     inline constexpr StringLiteral JsonIdCorrelator = "correlator";
     inline constexpr StringLiteral JsonIdCreated = "created";
