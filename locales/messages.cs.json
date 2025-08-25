@@ -279,7 +279,7 @@
   "CmdExportEmptyPlan": "Odmítnutí vytvořit export nulových balíčků. Před exportem nainstalujte balíčky.",
   "CmdExportExample1": "vcpkg export <port names> [--nuget] [--directory=out_dir]",
   "CmdExportOpt7Zip": "Exportuje do souboru 7zip (.7z).",
-  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
+  "CmdExportOptDereferenceSymlinks": "Zkopíruje symbolické odkazy jako běžné soubory a adresáře v exportovaných výsledcích.",
   "CmdExportOptDryRun": "Ve skutečnosti neexportuje",
   "CmdExportOptInstalled": "Exportuje všechny nainstalované balíčky",
   "CmdExportOptNuget": "Exportuje balíček NuGet",

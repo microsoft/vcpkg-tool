@@ -279,7 +279,7 @@
   "CmdExportEmptyPlan": "Отказ от создания экспорта нулевых пакетов. Установите пакеты перед экспортом.",
   "CmdExportExample1": "vcpkg export <имена портов> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "Экспортирует в файл 7zip (.7z)",
-  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
+  "CmdExportOptDereferenceSymlinks": "Копирует символические ссылки как обычные файлы и каталоги в экспортированные результаты",
   "CmdExportOptDryRun": "Фактически не выполняет экспорт",
   "CmdExportOptInstalled": "Экспортирует все установленные пакеты",
   "CmdExportOptNuget": "Экспортирует пакет NuGet",
