@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -135,6 +136,15 @@ namespace
 
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
+        // Ensure that we call curl_global_init only once in the program.
+        // Making it safe to call curl_easy_init. To obtain a CURLM handle
+        // use the get_global_curl_multi_handle function.
+        if (CURLE_OK != curl_global_init_status())
+        {
+            // Maybe collect some telemetry?
+            Debug::println("Failed to initialize CURL");
+        }
+
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
 
