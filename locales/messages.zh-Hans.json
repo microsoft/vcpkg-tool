@@ -279,7 +279,7 @@
   "CmdExportEmptyPlan": "拒绝创建零包导出。在导出之前安装包。",
   "CmdExportExample1": "vcpkg export <port names> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "导出为 7zip (.7z)文件",
-  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
+  "CmdExportOptDereferenceSymlinks": "将符号链接复制为导出结果中的常规文件和目录",
   "CmdExportOptDryRun": "不实际导出",
   "CmdExportOptInstalled": "导出所有安装的包",
   "CmdExportOptNuget": "导出 NuGet 包",

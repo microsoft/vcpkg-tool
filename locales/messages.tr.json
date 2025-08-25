@@ -279,7 +279,7 @@
   "CmdExportEmptyPlan": "Sıfır paketlerin dışarı aktarılma işleminin oluşturulması reddediliyor. Dışarı aktarmadan önce paketleri yükleyin.",
   "CmdExportExample1": "vcpkg export <bağlantı noktası adları> [--nuget] [--output-dir=out_dir]",
   "CmdExportOpt7Zip": "7zip (.7z) dosyasına aktarır",
-  "CmdExportOptDereferenceSymlinks": "Copies symlinks as regular files and directories in the exported results",
+  "CmdExportOptDereferenceSymlinks": "Sembolik bağlantıları, dışa aktarılan sonuçlarda normal dosyalar ve dizinler olarak kopyalar",
   "CmdExportOptDryRun": "Gerçekten dışarı aktarmaz",
   "CmdExportOptInstalled": "Yüklü tüm paketleri dışarı aktarır",
   "CmdExportOptNuget": "NuGet paketini dışarı aktarır",
