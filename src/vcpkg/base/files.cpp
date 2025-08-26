@@ -1674,6 +1674,23 @@ namespace vcpkg
         return maybe_files;
     }
 
+    std::vector<Path> ReadOnlyFilesystem::get_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_recursive_lexically_proximate(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive_lexically_proximate(const Path& dir) const
+    {
+        std::error_code ec;
+        auto maybe_files = this->get_files_recursive_lexically_proximate(dir, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {dir});
+        }
+
+        return maybe_files;
+    }
+
     std::vector<Path> ReadOnlyFilesystem::get_files_non_recursive(const Path& dir, LineInfo li) const
     {
         return this->try_get_files_non_recursive(dir).value_or_exit(li);
@@ -2666,6 +2683,21 @@ namespace vcpkg
             return get_directories_impl<stdfs::recursive_directory_iterator>(dir, ec);
         }
 
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            auto ret = this->get_files_recursive(dir, ec);
+            if (!ec)
+            {
+                const auto base = to_stdfs_path(dir);
+                for (auto& p : ret)
+                {
+                    p = from_stdfs_path(to_stdfs_path(p).lexically_proximate(base));
+                }
+            }
+            return ret;
+        }
+
         virtual std::vector<Path> get_directories_recursive_lexically_proximate(const Path& dir,
                                                                                 std::error_code& ec) const override
         {
@@ -2969,6 +3001,15 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_recursive_impl(result, dir, dir, ec, true, true, true);
+            return result;
+        }
+
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            Path out_base;
+            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
 
