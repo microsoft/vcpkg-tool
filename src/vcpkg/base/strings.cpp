@@ -172,12 +172,12 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
 std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
-const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern)
+const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern) noexcept
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
-bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern)
+bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern) noexcept
 {
     return case_insensitive_ascii_search(s, pattern) != s.end();
 }
@@ -187,7 +187,7 @@ bool Strings::case_insensitive_ascii_equals(StringView left, StringView right) n
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
-bool Strings::case_insensitive_ascii_less(StringView left, StringView right)
+bool Strings::case_insensitive_ascii_less(StringView left, StringView right) noexcept
 {
     return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(), icase_less);
 }

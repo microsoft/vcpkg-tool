@@ -1,4 +1,5 @@
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.update.h>
 #include <vcpkg/portfileprovider.h>
@@ -70,9 +71,8 @@ namespace vcpkg
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
-        const auto outdated_packages = SortedVector<OutdatedPackage, decltype(&OutdatedPackage::compare_by_name)>(
-            find_outdated_packages(provider, status_db), &OutdatedPackage::compare_by_name);
-
+        auto outdated_packages = find_outdated_packages(provider, status_db);
+        Util::sort(outdated_packages, &OutdatedPackage::compare_by_name);
         if (outdated_packages.empty())
         {
             msg::println(msgPackagesUpToDate);
