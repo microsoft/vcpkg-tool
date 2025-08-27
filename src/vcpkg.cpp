@@ -138,15 +138,15 @@ namespace
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
 
+        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
+                                                    detect_libcurl().value_or("unknown"));
+
         if (args.get_command().empty())
         {
             msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
-                                                    detect_libcurl().value_or("unknown"));
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
