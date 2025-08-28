@@ -6,6 +6,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -221,15 +222,6 @@ namespace
         }
 
         return last;
-    }
-
-    StringView parse_filename(const StringView str) noexcept
-    {
-        // attempt to parse str as a path and return the filename if it exists; otherwise, an empty view
-        const auto first = str.data();
-        const auto last = first + str.size();
-        const auto filename = find_filename(first, last);
-        return StringView(filename, static_cast<size_t>(last - filename));
     }
 
     constexpr const char* find_extension(const char* const filename, const char* const ads) noexcept
@@ -1366,6 +1358,14 @@ namespace vcpkg
     bool Path::is_relative() const { return !is_absolute(); }
 
     const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
+
+    StringView parse_filename(const StringView str) noexcept
+    {
+        const auto first = str.data();
+        const auto last = first + str.size();
+        const auto filename = find_filename(first, last);
+        return StringView(filename, static_cast<size_t>(last - filename));
+    }
 
     bool is_symlink(FileType s) { return s == FileType::symlink || s == FileType::junction; }
     bool is_regular_file(FileType s) { return s == FileType::regular; }
