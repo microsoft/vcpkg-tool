@@ -990,3 +990,17 @@ foreach ($bad_dir in @('build-dir', 'downloads', 'installed-root', 'package-dir'
 
 Run-Vcpkg @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" 'vcpkg-policy-absolute-paths[build-dir,downloads,installed-root,package-dir,pkgconfig,policy]' --no-binarycaching --enforce-port-checks
 Throw-IfFailed
+
+# Conflicting files. Note that the test ports here don't actually conflict due to different CaSe on Linux but do on Windows and macOS
+# Also note that the case chosen is the case from a-conflict not b-conflict, since we are claiming 'installed by a-conflict'
+Refresh-TestRoot
+$buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$PSScriptRoot/../e2e-ports" a-conflict b-conflict --no-binarycaching --enforce-port-checks
+Throw-IfNotFailed
+$forwardInstalled = $installRoot.Replace('\', '/')
+$expected = @"
+error: The following files are already installed in $($forwardInstalled)/$($Triplet) and are in conflict with b-conflict:$($Triplet)
+Installed by a-conflict:$($Triplet):
+  include/CONFLICT-a-header-ONLY-mixed.h
+  include/CONFLICT-a-header-ONLY-mixed2.h
+"@
+Throw-IfNonContains -Expected $expected -Actual $buildOutput

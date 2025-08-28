@@ -4,6 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
 #include <vcpkg/base/util.h>
@@ -30,9 +31,45 @@
 
 #include <iterator>
 
+namespace
+{
+    using namespace vcpkg;
+
+    struct InstalledFile
+    {
+        std::string file_path;
+        std::string package_display_name;
+
+        InstalledFile(std::string&& file_path_, const std::string& package_display_name_)
+            : file_path(std::move(file_path_)), package_display_name(package_display_name_)
+        {
+        }
+
+        InstalledFile(const InstalledFile&) = default;
+        InstalledFile(InstalledFile&&) = default;
+        InstalledFile& operator=(const InstalledFile&) = default;
+        InstalledFile& operator=(InstalledFile&&) = default;
+    };
+
+    struct InstalledFilePathCompare
+    {
+        bool operator()(const std::string& lhs, const InstalledFile& rhs) const noexcept
+        {
+            return Strings::case_insensitive_ascii_less(lhs, rhs.file_path);
+        }
+        bool operator()(const InstalledFile& lhs, const std::string& rhs) const noexcept
+        {
+            return Strings::case_insensitive_ascii_less(lhs.file_path, rhs);
+        }
+        bool operator()(const InstalledFile& lhs, const InstalledFile& rhs) const noexcept
+        {
+            return Strings::case_insensitive_ascii_less(lhs.file_path, rhs.file_path);
+        }
+    };
+}
+
 namespace vcpkg
 {
-    using file_pack = std::pair<std::string, std::string>;
 
     InstallDir InstallDir::from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh)
     {
@@ -176,34 +213,7 @@ namespace vcpkg
         fs.write_lines(listfile, output, VCPKG_LINE_INFO);
     }
 
-    static std::vector<file_pack> extract_files_in_triplet(
-        const std::vector<StatusParagraphAndAssociatedFiles>& pgh_and_files,
-        Triplet triplet,
-        const size_t remove_chars = 0)
-    {
-        std::vector<file_pack> output;
-        for (const StatusParagraphAndAssociatedFiles& t : pgh_and_files)
-        {
-            if (t.pgh.package.spec.triplet() != triplet)
-            {
-                continue;
-            }
-
-            const std::string name = t.pgh.package.display_name();
-
-            for (const std::string& file : t.files)
-            {
-                output.emplace_back(file_pack{std::string(file, remove_chars), name});
-            }
-        }
-
-        std::sort(output.begin(), output.end(), [](const file_pack& lhs, const file_pack& rhs) {
-            return lhs.first < rhs.first;
-        });
-        return output;
-    }
-
-    static SortedVector<std::string> build_list_of_package_files(const ReadOnlyFilesystem& fs, const Path& package_dir)
+    static std::vector<std::string> build_list_of_package_files(const ReadOnlyFilesystem& fs, const Path& package_dir)
     {
         std::vector<Path> package_file_paths = fs.get_files_recursive(package_dir, IgnoreErrors{});
         Util::erase_remove_if(package_file_paths, [](Path& path) { return path.filename() == FileDotDsStore; });
@@ -212,88 +222,109 @@ namespace vcpkg
             return std::string(target.generic_u8string(), package_remove_char_count);
         });
 
-        return SortedVector<std::string>(std::move(package_files));
+        return package_files;
     }
 
-    static SortedVector<file_pack> build_list_of_installed_files(
-        const std::vector<StatusParagraphAndAssociatedFiles>& pgh_and_files, Triplet triplet)
+    static std::vector<InstalledFile> build_list_of_installed_files(
+        std::vector<StatusParagraphAndAssociatedFiles>&& pgh_and_files, Triplet triplet)
     {
         const size_t installed_remove_char_count = triplet.canonical_name().size() + 1; // +1 for the slash
-        std::vector<file_pack> installed_files =
-            extract_files_in_triplet(pgh_and_files, triplet, installed_remove_char_count);
+        std::vector<InstalledFile> output;
+        for (StatusParagraphAndAssociatedFiles& t : pgh_and_files)
+        {
+            if (t.pgh.package.spec.triplet() != triplet)
+            {
+                continue;
+            }
 
-        return SortedVector<file_pack>(std::move(installed_files));
+            const std::string package_display_name = t.pgh.package.display_name();
+            for (std::string& file : t.files)
+            {
+                file.erase(0, installed_remove_char_count);
+                output.emplace_back(std::move(file), package_display_name);
+            }
+        }
+
+        return output;
     }
 
-    static InstallResult install_package(const VcpkgPaths& paths,
-                                         const Path& package_dir,
-                                         const BinaryControlFile& bcf,
-                                         StatusParagraphs* status_db)
+    static bool check_for_install_conflicts(const Filesystem& fs,
+                                            const Path& package_dir,
+                                            const InstalledPaths& installed,
+                                            const StatusParagraphs& status_db,
+                                            const PackageSpec& spec)
     {
-        auto& fs = paths.get_filesystem();
-        const auto& installed = paths.installed();
-        Triplet triplet = bcf.core_paragraph.spec.triplet();
-        const std::vector<StatusParagraphAndAssociatedFiles> pgh_and_files =
-            get_installed_files_and_upgrade(fs, installed, *status_db);
+        std::vector<InstalledFile> installed_files =
+            build_list_of_installed_files(get_installed_files_and_upgrade(fs, installed, status_db), spec.triplet());
+        std::vector<std::string> package_files = build_list_of_package_files(fs, package_dir);
+        std::vector<InstalledFile> intersection;
 
-        const SortedVector<std::string> package_files = build_list_of_package_files(fs, package_dir);
-        const SortedVector<file_pack> installed_files = build_list_of_installed_files(pgh_and_files, triplet);
-
-        struct intersection_compare
-        {
-            bool operator()(const std::string& lhs, const file_pack& rhs) const
-            {
-                return Strings::case_insensitive_ascii_less(lhs, rhs.first);
-            }
-            bool operator()(const file_pack& lhs, const std::string& rhs) const
-            {
-                return Strings::case_insensitive_ascii_less(lhs.first, rhs);
-            }
-        };
-
-        std::vector<file_pack> intersection;
-
+        Util::sort(installed_files, InstalledFilePathCompare{});
+        Util::sort(package_files, Strings::case_insensitive_ascii_less);
         std::set_intersection(installed_files.begin(),
                               installed_files.end(),
                               package_files.begin(),
                               package_files.end(),
                               std::back_inserter(intersection),
-                              intersection_compare());
+                              InstalledFilePathCompare{});
 
-        std::sort(intersection.begin(), intersection.end(), [](const file_pack& lhs, const file_pack& rhs) {
-            return lhs.second < rhs.second;
-        });
-
-        if (!intersection.empty())
+        if (intersection.empty())
         {
-            const auto triplet_install_path = installed.triplet_dir(triplet);
-            msg::println_error(msgConflictingFiles,
-                               msg::path = triplet_install_path.generic_u8string(),
-                               msg::spec = bcf.core_paragraph.spec);
+            return false;
+        }
 
-            auto i = intersection.begin();
-            while (i != intersection.end())
+        // Re-sort by package display name to group conflicts by package
+        std::stable_sort(
+            intersection.begin(), intersection.end(), [](const InstalledFile& lhs, const InstalledFile& rhs) {
+                return lhs.package_display_name < rhs.package_display_name;
+            });
+
+        const auto triplet_install_path = installed.triplet_dir(spec.triplet());
+        msg::println_error(msgConflictingFiles, msg::path = triplet_install_path.generic_u8string(), msg::spec = spec);
+
+        auto i = intersection.begin();
+        while (i != intersection.end())
+        {
+            const auto& conflicting_display_name = i->package_display_name;
+            auto next = std::find_if(i + 1, intersection.end(), [&conflicting_display_name](const InstalledFile& val) {
+                return conflicting_display_name != val.package_display_name;
+            });
+            std::vector<LocalizedString> this_conflict_list;
+            this_conflict_list.reserve(next - i);
+            for (; i != next; ++i)
             {
-                msg::println(msg::format(msgInstalledBy, msg::path = i->second).append_indent());
-                auto next =
-                    std::find_if(i, intersection.end(), [i](const auto& val) { return i->second != val.second; });
-
-                msg::write_unlocalized_text(
-                    Color::none, Strings::join("\n    ", i, next, [](const file_pack& file) { return file.first; }));
-                msg::write_unlocalized_text(Color::none, "\n\n");
-
-                i = next;
+                this_conflict_list.emplace_back(LocalizedString::from_raw(std::move(i->file_path)));
             }
 
+            msg::print(msg::format(msgInstalledBy, msg::path = conflicting_display_name)
+                           .append_raw(':')
+                           .append_floating_list(1, this_conflict_list)
+                           .append_raw('\n'));
+        }
+
+        return true;
+    }
+
+    static InstallResult install_package(const VcpkgPaths& paths,
+                                         const Path& package_dir,
+                                         const BinaryControlFile& bcf,
+                                         StatusParagraphs& status_db)
+    {
+        auto& fs = paths.get_filesystem();
+        const auto& installed = paths.installed();
+        const auto& bcf_core_paragraph = bcf.core_paragraph;
+        const auto& bcf_spec = bcf_core_paragraph.spec;
+        if (check_for_install_conflicts(fs, package_dir, installed, status_db, bcf_spec))
+        {
             return InstallResult::FILE_CONFLICTS;
         }
 
         StatusParagraph source_paragraph;
-        source_paragraph.package = bcf.core_paragraph;
+        source_paragraph.package = bcf_core_paragraph;
         source_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
         write_update(fs, installed, source_paragraph);
-        status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
+        status_db.insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         std::vector<StatusParagraph> features_spghs;
         for (auto&& feature : bcf.features)
@@ -303,23 +334,23 @@ namespace vcpkg
             feature_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
             write_update(fs, installed, feature_paragraph);
-            status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
+            status_db.insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
         const InstallDir install_dir =
-            InstallDir::from_destination_root(paths.installed(), triplet, bcf.core_paragraph);
+            InstallDir::from_destination_root(installed, bcf_spec.triplet(), bcf_core_paragraph);
 
         install_package_and_write_listfile(fs, package_dir, install_dir);
 
         source_paragraph.status.state = InstallState::INSTALLED;
         write_update(fs, installed, source_paragraph);
-        status_db->insert(std::make_unique<StatusParagraph>(source_paragraph));
+        status_db.insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         for (auto&& feature_paragraph : features_spghs)
         {
             feature_paragraph.status.state = InstallState::INSTALLED;
             write_update(fs, installed, feature_paragraph);
-            status_db->insert(std::make_unique<StatusParagraph>(feature_paragraph));
+            status_db.insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
         return InstallResult::SUCCESS;
@@ -417,7 +448,7 @@ namespace vcpkg
             if (all_dependencies_satisfied)
             {
                 const auto install_result =
-                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, &status_db);
+                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, status_db);
                 switch (install_result)
                 {
                     case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
