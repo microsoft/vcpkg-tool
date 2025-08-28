@@ -286,8 +286,8 @@ namespace vcpkg
         while (i != intersection.end())
         {
             const auto& conflicting_display_name = i->package_display_name;
-            auto next = std::find_if(i, intersection.end(), [i](const auto& val) {
-                return i->package_display_name != val.package_display_name;
+            auto next = std::find_if(i + 1, intersection.end(), [&conflicting_display_name](const InstalledFile& val) {
+                return conflicting_display_name != val.package_display_name;
             });
             std::vector<LocalizedString> this_conflict_list;
             this_conflict_list.reserve(next - i);
@@ -338,7 +338,7 @@ namespace vcpkg
         }
 
         const InstallDir install_dir =
-            InstallDir::from_destination_root(paths.installed(), bcf_spec.triplet(), bcf_core_paragraph);
+            InstallDir::from_destination_root(installed, bcf_spec.triplet(), bcf_core_paragraph);
 
         install_package_and_write_listfile(fs, package_dir, install_dir);
 
