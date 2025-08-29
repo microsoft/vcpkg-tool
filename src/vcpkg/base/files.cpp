@@ -1557,6 +1557,35 @@ namespace vcpkg
         ec.clear();
     }
 
+    uint64_t ReadFilePointer::size(LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->size(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {m_path});
+        }
+
+        return result;
+    }
+
+    uint64_t ReadFilePointer::size(std::error_code& ec) const
+    {
+        ec.clear();
+#if _WIN32
+        return stdfs::file_size(to_stdfs_path(m_path), ec);
+#else
+        struct stat st;
+        if (::fstat(::fileno(m_fs), &st) != 0)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        return st.st_size;
+#endif
+    }
+
     WriteFilePointer::WriteFilePointer() noexcept = default;
 
     WriteFilePointer::WriteFilePointer(WriteFilePointer&&) noexcept = default;
