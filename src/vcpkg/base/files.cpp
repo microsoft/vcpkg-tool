@@ -6,6 +6,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -221,15 +222,6 @@ namespace
         }
 
         return last;
-    }
-
-    StringView parse_filename(const StringView str) noexcept
-    {
-        // attempt to parse str as a path and return the filename if it exists; otherwise, an empty view
-        const auto first = str.data();
-        const auto last = first + str.size();
-        const auto filename = find_filename(first, last);
-        return StringView(filename, static_cast<size_t>(last - filename));
     }
 
     constexpr const char* find_extension(const char* const filename, const char* const ads) noexcept
@@ -1367,6 +1359,14 @@ namespace vcpkg
 
     const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
 
+    StringView parse_filename(const StringView str) noexcept
+    {
+        const auto first = str.data();
+        const auto last = first + str.size();
+        const auto filename = find_filename(first, last);
+        return StringView(filename, static_cast<size_t>(last - filename));
+    }
+
     bool is_symlink(FileType s) { return s == FileType::symlink || s == FileType::junction; }
     bool is_regular_file(FileType s) { return s == FileType::regular; }
     bool is_directory(FileType s) { return s == FileType::directory; }
@@ -1666,6 +1666,23 @@ namespace vcpkg
     {
         std::error_code ec;
         auto maybe_files = this->get_files_recursive(dir, ec);
+        if (ec)
+        {
+            return format_filesystem_call_error(ec, __func__, {dir});
+        }
+
+        return maybe_files;
+    }
+
+    std::vector<Path> ReadOnlyFilesystem::get_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_recursive_lexically_proximate(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive_lexically_proximate(const Path& dir) const
+    {
+        std::error_code ec;
+        auto maybe_files = this->get_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
             return format_filesystem_call_error(ec, __func__, {dir});
@@ -2666,6 +2683,21 @@ namespace vcpkg
             return get_directories_impl<stdfs::recursive_directory_iterator>(dir, ec);
         }
 
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            auto ret = this->get_files_recursive(dir, ec);
+            if (!ec)
+            {
+                const auto base = to_stdfs_path(dir);
+                for (auto& p : ret)
+                {
+                    p = from_stdfs_path(to_stdfs_path(p).lexically_proximate(base));
+                }
+            }
+            return ret;
+        }
+
         virtual std::vector<Path> get_directories_recursive_lexically_proximate(const Path& dir,
                                                                                 std::error_code& ec) const override
         {
@@ -2969,6 +3001,15 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_recursive_impl(result, dir, dir, ec, true, true, true);
+            return result;
+        }
+
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            Path out_base;
+            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
 

@@ -155,6 +155,11 @@ namespace vcpkg
         std::vector<Path> get_files_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_files_recursive(const Path& dir) const;
 
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const = 0;
+        std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const;
+        ExpectedL<std::vector<Path>> try_get_files_recursive_lexically_proximate(const Path& dir) const;
+
         virtual std::vector<Path> get_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_non_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_files_non_recursive(const Path& dir) const;

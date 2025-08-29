@@ -419,25 +419,17 @@ namespace
                 msg::println(msgExportingPackage, msg::package_name = action.spec);
 
                 const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-
-                const InstallDir dirs =
-                    InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
+                const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
 
                 auto lines =
                     fs.read_lines(paths.installed().listfile_path(binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
-                std::vector<Path> files;
-                for (auto&& suffix : lines)
-                {
-                    if (suffix.empty()) continue;
-                    if (suffix.back() == '/') suffix.pop_back();
-                    if (suffix == action.spec.triplet().to_string()) continue;
-                    files.push_back(paths.installed().root() / suffix);
-                }
-
+                auto proximate_files = convert_list_to_proximate_files(std::move(lines), triplet_canonical_name);
                 install_files_and_write_listfile(fs,
                                                  paths.installed().triplet_dir(action.spec.triplet()),
-                                                 files,
-                                                 dirs,
+                                                 proximate_files,
+                                                 export_paths.root(),
+                                                 triplet_canonical_name,
+                                                 export_paths.listfile_path(binary_paragraph),
                                                  opts.dereference_symlinks ? SymlinkHydrate::CopyData
                                                                            : SymlinkHydrate::CopySymlinks);
             }
@@ -601,5 +593,26 @@ namespace vcpkg
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
+    std::vector<std::string> convert_list_to_proximate_files(std::vector<std::string>&& lines,
+                                                             StringView triplet_canonical_name)
+    {
+        auto prefix_length = triplet_canonical_name.size() + 1; // +1 for the trailing '/'
+        std::vector<std::string> proximate_files;
+        for (auto&& suffix : lines)
+        {
+            if (suffix.size() <= prefix_length)
+            {
+                continue;
+            }
+
+            suffix.erase(0, prefix_length);
+            if (suffix.back() == '/') suffix.pop_back();
+            if (suffix.empty()) continue;
+            proximate_files.emplace_back(std::move(suffix));
+        }
+
+        return proximate_files;
     }
 } // namespace vcpkg
