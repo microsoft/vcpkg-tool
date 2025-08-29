@@ -58,5 +58,5 @@ namespace vcpkg
     };
 
     // attempt to parse str as a path and return the filename if it exists; otherwise, an empty view
-    StringView parse_filename(const StringView str) noexcept;
+    StringView parse_filename(StringView str) noexcept;
 }
