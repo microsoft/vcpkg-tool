@@ -428,7 +428,7 @@ add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell
 # === Target: vcpkg ===
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
-target_link_libraries(vcpkg PRIVATE vcpkglib)
+target_link_libraries(vcpkg PRIVATE vcpkglib ${CMAKE_DL_LIBS})
 
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
