@@ -16,3 +16,5 @@ file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/include")
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/../../../LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
 
 file(CREATE_LINK "definitely-nonexistent-target-file.txt" "${CURRENT_PACKAGES_DIR}/share/${PORT}/broken-symlink" SYMBOLIC)
+file(CREATE_LINK "self-symlink-b" "${CURRENT_PACKAGES_DIR}/share/${PORT}/self-symlink-a" SYMBOLIC)
+file(CREATE_LINK "self-symlink-a" "${CURRENT_PACKAGES_DIR}/share/${PORT}/self-symlink-b" SYMBOLIC)

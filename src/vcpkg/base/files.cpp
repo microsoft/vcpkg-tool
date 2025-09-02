@@ -318,9 +318,14 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
+#if !defined(_WIN32)
+    bool is_not_found_errno_code(int err) { return err == ENOENT || err == ENOTDIR || err == ELOOP; }
+#endif // ^^^ !_WIN32
+
     void translate_not_found_to_success(std::error_code& ec)
     {
-        if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory))
+        if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory ||
+                   ec == std::errc::too_many_symbolic_link_levels))
         {
             ec.clear();
         }
@@ -2894,8 +2899,9 @@ namespace vcpkg
                         default:
                             if (::lstat(full.c_str(), &ls) != 0)
                             {
-                                if (errno == ENOENT || errno == ENOTDIR)
+                                if (is_not_found_errno_code(errno))
                                 {
+                                    // report broken symlink as just a symlink rather than the target
                                     ec.clear();
                                 }
                                 else
@@ -2918,8 +2924,9 @@ namespace vcpkg
                                 {
                                     if (::stat(full.c_str(), &s) != 0)
                                     {
-                                        if (errno == ENOENT || errno == ENOTDIR)
+                                        if (is_not_found_errno_code(errno))
                                         {
+                                            // report broken symlink as just a symlink rather than the target
                                             ec.clear();
                                         }
                                         else
@@ -3177,7 +3184,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT || errno == ENOTDIR)
+            if (is_not_found_errno_code(errno))
             {
                 ec.clear();
                 return FileType::not_found;
@@ -3202,7 +3209,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT || errno == ENOTDIR)
+            if (is_not_found_errno_code(errno))
             {
                 ec.clear();
                 return FileType::not_found;
@@ -3390,6 +3397,8 @@ namespace vcpkg
             }
 
             const auto remove_errno = errno;
+            // note that this does not treat ELOOP as 'nonexistent' because we still need to remove
+            // the symlink itself
             if (remove_errno == ENOENT || remove_errno == ENOTDIR)
             {
                 ec.clear();
