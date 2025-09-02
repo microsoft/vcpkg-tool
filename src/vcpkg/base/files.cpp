@@ -2660,7 +2660,8 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec)
+                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
+                        ec != std::make_error_condition(std::errc::not_a_directory))
                     {
                         ret.clear();
                         break;
@@ -2736,7 +2737,8 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec)
+                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
+                        ec != std::make_error_condition(std::errc::not_a_directory))
                     {
                         ret.clear();
                         break;
