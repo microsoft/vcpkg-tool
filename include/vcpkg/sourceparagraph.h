@@ -188,7 +188,9 @@ namespace vcpkg
         ParsedSpdxLicenseDeclaration license;
 
         Optional<std::string> builtin_baseline;
-        Optional<Json::Object> vcpkg_configuration;
+
+        Optional<Json::Object> configuration;
+        ConfigurationSource configuration_source = ConfigurationSource::None;
         // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
         Json::Object contacts;
 
