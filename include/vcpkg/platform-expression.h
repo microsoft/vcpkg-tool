@@ -64,6 +64,10 @@ namespace vcpkg::PlatformExpression
 
         static const Expr always_true;
 
+        Expr& negate();
+
+        Expr& simplify();
+
     private:
         std::unique_ptr<detail::ExprImpl> underlying_;
     };
