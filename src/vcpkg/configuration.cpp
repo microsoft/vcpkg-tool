@@ -764,6 +764,31 @@ namespace vcpkg
         return known_fields;
     }
 
+    StringLiteral configuration_source_file_name(ConfigurationSource source)
+    {
+        switch (source)
+        {
+            case ConfigurationSource::ManifestFileVcpkgConfiguration:
+            case ConfigurationSource::ManifestFileConfiguration: return FileVcpkgDotJson;
+            case ConfigurationSource::None: // we always make the configuration as a separate file by default, so use
+                                            // that name if we don't already have one
+            case ConfigurationSource::VcpkgConfigurationFile: return FileVcpkgConfigurationDotJson;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    StringLiteral configuration_source_field(ConfigurationSource source)
+    {
+        switch (source)
+        {
+            case ConfigurationSource::None:
+            case ConfigurationSource::VcpkgConfigurationFile: return "";
+            case ConfigurationSource::ManifestFileVcpkgConfiguration: return JsonIdVcpkgConfiguration;
+            case ConfigurationSource::ManifestFileConfiguration: return JsonIdConfiguration;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
     void Configuration::validate_as_active() const
     {
         if (!ce_metadata.is_empty())

@@ -1352,20 +1352,21 @@ namespace vcpkg
         {
             static constexpr StringLiteral fields[] = {
                 VCPKG_SCHEMED_DESERIALIZER_FIELDS,
-                JsonIdName,
-                JsonIdMaintainers,
-                JsonIdContacts,
-                JsonIdSummary,
-                JsonIdDescription,
-                JsonIdHomepage,
-                JsonIdDocumentation,
-                JsonIdLicense,
-                JsonIdDependencies,
-                JsonIdFeatures,
-                JsonIdDefaultFeatures,
-                JsonIdSupports,
-                JsonIdOverrides,
                 JsonIdBuiltinBaseline,
+                JsonIdConfiguration,
+                JsonIdContacts,
+                JsonIdDefaultFeatures,
+                JsonIdDependencies,
+                JsonIdDescription,
+                JsonIdDocumentation,
+                JsonIdFeatures,
+                JsonIdHomepage,
+                JsonIdLicense,
+                JsonIdMaintainers,
+                JsonIdName,
+                JsonIdOverrides,
+                JsonIdSummary,
+                JsonIdSupports,
                 JsonIdVcpkgConfiguration,
             };
 
@@ -1411,16 +1412,39 @@ namespace vcpkg
             control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
             control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
-            if (auto configuration = obj.get(JsonIdVcpkgConfiguration))
+            // FIXME copy pasta from ManifestConfiguration?
+            auto vcpkg_configuration = obj.get(JsonIdVcpkgConfiguration);
+            if (vcpkg_configuration)
             {
-                if (auto configuration_object = configuration->maybe_object())
+                if (auto configuration_object = vcpkg_configuration->maybe_object())
                 {
-                    spgh.vcpkg_configuration.emplace(*configuration_object);
+                    spgh.configuration.emplace(*configuration_object);
+                    spgh.configuration_source = ConfigurationSource::ManifestFileVcpkgConfiguration;
                 }
                 else
                 {
                     r.add_generic_error(type_name(),
                                         msg::format(msgJsonFieldNotObject, msg::json_field = JsonIdVcpkgConfiguration));
+                }
+            }
+
+            if (auto configuration = obj.get(JsonIdConfiguration))
+            {
+                if (vcpkg_configuration)
+                {
+                    spgh.configuration.clear();
+                    r.add_generic_error(type_name(), msg::format(msgConflictingEmbeddedConfiguration));
+                }
+
+                if (auto configuration_object = configuration->maybe_object())
+                {
+                    spgh.configuration.emplace(*configuration_object);
+                    spgh.configuration_source = ConfigurationSource::ManifestFileConfiguration;
+                }
+                else
+                {
+                    r.add_generic_error(type_name(),
+                                        msg::format(msgJsonFieldNotObject, msg::json_field = JsonIdConfiguration));
                 }
             }
 
@@ -1496,7 +1520,24 @@ namespace vcpkg
         {
             Optional<ManifestConfiguration> x;
             ManifestConfiguration& ret = x.emplace();
-            r.optional_object_field_emplace(obj, JsonIdVcpkgConfiguration, ret.config, configuration_deserializer);
+            if (r.optional_object_field_emplace(obj, JsonIdVcpkgConfiguration, ret.config, configuration_deserializer))
+            {
+                ret.config_source = ConfigurationSource::ManifestFileVcpkgConfiguration;
+                // we parse the other option even if the user shouldn't do that to generate any errors for it
+                if (auto config = obj.get(JsonIdConfiguration))
+                {
+                    ret.config.clear();
+                    r.visit_in_key(*config, JsonIdConfiguration, ret.config.emplace(), configuration_deserializer);
+                    r.add_generic_error(type_name(), msg::format(msgConflictingEmbeddedConfiguration));
+                    ret.config_source = ConfigurationSource::ManifestFileConfiguration;
+                }
+            }
+            else
+            {
+                r.optional_object_field_emplace(obj, JsonIdConfiguration, ret.config, configuration_deserializer);
+                ret.config_source = ConfigurationSource::ManifestFileConfiguration;
+            }
+
             r.optional_object_field_emplace(
                 obj, JsonIdBuiltinBaseline, ret.builtin_baseline, BaselineCommitDeserializer::instance);
             return x;
@@ -2005,10 +2046,11 @@ namespace vcpkg
             obj.insert(el.first.to_string(), el.second);
         }
 
-        if (auto configuration = scf.core_paragraph->vcpkg_configuration.get())
+        if (auto configuration = scf.core_paragraph->configuration.get())
         {
-            auto maybe_configuration = parse_configuration(*configuration, JsonIdVcpkgConfiguration, out_sink);
-            obj.insert(JsonIdVcpkgConfiguration, maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
+            const auto source_field = configuration_source_field(scf.core_paragraph->configuration_source);
+            auto maybe_configuration = parse_configuration(*configuration, source_field, out_sink);
+            obj.insert(source_field, maybe_configuration.value_or_exit(VCPKG_LINE_INFO).serialize());
         }
 
         serialize_optional_string(obj, JsonIdName, scf.to_name());
