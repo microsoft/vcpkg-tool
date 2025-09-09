@@ -36,7 +36,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <numeric>
+#include <iterator>
 
 using namespace vcpkg;
 
@@ -80,7 +80,7 @@ namespace vcpkg
         if (minimum_last_write_time > 0)
         {
             Util::erase_remove_if(children, [&](Path& path) {
-                return filesystem.last_write_time(path, VCPKG_LINE_INFO) >= minimum_last_write_time;
+                return filesystem.last_write_time(path, VCPKG_LINE_INFO) < minimum_last_write_time;
             });
         }
         auto target_path = base_path / spec.name();
@@ -995,6 +995,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
+        else if (cmake_system_name == "SunOS")
+        {
+            return m_paths.scripts / "toolchains/solaris.cmake";
+        }
         else if (cmake_system_name == "Android")
         {
             return m_paths.scripts / "toolchains/android.cmake";
@@ -1018,6 +1022,18 @@ namespace vcpkg
         else if (cmake_system_name.empty() || cmake_system_name == "Windows")
         {
             return m_paths.scripts / "toolchains/windows.cmake";
+        }
+        else if (cmake_system_name == "tvOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
+        else if (cmake_system_name == "watchOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
+        else if (cmake_system_name == "visionOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
         }
         else
         {
@@ -1047,14 +1063,40 @@ namespace vcpkg
 
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / action.spec.name() / FileVcpkgSpdxJson;
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, abi.relative_port_files, abi.relative_port_hashes, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
+        const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
+        // Gather all the files in the package directory
+        // Note: For packages with many files, this sequential hashing may be slow
+        std::vector<Path> package_files;
+        std::vector<std::string> package_hashes;
+        {
+            auto maybe_relative_package_files = fs.try_get_regular_files_recursive_lexically_proximate(package_dir);
+            if (auto relative_package_files = maybe_relative_package_files.get())
+            {
+                package_files.reserve(relative_package_files->size());
+                package_hashes.reserve(relative_package_files->size());
+                for (auto& file : *relative_package_files)
+                {
+                    auto maybe_hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
+                    if (auto hash = maybe_hash.get())
+                    {
+                        package_files.push_back(std::move(file));
+                        package_hashes.push_back(std::move(*hash));
+                    }
+                }
+            }
+        } // destroy maybe_relative_package_files
+        fs.write_contents_and_dirs(json_path,
+                                   create_spdx_sbom(action,
+                                                    abi.relative_port_files,
+                                                    abi.relative_port_hashes,
+                                                    package_files,
+                                                    package_hashes,
+                                                    now,
+                                                    doc_ns,
+                                                    std::move(heuristic_resources)),
+                                   VCPKG_LINE_INFO);
     }
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
@@ -1448,6 +1490,7 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back(AbiTagPortsDotCMake, paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back(AbiTagPostBuildChecks, "2");
+        abi_tag_entries.emplace_back(AbiTagSbomInfo, "1");
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
@@ -1822,6 +1865,8 @@ namespace vcpkg
                     std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
             }
         }
+        fmt::format_to(
+            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version(Tools::CMAKE, null_sink));
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),
@@ -1867,10 +1912,9 @@ namespace vcpkg
 
     static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
-        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
-                               spec_name,
-                               "]+Build+error+on+",
-                               triplet,
+        auto title = fmt::format("[{}] build error on {}", spec_name, triplet);
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=",
+                               Strings::percent_encode(title),
                                "&body=",
                                Strings::percent_encode(body));
     }
@@ -2004,9 +2048,9 @@ namespace vcpkg
         {
             result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[")
+                            "new?template=report-package-build-failure.md&title=%5B")
                 .append_raw(spec_name)
-                .append_raw("]+Build+error+on+")
+                .append_raw("%5D+Build+error+on+")
                 .append_raw(triplet_name)
                 .append_raw("\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');

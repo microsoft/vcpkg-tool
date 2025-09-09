@@ -31,6 +31,11 @@
 #pragma comment(lib, "shell32")
 #endif
 
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#define TEST_LIBCURL_AVAILABLE
+#include <dlfcn.h>
+#endif
+
 using namespace vcpkg;
 
 namespace
@@ -50,6 +55,26 @@ namespace
                 .append_raw('\n'));
         msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
+    }
+
+    Optional<std::string> detect_libcurl()
+    {
+        // Determine if libcurl.so.4 is installed in the system by attempting to load it
+        // At the moment we don't do anything with it, but we're tracking availability
+        // of libcurl to replace the current download/upload implementation
+#if defined(TEST_LIBCURL_AVAILABLE)
+        // calling dlclose() on the handle after calling curl_version() causes asan to
+        // report a false leak, so we intentionally don't unload the library
+        if (auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL))
+        {
+            auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
+            if (!dlerror() && curl_version_fn)
+            {
+                return {curl_version_fn()};
+            }
+        }
+#endif
+        return nullopt;
     }
 
     bool detect_container(const Filesystem& fs)
@@ -113,13 +138,15 @@ namespace
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
 
+        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
+                                                    detect_libcurl().value_or("unknown"));
+
         if (args.get_command().empty())
         {
             msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {

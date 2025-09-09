@@ -171,7 +171,8 @@ namespace vcpkg
                 // no existing configuration, so create one with out-of-the-box registries
                 break;
             case ConfigurationSource::VcpkgConfigurationFile:
-            case ConfigurationSource::ManifestFile:
+            case ConfigurationSource::ManifestFileVcpkgConfiguration:
+            case ConfigurationSource::ManifestFileConfiguration:
                 // reuse existing configuration
                 configuration = current_configuration.config;
                 break;

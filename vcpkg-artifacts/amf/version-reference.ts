@@ -7,7 +7,7 @@ import { Yaml, YAMLScalar } from '../yaml/yaml-types';
 
 
 // nuget-semver parser doesn't have a ts typings package
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const parseRange: any = require('@snyk/nuget-semver/lib/range-parser');
 
 export class VersionReference extends Yaml<YAMLScalar> implements IVersionReference {
@@ -55,7 +55,7 @@ export class VersionReference extends Yaml<YAMLScalar> implements IVersionRefere
 
           return [newRange, undefined];
 
-        } catch (E) {
+        } catch {
           // ignore and fall thru
         }
       }
@@ -66,7 +66,7 @@ export class VersionReference extends Yaml<YAMLScalar> implements IVersionRefere
           const range = new Range(a, true);
           const ver = new SemVer(b, true);
           return [range, ver];
-        } catch (E) {
+        } catch {
           // ignore and fall thru
         }
       }
