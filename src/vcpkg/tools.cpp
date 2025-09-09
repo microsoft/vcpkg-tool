@@ -400,7 +400,7 @@ namespace vcpkg
             // the cmake version from mysys and cygwin can not be used because that version can't handle 'C:' in paths
             auto path = exe_path.generic_u8string();
             return !Strings::ends_with(path, "/usr/bin") && !Strings::ends_with(path, "/cygwin64/bin") &&
-                   path.find("/msys2/") == std::string::npos;
+                   path.find("/msys64/") == std::string::npos;
         }
 
 #endif
