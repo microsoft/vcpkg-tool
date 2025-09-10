@@ -496,14 +496,13 @@ extends:
             solution: 'azure-pipelines\nuget-package.signproj'
             msbuildArguments: '/p:OutDir=$(Build.ArtifactStagingDirectory)\vs-insertion\drop /p:IntermediateOutputPath=$(Build.ArtifactStagingDirectory)\vs-insertion\drop'
         - task: APIScan@2
-          env:
-            AzureServicesAuthConnectionString: RunAs=App;AppId=d318cba7-db4d-4fb3-99e1-01879cb74e91
           inputs:
             softwareFolder: '$(Build.ArtifactStagingDirectory)\drop'
             softwareName: 'vcpkg'
             softwareVersionNum: '$(VCPKG_BASE_VERSION)'
             softwareBuildNum: '$(Build.BuildId)'
             symbolsFolder: '$(Build.ArtifactStagingDirectory)\drop'
+            azureSubscription: 'VSEng-APIScanSC'
         - task: PoliCheck@2
           inputs:
             inputType: 'Basic'
@@ -516,6 +515,7 @@ extends:
             SymbolsFeatureName: 'vcpkg'
             SymbolsProject: 'VS'
             SymbolsAgentPath: '$(Build.ArtifactStagingDirectory)\symbols'
+            azureSubscription: 'Vseng-SymbolsUpload'
       - job: github_release
         displayName: 'Publish GitHub Release'
         dependsOn:
