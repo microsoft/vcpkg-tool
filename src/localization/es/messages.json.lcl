@@ -958,11 +958,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AmbiguousConfigDeleteConfigFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AmbiguousConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
+          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file. Choose one by deleting this file or deleting "{json_field}" from the manifest file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Configuración ambigua de vcpkg proporcionada por el manifiesto y el archivo de configuración.]A;-- Eliminar archivo de configuración {path}]]></Val>
+            <Val><![CDATA[Configuración ambigua de vcpkg proporcionada por el manifiesto y el archivo de configuración. Elija una opción eliminando este archivo o eliminando "{json_field}" del archivo de manifiesto.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4009,6 +4009,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConflictingEmbeddedConfiguration" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[only one of {{"configuration", "vcpkg-configuration"}} may be used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[solo se puede usar un {{"configuration", "vcpkg-configuration"}}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ConflictingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
@@ -4347,15 +4356,6 @@
           <Val><![CDATA[The default registry cannot be an artifact registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[El Registro predeterminado no puede ser un registro de artefacto.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeleteVcpkgConfigFromManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- O bien, quite “vcpkg-configuration” del archivo de manifiesto {path}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4887,15 +4887,6 @@
           <Val><![CDATA[Send an email to {url} with any feedback.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Envíe un correo electrónico a {url} con cualquier comentario.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";EmbeddingVcpkgConfigInManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[La inserción de “vcpkg-configuration” en un archivo de manifiesto es una característica EXPERIMENTAL.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8352,6 +8343,15 @@
           <Val><![CDATA[Succeeded in formatting the manifest files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Se ha aplicado formato a los archivos de manifiesto con éxito.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ManifestHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the manifest file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[el archivo de manifiesto está aquí]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

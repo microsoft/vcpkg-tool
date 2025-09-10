@@ -958,11 +958,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AmbiguousConfigDeleteConfigFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AmbiguousConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
+          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file. Choose one by deleting this file or deleting "{json_field}" from the manifest file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Неоднозначная конфигурация vcpkg, указанная как в манифесте, так и в файле конфигурации.]A;-- Удалить {path} файла конфигурации]]></Val>
+            <Val><![CDATA[Неоднозначная конфигурация vcpkg, указанная как в манифесте, так и в файле конфигурации. Выберите один из них, удалив этот файл или удалив "{json_field}" из файла манифеста.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4009,6 +4009,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConflictingEmbeddedConfiguration" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[only one of {{"configuration", "vcpkg-configuration"}} may be used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[можно использовать только один из {{"configuration", "vcpkg-configuration"}}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ConflictingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
@@ -4347,15 +4356,6 @@
           <Val><![CDATA[The default registry cannot be an artifact registry.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Реестр, используемый по умолчанию, не может быть реестром артефактов.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DeleteVcpkgConfigFromManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Или удалите "vcpkg-configuration" из {path} файла манифеста.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4887,15 +4887,6 @@
           <Val><![CDATA[Send an email to {url} with any feedback.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Отправьте электронное письмо с любым отзывом на адрес {url}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";EmbeddingVcpkgConfigInManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Внедрение "vcpkg-configuration" в файл манифеста является ЭКСПЕРИМЕНТАЛЬНОЙ возможностью.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8352,6 +8343,15 @@
           <Val><![CDATA[Succeeded in formatting the manifest files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Файлы манифеста отформатированы успешно.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ManifestHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the manifest file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[файл манифеста находится здесь]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
