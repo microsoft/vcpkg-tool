@@ -509,7 +509,7 @@ extends:
             targetType: 'F'
             targetArgument: '$(Build.ArtifactStagingDirectory)\drop'
             result: 'PoliCheck.xml'
-        - task: MicroBuildArchiveSymbols@5
+        - task: MicroBuildArchiveSymbols@6
           displayName: 'Upload Symbols'
           inputs:
             SymbolsFeatureName: 'vcpkg'
