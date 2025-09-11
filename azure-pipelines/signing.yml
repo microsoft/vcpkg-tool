@@ -514,6 +514,8 @@ extends:
             result: 'PoliCheck.xml'
         - task: MicroBuildArchiveSymbols@6
           displayName: 'Upload Symbols'
+          env:
+            SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           inputs:
             SymbolsFeatureName: 'vcpkg'
             SymbolsProject: 'VS'
