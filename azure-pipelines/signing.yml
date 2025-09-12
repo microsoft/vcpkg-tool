@@ -414,7 +414,7 @@ extends:
             SigningCert: '8025'
             SigningPluginSource: 'https://pkgs.dev.azure.com/devdiv/_packaging/MicroBuildToolset/nuget/v3/index.json'
             SigningPluginVersion: 'latest'
-            ConnectedPMEServiceName: 'beb8cb23-b303-4c95-ab26-9e44bc958d39'
+            ConnectedPMEServiceName: '6cc74545-d7b9-4050-9dfa-ebefcc8961ea'
         - task: MicroBuildSignMacFiles@1
           displayName: 'Notarize Mac Binaries'
           inputs:
@@ -423,7 +423,7 @@ extends:
             MacAppName: 'vcpkg'
             SigningPluginSource: 'https://pkgs.dev.azure.com/devdiv/_packaging/MicroBuildToolset/nuget/v3/index.json'
             SigningPluginVersion: 'latest'
-            ConnectedPMEServiceName: 'beb8cb23-b303-4c95-ab26-9e44bc958d39'
+            ConnectedPMEServiceName: '6cc74545-d7b9-4050-9dfa-ebefcc8961ea'
         - task: Powershell@2
           displayName: 'Mint VS Insertion standalone bundle'
           inputs:
