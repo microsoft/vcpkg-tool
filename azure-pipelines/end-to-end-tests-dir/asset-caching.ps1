@@ -53,7 +53,7 @@ Throw-IfNotFailed
 $expected = @(
 "A suitable version of cmake was not found \(required v[0-9.]+\)\.",
 "Trying to download cmake-[0-9.]+-[^.]+\.(zip|tar\.gz) using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://github\.com/Kitware/CMake/releases/download/[^ ]+",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
@@ -105,7 +105,7 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $expected = @(
 "^Downloading https://localhost:1234/foobar\.html -> example3\.html",
-"error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
+"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -129,8 +129,8 @@ Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://localhost:1234/foobar\.html",
 "Trying https://localhost:1235/baz\.html",
-"error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
-"error: curl: \(7\) Failed to connect to localhost port 1235( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
+"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
+"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -206,9 +206,6 @@ if ($IsWindows) {
 Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://nonexistent\.example\.com",
-"warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 1 seconds?\. 3 retries left\.",
-"warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 2 seconds\. 2 retries left\.",
-"warning: (Problem : timeout\.|Transient problem: timeout) Will retry in 4 seconds\. 1 (retries|retry) left\.",
 "Trying https://example\.com",
 "Successfully downloaded example3\.html",
 "$"
@@ -217,7 +214,7 @@ $expected = @(
 $actual = Run-VcpkgAndCaptureOutput @commonArgs x-download "$TestDownloadsRoot/example3.html" --sha512 d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73a --url https://nonexistent.example.com --url https://example.com --header "Cache-Control: no-cache"
 Throw-IfFailed
 if (-not ($actual -match $expected)) {
-    throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (succeed)"
+    throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (succeed), headers (cache-control)"
 }
 
 # azurl (no), x-block-origin (yes), asset-cache (n/a), download (n/a)
@@ -241,8 +238,8 @@ Refresh-TestRoot
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
-"error: curl: \(37\) Couldn't open file [^\n]+",
-"error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
+"error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
+"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -301,7 +298,7 @@ if (-not ($actual -match $expected)) {
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://example\.com",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -363,7 +360,7 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://example\.com",
 "note: or https://alternate\.example\.com",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
