@@ -180,7 +180,7 @@ namespace vcpkg
 #elif defined(__SVR4) && defined(__sun)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Solaris);
 #else
-        return nullopt;
+        ToolDataEntry* data = nullptr;
 #endif
         if (!data)
         {

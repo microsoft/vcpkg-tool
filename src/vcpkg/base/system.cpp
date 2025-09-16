@@ -786,7 +786,7 @@ namespace vcpkg
 #elif defined(__linux__)
         return "linux";
 #else
-        return "unknown"
+        return "unknown";
 #endif
     }
 }
