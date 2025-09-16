@@ -20,7 +20,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
@@ -262,7 +262,7 @@ namespace vcpkg
         auto written = readlink(procpath, buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
         return Path(buf, written);
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__NetBSD__)
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");

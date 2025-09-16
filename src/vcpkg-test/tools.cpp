@@ -255,7 +255,7 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
     REQUIRE(!invalid_os.has_value());
     CHECK(
         "invalid_os.json: error: $.tools[0].os (a tool data operating system): Invalid tool operating system: notanos. "
-        "Expected one of: windows, osx, linux, freebsd, openbsd, solaris" == invalid_os.error());
+        "Expected one of: windows, osx, linux, freebsd, openbsd, netbsd, solaris" == invalid_os.error());
 
     auto invalid_version = parse_tool_data(R"(
 {
