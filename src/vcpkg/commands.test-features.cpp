@@ -176,7 +176,8 @@ namespace
                                             const FullPackageSpec& spec,
                                             const std::string* ci_feature_baseline_file_name,
                                             const CiFeatureBaselineEntry* baseline,
-                                            std::string&& cascade_reason)
+                                            std::string&& cascade_reason,
+                                            LocalizedString&& fix_msg = {})
     {
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
@@ -192,6 +193,10 @@ namespace
             case CiFeatureBaselineOutcome::ConfigurationFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
+                if (!fix_msg.empty())
+                {
+                    diagnostics.push_back(DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedFail:
             case CiFeatureBaselineOutcome::FeatureFail:
@@ -201,6 +206,10 @@ namespace
                                                      *ci_feature_baseline_file_name,
                                                      TextRowCol{outcome.loc.row, outcome.loc.column},
                                                      msg::format(msgUnexpectedStateCascadePortNote)});
+                if (!fix_msg.empty())
+                {
+                    diagnostics.push_back(DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedCascade:
             case CiFeatureBaselineOutcome::FeatureCascade:
@@ -727,21 +736,50 @@ namespace vcpkg
             if (!install_plan.unsupported_features.empty())
             {
                 std::vector<std::string> out;
+                std::vector<PlatformExpression::Expr> exprs;
                 for (const auto& entry : install_plan.unsupported_features)
                 {
                     out.push_back(msg::format(msgOnlySupports,
                                               msg::feature_spec = entry.first,
                                               msg::supports_expression = to_string(entry.second))
                                       .extract_data());
+                    if (spec.kind != SpecToTestKind::Combined && ci_feature_baseline_file_name)
+                    {
+                        exprs.push_back(entry.second);
+                    }
                 }
+                LocalizedString fix_msg;
+                if (!exprs.empty())
+                {
+                    auto all_or = PlatformExpression::Expr::And(std::move(exprs)).negate().simplify();
+                    fix_msg = msg::format(msgUnexpectedStateCascadeSuggestLine).append_raw('\n');
+                    if (spec.kind == SpecToTestKind::Core)
+                    {
+                        fix_msg.append_raw(
+                            fmt::format("{}({}) = cascade", spec.package_spec.name(), to_string(all_or)));
+                    }
+                    else if (spec.kind == SpecToTestKind::Separate)
+                    {
+                        fix_msg.append_raw(fmt::format("{}[{}]({}) = cascade",
+                                                       spec.package_spec.name(),
+                                                       spec.separate_feature,
+                                                       to_string(all_or)));
+                    }
+                }
+
                 msg::print(msg::format(msgSkipTestingOfPort,
                                        msg::feature_spec = install_plan.install_actions.back().display_name(),
                                        msg::triplet = target_triplet)
                                .append_raw('\n')
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
-                handle_cascade_feature_test_result(
-                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, Strings::join(", ", out));
+                handle_cascade_feature_test_result(diagnostics,
+                                                   all_ports,
+                                                   spec,
+                                                   ci_feature_baseline_file_name,
+                                                   baseline,
+                                                   Strings::join(", ", out),
+                                                   std::move(fix_msg));
                 continue;
             }
 

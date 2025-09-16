@@ -2978,6 +2978,7 @@ DECLARE_MESSAGE(
     "",
     "{feature_spec} was unexpectedly a cascading failure because the following dependencies are unavailable:")
 DECLARE_MESSAGE(UnexpectedStateCascadePortNote, (), "", "consider changing this to =cascade instead")
+DECLARE_MESSAGE(UnexpectedStateCascadeSuggestLine, (), "", "consider adding the following line:")
 DECLARE_MESSAGE(UnexpectedSwitch,
                 (msg::option),
                 "Switch is a command line switch like --switch",
