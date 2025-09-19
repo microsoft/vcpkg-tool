@@ -201,8 +201,9 @@ TEST_CASE ("download_files", "[downloads]")
             all_errors,
             Catch::Matches("error: curl operation failed with error code 1\\. Protocol \"unknown\" not supported( or "
                            "disabled in libcurl)?\n"
-                           "error: curl operation failed with error code 7\\. Failed to connect to localhost port 9 "
-                           "after [0-9]+ ms: ((Could not|Couldn't) connect to server|Connection refused)",
+                           "error: curl operation failed with error code 7\\. ((Failed to connect to localhost port 9 "
+                           "after [0-9]+ ms: ((Could not|Couldn't) connect to server|Connection refused))"
+                           "|(getsockname\\(\\) failed with errno 22: Invalid argument))",
                            Catch::CaseSensitive::Yes));
     }
 }
