@@ -336,6 +336,12 @@ namespace vcpkg::Json
         val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), std::move(s));
         return val;
     }
+    Value Value::string_valid(std::string&& s) noexcept
+    {
+        Value val;
+        val.underlying_ = std::make_unique<ValueImpl>(ValueKindConstant<VK::String>(), std::move(s));
+        return val;
+    }
     Value Value::array(Array&& arr) noexcept
     {
         Value val;
@@ -699,6 +705,7 @@ namespace vcpkg::Json
                 }
 
                 add_error(msg::format(msgUnexpectedEOFMidString));
+                vcpkg::Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidString);
                 return res;
             }
 
@@ -1036,7 +1043,7 @@ namespace vcpkg::Json
                 {
                     case '{': return parse_object();
                     case '[': return parse_array();
-                    case '"': return Value::string(parse_string());
+                    case '"': return Value::string_valid(parse_string());
                     case 'n':
                     case 't':
                     case 'f': return parse_keyword();
