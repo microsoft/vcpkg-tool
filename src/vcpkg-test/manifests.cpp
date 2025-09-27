@@ -103,7 +103,7 @@ TEST_CASE ("manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
-    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
+    REQUIRE(!pgh.core_paragraph->configuration.has_value());
 
     REQUIRE(pgh.check_against_feature_flags({}, feature_flags_without_versioning));
 
@@ -136,7 +136,7 @@ TEST_CASE ("project manifest construct minimum", "[manifests]")
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.empty());
     REQUIRE(!pgh.core_paragraph->builtin_baseline.has_value());
-    REQUIRE(!pgh.core_paragraph->vcpkg_configuration.has_value());
+    REQUIRE(!pgh.core_paragraph->configuration.has_value());
 
     // name might not be present:
     REQUIRE(project_manifest_is_parsable(R"json({
@@ -874,6 +874,93 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     })json";
 
     std::string raw = Strings::concat(R"json({
+    "configuration": )json",
+                                      raw_config,
+                                      R"json(,
+    "name": "zlib",
+    "version": "1.0.0",
+    "builtin-baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+    "dependencies": [
+        "a",
+        {
+            "$extra": null,
+            "name": "b"
+        },
+        {
+            "name": "c",
+            "version>=": "2018-09-01"
+        }
+    ]
+})json");
+    auto m_pgh = test_parse_port_manifest(raw);
+
+    REQUIRE(m_pgh.has_value());
+    auto& pgh = **m_pgh.get();
+    REQUIRE(!pgh.check_against_feature_flags({}, feature_flags_without_versioning));
+    REQUIRE(pgh.check_against_feature_flags({}, feature_flags_with_versioning));
+
+    auto maybe_as_json = Json::parse(raw, "test");
+    REQUIRE(maybe_as_json.has_value());
+    auto as_json = *maybe_as_json.get();
+    check_json_eq(Json::Value::object(serialize_manifest(pgh)), as_json.value);
+
+    REQUIRE(pgh.core_paragraph->builtin_baseline == "089fa4de7dca22c67dcab631f618d5cd0697c8d4");
+    REQUIRE(pgh.core_paragraph->dependencies.size() == 3);
+    REQUIRE(pgh.core_paragraph->dependencies[0].name == "a");
+    REQUIRE(pgh.core_paragraph->dependencies[0].constraint == DependencyConstraint{});
+    REQUIRE(pgh.core_paragraph->dependencies[1].name == "b");
+    REQUIRE(pgh.core_paragraph->dependencies[1].constraint == DependencyConstraint{});
+    REQUIRE(pgh.core_paragraph->dependencies[2].name == "c");
+    REQUIRE(pgh.core_paragraph->dependencies[2].constraint ==
+            DependencyConstraint{VersionConstraintKind::Minimum, Version{"2018-09-01", 0}});
+
+    auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
+    REQUIRE(config.is_object());
+    auto config_obj = config.object(VCPKG_LINE_INFO);
+    REQUIRE(pgh.core_paragraph->configuration.has_value());
+    auto parsed_config_obj = *pgh.core_paragraph->configuration.get();
+    REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
+    REQUIRE(pgh.core_paragraph->configuration_source == ConfigurationSource::ManifestFileConfiguration);
+}
+
+TEST_CASE ("manifest embed vcpkg_configuration", "[manifests]")
+{
+    std::string raw_config = R"json({
+        "$extra-info": null,
+        "default-registry": {
+            "kind": "builtin",
+            "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4"
+        },
+        "registries": [
+            {
+                "kind": "filesystem",
+                "path": "a/b/c",
+                "baseline": "default",
+                "packages": [
+                    "a",
+                    "b",
+                    "c"
+                ]
+            },
+            {
+                "kind": "git",
+                "repository": "https://github.com/microsoft/vcpkg-ports",
+                "baseline": "089fa4de7dca22c67dcab631f618d5cd0697c8d4",
+                "packages": [ 
+                    "zlib",
+                    "rapidjson",
+                    "fmt"
+                ]
+            },
+            {
+                "kind": "artifact",
+                "name": "vcpkg-artifacts",
+                "location": "https://github.com/microsoft/vcpkg-artifacts"
+            }
+        ]
+    })json";
+
+    std::string raw = Strings::concat(R"json({
     "vcpkg-configuration": )json",
                                       raw_config,
                                       R"json(,
@@ -917,9 +1004,10 @@ TEST_CASE ("manifest embed configuration", "[manifests]")
     auto config = Json::parse(raw_config, "<test config>").value(VCPKG_LINE_INFO).value;
     REQUIRE(config.is_object());
     auto config_obj = config.object(VCPKG_LINE_INFO);
-    REQUIRE(pgh.core_paragraph->vcpkg_configuration.has_value());
-    auto parsed_config_obj = *pgh.core_paragraph->vcpkg_configuration.get();
+    REQUIRE(pgh.core_paragraph->configuration.has_value());
+    auto parsed_config_obj = *pgh.core_paragraph->configuration.get();
     REQUIRE(Json::stringify(parsed_config_obj) == Json::stringify(config_obj));
+    REQUIRE(pgh.core_paragraph->configuration_source == ConfigurationSource::ManifestFileVcpkgConfiguration);
 }
 
 TEST_CASE ("manifest construct maximum", "[manifests]")
@@ -1054,8 +1142,7 @@ TEST_CASE ("manifest construct maximum", "[manifests]")
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "arm"}}));
     REQUIRE(pgh.feature_paragraphs[1]->supports_expression.evaluate(
         {{"VCPKG_CMAKE_SYSTEM_NAME", ""}, {"VCPKG_TARGET_ARCHITECTURE", "x86"}}));
-    REQUIRE(pgh.feature_paragraphs[1]->license.has_value());
-    REQUIRE(*pgh.feature_paragraphs[1]->license.get() == "MIT");
+    REQUIRE(pgh.feature_paragraphs[1]->license == parse_spdx_license_expression_required("MIT"));
 
     check_json_eq_ordered(serialize_manifest(pgh), object);
 }
@@ -1313,7 +1400,70 @@ TEST_CASE ("license serialization", "[manifests][license]")
     CHECK(test_serialized_license("MIT") == "MIT");
     CHECK(test_serialized_license("mit") == "MIT");
     CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("MiT    AND (BsL-1.0) AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") ==
+          "MIT AND BSL-1.0 AND (Apache-2.0 OR GPL-2.0+)");
+    CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 AND (BSL-1.0) \tOR   \n gpl-2.0+)") ==
+          "MIT AND (Apache-2.0 AND BSL-1.0 OR GPL-2.0+)");
     CHECK(test_serialized_license("uNkNoWnLiCeNsE") == "uNkNoWnLiCeNsE");
+}
+
+TEST_CASE ("license-list-extraction", "[manifests]")
+{
+    ParseMessages messages;
+    const auto mit = parse_spdx_license_expression("MIT", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit.license_text() == "MIT");
+    REQUIRE(mit.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto mit_and_boost = parse_spdx_license_expression("MIT AND BSL-1.0", messages);
+    REQUIRE(messages.good());
+    REQUIRE(mit_and_boost.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(mit_and_boost.license_text() == "MIT AND BSL-1.0");
+    REQUIRE(mit_and_boost.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                                                         SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto parens = parse_spdx_license_expression("(MIT) AND (BSL-1.0 AND Apache-2.0)", messages);
+    REQUIRE(messages.good());
+    REQUIRE(parens.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(parens.license_text() == "MIT AND BSL-1.0 AND Apache-2.0");
+    REQUIRE(parens.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{SpdxApplicableLicenseExpression{"Apache-2.0", false},
+                                                         SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                                                         SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto complex =
+        parse_spdx_license_expression("MiT    AND (aPACHe-2.0 AND (BSL-1.0) \tOR   \n gpl-2.0+)", messages);
+    REQUIRE(messages.good());
+    REQUIRE(complex.kind() == SpdxLicenseDeclarationKind::String);
+    REQUIRE(complex.license_text() == "MIT AND (Apache-2.0 AND BSL-1.0 OR GPL-2.0+)");
+    REQUIRE(complex.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"Apache-2.0 AND BSL-1.0 OR GPL-2.0+", true},
+                SpdxApplicableLicenseExpression{"MIT", false}});
+
+    const auto complex2 = parse_spdx_license_expression(
+        "MIT AND BSL-1.0 AND (Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause))", messages);
+    REQUIRE(messages.good());
+    REQUIRE(complex2.license_text() ==
+            "MIT AND BSL-1.0 AND (Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause))");
+    REQUIRE(complex2.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"Apache-2.0 AND BSL-1.0 OR (GPL-2.0+ OR MIT AND BSD-3-Clause)", true},
+                SpdxApplicableLicenseExpression{"BSL-1.0", false},
+                SpdxApplicableLicenseExpression{"MIT", false}});
+
+    // note that these ORs could be collapsed together, but we don't attempt that
+    const auto many_or = parse_spdx_license_expression("MIT OR BSL-1.0 OR Apache-2.0", messages);
+    REQUIRE(messages.good());
+    REQUIRE(many_or.license_text() == "MIT OR BSL-1.0 OR Apache-2.0");
+    // note that 'requires parens' is true because when combining these ORs for the overall AND that
+    // goes into an SBOM, putting parens around it are required
+    REQUIRE(many_or.applicable_licenses() ==
+            std::vector<SpdxApplicableLicenseExpression>{
+                SpdxApplicableLicenseExpression{"MIT OR BSL-1.0 OR Apache-2.0", true}});
 }
 
 TEST_CASE ("license error messages", "[manifests][license]")
@@ -1344,6 +1494,13 @@ TEST_CASE ("license error messages", "[manifests][license]")
           LocalizedString::from_raw(R"(<license string>: error: Expected a license name, found the end of the string.
   on expression: MIT AND
                         ^)"));
+
+    parse_spdx_license_expression("MIT MIT", messages);
+    CHECK(messages.join() ==
+          LocalizedString::from_raw(
+              R"(<license string>: error: Expected either AND, OR, or WITH, found a license or exception name: 'MIT'.
+  on expression: MIT MIT
+                     ^)"));
 
     parse_spdx_license_expression("MIT AND unknownlicense", messages);
     CHECK(!messages.any_errors());

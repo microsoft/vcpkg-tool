@@ -958,11 +958,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AmbiguousConfigDeleteConfigFile" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";AmbiguousConfig" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file.]A;-- Delete configuration file {path}]]></Val>
+          <Val><![CDATA[Ambiguous vcpkg configuration provided by both manifest and configuration file. Choose one by deleting this file or deleting "{json_field}" from the manifest file.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Неоднозначная конфигурация vcpkg, указанная как в манифесте, так и в файле конфигурации.]A;-- Удалить {path} файла конфигурации]]></Val>
+            <Val><![CDATA[Неоднозначная конфигурация vcpkg, указанная как в манифесте, так и в файле конфигурации. Выберите один из них, удалив этот файл или удалив "{json_field}" из файла манифеста.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1173,15 +1173,6 @@
           <Val><![CDATA[vcpkg-artifacts is not installed and could not be bootstrapped.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[vcpkg-артефакты не установлены и не могут использоваться для начальной загрузки.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ArtifactsNotInstalledReadonlyRoot" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[vcpkg-artifacts is not installed, and it can't be installed because VCPKG_ROOT is assumed to be readonly. Reinstalling vcpkg using the 'one liner' may fix this problem.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-артефакты не установлены, и их невозможно установить, так как предполагается, что VCPKG_ROOT доступен только для чтения. Переустановка vcpkg с помощью "one liner" может устранить эту проблему.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1671,6 +1662,15 @@
           <Val><![CDATA[unexpected arguments: asset config 'azurl' requires fewer than 4 arguments]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[непредвиденные аргументы: для конфигурации ресурса "azurl" требуется менее 4 аргументов]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";AzcopyFailedToPutBlob" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[azcopy failed to upload a file to {url} with exit code {exit_code} and http code {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Решению azcopy не удалось отправить файл по адресу {url}. Код завершения: {exit_code}, код HTTP: {value}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2296,6 +2296,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CiBaselineRegressionNoPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} failed with {build_result}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[РЕГРЕССИЯ: сбой {spec} с {build_result}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CiBaselineUnexpectedFail" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} is marked as fail but not supported for {triplet}.]]></Val>
@@ -2875,6 +2884,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdExportOptDereferenceSymlinks" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Copies symlinks as regular files and directories in the exported results]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Копирует символические ссылки как обычные файлы и каталоги в экспортированные результаты]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdExportOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually export]]></Val>
@@ -3270,6 +3288,15 @@
           <Val><![CDATA[Integrates vcpkg with machines, projects, or shells]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Интегрирует vcpkg с компьютерами, проектами или оболочками]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdLicenseReportSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Displays the declared licenses of all ports in the installed tree]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Показывает объявленные лицензии для всех портов в установленном дереве]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -3982,6 +4009,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ConflictingEmbeddedConfiguration" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[only one of {{"configuration", "vcpkg-configuration"}} may be used]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[можно использовать только один из {{"configuration", "vcpkg-configuration"}}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ConflictingFiles" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The following files are already installed in {path} and are in conflict with {spec}]]></Val>
@@ -4324,15 +4360,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DeleteVcpkgConfigFromManifest" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[-- Or remove "vcpkg-configuration" from the manifest file {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[-- Или удалите "vcpkg-configuration" из {path} файла манифеста.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DeletingArtifact$From$" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Deleting artifact ${p0} from ${p1}]]></Val>
@@ -4515,12 +4542,12 @@
       </Item>
       <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность параметров прокси-сервера.]A;Возможные причины:]A;1. Вы действительно используете HTTP-прокси, но HTTPS_PROXY переменную "https//address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является HTTPS-прокси, а прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте задатьhttp://address:port` для HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически использует параметры прокси-сервера Windows IE, заданные программным обеспечением прокси-сервера. Просмотреть: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, заданное прокси-сервером, может быть неправильным или иметь одну и ту же https:// префикса "https://".]A;3. Удаленный сервер вашего прокси-сервера является нашим службой.]A;Если вы считаете, что это не временная ошибка сервера загрузки и необходимо изменить VCPKG для скачивания этого файла из другого расположения, отправьте проблему в https://github.com/Microsoft/vcpkg/issues]]></Val>
+            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность его настроек..]A;Возможные причины:]A;1. Фактически вы используете HTTP-прокси, но устанавливаете переменную HTTPS_PROXY на "https//address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является HTTPS-прокси, в то время как ваш прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте вместо "http://address:port" задать значение HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически будет использовать настройки прокси-сервера Windows IE, установленные программным обеспечением прокси-сервера. Сведения: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, установленное прокси-сервером, может быть неправильным или содержать тот же префикс "https://".]A;3. Удаленный сервер этого прокси-сервера не обслуживается.]A;Если вы считаете, что это не временная ошибка сервера скачивания и vcpkg необходимо изменить, чтобы скачать этот файл из другого расположения, отправьте проблему по адресу https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you've tried directly download the link, and believe this is not a temporary download server failure, please submit an issue at https://github.com/Microsoft/vcpkg/issues]A;to report this upstream download server failure.]]></Val>
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4860,15 +4887,6 @@
           <Val><![CDATA[Send an email to {url} with any feedback.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Отправьте электронное письмо с любым отзывом на адрес {url}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";EmbeddingVcpkgConfigInManifest" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Embedding `vcpkg-configuration` in a manifest file is an EXPERIMENTAL feature.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Внедрение "vcpkg-configuration" в файл манифеста является ЭКСПЕРИМЕНТАЛЬНОЙ возможностью.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8188,15 +8206,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";LicenseExpressionExpectLicenseFoundParen" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected a license name, found a parenthesis.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ожидалось имя лицензии, обнаружена круглая скобка.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";LicenseExpressionImbalancedParens" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There was a close parenthesis without an opening parenthesis.]]></Val>
@@ -8334,6 +8343,15 @@
           <Val><![CDATA[Succeeded in formatting the manifest files.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Файлы манифеста отформатированы успешно.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ManifestHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the manifest file is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[файл манифеста находится здесь]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8716,6 +8734,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";NoInstalledPackagesLicenseReport" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[There are no installed packages, and thus no licenses of installed packages. Did you mean to install something first?]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Нет установленных пакетов, поэтому отсутствуют лицензии установленных пакетов. Нужно было сначала что-то установить?]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";NoOutdatedPackages" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[There are no outdated packages.]]></Val>
@@ -9063,6 +9090,42 @@
           <Val><![CDATA[Package Installation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Установка пакета]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdx" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed packages declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[В установленных пакетах объявлены следующие лицензии:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseSpdxThisInstall" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Packages installed in this vcpkg installation declare the following licenses:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[В пакетах, установленных в этой установке vcpkg, объявлены следующие лицензии:]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseUnknown" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[В некоторых пакетах не объявлена лицензия SPDX. Для получения дополнительной информации о лицензировании проверьте файл "copyright" для каждого пакета.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageLicenseWarning" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Установленные содержимое предоставляется вам по лицензии владельцами этого содержимого. Корпорация Майкрософт не несет ответственности за пакеты сторонних производителей и не предоставляет лицензии на такие пакеты.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10096,6 +10159,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";RestoredPackagesFromAzureStorage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Restored {count} package(s) from Azure Storage in {elapsed}. Use --debug to see more details.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Восстановлено несколько ({count}) пакетов из службы хранилища Azure за {elapsed}. Используйте --debug, чтобы увидеть больше подробностей.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";RestoredPackagesFromCOS" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Restored {count} package(s) from COS in {elapsed}. Use --debug to see more details.]]></Val>
@@ -10437,15 +10509,6 @@
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Сбой вызова API {system_api} с кодом завершения {exit_code} ({error_msg})]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SystemRootMustAlwaysBePresent" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected the SystemRoot environment variable to be always set on Windows.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Ожидается, что переменная среды SystemRoot всегда установлена ​​в Windows.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12408,6 +12471,15 @@
           <Val><![CDATA[while validating version: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[при проверке версии: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WindowsEnvMustAlwaysBePresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Expected {env_var} to be always set on Windows.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ожидалось, что {env_var} всегда будет настроено в Windows.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

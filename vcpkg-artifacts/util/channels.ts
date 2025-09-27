@@ -44,16 +44,32 @@ export class Channels extends EventEmitter {
   readonly stopwatch: Stopwatch;
 
   warning(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('warning', text, this.stopwatch.total) : text.forEach(t => this.emit('warning', t, this.stopwatch.total));
+    if (typeof text === 'string') {
+      this.emit('warning', text, this.stopwatch.total);
+    } else {
+      text.forEach(t => this.emit('warning', t, this.stopwatch.total));
+    }
   }
   error(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('error', text, this.stopwatch.total) : text.forEach(t => this.emit('error', t, this.stopwatch.total));
+    if (typeof text === 'string') {
+      this.emit('error', text, this.stopwatch.total);
+    } else {
+      text.forEach(t => this.emit('error', t, this.stopwatch.total));
+    }
   }
   message(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('message', text, this.stopwatch.total) : text.forEach(t => this.emit('message', t, this.stopwatch.total));
+    if (typeof text === 'string') {
+      this.emit('message', text, this.stopwatch.total);
+    } else {
+      text.forEach(t => this.emit('message', t, this.stopwatch.total));
+    }
   }
   debug(text: string | Array<string>) {
-    typeof text === 'string' ? this.emit('debug', text, this.stopwatch.total) : text.forEach(t => this.emit('debug', t, this.stopwatch.total));
+    if (typeof text === 'string') {
+      this.emit('debug', text, this.stopwatch.total);
+    } else {
+      text.forEach(t => this.emit('debug', t, this.stopwatch.total));
+    }
   }
   constructor(session: Session) {
     super();

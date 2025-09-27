@@ -14,6 +14,14 @@
 
 #include <net/if_dl.h>
 #define AF_TYPE AF_LINK
+#elif defined(__SVR4) && defined(__sun)
+#include <unistd.h>
+
+#include <net/if.h>
+#include <net/if_arp.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/sockio.h>
 #elif defined(__linux__)
 #include <ifaddrs.h>
 
@@ -201,6 +209,80 @@ namespace vcpkg
             if (is_valid_mac_for_telemetry(mac))
             {
                 return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
+            }
+        }
+#elif defined(__SVR4) && defined(__sun)
+        struct socket_guard
+        {
+            int fd, fd6 = -1;
+            ~socket_guard()
+            {
+                if (fd > 0) close(fd);
+                if (fd6 > 0) close(fd6);
+            }
+            inline operator int() { return fd; }
+        } fd{socket(AF_INET, SOCK_DGRAM, 0), socket(AF_INET6, SOCK_DGRAM, 0)};
+
+        if (fd == -1) return "0";
+
+        // Retrieve the current number of interfaces
+        lifnum number{};
+        number.lifn_family = AF_UNSPEC;
+        number.lifn_flags = 0;
+        number.lifn_count = 0;
+        if (ioctl(fd, SIOCGLIFNUM, &number) < 0) return "0";
+
+        // Pad buffer size in case an interface is added between calls
+        auto data = std::vector<lifreq>(number.lifn_count + 1);
+        lifconf interfaces{};
+        interfaces.lifc_family = AF_UNSPEC;
+        interfaces.lifc_flags = 0;
+        interfaces.lifc_len = data.size() * sizeof(lifreq);
+        interfaces.lifc_buf = reinterpret_cast<caddr_t>(data.data());
+        if (ioctl(fd, SIOCGLIFCONF, &interfaces) < 0) return "0";
+
+        // On a successful call, lifc_req contains a pointer to an array of
+        // lifreq structures filled with all currently active interface addresses.
+        // Within each structure lifr_name will receive the interface name, and
+        // lifr_addr the address.
+        const lifreq* const end = interfaces.lifc_req + (interfaces.lifc_len / sizeof(lifreq));
+        for (auto it = interfaces.lifc_req; it != end; ++it)
+        {
+            lifreq& interface = *it;
+            auto addr = interface.lifr_addr;
+            auto family = addr.ss_family;
+            if ((family != AF_INET) && (family != AF_INET6)) continue;
+
+            auto fdf = (family == AF_INET) ? fd : fd.fd6;
+
+            // Retrieve interface hardware addresses (ignore loopback and virtual).
+            if ((ioctl(fdf, SIOCGLIFFLAGS, &interface) >= 0) && !(interface.lifr_flags & IFF_LOOPBACK) &&
+                !(interface.lifr_flags & (IFF_VIRTUAL | IFF_IPMP | IFF_POINTOPOINT)) &&
+                (interface.lifr_flags & IFF_UP) && (interface.lifr_flags & IFF_RUNNING))
+            {
+                std::string mac;
+
+                // Use data from ARP or NDP cache for IPv4 and IPv6, respectively.
+                if (family == AF_INET)
+                {
+                    arpreq ar{};
+                    std::memcpy(&ar.arp_pa, &addr, sizeof(sockaddr_in));
+                    if (ioctl(fdf, SIOCGARP, &ar) < 0) continue;
+                    mac = mac_bytes_to_string(Span<char>(ar.arp_ha.sa_data, MAC_BYTES_LENGTH));
+                }
+                else
+                {
+                    lifreq nd{};
+                    std::memcpy(&nd.lifr_name, &interface.lifr_name, sizeof(nd.lifr_name));
+                    nd.lifr_nd.lnr_addr = addr;
+                    if (ioctl(fdf, SIOCLIFGETND, &nd) < 0) continue;
+                    mac = mac_bytes_to_string(Span<char>(nd.lifr_nd.lnr_hdw_addr, MAC_BYTES_LENGTH));
+                }
+
+                if (is_valid_mac_for_telemetry(mac))
+                {
+                    return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
+                }
             }
         }
 #else

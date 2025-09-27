@@ -459,8 +459,9 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
 
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         CHECK(state.url_templates_to_get.empty());
-        CHECK(state.url_templates_to_put.size() == 1);
-        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
+        CHECK(state.url_templates_to_put.empty());
+        CHECK(state.azblob_templates_to_put.size() == 1);
+        CHECK(state.azblob_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_write.empty());
     }
@@ -471,11 +472,203 @@ TEST_CASE ("BinaryConfigParser azblob provider", "[binaryconfigparser]")
         REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azblob"}, {"default"}});
         CHECK(state.url_templates_to_get.size() == 1);
         CHECK(state.url_templates_to_get.front().url_template == "https://azure/container/{sha}.zip?sas");
-        CHECK(state.url_templates_to_put.size() == 1);
-        CHECK(state.url_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
+        CHECK(state.url_templates_to_put.empty());
+        CHECK(state.azblob_templates_to_put.size() == 1);
+        CHECK(state.azblob_templates_to_put.front().url_template == "https://azure/container/{sha}.zip?sas");
         REQUIRE(state.secrets == std::vector<std::string>{"sas"});
         REQUIRE(!state.archives_to_read.empty());
         REQUIRE(!state.archives_to_write.empty());
+    }
+}
+
+TEST_CASE ("BinaryConfigParser azcopy providers", "[binaryconfigparser]")
+{
+    SECTION ("azcopy no SAS token")
+    {
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
+
+            CHECK(state.azcopy_write_templates.empty());
+            REQUIRE(state.secrets.empty());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,read", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
+
+            CHECK(state.azcopy_write_templates.empty());
+            REQUIRE(state.secrets.empty());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,write", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            CHECK(state.azcopy_read_templates.empty());
+            REQUIRE(state.azcopy_write_templates.size() == 1);
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas.empty());
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container");
+            REQUIRE(state.secrets.empty());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,readwrite", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas.empty());
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container");
+            REQUIRE(state.azcopy_write_templates.size() == 1);
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas.empty());
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container");
+            REQUIRE(state.secrets.empty());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,http://not/container", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,,readwrite", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,?sas", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy,https://azure/container,sas,readwrite", {});
+            REQUIRE(!parsed.has_value());
+        }
+    }
+
+    SECTION ("azcopy with SAS token")
+    {
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
+            CHECK(state.azcopy_write_templates.empty());
+            REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,read", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
+            CHECK(state.azcopy_write_templates.empty());
+            REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,write", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
+            CHECK(state.azcopy_read_templates.empty());
+            REQUIRE(state.azcopy_write_templates.size() == 1);
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas == "sas");
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container?sas");
+            REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,readwrite", {});
+            auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+            REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"azcopy-sas"}, {"default"}});
+            REQUIRE(state.azcopy_read_templates.size() == 1);
+            const auto& azcopy_read = state.azcopy_read_templates.front();
+            CHECK(azcopy_read.url == "https://azure/container");
+            CHECK(azcopy_read.sas == "sas");
+            CHECK(azcopy_read.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_read.make_container_path() == "https://azure/container?sas");
+            REQUIRE(state.azcopy_write_templates.size() == 1);
+            const auto& azcopy_write = state.azcopy_write_templates.front();
+            CHECK(azcopy_write.url == "https://azure/container");
+            CHECK(azcopy_write.sas == "sas");
+            CHECK(azcopy_write.make_object_path("{sha}") == "https://azure/container/{sha}.zip?sas");
+            CHECK(azcopy_write.make_container_path() == "https://azure/container?sas");
+            REQUIRE(state.secrets == std::vector<std::string>{"sas"});
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,,sas,readwrite", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,http://not/container", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,?sas", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,,readwrite", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,invalid", {});
+            REQUIRE(!parsed.has_value());
+        }
+        {
+            auto parsed = parse_binary_provider_configs("x-azcopy-sas,https://azure/container,sas,readwrite,extra", {});
+            REQUIRE(!parsed.has_value());
+        }
     }
 }
 

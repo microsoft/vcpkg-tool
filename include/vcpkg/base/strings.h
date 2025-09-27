@@ -108,10 +108,10 @@ namespace vcpkg::Strings
     std::string to_utf8(const std::wstring& ws);
 #endif
 
-    const char* case_insensitive_ascii_search(StringView s, StringView pattern);
-    bool case_insensitive_ascii_contains(StringView s, StringView pattern);
+    const char* case_insensitive_ascii_search(StringView s, StringView pattern) noexcept;
+    bool case_insensitive_ascii_contains(StringView s, StringView pattern) noexcept;
     bool case_insensitive_ascii_equals(StringView left, StringView right) noexcept;
-    bool case_insensitive_ascii_less(StringView left, StringView right);
+    bool case_insensitive_ascii_less(StringView left, StringView right) noexcept;
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);

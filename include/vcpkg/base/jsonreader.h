@@ -154,6 +154,23 @@ namespace vcpkg::Json
             }
         }
 
+        // returns a pointer to the emplaced value, or nullptr
+        template<class Type>
+        Type* optional_object_field_emplace(const Object& obj,
+                                            StringView key,
+                                            Optional<Type>& place,
+                                            const IDeserializer<Type>& visitor)
+        {
+            if (auto value = obj.get(key))
+            {
+                Type& emplaced = place.emplace();
+                visit_in_key(*value, key, emplaced, visitor);
+                return &emplaced;
+            }
+
+            return nullptr;
+        }
+
         template<class Type, class Fn>
         Optional<std::vector<Type>> array_elements_fn(const Array& arr, const IDeserializer<Type>& visitor, Fn callback)
         {

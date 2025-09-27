@@ -192,7 +192,7 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
     this.channels.message(`[${this.#currentIndex + 1}/${this.totalArtifactCount - 1}] ` + i`${displayName} already installed.`);
   }
 
-  downloadStart(uris: Array<Uri>, destination: string) {
+  downloadStart(uris: Array<Uri>, _destination: string) {
     let displayUri: string;
     if (uris.length === 1) {
       displayUri = uris[0].toString();
@@ -204,7 +204,7 @@ class NoTtyProgressRenderer implements Partial<ProgressRenderer> {
     this.#downloadTimeoutId = setTimeout(this.downloadProgressDisplay.bind(this), downloadUpdateRateMs);
   }
 
-  downloadProgress(uri: Uri, destination: string, percent: number): void {
+  downloadProgress(_uri: Uri, _destination: string, percent: number): void {
     this.#downloadPrecent = percent;
   }
 

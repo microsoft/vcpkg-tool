@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: "24.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
       - name: Enable Problem Matchers
@@ -56,12 +56,8 @@ jobs:
       - name: '[CI Only] Perform CodeQL Analysis'
         if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
         uses: github/codeql-action/analyze@v3
-      - name: Run vcpkg unit tests
+      - name: Run vcpkg and vcpkg-artifacts unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
-      - name: Run vcpkg-artifacts unit tests
-        run: |
-          cd out/build/${{ matrix.preset }}/vcpkg-artifacts
-          node node_modules/mocha/bin/mocha --config mocha-config.yaml
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
         id: vcpkg_sha
         shell: pwsh

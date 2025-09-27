@@ -5,8 +5,6 @@
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/statusparagraphs.h>
 
-#include <vcpkg/base/sortedvector.h>
-
 #include <vcpkg/statusparagraph.h>
 
 #include <string>
@@ -24,7 +22,7 @@ namespace vcpkg
     struct StatusParagraphAndAssociatedFiles
     {
         StatusParagraph pgh;
-        SortedVector<std::string> files;
+        std::vector<std::string> files;
     };
 
     std::vector<InstalledPackageView> get_installed_ports(const StatusParagraphs& status_db);

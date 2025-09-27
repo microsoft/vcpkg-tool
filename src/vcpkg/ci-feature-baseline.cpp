@@ -339,21 +339,6 @@ namespace vcpkg
     {
         if (baseline)
         {
-            if (auto pstate = baseline->state.get())
-            {
-                switch (pstate->value)
-                {
-                    case CiFeatureBaselineState::Fail:
-                        return Located<CiFeatureBaselineOutcome>{pstate->loc, CiFeatureBaselineOutcome::PortMarkedFail};
-                    case CiFeatureBaselineState::Cascade:
-                        return Located<CiFeatureBaselineOutcome>{pstate->loc,
-                                                                 CiFeatureBaselineOutcome::PortMarkedCascade};
-                    case CiFeatureBaselineState::Skip:
-                    case CiFeatureBaselineState::Pass: break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
-            }
-
             for (auto&& failing_configuration : baseline->fail_configurations)
             {
                 if (std::is_permutation(failing_configuration.value.begin(),
@@ -392,9 +377,17 @@ namespace vcpkg
 
             if (auto pstate = baseline->state.get())
             {
-                if (pstate->value == CiFeatureBaselineState::Pass)
+                switch (pstate->value)
                 {
-                    return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ExplicitPass};
+                    case CiFeatureBaselineState::Fail:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc, CiFeatureBaselineOutcome::PortMarkedFail};
+                    case CiFeatureBaselineState::Cascade:
+                        return Located<CiFeatureBaselineOutcome>{pstate->loc,
+                                                                 CiFeatureBaselineOutcome::PortMarkedCascade};
+                    case CiFeatureBaselineState::Skip: break;
+                    case CiFeatureBaselineState::Pass:
+                        return Located<CiFeatureBaselineOutcome>{SourceLoc{}, CiFeatureBaselineOutcome::ExplicitPass};
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
             }
         }

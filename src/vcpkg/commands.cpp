@@ -30,6 +30,7 @@
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
+#include <vcpkg/commands.license-report.h>
 #include <vcpkg/commands.list.h>
 #include <vcpkg/commands.new.h>
 #include <vcpkg/commands.owns.h>
@@ -97,6 +98,7 @@ namespace vcpkg
         {CommandFormatManifestMetadata, command_format_manifest_and_exit},
         {CommandHelpMetadata, command_help_and_exit},
         {CommandIntegrateMetadata, command_integrate_and_exit},
+        {CommandLicenseReportMetadata, command_license_report_and_exit},
         {CommandListMetadata, command_list_and_exit},
         {CommandNewMetadata, command_new_and_exit},
         {CommandOwnsMetadata, command_owns_and_exit},

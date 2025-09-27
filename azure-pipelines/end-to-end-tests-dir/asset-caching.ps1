@@ -62,7 +62,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues"
 ) -join "`n"
 
@@ -113,7 +113,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
@@ -138,7 +138,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
@@ -250,7 +250,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"
@@ -309,7 +309,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "[^\n]+example3\.html\.\d+\.part: error: download from https://example\.com had an unexpected hash",
 "note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
@@ -373,7 +373,7 @@ $expected = @(
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
-"3\. Your proxy's remote server is our of service\.",
+"3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
 "$"
 ) -join "`n"

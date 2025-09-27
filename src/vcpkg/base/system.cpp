@@ -208,8 +208,8 @@ namespace vcpkg
         const HMODULE hKernel32 = ::GetModuleHandleW(L"kernel32.dll");
         if (hKernel32)
         {
-            BOOL(__stdcall* const isWow64Process2)
-            (HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
+            BOOL(__stdcall* const isWow64Process2)(
+                HANDLE /* hProcess */, USHORT* /* pProcessMachine */, USHORT* /*pNativeMachine*/) =
                 reinterpret_cast<decltype(isWow64Process2)>(::GetProcAddress(hKernel32, "IsWow64Process2"));
             if (isWow64Process2)
             {
@@ -481,19 +481,29 @@ namespace vcpkg
         return s_home;
     }
 
+    static ExpectedL<Path> get_windows_forced_environment_variable(StringLiteral environment_variable)
+    {
+        auto env = get_environment_variable(environment_variable);
+        if (const auto p = env.get())
+        {
+            return Path(std::move(*p));
+        }
+
+        return msg::format(msgWindowsEnvMustAlwaysBePresent,
+                           msg::env_var = format_environment_variable(environment_variable));
+    }
+
+    const ExpectedL<Path>& get_system_drive() noexcept
+    {
+        static const ExpectedL<Path> s_system_drive =
+            get_windows_forced_environment_variable(EnvironmentVariableSystemDrive);
+        return s_system_drive;
+    }
+
     const ExpectedL<Path>& get_system_root() noexcept
     {
-        static const ExpectedL<Path> s_system_root = []() -> ExpectedL<Path> {
-            auto env = get_environment_variable(EnvironmentVariableSystemRoot);
-            if (const auto p = env.get())
-            {
-                return Path(std::move(*p));
-            }
-            else
-            {
-                return msg::format(msgSystemRootMustAlwaysBePresent);
-            }
-        }();
+        static const ExpectedL<Path> s_system_root =
+            get_windows_forced_environment_variable(EnvironmentVariableSystemRoot);
         return s_system_root;
     }
 
@@ -769,6 +779,8 @@ namespace vcpkg
         return "freebsd";
 #elif defined(__OpenBSD__)
         return "openbsd";
+#elif defined(__SVR4) && defined(__sun)
+        return "solaris";
 #elif defined(__ANDROID__)
         return "android";
 #elif defined(__linux__)
