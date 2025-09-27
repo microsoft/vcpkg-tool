@@ -68,7 +68,7 @@ namespace vcpkg
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
                                      const CiBaselineData& cidata,
-                                     StringView cifile,
+                                     const std::string* cifile,
                                      bool allow_unexpected_passing,
                                      bool is_independent);
 }

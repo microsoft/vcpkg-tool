@@ -10,7 +10,7 @@ import { Session } from '../../session';
 import { Uri } from '../../util/uri';
 import { uniqueTempFolder } from './uniqueTempFolder';
 
-
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('../../exports');
 
 function resourcesFolder(from = __dirname): string {

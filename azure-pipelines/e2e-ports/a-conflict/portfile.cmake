@@ -1,0 +1,7 @@
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/share/${PORT}")
+file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "license text")
+file(MAKE_DIRECTORY "${CURRENT_PACKAGES_DIR}/include")
+file(WRITE "${CURRENT_PACKAGES_DIR}/include/conflict-a-header-only-lowercase.h" "// header only port")
+file(WRITE "${CURRENT_PACKAGES_DIR}/include/CONFLICT-A-HEADER-ONLY-CAPS.h" "// header only port")
+file(WRITE "${CURRENT_PACKAGES_DIR}/include/CONFLICT-a-header-ONLY-mixed.h" "// header only port")
+file(WRITE "${CURRENT_PACKAGES_DIR}/include/CONFLICT-a-header-ONLY-mixed2.h" "// header only port")

@@ -381,6 +381,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
         create_spdx_sbom(ipa,
                          std::vector<Path>{"vcpkg.json", "portfile.cmake", "patches/patch1.diff"},
                          std::vector<std::string>{"vcpkg.json-hash", "portfile.cmake-hash", "patch1.diff-hash"},
+                         std::vector<Path>{"include/zlib.h", "lib/zlib.lib"},
+                         std::vector<std::string>{"zlib-header-hash", "zlib-lib-hash"},
                          "now",
                          "https://test-document-namespace",
                          {});
@@ -408,42 +410,32 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     {
       "spdxElementId": "SPDXRef-port",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-file-0"
+      "relatedSpdxElement": "SPDXRef-port-file-0"
     },
     {
-      "spdxElementId": "SPDXRef-port",
-      "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-file-1"
-    },
-    {
-      "spdxElementId": "SPDXRef-port",
-      "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-file-2"
-    },
-    {
-      "spdxElementId": "SPDXRef-binary",
-      "relationshipType": "GENERATED_FROM",
-      "relatedSpdxElement": "SPDXRef-port"
-    },
-    {
-      "spdxElementId": "SPDXRef-file-0",
-      "relationshipType": "CONTAINED_BY",
-      "relatedSpdxElement": "SPDXRef-port"
-    },
-    {
-      "spdxElementId": "SPDXRef-file-0",
+      "spdxElementId": "SPDXRef-port-file-0",
       "relationshipType": "DEPENDENCY_MANIFEST_OF",
       "relatedSpdxElement": "SPDXRef-port"
     },
     {
-      "spdxElementId": "SPDXRef-file-1",
-      "relationshipType": "CONTAINED_BY",
-      "relatedSpdxElement": "SPDXRef-port"
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-port-file-1"
     },
     {
-      "spdxElementId": "SPDXRef-file-2",
-      "relationshipType": "CONTAINED_BY",
-      "relatedSpdxElement": "SPDXRef-port"
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-port-file-2"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-binary-file-0"
+    },
+    {
+      "spdxElementId": "SPDXRef-binary",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-binary-file-1"
     }
   ],
   "packages": [
@@ -474,7 +466,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -486,7 +478,7 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -498,11 +490,35 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
     },
     {
       "fileName": "./patches/patch1.diff",
-      "SPDXID": "SPDXRef-file-2",
+      "SPDXID": "SPDXRef-port-file-2",
       "checksums": [
         {
           "algorithm": "SHA256",
           "checksumValue": "patch1.diff-hash"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./include/zlib.h",
+      "SPDXID": "SPDXRef-binary-file-0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "zlib-header-hash"
+        }
+      ],
+      "licenseConcluded": "NOASSERTION",
+      "copyrightText": "NOASSERTION"
+    },
+    {
+      "fileName": "./lib/zlib.lib",
+      "SPDXID": "SPDXRef-binary-file-1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "zlib-lib-hash"
         }
       ],
       "licenseConcluded": "NOASSERTION",
@@ -537,6 +553,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     const auto sbom = create_spdx_sbom(ipa,
                                        std::vector<Path>{"vcpkg.json", "portfile.cmake"},
                                        std::vector<std::string>{"hash-vcpkg.json", "hash-portfile.cmake"},
+                                       {},
+                                       {},
                                        "now+1",
                                        "https://test-document-namespace-2",
                                        {});
@@ -564,32 +582,17 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     {
       "spdxElementId": "SPDXRef-port",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-file-0"
+      "relatedSpdxElement": "SPDXRef-port-file-0"
     },
     {
-      "spdxElementId": "SPDXRef-port",
-      "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-file-1"
-    },
-    {
-      "spdxElementId": "SPDXRef-binary",
-      "relationshipType": "GENERATED_FROM",
-      "relatedSpdxElement": "SPDXRef-port"
-    },
-    {
-      "spdxElementId": "SPDXRef-file-0",
-      "relationshipType": "CONTAINED_BY",
-      "relatedSpdxElement": "SPDXRef-port"
-    },
-    {
-      "spdxElementId": "SPDXRef-file-0",
+      "spdxElementId": "SPDXRef-port-file-0",
       "relationshipType": "DEPENDENCY_MANIFEST_OF",
       "relatedSpdxElement": "SPDXRef-port"
     },
     {
-      "spdxElementId": "SPDXRef-file-1",
-      "relationshipType": "CONTAINED_BY",
-      "relatedSpdxElement": "SPDXRef-port"
+      "spdxElementId": "SPDXRef-port",
+      "relationshipType": "CONTAINS",
+      "relatedSpdxElement": "SPDXRef-port-file-1"
     }
   ],
   "packages": [
@@ -617,7 +620,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -629,7 +632,7 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -681,7 +684,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
                     .value(VCPKG_LINE_INFO)
                     .value.object(VCPKG_LINE_INFO);
 
-    const auto sbom = create_spdx_sbom(ipa, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
 
     auto expected = Json::parse(R"json(
 {
@@ -702,11 +705,6 @@ TEST_CASE ("spdx concat resources", "[spdx]")
       "spdxElementId": "SPDXRef-port",
       "relationshipType": "GENERATES",
       "relatedSpdxElement": "SPDXRef-binary"
-    },
-    {
-      "spdxElementId": "SPDXRef-binary",
-      "relationshipType": "GENERATED_FROM",
-      "relatedSpdxElement": "SPDXRef-port"
     },
     "r1",
     "r2",
@@ -810,7 +808,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -822,7 +820,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -892,7 +890,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -904,7 +902,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -974,7 +972,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -986,7 +984,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1056,7 +1054,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1068,7 +1066,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1147,7 +1145,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1159,7 +1157,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1240,7 +1238,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1252,7 +1250,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1343,7 +1341,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
   "files": [
     {
       "fileName": "./vcpkg.json",
-      "SPDXID": "SPDXRef-file-0",
+      "SPDXID": "SPDXRef-port-file-0",
       "checksums": [
         {
           "algorithm": "SHA256",
@@ -1355,7 +1353,7 @@ TEST_CASE ("spdx license parse edge cases", "[spdx]")
     },
     {
       "fileName": "./portfile.cmake",
-      "SPDXID": "SPDXRef-file-1",
+      "SPDXID": "SPDXRef-port-file-1",
       "checksums": [
         {
           "algorithm": "SHA256",

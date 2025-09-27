@@ -29,6 +29,7 @@ namespace vcpkg::PlatformExpression
         linux,
         freebsd,
         openbsd,
+        bsd,
         solaris,
         osx,
         uwp,
@@ -38,6 +39,8 @@ namespace vcpkg::PlatformExpression
         ios,
         qnx,
         vxworks,
+        tvos,
+        watchos,
         visionos,
 
         static_link,
@@ -62,6 +65,7 @@ namespace vcpkg::PlatformExpression
             {"linux", Identifier::linux},
             {"freebsd", Identifier::freebsd},
             {"openbsd", Identifier::openbsd},
+            {"bsd", Identifier::bsd},
             {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
             {"uwp", Identifier::uwp},
@@ -71,6 +75,8 @@ namespace vcpkg::PlatformExpression
             {"ios", Identifier::ios},
             {"qnx", Identifier::qnx},
             {"vxworks", Identifier::vxworks},
+            {"tvos", Identifier::tvos},
+            {"watchos", Identifier::watchos},
             {"visionos", Identifier::visionos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
@@ -677,6 +683,9 @@ namespace vcpkg::PlatformExpression
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
                         case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
                         case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
+                        case Identifier::bsd:
+                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
                         case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
@@ -690,6 +699,8 @@ namespace vcpkg::PlatformExpression
                         case Identifier::vxworks: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "VxWorks");
                         case Identifier::wasm32: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "wasm32");
                         case Identifier::mips64: return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "mips64");
+                        case Identifier::tvos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "tvOS");
+                        case Identifier::watchos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS");
                         case Identifier::visionos:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
                         case Identifier::static_link:

@@ -1,24 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-/* eslint-disable @typescript-eslint/no-var-requires */
-import * as vm from 'vm';
+import { createContext, runInContext } from 'node:vm';
 /**
  * Creates a reusable safe-eval sandbox to execute code in.
  */
 export function createSandbox(): <T>(code: string, context?: any) => T {
-  const sandbox = vm.createContext({});
+  const sandbox = createContext({});
   return (code: string, context?: any) => {
     const response = 'SAFE_EVAL_' + Math.floor(Math.random() * 1000000);
     sandbox[response] = {};
     if (context) {
       Object.keys(context).forEach(key => sandbox[key] = context[key]);
-      vm.runInContext(`try {  ${response} = ${code} } catch (e) { ${response} = undefined }`, sandbox);
+      runInContext(`try {  ${response} = ${code} } catch (e) { ${response} = undefined }`, sandbox);
       for (const key of Object.keys(context)) {
         delete sandbox[key];
       }
     } else {
-      vm.runInContext(`${response} = ${code}`, sandbox);
+      runInContext(`${response} = ${code}`, sandbox);
     }
     return sandbox[response];
   };
@@ -26,11 +25,12 @@ export function createSandbox(): <T>(code: string, context?: any) => T {
 
 export const safeEval = createSandbox();
 
-type PrimitiveValue = string | number | boolean | undefined | Date;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 let currentLocale = require('./locales/messages.json');
 
 export function setLocale(newLocale: string | undefined) {
   if (newLocale) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     currentLocale = require(newLocale);
   }
 }
@@ -43,9 +43,9 @@ export function setLocale(newLocale: string | undefined) {
  * @returns the key
  */
 function indexOf(literals: TemplateStringsArray) {
-  const content = literals.flatMap((k, i) => [k, '$']);
+  const content = literals.flatMap((k) => [k, '$']);
   content.length--; // drop the trailing undefined.
-  return content.join('').trim().replace(/ [a-z]/g, ([a, b]) => b.toUpperCase()).replace(/[^a-zA-Z$]/g, '');
+  return content.join('').trim().replace(/ [a-z]/g, ([, b]) => b.toUpperCase()).replace(/[^a-zA-Z$]/g, '');
 }
 
 /**

@@ -763,7 +763,7 @@ export class Scanner implements Token {
     let crlf = false;
     let isEscaping = false;
 
-    const text = this.scanUntil((ch, chNext, chNextNext) => {
+    const text = this.scanUntil((ch, chNext) => {
       if (isEscaping) {
         isEscaping = false;
         return false;
@@ -869,7 +869,6 @@ export class Scanner implements Token {
   positionFromOffset(offset: number): Position {
     let position = { line: 0, column: 0, offset: 0 };
 
-    // eslint-disable-next-line keyword-spacing
     if (offset < 0 || offset > this.#length) {
       return { line: position.line, column: position.column };
     }

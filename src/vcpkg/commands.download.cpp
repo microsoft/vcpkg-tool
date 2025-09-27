@@ -49,7 +49,7 @@ namespace vcpkg
 
     static Optional<std::string> get_sha512_check(const ParsedArguments& parsed)
     {
-        Optional<std::string> sha = nullopt;
+        Optional<std::string> sha;
         auto sha_it = parsed.settings.find(SwitchSha512);
         if (parsed.command_arguments.size() > 1)
         {
