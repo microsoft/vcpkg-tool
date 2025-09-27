@@ -148,6 +148,14 @@ $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self
 Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
 
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/empty-baseline.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
+Throw-IfNotFailed
+Throw-IfNonContains -Expected @"
+note: consider adding the following line:
+vcpkg-self-cascade[cascade](!windows | windows) = cascade
+"@ -Actual $output
+
 # Ensure that the baseline without a feature can be overwritten by feature specific baselines.
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-fail-or-cascade.txt"
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-fail-feature-cascades --ci-feature-baseline $ciFeatureBaseline
