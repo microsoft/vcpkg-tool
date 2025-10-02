@@ -31,7 +31,7 @@
 #pragma comment(lib, "shell32")
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #define TEST_LIBCURL_AVAILABLE
 #include <dlfcn.h>
 #endif
