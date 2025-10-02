@@ -130,6 +130,7 @@ namespace vcpkg::Json
         static Value integer(int64_t i) noexcept;
         static Value number(double d) noexcept;
         static Value string(std::string&& s) noexcept;
+        static Value string_valid(std::string&& s) noexcept;
         template<class StringLike, std::enable_if_t<std::is_constructible_v<StringView, const StringLike&>, int> = 0>
         static Value string(const StringLike& s) noexcept
         {
