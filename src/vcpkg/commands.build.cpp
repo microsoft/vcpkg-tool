@@ -806,6 +806,7 @@ namespace vcpkg
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {CMakeVariableHostTriplet, triplet.canonical_name()},
             {CMakeVariableCompilerCacheFile, paths.installed().compiler_hash_cache_file()},
+            {CMakeVariableZChainloadToolchainFile, pre_build_info.toolchain_file()},
         };
 
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
