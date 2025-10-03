@@ -109,9 +109,10 @@ namespace vcpkg
     {
         WriteFilePointer() noexcept;
         WriteFilePointer(WriteFilePointer&&) noexcept;
-        explicit WriteFilePointer(const Path& file_path, Append append, std::error_code& ec);
+        explicit WriteFilePointer(const Path& file_path, Append append, Overwrite overwrite, std::error_code& ec);
         WriteFilePointer& operator=(WriteFilePointer&& other) noexcept;
         size_t write(const void* buffer, size_t element_size, size_t element_count) const noexcept;
+        void flush() const noexcept;
         int put(int c) const noexcept;
     };
 
@@ -129,6 +130,13 @@ namespace vcpkg
         // Omitted to allow constexpr:
         // protected:
         //    ~ILineReader();
+    };
+
+    struct space_info
+    {
+        std::uintmax_t capacity;
+        std::uintmax_t free;
+        std::uintmax_t available;
     };
 
     struct ReadOnlyFilesystem : ILineReader
@@ -324,6 +332,15 @@ namespace vcpkg
 
         virtual int64_t last_write_time(const Path& target, std::error_code& ec) const = 0;
         int64_t last_write_time(const Path& target, LineInfo li) const noexcept;
+
+        virtual int64_t last_access_time(const Path& target, std::error_code& ec) const = 0;
+        int64_t last_access_time(const Path& target, LineInfo li) const noexcept;
+
+        virtual void last_access_time(const Path& target, int64_t new_time, std::error_code& ec) const = 0;
+        void last_access_time(const Path& target, int64_t new_time, LineInfo li) const noexcept;
+
+        virtual space_info space(const Path& target, std::error_code& ec) const = 0;
+        space_info space(const Path& target, LineInfo li) const noexcept;
 
         virtual void last_write_time(const Path& target, int64_t new_time, std::error_code& ec) const = 0;
         void last_write_time(const Path& target, int64_t new_time, LineInfo li) const noexcept;

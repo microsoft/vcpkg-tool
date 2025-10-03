@@ -1332,6 +1332,7 @@ DECLARE_MESSAGE(FailedToParseCMakeConsoleOut,
                 "Failed to parse CMake console output to locate block start/end markers.")
 DECLARE_MESSAGE(FailedToParseBaseline, (msg::path), "", "Failed to parse baseline: {path}")
 DECLARE_MESSAGE(FailedToParseConfig, (), "", "failed to parse configuration")
+DECLARE_MESSAGE(FailedToParseJson, (msg::path), "", "Failed to parse JSON file: {path}")
 DECLARE_MESSAGE(FailedToParseNoTopLevelObj, (msg::path), "", "Failed to parse {path}, expected a top-level object.")
 DECLARE_MESSAGE(FailedToParseNoVersionsArray, (msg::path), "", "Failed to parse {path}, expected a 'versions' array.")
 DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
@@ -1340,6 +1341,9 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "[sanity check] Failed to parse a serialized binary paragraph.\nPlease open an issue at "
                 "https://github.com/microsoft/vcpkg, "
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
+DECLARE_MESSAGE(FailedToParseFileCacheSettings, (msg::path), "", "Failed to parse file cache settings file {path}:")
+DECLARE_MESSAGE(FailedToWriteFile, (msg::path, msg::error_msg), "", "Failed to write file {path}: {error_msg}")
+DECLARE_MESSAGE(FailedToReadFile, (msg::path, msg::error_msg), "", "Failed to read file {path}: {error_msg}")
 DECLARE_MESSAGE(FailedToRunToolToDetermineVersion,
                 (msg::tool_name, msg::path),
                 "Additional information, such as the command line output, if any, will be appended on "
@@ -2382,6 +2386,7 @@ DECLARE_MESSAGE(ParseQualifiedSpecifierNotEofSquareBracket,
                 (msg::version_spec),
                 "",
                 "expected the end of input parsing a package spec; did you mean {version_spec} instead?")
+DECLARE_MESSAGE(ParserWarnings, (msg::path), "", "The following warnings were generated while parsing {path}:")
 DECLARE_MESSAGE(ParseTripletNotEof,
                 (),
                 "",

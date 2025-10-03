@@ -40,6 +40,12 @@ namespace vcpkg
         YES,
     };
 
+    enum class Overwrite
+    {
+        NO = 0,
+        YES,
+    };
+
     struct IgnoreErrors;
     struct Path;
     struct FilePointer;
