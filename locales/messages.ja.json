@@ -1054,6 +1054,7 @@
   "UnexpectedPortversion": "バージョン管理フィールドのない予期しない \"port-version\" です",
   "UnexpectedStateCascade": "{feature_spec} は、次の依存関係が使用できないため、予期せずカスケード エラーになりました:",
   "UnexpectedStateCascadePortNote": "代わりにこれを =cascade に変更することを検討してください",
+  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
   "UnexpectedStateFailedCascade": "{feature_spec} のビルドは失敗しましたが、カスケード エラーである必要がありました",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "`{package_name}=fail` または `{spec}=fail` または同等のスキップを追加することを検討してください",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "`{package_name}=fail`、`{spec}=fail`、`{feature_spec}=combination-fail`、または同等のスキップを追加するか、相互に排他的な機能をオプションとしてマークすることを検討してください",

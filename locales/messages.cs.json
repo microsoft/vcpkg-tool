@@ -1054,6 +1054,7 @@
   "UnexpectedPortversion": "Neočekávaná verze portu bez pole správy verzí",
   "UnexpectedStateCascade": "U {feature_spec} došlo neočekávaně ke kaskádovému selhání, protože nejsou k dispozici následující závislosti:",
   "UnexpectedStateCascadePortNote": "Zvažte změnu této možnosti na =cascade.",
+  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
   "UnexpectedStateFailedCascade": "Sestavení {feature_spec} selhalo, ale očekávalo se, že se bude jednat o kaskádové selhání.",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "Zvažte přidání {package_name}=fail, {spec}=fail nebo ekvivalentních přeskočení.",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "Zvažte přidání {package_name}=fail, {spec}=fail, {feature_spec}=combination-fails nebo ekvivalentních přeskočení nebo označení vzájemně se vylučujících funkcí jako možností.",
