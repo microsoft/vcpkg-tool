@@ -1054,6 +1054,7 @@
   "UnexpectedPortversion": "Unerwartete \"port-version\" ohne Versionsverwaltungsfeld",
   "UnexpectedStateCascade": "Bei {feature_spec} ist unerwartet ein Kaskadierungsfehler aufgetreten, da die folgenden Abhängigkeiten nicht verfügbar sind:",
   "UnexpectedStateCascadePortNote": "Erwägen Sie stattdessen, dies in „=cascade“ zu ändern.",
+  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
   "UnexpectedStateFailedCascade": "Der Build von {feature_spec} ist fehlgeschlagen, obwohl ein kaskadierter Fehler erwartet wurde.",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "Erwägen Sie, „{package_name}=fail“ oder „{spec}=fail“ oder entsprechende Überspringungen hinzuzufügen.",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "Erwägen Sie, „{package_name}=fail“, „{spec}=fail“, „{feature_spec}=kombinationsfehler“ oder äquivalente Überspringungen hinzuzufügen, oder markieren Sie sich gegenseitig ausschließende Features als Optionen.",
