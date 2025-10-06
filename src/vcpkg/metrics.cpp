@@ -99,7 +99,7 @@ namespace vcpkg
         {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
         {DefineMetric::BinaryCachingGcs, "binarycaching_gcs"},
         {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
-        {DefineMetric::BinaryCachingNuget, "binarycaching_nuget"},
+        {DefineMetric::BinaryCachingNuGet, "binarycaching_nuget"},
         {DefineMetric::BinaryCachingSource, "binarycaching-source"},
         {DefineMetric::BinaryCachingUpkg, "binarycaching_upkg"},
         {DefineMetric::ErrorVersioningDisabled, "error-versioning-disabled"},
@@ -112,11 +112,11 @@ namespace vcpkg
         {DefineMetric::RegistriesErrorNoVersionsAtCommit, "registries-error-no-versions-at-commit"},
         {DefineMetric::VcpkgBinarySources, "VCPKG_BINARY_SOURCES"},
         {DefineMetric::VcpkgDefaultBinaryCache, "VCPKG_DEFAULT_BINARY_CACHE"},
-        {DefineMetric::VcpkgNugetRepository, "VCPKG_NUGET_REPOSITORY"},
+        {DefineMetric::VcpkgNuGetRepository, "VCPKG_NUGET_REPOSITORY"},
         {DefineMetric::VersioningErrorBaseline, "versioning-error-baseline"},
         {DefineMetric::VersioningErrorVersion, "versioning-error-version"},
         {DefineMetric::X_VcpkgRegistriesCache, "X_VCPKG_REGISTRIES_CACHE"},
-        {DefineMetric::X_WriteNugetPackagesConfig, "x-write-nuget-packages-config"},
+        {DefineMetric::X_WriteNuGetPackagesConfig, "x-write-nuget-packages-config"},
     };
 
     // SHA256s separated by colons, separated by commas

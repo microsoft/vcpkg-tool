@@ -295,11 +295,6 @@ DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 "",
                 "attempting to set builtin-baseline in vcpkg.json while overriding the default-registry in "
                 "vcpkg-configuration.json.\nthe default-registry from vcpkg-configuration.json will be used.")
-DECLARE_MESSAGE(AuthenticationMayRequireManualAction,
-                (msg::vendor),
-                "",
-                "One or more {vendor} credential providers requested manual action. Add the binary source "
-                "'interactive' to allow interactivity.")
 DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 (),
                 "",
@@ -684,12 +679,12 @@ DECLARE_MESSAGE(CmdExportOptDereferenceSymlinks,
                 "Copies symlinks as regular files and directories in the exported results")
 DECLARE_MESSAGE(CmdExportOptDryRun, (), "", "Does not actually export")
 DECLARE_MESSAGE(CmdExportOptInstalled, (), "", "Exports all installed packages")
-DECLARE_MESSAGE(CmdExportOptNuget, (), "", "Exports a NuGet package")
+DECLARE_MESSAGE(CmdExportOptNuGet, (), "", "Exports a NuGet package")
 DECLARE_MESSAGE(CmdExportOptRaw, (), "", "Exports to an uncompressed directory")
 DECLARE_MESSAGE(CmdExportOptZip, (), "", "Exports to a zip file")
-DECLARE_MESSAGE(CmdExportSettingNugetDesc, (), "", "Description for the exported NuGet package")
-DECLARE_MESSAGE(CmdExportSettingNugetID, (), "", "Id for the exported NuGet package (overrides --output)")
-DECLARE_MESSAGE(CmdExportSettingNugetVersion, (), "", "The version for the exported NuGet package")
+DECLARE_MESSAGE(CmdExportSettingNuGetDesc, (), "", "Description for the exported NuGet package")
+DECLARE_MESSAGE(CmdExportSettingNuGetID, (), "", "Id for the exported NuGet package (overrides --output)")
+DECLARE_MESSAGE(CmdExportSettingNuGetVersion, (), "", "The version for the exported NuGet package")
 DECLARE_MESSAGE(CmdExportSettingOutput, (), "", "The output name (used to construct filename)")
 DECLARE_MESSAGE(CmdExportSettingOutputDir, (), "", "The output directory for produced artifacts")
 DECLARE_MESSAGE(CmdExportSynopsis, (), "", "Creates a standalone deployment of installed ports")
@@ -950,7 +945,7 @@ DECLARE_MESSAGE(CorruptedDatabase,
                 "the contents of the 'installed' directory in an unexpected way. You may be able to fix this by "
                 "deleting the 'installed' directory and reinstalling what you want to use. If this problem happens "
                 "consistently, please file a bug at https://github.com/microsoft/vcpkg .")
-DECLARE_MESSAGE(CouldNotDeduceNugetIdAndVersion,
+DECLARE_MESSAGE(CouldNotDeduceNuGetIdAndVersion,
                 (msg::path),
                 "",
                 "Could not deduce nuget id and version from filename: {path}")
@@ -966,7 +961,7 @@ DECLARE_MESSAGE(CouldNotFindVersionDatabaseFile, (msg::path), "", "Couldn't find
 DECLARE_MESSAGE(CreatedNuGetPackage, (msg::path), "", "Created nupkg: {path}")
 DECLARE_MESSAGE(CreateFailureLogsDir, (msg::path), "", "Creating failure logs output directory {path}.")
 DECLARE_MESSAGE(Creating7ZipArchive, (), "", "Creating 7zip archive...")
-DECLARE_MESSAGE(CreatingNugetPackage, (), "", "Creating NuGet package...")
+DECLARE_MESSAGE(CreatingNuGetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
 DECLARE_MESSAGE(CurlFailedGeneric,
@@ -2256,15 +2251,20 @@ DECLARE_MESSAGE(NonZeroRemainingArgs,
 DECLARE_MESSAGE(NoOutdatedPackages, (), "", "There are no outdated packages.")
 DECLARE_MESSAGE(NoRegistryForPort, (msg::package_name), "", "no registry configured for port {package_name}")
 DECLARE_MESSAGE(NoUrlsAndNoHashSpecified, (), "", "No urls specified and no hash specified.")
-DECLARE_MESSAGE(NugetOutputNotCapturedBecauseInteractiveSpecified,
+DECLARE_MESSAGE(NuGetAuthenticationMayRequireManualAction,
+                (),
+                "",
+                "One or more NuGet credential providers requested manual action. Add the binary source 'interactive' "
+                "to allow interactivity.")
+DECLARE_MESSAGE(NuGetOutputNotCapturedBecauseInteractiveSpecified,
                 (),
                 "",
                 "NuGet command failed and output was not captured because --interactive was specified")
-DECLARE_MESSAGE(NugetPackageFileSucceededButCreationFailed,
+DECLARE_MESSAGE(NuGetPackageFileSucceededButCreationFailed,
                 (msg::path),
                 "",
                 "NuGet package creation succeeded, but no .nupkg was produced. Expected: \"{path}\"")
-DECLARE_MESSAGE(NugetTimeoutExpectsSinglePositiveInteger,
+DECLARE_MESSAGE(NuGetTimeoutExpectsSinglePositiveInteger,
                 (),
                 "",
                 "unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument")

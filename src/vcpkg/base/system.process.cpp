@@ -2031,6 +2031,56 @@ namespace vcpkg
         }
     }
 
+    void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit)
+    {
+        auto str_command = command.command_line().to_string();
+        context.report(
+            DiagnosticLine{DiagKind::Error,
+                           LocalizedString::from_raw(str_command)
+                               .append_raw(' ')
+                               .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit))});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit)
+    {
+        report_nonzero_exit_code_and_output(context, command, exit, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             View<std::string> secrets)
+    {
+        auto str_command = command.command_line().to_string();
+        replace_secrets(str_command, secrets);
+        context.report(DiagnosticLine{
+            DiagKind::Error,
+            LocalizedString::from_raw(std::move(str_command))
+                .append_raw(' ')
+                .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code))
+                .append_raw('\n')
+                .append_raw(exit.output)});
+    }
+
+    bool check_zero_exit_code(DiagnosticContext& context,
+                              const Command& command,
+                              Optional<ExitCodeIntegral>& maybe_exit)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (*exit == 0)
+            {
+                return true;
+            }
+
+            report_nonzero_exit_code(context, command, *exit);
+        }
+
+        return false;
+    }
+
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit)
@@ -2050,15 +2100,7 @@ namespace vcpkg
                 return &exit->output;
             }
 
-            auto str_command = command.command_line().to_string();
-            replace_secrets(str_command, secrets);
-            context.report(DiagnosticLine{
-                DiagKind::Error,
-                LocalizedString::from_raw(str_command)
-                    .append_raw(' ')
-                    .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code))
-                    .append_raw('\n')
-                    .append_raw(exit->output)});
+            report_nonzero_exit_code_and_output(context, command, *exit, secrets);
         }
 
         return nullptr;

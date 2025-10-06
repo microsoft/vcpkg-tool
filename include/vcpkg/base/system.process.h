@@ -266,6 +266,21 @@ namespace vcpkg
 
     void replace_secrets(std::string& target, View<std::string> secrets);
 
+    void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             View<std::string> secrets);
+
+    // Checks that `maybe_exit` implies a process that returned 0. If so, returns true.
+    // Otherwise, records an error in `context` and returns false.
+    bool check_zero_exit_code(DiagnosticContext& context,
+                              const Command& command,
+                              Optional<ExitCodeIntegral>& maybe_exit);
+
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns a pointer to the process' output.
     // Otherwise, records an error in `context` and returns nullptr.
     std::string* check_zero_exit_code(DiagnosticContext& context,

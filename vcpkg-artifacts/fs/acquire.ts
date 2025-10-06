@@ -107,7 +107,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
   return outputFile;
 }
 
-export async function resolveNugetUrl(session: Session, pkg: string) {
+export async function resolveNuGetUrl(session: Session, pkg: string) {
   const [, name, version] = pkg.match(/^(.*)\/(.*)$/) ?? [];
   strict.ok(version, i`package reference '${pkg}' is not a valid nuget package reference ({name}/{version})`);
 
@@ -116,6 +116,6 @@ export async function resolveNugetUrl(session: Session, pkg: string) {
   return session.fileSystem.parseUri(`https://www.nuget.org/api/v2/package/${name}/${version}`);
 }
 
-export async function acquireNugetFile(session: Session, pkg: string, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions): Promise<Uri> {
-  return https(session, [await resolveNugetUrl(session, pkg)], outputFilename, events, options);
+export async function acquireNuGetFile(session: Session, pkg: string, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions): Promise<Uri> {
+  return https(session, [await resolveNuGetUrl(session, pkg)], outputFilename, events, options);
 }
