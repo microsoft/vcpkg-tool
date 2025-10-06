@@ -1054,6 +1054,7 @@
   "UnexpectedPortversion": "nieoczekiwany element „port-version” bez pola przechowywania wersji",
   "UnexpectedStateCascade": "Funkcja {feature_spec} nieoczekiwanie zakończyła się niepowodzeniem kaskadowym, ponieważ następujące zależności są niedostępne:",
   "UnexpectedStateCascadePortNote": "zamiast tego rozważ zmianę tego na =cascade",
+  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
   "UnexpectedStateFailedCascade": "Kompilacja elementu {feature_spec} nie powiodła się, ale oczekiwano awarii kaskadowej",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "rozważ dodanie elementu „{package_name}=fail”, „{spec}=fail” lub równoważnych pominięć",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "rozważ dodanie „{package_name}=fail”, „{spec}=fail”, „{feature_spec}=combination-fails” lub równoważnych pominięć albo poprzez oznaczenie wzajemnie wykluczających się funkcji jako opcji",
