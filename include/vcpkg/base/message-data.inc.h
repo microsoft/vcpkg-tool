@@ -948,7 +948,7 @@ DECLARE_MESSAGE(CorruptedDatabase,
 DECLARE_MESSAGE(CouldNotDeduceNuGetIdAndVersion,
                 (msg::path),
                 "",
-                "Could not deduce nuget id and version from filename: {path}")
+                "Could not deduce NuGet id and version from filename: {path}")
 DECLARE_MESSAGE(CouldNotFindBaselineInCommit,
                 (msg::url, msg::commit_sha, msg::package_name),
                 "",
@@ -1799,7 +1799,7 @@ DECLARE_MESSAGE(InstallingPackage,
                 "Installing {action_index}/{count} {spec}...")
 DECLARE_MESSAGE(InstallPackageInstruction,
                 (msg::value, msg::path),
-                "'{value}' is the nuget id.",
+                "'{value}' is the NuGet id.",
                 "With a project open, go to Tools->NuGet Package Manager->Package Manager Console and "
                 "paste:\n Install-Package \"{value}\" -Source \"{path}\"")
 DECLARE_MESSAGE(InstallRootDir, (), "", "Installed directory (experimental)")

@@ -109,7 +109,7 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
 
 export async function resolveNuGetUrl(session: Session, pkg: string) {
   const [, name, version] = pkg.match(/^(.*)\/(.*)$/) ?? [];
-  strict.ok(version, i`package reference '${pkg}' is not a valid nuget package reference ({name}/{version})`);
+  strict.ok(version, i`package reference '${pkg}' is not a valid NuGet package reference ({name}/{version})`);
 
   // let's resolve the redirect first, since nuget servers don't like us getting HEAD data on the targets via a redirect.
   // even if this wasn't the case, this is lower cost now rather than later.
