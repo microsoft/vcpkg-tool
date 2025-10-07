@@ -168,7 +168,7 @@ namespace vcpkg
             if (!fs.is_directory(portpath))
             {
                 msg::println_error(msgPortDoesNotExist, msg::package_name = port_name);
-                Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+                Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
