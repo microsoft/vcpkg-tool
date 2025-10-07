@@ -1054,7 +1054,7 @@
   "UnexpectedPortversion": "버전 관리 필드가 없는 예기치 않은 \"port-version\"",
   "UnexpectedStateCascade": "{feature_spec}가 다음 종속성을 사용할 수 없으므로 예기치 않게 연속 오류가 발생했습니다.",
   "UnexpectedStateCascadePortNote": "이것을 =cascade로 변경하는 것을 고려해 보세요.",
-  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
+  "UnexpectedStateCascadeSuggestLine": "다음 줄을 추가해 보세요.",
   "UnexpectedStateFailedCascade": "{feature_spec} 빌드에 실패했지만 연속 오류여야 합니다.",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "{package_name}=fail`, {spec}=fail` 또는 동등한 건너뛰기를 추가하는 것을 고려해 보세요.",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "{package_name}=fail`, {spec}=fail`, {feature_spec}=combination-fails` 또는 동등한 건너뛰기를 추가하거나 상호 배타적인 기능을 옵션으로 표시해 보세요.",

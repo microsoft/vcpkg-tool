@@ -1054,7 +1054,7 @@
   "UnexpectedPortversion": "没有版本控制字段的意外 \"port-version\"",
   "UnexpectedStateCascade": "{feature_spec} 意外发生级联故障，因为以下依赖项不可用:",
   "UnexpectedStateCascadePortNote": "请考虑将此项更改为 =cascade",
-  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
+  "UnexpectedStateCascadeSuggestLine": "请考虑添加以下行:",
   "UnexpectedStateFailedCascade": "{feature_spec} 生成失败，但应该是级联失效",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "请考虑添加 `{package_name}=fail`、`{spec}=fail` 或等效的跳过选项",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "请考虑添加 `{package_name}=fail`、`{spec}=fail`、`{feature_spec}=combination-fails` 或等效的跳过选项，或者通过将互斥功能标记为选项来处理",

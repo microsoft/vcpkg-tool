@@ -1054,7 +1054,7 @@
   "UnexpectedPortversion": "sürüm oluşturma alanı olmadan \"port-version\" beklenmiyordu",
   "UnexpectedStateCascade": "Aşağıdaki bağımlılıklar mevcut olmadığından {feature_spec} beklenmedik bir şekilde art arda hatalar verdi:",
   "UnexpectedStateCascadePortNote": "bunun yerine bunu =cascade olarak değiştirmeyi düşünün",
-  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
+  "UnexpectedStateCascadeSuggestLine": "aşağıdaki satırı eklemeyi düşünün:",
   "UnexpectedStateFailedCascade": "{feature_spec} derleme başarısız oldu, ancak art arda hata vermesi bekleniyordu",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "'{package_name}=fail' veya '{spec}=fail' veya eşdeğer atlamalar eklemeyi düşünün",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "'{package_name}=fail', '{spec}=fail', '{feature_spec}=combination-fails' veya eşdeğer atlamalar eklemeyi ya da birbirini dışlayan özellikleri seçenekler olarak işaretlemeyi düşünün",

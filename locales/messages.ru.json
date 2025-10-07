@@ -1054,7 +1054,7 @@
   "UnexpectedPortversion": "неожиданный параметр \"port-version\" без поля управления версиями",
   "UnexpectedStateCascade": "В {feature_spec} произошла непредвиденная каскадная ошибка из-за недоступности следующих зависимостей:",
   "UnexpectedStateCascadePortNote": "рассмотрите возможность замены этого на =cascade",
-  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
+  "UnexpectedStateCascadeSuggestLine": "рассмотрите возможность добавить следующую строку:",
   "UnexpectedStateFailedCascade": "сборка {feature_spec} завершилась сбоем, хотя ожидался каскадный сбой",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "рассмотрите возможность добавления \"{package_name}=fail\", \"{spec}=fail\" или эквивалентных пропусков",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "рассмотрите возможность добавления \"{package_name}=fail\", \"{spec}=fail\", \"{feature_spec}=combination-fails\" или эквивалентных пропусков или пометки взаимоисключающих функций в качестве параметров",

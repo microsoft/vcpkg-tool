@@ -1054,7 +1054,7 @@
   "UnexpectedPortversion": "\"port-version\" imprevisto senza un campo di controllo delle versioni",
   "UnexpectedStateCascade": "{feature_spec} ha subito un errore imprevisto a cascata perché le dipendenze seguenti non sono disponibili:",
   "UnexpectedStateCascadePortNote": "prova a cambiare con =cascade",
-  "UnexpectedStateCascadeSuggestLine": "consider adding the following line:",
+  "UnexpectedStateCascadeSuggestLine": "valutare l'aggiunta della riga seguente:",
   "UnexpectedStateFailedCascade": "la compilazione di {feature_spec} non è riuscita ma era previsto un errore a cascata",
   "UnexpectedStateFailedNoteConsiderSkippingPort": "prova ad aggiungere '{package_name}=fail' o '{spec}=fail' o skip equivalenti",
   "UnexpectedStateFailedNoteConsiderSkippingPortOrCombination": "prova ad aggiungere '{package_name}=fail`, `{spec}=fail`, `{feature_spec}=combination-fails' o skip equivalenti oppure a contrassegnare le funzionalità che si escludono a vicenda come opzioni",
