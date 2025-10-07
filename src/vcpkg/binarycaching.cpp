@@ -672,18 +672,6 @@ namespace
                 .string_arg(src.value);
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmd, MessageSink& msg_sink) const
-        {
-            BufferedDiagnosticContext bdc{msg_sink};
-            WarningDiagnosticContext wdc{bdc};
-            if (run_nuget_commandline(wdc, cmd))
-            {
-                return {Unit{}};
-            }
-
-            return LocalizedString::from_raw(std::move(bdc).to_string());
-        }
-
         bool run_nuget_commandline(DiagnosticContext& context, const Command& cmd) const
         {
             if (m_interactive)
