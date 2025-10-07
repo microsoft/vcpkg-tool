@@ -867,7 +867,7 @@ namespace
             WarningDiagnosticContext wdc{pdc};
             auto& spec = request.spec;
             auto nuspec_path = m_buildtrees / spec.name() / spec.triplet().canonical_name() + ".nuspec";
-            auto nuspec_contents = request.nuspec.value_or_exit(VCPKG_LINE_INFO);
+            auto& nuspec_contents = request.nuspec.value_or_exit(VCPKG_LINE_INFO);
             std::error_code ec;
             m_fs.write_contents(nuspec_path, nuspec_contents, ec);
             if (ec)
