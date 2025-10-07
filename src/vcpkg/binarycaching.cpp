@@ -601,20 +601,32 @@ namespace
             m_cmd.string_arg(cache.get_tool_path(Tools::NUGET, sink));
         }
 
-        ExpectedL<Unit> push(MessageSink& sink, const Path& nupkg_path, const NuGetSource& src) const
+        bool push(DiagnosticContext& context, const Path& nupkg_path, const NuGetSource& src) const
         {
-            return run_nuget_commandline(push_cmd(nupkg_path, src), sink);
+            if (run_nuget_commandline(context, push_cmd(nupkg_path, src)))
+            {
+                return true;
+            }
+
+            context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePushingNuGetPackage)});
+            return false;
         }
-        ExpectedL<Unit> pack(MessageSink& sink, const Path& nuspec_path, const Path& out_dir) const
+        bool pack(DiagnosticContext& context, const Path& nuspec_path, const Path& out_dir) const
         {
-            return run_nuget_commandline(pack_cmd(nuspec_path, out_dir), sink);
+            if (run_nuget_commandline(context, pack_cmd(nuspec_path, out_dir)))
+            {
+                return true;
+            }
+
+            context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePackingNuGetPackage)});
+            return false;
         }
-        ExpectedL<Unit> install(MessageSink& sink,
-                                StringView packages_config,
-                                const Path& out_dir,
-                                const NuGetSource& src) const
+        bool install(DiagnosticContext& context,
+                     StringView packages_config,
+                     const Path& out_dir,
+                     const NuGetSource& src) const
         {
-            return run_nuget_commandline(install_cmd(packages_config, out_dir, src), sink);
+            return run_nuget_commandline(context, install_cmd(packages_config, out_dir, src));
         }
 
     private:
@@ -690,8 +702,10 @@ namespace
                 return false;
             }
 
+            RedirectedProcessLaunchSettings settings;
+            settings.echo_in_debug = EchoInDebug::Show;
             AttemptDiagnosticContext adc{context};
-            auto maybe_code_and_output = cmd_execute_and_capture_output(adc, cmd);
+            auto maybe_code_and_output = cmd_execute_and_capture_output(adc, cmd, settings);
             if (auto code_and_output = maybe_code_and_output.get())
             {
                 if (code_and_output->exit_code == 0)
@@ -728,8 +742,8 @@ namespace
                     AttemptDiagnosticContext retry_adc{context};
                     auto retry_cmd = cmd;
                     retry_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
-                    auto maybe_retry_code_and_output = cmd_execute_and_capture_output(retry_adc, retry_cmd);
-                    if (check_zero_exit_code(retry_adc, retry_cmd, maybe_retry_code_and_output))
+                    auto maybe_retry_code_and_output = cmd_execute_and_capture_output(retry_adc, retry_cmd, settings);
+                    if (check_zero_exit_code(retry_adc, retry_cmd, maybe_retry_code_and_output, settings.echo_in_debug))
                     {
                         adc.handle();
                         retry_adc.commit();
@@ -744,7 +758,7 @@ namespace
                 }
 
                 adc.commit();
-                report_nonzero_exit_code_and_output(context, cmd, *code_and_output);
+                report_nonzero_exit_code_and_output(context, cmd, *code_and_output, settings.echo_in_debug);
             }
 
             return false;
@@ -821,7 +835,8 @@ namespace
             auto refs =
                 Util::fmap(actions, [this](const InstallPlanAction* p) { return make_nugetref(*p, m_nuget_prefix); });
             m_fs.write_contents(packages_config, generate_packages_config(refs), VCPKG_LINE_INFO);
-            m_cmd.install(out_sink, packages_config, m_packages, m_src);
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            m_cmd.install(wdc, packages_config, m_packages, m_src);
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 // nuget.exe provides the nupkg file and the unpacked folder
@@ -860,22 +875,24 @@ namespace
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
+            PrintingDiagnosticContext pdc{msg_sink};
+            WarningDiagnosticContext wdc{pdc};
             auto& spec = request.spec;
-
             auto nuspec_path = m_buildtrees / spec.name() / spec.triplet().canonical_name() + ".nuspec";
+            auto nuspec_contents = request.nuspec.value_or_exit(VCPKG_LINE_INFO);
             std::error_code ec;
-            m_fs.write_contents(nuspec_path, request.nuspec.value_or_exit(VCPKG_LINE_INFO), ec);
+            m_fs.write_contents(nuspec_path, nuspec_contents, ec);
             if (ec)
             {
-                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
+                wdc.report_error(format_filesystem_call_error(ec, "write_contents", {nuspec_path, nuspec_contents}));
+                wdc.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePackingNuGetPackage)});
                 return 0;
             }
 
-            auto packed_result = m_cmd.pack(msg_sink, nuspec_path, m_buildtrees);
+            auto pack_result = m_cmd.pack(wdc, nuspec_path, m_buildtrees);
             m_fs.remove(nuspec_path, IgnoreErrors{});
-            if (!packed_result)
+            if (!pack_result)
             {
-                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return 0;
             }
 
@@ -883,40 +900,20 @@ namespace
             auto nupkg_path = m_buildtrees / make_feedref(request, m_nuget_prefix).nupkg_filename();
             for (auto&& write_src : m_sources)
             {
-                msg_sink.println(msgUploadingBinariesToVendor,
-                                 msg::spec = request.display_name,
-                                 msg::vendor = "NuGet",
-                                 msg::path = write_src);
-                if (!m_cmd.push(msg_sink, nupkg_path, nuget_sources_arg({&write_src, 1})))
-                {
-                    msg_sink.println(Color::error,
-                                     msg::format(msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src)
-                                         .append_raw('\n')
-                                         .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
-                }
-                else
-                {
-                    count_stored++;
-                }
+                wdc.statusln(msg::format(msgUploadingBinariesToVendor,
+                                         msg::spec = request.display_name,
+                                         msg::vendor = "NuGet",
+                                         msg::path = write_src));
+                count_stored += m_cmd.push(wdc, nupkg_path, nuget_sources_arg({&write_src, 1}));
             }
+
             for (auto&& write_cfg : m_configs)
             {
-                msg_sink.println(msgUploadingBinariesToVendor,
-                                 msg::spec = spec,
-                                 msg::vendor = "NuGet config",
-                                 msg::path = write_cfg);
-                if (!m_cmd.push(msg_sink, nupkg_path, nuget_configfile_arg(write_cfg)))
-                {
-                    msg_sink.println(
-                        Color::error,
-                        msg::format(msgPushingVendorFailed, msg::vendor = "NuGet config", msg::path = write_cfg)
-                            .append_raw('\n')
-                            .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
-                }
-                else
-                {
-                    count_stored++;
-                }
+                wdc.statusln(msg::format(msgUploadingBinariesToVendor,
+                                         msg::spec = spec,
+                                         msg::vendor = "NuGet config",
+                                         msg::path = write_cfg));
+                count_stored += m_cmd.push(wdc, nupkg_path, nuget_configfile_arg(write_cfg));
             }
 
             m_fs.remove(nupkg_path, IgnoreErrors{});

@@ -2043,25 +2043,31 @@ namespace vcpkg
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
-                                             const ExitCodeAndOutput& exit)
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
     {
-        report_nonzero_exit_code_and_output(context, command, exit, View<std::string>{});
+        report_nonzero_exit_code_and_output(context, command, exit, echo_in_debug, View<std::string>{});
     }
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
                                              View<std::string> secrets)
     {
         auto str_command = command.command_line().to_string();
         replace_secrets(str_command, secrets);
-        context.report(DiagnosticLine{
-            DiagKind::Error,
+        auto error_line =
             LocalizedString::from_raw(std::move(str_command))
                 .append_raw(' ')
-                .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code))
-                .append_raw('\n')
-                .append_raw(exit.output)});
+                .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code));
+        if (echo_in_debug == EchoInDebug::Hide || !Debug::g_debugging)
+        {
+            // output was already echoed in debug
+            error_line.append_raw('\n').append_raw(exit.output);
+        }
+
+        context.report(DiagnosticLine{DiagKind::Error, std::move(error_line)});
     }
 
     bool check_zero_exit_code(DiagnosticContext& context,
@@ -2085,12 +2091,22 @@ namespace vcpkg
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit)
     {
-        return check_zero_exit_code(context, command, maybe_exit, View<std::string>{});
+        return check_zero_exit_code(
+            context, command, maybe_exit, RedirectedProcessLaunchSettings{}.echo_in_debug, View<std::string>{});
     }
 
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug)
+    {
+        return check_zero_exit_code(context, command, maybe_exit, echo_in_debug, View<std::string>{});
+    }
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug,
                                       View<std::string> secrets)
     {
         if (auto exit = maybe_exit.get())
@@ -2100,7 +2116,7 @@ namespace vcpkg
                 return &exit->output;
             }
 
-            report_nonzero_exit_code_and_output(context, command, *exit, secrets);
+            report_nonzero_exit_code_and_output(context, command, *exit, echo_in_debug, secrets);
         }
 
         return nullptr;

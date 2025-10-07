@@ -2332,7 +2332,6 @@ DECLARE_MESSAGE(PackagesToRebuildSuggestRecurse,
                 "If you are sure you want to rebuild the above packages, run the command with the --recurse option.")
 DECLARE_MESSAGE(PackagesToRemove, (), "", "The following packages will be removed:")
 DECLARE_MESSAGE(PackagesUpToDate, (), "", "No packages need updating.")
-DECLARE_MESSAGE(PackingVendorFailed, (msg::vendor), "", "Packing {vendor} failed. Use --debug for more information.")
 DECLARE_MESSAGE(PairedSurrogatesAreInvalid,
                 (),
                 "",
@@ -2677,10 +2676,6 @@ DECLARE_MESSAGE(ProvideExportType,
                 (),
                 "",
                 "At least one of the following options are required: --raw --nuget --zip --7zip.")
-DECLARE_MESSAGE(PushingVendorFailed,
-                (msg::vendor, msg::path),
-                "",
-                "Pushing {vendor} to \"{path}\" failed. Use --debug for more information.")
 DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}")
 DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry")
 DECLARE_MESSAGE(RegistryValueWrongType, (msg::path), "", "The registry value {path} was an unexpected type.")
@@ -3369,6 +3364,8 @@ DECLARE_MESSAGE(WhileParsingVersionsForPort,
                 (msg::package_name, msg::path),
                 "",
                 "while parsing versions for {package_name} from {path}")
+DECLARE_MESSAGE(WhilePackingNuGetPackage, (), "", "while packing NuGet package")
+DECLARE_MESSAGE(WhilePushingNuGetPackage, (), "", "while pushing NuGet package")
 DECLARE_MESSAGE(WhileRunningAssetCacheScriptCommandLine, (), "", "while running asset cache script command line")
 DECLARE_MESSAGE(WhileValidatingVersion, (msg::version), "", "while validating version: {version}")
 DECLARE_MESSAGE(WindowsEnvMustAlwaysBePresent, (msg::env_var), "", "Expected {env_var} to be always set on Windows.")

@@ -269,10 +269,12 @@ namespace vcpkg
     void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit);
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
-                                             const ExitCodeAndOutput& exit);
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug);
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
                                              View<std::string> secrets);
 
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns true.
@@ -290,5 +292,11 @@ namespace vcpkg
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug);
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug,
                                       View<std::string> secrets);
 }
