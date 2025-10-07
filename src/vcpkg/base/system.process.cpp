@@ -2061,9 +2061,9 @@ namespace vcpkg
             LocalizedString::from_raw(std::move(str_command))
                 .append_raw(' ')
                 .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code));
+        // add the output iff it was not already echoed in debug
         if (echo_in_debug == EchoInDebug::Hide || !Debug::g_debugging)
         {
-            // output was already echoed in debug
             error_line.append_raw('\n').append_raw(exit.output);
         }
 
