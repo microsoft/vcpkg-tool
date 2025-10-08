@@ -3963,13 +3963,13 @@ namespace vcpkg
             if (futimens(fd.get(), times))
             {
                 auto local_errno = errno;
-                context
-                    .report(DiagnosticLine{DiagKind::Error,
-                                           target,
-                                           msg::format(msgSystemApiErrorMessage,
-                                                       msg::system_api = "futimens",
-                                                       msg::exit_code = local_errno,
-                                                       msg::error_msg = std::system_category().message(local_errno)});
+                context.report(
+                    DiagnosticLine{DiagKind::Error,
+                                   target,
+                                   msg::format(msgSystemApiErrorMessage,
+                                               msg::system_api = "futimens",
+                                               msg::exit_code = local_errno,
+                                               msg::error_msg = std::system_category().message(local_errno))});
             }
 
             return true;
