@@ -16,7 +16,7 @@ Throw-IfFailed
 Require-FileNotExists "$installRoot/$Triplet/include"
 
 if(-Not $IsLinux -and -Not $IsMacOS) {
-    # Test simple nuget installation
+    # Test simple NuGet installation
     Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;nuget,$NuGetRoot,readwrite"))
     Throw-IfFailed
 }
@@ -49,7 +49,7 @@ Require-FileExists "$buildtreesRoot/vcpkg-hello-world-1/src"
 Require-FileNotExists "$buildtreesRoot/detect_compiler"
 
 if(-Not $IsLinux -and -Not $IsMacOS) {
-    # Test restoring from nuget
+    # Test restoring from NuGet
     Remove-Item -Recurse -Force $installRoot
     Remove-Item -Recurse -Force $buildtreesRoot
     Run-Vcpkg -TestArgs ($commonArgs + @("install", "vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config", "--x-binarysource=clear;nuget,$NuGetRoot"))

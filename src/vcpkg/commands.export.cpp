@@ -265,7 +265,7 @@ namespace
     constexpr CommandSwitch EXPORT_SWITCHES[] = {
         {SwitchDryRun, msgCmdExportOptDryRun},
         {SwitchRaw, msgCmdExportOptRaw},
-        {SwitchNuGet, msgCmdExportOptNuget},
+        {SwitchNuGet, msgCmdExportOptNuGet},
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
@@ -275,9 +275,9 @@ namespace
     constexpr CommandSetting EXPORT_SETTINGS[] = {
         {SwitchOutput, msgCmdExportSettingOutput},
         {SwitchOutputDir, msgCmdExportSettingOutputDir},
-        {SwitchNuGetId, msgCmdExportSettingNugetID},
-        {SwitchNuGetDescription, msgCmdExportSettingNugetDesc},
-        {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
+        {SwitchNuGetId, msgCmdExportSettingNuGetID},
+        {SwitchNuGetDescription, msgCmdExportSettingNuGetDesc},
+        {SwitchNuGetVersion, msgCmdExportSettingNuGetVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -450,7 +450,7 @@ namespace
             const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
 
-            msg::println(msgCreatingNugetPackage);
+            msg::println(msgCreatingNuGetPackage);
 
             const auto output_path = do_nuget_export(
                 paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);

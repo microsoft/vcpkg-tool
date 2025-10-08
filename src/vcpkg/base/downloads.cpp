@@ -957,7 +957,8 @@ namespace vcpkg
         cmd.string_arg(url_encode_spaces(raw_url));
 
         auto maybe_output = cmd_execute_and_capture_output(context, cmd);
-        if (auto output = check_zero_exit_code(context, cmd, maybe_output, secrets))
+        if (auto output = check_zero_exit_code(
+                context, cmd, maybe_output, RedirectedProcessLaunchSettings{}.echo_in_debug, secrets))
         {
             return *output;
         }

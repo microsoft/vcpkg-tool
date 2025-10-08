@@ -27,7 +27,7 @@ namespace
         auto is_digit_or_dot = [](char ch) { return ch == '.' || ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNuGetIdAndVersion, msg::path = archive);
         }
 
         StringView nugetid{stem.begin(), dot_after_name};

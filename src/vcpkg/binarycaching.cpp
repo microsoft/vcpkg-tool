@@ -601,20 +601,32 @@ namespace
             m_cmd.string_arg(cache.get_tool_path(Tools::NUGET, sink));
         }
 
-        ExpectedL<Unit> push(MessageSink& sink, const Path& nupkg_path, const NuGetSource& src) const
+        bool push(DiagnosticContext& context, const Path& nupkg_path, const NuGetSource& src) const
         {
-            return run_nuget_commandline(push_cmd(nupkg_path, src), sink);
+            if (run_nuget_commandline(context, push_cmd(nupkg_path, src)))
+            {
+                return true;
+            }
+
+            context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePushingNuGetPackage)});
+            return false;
         }
-        ExpectedL<Unit> pack(MessageSink& sink, const Path& nuspec_path, const Path& out_dir) const
+        bool pack(DiagnosticContext& context, const Path& nuspec_path, const Path& out_dir) const
         {
-            return run_nuget_commandline(pack_cmd(nuspec_path, out_dir), sink);
+            if (run_nuget_commandline(context, pack_cmd(nuspec_path, out_dir)))
+            {
+                return true;
+            }
+
+            context.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePackingNuGetPackage)});
+            return false;
         }
-        ExpectedL<Unit> install(MessageSink& sink,
-                                StringView packages_config,
-                                const Path& out_dir,
-                                const NuGetSource& src) const
+        bool install(DiagnosticContext& context,
+                     StringView packages_config,
+                     const Path& out_dir,
+                     const NuGetSource& src) const
         {
-            return run_nuget_commandline(install_cmd(packages_config, out_dir, src), sink);
+            return run_nuget_commandline(context, install_cmd(packages_config, out_dir, src));
         }
 
     private:
@@ -660,60 +672,84 @@ namespace
                 .string_arg(src.value);
         }
 
-        ExpectedL<Unit> run_nuget_commandline(const Command& cmd, MessageSink& msg_sink) const
+        bool run_nuget_commandline(DiagnosticContext& context, const Command& cmd) const
         {
             if (m_interactive)
             {
-                return cmd_execute(cmd).then([](int exit_code) -> ExpectedL<Unit> {
-                    if (exit_code == 0)
-                    {
-                        return {Unit{}};
-                    }
+                // note that this must cmd_execute not cmd_execute_and_capture_output because we need
+                // our console, stdin, stdout, and stderr to be inherited directly by the interactive
+                // nuget process.
+                auto maybe_exit_code = cmd_execute(context, cmd);
+                if (check_zero_exit_code(context, cmd, maybe_exit_code))
+                {
+                    return true;
+                }
 
-                    return msg::format_error(msgNugetOutputNotCapturedBecauseInteractiveSpecified);
-                });
+                context.report(
+                    DiagnosticLine{DiagKind::Note, msg::format(msgNuGetOutputNotCapturedBecauseInteractiveSpecified)});
+                return false;
             }
 
-            RedirectedProcessLaunchSettings show_in_debug_settings;
-            show_in_debug_settings.echo_in_debug = EchoInDebug::Show;
-            return cmd_execute_and_capture_output(cmd, show_in_debug_settings)
-                .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                    if (res.output.find("Authentication may require manual action.") != std::string::npos)
+            RedirectedProcessLaunchSettings settings;
+            settings.echo_in_debug = EchoInDebug::Show;
+            AttemptDiagnosticContext adc{context};
+            auto maybe_code_and_output = cmd_execute_and_capture_output(adc, cmd, settings);
+            if (auto code_and_output = maybe_code_and_output.get())
+            {
+                if (code_and_output->exit_code == 0)
+                {
+                    adc.commit();
+                    return true;
+                }
+
+                // NuGet is extremely chatty in its console output so we look for some failures we know about and
+                // avoid printing the whole console output in such cases.
+                if (code_and_output->output.find("Authentication may require manual action.") != std::string::npos)
+                {
+                    adc.commit();
+                    report_nonzero_exit_code(context, cmd, code_and_output->exit_code);
+                    context.report(
+                        DiagnosticLine{DiagKind::Note, msg::format(msgNuGetAuthenticationMayRequireManualAction)});
+                    return false;
+                }
+
+                if (code_and_output->output.find(
+                        "Response status code does not indicate success: 401 (Unauthorized)") != std::string::npos)
+                {
+                    adc.commit();
+                    report_nonzero_exit_code(context, cmd, code_and_output->exit_code);
+                    context.report(DiagnosticLine{DiagKind::Note,
+                                                  msg::format(msgFailedVendorAuthentication,
+                                                              msg::vendor = "NuGet",
+                                                              msg::url = docs::troubleshoot_binary_cache_url)});
+                    return false;
+                }
+
+                if (code_and_output->output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
+                {
+                    AttemptDiagnosticContext retry_adc{context};
+                    auto retry_cmd = cmd;
+                    retry_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
+                    auto maybe_retry_code_and_output = cmd_execute_and_capture_output(retry_adc, retry_cmd, settings);
+                    if (check_zero_exit_code(retry_adc, retry_cmd, maybe_retry_code_and_output, settings.echo_in_debug))
                     {
-                        msg_sink.println(
-                            Color::warning, msgAuthenticationMayRequireManualAction, msg::vendor = "Nuget");
+                        adc.handle();
+                        retry_adc.commit();
+                        return true;
                     }
 
-                    if (res.exit_code == 0)
-                    {
-                        return {Unit{}};
-                    }
+                    adc.commit();
+                    // we only print the whole console output from the retry
+                    report_nonzero_exit_code(context, cmd, code_and_output->exit_code);
+                    retry_adc.commit();
+                    return false;
+                }
 
-                    if (res.output.find("Response status code does not indicate success: 401 (Unauthorized)") !=
-                        std::string::npos)
-                    {
-                        msg_sink.println(Color::warning,
-                                         msgFailedVendorAuthentication,
-                                         msg::vendor = "NuGet",
-                                         msg::url = docs::troubleshoot_binary_cache_url);
-                    }
-                    else if (res.output.find("for example \"-ApiKey AzureDevOps\"") != std::string::npos)
-                    {
-                        auto real_cmd = cmd;
-                        real_cmd.string_arg("-ApiKey").string_arg("AzureDevOps");
-                        return cmd_execute_and_capture_output(real_cmd, show_in_debug_settings)
-                            .then([&](ExitCodeAndOutput&& res) -> ExpectedL<Unit> {
-                                if (res.exit_code == 0)
-                                {
-                                    return {Unit{}};
-                                }
+                adc.commit();
+                report_nonzero_exit_code_and_output(context, cmd, *code_and_output, settings.echo_in_debug);
+            }
 
-                                return LocalizedString::from_raw(std::move(res).output);
-                            });
-                    }
-
-                    return LocalizedString::from_raw(std::move(res).output);
-                });
+            return false;
         }
 
         Command m_cmd;
@@ -787,7 +823,8 @@ namespace
             auto refs =
                 Util::fmap(actions, [this](const InstallPlanAction* p) { return make_nugetref(*p, m_nuget_prefix); });
             m_fs.write_contents(packages_config, generate_packages_config(refs), VCPKG_LINE_INFO);
-            m_cmd.install(out_sink, packages_config, m_packages, m_src);
+            WarningDiagnosticContext wdc{console_diagnostic_context};
+            m_cmd.install(wdc, packages_config, m_packages, m_src);
             for (size_t i = 0; i < actions.size(); ++i)
             {
                 // nuget.exe provides the nupkg file and the unpacked folder
@@ -826,22 +863,24 @@ namespace
 
         size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) override
         {
+            PrintingDiagnosticContext pdc{msg_sink};
+            WarningDiagnosticContext wdc{pdc};
             auto& spec = request.spec;
-
             auto nuspec_path = m_buildtrees / spec.name() / spec.triplet().canonical_name() + ".nuspec";
+            auto& nuspec_contents = request.nuspec.value_or_exit(VCPKG_LINE_INFO);
             std::error_code ec;
-            m_fs.write_contents(nuspec_path, request.nuspec.value_or_exit(VCPKG_LINE_INFO), ec);
+            m_fs.write_contents(nuspec_path, nuspec_contents, ec);
             if (ec)
             {
-                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
+                wdc.report_error(format_filesystem_call_error(ec, "write_contents", {nuspec_path, nuspec_contents}));
+                wdc.report(DiagnosticLine{DiagKind::Note, msg::format(msgWhilePackingNuGetPackage)});
                 return 0;
             }
 
-            auto packed_result = m_cmd.pack(msg_sink, nuspec_path, m_buildtrees);
+            auto pack_result = m_cmd.pack(wdc, nuspec_path, m_buildtrees);
             m_fs.remove(nuspec_path, IgnoreErrors{});
-            if (!packed_result)
+            if (!pack_result)
             {
-                msg_sink.println(Color::error, msgPackingVendorFailed, msg::vendor = "NuGet");
                 return 0;
             }
 
@@ -849,40 +888,20 @@ namespace
             auto nupkg_path = m_buildtrees / make_feedref(request, m_nuget_prefix).nupkg_filename();
             for (auto&& write_src : m_sources)
             {
-                msg_sink.println(msgUploadingBinariesToVendor,
-                                 msg::spec = request.display_name,
-                                 msg::vendor = "NuGet",
-                                 msg::path = write_src);
-                if (!m_cmd.push(msg_sink, nupkg_path, nuget_sources_arg({&write_src, 1})))
-                {
-                    msg_sink.println(Color::error,
-                                     msg::format(msgPushingVendorFailed, msg::vendor = "NuGet", msg::path = write_src)
-                                         .append_raw('\n')
-                                         .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
-                }
-                else
-                {
-                    count_stored++;
-                }
+                wdc.statusln(msg::format(msgUploadingBinariesToVendor,
+                                         msg::spec = request.display_name,
+                                         msg::vendor = "NuGet",
+                                         msg::path = write_src));
+                count_stored += m_cmd.push(wdc, nupkg_path, nuget_sources_arg({&write_src, 1}));
             }
+
             for (auto&& write_cfg : m_configs)
             {
-                msg_sink.println(msgUploadingBinariesToVendor,
-                                 msg::spec = spec,
-                                 msg::vendor = "NuGet config",
-                                 msg::path = write_cfg);
-                if (!m_cmd.push(msg_sink, nupkg_path, nuget_configfile_arg(write_cfg)))
-                {
-                    msg_sink.println(
-                        Color::error,
-                        msg::format(msgPushingVendorFailed, msg::vendor = "NuGet config", msg::path = write_cfg)
-                            .append_raw('\n')
-                            .append(msgSeeURL, msg::url = docs::troubleshoot_binary_cache_url));
-                }
-                else
-                {
-                    count_stored++;
-                }
+                wdc.statusln(msg::format(msgUploadingBinariesToVendor,
+                                         msg::spec = spec,
+                                         msg::vendor = "NuGet config",
+                                         msg::path = write_cfg));
+                count_stored += m_cmd.push(wdc, nupkg_path, nuget_configfile_arg(write_cfg));
             }
 
             m_fs.remove(nupkg_path, IgnoreErrors{});
@@ -1815,13 +1834,13 @@ namespace
             {
                 if (segments.size() != 2)
                 {
-                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    return add_error(msg::format(msgNuGetTimeoutExpectsSinglePositiveInteger));
                 }
 
                 long timeout = Strings::strto<long>(segments[1].second).value_or(-1);
                 if (timeout <= 0)
                 {
-                    return add_error(msg::format(msgNugetTimeoutExpectsSinglePositiveInteger));
+                    return add_error(msg::format(msgNuGetTimeoutExpectsSinglePositiveInteger));
                 }
 
                 state->nugettimeout = std::to_string(timeout);
@@ -2313,7 +2332,7 @@ namespace vcpkg
     {
         if (auto p = args.vcpkg_nuget_repository.get())
         {
-            get_global_metrics_collector().track_define(DefineMetric::VcpkgNugetRepository);
+            get_global_metrics_collector().track_define(DefineMetric::VcpkgNuGetRepository);
             return {*p};
         }
 
@@ -2558,7 +2577,7 @@ namespace vcpkg
                 {"files", DefineMetric::BinaryCachingFiles},
                 {"gcs", DefineMetric::BinaryCachingGcs},
                 {"http", DefineMetric::BinaryCachingHttp},
-                {"nuget", DefineMetric::BinaryCachingNuget},
+                {"nuget", DefineMetric::BinaryCachingNuGet},
                 {"upkg", DefineMetric::BinaryCachingUpkg},
             };
 
