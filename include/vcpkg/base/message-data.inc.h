@@ -1268,6 +1268,7 @@ DECLARE_MESSAGE(ExportedZipArchive, (msg::path), "", "Zip archive exported at: {
 DECLARE_MESSAGE(ExportingAlreadyBuiltPackages, (), "", "The following packages are already built and will be exported:")
 DECLARE_MESSAGE(ExportingPackage, (msg::package_name), "", "Exporting {package_name}...")
 DECLARE_MESSAGE(ExtendedDocumentationAtUrl, (msg::url), "", "Extended documentation available at '{url}'.")
+DECLARE_MESSAGE(ExtractedInto, (msg::path), "", "extracted into {path}")
 DECLARE_MESSAGE(ExtractHelp, (), "", "Extracts an archive.")
 DECLARE_MESSAGE(ExtractingTool, (msg::tool_name), "", "Extracting {tool_name}...")
 DECLARE_MESSAGE(FailedPostBuildChecks,
@@ -2849,7 +2850,6 @@ DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                 (msg::value),
                 "'{value}' is a feature flag.",
                 "Both '{value}' and -'{value}' were specified as feature flags.")
-DECLARE_MESSAGE(UnableToClearPath, (msg::path), "", "unable to delete {path}")
 DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable")
 DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}")
 DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
@@ -3348,11 +3348,13 @@ DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                 "",
                 "Waiting for {count} remaining binary cache submissions...")
 DECLARE_MESSAGE(WarningsTreatedAsErrors, (), "", "previous warnings being interpreted as errors")
+DECLARE_MESSAGE(WhileClearingThis, (), "", "while clearing this directory")
 DECLARE_MESSAGE(WhileCheckingOutBaseline, (msg::commit_sha), "", "while checking out baseline {commit_sha}")
 DECLARE_MESSAGE(WhileCheckingOutPortTreeIsh,
                 (msg::package_name, msg::git_tree_sha),
                 "",
                 "while checking out port {package_name} with git tree {git_tree_sha}")
+DECLARE_MESSAGE(WhileExtractingThisArchive, (), "", "while extracting this archive")
 DECLARE_MESSAGE(WhileGettingLocalTreeIshObjectsForPorts, (), "", "while getting local treeish objects for ports")
 DECLARE_MESSAGE(WhileLookingForSpec, (msg::spec), "", "while looking for {spec}:")
 DECLARE_MESSAGE(WhileLoadingBaselineVersionForPort,

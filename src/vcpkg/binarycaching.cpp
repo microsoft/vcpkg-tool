@@ -8,6 +8,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -199,13 +200,39 @@ namespace
         return make_feedref(info.spec, info.version, info.package_abi, prefix);
     }
 
-    void clean_prepare_dir(const Filesystem& fs, const Path& dir)
+    bool clean_prepare_dir(DiagnosticContext& context, const Filesystem& fs, const Path& dir)
     {
-        fs.remove_all(dir, VCPKG_LINE_INFO);
-        if (!fs.create_directories(dir, VCPKG_LINE_INFO))
+        if (fs.remove_all(context, dir) && fs.create_directories(context, dir))
         {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgUnableToClearPath, msg::path = dir);
+            return true;
         }
+
+        context.report(DiagnosticLine{DiagKind::Note, dir, msg::format(msgWhileClearingThis)});
+        return false;
+    }
+
+    bool directory_last_write_time(DiagnosticContext& context, const Filesystem& fs, const Path& dir)
+    {
+        auto now = fs.file_time_now();
+        auto maybe_paths = fs.try_get_files_recursive(context, dir);
+        if (auto paths = maybe_paths.get())
+        {
+            bool all_success = true;
+            for (auto&& path : *paths)
+            {
+                if (!fs.last_write_time(context, path, now))
+                {
+                    all_success = false;
+                }
+            }
+
+            if (all_success)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec, const std::string& abi)
@@ -298,67 +325,84 @@ namespace
     {
         ZipReadBinaryProvider(ZipTool zip, const Filesystem& fs) : m_zip(std::move(zip)), m_fs(fs) { }
 
+        struct UnzipJob
+        {
+            const Path* package_dir;
+            const ZipResource* zip_resource;
+            uint64_t zip_size;
+            size_t action_idx;
+            FullyBufferedDiagnosticContext fbdc;
+            bool success = false;
+        };
+
         void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
         {
             const ElapsedTimer timer;
             std::vector<Optional<ZipResource>> zip_paths(actions.size(), nullopt);
             acquire_zips(actions, zip_paths);
 
-            std::vector<std::pair<Command, uint64_t>> jobs_with_size;
-            std::vector<size_t> action_idxs;
+            std::vector<UnzipJob> jobs;
+            jobs.reserve(actions.size());
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                if (!zip_paths[i]) continue;
-                const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
-                clean_prepare_dir(m_fs, pkg_path);
-                jobs_with_size.emplace_back(m_zip.decompress_zip_archive_cmd(pkg_path, zip_paths[i].get()->path),
-                                            m_fs.file_size(zip_paths[i].get()->path, VCPKG_LINE_INFO));
-                action_idxs.push_back(i);
+                if (auto zip_resource = zip_paths[i].get())
+                {
+                    jobs.push_back({&actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO),
+                                    zip_resource,
+                                    m_fs.file_size(zip_resource->path, IgnoreErrors{}),
+                                    i});
+                }
             }
-            std::sort(jobs_with_size.begin(), jobs_with_size.end(), [](const auto& l, const auto& r) {
-                return l.second > r.second;
+
+            std::sort(
+                jobs.begin(), jobs.end(), [](const UnzipJob& l, const UnzipJob& r) { return l.zip_size > r.zip_size; });
+
+            parallel_for_each(jobs, [this, &out_status](UnzipJob& job) {
+                WarningDiagnosticContext wdc{job.fbdc};
+                if (clean_prepare_dir(wdc, m_fs, *job.package_dir))
+                {
+                    auto cmd = m_zip.decompress_zip_archive_cmd(*job.package_dir, job.zip_resource->path);
+                    auto maybe_output = cmd_execute_and_capture_output(wdc, cmd);
+                    if (check_zero_exit_code(wdc, cmd, maybe_output)
+#ifdef _WIN32
+                        // On windows the ziptool does restore file times, we don't want that because this breaks file
+                        // time based change detection.
+                        && directory_last_write_time(wdc, m_fs, *job.package_dir)
+#endif // ^^^ _WIN32
+                    )
+                    {
+                        out_status[job.action_idx] = RestoreResult::restored;
+                        job.success = true;
+                    }
+                    else
+                    {
+                        wdc.report(DiagnosticLine{
+                            DiagKind::Note, job.zip_resource->path, msg::format(msgWhileExtractingThisArchive)});
+                    }
+                }
+
+                if (job.zip_resource->to_remove == RemoveWhen::always)
+                {
+                    m_fs.remove(job.zip_resource->path, IgnoreErrors{});
+                }
             });
 
-            std::vector<Command> sorted_jobs;
-            for (auto&& e : jobs_with_size)
+            if (Debug::g_debugging)
             {
-                sorted_jobs.push_back(std::move(e.first));
-            }
-            auto job_results = decompress_in_parallel(sorted_jobs);
-
-            for (size_t j = 0; j < sorted_jobs.size(); ++j)
-            {
-                const auto i = action_idxs[j];
-                const auto& zip_path = zip_paths[i].value_or_exit(VCPKG_LINE_INFO);
-                if (job_results[j])
+                for (auto&& job : jobs)
                 {
-#ifdef _WIN32
-                    // On windows the ziptool does restore file times, we don't want that because this breaks file time
-                    // based change detection.
-                    const auto& pkg_path = actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO);
-                    auto now = m_fs.file_time_now();
-                    for (auto&& path : m_fs.get_files_recursive(pkg_path, VCPKG_LINE_INFO))
+                    if (job.success)
                     {
-                        m_fs.last_write_time(path, now, VCPKG_LINE_INFO);
+                        console_diagnostic_context.report(
+                            DiagnosticLine{DiagKind::Note,
+                                           job.zip_resource->path,
+                                           msg::format(msgExtractedInto, msg::path = *job.package_dir)});
                     }
-#endif
-                    Debug::print("Restored ", zip_path.path, '\n');
-                    out_status[i] = RestoreResult::restored;
+                    else
+                    {
+                        job.fbdc.print_to(out_sink);
+                    }
                 }
-                else
-                {
-                    Debug::print("Failed to decompress archive package: ", zip_path.path, '\n');
-                }
-
-                post_decompress(zip_path);
-            }
-        }
-
-        void post_decompress(const ZipResource& r) const
-        {
-            if (r.to_remove == RemoveWhen::always)
-            {
-                m_fs.remove(r.path, IgnoreErrors{});
             }
         }
 

@@ -66,6 +66,4 @@ namespace vcpkg
         Optional<Path> seven_zip;
 #endif
     };
-
-    std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs);
 }
