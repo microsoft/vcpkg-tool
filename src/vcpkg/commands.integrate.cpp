@@ -397,7 +397,7 @@ namespace vcpkg
         const auto nuget_package = paths.original_cwd / fmt::format("{}.{}.nupkg", nuget_id, nupkg_version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                fs.exists(nuget_package, IgnoreErrors{}),
-                               msgNugetPackageFileSucceededButCreationFailed,
+                               msgNuGetPackageFileSucceededButCreationFailed,
                                msg::path = nuget_package);
         msg::println(Color::success, msgCreatedNuGetPackage, msg::path = nuget_package);
 

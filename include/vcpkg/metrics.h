@@ -24,7 +24,7 @@ namespace vcpkg
         BinaryCachingFiles,
         BinaryCachingGcs,
         BinaryCachingHttp,
-        BinaryCachingNuget,
+        BinaryCachingNuGet,
         BinaryCachingSource,
         BinaryCachingUpkg,
         ErrorVersioningDisabled,
@@ -37,11 +37,11 @@ namespace vcpkg
         RegistriesErrorNoVersionsAtCommit,
         VcpkgBinarySources,
         VcpkgDefaultBinaryCache,
-        VcpkgNugetRepository,
+        VcpkgNuGetRepository,
         VersioningErrorBaseline,
         VersioningErrorVersion, // no longer used
         X_VcpkgRegistriesCache,
-        X_WriteNugetPackagesConfig,
+        X_WriteNuGetPackagesConfig,
         COUNT // always keep COUNT last
     };
 

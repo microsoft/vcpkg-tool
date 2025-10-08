@@ -1235,7 +1235,7 @@ namespace vcpkg
             auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
             if (it_pkgsconfig != options.settings.end())
             {
-                get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
+                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
                 pkgsconfig = Path(it_pkgsconfig->second);
             }
             auto maybe_manifest_scf =
@@ -1428,7 +1428,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
-            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
             compute_all_abis(paths, action_plan, var_provider, status_db);
 
             auto pkgsconfig_path = paths.original_cwd / it_pkgsconfig->second;
