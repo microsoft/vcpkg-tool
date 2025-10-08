@@ -211,6 +211,7 @@ namespace
         return false;
     }
 
+#ifdef _WIN32
     bool directory_last_write_time(DiagnosticContext& context, const Filesystem& fs, const Path& dir)
     {
         auto now = fs.file_time_now();
@@ -234,6 +235,7 @@ namespace
 
         return false;
     }
+#endif // ^^^ _WIN32
 
     Path make_temp_archive_path(const Path& buildtrees, const PackageSpec& spec, const std::string& abi)
     {
