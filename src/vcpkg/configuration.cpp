@@ -234,11 +234,7 @@ namespace
             r.required_object_field(
                 msg::format(msgAGitRegistry), obj, JsonIdRepository, res.repo.emplace(), GitUrlDeserializer::instance);
             r.optional_object_field_emplace(obj, JsonIdReference, res.reference, GitReferenceDeserializer::instance);
-            r.required_object_field(msg::format(msgAGitRegistry),
-                                    obj,
-                                    JsonIdBaseline,
-                                    res.baseline.emplace(),
-                                    BaselineShaDeserializer::instance);
+            r.optional_object_field_emplace(obj, JsonIdBaseline, res.baseline, BaselineShaDeserializer::instance);
             r.check_for_unexpected_fields(obj, valid_git_fields, msg::format(msgAGitRegistry));
         }
         else if (kind == JsonIdArtifact)
@@ -897,7 +893,7 @@ namespace vcpkg
                 return make_git_registry(paths,
                                          config.repo.value_or_exit(VCPKG_LINE_INFO),
                                          config.reference.value_or("HEAD"),
-                                         config.baseline.value_or_exit(VCPKG_LINE_INFO));
+                                         config.baseline);
             }
             else if (*k == JsonIdFilesystem)
             {

@@ -2,6 +2,7 @@
 #include <vcpkg/base/graphs.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/cmakevars.h>
@@ -1456,7 +1457,9 @@ namespace vcpkg
 
             // Add an initial requirement for a package.
             // Returns a reference to the node to place additional constraints
-            Optional<PackageNode&> require_package(const PackageSpec& spec, const std::string& origin);
+            Optional<PackageNode&> require_package(const PackageSpec& spec,
+                                                   const std::string& origin,
+                                                   Optional<Version> maybe_declared_ver);
 
             void require_scfl(PackageNode& ref, const SourceControlFileAndLocation* scfl, const std::string& origin);
 
@@ -1512,14 +1515,15 @@ namespace vcpkg
                 if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame.spec))) continue;
 
                 PackageSpec dep_spec(dep.name, dep.host ? m_host_triplet : frame.spec.triplet());
-                auto maybe_node = require_package(dep_spec, frame.spec.name());
+
+                auto maybe_dep_ver = dep.constraint.try_get_minimum_version();
+                auto maybe_node = require_package(dep_spec, frame.spec.name(), maybe_dep_ver);
                 if (auto node = maybe_node.get())
                 {
                     // If the node is overlayed or overridden, don't apply version constraints
                     // If the baseline is a version_string, it occludes other constraints
                     if (!node->second.overlay_or_override)
                     {
-                        const auto maybe_dep_ver = dep.constraint.try_get_minimum_version();
                         if (auto dep_ver = maybe_dep_ver.get())
                         {
                             auto maybe_scfl = m_ver_provider.get_control_file({dep.name, *dep_ver});
@@ -1639,8 +1643,8 @@ namespace vcpkg
             return *it;
         }
 
-        Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(const PackageSpec& spec,
-                                                                                             const std::string& origin)
+        Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(
+            const PackageSpec& spec, const std::string& origin, Optional<Version> maybe_declared_ver)
         {
             // Implicit defaults are disabled if spec is requested from top-level spec.
             const bool default_features_mask = origin != m_toplevel.name();
@@ -1686,9 +1690,24 @@ namespace vcpkg
                 }
                 else
                 {
-                    auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
-                        return m_ver_provider.get_control_file({spec.name(), ver});
-                    });
+                    auto maybe_scfl =
+                        m_base_provider.get_baseline_version(spec.name())
+                            .then([&](const Optional<Version>& ver) -> ExpectedL<const SourceControlFileAndLocation&> {
+                                if (auto baseline_ver = ver.get())
+                                {
+                                    return m_ver_provider.get_control_file({spec.name(), *baseline_ver});
+                                }
+                                else if (auto declared_ver = maybe_declared_ver.get())
+                                {
+                                    return m_ver_provider.get_control_file({spec.name(), *declared_ver});
+                                }
+                                else
+                                {
+                                    // TODO: this should be a PortNotInBaselineAndNoVersion
+                                    Debug::println("port {} not in baseline, no declared version", spec.name());
+                                    return msg::format_error(msgPortNotInBaseline, msg::package_name = spec.name());
+                                }
+                            });
                     if (auto p_scfl = maybe_scfl.get())
                     {
                         it = m_graph.emplace(spec, PackageNodeData{}).first;
