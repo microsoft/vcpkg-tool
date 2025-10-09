@@ -4,7 +4,6 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -745,23 +744,6 @@ namespace vcpkg
     {
         static const Environment clean_env = get_modified_clean_environment({});
         return clean_env;
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands)
-    {
-        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
-        return cmd_execute_and_capture_output_parallel(commands, default_redirected_process_launch_settings);
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> commands, const RedirectedProcessLaunchSettings& settings)
-    {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(commands.size(), LocalizedString{});
-
-        parallel_transform(
-            commands, res.begin(), [&](const Command& cmd) { return cmd_execute_and_capture_output(cmd, settings); });
-
-        return res;
     }
 } // namespace vcpkg
 

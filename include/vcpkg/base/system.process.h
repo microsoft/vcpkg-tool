@@ -166,10 +166,6 @@ namespace vcpkg
             settings);
     }
 
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands);
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> commands, const RedirectedProcessLaunchSettings& settings);
-
     Optional<ExitCodeIntegral> cmd_execute_and_stream_lines(DiagnosticContext& context,
                                                             const Command& cmd,
                                                             const std::function<void(StringView)>& per_line_cb);

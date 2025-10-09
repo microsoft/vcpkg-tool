@@ -368,19 +368,4 @@ namespace vcpkg
 #endif
         return cmd;
     }
-
-    std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs)
-    {
-        RedirectedProcessLaunchSettings settings;
-        settings.environment = get_clean_environment();
-        auto results = cmd_execute_and_capture_output_parallel(jobs, settings);
-        std::vector<ExpectedL<Unit>> filtered_results;
-        filtered_results.reserve(jobs.size());
-        for (std::size_t idx = 0; idx < jobs.size(); ++idx)
-        {
-            filtered_results.push_back(flatten(results[idx], jobs[idx].command_line()));
-        }
-
-        return filtered_results;
-    }
 }

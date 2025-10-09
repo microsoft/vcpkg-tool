@@ -161,10 +161,4 @@ namespace vcpkg
     {
         execute_in_parallel(c.size(), [&](size_t offset) { cb(c[offset]); });
     }
-
-    template<class Container, class RanItTarget, class F>
-    void parallel_transform(const Container& c, RanItTarget out_begin, F cb) noexcept
-    {
-        execute_in_parallel(c.size(), [&](size_t offset) { out_begin[offset] = cb(c[offset]); });
-    }
 }

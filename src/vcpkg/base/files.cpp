@@ -1664,16 +1664,23 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_files_recursive(const Path& dir, LineInfo li) const
     {
-        return this->try_get_files_recursive(dir).value_or_exit(li);
+        return this->try_get_files_recursive(console_diagnostic_context, dir).value_or_exit(li);
     }
 
-    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(const Path& dir) const
+    Optional<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(DiagnosticContext& context,
+                                                                            const Path& dir) const
     {
         std::error_code ec;
         auto maybe_files = this->get_files_recursive(dir, ec);
         if (ec)
         {
-            return format_filesystem_call_error(ec, __func__, {dir});
+            context.report(DiagnosticLine{DiagKind::Error,
+                                          dir,
+                                          msg::format(msgSystemApiErrorMessage,
+                                                      msg::system_api = "get_files_recursive",
+                                                      msg::exit_code = ec.value(),
+                                                      msg::error_msg = ec.message())});
+            return nullopt;
         }
 
         return maybe_files;
@@ -2277,16 +2284,6 @@ namespace vcpkg
         }
 
         return result;
-    }
-
-    void Filesystem::last_write_time(const Path& target, int64_t new_time, vcpkg::LineInfo li) const noexcept
-    {
-        std::error_code ec;
-        this->last_write_time(target, new_time, ec);
-        if (ec)
-        {
-            exit_filesystem_call_error(li, ec, __func__, {target});
-        }
     }
 
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const
@@ -3926,20 +3923,38 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
-        void last_write_time(const Path& target, int64_t new_time, std::error_code& ec) const override
+        virtual bool last_write_time(DiagnosticContext& context, const Path& target, int64_t new_time) const override
         {
+            std::error_code ec;
 #if defined(_WIN32)
             stdfs::last_write_time(to_stdfs_path(target),
                                    stdfs::file_time_type::time_point{stdfs::file_time_type::time_point::duration {
                                        new_time
                                    }},
                                    ec);
+            if (ec)
+            {
+                context.report(DiagnosticLine{DiagKind::Error,
+                                              target,
+                                              msg::format(msgSystemApiErrorMessage,
+                                                          msg::system_api = "std::fs::last_write_time",
+                                                          msg::exit_code = ec.value(),
+                                                          msg::error_msg = ec.message())});
+                return false;
+            }
 
+            return true;
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             PosixFd fd(target.c_str(), O_WRONLY, ec);
             if (ec)
             {
-                return;
+                context.report(DiagnosticLine{DiagKind::Error,
+                                              target,
+                                              msg::format(msgSystemApiErrorMessage,
+                                                          msg::system_api = "open",
+                                                          msg::exit_code = ec.value(),
+                                                          msg::error_msg = ec.message())});
+                return false;
             }
             timespec times[2]; // last access and modification time
             times[0].tv_nsec = UTIME_OMIT;
@@ -3947,8 +3962,17 @@ namespace vcpkg
             times[1].tv_sec = new_time / 1'000'000'000;
             if (futimens(fd.get(), times))
             {
-                ec.assign(errno, std::system_category());
+                auto local_errno = errno;
+                context.report(
+                    DiagnosticLine{DiagKind::Error,
+                                   target,
+                                   msg::format(msgSystemApiErrorMessage,
+                                               msg::system_api = "futimens",
+                                               msg::exit_code = local_errno,
+                                               msg::error_msg = std::system_category().message(local_errno))});
             }
+
+            return true;
 #endif // ^^^ !_WIN32
         }
 
