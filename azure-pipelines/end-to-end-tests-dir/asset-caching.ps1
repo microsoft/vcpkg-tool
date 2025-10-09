@@ -7,6 +7,12 @@ Run-Vcpkg @commonArgs fetch cmake
 Throw-IfFailed
 Run-Vcpkg @commonArgs fetch ninja
 Throw-IfFailed
+if ($IsWindows)
+{
+    Run-Vcpkg @commonArgs fetch powershell-core
+    Throw-IfFailed
+}
+
 Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
 $helloPath = Join-Path $DefaultDownloadsRoot 'hello-world.txt'
 if (Test-Path $helloPath) {
