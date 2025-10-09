@@ -4,12 +4,36 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char expected_uri[] = "https://example.com/hello-world.txt";
+static const char expected_uri[] =
+    "https://raw.githubusercontent.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE.txt";
 // Note that this checks that the SHA is properly tolower'd
-static const char expected_sha[] = "09e1e2a84c92b56c8280f4a1203c7cffd61b162cfe987278d4d6be9afbf38c0e8934cdadf83751f4e99"
-                                   "d111352bffefc958e5a4852c8a7a29c95742ce59288a8";
+static const char expected_sha[] = "65077997890f66f6041bb3284bb7b88e27631411ccbc253201ca4e00c4bcc58c0d77edffda497549879"
+                                   "7cc10772c7fd68fbeb13cc4ac493a3471a9d49e5b6f24";
 
-static const char result_data[] = "Hello, world!\n";
+static const char result_data[] = //
+    "Copyright (c) Microsoft Corporation\n"
+    "\n"
+    "All rights reserved.\n"
+    "\n"
+    "MIT License\n"
+    "\n"
+    "Permission is hereby granted, free of charge, to any person obtaining a copy of\n"
+    "this software and associated documentation files (the \"Software\"), to deal in\n"
+    "the Software without restriction, including without limitation the rights to\n"
+    "use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies\n"
+    "of the Software, and to permit persons to whom the Software is furnished to do\n"
+    "so, subject to the following conditions:\n"
+    "\n"
+    "The above copyright notice and this permission notice shall be included in all\n"
+    "copies or substantial portions of the Software.\n"
+    "\n"
+    "THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+    "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+    "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+    "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+    "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+    "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+    "SOFTWARE.\n";
 
 int main(int argc, char** argv)
 {
