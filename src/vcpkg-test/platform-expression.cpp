@@ -570,3 +570,34 @@ TEST_CASE ("invalid alternate expressions", "[platform-expression]")
     CHECK_FALSE(parse_expr("not! windows"));
     CHECK_FALSE(parse_expr("notx64 windows"));
 }
+
+TEST_CASE ("negate expression", "[platform-expression]")
+{
+    auto m_expr = parse_expr("uwp & !xbox, (windows | osx)");
+    REQUIRE(m_expr);
+    m_expr.get()->negate();
+    to_string(*m_expr.get());
+
+    CHECK(to_string(*m_expr.get()) == "(!uwp | xbox) & (!windows & !osx)");
+}
+
+static std::string simplyfy(StringView expr)
+{
+    auto m_expr = parse_expr(expr);
+    REQUIRE(m_expr);
+    m_expr.get()->simplify();
+    return to_string(*m_expr.get());
+}
+
+TEST_CASE ("simplify expression", "[platform-expression]")
+{
+    CHECK(simplyfy("(uwp & (xbox & (uwp & xbox))) , !windows | (uwp, !windows)") == "(uwp & xbox), !windows, uwp");
+    CHECK(simplyfy("uwp & uwp") == "uwp");
+    CHECK(simplyfy("uwp , uwp | uwp") == "uwp");
+    CHECK(simplyfy("!uwp & !uwp") == "!uwp");
+    CHECK(simplyfy("uwp & (uwp & (windows & uwp))") == "uwp & windows");
+    CHECK(simplyfy("uwp | (uwp , (windows | uwp))") == "uwp | windows");
+    CHECK(simplyfy("!(!uwp)") == "uwp");
+    CHECK(simplyfy("!(uwp & uwp)") == "!uwp");
+    CHECK(simplyfy("!(!uwp & !uwp)") == "uwp");
+}

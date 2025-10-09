@@ -27,7 +27,7 @@ namespace
         auto is_digit_or_dot = [](char ch) { return ch == '.' || ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNugetIdAndVersion, msg::path = archive);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNuGetIdAndVersion, msg::path = archive);
         }
 
         StringView nugetid{stem.begin(), dot_after_name};
@@ -367,20 +367,5 @@ namespace vcpkg
             .string_arg("-d" + dst.native());
 #endif
         return cmd;
-    }
-
-    std::vector<ExpectedL<Unit>> decompress_in_parallel(View<Command> jobs)
-    {
-        RedirectedProcessLaunchSettings settings;
-        settings.environment = get_clean_environment();
-        auto results = cmd_execute_and_capture_output_parallel(jobs, settings);
-        std::vector<ExpectedL<Unit>> filtered_results;
-        filtered_results.reserve(jobs.size());
-        for (std::size_t idx = 0; idx < jobs.size(); ++idx)
-        {
-            filtered_results.push_back(flatten(results[idx], jobs[idx].command_line()));
-        }
-
-        return filtered_results;
     }
 }

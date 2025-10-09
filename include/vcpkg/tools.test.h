@@ -47,6 +47,7 @@ namespace vcpkg
         Linux,
         FreeBsd,
         OpenBsd,
+        NetBsd,
         Solaris,
     };
 

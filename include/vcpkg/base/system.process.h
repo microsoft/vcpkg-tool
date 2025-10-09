@@ -166,10 +166,6 @@ namespace vcpkg
             settings);
     }
 
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands);
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> commands, const RedirectedProcessLaunchSettings& settings);
-
     Optional<ExitCodeIntegral> cmd_execute_and_stream_lines(DiagnosticContext& context,
                                                             const Command& cmd,
                                                             const std::function<void(StringView)>& per_line_cb);
@@ -266,6 +262,23 @@ namespace vcpkg
 
     void replace_secrets(std::string& target, View<std::string> secrets);
 
+    void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets);
+
+    // Checks that `maybe_exit` implies a process that returned 0. If so, returns true.
+    // Otherwise, records an error in `context` and returns false.
+    bool check_zero_exit_code(DiagnosticContext& context,
+                              const Command& command,
+                              Optional<ExitCodeIntegral>& maybe_exit);
+
     // Checks that `maybe_exit` implies a process that returned 0. If so, returns a pointer to the process' output.
     // Otherwise, records an error in `context` and returns nullptr.
     std::string* check_zero_exit_code(DiagnosticContext& context,
@@ -275,5 +288,11 @@ namespace vcpkg
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug);
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug,
                                       View<std::string> secrets);
 }

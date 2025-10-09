@@ -90,6 +90,10 @@
         "supports": {
           "$ref": "vcpkg-schema-definitions.schema.json#/definitions/platform-expression"
         },
+        "configuration": {
+          "description": "Embedded vcpkg.configuration.json file.",
+          "$ref": "vcpkg-configuration.schema.json"
+        },
         "vcpkg-configuration": {
           "description": "Embedded vcpkg.configuration.json file.",
           "$ref": "vcpkg-configuration.schema.json"
@@ -102,6 +106,21 @@
     },
     {
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/has-zero-or-one-version"
+    },
+    {
+      "description": "Only one of configuration or vcpkg-configuration may be used. (They are aliases of the same field)",
+      "if": {
+        "required": [
+          "configuration"
+        ]
+      },
+      "then": {
+        "not": {
+          "required": [
+            "vcpkg-configuration"
+          ]
+        }
+      }
     }
   ]
 }

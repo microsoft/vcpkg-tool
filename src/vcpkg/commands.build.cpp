@@ -806,6 +806,7 @@ namespace vcpkg
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {CMakeVariableHostTriplet, triplet.canonical_name()},
             {CMakeVariableCompilerCacheFile, paths.installed().compiler_hash_cache_file()},
+            {CMakeVariableZChainloadToolchainFile, pre_build_info.toolchain_file()},
         };
 
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
@@ -995,6 +996,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
+        else if (cmake_system_name == "NetBSD")
+        {
+            return m_paths.scripts / "toolchains/netbsd.cmake";
+        }
         else if (cmake_system_name == "SunOS")
         {
             return m_paths.scripts / "toolchains/solaris.cmake";
@@ -1068,19 +1073,30 @@ namespace vcpkg
         const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
         // Gather all the files in the package directory
         // Note: For packages with many files, this sequential hashing may be slow
-        const auto relative_package_files =
-            fs.get_regular_files_recursive_lexically_proximate(package_dir, VCPKG_LINE_INFO);
+        std::vector<Path> package_files;
         std::vector<std::string> package_hashes;
-        for (const auto& file : relative_package_files)
         {
-            auto hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
-            package_hashes.push_back(hash.value_or_exit(VCPKG_LINE_INFO));
-        }
+            auto maybe_relative_package_files = fs.try_get_regular_files_recursive_lexically_proximate(package_dir);
+            if (auto relative_package_files = maybe_relative_package_files.get())
+            {
+                package_files.reserve(relative_package_files->size());
+                package_hashes.reserve(relative_package_files->size());
+                for (auto& file : *relative_package_files)
+                {
+                    auto maybe_hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
+                    if (auto hash = maybe_hash.get())
+                    {
+                        package_files.push_back(std::move(file));
+                        package_hashes.push_back(std::move(*hash));
+                    }
+                }
+            }
+        } // destroy maybe_relative_package_files
         fs.write_contents_and_dirs(json_path,
                                    create_spdx_sbom(action,
                                                     abi.relative_port_files,
                                                     abi.relative_port_hashes,
-                                                    relative_package_files,
+                                                    package_files,
                                                     package_hashes,
                                                     now,
                                                     doc_ns,
