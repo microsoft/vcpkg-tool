@@ -1603,15 +1603,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Mindestens ein {vendor}-Anmeldeinformationsanbieter hat eine manuelle Aktion angefordert. Fügen Sie die binäre Quelle "interactive" hinzu, um Interaktivität zuzulassen.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AutoSettingEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Automatically setting {env_var} environment variables to "{url}".]]></Val>
@@ -2917,15 +2908,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportOptNuGet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Exportiert ein NuGet-Paket]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2953,39 +2941,30 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetDesc" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Description for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Beschreibung für das exportierte NuGet-Paket]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetID" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetID" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Id for the exported NuGet package (overrides --output)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ID für das exportierte NuGet-Paket (überschreibt --output).]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetVersion" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die Version für das exportierte NuGet-Paket.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4114,9 +4093,9 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CouldNotDeduceNuGetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
+          <Val><![CDATA[Could not deduce NuGet id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Die NuGet-ID und die Version konnten nicht aus dem Dateinamen abgeleitet werden: {path}]]></Val>
           </Tgt>
@@ -4195,7 +4174,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CreatingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creating NuGet package...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8821,7 +8800,16 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetAuthenticationMayRequireManualAction" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[One or more NuGet credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Mindestens ein NuGet-Anmeldeinformationsanbieter hat eine manuelle Aktion angefordert. Fügen Sie die binäre Quelle „interactive“ hinzu, um Interaktivität zuzulassen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NuGetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet command failed and output was not captured because --interactive was specified]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8830,7 +8818,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";NuGetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet package creation succeeded, but no .nupkg was produced. Expected: "{path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8839,7 +8827,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -9199,18 +9187,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es müssen keine Pakete aktualisiert werden.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Packing {vendor} failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler bei der {vendor}-Paketerstellung. Verwenden Sie "--debug", um weitere Informationen zu erhalten.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10014,18 +9990,6 @@
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[At least one of the following options are required: --raw --nuget --ifw --zip --7zip --chocolatey --prefab.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PushingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Pushing {vendor} to "{path}" failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Pushen von {vendor} nach „{path}“. Verwenden Sie „--debug“, um weitere Informationen zu erhalten.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -12436,11 +12400,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhilePackingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while packing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beim Packen des NuGet-Pakets]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileParsingVersionsForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while parsing versions for {package_name} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[beim Parsen von Versionen für das Paket {package_name} aus {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhilePushingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while pushing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[beim Pushen des NuGet-Pakets]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12655,11 +12637,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";packageReference$IsNotAValidNugetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";packageReference$IsNotAValidNuGetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[package reference '${p0}' is not a valid nuget package reference ({name}/{version})]]></Val>
+          <Val><![CDATA[package reference '${p0}' is not a valid NuGet package reference ({name}/{version})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Der Paketverweis "${p0}" ist kein gültiger NuGet-Paketverweis ({name}/{version}).]]></Val>
+            <Val><![CDATA[Der Paketverweis „${p0}“ ist kein gültiger NuGet-Paketverweis ({name}/{version}).]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
