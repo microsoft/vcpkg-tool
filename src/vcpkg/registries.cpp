@@ -73,7 +73,10 @@ namespace
 
     struct GitRegistry final : RegistryImplementation
     {
-        GitRegistry(const VcpkgPaths& paths, std::string&& repo, std::string&& reference, std::string&& baseline)
+        GitRegistry(const VcpkgPaths& paths,
+                    std::string&& repo,
+                    std::string&& reference,
+                    Optional<std::string>&& baseline)
             : m_paths(paths)
             , m_repo(std::move(repo))
             , m_reference(std::move(reference))
@@ -202,7 +205,7 @@ namespace
 
         std::string m_repo;
         std::string m_reference;
-        std::string m_baseline_identifier;
+        Optional<std::string> m_baseline_identifier;
         DelayedInit<ExpectedL<LockFile::Entry>> m_lock_entry;
         mutable Optional<Path> m_stale_versions_tree;
         DelayedInit<ExpectedL<Path>> m_versions_tree;
@@ -730,9 +733,15 @@ namespace
 
     ExpectedL<Optional<Version>> GitRegistry::get_baseline_version(StringView port_name) const
     {
+        if (!m_baseline_identifier)
+        {
+            return nullopt;
+        }
+
         return lookup_in_maybe_baseline(m_baseline.get([this, port_name]() -> ExpectedL<Baseline> {
             // We delay baseline validation until here to give better error messages and suggestions
-            if (!is_git_sha(m_baseline_identifier))
+            auto baseline_id = m_baseline_identifier.value_or_exit(VCPKG_LINE_INFO);
+            if (!is_git_sha(baseline_id))
             {
                 auto& maybe_lock_entry = get_lock_entry();
                 auto lock_entry = maybe_lock_entry.get();
@@ -752,7 +761,7 @@ namespace
             }
 
             auto path_to_baseline = Path(FileVersions) / FileBaselineDotJson;
-            auto maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+            auto maybe_contents = m_paths.git_show_from_remote_registry(baseline_id, path_to_baseline);
             if (!maybe_contents)
             {
                 auto& maybe_lock_entry = get_lock_entry();
@@ -768,13 +777,13 @@ namespace
                     return std::move(maybe_up_to_date).error();
                 }
 
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+                maybe_contents = m_paths.git_show_from_remote_registry(baseline_id, path_to_baseline);
             }
 
             if (!maybe_contents)
             {
                 msg::println(msgFetchingBaselineInfo, msg::package_name = m_repo);
-                auto maybe_err = m_paths.git_fetch(m_repo, m_baseline_identifier);
+                auto maybe_err = m_paths.git_fetch(m_repo, baseline_id);
                 if (!maybe_err)
                 {
                     get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
@@ -783,7 +792,7 @@ namespace
                         .append(maybe_err.error());
                 }
 
-                maybe_contents = m_paths.git_show_from_remote_registry(m_baseline_identifier, path_to_baseline);
+                maybe_contents = m_paths.git_show_from_remote_registry(baseline_id, path_to_baseline);
             }
 
             if (!maybe_contents)
@@ -791,7 +800,7 @@ namespace
                 get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
                 return msg::format_error(msgCouldNotFindBaselineInCommit,
                                          msg::url = m_repo,
-                                         msg::commit_sha = m_baseline_identifier,
+                                         msg::commit_sha = baseline_id,
                                          msg::package_name = port_name)
                     .append_raw('\n')
                     .append_raw(maybe_contents.error());
@@ -801,9 +810,8 @@ namespace
             return parse_baseline_versions(*contents, JsonIdDefault, path_to_baseline)
                 .map_error([&](LocalizedString&& error) {
                     get_global_metrics_collector().track_define(DefineMetric::RegistriesErrorCouldNotFindBaseline);
-                    return msg::format_error(msgErrorWhileFetchingBaseline,
-                                             msg::value = m_baseline_identifier,
-                                             msg::package_name = m_repo)
+                    return msg::format_error(
+                               msgErrorWhileFetchingBaseline, msg::value = baseline_id, msg::package_name = m_repo)
                         .append_raw('\n')
                         .append(error);
                 });
@@ -1509,7 +1517,7 @@ namespace vcpkg
     std::unique_ptr<RegistryImplementation> make_git_registry(const VcpkgPaths& paths,
                                                               std::string repo,
                                                               std::string reference,
-                                                              std::string baseline)
+                                                              Optional<std::string> baseline)
     {
         return std::make_unique<GitRegistry>(paths, std::move(repo), std::move(reference), std::move(baseline));
     }
