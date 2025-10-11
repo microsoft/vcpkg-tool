@@ -59,7 +59,7 @@ namespace vcpkg
     {
         if (paths.manifest_mode_enabled())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgUnsupportedUpdateCMD);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgUnsupportedUpdateCMD);
         }
 
         (void)args.parse_arguments(CommandUpdateMetadata);

@@ -149,9 +149,7 @@ namespace vcpkg
     inline constexpr StringLiteral MessagePrefix = "message: ";
     LocalizedString message_prefix();
     inline constexpr StringLiteral InfoPrefix = "info: ";
-    LocalizedString info_prefix();
     inline constexpr StringLiteral NotePrefix = "note: ";
-    LocalizedString note_prefix();
     inline constexpr StringLiteral WarningPrefix = "warning: ";
     LocalizedString warning_prefix();
 }

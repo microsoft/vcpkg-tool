@@ -28,8 +28,6 @@ namespace vcpkg::Checks
     [[noreturn]] void exit_success(const LineInfo& line_info);
 
     // Display an error message to the user and exit the tool.
-    [[noreturn]] void exit_with_message(const LineInfo& line_info, StringView error_message);
-    [[noreturn]] void exit_with_message(const LineInfo& line_info, const LocalizedString&) = delete;
     [[noreturn]] void msg_exit_with_message(const LineInfo& line_info, const LocalizedString& error_message);
     template<VCPKG_DECL_MSG_TEMPLATE>
     [[noreturn]] void msg_exit_with_message(const LineInfo& line_info, VCPKG_DECL_MSG_ARGS)
@@ -55,33 +53,6 @@ namespace vcpkg::Checks
         }
     }
 
-    // Display a message indicating that vcpkg should be upgraded and exit.
-    [[noreturn]] void exit_maybe_upgrade(const LineInfo& line_info);
-    [[noreturn]] void exit_maybe_upgrade(const LineInfo& line_info, StringView error_message);
-    [[noreturn]] void exit_maybe_upgrade(const LineInfo&, const LocalizedString&) = delete;
-    [[noreturn]] void msg_exit_maybe_upgrade(const LineInfo& line_info, const LocalizedString& error_message);
-    template<VCPKG_DECL_MSG_TEMPLATE>
-    [[noreturn]] void msg_exit_maybe_upgrade(const LineInfo& line_info, VCPKG_DECL_MSG_ARGS)
-    {
-        msg_exit_maybe_upgrade(line_info, msg::format(VCPKG_EXPAND_MSG_ARGS));
-    }
-
-    // Check the indicated condition and call exit_maybe_upgrade if it is false.
-    void check_maybe_upgrade(const LineInfo& line_info, bool condition);
-    void check_maybe_upgrade(const LineInfo& line_info, bool condition, StringView error_message);
-    void check_maybe_upgrade(const LineInfo& line_info, bool condition, const LocalizedString&) = delete;
-    void msg_check_maybe_upgrade(const LineInfo& line_info, bool condition, const LocalizedString& error_message);
-    template<VCPKG_DECL_MSG_TEMPLATE>
-    VCPKG_SAL_ANNOTATION(_Post_satisfies_(_Old_(expression)))
-    void msg_check_maybe_upgrade(const LineInfo& line_info, bool expression, VCPKG_DECL_MSG_ARGS)
-    {
-        if (!expression)
-        {
-            // Only create the string if the expression is false
-            msg_exit_maybe_upgrade(line_info, msg::format(VCPKG_EXPAND_MSG_ARGS));
-        }
-    }
-
     [[noreturn]] inline void msg_exit_with_error(const LineInfo& line_info, const LocalizedString& message)
     {
         msg::write_unlocalized_text_to_stderr(Color::error, error_prefix().append_raw(message).append_raw('\n'));
@@ -94,5 +65,4 @@ namespace vcpkg::Checks
                                               error_prefix().append(VCPKG_EXPAND_MSG_ARGS).append_raw('\n'));
         Checks::exit_fail(line_info);
     }
-
 }

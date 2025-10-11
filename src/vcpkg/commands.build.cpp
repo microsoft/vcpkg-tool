@@ -435,7 +435,7 @@ namespace vcpkg
             msg::println_error(msgInvalidArchitectureValue,
                                msg::value = target_architecture,
                                msg::expected = all_comma_separated_cpu_architectures());
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
@@ -464,7 +464,7 @@ namespace vcpkg
                            msg::path = toolset.visual_studio_root_path,
                            msg::list = toolset_list);
         msg::println(msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 #endif
 
@@ -1042,10 +1042,10 @@ namespace vcpkg
         }
         else
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msgUndeterminedToolChainForTriplet,
-                                           msg::triplet = triplet,
-                                           msg::system_name = cmake_system_name);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msgUndeterminedToolChainForTriplet,
+                                          msg::triplet = triplet,
+                                          msg::system_name = cmake_system_name);
         }
     }
 
@@ -2144,7 +2144,7 @@ namespace vcpkg
             return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)

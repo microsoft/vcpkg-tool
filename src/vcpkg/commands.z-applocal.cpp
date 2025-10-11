@@ -394,7 +394,8 @@ namespace
                     }
                     else
                     {
-                        Checks::exit_with_message(VCPKG_LINE_INFO, "qml directory must exist with Qt5Qml.dll");
+                        msg::write_unlocalized_text(Color::error, "qml directory must exist with Qt5Qml.dll\n");
+                        Checks::exit_fail(VCPKG_LINE_INFO);
                     }
                 }
                 std::vector<std::string> libs = {"Qt5Quick.dll",

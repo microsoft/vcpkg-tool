@@ -83,10 +83,10 @@ namespace
             return ManifestAndPath{std::move(*manifest_object), std::move(manifest_path)};
         }
 
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                       msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
-                                           .append_raw('\n')
-                                           .append(maybe_manifest_object.error()));
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                      msg::format(msgFailedToLoadManifest, msg::path = manifest_dir)
+                                          .append_raw('\n')
+                                          .append(maybe_manifest_object.error()));
     }
 
     static Optional<ManifestConfiguration> config_from_manifest(const Optional<ManifestAndPath>& manifest_doc)
@@ -192,9 +192,9 @@ namespace
                 if (!is_git_sha(*p_baseline))
                 {
                     get_global_metrics_collector().track_define(DefineMetric::VersioningErrorBaseline);
-                    Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                                   msg::format(msgInvalidBuiltInBaseline, msg::value = *p_baseline)
-                                                       .append_raw(paths.get_current_git_sha_baseline_message()));
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msg::format(msgInvalidBuiltInBaseline, msg::value = *p_baseline)
+                                                      .append_raw(paths.get_current_git_sha_baseline_message()));
                 }
 
                 if (ret.config.default_reg)

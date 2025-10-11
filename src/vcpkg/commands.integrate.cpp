@@ -655,7 +655,7 @@ namespace vcpkg
             return integrate_fish(paths);
         }
 
-        Checks::msg_exit_maybe_upgrade(
+        Checks::msg_exit_with_message(
             VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
     }
 }

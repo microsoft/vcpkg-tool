@@ -862,10 +862,7 @@ namespace
                          [&](const GitVersionDbEntry& entry) noexcept { return entry.version.version == version; });
         if (it == port_version_entries.end())
         {
-            return format_version_git_entry_missing(port_name, version, port_version_entries)
-                .append_raw('\n')
-                .append_raw(NotePrefix)
-                .append(msgChecksUpdateVcpkg);
+            return format_version_git_entry_missing(port_name, version, port_version_entries);
         }
 
         return m_paths.versions_dot_git_dir()
