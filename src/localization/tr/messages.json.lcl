@@ -1603,15 +1603,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Bir veya daha {vendor} kimlik bilgisi sağlayıcısı el ile eylem isteğinde bulundu. Etkileşime izin vermek için 'interactive' ikili kaynağı ekleyin.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AutoSettingEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Automatically setting {env_var} environment variables to "{url}".]]></Val>
@@ -2917,15 +2908,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportOptNuGet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[NuGet paketini dışarı aktarır]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2953,39 +2941,30 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetDesc" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Description for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dışarı aktarılan NuGet paketi hakkında açıklama]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetID" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetID" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Id for the exported NuGet package (overrides --output)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dışarı aktarılan NuGet paketinin kimliği (--output öğesini geçersiz kılar)]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetVersion" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dışarı aktarılan NuGet paketinin sürümü]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4114,11 +4093,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CouldNotDeduceNuGetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
+          <Val><![CDATA[Could not deduce NuGet id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} dosya adından NuGet kimliği ve sürümü çıkarılamadı]]></Val>
+            <Val><![CDATA[Dosya adından NuGet kimliği ve sürümü alınamadı: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4195,7 +4174,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CreatingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creating NuGet package...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -5553,6 +5532,15 @@
           <Val><![CDATA[Extracts an archive.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Arşivi ayıklar.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExtractedInto" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[extracted into {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{path} içine çıkarıldı]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8824,7 +8812,16 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetAuthenticationMayRequireManualAction" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[One or more NuGet credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Bir veya daha çok NuGet kimlik bilgisi sağlayıcısı, el ile eylem isteğinde bulundu. Etkileşime izin vermek için "interactive" ikili kaynağı ekleyin.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NuGetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet command failed and output was not captured because --interactive was specified]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8833,7 +8830,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";NuGetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet package creation succeeded, but no .nupkg was produced. Expected: "{path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8842,7 +8839,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -9202,18 +9199,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Güncelleştirilmesi gereken paket yok.]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Packing {vendor} failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{vendor} paketlemesi yapılamadı. Daha fazla bilgi için --debug kullanın.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10021,18 +10006,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PushingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Pushing {vendor} to "{path}" failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA["{path}" yoluna {vendor} gönderimi yapılamadı. Daha fazla bilgi için --debug kullanın.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";RegeneratesArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Regenerates an artifact registry]]></Val>
@@ -10707,15 +10680,6 @@
           <Val><![CDATA[Unable to checkout data for (${p0}) in folder (${p1})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(${p1}) klasöründeki (${p0}) için veriler kullanıma alınamıyor]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnableToClearPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to delete {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} silinemiyor]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12403,6 +12367,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhileClearingThis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while clearing this directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu dizini temizlerken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileExtractingThisArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while extracting this archive]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[bu arşivi çıkarırken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileGettingLocalTreeIshObjectsForPorts" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while getting local treeish objects for ports]]></Val>
@@ -12439,11 +12421,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhilePackingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while packing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[NuGet paketi paketlenirken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileParsingVersionsForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while parsing versions for {package_name} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{path} öğesinden {package_name} için sürümler ayrıştırılırken]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhilePushingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while pushing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[NuGet paketi gönderilirken]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12658,11 +12658,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";packageReference$IsNotAValidNugetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";packageReference$IsNotAValidNuGetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[package reference '${p0}' is not a valid nuget package reference ({name}/{version})]]></Val>
+          <Val><![CDATA[package reference '${p0}' is not a valid NuGet package reference ({name}/{version})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA['${p0}' paket başvurusu geçerli bir nuget paket başvurusu değil ({name}/{version})]]></Val>
+            <Val><![CDATA["${p0}" paket başvurusu, geçerli bir NuGet paket başvurusu değil ({name}/{version})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
