@@ -389,21 +389,15 @@ namespace
                 }
             });
 
-            if (Debug::g_debugging)
+            for (auto&& job : jobs)
             {
-                for (auto&& job : jobs)
+                job.fbdc.print_to(out_sink);
+                if (Debug::g_debugging && job.success)
                 {
-                    if (job.success)
-                    {
-                        console_diagnostic_context.report(
-                            DiagnosticLine{DiagKind::Note,
-                                           job.zip_resource->path,
-                                           msg::format(msgExtractedInto, msg::path = *job.package_dir)});
-                    }
-                    else
-                    {
-                        job.fbdc.print_to(out_sink);
-                    }
+                    console_diagnostic_context.report(
+                        DiagnosticLine{DiagKind::Note,
+                                       job.zip_resource->path,
+                                       msg::format(msgExtractedInto, msg::path = *job.package_dir)});
                 }
             }
         }
