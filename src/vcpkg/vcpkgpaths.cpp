@@ -1221,7 +1221,9 @@ namespace vcpkg
 
     const Toolset& VcpkgPaths::get_toolset(const PreBuildInfo& prebuildinfo) const
     {
+#if defined(_WIN32)
         if (!prebuildinfo.using_vcvars())
+#endif
         {
             static const Toolset external_toolset{
                 Path{},
