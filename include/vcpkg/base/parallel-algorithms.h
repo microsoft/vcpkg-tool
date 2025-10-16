@@ -78,6 +78,7 @@ namespace vcpkg
         if (work_count == 1)
         {
             work(size_t{});
+            return;
         }
 
         WorkCallbackContext<F> context{work, work_count};
