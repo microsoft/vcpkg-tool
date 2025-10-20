@@ -685,6 +685,21 @@ namespace vcpkg
         return file->write(contents, size, nmemb);
     }
 
+    static size_t progress_callback(void *clientp,
+                      double dltotal,
+                      double dlnow,
+                      double ultotal,
+                      double ulnow)
+    {
+        (void)ultotal;
+        (void)ulnow;
+        auto machine_readable_progress = static_cast<MessageSink*>(clientp);
+
+        const double percent = (dlnow / dltotal) * 100.0;
+        machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
+        return 0;
+    }
+
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
                                                    View<std::string> urls,
                                                    View<Path> outputs,
@@ -1099,8 +1114,9 @@ namespace vcpkg
         set_common_curl_options(curl, url_encode_spaces(raw_url).c_str(), request_headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fileptr.get());
-        // TODO: Add progress
-        (void)machine_readable_progress;
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress reporting
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &machine_readable_progress);
 
         // Retry on transient errors:
         // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or 504
