@@ -80,8 +80,8 @@ namespace
     // Build the list of package specs to install for CI (all ports with default features, excluding those in the
     // exclusion list)
     std::vector<FullPackageSpec> calculate_ci_requested_specs(const PortFileProvider& provider,
-                                                               Triplet target_triplet,
-                                                               const SortedVector<PackageSpec>& ports_to_exclude)
+                                                              Triplet target_triplet,
+                                                              const SortedVector<PackageSpec>& ports_to_exclude)
     {
         std::vector<FullPackageSpec> ci_requested_default_full_specs;
         for (auto scfl : provider.load_all_control_files())
@@ -421,8 +421,12 @@ namespace vcpkg
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
             randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto action_plan = compute_full_plan(
-            paths, provider, var_provider, ci_requested_default_full_specs, packages_dir_assigner, create_install_plan_options);
+        auto action_plan = compute_full_plan(paths,
+                                             provider,
+                                             var_provider,
+                                             ci_requested_default_full_specs,
+                                             packages_dir_assigner,
+                                             create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
