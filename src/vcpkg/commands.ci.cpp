@@ -353,7 +353,7 @@ namespace vcpkg
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        
+
         // Build a set of ports to exclude based on the exclusions_map for the target triplet
         SortedVector<PackageSpec> ports_to_exclude;
         std::vector<PackageSpec> exclude_list;
@@ -369,7 +369,7 @@ namespace vcpkg
             }
         }
         ports_to_exclude = SortedVector<PackageSpec>(std::move(exclude_list));
-        
+
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -379,21 +379,11 @@ namespace vcpkg
         for (auto scfl : provider.load_all_control_files())
         {
             PackageSpec pkg_spec{scfl->to_name(), target_triplet};
-            
-            // Check if this port is excluded (should already be filtered by provider, but double-check)
-            if (ports_to_exclude.contains(pkg_spec))
+            if (!ports_to_exclude.contains(pkg_spec))
             {
-                // Port is marked to skip, don't add it to the test list
-                continue;
+                all_default_full_specs.emplace_back(
+                    pkg_spec, InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
             }
-            
-            InternalFeatureSet features;
-            // Always add core feature
-            features.push_back(FeatureNameCore.to_string());
-            // Add default feature
-            features.push_back(FeatureNameDefault.to_string());
-            
-            all_default_full_specs.emplace_back(pkg_spec, std::move(features));
         }
 
         struct RandomizerInstance : GraphRandomizer
@@ -430,7 +420,7 @@ namespace vcpkg
         LocalizedString not_supported_regressions;
         {
             std::string msg;
-            
+
             // First, print ports that were excluded early (before dependency resolution)
             for (const auto& excluded_spec : ports_to_exclude)
             {
@@ -441,7 +431,7 @@ namespace vcpkg
                 split_specs->features.emplace(excluded_spec, std::vector<std::string>{"core"});
                 msg += fmt::format("{:>40}: {:>8}: {}\n", excluded_spec, "skip", fake_abi);
             }
-            
+
             for (const auto& spec : all_default_full_specs)
             {
                 if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
