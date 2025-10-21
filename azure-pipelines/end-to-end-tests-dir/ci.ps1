@@ -62,4 +62,8 @@ Remove-Problem-Matchers
 Refresh-TestRoot
 $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-features/baseline.txt"
 Throw-IfFailed
+if (-not ($Output -match 'skipped-features:[^:]+:        \*' -and $Output -match 'Building skipped-features:[^@]+@1.0.0...')) {
+    throw 'did not attempt to build skipped-features'
+}
+
 Restore-Problem-Matchers
