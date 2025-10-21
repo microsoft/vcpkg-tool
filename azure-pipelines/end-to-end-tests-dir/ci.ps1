@@ -77,10 +77,10 @@ if ($Output -match "qtwayland-test:${Triplet}@") {
 # Test that without CI baseline, both ports are included
 $Output2 = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-feature-baseline" --binarysource=clear
 Throw-IfFailed
-# Both ports should be in the installation list
-if (-not ($Output2 -match "qtbase-test:${Triplet}@")) {
+# Both ports should be in the installation list (may have features like [core,wayland])
+if (-not ($Output2 -match "qtbase-test(\[.+?\])?:${Triplet}@")) {
     throw 'qtbase-test should be in the installation list without baseline'
 }
-if (-not ($Output2 -match "qtwayland-test:${Triplet}@")) {
+if (-not ($Output2 -match "qtwayland-test(\[.+?\])?:${Triplet}@")) {
     throw 'qtwayland-test should be in the installation list without baseline'
 }
