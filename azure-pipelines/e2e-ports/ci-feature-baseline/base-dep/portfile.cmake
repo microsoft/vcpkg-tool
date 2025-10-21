@@ -1,6 +1,6 @@
 vcpkg_minimum_required(VERSION 2024-11-01)
 
-message(STATUS "Installing qtwayland-test")
+message(STATUS "Installing base-dep")
 
 file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/copyright" "Test port")
 

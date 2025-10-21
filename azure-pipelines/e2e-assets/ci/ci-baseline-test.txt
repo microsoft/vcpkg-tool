@@ -1,9 +1,9 @@
 # CI Baseline for testing early filtering
-# qtwayland-test should be skipped on all triplets
-qtwayland-test:x86-windows=skip
-qtwayland-test:x64-windows=skip
-qtwayland-test:arm64-windows=skip
-qtwayland-test:x64-linux=skip
-qtwayland-test:arm64-linux=skip
-qtwayland-test:x64-osx=skip
-qtwayland-test:arm64-osx=skip
+# skip-dep should be skipped on all triplets
+skip-dep:x86-windows=skip
+skip-dep:x64-windows=skip
+skip-dep:arm64-windows=skip
+skip-dep:x64-linux=skip
+skip-dep:arm64-linux=skip
+skip-dep:x64-osx=skip
+skip-dep:arm64-osx=skip

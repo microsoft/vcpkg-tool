@@ -1,0 +1,10 @@
+{
+  "name": "base-dep",
+  "version": "1.0.0",
+  "description": "Test port with optional feature that should be skipped",
+  "features": {
+    "feature-to-skip": {
+      "description": "Optional feature (should be skipped when skip-dep is excluded)"
+    }
+  }
+}
