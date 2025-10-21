@@ -56,3 +56,27 @@ New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci --triplet=$Triplet --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
 Throw-IfNotFailed
 Restore-Problem-Matchers
+
+# Test CI baseline early filtering functionality
+# Test that ports marked as skip in ci.baseline.txt are excluded early from CI
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-feature-baseline" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci-baseline-test.txt"
+Throw-IfFailed
+# qtbase-test should be in the plan
+if (-not ($Output -match "qtbase-test:${Triplet}")) {
+    throw 'qtbase-test should be in the install plan'
+}
+# qtwayland-test should NOT be in the plan (it's marked as skip in baseline)
+if ($Output -match "qtwayland-test:${Triplet}") {
+    throw 'qtwayland-test should NOT be in the install plan (marked as skip in ci.baseline.txt)'
+}
+
+# Test that without CI baseline, both ports are included
+$Output2 = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-feature-baseline" --binarysource=clear
+Throw-IfFailed
+# Both ports should be in the plan
+if (-not ($Output2 -match "qtbase-test:${Triplet}")) {
+    throw 'qtbase-test should be in the install plan without baseline'
+}
+if (-not ($Output2 -match "qtwayland-test:${Triplet}")) {
+    throw 'qtwayland-test should be in the install plan without baseline'
+}

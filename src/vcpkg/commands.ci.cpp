@@ -50,6 +50,60 @@ namespace
         {SwitchXXUnitAll, msgCISwitchOptXUnitAll},
     };
 
+    // Filter wrapper that excludes ports marked as skip in CI baseline
+    struct FilteredPortFileProvider : PortFileProvider
+    {
+        FilteredPortFileProvider(PortFileProvider& base_provider,
+                                const SortedVector<PackageSpec>& excluded_specs)
+            : base_provider(base_provider), excluded_specs(excluded_specs)
+        {
+        }
+
+        ExpectedL<const SourceControlFileAndLocation&> get_control_file(const std::string& port_name) const override
+        {
+            // Check if this port is excluded
+            for (const auto& excluded_spec : excluded_specs)
+            {
+                if (excluded_spec.name() == port_name)
+                {
+                    return LocalizedString::from_raw(
+                        fmt::format("Port {} is excluded in CI baseline", port_name));
+                }
+            }
+            return base_provider.get_control_file(port_name);
+        }
+
+        std::vector<const SourceControlFileAndLocation*> load_all_control_files() const override
+        {
+            auto all_ports = base_provider.load_all_control_files();
+            // Filter out excluded ports
+            std::vector<const SourceControlFileAndLocation*> filtered;
+            for (auto* port : all_ports)
+            {
+                // Check if any triplet variant of this port is excluded
+                // Since we don't have triplet info here, we check the port name only
+                bool is_excluded = false;
+                for (const auto& excluded_spec : excluded_specs)
+                {
+                    if (excluded_spec.name() == port->to_name())
+                    {
+                        is_excluded = true;
+                        break;
+                    }
+                }
+                if (!is_excluded)
+                {
+                    filtered.push_back(port);
+                }
+            }
+            return filtered;
+        }
+
+    private:
+        PortFileProvider& base_provider;
+        const SortedVector<PackageSpec>& excluded_specs;
+    };
+
     struct UnknownCIPortsResults
     {
         std::map<PackageSpec, BuildResult> known;
@@ -352,7 +406,27 @@ namespace vcpkg
         }
 
         auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
+        PathsPortFileProvider base_provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
+        
+        // Build a set of ports to exclude based on the exclusions_map for the target triplet
+        SortedVector<PackageSpec> ports_to_exclude;
+        std::vector<PackageSpec> exclude_list;
+        for (const auto& triplet_exclusions : exclusions_map.triplets)
+        {
+            if (triplet_exclusions.triplet == target_triplet)
+            {
+                for (const auto& port_name : triplet_exclusions.exclusions)
+                {
+                    exclude_list.emplace_back(port_name, target_triplet);
+                }
+                break;
+            }
+        }
+        ports_to_exclude = SortedVector<PackageSpec>(std::move(exclude_list));
+        
+        // Create a filtered provider that excludes ports marked as skip in CI baseline
+        FilteredPortFileProvider provider(base_provider, ports_to_exclude);
+        
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
@@ -361,9 +435,22 @@ namespace vcpkg
         std::vector<FullPackageSpec> all_default_full_specs;
         for (auto scfl : provider.load_all_control_files())
         {
-            all_default_full_specs.emplace_back(
-                PackageSpec{scfl->to_name(), target_triplet},
-                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+            PackageSpec pkg_spec{scfl->to_name(), target_triplet};
+            
+            // Check if this port is excluded (should already be filtered by provider, but double-check)
+            if (ports_to_exclude.contains(pkg_spec))
+            {
+                // Port is marked to skip, don't add it to the test list
+                continue;
+            }
+            
+            InternalFeatureSet features;
+            // Always add core feature
+            features.push_back(FeatureNameCore.to_string());
+            // Add default feature
+            features.push_back(FeatureNameDefault.to_string());
+            
+            all_default_full_specs.emplace_back(pkg_spec, std::move(features));
         }
 
         struct RandomizerInstance : GraphRandomizer
@@ -400,6 +487,18 @@ namespace vcpkg
         LocalizedString not_supported_regressions;
         {
             std::string msg;
+            
+            // First, print ports that were excluded early (before dependency resolution)
+            for (const auto& excluded_spec : ports_to_exclude)
+            {
+                split_specs->known.emplace(excluded_spec, BuildResult::Excluded);
+                // Generate a simple hash for excluded ports (they don't get real ABIs)
+                std::string fake_abi = "0000000000000000000000000000000000000000000000000000000000000000";
+                split_specs->abi_map.emplace(excluded_spec, fake_abi);
+                split_specs->features.emplace(excluded_spec, std::vector<std::string>{"core"});
+                msg += fmt::format("{:>40}: {:>8}: {}\n", excluded_spec, "skip", fake_abi);
+            }
+            
             for (const auto& spec : all_default_full_specs)
             {
                 if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
