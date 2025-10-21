@@ -53,6 +53,13 @@ if (-not ($Output.Contains("vcpkg.json:3:17: error: Trailing comma"))) {
 Remove-Problem-Matchers
 $emptyDir = "$TestingRoot/empty"
 New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
-$Output = Run-VcpkgAndCaptureOutput ci --triplet=$Triplet --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
 Throw-IfNotFailed
+Restore-Problem-Matchers
+
+# test that features included only by skipped ports are not included
+Remove-Problem-Matchers
+Refresh-TestRoot
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-features/baseline.txt"
+Throw-IfFailed
 Restore-Problem-Matchers
