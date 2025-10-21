@@ -263,6 +263,36 @@ namespace
         return has_error;
     }
 
+    std::vector<vcpkg::FullPackageSpec> calculate_ci_requested_specs(const ExclusionsMap& exclusions_map,
+                                                                     const Triplet& target_triplet,
+                                                                     PortFileProvider& provider)
+    {
+        // Generate a spec for the default features for every package, except for those explicitly skipped.
+        // While `reduce_action_plan` tries to remove skipped packages as expected failures, there
+        // it is too late as we have already calculated an action plan with feature dependencies from
+        // the skipped ports.
+        std::vector<vcpkg::FullPackageSpec> result;
+        const TripletExclusions* target_triplet_exclusions = nullptr;
+        for (auto&& te : exclusions_map.triplets)
+        {
+            if (te.triplet == target_triplet)
+            {
+                target_triplet_exclusions = &te;
+                break;
+            }
+        }
+
+        for (auto scfl : provider.load_all_control_files())
+        {
+            if (!target_triplet_exclusions || !target_triplet_exclusions->exclusions.contains(scfl->to_name()))
+            {
+                result.emplace_back(PackageSpec{scfl->to_name(), target_triplet},
+                                    InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+            }
+        }
+
+        return result;
+    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -357,14 +387,8 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        // Install the default features for every package
-        std::vector<FullPackageSpec> all_default_full_specs;
-        for (auto scfl : provider.load_all_control_files())
-        {
-            all_default_full_specs.emplace_back(
-                PackageSpec{scfl->to_name(), target_triplet},
-                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
-        }
+        std::vector<FullPackageSpec> ci_requested_specs =
+            calculate_ci_requested_specs(exclusions_map, target_triplet, provider);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -387,7 +411,7 @@ namespace vcpkg
         CreateInstallPlanOptions create_install_plan_options(
             randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan = compute_full_plan(
-            paths, provider, var_provider, all_default_full_specs, packages_dir_assigner, create_install_plan_options);
+            paths, provider, var_provider, ci_requested_specs, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -400,7 +424,7 @@ namespace vcpkg
         LocalizedString not_supported_regressions;
         {
             std::string msg;
-            for (const auto& spec : all_default_full_specs)
+            for (const auto& spec : ci_requested_specs)
             {
                 if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
                 {
