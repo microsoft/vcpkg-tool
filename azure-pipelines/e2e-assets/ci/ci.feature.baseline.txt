@@ -1,8 +1,0 @@
-# CI Feature Baseline for testing
-# This file contains features that should be skipped during CI testing
-
-# qtbase-test port has 'wayland' feature marked as skip
-qtbase-test[wayland] = skip
-
-# qtwayland-test should cascade (skip if any dependency is skipped)
-qtwayland-test = cascade
