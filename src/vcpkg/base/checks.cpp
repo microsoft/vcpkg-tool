@@ -60,7 +60,7 @@ namespace vcpkg
     [[noreturn]] void Checks::unreachable(const LineInfo& line_info)
     {
         msg::write_unlocalized_text_to_stderr(
-            Color::error, locale_invariant_lineinfo(line_info).append(msgChecksUnreachableCode).append_raw('\n'));
+            Color::error, locale_invariant_lineinfo(line_info).append_raw(" unreachable code was reached\n"));
 #ifndef NDEBUG
         std::abort();
 #else
@@ -89,12 +89,6 @@ namespace vcpkg
 
     [[noreturn]] void Checks::exit_success(const LineInfo& line_info) { exit_with_code(line_info, EXIT_SUCCESS); }
 
-    [[noreturn]] void Checks::exit_with_message(const LineInfo& line_info, StringView error_message)
-    {
-        msg::write_unlocalized_text(Color::error, error_message);
-        msg::write_unlocalized_text(Color::error, "\n");
-        exit_fail(line_info);
-    }
     [[noreturn]] void Checks::msg_exit_with_message(const LineInfo& line_info, const LocalizedString& error_message)
     {
         msg::println(Color::error, error_message);
@@ -136,59 +130,6 @@ namespace vcpkg
         if (!expression)
         {
             msg_exit_with_message(line_info, error_message);
-        }
-    }
-
-    static void display_upgrade_message()
-    {
-        msg::write_unlocalized_text_to_stderr(Color::error,
-                                              note_prefix().append(msgChecksUpdateVcpkg).append_raw('\n'));
-    }
-
-    [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info)
-    {
-        display_upgrade_message();
-        exit_fail(line_info);
-    }
-
-    [[noreturn]] void Checks::exit_maybe_upgrade(const LineInfo& line_info, StringView error_message)
-    {
-        msg::write_unlocalized_text_to_stderr(
-            Color::error,
-            LocalizedString::from_raw(error_message).append_raw('\n').append(msgChecksUpdateVcpkg).append_raw('\n'));
-        exit_fail(line_info);
-    }
-    [[noreturn]] void Checks::msg_exit_maybe_upgrade(const LineInfo& line_info, const LocalizedString& error_message)
-    {
-        msg::write_unlocalized_text_to_stderr(Color::error, error_message);
-        msg::write_unlocalized_text_to_stderr(Color::none, "\n");
-        display_upgrade_message();
-        exit_fail(line_info);
-    }
-
-    void Checks::check_maybe_upgrade(const LineInfo& line_info, bool expression)
-    {
-        if (!expression)
-        {
-            exit_maybe_upgrade(line_info);
-        }
-    }
-
-    void Checks::check_maybe_upgrade(const LineInfo& line_info, bool expression, StringView error_message)
-    {
-        if (!expression)
-        {
-            exit_maybe_upgrade(line_info, error_message);
-        }
-    }
-
-    void Checks::msg_check_maybe_upgrade(const LineInfo& line_info,
-                                         bool expression,
-                                         const LocalizedString& error_message)
-    {
-        if (!expression)
-        {
-            msg_exit_maybe_upgrade(line_info, error_message);
         }
     }
 }

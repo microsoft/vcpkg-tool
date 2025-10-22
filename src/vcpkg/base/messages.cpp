@@ -123,8 +123,6 @@ namespace vcpkg
     LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
     LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
     LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
-    LocalizedString info_prefix() { return LocalizedString::from_raw(InfoPrefix); }
-    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
     LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 
