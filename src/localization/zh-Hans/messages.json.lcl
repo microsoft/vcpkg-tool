@@ -1603,15 +1603,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AuthenticationMayRequireManualAction" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[One or more {vendor} credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[一个或多个 {vendor} 凭据提供程序请求手动操作。添加二进制源 “interactive” 以允许交互。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AutoSettingEnvVar" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[-- Automatically setting {env_var} environment variables to "{url}".]]></Val>
@@ -2917,15 +2908,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportOptNuget" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportOptNuGet" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Exports a NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[导出 NuGet 包]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Export a NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2953,39 +2941,30 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetDesc" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetDesc" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Description for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[导出的 NuGet 包的说明]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify a description for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetID" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetID" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Id for the exported NuGet package (overrides --output)]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[导出的 NuGet 包的 ID (替代 --output)]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the id for the exported NuGet package (overrides --output)]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CmdExportSettingNugetVersion" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CmdExportSettingNuGetVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The version for the exported NuGet package]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[导出的 NuGet 包的版本]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Specify the version for the exported NuGet package]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4114,11 +4093,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotDeduceNugetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CouldNotDeduceNuGetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not deduce nuget id and version from filename: {path}]]></Val>
+          <Val><![CDATA[Could not deduce NuGet id and version from filename: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法从文件名推导出 nuget ID 和版本: {path}]]></Val>
+            <Val><![CDATA[无法根据文件名推导 NuGet ID 和版本: {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4195,7 +4174,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CreatingNugetPackage" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";CreatingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Creating NuGet package...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -5553,6 +5532,15 @@
           <Val><![CDATA[Extracts an archive.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[提取存档。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ExtractedInto" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[extracted into {path}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[已提取到 {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -8824,7 +8812,16 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetAuthenticationMayRequireManualAction" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[One or more NuGet credential providers requested manual action. Add the binary source 'interactive' to allow interactivity.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[一个或多个 NuGet 凭据提供程序请求手动操作。添加二进制源 ‘interactive’ 以允许交互。]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";NuGetOutputNotCapturedBecauseInteractiveSpecified" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet command failed and output was not captured because --interactive was specified]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8833,7 +8830,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";NuGetPackageFileSucceededButCreationFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[NuGet package creation succeeded, but no .nupkg was produced. Expected: "{path}"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -8842,7 +8839,7 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";NugetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";NuGetTimeoutExpectsSinglePositiveInteger" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[unexpected arguments: binary config 'nugettimeout' expects a single positive integer argument]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
@@ -9202,18 +9199,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[没有需要更新的包。]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PackingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Packing {vendor} failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[打包 {vendor} 失败。有关详细信息，请使用 --debug。]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Packing {vendor} failed.  Use --debug for more information.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10021,18 +10006,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PushingVendorFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Pushing {vendor} to "{path}" failed. Use --debug for more information.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[将 {vendor} 推送到“{path}”失败。请使用 --debug 获取详细信息。]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Pushing {vendor} to '{path}' failed. Use --debug for more information.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";RegeneratesArtifactRegistry" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Regenerates an artifact registry]]></Val>
@@ -10707,15 +10680,6 @@
           <Val><![CDATA[Unable to checkout data for (${p0}) in folder (${p1})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[无法签出文件夹(${p1})中(${p0})的数据]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";UnableToClearPath" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to delete {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[无法删除 {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12403,6 +12367,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhileClearingThis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while clearing this directory]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[清除此目录时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhileExtractingThisArchive" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while extracting this archive]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[提取此存档时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileGettingLocalTreeIshObjectsForPorts" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while getting local treeish objects for ports]]></Val>
@@ -12439,11 +12421,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhilePackingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while packing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[打包 NuGet 包时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileParsingVersionsForPort" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while parsing versions for {package_name} from {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[分析来自 {path} 的 {package_name} 版本时]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";WhilePushingNuGetPackage" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[while pushing NuGet package]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[推送 NuGet 包时]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12658,11 +12658,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";packageReference$IsNotAValidNugetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";packageReference$IsNotAValidNuGetPackageReferencenameversion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[package reference '${p0}' is not a valid nuget package reference ({name}/{version})]]></Val>
+          <Val><![CDATA[package reference '${p0}' is not a valid NuGet package reference ({name}/{version})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[包引用“${p0}”不是有效的 nuget 包引用({name}/{version})]]></Val>
+            <Val><![CDATA[包引用 '${p0}' 不是有效的 NuGet 包引用({name}/{version})]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
