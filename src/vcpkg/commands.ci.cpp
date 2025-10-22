@@ -31,6 +31,8 @@ using namespace vcpkg;
 
 namespace
 {
+    constexpr StringLiteral dummy_abi = "0000000000000000000000000000000000000000000000000000000000000000";
+
     constexpr CommandSetting CI_SETTINGS[] = {
         {SwitchExclude, msgCISettingsOptExclude},
         {SwitchHostExclude, msgCISettingsOptHostExclude},
@@ -444,11 +446,9 @@ namespace vcpkg
             for (const auto& excluded_spec : ports_to_exclude)
             {
                 split_specs->known.emplace(excluded_spec, BuildResult::Excluded);
-                // Generate a simple hash for excluded ports (they don't get real ABIs)
-                std::string fake_abi = "0000000000000000000000000000000000000000000000000000000000000000";
-                split_specs->abi_map.emplace(excluded_spec, fake_abi);
+                split_specs->abi_map.emplace(excluded_spec, dummy_abi);
                 split_specs->features.emplace(excluded_spec, std::vector<std::string>{"core"});
-                msg += fmt::format("{:>40}: {:>8}: {}\n", excluded_spec, "skip", fake_abi);
+                msg += fmt::format("{:>40}: {:>8}: {}\n", excluded_spec, "skip", dummy_abi);
             }
 
             for (const auto& spec : ci_requested_default_full_specs)
