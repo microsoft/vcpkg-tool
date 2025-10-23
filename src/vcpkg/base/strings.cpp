@@ -377,33 +377,34 @@ std::vector<StringView> Strings::find_all_enclosed(StringView input, StringView 
 StringView Strings::find_exactly_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    result.size() == 1,
-                                    msgExpectedOneSetOfTags,
-                                    msg::count = result.size(),
-                                    msg::old_value = left_tag,
-                                    msg::new_value = right_tag,
-                                    msg::value = input);
-    return result.front();
+    if (result.size() == 1)
+    {
+        return result.front();
+    }
+
+    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                  msgExpectedOneSetOfTags,
+                                  msg::count = result.size(),
+                                  msg::old_value = left_tag,
+                                  msg::new_value = right_tag,
+                                  msg::value = input);
 }
 
 Optional<StringView> Strings::find_at_most_one_enclosed(StringView input, StringView left_tag, StringView right_tag)
 {
     std::vector<StringView> result = find_all_enclosed(input, left_tag, right_tag);
-    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                    result.size() <= 1,
-                                    msgExpectedAtMostOneSetOfTags,
-                                    msg::count = result.size(),
-                                    msg::old_value = left_tag,
-                                    msg::new_value = right_tag,
-                                    msg::value = input);
-
-    if (result.empty())
+    switch (result.size())
     {
-        return nullopt;
+        case 0: return nullopt;
+        case 1: return result.front();
+        default:
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msgExpectedAtMostOneSetOfTags,
+                                          msg::count = result.size(),
+                                          msg::old_value = left_tag,
+                                          msg::new_value = right_tag,
+                                          msg::value = input);
     }
-
-    return result.front();
 }
 
 bool vcpkg::Strings::contains_any_ignoring_c_comments(const std::string& source, View<vcpkg_searcher> to_find)
