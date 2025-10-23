@@ -119,7 +119,7 @@ namespace
     }
 
     std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
-        ExclusionPredicate is_excluded,
+        const ExclusionsMap& exclusions_map,
         const std::vector<CacheAvailability>& precheck_results,
         const std::unordered_set<std::string>& known_failures,
         const ActionPlan& action_plan)
@@ -136,7 +136,7 @@ namespace
             auto p = &action;
             ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             ret->features.emplace(action.spec, action.feature_list);
-            if (is_excluded(p->spec))
+            if (exclusions_map.is_excluded(p->spec))
             {
                 ret->action_state_string.emplace_back("skip");
                 ret->known.emplace(p->spec, BuildResult::Excluded);
@@ -293,6 +293,18 @@ namespace
 
         return result;
     }
+
+    struct CiRandomizer : GraphRandomizer
+    {
+        virtual int random(int i) override
+        {
+            if (i <= 1) return 0;
+            std::uniform_int_distribution<int> d(0, i - 1);
+            return d(e);
+        }
+
+        std::random_device e;
+    };
 } // unnamed namespace
 
 namespace vcpkg
@@ -390,26 +402,15 @@ namespace vcpkg
         std::vector<FullPackageSpec> ci_requested_specs =
             calculate_ci_requested_specs(exclusions_map, target_triplet, provider);
 
-        struct RandomizerInstance : GraphRandomizer
-        {
-            virtual int random(int i) override
-            {
-                if (i <= 1) return 0;
-                std::uniform_int_distribution<int> d(0, i - 1);
-                return d(e);
-            }
-
-            std::random_device e;
-        } randomizer_instance;
-        GraphRandomizer* randomizer = nullptr;
+        Optional<CiRandomizer> randomizer;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            randomizer = &randomizer_instance;
+            randomizer.emplace();
         }
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
-            randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+            randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan = compute_full_plan(
             paths, provider, var_provider, ci_requested_specs, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
@@ -417,10 +418,10 @@ namespace vcpkg
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
+        auto install_actions =
+            Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        auto split_specs =
-            compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, known_failures, action_plan);
+        auto split_specs = compute_action_statuses(exclusions_map, precheck_results, known_failures, action_plan);
         LocalizedString not_supported_regressions;
         {
             std::string msg;
@@ -454,24 +455,24 @@ namespace vcpkg
             }
 
             msg::write_unlocalized_text(Color::none, msg);
-            auto it_output_hashes = settings.find(SwitchOutputHashes);
-            if (it_output_hashes != settings.end())
+        }
+
+        auto it_output_hashes = settings.find(SwitchOutputHashes);
+        if (it_output_hashes != settings.end())
+        {
+            const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
+            Json::Array arr;
+            for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
-                const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
-                Json::Array arr;
-                for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
-                {
-                    auto&& action = action_plan.install_actions[i];
-                    Json::Object obj;
-                    obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
-                    obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
-                    obj.insert(JsonIdState, Json::Value::string(split_specs->action_state_string[i]));
-                    obj.insert(JsonIdAbi,
-                               Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
-                    arr.push_back(std::move(obj));
-                }
-                fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
+                auto&& action = action_plan.install_actions[i];
+                Json::Object obj;
+                obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
+                obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
+                obj.insert(JsonIdState, Json::Value::string(split_specs->action_state_string[i]));
+                obj.insert(JsonIdAbi, Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                arr.push_back(std::move(obj));
             }
+            fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
         }
 
         std::vector<std::string> parent_hashes;

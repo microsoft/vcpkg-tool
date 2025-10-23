@@ -43,9 +43,9 @@ namespace vcpkg
         triplets.emplace_back(triplet, std::move(exclusions));
     }
 
-    bool ExclusionPredicate::operator()(const PackageSpec& spec) const
+    bool ExclusionsMap::is_excluded(const PackageSpec& spec) const
     {
-        for (const auto& triplet_exclusions : data->triplets)
+        for (const auto& triplet_exclusions : triplets)
         {
             if (triplet_exclusions.triplet == spec.triplet())
             {
