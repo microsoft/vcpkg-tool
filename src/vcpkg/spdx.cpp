@@ -296,7 +296,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};
-    if (auto package_abi = action.package_abi().get())
+    if (auto package_abi = action.package_abi())
     {
         abi = *package_abi;
     }

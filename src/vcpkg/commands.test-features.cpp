@@ -786,8 +786,7 @@ namespace vcpkg
             if (auto iter = Util::find_if(install_plan.install_actions,
                                           [&known_failures](const auto& install_action) {
                                               return Util::Sets::contains(
-                                                  known_failures,
-                                                  install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                                  known_failures, install_action.package_abi_or_exit(VCPKG_LINE_INFO));
                                           });
                 iter != install_plan.install_actions.end())
             {
@@ -812,7 +811,7 @@ namespace vcpkg
                     CacheAvailability::available)
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
-                                 msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                 msg::sha = action->package_abi_or_exit(VCPKG_LINE_INFO));
                     handle_pass_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     continue;
                 }
@@ -861,7 +860,7 @@ namespace vcpkg
 
                         [[fallthrough]];
                     case BuildResult::PostBuildChecksFailed:
-                        known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
+                        known_failures.insert(result.package_abi_or_exit(VCPKG_LINE_INFO));
                         break;
                     default: break;
                 }
@@ -896,7 +895,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.results.back().get_abi().get())
+                    if (auto abi = summary.results.back().package_abi())
                     {
                         known_failures.insert(*abi);
                     }
