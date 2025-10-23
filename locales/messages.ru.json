@@ -213,8 +213,6 @@
   "CMakeToolChainFile": "В проектах CMake следует использовать: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
   "CMakeUsingExportedLibs": "Чтобы использовать экспортированные библиотеки в проектах CMake, добавьте {value} в командную строку CMake.",
   "ChecksFailedCheck": "сбой vcpkg; дополнительные сведения недоступны.",
-  "ChecksUnreachableCode": "достигнут недостижимый код",
-  "ChecksUpdateVcpkg": "обновление vcpkg путем повторного запуска bootstrap-vcpkg может устранить этот сбой.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing-passing можно использовать, только если указан базовый план с помощью --ci-baseline.",
   "CiBaselineDisallowedCascade": "Регрессия: значение {spec} является каскадным, но необходима его передача ({path}).",
   "CiBaselineIndependentRegression": "РЕГРЕССИЯ: сбой независимого объекта {spec} с {build_result}.",

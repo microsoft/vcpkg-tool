@@ -213,8 +213,6 @@
   "CMakeToolChainFile": "Projekty CMake by měly používat: -DCMAKE_TOOLCHAIN_FILE={path}",
   "CMakeUsingExportedLibs": "Pokud chcete v projektech CMake používat exportované knihovny, přidejte do příkazového řádku CMake {value}.",
   "ChecksFailedCheck": "vcpkg se zhroutilo. blížší podrobnosti nejsou k dispozici.",
-  "ChecksUnreachableCode": "nedosažitelný kód byl dosažen",
-  "ChecksUpdateVcpkg": "aktualizace vcpkg opětovným spuštěním bootstrap-vcpkg může tuto chybu vyřešit.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "Parametr --allow-unexpected-passing lze použít pouze v případě, že je směrný plán poskytnut prostřednictvím parametru --ci-baseline.",
   "CiBaselineDisallowedCascade": "REGRESE: {spec} kaskádovité, ale je nutný úspěch. ({path}).",
   "CiBaselineIndependentRegression": "REGRESE: Nezávislá specifikace {spec} selhala s {build_result}.",

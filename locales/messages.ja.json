@@ -213,8 +213,6 @@
   "CMakeToolChainFile": "CMake プロジェクトでは次を使用する必要があります: \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
   "CMakeUsingExportedLibs": "CMake プロジェクトでエクスポートされたライブラリを使用するには、CMake コマンド ラインに {value} を追加します。",
   "ChecksFailedCheck": "vcpkg がクラッシュしました。その他の詳細はありません。",
-  "ChecksUnreachableCode": "到達できないコードに達しました",
-  "ChecksUpdateVcpkg": "bootstrap-vcpkg を再実行して vcpkg を更新すると、このエラーが解決される可能性があります。",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing は、--ci-baseline を介してベースラインが指定されている場合にのみ使用できます。",
   "CiBaselineDisallowedCascade": "回帰: {spec} がカスケードされましたが、渡す必要があります。({path})。",
   "CiBaselineIndependentRegression": "回帰: 独立した {spec} が {build_result} で失敗しました。",
