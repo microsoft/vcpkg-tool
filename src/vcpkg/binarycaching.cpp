@@ -589,7 +589,7 @@ namespace
 
             // cf.
             // https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json
-            constexpr size_t max_single_write = 5000000000;
+            constexpr size_t max_single_write = static_cast<size_t>(5000000000);
             bool use_azcopy = file_size > max_single_write;
 
             PrintingDiagnosticContext pdc{msg_sink};
