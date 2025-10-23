@@ -161,12 +161,8 @@ namespace vcpkg
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
                                                    View<std::string> urls,
                                                    View<Path> outputs,
-                                                   View<std::string> headers,
-                                                   View<std::string> secrets)
+                                                   View<std::string> headers)
     {
-        // TODO: handle secret replacement when error messages are implemented
-        (void)secrets;
-
         if (!outputs.empty() && outputs.size() != urls.size()) return {};
 
         if (vcpkg::curl_global_init_status() != CURLE_OK) Checks::unreachable(VCPKG_LINE_INFO);
@@ -295,30 +291,27 @@ namespace vcpkg
 
     static std::vector<int> libcurl_bulk_check(DiagnosticContext& context,
                                                View<std::string> urls,
-                                               View<std::string> headers,
-                                               View<std::string> secrets)
+                                               View<std::string> headers)
     {
-        return libcurl_bulk_operation(context, urls, {}, headers, secrets);
+        return libcurl_bulk_operation(context,
+                                      urls,
+                                      {}, // no output
+                                      headers);
     }
 
-    std::vector<int> url_heads(DiagnosticContext& context,
-                               View<std::string> urls,
-                               View<std::string> headers,
-                               View<std::string> secrets)
+    std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers)
     {
-        return libcurl_bulk_check(context, urls, headers, secrets);
+        return libcurl_bulk_check(context, urls, headers);
     }
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
                                              View<std::pair<std::string, Path>> url_pairs,
-                                             View<std::string> headers,
-                                             View<std::string> secrets)
+                                             View<std::string> headers)
     {
         return libcurl_bulk_operation(context,
                                       Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.first; }),
                                       Util::fmap(url_pairs, [](auto&& kv) -> Path { return kv.second; }),
-                                      headers,
-                                      secrets);
+                                      headers);
     }
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,

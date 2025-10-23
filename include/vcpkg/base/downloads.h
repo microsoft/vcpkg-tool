@@ -39,8 +39,7 @@ namespace vcpkg
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
                                              View<std::pair<std::string, Path>> url_pairs,
-                                             View<std::string> headers,
-                                             View<std::string> secrets);
+                                             View<std::string> headers);
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
                                                  const Optional<std::string>& maybe_github_server_url,
@@ -50,10 +49,7 @@ namespace vcpkg
 
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 
-    std::vector<int> url_heads(DiagnosticContext& context,
-                               View<std::string> urls,
-                               View<std::string> headers,
-                               View<std::string> secrets);
+    std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers);
 
     struct AssetCachingSettings
     {
