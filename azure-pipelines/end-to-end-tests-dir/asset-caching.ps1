@@ -189,13 +189,9 @@ if (-not ($actual -match $expected)) {
 
 # ... also with multiple authoritative URLs
 if ($IsWindows) {
-    # WinHTTP
     Refresh-TestRoot
     $expected = @(
     "^Downloading example3\.html, trying https://nonexistent\.example\.com",
-    "warning: Download https://nonexistent\.example\.com failed -- retrying after 1000ms",
-    "warning: Download https://nonexistent\.example\.com failed -- retrying after 2000ms",
-    "warning: Download https://nonexistent\.example\.com failed -- retrying after 4000ms",
     "Trying https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
     "Successfully downloaded example3\.html",
     "$"
