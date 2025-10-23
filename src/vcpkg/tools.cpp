@@ -851,11 +851,11 @@ namespace vcpkg
 
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
-            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                            !tool_data.url.empty(),
-                                            msgToolOfVersionXNotFound,
-                                            msg::tool_name = tool_data.name,
-                                            msg::version = version_as_string);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   !tool_data.url.empty(),
+                                   msgToolOfVersionXNotFound,
+                                   msg::tool_name = tool_data.name,
+                                   msg::version = version_as_string);
             status_sink.println(Color::none,
                                 msgDownloadingPortableToolVersionX,
                                 msg::tool_name = tool_data.name,
@@ -1050,7 +1050,7 @@ namespace vcpkg
                     .append_raw('\n')
                     .append_raw(considered_versions);
             }
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, s);
         }
 
         const PathAndVersion& get_tool_pathversion(StringView tool, MessageSink& status_sink) const
