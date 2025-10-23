@@ -213,8 +213,6 @@
   "CMakeToolChainFile": "CMake 项目应使用:“-DCMAKE_TOOLCHAIN_FILE={path}”",
   "CMakeUsingExportedLibs": "要在 CMake 项目中使用导出的库，请将 {value} 添加到 CMake 命令行。",
   "ChecksFailedCheck": "vcpkg 已崩溃；没有其他详细信息可用。",
-  "ChecksUnreachableCode": "已访问无法访问的代码",
-  "ChecksUpdateVcpkg": "通过重新运行 bootstrap-vcpkg 更新 vcpkg 可能会解决此故障。",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "只有当通过 --ci-baseline 提供基线时才能使用 --allow-unexpected-passing。",
   "CiBaselineDisallowedCascade": "回归: {spec} 已级联，但需要它才能通过。({path})。",
   "CiBaselineIndependentRegression": "REGRESSION: 独立 {spec} 失败，出现 {build_result}。",

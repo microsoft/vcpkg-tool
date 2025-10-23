@@ -213,8 +213,6 @@
   "CMakeToolChainFile": "Los proyectos de CMake deben usar\" \"-DCMAKE_TOOLCHAIN_FILE={path}\"",
   "CMakeUsingExportedLibs": "Para usar bibliotecas exportadas en proyectos de CMake, agregue {value} a la línea de comandos de CMake.",
   "ChecksFailedCheck": "vcpkg se bloqueó; no hay detalles adicionales disponibles.",
-  "ChecksUnreachableCode": "se ha alcanzado un código inaccesible",
-  "ChecksUpdateVcpkg": "actualizar vcpkg volviendo a ejecutar bootstrap-vcpkg puede resolver este error.",
   "CiBaselineAllowUnexpectedPassingRequiresBaseline": "--allow-unexpected-passing solo se puede usar si se proporciona una base de referencia mediante --ci-baseline.",
   "CiBaselineDisallowedCascade": "REGRESIÓN: {spec} en cascada, pero es necesario pasar. ({path}).",
   "CiBaselineIndependentRegression": "REGRESIÓN: error de {spec} independiente con {build_result}.",
