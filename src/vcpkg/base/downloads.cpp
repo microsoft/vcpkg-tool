@@ -243,13 +243,16 @@ namespace vcpkg
 
         int messages_in_queue = 0;
         size_t processed = 0;
+        size_t max_iterations = urls.size() * 2; // Safety limit
+        size_t iterations = 0;
+
         do
         {
+            bool made_progress = false;
             while (auto* msg = curl_multi_info_read(multi_handle, &messages_in_queue))
             {
                 if (msg->msg == CURLMSG_DONE)
                 {
-                    ++processed;
                     CURL* handle = msg->easy_handle;
 
                     if (msg->data.result == CURLE_OK)
@@ -271,7 +274,16 @@ namespace vcpkg
                     }
                     curl_multi_remove_handle(multi_handle, handle);
                     curl_easy_cleanup(handle);
+                    ++processed;
+                    made_progress = true;
                 }
+            }
+
+            // Safety check to prevent infinite loop
+            if (!made_progress && ++iterations > max_iterations)
+            {
+                context.report_error(msg::format(msgCurlFailedTimeout));
+                break;
             }
         } while (processed + skipped < urls.size());
 
@@ -378,12 +390,9 @@ namespace vcpkg
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
                               View<std::string> headers,
                               const Path& file)
     {
-        (void)method;
-
         std::error_code ec;
         auto fileptr = std::make_unique<ReadFilePointer>(file, ec);
         if (ec)
@@ -929,12 +938,8 @@ namespace vcpkg
             context.statusln(
                 msg::format(msgDownloadSuccesfulUploading, msg::path = display_path, msg::url = sanitized_upload_url));
             WarningDiagnosticContext wdc{context};
-            if (!store_to_asset_cache(wdc,
-                                      raw_upload_url,
-                                      sanitized_upload_url,
-                                      "PUT",
-                                      asset_cache_settings.m_write_headers,
-                                      download_path))
+            if (!store_to_asset_cache(
+                    wdc, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, download_path))
             {
                 context.report(DiagnosticLine{DiagKind::Warning,
                                               msg::format(msgFailedToStoreBackToMirror,
@@ -1254,12 +1259,8 @@ namespace vcpkg
 
             auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
-            return store_to_asset_cache(context,
-                                        raw_upload_url,
-                                        sanitized_upload_url,
-                                        "PUT",
-                                        asset_cache_settings.m_write_headers,
-                                        file_to_put);
+            return store_to_asset_cache(
+                context, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, file_to_put);
         }
 
         return true;

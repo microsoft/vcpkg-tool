@@ -90,7 +90,6 @@ namespace vcpkg
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
                               View<std::string> headers,
                               const Path& file);
 

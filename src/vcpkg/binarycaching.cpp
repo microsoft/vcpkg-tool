@@ -482,7 +482,7 @@ namespace
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
                 auto maybe_success =
-                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -601,7 +601,7 @@ namespace
                 auto maybe_success =
                     use_azcopy
                         ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
-                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;

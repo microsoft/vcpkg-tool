@@ -306,7 +306,7 @@ TEST_CASE ("azblob", "[.][azblob]")
 
         FullyBufferedDiagnosticContext diagnostics{};
         auto plain_put_success = store_to_asset_cache(
-            diagnostics, plain_put_url, SanitizedUrl{url, {}}, "PUT", azure_blob_headers(), data_filepath);
+            diagnostics, plain_put_url, SanitizedUrl{url, {}}, azure_blob_headers(), data_filepath);
         INFO(diagnostics.to_string());
         CHECK(plain_put_success);
     }
