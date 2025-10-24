@@ -42,7 +42,6 @@ namespace vcpkg
     {
         std::vector<TripletExclusions> triplets;
 
-        void insert(Triplet triplet);
         void insert(Triplet triplet, SortedVector<std::string>&& exclusions);
         bool is_excluded(const PackageSpec& spec) const;
     };

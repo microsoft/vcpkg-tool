@@ -16,19 +16,6 @@ namespace vcpkg
     {
     }
 
-    void ExclusionsMap::insert(Triplet triplet)
-    {
-        for (auto& triplet_exclusions : triplets)
-        {
-            if (triplet_exclusions.triplet == triplet)
-            {
-                return;
-            }
-        }
-
-        triplets.emplace_back(triplet);
-    }
-
     void ExclusionsMap::insert(Triplet triplet, SortedVector<std::string>&& exclusions)
     {
         for (auto& triplet_exclusions : triplets)

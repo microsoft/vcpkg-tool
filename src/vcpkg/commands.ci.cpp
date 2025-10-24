@@ -121,7 +121,7 @@ namespace
     std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
         const ExclusionsMap& exclusions_map,
         const std::vector<CacheAvailability>& precheck_results,
-        const std::unordered_set<std::string>& known_failures,
+        const std::unordered_set<std::string>& known_failure_abis,
         const ActionPlan& action_plan)
     {
         auto ret = std::make_unique<UnknownCIPortsResults>();
@@ -142,7 +142,7 @@ namespace
                 ret->known.emplace(p->spec, BuildResult::Excluded);
                 will_fail.emplace(p->spec);
             }
-            else if (Util::Sets::contains(known_failures, p->public_abi()))
+            else if (Util::Sets::contains(known_failure_abis, p->public_abi()))
             {
                 ret->action_state_string.emplace_back("will fail");
                 ret->known.emplace(p->spec, BuildResult::BuildFailed);
@@ -263,15 +263,21 @@ namespace
         return has_error;
     }
 
-    std::vector<vcpkg::FullPackageSpec> calculate_ci_requested_specs(const ExclusionsMap& exclusions_map,
-                                                                     const Triplet& target_triplet,
-                                                                     PortFileProvider& provider)
+    struct CiSpecsResult
+    {
+        std::vector<FullPackageSpec> requested;
+        std::vector<PackageSpec> excluded;
+    };
+
+    CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
+                                                      const Triplet& target_triplet,
+                                                      PortFileProvider& provider)
     {
         // Generate a spec for the default features for every package, except for those explicitly skipped.
         // While `reduce_action_plan` tries to remove skipped packages as expected failures, there
         // it is too late as we have already calculated an action plan with feature dependencies from
         // the skipped ports.
-        std::vector<vcpkg::FullPackageSpec> result;
+        CiSpecsResult result;
         const TripletExclusions* target_triplet_exclusions = nullptr;
         for (auto&& te : exclusions_map.triplets)
         {
@@ -286,8 +292,13 @@ namespace
         {
             if (!target_triplet_exclusions || !target_triplet_exclusions->exclusions.contains(scfl->to_name()))
             {
-                result.emplace_back(PackageSpec{scfl->to_name(), target_triplet},
-                                    InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+                result.requested.emplace_back(
+                    PackageSpec{scfl->to_name(), target_triplet},
+                    InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+            }
+            else
+            {
+                result.excluded.emplace_back(PackageSpec{scfl->to_name(), target_triplet});
             }
         }
 
@@ -368,13 +379,13 @@ namespace vcpkg
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
-        std::unordered_set<std::string> known_failures;
+        std::unordered_set<std::string> known_failure_abis;
         auto it_known_failures = settings.find(SwitchKnownFailuresFrom);
         if (it_known_failures != settings.end())
         {
             Path raw_path = it_known_failures->second;
             auto lines = paths.get_filesystem().read_lines(raw_path).value_or_exit(VCPKG_LINE_INFO);
-            known_failures.insert(lines.begin(), lines.end());
+            known_failure_abis.insert(lines.begin(), lines.end());
         }
 
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
@@ -399,8 +410,8 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        std::vector<FullPackageSpec> ci_requested_specs =
-            calculate_ci_requested_specs(exclusions_map, target_triplet, provider);
+        auto ci_specs =
+            calculate_ci_specs(exclusions_map, target_triplet, provider);
 
         Optional<CiRandomizer> randomizer;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
@@ -412,7 +423,7 @@ namespace vcpkg
         CreateInstallPlanOptions create_install_plan_options(
             randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan = compute_full_plan(
-            paths, provider, var_provider, ci_requested_specs, packages_dir_assigner, create_install_plan_options);
+            paths, provider, var_provider, ci_specs.requested, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -421,11 +432,11 @@ namespace vcpkg
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        auto split_specs = compute_action_statuses(exclusions_map, precheck_results, known_failures, action_plan);
+        auto split_specs = compute_action_statuses(exclusions_map, precheck_results, known_failure_abis, action_plan);
         LocalizedString not_supported_regressions;
         {
             std::string msg;
-            for (const auto& spec : ci_requested_specs)
+            for (const auto& spec : ci_specs.requested)
             {
                 if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
                 {
