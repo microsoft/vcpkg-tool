@@ -1,0 +1,11 @@
+{
+  "name": "skip-dep",
+  "version": "1.0.0",
+  "description": "Test port that depends on base-dep[feature-to-skip]",
+  "dependencies": [
+    {
+      "name": "base-dep",
+      "features": ["feature-to-skip"]
+    }
+  ]
+}

@@ -31,6 +31,8 @@ using namespace vcpkg;
 
 namespace
 {
+    constexpr StringLiteral dummy_abi = "0000000000000000000000000000000000000000000000000000000000000000";
+
     constexpr CommandSetting CI_SETTINGS[] = {
         {SwitchExclude, msgCISettingsOptExclude},
         {SwitchHostExclude, msgCISettingsOptHostExclude},
@@ -58,6 +60,43 @@ namespace
         // action_state_string.size() will equal install_actions.size()
         std::vector<StringLiteral> action_state_string;
     };
+
+    // Build a set of package specs to exclude based on the CI baseline exclusions map for the target triplet
+    SortedVector<PackageSpec> calculate_ci_excluded_specs(const ExclusionsMap& exclusions_map, Triplet target_triplet)
+    {
+        std::vector<PackageSpec> exclude_list;
+        for (const auto& triplet_exclusions : exclusions_map.triplets)
+        {
+            if (triplet_exclusions.triplet == target_triplet)
+            {
+                for (const auto& port_name : triplet_exclusions.exclusions)
+                {
+                    exclude_list.emplace_back(port_name, target_triplet);
+                }
+                break;
+            }
+        }
+        return SortedVector<PackageSpec>(std::move(exclude_list));
+    }
+
+    // Build the list of package specs to install for CI (all ports with default features, excluding those in the
+    // exclusion list)
+    std::vector<FullPackageSpec> calculate_ci_requested_specs(const PortFileProvider& provider,
+                                                              Triplet target_triplet,
+                                                              const SortedVector<PackageSpec>& ports_to_exclude)
+    {
+        std::vector<FullPackageSpec> ci_requested_default_full_specs;
+        for (auto scfl : provider.load_all_control_files())
+        {
+            PackageSpec pkg_spec{scfl->to_name(), target_triplet};
+            if (!ports_to_exclude.contains(pkg_spec))
+            {
+                ci_requested_default_full_specs.emplace_back(
+                    pkg_spec, InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+            }
+        }
+        return ci_requested_default_full_specs;
+    }
 
     bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
                                const SourceControlFile& source_control_file,
@@ -353,18 +392,16 @@ namespace vcpkg
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
+
+        // Build a set of ports to exclude based on the exclusions_map for the target triplet
+        auto ports_to_exclude = calculate_ci_excluded_specs(exclusions_map, target_triplet);
+
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
         // Install the default features for every package
-        std::vector<FullPackageSpec> all_default_full_specs;
-        for (auto scfl : provider.load_all_control_files())
-        {
-            all_default_full_specs.emplace_back(
-                PackageSpec{scfl->to_name(), target_triplet},
-                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
-        }
+        auto ci_requested_default_full_specs = calculate_ci_requested_specs(provider, target_triplet, ports_to_exclude);
 
         struct RandomizerInstance : GraphRandomizer
         {
@@ -386,8 +423,12 @@ namespace vcpkg
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
             randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto action_plan = compute_full_plan(
-            paths, provider, var_provider, all_default_full_specs, packages_dir_assigner, create_install_plan_options);
+        auto action_plan = compute_full_plan(paths,
+                                             provider,
+                                             var_provider,
+                                             ci_requested_default_full_specs,
+                                             packages_dir_assigner,
+                                             create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -400,7 +441,17 @@ namespace vcpkg
         LocalizedString not_supported_regressions;
         {
             std::string msg;
-            for (const auto& spec : all_default_full_specs)
+
+            // First, print ports that were excluded early (before dependency resolution)
+            for (const auto& excluded_spec : ports_to_exclude)
+            {
+                split_specs->known.emplace(excluded_spec, BuildResult::Excluded);
+                split_specs->abi_map.emplace(excluded_spec, dummy_abi);
+                split_specs->features.emplace(excluded_spec, std::vector<std::string>{"core"});
+                msg += fmt::format("{:>40}: {:>8}: {}\n", excluded_spec, "skip", dummy_abi);
+            }
+
+            for (const auto& spec : ci_requested_default_full_specs)
             {
                 if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
                 {

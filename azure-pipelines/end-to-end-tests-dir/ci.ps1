@@ -56,3 +56,31 @@ New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci --triplet=$Triplet --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
 Throw-IfNotFailed
 Restore-Problem-Matchers
+
+# Test CI baseline early filtering functionality
+# Test that ports marked as skip in ci.baseline.txt are excluded early from CI
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-feature-baseline" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci-baseline-test.txt"
+Throw-IfFailed
+# skip-dep should be marked as skip in the output (verifies it appears AND has skip status)
+if (-not ($Output -match "skip-dep:${Triplet}:\s+skip:")) {
+    throw 'skip-dep should be marked as skip in ci.baseline.txt and appear in output'
+}
+# base-dep should be in the installation list (not skipped)
+if (-not ($Output -match "base-dep:${Triplet}@")) {
+    throw 'base-dep should be in the installation list'
+}
+# skip-dep should NOT be in the installation list
+if ($Output -match "skip-dep:${Triplet}@") {
+    throw 'skip-dep should NOT be in the installation list (marked as skip)'
+}
+
+# Test that without CI baseline, both ports are included
+$Output2 = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci-feature-baseline" --binarysource=clear
+Throw-IfFailed
+# Both ports should be in the installation list (may have features like [core,feature-to-skip])
+if (-not ($Output2 -match "base-dep(\[.+?\])?:${Triplet}@")) {
+    throw 'base-dep should be in the installation list without baseline'
+}
+if (-not ($Output2 -match "skip-dep(\[.+?\])?:${Triplet}@")) {
+    throw 'skip-dep should be in the installation list without baseline'
+}
