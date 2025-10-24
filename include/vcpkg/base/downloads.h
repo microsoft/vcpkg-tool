@@ -37,20 +37,9 @@ namespace vcpkg
 
     View<std::string> azure_blob_headers();
 
-    // Parses a curl output line for curl invoked with
-    // -w "PREFIX%{http_code} %{exitcode} %{errormsg}"
-    // with specific handling for curl version < 7.75.0 which does not understand %{exitcode} %{errormsg}
-    // If the line is malformed for any reason, no entry to http_codes is added.
-    // Returns: true if the new version of curl's output with exitcode and errormsg was parsed; otherwise, false.
-    bool parse_curl_status_line(DiagnosticContext& context,
-                                std::vector<int>& http_codes,
-                                StringLiteral prefix,
-                                StringView this_line);
-
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
                                              View<std::pair<std::string, Path>> url_pairs,
-                                             View<std::string> headers,
-                                             View<std::string> secrets);
+                                             View<std::string> headers);
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
                                                  const Optional<std::string>& maybe_github_server_url,
@@ -58,19 +47,9 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
 
-    Optional<std::string> invoke_http_request(DiagnosticContext& context,
-                                              StringLiteral method,
-                                              View<std::string> headers,
-                                              StringView url,
-                                              View<std::string> secrets,
-                                              StringView data = {});
-
     std::string format_url_query(StringView base_url, View<std::string> query_params);
 
-    std::vector<int> url_heads(DiagnosticContext& context,
-                               View<std::string> urls,
-                               View<std::string> headers,
-                               View<std::string> secrets);
+    std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers);
 
     struct AssetCachingSettings
     {
@@ -107,7 +86,6 @@ namespace vcpkg
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
-                              StringLiteral method,
                               View<std::string> headers,
                               const Path& file);
 
