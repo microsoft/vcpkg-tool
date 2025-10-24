@@ -294,7 +294,7 @@ namespace
         return result;
     }
 
-    struct CiRandomizer : GraphRandomizer
+    struct CiRandomizer final : GraphRandomizer
     {
         virtual int random(int i) override
         {
