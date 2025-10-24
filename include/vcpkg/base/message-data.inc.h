@@ -983,10 +983,6 @@ DECLARE_MESSAGE(CurlFailedToPutHttp,
                 (msg::exit_code, msg::error_msg, msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
                 "curl failed to put file to {url} with exit code {exit_code} ({error_msg}) and http code {value}.")
-DECLARE_MESSAGE(CurlFailedTimeout,
-                (),
-                "curl is the name of a program, see curl.se.",
-                "Timed out waiting for curl operation to complete.")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",
