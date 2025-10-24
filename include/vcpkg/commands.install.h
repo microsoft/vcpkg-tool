@@ -27,9 +27,24 @@ namespace vcpkg
 
         const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
-        Optional<const std::string&> get_abi() const
+        const std::string* package_abi() const
         {
-            return m_install_action ? m_install_action->package_abi() : nullopt;
+            if (m_install_action)
+            {
+                return m_install_action->package_abi();
+            }
+
+            return nullptr;
+        }
+        const std::string& package_abi_or_exit(LineInfo li) const
+        {
+            auto pabi = package_abi();
+            if (!pabi)
+            {
+                Checks::unreachable(li);
+            }
+
+            return *pabi;
         }
         bool is_user_requested_install() const;
         Optional<ExtendedBuildResult> build_result;

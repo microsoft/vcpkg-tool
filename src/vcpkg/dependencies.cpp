@@ -554,11 +554,21 @@ namespace vcpkg
         const auto p = abi_info.get();
         return p && !p->package_abi.empty();
     }
-    Optional<const std::string&> InstallPlanAction::package_abi() const
+    const std::string* InstallPlanAction::package_abi() const
     {
         const auto p = abi_info.get();
-        if (!p || p->package_abi.empty()) return nullopt;
-        return p->package_abi;
+        if (p && !p->package_abi.empty()) return &p->package_abi;
+        return nullptr;
+    }
+    const std::string& InstallPlanAction::package_abi_or_exit(LineInfo li) const
+    {
+        auto pabi = package_abi();
+        if (!pabi)
+        {
+            Checks::unreachable(li);
+        }
+
+        return *pabi;
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {

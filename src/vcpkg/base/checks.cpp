@@ -95,6 +95,7 @@ namespace vcpkg
         exit_fail(line_info);
     }
 
+    VCPKG_SAL_ANNOTATION(_Post_satisfies_(_Old_(expression)))
     void Checks::check_exit(const LineInfo& line_info, bool expression)
     {
         if (!expression)

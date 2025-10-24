@@ -56,7 +56,8 @@ namespace vcpkg
 
         const std::string& public_abi() const;
         bool has_package_abi() const;
-        Optional<const std::string&> package_abi() const;
+        const std::string* package_abi() const;
+        const std::string& package_abi_or_exit(LineInfo li) const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
         std::string display_name() const;

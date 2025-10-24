@@ -50,7 +50,7 @@ namespace
         {SwitchXXUnitAll, msgCISwitchOptXUnitAll},
     };
 
-    struct UnknownCIPortsResults
+    struct CIPreBuildStatus
     {
         std::map<PackageSpec, BuildResult> known;
         std::map<PackageSpec, std::vector<std::string>> features;
@@ -118,60 +118,59 @@ namespace
         return action_plan;
     }
 
-    std::unique_ptr<UnknownCIPortsResults> compute_action_statuses(
-        ExclusionPredicate is_excluded,
-        const std::vector<CacheAvailability>& precheck_results,
-        const std::unordered_set<std::string>& known_failures,
-        const ActionPlan& action_plan)
+    CIPreBuildStatus compute_pre_build_statuses(const ExclusionsMap& exclusions_map,
+                                                const std::vector<CacheAvailability>& precheck_results,
+                                                const std::unordered_set<std::string>& known_failure_abis,
+                                                const ActionPlan& action_plan)
     {
-        auto ret = std::make_unique<UnknownCIPortsResults>();
+        CIPreBuildStatus ret;
 
         std::set<PackageSpec> will_fail;
 
-        ret->action_state_string.reserve(action_plan.install_actions.size());
+        ret.action_state_string.reserve(action_plan.install_actions.size());
         for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
         {
             auto&& action = action_plan.install_actions[action_idx];
 
             auto p = &action;
-            ret->abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            ret->features.emplace(action.spec, action.feature_list);
-            if (is_excluded(p->spec))
+            ret.abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            ret.features.emplace(action.spec, action.feature_list);
+            if (exclusions_map.is_excluded(p->spec))
             {
-                ret->action_state_string.emplace_back("skip");
-                ret->known.emplace(p->spec, BuildResult::Excluded);
+                ret.action_state_string.emplace_back("skip");
+                ret.known.emplace(p->spec, BuildResult::Excluded);
                 will_fail.emplace(p->spec);
             }
-            else if (Util::Sets::contains(known_failures, p->public_abi()))
+            else if (Util::Sets::contains(known_failure_abis, p->public_abi()))
             {
-                ret->action_state_string.emplace_back("will fail");
-                ret->known.emplace(p->spec, BuildResult::BuildFailed);
+                ret.action_state_string.emplace_back("will fail");
+                ret.known.emplace(p->spec, BuildResult::BuildFailed);
                 will_fail.emplace(p->spec);
             }
             else if (Util::any_of(p->package_dependencies,
                                   [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
             {
-                ret->action_state_string.emplace_back("cascade");
-                ret->known.emplace(p->spec, BuildResult::CascadedDueToMissingDependencies);
+                ret.action_state_string.emplace_back("cascade");
+                ret.known.emplace(p->spec, BuildResult::CascadedDueToMissingDependencies);
                 will_fail.emplace(p->spec);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret->action_state_string.emplace_back("pass");
-                ret->known.emplace(p->spec, BuildResult::Succeeded);
+                ret.action_state_string.emplace_back("pass");
+                ret.known.emplace(p->spec, BuildResult::Succeeded);
             }
             else
             {
-                ret->action_state_string.emplace_back("*");
+                ret.action_state_string.emplace_back("*");
             }
         }
         return ret;
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
-    void reduce_action_plan(ActionPlan& action_plan,
-                            const std::map<PackageSpec, BuildResult>& known,
-                            View<std::string> parent_hashes)
+    void prune_entirely_known_action_branches(ActionPlan& action_plan,
+                                              const std::map<PackageSpec, BuildResult>& known,
+                                              View<std::string> parent_hashes)
     {
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
@@ -244,6 +243,9 @@ namespace
                 output.append(msg).append_raw('\n');
             }
         }
+
+        // FIXME this is the root of the problem: `results` should have *all* of the results, not need to be somehow
+        // combined with the pre-build known results
         for (auto&& r : known)
         {
             auto msg =
@@ -263,6 +265,59 @@ namespace
         return has_error;
     }
 
+    struct CiSpecsResult
+    {
+        std::vector<FullPackageSpec> requested;
+        std::vector<PackageSpec> excluded;
+    };
+
+    CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
+                                     const Triplet& target_triplet,
+                                     PortFileProvider& provider)
+    {
+        // Generate a spec for the default features for every package, except for those explicitly skipped.
+        // While `reduce_action_plan` tries to remove skipped packages as expected failures, there
+        // it is too late as we have already calculated an action plan with feature dependencies from
+        // the skipped ports.
+        CiSpecsResult result;
+        const TripletExclusions* target_triplet_exclusions = nullptr;
+        for (auto&& te : exclusions_map.triplets)
+        {
+            if (te.triplet == target_triplet)
+            {
+                target_triplet_exclusions = &te;
+                break;
+            }
+        }
+
+        for (auto scfl : provider.load_all_control_files())
+        {
+            if (!target_triplet_exclusions || !target_triplet_exclusions->exclusions.contains(scfl->to_name()))
+            {
+                result.requested.emplace_back(
+                    PackageSpec{scfl->to_name(), target_triplet},
+                    InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
+            }
+            else
+            {
+                result.excluded.emplace_back(PackageSpec{scfl->to_name(), target_triplet});
+            }
+        }
+
+        return result;
+    }
+
+    struct CiRandomizer final : GraphRandomizer
+    {
+        virtual int random(int i) override
+        {
+            if (i <= 1) return 0;
+            std::uniform_int_distribution<int> d(0, i - 1);
+            return d(e);
+        }
+
+        std::random_device e;
+    };
 } // unnamed namespace
 
 namespace vcpkg
@@ -326,13 +381,13 @@ namespace vcpkg
             cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
-        std::unordered_set<std::string> known_failures;
+        std::unordered_set<std::string> known_failure_abis;
         auto it_known_failures = settings.find(SwitchKnownFailuresFrom);
         if (it_known_failures != settings.end())
         {
             Path raw_path = it_known_failures->second;
             auto lines = paths.get_filesystem().read_lines(raw_path).value_or_exit(VCPKG_LINE_INFO);
-            known_failures.insert(lines.begin(), lines.end());
+            known_failure_abis.insert(lines.begin(), lines.end());
         }
 
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
@@ -357,57 +412,40 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        // Install the default features for every package
-        std::vector<FullPackageSpec> all_default_full_specs;
-        for (auto scfl : provider.load_all_control_files())
-        {
-            all_default_full_specs.emplace_back(
-                PackageSpec{scfl->to_name(), target_triplet},
-                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
-        }
+        auto ci_specs = calculate_ci_specs(exclusions_map, target_triplet, provider);
 
-        struct RandomizerInstance : GraphRandomizer
-        {
-            virtual int random(int i) override
-            {
-                if (i <= 1) return 0;
-                std::uniform_int_distribution<int> d(0, i - 1);
-                return d(e);
-            }
-
-            std::random_device e;
-        } randomizer_instance;
-        GraphRandomizer* randomizer = nullptr;
+        Optional<CiRandomizer> randomizer;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
-            randomizer = &randomizer_instance;
+            randomizer.emplace();
         }
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
-            randomizer, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+            randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto action_plan = compute_full_plan(
-            paths, provider, var_provider, all_default_full_specs, packages_dir_assigner, create_install_plan_options);
+            paths, provider, var_provider, ci_specs.requested, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-        auto install_actions = Util::fmap(action_plan.install_actions, [](const auto& action) { return &action; });
+        auto install_actions =
+            Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        auto split_specs =
-            compute_action_statuses(ExclusionPredicate{&exclusions_map}, precheck_results, known_failures, action_plan);
+        const auto pre_build_status =
+            compute_pre_build_statuses(exclusions_map, precheck_results, known_failure_abis, action_plan);
         LocalizedString not_supported_regressions;
         {
             std::string msg;
-            for (const auto& spec : all_default_full_specs)
+            for (const auto& spec : ci_specs.requested)
             {
-                if (!Util::Sets::contains(split_specs->abi_map, spec.package_spec))
+                if (!Util::Sets::contains(pre_build_status.abi_map, spec.package_spec))
                 {
                     bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
-                    split_specs->known.emplace(spec.package_spec,
-                                               supp ? BuildResult::CascadedDueToMissingDependencies
-                                                    : BuildResult::Excluded);
+                    pre_build_status.known.emplace(spec.package_spec,
+                                                   supp ? BuildResult::CascadedDueToMissingDependencies
+                                                        : BuildResult::Excluded);
 
                     if (cidata.expected_failures.contains(spec.package_spec))
                     {
@@ -425,29 +463,29 @@ namespace vcpkg
                 auto&& action = action_plan.install_actions[i];
                 msg += fmt::format("{:>40}: {:>8}: {}\n",
                                    action.spec,
-                                   split_specs->action_state_string[i],
+                                   pre_build_status.action_state_string[i],
                                    action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
             }
 
             msg::write_unlocalized_text(Color::none, msg);
-            auto it_output_hashes = settings.find(SwitchOutputHashes);
-            if (it_output_hashes != settings.end())
+        }
+
+        auto it_output_hashes = settings.find(SwitchOutputHashes);
+        if (it_output_hashes != settings.end())
+        {
+            const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
+            Json::Array arr;
+            for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
             {
-                const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
-                Json::Array arr;
-                for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
-                {
-                    auto&& action = action_plan.install_actions[i];
-                    Json::Object obj;
-                    obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
-                    obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
-                    obj.insert(JsonIdState, Json::Value::string(split_specs->action_state_string[i]));
-                    obj.insert(JsonIdAbi,
-                               Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
-                    arr.push_back(std::move(obj));
-                }
-                fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
+                auto&& action = action_plan.install_actions[i];
+                Json::Object obj;
+                obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
+                obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
+                obj.insert(JsonIdState, Json::Value::string(pre_build_status.action_state_string[i]));
+                obj.insert(JsonIdAbi, Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
+                arr.push_back(std::move(obj));
             }
+            fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
         }
 
         std::vector<std::string> parent_hashes;
@@ -467,7 +505,7 @@ namespace vcpkg
             });
         }
 
-        reduce_action_plan(action_plan, split_specs->known, parent_hashes);
+        prune_entirely_known_action_branches(action_plan, pre_build_status.known, parent_hashes);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
 
@@ -487,7 +525,7 @@ namespace vcpkg
             StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
-                           [&](auto& spec) { return Util::Sets::contains(split_specs->known, spec); });
+                           [&](const PackageSpec& spec) { return Util::Sets::contains(pre_build_status.known, spec); });
             if (!already_installed.empty())
             {
                 LocalizedString warning;
@@ -506,7 +544,7 @@ namespace vcpkg
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
             for (auto&& result : summary.results)
             {
-                split_specs->known.erase(result.get_spec());
+                pre_build_status.known.erase(result.get_spec());
             }
 
             msg::print(LocalizedString::from_raw("\n")
@@ -516,7 +554,7 @@ namespace vcpkg
                            .append_raw('\n')
                            .append(summary.format_results()));
             const bool any_regressions = print_regressions(summary.results,
-                                                           split_specs->known,
+                                                           pre_build_status.known,
                                                            cidata,
                                                            ci_baseline_file_name,
                                                            not_supported_regressions,
@@ -531,24 +569,24 @@ namespace vcpkg
                 for (auto&& result : summary.results)
                 {
                     const auto& spec = result.get_spec();
-                    auto& port_features = split_specs->features.at(spec);
+                    auto& port_features = pre_build_status.features.at(spec);
                     auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
                     xunitTestResults.add_test_results(
-                        spec, code, result.timing, result.start_time, split_specs->abi_map.at(spec), port_features);
+                        spec, code, result.timing, result.start_time, pre_build_status.abi_map.at(spec), port_features);
                 }
 
                 // Adding results for ports that were not built because they have known states
                 if (Util::Sets::contains(options.switches, SwitchXXUnitAll))
                 {
-                    for (auto&& port : split_specs->known)
+                    for (auto&& port : pre_build_status.known)
                     {
                         const auto& spec = port.first;
-                        auto& port_features = split_specs->features.at(spec);
+                        auto& port_features = pre_build_status.features.at(spec);
                         xunitTestResults.add_test_results(spec,
                                                           port.second,
                                                           ElapsedTime{},
                                                           std::chrono::system_clock::time_point{},
-                                                          split_specs->abi_map.at(spec),
+                                                          pre_build_status.abi_map.at(spec),
                                                           port_features);
                     }
                 }
