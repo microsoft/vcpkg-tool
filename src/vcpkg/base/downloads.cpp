@@ -132,16 +132,10 @@ namespace vcpkg
         return true;
     }
 
-    struct CurlRequestPrivateData
-    {
-        size_t request_index = 0;
-        std::unique_ptr<WriteFilePointer> file = nullptr;
-    };
     static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
     {
-        auto* file = reinterpret_cast<WriteFilePointer*>(param);
-        if (!file) return 0;
-        return file->write(contents, size, nmemb);
+        if (!param) return 0;
+        return static_cast<WriteFilePointer*>(param)->write(contents, size, nmemb);
     }
 
     static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow)
@@ -171,8 +165,8 @@ namespace vcpkg
         if (!multi_handle) Checks::unreachable(VCPKG_LINE_INFO);
 
         std::vector<int> ret(urls.size(), -1);
-        std::vector<CurlRequestPrivateData> private_data;
-        private_data.reserve(urls.size());
+        std::vector<WriteFilePointer> write_pointers;
+        write_pointers.reserve(urls.size());
 
         curl_slist* request_headers = nullptr;
         for (auto&& header : headers)
@@ -182,7 +176,6 @@ namespace vcpkg
 
         for (size_t request_index = 0; request_index < urls.size(); ++request_index)
         {
-            auto& data = private_data.emplace_back(CurlRequestPrivateData{request_index});
             const auto& url = urls[request_index];
 
             CURL* curl = curl_easy_init();
@@ -195,24 +188,28 @@ namespace vcpkg
             }
 
             set_common_curl_options(curl, url.c_str(), request_headers);
-            curl_easy_setopt(curl, CURLOPT_PRIVATE, &data);
-            if (outputs.size() > request_index)
+            if (outputs.empty())
+            {
+                curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
+            }
+            else
             {
                 const auto& output = outputs[request_index];
-
                 std::error_code ec;
-                data.file.reset(new WriteFilePointer(output, Append::NO, ec));
+                auto& request_write_pointer = write_pointers.emplace_back(output, Append::NO, ec);
+                curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
                 if (ec)
                 {
                     context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
                 }
                 else
                 {
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, data.file.get());
+                    // note explicit cast to void* necessary to go through ...
+                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
                     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+                    curl_multi_add_handle(multi_handle, curl);
                 }
             }
-            curl_multi_add_handle(multi_handle, curl);
         }
 
         int still_running = 0;
@@ -245,12 +242,21 @@ namespace vcpkg
 
                 if (msg->data.result == CURLE_OK)
                 {
-                    CurlRequestPrivateData* data = nullptr;
-                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &data);
-                    if (!data) Checks::unreachable(VCPKG_LINE_INFO);
+                    size_t idx;
+                    void* curlinfo_private;
+                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &curlinfo_private);
+                    if (outputs.empty())
+                    {
+                        idx = reinterpret_cast<uintptr_t>(curlinfo_private);
+                    }
+                    else
+                    {
+                        if (!curlinfo_private) Checks::unreachable(VCPKG_LINE_INFO);
+                        auto request_write_handle = static_cast<WriteFilePointer*>(curlinfo_private);
+                        idx = request_write_handle - write_pointers.data();
+                    }
 
-                    auto idx = data->request_index;
-                    long response_code = -1;
+                    long response_code;
                     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
                     ret[idx] = static_cast<int>(response_code);
                 }
@@ -260,6 +266,7 @@ namespace vcpkg
                                                      msg::exit_code = static_cast<int>(msg->data.result),
                                                      msg::error_msg = curl_easy_strerror(msg->data.result)));
                 }
+
                 curl_multi_remove_handle(multi_handle, handle);
                 curl_easy_cleanup(handle);
             }
