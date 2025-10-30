@@ -2464,7 +2464,7 @@ namespace vcpkg
 
     std::vector<CacheAvailability> ReadOnlyBinaryCache::precheck(View<const InstallPlanAction*> actions)
     {
-        std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const InstallPlanAction* action) {
+        const std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const InstallPlanAction* action) {
             Checks::check_exit(VCPKG_LINE_INFO, action);
             return &m_status[action->package_abi_or_exit(VCPKG_LINE_INFO)];
         });
@@ -2492,14 +2492,13 @@ namespace vcpkg
 
             for (size_t i = 0; i < action_ptrs.size(); ++i)
             {
-                auto&& this_status = m_status[action_ptrs[i]->package_abi_or_exit(VCPKG_LINE_INFO)];
                 if (cache_result[i] == CacheAvailability::available)
                 {
-                    this_status.mark_available(provider.get());
+                    statuses[i]->mark_available(provider.get());
                 }
                 else if (cache_result[i] == CacheAvailability::unavailable)
                 {
-                    this_status.mark_unavailable(provider.get());
+                    statuses[i]->mark_unavailable(provider.get());
                 }
             }
         }
