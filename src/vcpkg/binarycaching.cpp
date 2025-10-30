@@ -2466,9 +2466,7 @@ namespace vcpkg
     {
         std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const InstallPlanAction* action) {
             Checks::check_exit(VCPKG_LINE_INFO, action);
-            auto pabi = action->package_abi();
-            Checks::check_exit(VCPKG_LINE_INFO, pabi);
-            return &m_status[*pabi];
+            return &m_status[action->package_abi_or_exit(VCPKG_LINE_INFO)];
         });
 
         std::vector<const InstallPlanAction*> action_ptrs;
