@@ -276,7 +276,7 @@ namespace
                                      PortFileProvider& provider)
     {
         // Generate a spec for the default features for every package, except for those explicitly skipped.
-        // While `reduce_action_plan` tries to remove skipped packages as expected failures, there
+        // While `reduce_action_plan` removes skipped packages as expected failures, there
         // it is too late as we have already calculated an action plan with feature dependencies from
         // the skipped ports.
         CiSpecsResult result;
