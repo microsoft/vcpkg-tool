@@ -1,16 +1,6 @@
 #pragma once
 
-namespace fmt
-{
-    inline namespace v11
-    {
-        template<typename T, typename Char, typename Enable>
-        struct formatter;
-
-        template<typename Char>
-        class basic_string_view;
-    }
-}
+#include <fmt/base.h>
 
 #define VCPKG_FORMAT_AS(Type, Base)                                                                                    \
     template<typename Char>                                                                                            \
