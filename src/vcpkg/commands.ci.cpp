@@ -83,30 +83,10 @@ namespace
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
-                                 const std::vector<FullPackageSpec>& specs,
+                                 const std::vector<FullPackageSpec>& applicable_specs,
                                  PackagesDirAssigner& packages_dir_assigner,
                                  const CreateInstallPlanOptions& serialize_options)
     {
-        std::vector<PackageSpec> packages_with_qualified_deps;
-        for (auto&& spec : specs)
-        {
-            auto&& scfl = provider.get_control_file(spec.package_spec.name()).value_or_exit(VCPKG_LINE_INFO);
-            if (scfl.source_control_file->has_qualified_dependencies() ||
-                !scfl.source_control_file->core_paragraph->supports_expression.is_empty())
-            {
-                packages_with_qualified_deps.push_back(spec.package_spec);
-            }
-        }
-
-        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
-
-        const auto applicable_specs = Util::filter(specs, [&](auto& spec) -> bool {
-            PackagesDirAssigner this_packages_dir_not_used{""};
-            return create_feature_install_plan(
-                       provider, var_provider, {&spec, 1}, {}, this_packages_dir_not_used, serialize_options)
-                .unsupported_features.empty();
-        });
-
         auto action_plan = create_feature_install_plan(
             provider, var_provider, applicable_specs, {}, packages_dir_assigner, serialize_options);
         var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
@@ -268,12 +248,15 @@ namespace
     struct CiSpecsResult
     {
         std::vector<FullPackageSpec> requested;
+        std::vector<FullPackageSpec> applicable;
         std::vector<PackageSpec> excluded;
     };
 
     CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
                                      const Triplet& target_triplet,
-                                     PortFileProvider& provider)
+                                     PortFileProvider& provider,
+                                     const CMakeVars::CMakeVarProvider& var_provider,
+                                     const CreateInstallPlanOptions& serialize_options)
     {
         // Generate a spec for the default features for every package, except for those explicitly skipped.
         // While `reduce_action_plan` removes skipped packages as expected failures, there
@@ -290,19 +273,37 @@ namespace
             }
         }
 
+        std::vector<PackageSpec> packages_with_qualified_deps;
         for (auto scfl : provider.load_all_control_files())
         {
+            auto package_spec = PackageSpec{scfl->to_name(), target_triplet};
+            if (scfl->source_control_file->has_qualified_dependencies() ||
+                !scfl->source_control_file->core_paragraph->supports_expression.is_empty())
+            {
+                packages_with_qualified_deps.push_back(package_spec);
+            }
+
             if (!target_triplet_exclusions || !target_triplet_exclusions->exclusions.contains(scfl->to_name()))
             {
                 result.requested.emplace_back(
-                    PackageSpec{scfl->to_name(), target_triplet},
+                    std::move(package_spec),
                     InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
             }
             else
             {
-                result.excluded.emplace_back(PackageSpec{scfl->to_name(), target_triplet});
+                result.excluded.emplace_back(std::move(package_spec));
             }
         }
+
+        var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
+
+        result.applicable = Util::filter(result.requested, [&](const FullPackageSpec& spec) -> bool {
+            PackagesDirAssigner this_packages_dir_not_used{""};
+            return create_feature_install_plan(
+                       provider, var_provider, {&spec, 1}, {}, this_packages_dir_not_used, serialize_options)
+                .unsupported_features.empty();
+        });
+
 
         return result;
     }
@@ -412,19 +413,19 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
-        auto ci_specs = calculate_ci_specs(exclusions_map, target_triplet, provider);
 
         Optional<CiRandomizer> randomizer;
         if (Util::Sets::contains(options.switches, SwitchXRandomize))
         {
             randomizer.emplace();
         }
-
-        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         CreateInstallPlanOptions create_install_plan_options(
             randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
+        auto ci_specs = calculate_ci_specs(exclusions_map, target_triplet, provider, var_provider, create_install_plan_options);
+
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = compute_full_plan(
-            paths, provider, var_provider, ci_specs.requested, packages_dir_assigner, create_install_plan_options);
+            paths, provider, var_provider, ci_specs.applicable, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -433,7 +434,7 @@ namespace vcpkg
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        const auto pre_build_status =
+        auto pre_build_status =
             compute_pre_build_statuses(exclusions_map, precheck_results, known_failure_abis, action_plan);
         LocalizedString not_supported_regressions;
         {
