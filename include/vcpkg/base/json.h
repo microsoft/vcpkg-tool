@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/json.h>
 
 #include <vcpkg/base/expected.h>
@@ -336,7 +335,6 @@ namespace vcpkg::Json
     };
 
     ExpectedL<ParsedJson> parse(StringView text, StringView origin);
-    ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin);
 
     std::string stringify(const Value&);

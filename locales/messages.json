@@ -1409,6 +1409,7 @@
   "_RemovePackageConflict.comment": "An example of {package_name} is zlib. An example of {spec} is zlib:x64-windows. An example of {triplet} is x64-windows.",
   "RemovingPackage": "Removing {action_index}/{count} {spec}",
   "_RemovingPackage.comment": "An example of {action_index} is 340. An example of {count} is 42. An example of {spec} is zlib:x64-windows.",
+  "RequestedPortsNotInCIPlan": "one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)",
   "ResponseFileCode": "@response_file",
   "_ResponseFileCode.comment": "Explains to the user that they can use response files on the command line, 'response_file' must have no spaces and be a legal file name.",
   "RestoredPackagesFromAWS": "Restored {count} package(s) from AWS in {elapsed}. Use --debug to see more details.",

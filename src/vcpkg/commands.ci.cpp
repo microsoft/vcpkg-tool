@@ -53,10 +53,22 @@ namespace
     struct CIPreBuildStatus
     {
         std::map<PackageSpec, BuildResult> known;
+        std::map<PackageSpec, std::string> report_lines;
         std::map<PackageSpec, std::vector<std::string>> features;
-        std::map<PackageSpec, std::string> abi_map;
-        // action_state_string.size() will equal install_actions.size()
-        std::vector<StringLiteral> action_state_string;
+        Json::Array abis;
+    };
+
+    enum class ExcludeReason
+    {
+        Baseline,
+        Supports,
+        Cascade
+    };
+
+    struct CiSpecsResult
+    {
+        std::vector<FullPackageSpec> requested;
+        std::map<PackageSpec, ExcludeReason> excluded;
     };
 
     bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
@@ -68,16 +80,8 @@ namespace
         {
             return true;
         }
-        PlatformExpression::Context context = var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO);
-        return supports_expression.evaluate(context);
-    }
 
-    bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
-                               const PortFileProvider& provider,
-                               PackageSpec spec)
-    {
-        auto&& scf = provider.get_control_file(spec.name()).value_or_exit(VCPKG_LINE_INFO).source_control_file;
-        return supported_for_triplet(var_provider, *scf, spec);
+        return supports_expression.evaluate(var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO));
     }
 
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
@@ -98,67 +102,107 @@ namespace
         return action_plan;
     }
 
-    CIPreBuildStatus compute_pre_build_statuses(const ExclusionsMap& exclusions_map,
+    CIPreBuildStatus compute_pre_build_statuses(const CiSpecsResult& ci_specs,
                                                 const std::vector<CacheAvailability>& precheck_results,
                                                 const std::unordered_set<std::string>& known_failure_abis,
+                                                const std::unordered_set<std::string>& parent_hashes,
                                                 const ActionPlan& action_plan)
     {
+        static constexpr StringLiteral STATE_ABI_FAIL = "fail";
+        static constexpr StringLiteral STATE_UNSUPPORTED = "unsupported";
+        static constexpr StringLiteral STATE_CACHED = "cached";
+        static constexpr StringLiteral STATE_PARENT = "parent";
+        static constexpr StringLiteral STATE_UNKNOWN = "*";
+        static constexpr StringLiteral STATE_SKIP = "skip";
+        static constexpr StringLiteral STATE_CASCADE = "cascade";
+
         CIPreBuildStatus ret;
+        std::unordered_set<PackageSpec> missing_specs;
+        for (const FullPackageSpec& spec : ci_specs.requested)
+        {
+            missing_specs.insert(spec.package_spec);
+        }
 
-        std::set<PackageSpec> will_fail;
-
-        ret.action_state_string.reserve(action_plan.install_actions.size());
         for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
         {
-            auto&& action = action_plan.install_actions[action_idx];
-
-            auto p = &action;
-            ret.abi_map.emplace(action.spec, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            const auto& action = action_plan.install_actions[action_idx];
+            missing_specs.erase(action.spec); // note action.spec won't be in missing_specs if it's a host dependency
+            const std::string& public_abi = action.public_abi();
             ret.features.emplace(action.spec, action.feature_list);
-            if (exclusions_map.is_excluded(p->spec))
+
+            const StringLiteral* state;
+            if (Util::Sets::contains(known_failure_abis, public_abi))
             {
-                ret.action_state_string.emplace_back("skip");
-                ret.known.emplace(p->spec, BuildResult::Excluded);
-                will_fail.emplace(p->spec);
-            }
-            else if (Util::Sets::contains(known_failure_abis, p->public_abi()))
-            {
-                ret.action_state_string.emplace_back("will fail");
-                ret.known.emplace(p->spec, BuildResult::BuildFailed);
-                will_fail.emplace(p->spec);
-            }
-            else if (Util::any_of(p->package_dependencies,
-                                  [&](const PackageSpec& spec) { return Util::Sets::contains(will_fail, spec); }))
-            {
-                ret.action_state_string.emplace_back("cascade");
-                ret.known.emplace(p->spec, BuildResult::CascadedDueToMissingDependencies);
-                will_fail.emplace(p->spec);
+                state = &STATE_ABI_FAIL;
+                ret.known.emplace(action.spec, BuildResult::BuildFailed);
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
-                ret.action_state_string.emplace_back("pass");
-                ret.known.emplace(p->spec, BuildResult::Succeeded);
+                state = &STATE_CACHED;
+                ret.known.emplace(action.spec, BuildResult::Succeeded);
+            }
+            else if (Util::Sets::contains(parent_hashes, public_abi))
+            {
+                state = &STATE_PARENT;
+                ret.known.emplace(action.spec, BuildResult::Succeeded);
             }
             else
             {
-                ret.action_state_string.emplace_back("*");
+                state = &STATE_UNKNOWN;
             }
+
+            ret.report_lines.insert_or_assign(action.spec,
+                                              fmt::format("{:>40}: {:>6}: {}", action.spec, *state, public_abi));
+            Json::Object obj;
+            obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
+            obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
+            obj.insert(JsonIdState, Json::Value::string(*state));
+            obj.insert(JsonIdAbi, public_abi);
+            ret.abis.push_back(std::move(obj));
         }
+
+        if (!missing_specs.empty())
+        {
+            auto warning_text = msg::format(msgRequestedPortsNotInCIPlan);
+            for (const PackageSpec& missing_spec : missing_specs)
+            {
+                warning_text.append_raw('\n');
+                warning_text.append_raw(missing_spec.to_string());
+            }
+
+            console_diagnostic_context.report(DiagnosticLine{DiagKind::Warning, std::move(warning_text)});
+        }
+
+        for (const auto& exclusion : ci_specs.excluded)
+        {
+            const StringLiteral* state;
+            switch (exclusion.second)
+            {
+                case ExcludeReason::Baseline:
+                    state = &STATE_SKIP;
+                    break; // FIXME distingish between =skip and =fail in ci.baseline.txt?
+                case ExcludeReason::Supports: state = &STATE_UNSUPPORTED; break;
+                case ExcludeReason::Cascade: state = &STATE_CASCADE; break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            ret.report_lines.insert_or_assign(exclusion.first, fmt::format("{:>40}: {}", exclusion.first, *state));
+        }
+
         return ret;
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
     void prune_entirely_known_action_branches(ActionPlan& action_plan,
                                               const std::map<PackageSpec, BuildResult>& known,
-                                              View<std::string> parent_hashes)
+                                              const std::unordered_set<std::string>& parent_hashes)
     {
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
             auto it_known = known.find(it->spec);
             const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
-            auto it_parent = std::find(parent_hashes.begin(), parent_hashes.end(), abi);
-            if (it_parent == parent_hashes.end())
+            if (!Util::Sets::contains(parent_hashes, abi))
             {
                 it->request_type = RequestType::USER_REQUESTED;
                 if (it_known == known.end())
@@ -245,12 +289,21 @@ namespace
         return has_error;
     }
 
-    struct CiSpecsResult
+    std::vector<PackageSpec> calculate_packages_with_qualified_deps(
+        const std::vector<const SourceControlFileAndLocation*>& all_control_files, const Triplet& target_triplet)
     {
-        std::vector<FullPackageSpec> requested;
-        std::vector<FullPackageSpec> applicable;
-        std::vector<PackageSpec> excluded;
-    };
+        std::vector<PackageSpec> ret;
+        for (auto scfl : all_control_files)
+        {
+            if (scfl->source_control_file->has_qualified_dependencies() ||
+                !scfl->source_control_file->core_paragraph->supports_expression.is_empty())
+            {
+                ret.emplace_back(scfl->to_name(), target_triplet);
+            }
+        }
+
+        return ret;
+    }
 
     CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
                                      const Triplet& target_triplet,
@@ -273,37 +326,39 @@ namespace
             }
         }
 
-        std::vector<PackageSpec> packages_with_qualified_deps;
-        for (auto scfl : provider.load_all_control_files())
-        {
-            auto package_spec = PackageSpec{scfl->to_name(), target_triplet};
-            if (scfl->source_control_file->has_qualified_dependencies() ||
-                !scfl->source_control_file->core_paragraph->supports_expression.is_empty())
-            {
-                packages_with_qualified_deps.push_back(package_spec);
-            }
+        auto all_control_files = provider.load_all_control_files();
 
-            if (!target_triplet_exclusions || !target_triplet_exclusions->exclusions.contains(scfl->to_name()))
-            {
-                result.requested.emplace_back(
-                    std::move(package_spec),
-                    InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()});
-            }
-            else
-            {
-                result.excluded.emplace_back(std::move(package_spec));
-            }
-        }
-
+        // populate `var_provider` to evaluate supports expressions for all ports:
+        std::vector<PackageSpec> packages_with_qualified_deps =
+            calculate_packages_with_qualified_deps(all_control_files, target_triplet);
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
 
-        result.applicable = Util::filter(result.requested, [&](const FullPackageSpec& spec) -> bool {
-            PackagesDirAssigner this_packages_dir_not_used{""};
-            return create_feature_install_plan(
-                       provider, var_provider, {&spec, 1}, {}, this_packages_dir_not_used, serialize_options)
-                .unsupported_features.empty();
-        });
+        for (auto scfl : all_control_files)
+        {
+            auto full_package_spec =
+                FullPackageSpec{PackageSpec{scfl->to_name(), target_triplet},
+                                InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()}};
+            if (target_triplet_exclusions && target_triplet_exclusions->exclusions.contains(scfl->to_name()))
+            {
+                result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Baseline);
+                continue;
+            }
 
+            PackagesDirAssigner this_packages_dir_not_used{""};
+            if (!create_feature_install_plan(
+                     provider, var_provider, {&full_package_spec, 1}, {}, this_packages_dir_not_used, serialize_options)
+                     .unsupported_features.empty())
+            {
+                result.excluded.insert_or_assign(
+                    std::move(full_package_spec.package_spec),
+                    supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
+                        ? ExcludeReason::Supports
+                        : ExcludeReason::Cascade);
+                continue;
+            }
+
+            result.requested.emplace_back(std::move(full_package_spec));
+        }
 
         return result;
     }
@@ -388,7 +443,24 @@ namespace vcpkg
         {
             Path raw_path = it_known_failures->second;
             auto lines = paths.get_filesystem().read_lines(raw_path).value_or_exit(VCPKG_LINE_INFO);
-            known_failure_abis.insert(lines.begin(), lines.end());
+            known_failure_abis.insert(std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
+        }
+
+        std::unordered_set<std::string> parent_hashes;
+        auto it_parent_hashes = settings.find(SwitchParentHashes);
+        if (it_parent_hashes != settings.end())
+        {
+            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
+            auto parent_hashes_text = fs.try_read_contents(parent_hashes_path).value_or_exit(VCPKG_LINE_INFO);
+            const auto parsed_object =
+                Json::parse(parent_hashes_text.content, parent_hashes_text.origin).value_or_exit(VCPKG_LINE_INFO);
+            const auto& parent_hashes_array = parsed_object.value.array(VCPKG_LINE_INFO);
+            for (const Json::Value& array_value : parent_hashes_array)
+            {
+                auto abi = array_value.object(VCPKG_LINE_INFO).get(JsonIdAbi);
+                Checks::check_exit(VCPKG_LINE_INFO, abi);
+                parent_hashes.insert(abi->string(VCPKG_LINE_INFO).to_string());
+            }
         }
 
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
@@ -421,11 +493,12 @@ namespace vcpkg
         }
         CreateInstallPlanOptions create_install_plan_options(
             randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto ci_specs = calculate_ci_specs(exclusions_map, target_triplet, provider, var_provider, create_install_plan_options);
+        auto ci_specs =
+            calculate_ci_specs(exclusions_map, target_triplet, provider, var_provider, create_install_plan_options);
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = compute_full_plan(
-            paths, provider, var_provider, ci_specs.applicable, packages_dir_assigner, create_install_plan_options);
+            paths, provider, var_provider, ci_specs.requested, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(args, paths, out_sink))
         {
@@ -435,39 +508,44 @@ namespace vcpkg
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
         auto pre_build_status =
-            compute_pre_build_statuses(exclusions_map, precheck_results, known_failure_abis, action_plan);
+            compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
         LocalizedString not_supported_regressions;
         {
+            // std::string msg;
+            // for (const auto& spec : ci_specs.requested)
+            //{
+            //     if (!Util::Sets::contains(pre_build_status.abi_map, spec.package_spec))
+            //     {
+            //         bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
+            //         pre_build_status.known.emplace(spec.package_spec,
+            //                                        supp ? BuildResult::CascadedDueToMissingDependencies
+            //                                             : BuildResult::Excluded);
+
+            //        if (cidata.expected_failures.contains(spec.package_spec))
+            //        {
+            //            not_supported_regressions                                 // FIXME
+            //                .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
+            //                        msg::spec = spec.package_spec,
+            //                        msg::triplet = spec.package_spec.triplet())
+            //                .append_raw('\n');
+            //        }
+            //        msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
+            //    }
+            //}
+            // for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
+            //{
+            //    auto&& action = action_plan.install_actions[i];
+            //    msg += fmt::format("{:>40}: {:>8}: {}\n",
+            //                       action.spec,
+            //                       pre_build_status.action_state_string[i],
+            //                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
+            //}
+
             std::string msg;
-            for (const auto& spec : ci_specs.requested)
+            for (auto&& line : pre_build_status.report_lines)
             {
-                if (!Util::Sets::contains(pre_build_status.abi_map, spec.package_spec))
-                {
-                    bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
-                    pre_build_status.known.emplace(spec.package_spec,
-                                                   supp ? BuildResult::CascadedDueToMissingDependencies
-                                                        : BuildResult::Excluded);
-
-                    if (cidata.expected_failures.contains(spec.package_spec))
-                    {
-                        not_supported_regressions
-                            .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
-                                    msg::spec = spec.package_spec,
-                                    msg::triplet = spec.package_spec.triplet())
-                            .append_raw('\n');
-                    }
-                    msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
-                }
+                msg += fmt::format("{}\n", line.second);
             }
-            for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
-            {
-                auto&& action = action_plan.install_actions[i];
-                msg += fmt::format("{:>40}: {:>8}: {}\n",
-                                   action.spec,
-                                   pre_build_status.action_state_string[i],
-                                   action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            }
-
             msg::write_unlocalized_text(Color::none, msg);
         }
 
@@ -475,35 +553,7 @@ namespace vcpkg
         if (it_output_hashes != settings.end())
         {
             const Path output_hash_json = paths.original_cwd / it_output_hashes->second;
-            Json::Array arr;
-            for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
-            {
-                auto&& action = action_plan.install_actions[i];
-                Json::Object obj;
-                obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
-                obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
-                obj.insert(JsonIdState, Json::Value::string(pre_build_status.action_state_string[i]));
-                obj.insert(JsonIdAbi, Json::Value::string(action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi));
-                arr.push_back(std::move(obj));
-            }
-            fs.write_contents(output_hash_json, Json::stringify(arr), VCPKG_LINE_INFO);
-        }
-
-        std::vector<std::string> parent_hashes;
-
-        auto it_parent_hashes = settings.find(SwitchParentHashes);
-        if (it_parent_hashes != settings.end())
-        {
-            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
-            auto parsed_json = Json::parse_file(VCPKG_LINE_INFO, fs, parent_hashes_path).value;
-            parent_hashes = Util::fmap(parsed_json.array(VCPKG_LINE_INFO), [](const auto& json_object) {
-                auto abi = json_object.object(VCPKG_LINE_INFO).get(JsonIdAbi);
-                Checks::check_exit(VCPKG_LINE_INFO, abi);
-#ifdef _MSC_VER
-                _Analysis_assume_(abi);
-#endif
-                return abi->string(VCPKG_LINE_INFO).to_string();
-            });
+            fs.write_contents(output_hash_json, Json::stringify(pre_build_status.abis), VCPKG_LINE_INFO);
         }
 
         prune_entirely_known_action_branches(action_plan, pre_build_status.known, parent_hashes);
@@ -572,8 +622,12 @@ namespace vcpkg
                     const auto& spec = result.get_spec();
                     auto& port_features = pre_build_status.features.at(spec);
                     auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                    xunitTestResults.add_test_results(
-                        spec, code, result.timing, result.start_time, pre_build_status.abi_map.at(spec), port_features);
+                    xunitTestResults.add_test_results(spec,
+                                                      code,
+                                                      result.timing,
+                                                      result.start_time,
+                                                      result.package_abi_or_exit(VCPKG_LINE_INFO),
+                                                      port_features);
                 }
 
                 // Adding results for ports that were not built because they have known states
@@ -587,7 +641,7 @@ namespace vcpkg
                                                           port.second,
                                                           ElapsedTime{},
                                                           std::chrono::system_clock::time_point{},
-                                                          pre_build_status.abi_map.at(spec),
+                                                          /* pre_build_status.abi_map.at(spec) FIXME */ "",
                                                           port_features);
                     }
                 }

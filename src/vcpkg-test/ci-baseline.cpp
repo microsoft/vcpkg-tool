@@ -206,7 +206,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
     SECTION ("Applies Skips and Fails")
     {
         ExclusionsMap exclusions;
-        exclusions.insert(x64_uwp, {}); // example triplet
+        exclusions.insert(x64_uwp, {});   // example triplet
         exclusions.insert(x64_linux, {}); // example host triplet
         auto actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
         const SortedVector<PackageSpec> expected_expected_failures{

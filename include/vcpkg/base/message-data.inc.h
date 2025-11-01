@@ -186,6 +186,11 @@ DECLARE_MESSAGE(ARegistryPathMustStartWithDollar,
                 "",
                 "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.")
 DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string")
+DECLARE_MESSAGE(
+    RequestedPortsNotInCIPlan,
+    (),
+    "",
+    "one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)")
 DECLARE_MESSAGE(ArtifactsBootstrapFailed, (), "", "vcpkg-artifacts is not installed and could not be bootstrapped.")
 DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
 DECLARE_MESSAGE(ArtifactsOptionJson,

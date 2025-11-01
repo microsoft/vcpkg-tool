@@ -25,12 +25,15 @@ namespace
         StringLiteral result_string = "";
         switch (test.result)
         {
-            case BuildResult::PostBuildChecksFailed:
-            case BuildResult::FileConflicts:
-            case BuildResult::BuildFailed: result_string = "Fail"; break;
-            case BuildResult::Excluded:
-            case BuildResult::CascadedDueToMissingDependencies: result_string = "Skip"; break;
             case BuildResult::Succeeded: result_string = "Pass"; break;
+            case BuildResult::BuildFailed:
+            case BuildResult::PostBuildChecksFailed:
+            case BuildResult::FileConflicts: result_string = "Fail"; break;
+            case BuildResult::CascadedDueToMissingDependencies:
+            case BuildResult::Excluded: result_string = "Skip"; break;
+            case BuildResult::CacheMissing:
+            case BuildResult::Downloaded:
+            case BuildResult::Removed:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
