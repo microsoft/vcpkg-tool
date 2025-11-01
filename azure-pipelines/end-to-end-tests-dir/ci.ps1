@@ -27,11 +27,11 @@ if (-not ($ErrorOutput.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} i
     throw "feature-not-sup's baseline fail entry should result in a regression because the port is cascade for this triplet"
 }
 
-# test required pass
+# pass means pass
 $Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
-#Throw-IfNotFailed
+Throw-IfNotFailed
 $ErrorOutput = Run-VcpkgAndCaptureStdErr ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.pass.baseline.txt"
-#Throw-IfNotFailed
+Throw-IfNotFailed
 if (-not ($ErrorOutput.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as pass but not supported for ${Triplet}."))) {
     throw "feature-not-sup's baseline pass entry should result in a regression because the port is not supported"
 }
