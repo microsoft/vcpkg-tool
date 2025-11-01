@@ -424,7 +424,6 @@ namespace vcpkg
                                     msg::spec = spec.package_spec,
                                     msg::triplet = spec.package_spec.triplet())
                             .append_raw('\n');
-
                     }
                     msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
                 }
