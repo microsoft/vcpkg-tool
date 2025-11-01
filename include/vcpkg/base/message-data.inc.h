@@ -483,6 +483,10 @@ DECLARE_MESSAGE(CiBaselineRegressionHeader,
                 (),
                 "Printed before a series of CiBaselineRegression and/or CiBaselineUnexpectedPass messages.",
                 "REGRESSIONS:")
+DECLARE_MESSAGE(CiBaselineUnexpectedCascadePass,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.")
 DECLARE_MESSAGE(CiBaselineUnexpectedFail,
                 (msg::spec, msg::triplet),
                 "",
@@ -491,6 +495,10 @@ DECLARE_MESSAGE(CiBaselineUnexpectedFailCascade,
                 (msg::spec, msg::triplet),
                 "",
                 "REGRESSION: {spec} is marked as fail but one dependency is not supported for {triplet}.")
+DECLARE_MESSAGE(CiBaselineUnexpectedFailPass,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but not supported for {triplet}.")
 DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
