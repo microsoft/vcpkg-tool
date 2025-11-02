@@ -420,7 +420,7 @@ namespace vcpkg
                     else if (cidata.required_success.contains(spec.package_spec))
                     {
                         not_supported_regressions
-                            .append(supp ? msgCiBaselineUnexpectedCascadePass : msgCiBaselineUnexpectedFailPass,
+                            .append(supp ? msgCiBaselineUnexpectedPassCascade : msgCiBaselineUnexpectedPassUnsupported,
                                     msg::spec = spec.package_spec,
                                     msg::triplet = spec.package_spec.triplet())
                             .append_raw('\n');
