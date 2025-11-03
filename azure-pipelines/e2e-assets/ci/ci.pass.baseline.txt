@@ -1,0 +1,16 @@
+not-sup-host-b:arm64-osx=pass
+not-sup-host-b:x64-osx=pass
+not-sup-host-b:x86-windows=pass
+not-sup-host-b:x64-windows=pass
+not-sup-host-b:arm64-windows=pass
+not-sup-host-b:x64-linux=pass
+not-sup-host-b:arm64-linux=pass
+
+
+dep-on-feature-not-sup:arm64-osx=pass
+dep-on-feature-not-sup:x64-osx=pass
+dep-on-feature-not-sup:x86-windows=pass
+dep-on-feature-not-sup:x64-windows=pass
+dep-on-feature-not-sup:arm64-windows=pass
+dep-on-feature-not-sup:x64-linux=pass
+dep-on-feature-not-sup:arm64-linux=pass
