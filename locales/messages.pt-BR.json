@@ -222,6 +222,8 @@
   "CiBaselineUnexpectedFail": "REGRESSÃO: {spec} está marcada como falha, mas não tem suporte para {triplet}.",
   "CiBaselineUnexpectedFailCascade": "REGRESSÃO: {spec} está marcada como falha, mas uma dependência não possui suporte para {triplet}.",
   "CiBaselineUnexpectedPass": "PASSANDO, REMOVER DA LISTA DE FALHA: {spec} ({path}).",
+  "CiBaselineUnexpectedPassCascade": "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.",
+  "CiBaselineUnexpectedPassUnsupported": "REGRESSION: {spec} is marked as pass but not supported for {triplet}.",
   "ClearingContents": "Limpando os conteúdos de {path}",
   "CmakeTargetsExcluded": "observação: {count} destinos adicionais não estão exibidos.",
   "CmdAcquireExample1": "vcpkg acquire <artefato>",

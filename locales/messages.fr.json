@@ -222,6 +222,8 @@
   "CiBaselineUnexpectedFail": "RÉGRESSION : {spec} est marqué comme échec mais n’est pas pris en charge pour {triplet}.",
   "CiBaselineUnexpectedFailCascade": "REGRESSION : {spec} est marqué comme échec, mais une dépendance n’est pas prise en charge pour {triplet}.",
   "CiBaselineUnexpectedPass": "RÉUSSITE, SUPPRESSION DE LA LISTE D’ÉCHEC : {spec} ({path}).",
+  "CiBaselineUnexpectedPassCascade": "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.",
+  "CiBaselineUnexpectedPassUnsupported": "REGRESSION: {spec} is marked as pass but not supported for {triplet}.",
   "ClearingContents": "Effacement du contenu de {path}",
   "CmakeTargetsExcluded": "{count} cibles supplémentaires ne sont pas affichées.",
   "CmdAcquireExample1": "vcpkg acquire <artifact>",

@@ -69,6 +69,25 @@ $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$empt
 Throw-IfNotFailed
 Restore-Problem-Matchers
 
+# test effect of parent hashes
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+Remove-Item -Recurse -Force $ArchiveRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $ArchiveRoot -Force | Out-Null
+# Not a dry run in order to populate the artifact cache.
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource="clear;files,$ArchiveRoot" --output-hashes="$TestingRoot/parent-hashes.json"
+Throw-IfFailed
+if (-not ($Output.Contains("base-port:${Triplet}: SUCCEEDED:"))) {
+    throw 'base-port build must succeed'
+}
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"
+Throw-IfFailed
+if ($Output.Contains("base-port:${Triplet}: SUCCEEDED:")) {
+    throw 'base-port must not be rebuilt again'
+}
+
 # test that features included only by skipped ports are not included
 Remove-Problem-Matchers
 Refresh-TestRoot
@@ -79,3 +98,4 @@ if (-not ($Output -match 'skipped-features:[^:]+:        \*' -and $Output -match
 }
 
 Restore-Problem-Matchers
+
