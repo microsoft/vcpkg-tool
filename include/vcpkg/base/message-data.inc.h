@@ -496,6 +496,14 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
+DECLARE_MESSAGE(CiBaselineUnexpectedPassCascade,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.")
+DECLARE_MESSAGE(CiBaselineUnexpectedPassUnsupported,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but not supported for {triplet}.")
 DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
