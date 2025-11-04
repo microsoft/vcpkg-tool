@@ -848,14 +848,11 @@ namespace vcpkg
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
-                            fs.write_contents(
-                                issue_body_path,
-                                create_github_issue(args,
-                                                    build_result,
-                                                    paths,
-                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
-                                                    false),
-                                VCPKG_LINE_INFO);
+                            const auto* ipa = result.get_maybe_install_plan_action();
+                            Checks::check_exit(VCPKG_LINE_INFO, ipa);
+                            fs.write_contents(issue_body_path,
+                                              create_github_issue(args, build_result, paths, *ipa, false),
+                                              VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];

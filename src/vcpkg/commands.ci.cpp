@@ -54,7 +54,6 @@ namespace
     {
         std::map<PackageSpec, BuildResult> known;
         std::map<PackageSpec, std::string> report_lines;
-        std::map<PackageSpec, std::vector<std::string>> features;
         Json::Array abis;
     };
 
@@ -128,8 +127,6 @@ namespace
             const auto& action = action_plan.install_actions[action_idx];
             missing_specs.erase(action.spec); // note action.spec won't be in missing_specs if it's a host dependency
             const std::string& public_abi = action.public_abi();
-            ret.features.emplace(action.spec, action.feature_list);
-
             const StringLiteral* state;
             if (Util::Sets::contains(known_failure_abis, public_abi))
             {
@@ -178,9 +175,9 @@ namespace
             const StringLiteral* state;
             switch (exclusion.second)
             {
-                case ExcludeReason::Baseline:
-                    state = &STATE_SKIP;
-                    break; // FIXME distingish between =skip and =fail in ci.baseline.txt?
+                // it probably makes sense to distinguish between "--exclude", "=skip" and "=fail but --skip-failures"
+                // but we don't preserve that information right now, so all these cases report as "skip"
+                case ExcludeReason::Baseline: state = &STATE_SKIP; break;
                 case ExcludeReason::Supports: state = &STATE_UNSUPPORTED; break;
                 case ExcludeReason::Cascade: state = &STATE_CASCADE; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -241,9 +238,8 @@ namespace
                                   : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
-    bool print_regressions(const std::vector<SpecSummary>& results,
-                           const std::map<PackageSpec, BuildResult>& known,
-                           const CiBaselineData& cidata,
+    bool print_regressions(const std::map<PackageSpec, CiResult>& ci_results,
+                           const CiBaselineData& baseline_data,
                            const std::string* ci_baseline_file_name,
                            const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
@@ -252,28 +248,10 @@ namespace
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
         output.append(not_supported_regressions);
-        for (auto&& r : results)
+        for (auto&& ci_result : ci_results)
         {
-            auto result = r.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-            auto msg = format_ci_result(r.get_spec(),
-                                        result,
-                                        cidata,
-                                        ci_baseline_file_name,
-                                        allow_unexpected_passing,
-                                        !r.is_user_requested_install());
-            if (!msg.empty())
-            {
-                has_error = true;
-                output.append(msg).append_raw('\n');
-            }
-        }
-
-        // FIXME this is the root of the problem: `results` should have *all* of the results, not need to be somehow
-        // combined with the pre-build known results
-        for (auto&& r : known)
-        {
-            auto msg =
-                format_ci_result(r.first, r.second, cidata, ci_baseline_file_name, allow_unexpected_passing, true);
+            auto msg = format_ci_result(
+                ci_result.first, ci_result.second.code, baseline_data, ci_baseline_file_name, allow_unexpected_passing);
             if (!msg.empty())
             {
                 has_error = true;
@@ -417,7 +395,7 @@ namespace vcpkg
         auto baseline_iter = settings.find(SwitchCIBaseline);
         const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
-        CiBaselineData cidata;
+        CiBaselineData baseline_data;
         if (baseline_iter == settings.end())
         {
             if (allow_unexpected_passing)
@@ -434,7 +412,7 @@ namespace vcpkg
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, *ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings();
-            cidata = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
+            baseline_data = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
         }
 
         std::unordered_set<std::string> known_failure_abis;
@@ -507,7 +485,7 @@ namespace vcpkg
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(install_actions);
-        auto pre_build_status =
+        const auto pre_build_status =
             compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
         LocalizedString not_supported_regressions;
         {
@@ -521,7 +499,7 @@ namespace vcpkg
             //                                        supp ? BuildResult::CascadedDueToMissingDependencies
             //                                             : BuildResult::Excluded);
 
-            //        if (cidata.expected_failures.contains(spec.package_spec))
+            //        if (baseline_data.expected_failures.contains(spec.package_spec))
             //        {
             //            not_supported_regressions                                 // FIXME
             //                .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
@@ -593,9 +571,27 @@ namespace vcpkg
             auto summary = install_execute_plan(
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
+
+            std::map<PackageSpec, CiResult> ci_full_results;
+            for (auto&& pre_known_outcome : pre_build_status.known)
+            {
+                ci_full_results.insert_or_assign(pre_known_outcome.first, CiResult{pre_known_outcome.second, nullopt});
+            }
+
+            std::map<PackageSpec, CiResult> ci_results;
             for (auto&& result : summary.results)
             {
-                pre_build_status.known.erase(result.get_spec());
+                if (const auto* ipa = result.get_maybe_install_plan_action())
+                {
+                    // note that we assign over the 'guessed' known values from above
+                    auto ci_result = CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                                              CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
+                                                            ipa->feature_list,
+                                                            result.start_time,
+                                                            result.timing}};
+                    ci_results.insert_or_assign(result.get_spec(), ci_result);
+                    ci_full_results.insert_or_assign(result.get_spec(), std::move(ci_result));
+                }
             }
 
             msg::print(LocalizedString::from_raw("\n")
@@ -604,9 +600,8 @@ namespace vcpkg
                            .append_raw(target_triplet)
                            .append_raw('\n')
                            .append(summary.format_results()));
-            const bool any_regressions = print_regressions(summary.results,
-                                                           pre_build_status.known,
-                                                           cidata,
+            const bool any_regressions = print_regressions(ci_full_results,
+                                                           baseline_data,
                                                            ci_baseline_file_name,
                                                            not_supported_regressions,
                                                            allow_unexpected_passing);
@@ -615,35 +610,11 @@ namespace vcpkg
             if (it_xunit != settings.end())
             {
                 XunitWriter xunitTestResults;
-
-                // Adding results for ports that were built or pulled from an archive
-                for (auto&& result : summary.results)
+                const auto& xunit_results =
+                    Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_results;
+                for (auto&& xunit_result : xunit_results)
                 {
-                    const auto& spec = result.get_spec();
-                    auto& port_features = pre_build_status.features.at(spec);
-                    auto code = result.build_result.value_or_exit(VCPKG_LINE_INFO).code;
-                    xunitTestResults.add_test_results(spec,
-                                                      code,
-                                                      result.timing,
-                                                      result.start_time,
-                                                      result.package_abi_or_exit(VCPKG_LINE_INFO),
-                                                      port_features);
-                }
-
-                // Adding results for ports that were not built because they have known states
-                if (Util::Sets::contains(options.switches, SwitchXXUnitAll))
-                {
-                    for (auto&& port : pre_build_status.known)
-                    {
-                        const auto& spec = port.first;
-                        auto& port_features = pre_build_status.features.at(spec);
-                        xunitTestResults.add_test_results(spec,
-                                                          port.second,
-                                                          ElapsedTime{},
-                                                          std::chrono::system_clock::time_point{},
-                                                          /* pre_build_status.abi_map.at(spec) FIXME */ "",
-                                                          port_features);
-                    }
+                    xunitTestResults.add_test_results(xunit_result.first, xunit_result.second);
                 }
 
                 fs.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);

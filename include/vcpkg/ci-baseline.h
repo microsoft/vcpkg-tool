@@ -62,6 +62,5 @@ namespace vcpkg
                                      BuildResult result,
                                      const CiBaselineData& cidata,
                                      const std::string* cifile,
-                                     bool allow_unexpected_passing,
-                                     bool is_independent);
+                                     bool allow_unexpected_passing);
 }

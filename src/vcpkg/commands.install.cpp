@@ -1484,12 +1484,15 @@ namespace vcpkg
 
             for (auto&& result : summary.results)
             {
-                xwriter.add_test_results(result.get_spec(),
-                                         result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                         result.timing,
-                                         result.start_time,
-                                         "",
-                                         {});
+                if (const auto* ipa = result.get_maybe_install_plan_action())
+                {
+                    xwriter.add_test_results(result.get_spec(),
+                                             CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                                                      CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
+                                                                    ipa->feature_list,
+                                                                    result.start_time,
+                                                                    result.timing}});
+                }
             }
 
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);

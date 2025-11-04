@@ -50,10 +50,7 @@ namespace vcpkg
         Optional<ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
-        Optional<const InstallPlanAction&> get_install_plan_action() const
-        {
-            return m_install_action ? Optional<const InstallPlanAction&>(*m_install_action) : nullopt;
-        }
+        const InstallPlanAction* get_maybe_install_plan_action() const { return m_install_action; }
 
     private:
         const InstallPlanAction* m_install_action;

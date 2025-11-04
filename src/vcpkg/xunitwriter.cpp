@@ -11,11 +11,7 @@ struct vcpkg::XunitTest
     std::string name;
     std::string method;
     std::string owner;
-    BuildResult result;
-    ElapsedTime time;
-    std::chrono::system_clock::time_point start_time;
-    std::string abi_tag;
-    std::vector<std::string> features;
+    CiResult ci_result;
 };
 
 namespace
@@ -23,7 +19,7 @@ namespace
     static void xml_test(XmlSerializer& xml, const XunitTest& test)
     {
         StringLiteral result_string = "";
-        switch (test.result)
+        switch (test.ci_result.code)
         {
             case BuildResult::Succeeded: result_string = "Pass"; break;
             case BuildResult::BuildFailed:
@@ -37,28 +33,32 @@ namespace
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
+        long long time_seconds = 0ll;
+        if (const auto* build = test.ci_result.build.get())
+        {
+            time_seconds = build->timing.as<std::chrono::seconds>().count();
+        }
+
         xml.start_complex_open_tag("test")
             .attr("name", test.name)
             .attr("method", test.method)
-            .attr("time", fmt::format("{}", test.time.as<std::chrono::seconds>().count()))
+            .attr("time", fmt::format("{}", time_seconds))
             .attr("result", result_string)
             .finish_complex_open_tag()
             .line_break();
+
         xml.open_tag("traits").line_break();
-        if (!test.abi_tag.empty())
+        if (const auto* build = test.ci_result.build.get())
         {
             xml.start_complex_open_tag("trait")
                 .attr("name", "abi_tag")
-                .attr("value", test.abi_tag)
+                .attr("value", build->package_abi)
                 .finish_self_closing_complex_tag()
                 .line_break();
-        }
 
-        if (!test.features.empty())
-        {
             xml.start_complex_open_tag("trait")
                 .attr("name", "features")
-                .attr("value", Strings::join(", ", test.features))
+                .attr("value", Strings::join(",", build->feature_list))
                 .finish_self_closing_complex_tag()
                 .line_break();
         }
@@ -74,14 +74,17 @@ namespace
         {
             xml.open_tag("failure")
                 .open_tag("message")
-                .cdata(to_string_locale_invariant(test.result))
+                .cdata(to_string_locale_invariant(test.ci_result.code))
                 .close_tag("message")
                 .close_tag("failure")
                 .line_break();
         }
         else if (result_string == "Skip")
         {
-            xml.open_tag("reason").cdata(to_string_locale_invariant(test.result)).close_tag("reason").line_break();
+            xml.open_tag("reason")
+                .cdata(to_string_locale_invariant(test.ci_result.code))
+                .close_tag("reason")
+                .line_break();
         }
         else
         {
@@ -95,22 +98,18 @@ namespace
 XunitWriter::XunitWriter() = default;
 XunitWriter::~XunitWriter() = default;
 
-void XunitWriter::add_test_results(const PackageSpec& spec,
-                                   BuildResult build_result,
-                                   const ElapsedTime& elapsed_time,
-                                   const std::chrono::system_clock::time_point& start_time,
-                                   const std::string& abi_tag,
-                                   const std::vector<std::string>& features)
+void XunitWriter::add_test_results(const PackageSpec& spec, const CiResult& result)
 {
-    m_tests[spec.name()].push_back(
-        {spec.to_string(),
-         Strings::concat(spec.name(), '[', Strings::join(",", features), "]:", spec.triplet()),
-         spec.triplet().to_string(),
-         build_result,
-         elapsed_time,
-         start_time,
-         abi_tag,
-         features});
+    const auto& name = spec.name();
+    std::string method = name;
+    if (auto* built = result.build.get())
+    {
+        fmt::format_to(std::back_inserter(method), "[{}]", Strings::join(",", built->feature_list));
+    }
+
+    fmt::format_to(std::back_inserter(method), ":{}", spec.triplet());
+
+    m_tests[spec.name()].push_back({spec.to_string(), std::move(method), spec.triplet().to_string(), result});
 }
 
 std::string XunitWriter::build_xml(Triplet controlling_triplet) const
@@ -126,17 +125,36 @@ std::string XunitWriter::build_xml(Triplet controlling_triplet) const
         ElapsedTime elapsed_sum{};
         for (auto&& port_result : port_results)
         {
-            elapsed_sum += port_result.time;
+            if (const auto* build = port_result.ci_result.build.get())
+            {
+                elapsed_sum += build->timing;
+            }
         }
 
         const auto elapsed_seconds = fmt::format("{}", elapsed_sum.as<std::chrono::seconds>().count());
 
-        auto earliest_start_time =
-            std::min_element(port_results.begin(), port_results.end(), [](const XunitTest& lhs, const XunitTest& rhs) {
-                return lhs.start_time < rhs.start_time;
-            })->start_time;
+        std::chrono::system_clock::time_point earliest_start_time = std::chrono::system_clock::time_point::max();
+        for (auto&& port_result : port_results)
+        {
+            if (const auto* build = port_result.ci_result.build.get())
+            {
+                if (build->start_time < earliest_start_time)
+                {
+                    earliest_start_time = build->start_time;
+                }
+            }
+        }
 
-        const auto as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
+        time_t as_time_t;
+        if (earliest_start_time == std::chrono::system_clock::time_point::max())
+        {
+            as_time_t = 0;
+        }
+        else
+        {
+            as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
+        }
+
         const auto as_tm = to_utc_time(as_time_t).value_or_exit(VCPKG_LINE_INFO);
         char run_date_time[80];
         strftime(run_date_time, sizeof(run_date_time), "%Y-%m-%d%H:%M:%S", &as_tm);
