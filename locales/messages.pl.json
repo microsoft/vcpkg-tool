@@ -222,6 +222,8 @@
   "CiBaselineUnexpectedFail": "REGRESJA: parametr {spec} jest oznaczony jako niepowodzenie, ale nie jest obsługiwany dla parametru {triplet}.",
   "CiBaselineUnexpectedFailCascade": "REGRESJA: parametr {spec} jest oznaczony jako niepowodzenie, ale jedna zależność nie jest obsługiwana dla parametru {triplet}.",
   "CiBaselineUnexpectedPass": "PRZEKAZYWANIE, USUWANIE Z LISTY BŁĘDÓW: {spec} ({path}).",
+  "CiBaselineUnexpectedPassCascade": "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.",
+  "CiBaselineUnexpectedPassUnsupported": "REGRESSION: {spec} is marked as pass but not supported for {triplet}.",
   "ClearingContents": "Czyszczenie zawartości ścieżki {path}",
   "CmakeTargetsExcluded": "Dodatkowe elementy docelowe ({count}) nie są wyświetlane.",
   "CmdAcquireExample1": "uzyskanie vcpkg <artifact>",
