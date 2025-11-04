@@ -68,3 +68,28 @@ New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci --triplet=$Triplet --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
 Throw-IfNotFailed
 Restore-Problem-Matchers
+
+# test effect of parent hashes
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+Remove-Item -Recurse -Force $ArchiveRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $ArchiveRoot -Force | Out-Null
+# Not a dry run in order to populate the artifact cache.
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource="clear;files,$ArchiveRoot" --output-hashes="$TestingRoot/parent-hashes.json"
+Throw-IfFailed
+if (-not ($Output.Contains("base-port:${Triplet}: SUCCEEDED:"))) {
+    throw 'base-port build must succeed'
+}
+if (-not ($Output.Contains("feature-fails:${Triplet}: SUCCEEDED:"))) {
+    throw 'feature-fails[core] build must succeed'
+}
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"
+Throw-IfFailed
+if ($Output.Contains("base-port:${Triplet}: SUCCEEDED:")) {
+    throw 'base-port must not be rebuilt again'
+}
+if ($Output.Contains("feature-fails:${Triplet}: SUCCEEDED:")) {
+    throw 'feature-fails must not be rebuilt again'
+}
