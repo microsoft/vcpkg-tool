@@ -17,8 +17,8 @@ if (-not ($Output.Contains("feature-not-sup:${Triplet}:        *"))) {
 if (-not ($Output.Contains("feature-dep-missing:${Triplet}:        *"))) {
     throw 'feature-dep-missing must be built because the broken feature is not selected.'
 }
-if ($Output.Split("*").Length -ne 4) {
-    throw 'base-port should not be installed for the host'
+if ($Output.Split("*: ").Length -ne 5) {
+    throw 'Exactly 4 ports should be installed'
 }
 if (-not ($ErrorOutput.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."))) {
     throw "feature-not-sup's baseline fail entry should result in a regression because the port is not supported"
@@ -80,10 +80,36 @@ Throw-IfFailed
 if (-not ($Output.Contains("base-port:${Triplet}: SUCCEEDED:"))) {
     throw 'base-port build must succeed'
 }
+if (-not ($Output.Contains("feature-fails:${Triplet}: SUCCEEDED:"))) {
+    throw 'feature-fails[core] build must succeed'
+}
 Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"
 Throw-IfFailed
 if ($Output.Contains("base-port:${Triplet}: SUCCEEDED:")) {
     throw 'base-port must not be rebuilt again'
+}
+
+# With parent-hashes, test detection of regressions of independent ports.
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+Remove-Item -Recurse -Force $ArchiveRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $ArchiveRoot -Force | Out-Null
+# A dry run in order to determine all parent hashes without failing, regression@1
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource="clear;files,$ArchiveRoot" --output-hashes="$TestingRoot/parent-hashes.json"  --overlay-ports="$PSScriptRoot/../e2e-ports/ci-independent-regression/v1"
+Throw-IfFailed
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+# Non-dry run with port regression@2
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"  --overlay-ports="$PSScriptRoot/../e2e-ports/ci-independent-regression/v2"
+Throw-IfNotFailed
+if ($Output.Contains("base-port:${Triplet}: SUCCEEDED:")) {
+    throw 'base-port must not be rebuilt again'
+}
+if (-not ($Output.Contains("feature-fails:${Triplet}: BUILD_FAILED:"))) {
+    throw 'feature-fails[fail] build must fail'
+}
+if (-not ($Output.Contains("regression:${Triplet}: CASCADED_DUE_TO_MISSING_DEPENDENCIES:"))) {
+    throw 'regression build must cascade'
 }

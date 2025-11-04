@@ -1,0 +1,12 @@
+{
+  "name": "regression",
+  "version": "1",
+  "dependencies": [
+    {
+      "name": "feature-fails",
+      "features": [
+        "fail"
+      ]
+    }
+  ]
+}

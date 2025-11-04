@@ -1,0 +1,9 @@
+{
+  "name": "feature-fails",
+  "version": "1",
+  "features": {
+    "fail": {
+      "description": "fails to build"
+    }
+  }
+}
