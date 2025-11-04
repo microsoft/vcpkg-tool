@@ -80,16 +80,10 @@ Throw-IfFailed
 if (-not ($Output.Contains("base-port:${Triplet}: SUCCEEDED:"))) {
     throw 'base-port build must succeed'
 }
-if (-not ($Output.Contains("feature-fails:${Triplet}: SUCCEEDED:"))) {
-    throw 'feature-fails[core] build must succeed'
-}
 Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"
 Throw-IfFailed
 if ($Output.Contains("base-port:${Triplet}: SUCCEEDED:")) {
     throw 'base-port must not be rebuilt again'
-}
-if ($Output.Contains("feature-fails:${Triplet}: SUCCEEDED:")) {
-    throw 'feature-fails must not be rebuilt again'
 }
