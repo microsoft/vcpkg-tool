@@ -113,3 +113,12 @@ if (-not ($Output.Contains("feature-fails:${Triplet}: BUILD_FAILED:"))) {
 if (-not ($Output.Contains("regression:${Triplet}: CASCADED_DUE_TO_MISSING_DEPENDENCIES:"))) {
     throw 'regression build must cascade'
 }
+# Non-dry run with port regression@2
+$Output = Run-VcpkgAndCaptureStdErr ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"  --overlay-ports="$PSScriptRoot/../e2e-ports/ci-independent-regression/v2"
+Throw-IfNotFailed
+if (-not ($Output.Contains("REGRESSION: Independent feature-fails:${Triplet} failed with BUILD_FAILED."))) {
+    throw 'feature-fails[fail] build failure must be reported as independent regression'
+}
+if ($Output.Contains("REGRESSION: Independent regression:${Triplet} failed with BUILD_FAILED.")) {
+    throw 'regression (port) build failure must not be reported as independent regression'
+}
