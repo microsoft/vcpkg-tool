@@ -417,6 +417,14 @@ namespace vcpkg
                                     msg::triplet = spec.package_spec.triplet())
                             .append_raw('\n');
                     }
+                    else if (cidata.required_success.contains(spec.package_spec))
+                    {
+                        not_supported_regressions
+                            .append(supp ? msgCiBaselineUnexpectedPassCascade : msgCiBaselineUnexpectedPassUnsupported,
+                                    msg::spec = spec.package_spec,
+                                    msg::triplet = spec.package_spec.triplet())
+                            .append_raw('\n');
+                    }
                     msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
                 }
             }

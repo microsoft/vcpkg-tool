@@ -163,13 +163,15 @@ namespace vcpkg
 
         std::vector<int> return_codes(urls.size(), -1);
 
-        CurlMultiHandle multi_handle;
         CurlHeaders request_headers(headers);
+
         std::vector<WriteFilePointer> write_pointers;
         write_pointers.reserve(urls.size());
+
         std::vector<CurlEasyHandle> easy_handles;
         easy_handles.resize(urls.size());
 
+        CurlMultiHandle multi_handle;
         for (size_t request_index = 0; request_index < urls.size(); ++request_index)
         {
             const auto& url = urls[request_index];
@@ -446,7 +448,10 @@ namespace vcpkg
     {
         Success,
         OtherError,
-        NetworkErrorProxyMightHelp
+        NetworkErrorProxyMightHelp,
+        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
+        // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
+        TransientNetworkError
     };
 
     static bool check_combine_download_prognosis(DownloadPrognosis& target, DownloadPrognosis individual_call)
@@ -480,6 +485,68 @@ namespace vcpkg
         }
     }
 
+    static DownloadPrognosis perform_download(DiagnosticContext& context,
+                                              MessageSink& machine_readable_progress,
+                                              StringView raw_url,
+                                              const Path& download_path,
+                                              View<std::string> headers)
+    {
+        std::error_code ec;
+        WriteFilePointer fileptr(download_path, Append::NO, ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, "fopen", {download_path}));
+            return DownloadPrognosis::OtherError;
+        }
+
+        CurlHeaders request_headers(headers);
+
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
+        set_common_curl_easy_options(handle, url_encode_spaces(raw_url).c_str(), request_headers);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
+        auto curl_code = curl_easy_perform(curl);
+
+        if (curl_code == CURLE_OPERATION_TIMEDOUT)
+        {
+            context.report_error(msgCurlDownloadTimeout);
+            return DownloadPrognosis::TransientNetworkError;
+        }
+
+        if (curl_code != CURLE_OK)
+        {
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code)));
+            return DownloadPrognosis::NetworkErrorProxyMightHelp;
+        }
+
+        long response_code = -1;
+        auto get_info_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        if (get_info_code != CURLE_OK)
+        {
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code)));
+            return DownloadPrognosis::NetworkErrorProxyMightHelp;
+        }
+
+        if (response_code >= 200 && response_code < 300)
+        {
+            return DownloadPrognosis::Success;
+        }
+
+        if (response_code == 429 || response_code == 408 || response_code == 500 || response_code == 502 ||
+            response_code == 503 || response_code == 504)
+        {
+            context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
+            return DownloadPrognosis::TransientNetworkError;
+        }
+
+        context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
+        return DownloadPrognosis::NetworkErrorProxyMightHelp;
+    }
+
     static DownloadPrognosis try_download_file(DiagnosticContext& context,
                                                MessageSink& machine_readable_progress,
                                                const Filesystem& fs,
@@ -506,87 +573,36 @@ namespace vcpkg
             fs.create_directories(dir, VCPKG_LINE_INFO);
         }
 
-        std::error_code ec;
-        WriteFilePointer fileptr(download_path_part_path, Append::NO, ec);
-        if (ec)
+        // Retry on transient errors:
+        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
+        // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
+        using namespace std::chrono_literals;
+        static constexpr std::array<std::chrono::seconds, 3> attempt_delays = {0s, 1s, 2s};
+        DownloadPrognosis prognosis = DownloadPrognosis::NetworkErrorProxyMightHelp;
+        for (size_t attempt_count = 0; attempt_count < attempt_delays.size() + 1; attempt_count++)
         {
-            context.report_error(format_filesystem_call_error(ec, "fopen", {download_path_part_path}));
-            return DownloadPrognosis::OtherError;
+            prognosis = perform_download(context, machine_readable_progress, raw_url, download_path_part_path, headers);
+
+            if (DownloadPrognosis::Success != prognosis)
+            {
+                break;
+            }
+
+            if (DownloadPrognosis::TransientNetworkError != prognosis)
+            {
+                context.report_error(msg::format(msgDownloadNotTransientErrorWontRetry, msg::url = sanitized_url));
+                return prognosis;
+            }
+
+            context.report_error(msg::format(
+                msgDownloadTransientErrorRetry, msg::count = attempt_count + 1, msg::value = attempt_delays.size()));
+            std::this_thread::sleep_for(attempt_delays[attempt_count]);
         }
 
-        CurlEasyHandle handle;
-        CURL* curl = handle.get();
-        CurlHeaders request_headers(headers);
-
-        set_common_curl_easy_options(handle, url_encode_spaces(raw_url).c_str(), request_headers);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress
-        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
-
-        // Retry on transient errors:
-        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or 504
-        // response code.
-        // https://everything.curl.dev/usingcurl/downloads/retry.html#retry
-        bool curl_success = false;
-        bool should_retry = true;
-        size_t retries_count = 0;
-
-        using namespace std::chrono_literals;
-        static constexpr std::array<std::chrono::seconds, 3> retry_delay = {0s, 1s, 2s};
-        do
+        if (DownloadPrognosis::Success != prognosis)
         {
-            // blocking transfer
-            should_retry = false;
-            std::this_thread::sleep_for(retry_delay[retries_count++]);
-            auto curl_code = curl_easy_perform(curl);
-            if (curl_code == CURLE_OK)
-            {
-                long response_code = -1;
-                if (CURLE_OK == curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))
-                {
-                    if (response_code >= 200 && response_code < 300)
-                    {
-                        curl_success = true;
-                        break;
-                    }
-                    else if (response_code == 429 || response_code == 408 || response_code == 500 ||
-                             response_code == 502 || response_code == 503 || response_code == 504)
-                    {
-                        should_retry = true;
-                        context.report_error(msg::format(msgCurlFailedHttpResponseWithRetry,
-                                                         msg::exit_code = static_cast<int>(curl_code),
-                                                         msg::count = retries_count,
-                                                         msg::value = retry_delay.size()));
-                    }
-                    else
-                    {
-                        context.report_error(
-                            msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
-                    }
-                }
-            }
-            else
-            {
-                if (curl_code == CURLE_OPERATION_TIMEDOUT)
-                {
-                    should_retry = true;
-                    context.report_error(msg::format(
-                        msgCurlFailedTimeoutRetry, msg::count = retries_count, msg::value = retry_delay.size()));
-                }
-                else
-                {
-                    context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code))
-                                             .append_raw(fmt::format(" ({}). ", curl_easy_strerror(curl_code)))
-                                             .append(msgCurlFailedGenericNoRetryAddendum, msg::url = sanitized_url));
-                }
-            }
-        } while (should_retry && retries_count < retry_delay.size());
-
-        if (!curl_success)
-        {
-            return DownloadPrognosis::NetworkErrorProxyMightHelp;
+            context.report_error(msg::format(msgDownloadTransientErrorRetriesExhausted, msg::url = sanitized_url));
+            return prognosis;
         }
 
         if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512, out_sha512))

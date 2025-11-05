@@ -495,6 +495,14 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
+DECLARE_MESSAGE(CiBaselineUnexpectedPassCascade,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.")
+DECLARE_MESSAGE(CiBaselineUnexpectedPassUnsupported,
+                (msg::spec, msg::triplet),
+                "",
+                "REGRESSION: {spec} is marked as pass but not supported for {triplet}.")
 DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
@@ -966,22 +974,11 @@ DECLARE_MESSAGE(CurlFailedGeneric,
                 (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
                 "curl operation failed with error code {exit_code}")
-DECLARE_MESSAGE(CurlFailedGenericNoRetryAddendum,
-                (msg::url),
-                "curl is the name of a program, see curl.se.",
-                "This is a non-transient error, won't retry downloading from {url}.")
-DECLARE_MESSAGE(CurlFailedTimeoutRetry,
-                (msg::count, msg::value),
-                "{count} is the current retry atttempt, {value} is the maximum amount of retries.",
-                "The operation timed out retry {count} of {value}.")
+DECLARE_MESSAGE(CurlDownloadTimeout, (), "", "Download timed out.")
 DECLARE_MESSAGE(CurlFailedHttpResponse,
                 (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
                 "curl operation failed with HTTP response code {exit_code}.")
-DECLARE_MESSAGE(CurlFailedHttpResponseWithRetry,
-                (msg::exit_code, msg::count, msg::value),
-                "curl is the name of a program, see curl.se. {value} is the maximum amount of retries.",
-                "curl operation failed with HTTP response code {exit_code} retry {count} of {value}.")
 DECLARE_MESSAGE(CurlFailedToPut,
                 (msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
@@ -1103,6 +1100,18 @@ DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloadi
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
 DECLARE_MESSAGE(DownloadingTools, (msg::count), "", "Downloading {count} tools")
 DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
+DECLARE_MESSAGE(DownloadTransientErrorRetry,
+                (msg::count, msg::value),
+                "{value} is the maximum number of attempts to download a file",
+                "Attempt {count} of {value}, retrying download.")
+DECLARE_MESSAGE(DownloadTransientErrorRetriesExhausted,
+                (msg::url),
+                "",
+                "Reached maximum number of attempts, won't retry download from {url}.")
+DECLARE_MESSAGE(DownloadNotTransientErrorWontRetry,
+                (msg::url),
+                "",
+                "Not a transient network error, won't retry download from {url}")
 DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}")
