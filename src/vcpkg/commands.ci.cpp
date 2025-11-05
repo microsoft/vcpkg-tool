@@ -128,28 +128,31 @@ namespace
             missing_specs.erase(action.spec); // note action.spec won't be in missing_specs if it's a host dependency
             const std::string& public_abi = action.public_abi();
             const StringLiteral* state;
+            BuildResult known_result;
             if (Util::Sets::contains(known_failure_abis, public_abi))
             {
                 state = &STATE_ABI_FAIL;
-                ret.known.emplace(action.spec, BuildResult::BuildFailed);
+                known_result = BuildResult::BuildFailed;
             }
             else if (precheck_results[action_idx] == CacheAvailability::available)
             {
                 state = &STATE_CACHED;
-                ret.known.emplace(action.spec, BuildResult::Succeeded);
+                known_result = BuildResult::Cached;
             }
             else if (Util::Sets::contains(parent_hashes, public_abi))
             {
                 state = &STATE_PARENT;
-                ret.known.emplace(action.spec, BuildResult::Succeeded);
+                known_result = BuildResult::ExcludedByParent;
             }
             else
             {
                 state = &STATE_UNKNOWN;
+                known_result = BuildResult::ExcludedByDryRun;
             }
 
             ret.report_lines.insert_or_assign(action.spec,
                                               fmt::format("{:>40}: {:>6}: {}", action.spec, *state, public_abi));
+            ret.known.emplace(action.spec, known_result);
             Json::Object obj;
             obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
             obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
@@ -173,36 +176,49 @@ namespace
         for (const auto& exclusion : ci_specs.excluded)
         {
             const StringLiteral* state;
+            BuildResult known_result;
             switch (exclusion.second)
             {
                 // it probably makes sense to distinguish between "--exclude", "=skip" and "=fail but --skip-failures"
                 // but we don't preserve that information right now, so all these cases report as "skip"
-                case ExcludeReason::Baseline: state = &STATE_SKIP; break;
-                case ExcludeReason::Supports: state = &STATE_UNSUPPORTED; break;
-                case ExcludeReason::Cascade: state = &STATE_CASCADE; break;
+                case ExcludeReason::Baseline:
+                    state = &STATE_SKIP;
+                    known_result = BuildResult::Excluded;
+                    break;
+                case ExcludeReason::Supports:
+                    state = &STATE_UNSUPPORTED;
+                    known_result = BuildResult::Unsupported;
+                    break;
+                case ExcludeReason::Cascade:
+                    state = &STATE_CASCADE;
+                    known_result = BuildResult::CascadedDueToMissingDependencies;
+                    break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             ret.report_lines.insert_or_assign(exclusion.first, fmt::format("{:>40}: {}", exclusion.first, *state));
+            ret.known.emplace(exclusion.first, known_result);
         }
 
         return ret;
     }
 
     // This algorithm reduces an action plan to only unknown actions and their dependencies
-    void prune_entirely_known_action_branches(ActionPlan& action_plan,
-                                              const std::map<PackageSpec, BuildResult>& known,
-                                              const std::unordered_set<std::string>& parent_hashes)
+    void prune_entirely_known_action_branches(ActionPlan& action_plan, const std::map<PackageSpec, BuildResult>& known)
     {
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
             auto it_known = known.find(it->spec);
-            const auto& abi = it->abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi;
-            if (!Util::Sets::contains(parent_hashes, abi))
+            if (it_known == known.end())
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            if (it_known->second != BuildResult::ExcludedByParent)
             {
                 it->request_type = RequestType::USER_REQUESTED;
-                if (it_known == known.end())
+                if (it_known->second == BuildResult::ExcludedByDryRun)
                 {
                     to_keep.insert(it->spec);
                 }
@@ -210,7 +226,8 @@ namespace
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                if (it_known != known.end() && it_known->second == BuildResult::Excluded)
+                if (it_known != known.end() &&
+                    (it_known->second == BuildResult::Excluded || it_known->second == BuildResult::Unsupported))
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
@@ -241,13 +258,11 @@ namespace
     bool print_regressions(const std::map<PackageSpec, CiResult>& ci_results,
                            const CiBaselineData& baseline_data,
                            const std::string* ci_baseline_file_name,
-                           const LocalizedString& not_supported_regressions,
                            bool allow_unexpected_passing)
     {
-        bool has_error = !not_supported_regressions.empty();
+        bool has_error = false;
         LocalizedString output = msg::format(msgCiBaselineRegressionHeader);
         output.append_raw('\n');
-        output.append(not_supported_regressions);
         for (auto&& ci_result : ci_results)
         {
             auto msg = format_ci_result(
@@ -330,8 +345,8 @@ namespace
                 result.excluded.insert_or_assign(
                     std::move(full_package_spec.package_spec),
                     supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
-                        ? ExcludeReason::Supports
-                        : ExcludeReason::Cascade);
+                        ? ExcludeReason::Cascade
+                        : ExcludeReason::Supports);
                 continue;
             }
 
@@ -487,46 +502,7 @@ namespace vcpkg
         const auto precheck_results = binary_cache.precheck(install_actions);
         const auto pre_build_status =
             compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
-        LocalizedString not_supported_regressions;
         {
-            // std::string msg;
-            // for (const auto& spec : ci_specs.requested)
-            //{
-            //     if (!Util::Sets::contains(pre_build_status.abi_map, spec.package_spec))
-            //     {
-            //         bool supp = supported_for_triplet(var_provider, provider, spec.package_spec);
-            //         pre_build_status.known.emplace(spec.package_spec,
-            //                                        supp ? BuildResult::CascadedDueToMissingDependencies
-            //                                             : BuildResult::Excluded);
-
-            //        if (baseline_data.expected_failures.contains(spec.package_spec))
-            //        {
-            //            not_supported_regressions                                 // FIXME
-            //                .append(supp ? msgCiBaselineUnexpectedFailCascade : msgCiBaselineUnexpectedFail,
-            //                        msg::spec = spec.package_spec,
-            //                        msg::triplet = spec.package_spec.triplet())
-            //                .append_raw('\n');
-            //        }
-            //        else if (cidata.required_success.contains(spec.package_spec))
-            //        {
-            //            not_supported_regressions
-            //                .append(supp ? msgCiBaselineUnexpectedPassCascade : msgCiBaselineUnexpectedPassUnsupported,
-            //                        msg::spec = spec.package_spec,
-            //                        msg::triplet = spec.package_spec.triplet())
-            //                .append_raw('\n');
-            //        }
-            //        msg += fmt::format("{:>40}: {:>8}\n", spec.package_spec, supp ? "cascade" : "skip");
-            //    }
-            //}
-            // for (size_t i = 0; i < action_plan.install_actions.size(); ++i)
-            //{
-            //    auto&& action = action_plan.install_actions[i];
-            //    msg += fmt::format("{:>40}: {:>8}: {}\n",
-            //                       action.spec,
-            //                       pre_build_status.action_state_string[i],
-            //                       action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi);
-            //}
-
             std::string msg;
             for (auto&& line : pre_build_status.report_lines)
             {
@@ -542,20 +518,19 @@ namespace vcpkg
             fs.write_contents(output_hash_json, Json::stringify(pre_build_status.abis), VCPKG_LINE_INFO);
         }
 
-        prune_entirely_known_action_branches(action_plan, pre_build_status.known, parent_hashes);
+        prune_entirely_known_action_branches(action_plan, pre_build_status.known);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
+        std::map<PackageSpec, CiResult> ci_results;
+        std::map<PackageSpec, CiResult> ci_full_results;
+        for (auto&& pre_known_outcome : pre_build_status.known)
+        {
+            ci_full_results.insert_or_assign(pre_known_outcome.first, CiResult{pre_known_outcome.second, nullopt});
+        }
 
         if (is_dry_run)
         {
             print_plan(action_plan);
-            if (!not_supported_regressions.empty())
-            {
-                msg::write_unlocalized_text_to_stderr(
-                    Color::error,
-                    msg::format(msgCiBaselineRegressionHeader).append_raw('\n').append_raw(not_supported_regressions));
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
         }
         else
         {
@@ -580,18 +555,11 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
 
-            std::map<PackageSpec, CiResult> ci_full_results;
-            for (auto&& pre_known_outcome : pre_build_status.known)
-            {
-                ci_full_results.insert_or_assign(pre_known_outcome.first, CiResult{pre_known_outcome.second, nullopt});
-            }
-
-            std::map<PackageSpec, CiResult> ci_results;
             for (auto&& result : summary.results)
             {
                 if (const auto* ipa = result.get_maybe_install_plan_action())
                 {
-                    // note that we assign over the 'guessed' known values from above
+                    // note that we assign over the 'known' values from above
                     auto ci_result = CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
                                               CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
                                                             ipa->feature_list,
@@ -602,38 +570,58 @@ namespace vcpkg
                 }
             }
 
-            msg::print(LocalizedString::from_raw("\n")
-                           .append(msgTripletLabel)
-                           .append_raw(' ')
-                           .append_raw(target_triplet)
-                           .append_raw('\n')
-                           .append(summary.format_results()));
-            const bool any_regressions = print_regressions(ci_full_results,
-                                                           baseline_data,
-                                                           ci_baseline_file_name,
-                                                           not_supported_regressions,
-                                                           allow_unexpected_passing);
-
-            auto it_xunit = settings.find(SwitchXXUnit);
-            if (it_xunit != settings.end())
-            {
-                XunitWriter xunitTestResults;
-                const auto& xunit_results =
-                    Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_results;
-                for (auto&& xunit_result : xunit_results)
-                {
-                    xunitTestResults.add_test_results(xunit_result.first, xunit_result.second);
-                }
-
-                fs.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
-            }
-
-            if (any_regressions)
-            {
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
+            binary_cache.wait_for_async_complete_and_join();
+            msg::println();
         }
-        binary_cache.wait_for_async_complete_and_join();
+
+        std::map<Triplet, BuildResultCounts> summary_counts;
+        auto summary_report = msg::format(msgTripletLabel).data();
+        summary_report.push_back(' ');
+        target_triplet.to_string(summary_report);
+        summary_report.push_back('\n');
+        for (auto&& ci_result : ci_full_results)
+        {
+            summary_counts[ci_result.first.triplet()].increment(ci_result.second.code);
+
+            summary_report.append(2, ' ');
+            ci_result.first.to_string(summary_report);
+            summary_report.append(": ");
+            ci_result.second.to_string(summary_report);
+            summary_report.push_back('\n');
+        }
+
+        for (auto&& entry : summary_counts)
+        {
+            summary_report.push_back('\n');
+            summary_report.append(entry.second.format(entry.first).data());
+        }
+
+        summary_report.push_back('\n');
+        msg::println();
+        msg::print(LocalizedString::from_raw(std::move(summary_report)));
+
+        const bool any_regressions =
+            print_regressions(ci_full_results, baseline_data, ci_baseline_file_name, allow_unexpected_passing);
+
+        auto it_xunit = settings.find(SwitchXXUnit);
+        if (it_xunit != settings.end())
+        {
+            XunitWriter xunitTestResults;
+            const auto& xunit_results =
+                Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_results;
+            for (auto&& xunit_result : xunit_results)
+            {
+                xunitTestResults.add_test_results(xunit_result.first, xunit_result.second);
+            }
+
+            fs.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
+        }
+
+        if (any_regressions)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg

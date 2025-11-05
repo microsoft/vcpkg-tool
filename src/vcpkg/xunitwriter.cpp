@@ -4,19 +4,21 @@
 #include <vcpkg/commands.build.h>
 #include <vcpkg/xunitwriter.h>
 
-using namespace vcpkg;
-
-struct vcpkg::XunitTest
+namespace vcpkg
 {
-    std::string name;
-    std::string method;
-    std::string owner;
-    CiResult ci_result;
-};
+    struct XunitTest
+    {
+        std::string name;
+        std::string method;
+        std::string owner;
+        CiResult ci_result;
+    };
+}
 
 namespace
 {
-    static void xml_test(XmlSerializer& xml, const XunitTest& test)
+    using namespace vcpkg;
+    void xml_test(XmlSerializer& xml, const XunitTest& test)
     {
         StringLiteral result_string = "";
         switch (test.ci_result.code)
@@ -26,7 +28,13 @@ namespace
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts: result_string = "Fail"; break;
             case BuildResult::CascadedDueToMissingDependencies:
-            case BuildResult::Excluded: result_string = "Skip"; break;
+            case BuildResult::Excluded:
+            case BuildResult::ExcludedByParent:
+            case BuildResult::ExcludedByDryRun:
+            case BuildResult::Unsupported:
+            case BuildResult::Cached: // should this be "Pass" instead?
+                result_string = "Skip";
+                break;
             case BuildResult::CacheMissing:
             case BuildResult::Downloaded:
             case BuildResult::Removed:
@@ -92,96 +100,109 @@ namespace
         }
         xml.close_tag("test").line_break();
     }
+} // unnamed namespace
 
-}
-
-XunitWriter::XunitWriter() = default;
-XunitWriter::~XunitWriter() = default;
-
-void XunitWriter::add_test_results(const PackageSpec& spec, const CiResult& result)
+namespace vcpkg
 {
-    const auto& name = spec.name();
-    std::string method = name;
-    if (auto* built = result.build.get())
+    std::string CiResult::to_string() const { return adapt_to_string(*this); }
+    void CiResult::to_string(std::string& out_str) const
     {
-        fmt::format_to(std::back_inserter(method), "[{}]", Strings::join(",", built->feature_list));
+        out_str.append(vcpkg::to_string(code).data());
+        if (auto b = build.get())
+        {
+            out_str.append(": ");
+            b->timing.to_string(out_str);
+        }
     }
 
-    fmt::format_to(std::back_inserter(method), ":{}", spec.triplet());
+    XunitWriter::XunitWriter() = default;
+    XunitWriter::~XunitWriter() = default;
 
-    m_tests[spec.name()].push_back({spec.to_string(), std::move(method), spec.triplet().to_string(), result});
-}
-
-std::string XunitWriter::build_xml(Triplet controlling_triplet) const
-{
-    XmlSerializer xml;
-    xml.emit_declaration();
-    xml.open_tag("assemblies").line_break();
-    for (const auto& test_group : m_tests)
+    void XunitWriter::add_test_results(const PackageSpec& spec, const CiResult& result)
     {
-        const auto& port_name = test_group.first;
-        const auto& port_results = test_group.second;
-
-        ElapsedTime elapsed_sum{};
-        for (auto&& port_result : port_results)
+        const auto& name = spec.name();
+        std::string method = name;
+        if (auto* built = result.build.get())
         {
-            if (const auto* build = port_result.ci_result.build.get())
-            {
-                elapsed_sum += build->timing;
-            }
+            fmt::format_to(std::back_inserter(method), "[{}]", Strings::join(",", built->feature_list));
         }
 
-        const auto elapsed_seconds = fmt::format("{}", elapsed_sum.as<std::chrono::seconds>().count());
+        fmt::format_to(std::back_inserter(method), ":{}", spec.triplet());
 
-        std::chrono::system_clock::time_point earliest_start_time = std::chrono::system_clock::time_point::max();
-        for (auto&& port_result : port_results)
+        m_tests[spec.name()].push_back({spec.to_string(), std::move(method), spec.triplet().to_string(), result});
+    }
+
+    std::string XunitWriter::build_xml(Triplet controlling_triplet) const
+    {
+        XmlSerializer xml;
+        xml.emit_declaration();
+        xml.open_tag("assemblies").line_break();
+        for (const auto& test_group : m_tests)
         {
-            if (const auto* build = port_result.ci_result.build.get())
+            const auto& port_name = test_group.first;
+            const auto& port_results = test_group.second;
+
+            ElapsedTime elapsed_sum{};
+            for (auto&& port_result : port_results)
             {
-                if (build->start_time < earliest_start_time)
+                if (const auto* build = port_result.ci_result.build.get())
                 {
-                    earliest_start_time = build->start_time;
+                    elapsed_sum += build->timing;
                 }
             }
+
+            const auto elapsed_seconds = fmt::format("{}", elapsed_sum.as<std::chrono::seconds>().count());
+
+            std::chrono::system_clock::time_point earliest_start_time = std::chrono::system_clock::time_point::max();
+            for (auto&& port_result : port_results)
+            {
+                if (const auto* build = port_result.ci_result.build.get())
+                {
+                    if (build->start_time < earliest_start_time)
+                    {
+                        earliest_start_time = build->start_time;
+                    }
+                }
+            }
+
+            time_t as_time_t;
+            if (earliest_start_time == std::chrono::system_clock::time_point::max())
+            {
+                as_time_t = 0;
+            }
+            else
+            {
+                as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
+            }
+
+            const auto as_tm = to_utc_time(as_time_t).value_or_exit(VCPKG_LINE_INFO);
+            char run_date_time[80];
+            strftime(run_date_time, sizeof(run_date_time), "%Y-%m-%d%H:%M:%S", &as_tm);
+
+            StringView run_date{run_date_time, 10};
+            StringView run_time{run_date_time + 10, 8};
+
+            xml.start_complex_open_tag("assembly")
+                .attr("name", port_name)
+                .attr("run-date", run_date)
+                .attr("run-time", run_time)
+                .attr("time", elapsed_seconds)
+                .finish_complex_open_tag()
+                .line_break();
+            xml.start_complex_open_tag("collection")
+                .attr("name", controlling_triplet)
+                .attr("time", elapsed_seconds)
+                .finish_complex_open_tag()
+                .line_break();
+            for (const auto& port_result : port_results)
+            {
+                xml_test(xml, port_result);
+            }
+            xml.close_tag("collection").line_break();
+            xml.close_tag("assembly").line_break();
         }
 
-        time_t as_time_t;
-        if (earliest_start_time == std::chrono::system_clock::time_point::max())
-        {
-            as_time_t = 0;
-        }
-        else
-        {
-            as_time_t = std::chrono::system_clock::to_time_t(earliest_start_time);
-        }
-
-        const auto as_tm = to_utc_time(as_time_t).value_or_exit(VCPKG_LINE_INFO);
-        char run_date_time[80];
-        strftime(run_date_time, sizeof(run_date_time), "%Y-%m-%d%H:%M:%S", &as_tm);
-
-        StringView run_date{run_date_time, 10};
-        StringView run_time{run_date_time + 10, 8};
-
-        xml.start_complex_open_tag("assembly")
-            .attr("name", port_name)
-            .attr("run-date", run_date)
-            .attr("run-time", run_time)
-            .attr("time", elapsed_seconds)
-            .finish_complex_open_tag()
-            .line_break();
-        xml.start_complex_open_tag("collection")
-            .attr("name", controlling_triplet)
-            .attr("time", elapsed_seconds)
-            .finish_complex_open_tag()
-            .line_break();
-        for (const auto& port_result : port_results)
-        {
-            xml_test(xml, port_result);
-        }
-        xml.close_tag("collection").line_break();
-        xml.close_tag("assembly").line_break();
+        xml.close_tag("assemblies").line_break();
+        return std::move(xml.buf);
     }
-
-    xml.close_tag("assemblies").line_break();
-    return std::move(xml.buf);
 }

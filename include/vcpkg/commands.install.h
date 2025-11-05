@@ -52,6 +52,9 @@ namespace vcpkg
         std::chrono::system_clock::time_point start_time;
         const InstallPlanAction* get_maybe_install_plan_action() const { return m_install_action; }
 
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
+
     private:
         const InstallPlanAction* m_install_action;
         PackageSpec m_spec;

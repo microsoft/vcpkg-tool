@@ -192,8 +192,16 @@ namespace vcpkg
                                      const std::string* cifile,
                                      bool allow_unexpected_passing)
     {
+        // FIXME how to report msgCiBaselineUnexpectedFailCascade?
         switch (result)
         {
+            case BuildResult::Succeeded:
+            case BuildResult::Cached:
+                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *cifile);
+                }
+                break;
             case BuildResult::BuildFailed:
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts:
@@ -212,18 +220,36 @@ namespace vcpkg
                                        msg::build_result = to_string_locale_invariant(result));
                 }
                 break;
-            case BuildResult::Succeeded:
-                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
-                {
-                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *cifile);
-                }
-                break;
             case BuildResult::CascadedDueToMissingDependencies:
                 if (cidata.required_success.contains(spec))
                 {
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
                 }
-            default: break;
+                break;
+            case BuildResult::Unsupported:
+                if (cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedFail, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                else if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(
+                        msgCiBaselineUnexpectedPassUnsupported, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                break;
+            case BuildResult::Excluded:
+                if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(
+                        msgCiBaselineUnexpectedPassCascade, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                break;
+            case BuildResult::ExcludedByParent:
+            case BuildResult::ExcludedByDryRun: break;
+            case BuildResult::CacheMissing:
+            case BuildResult::Downloaded:
+            case BuildResult::Removed:
+            default: Checks::unreachable(VCPKG_LINE_INFO); break;
         }
         return {};
     }

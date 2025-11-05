@@ -23,8 +23,11 @@ namespace vcpkg
 
     struct CiResult
     {
-        BuildResult code; // FIXME describe why excluded
+        BuildResult code;
         Optional<CiBuiltResult> build;
+
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
     };
 
     struct XunitTest;

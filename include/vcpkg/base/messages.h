@@ -75,7 +75,8 @@ namespace vcpkg
     {
         LocalizedString() = default;
         operator StringView() const noexcept;
-        const std::string& data() const noexcept;
+        const std::string& data() const& noexcept;
+        std::string&& data() && noexcept;
         const std::string& to_string() const noexcept;
         std::string extract_data();
 
