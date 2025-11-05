@@ -16,24 +16,23 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
-#include <vcpkg/commands.version.h>
-
 #include <set>
 
 using namespace vcpkg;
 
 namespace
 {
-    constexpr StringLiteral vcpkg_curl_user_agent =
-        "vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
-
-    void set_common_curl_options(CURL* handle, const char* url, curl_slist* request_headers)
+    void set_common_curl_easy_options(CurlEasyHandle& easy_handle, const char* url, const CurlHeaders& request_headers)
     {
-        curl_easy_setopt(handle, CURLOPT_USERAGENT, vcpkg_curl_user_agent.c_str());
-        curl_easy_setopt(handle, CURLOPT_URL, url);
-        curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 2L); // CURLFOLLOW_OBEYCODE
-        curl_easy_setopt(handle, CURLOPT_HTTPHEADER, request_headers);
-        curl_easy_setopt(handle, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
+        auto* curl = easy_handle.get();
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl,
+                         CURLOPT_FOLLOWLOCATION,
+                         2L); // Follow redirects, change request method based on HTTP response code.
+                              // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
     }
 }
 
@@ -157,37 +156,27 @@ namespace vcpkg
                                                    View<Path> outputs,
                                                    View<std::string> headers)
     {
-        if (!outputs.empty() && outputs.size() != urls.size()) return {};
+        if (!outputs.empty() && outputs.size() != urls.size())
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
 
-        if (vcpkg::curl_global_init_status() != CURLE_OK) Checks::unreachable(VCPKG_LINE_INFO);
+        std::vector<int> return_codes(urls.size(), -1);
 
-        CURLM* multi_handle = curl_multi_init();
-        if (!multi_handle) Checks::unreachable(VCPKG_LINE_INFO);
-
-        std::vector<int> ret(urls.size(), -1);
+        CurlMultiHandle multi_handle;
+        CurlHeaders request_headers(headers);
         std::vector<WriteFilePointer> write_pointers;
         write_pointers.reserve(urls.size());
-
-        curl_slist* request_headers = nullptr;
-        for (auto&& header : headers)
-        {
-            request_headers = curl_slist_append(request_headers, header.c_str());
-        }
+        std::vector<CurlEasyHandle> easy_handles;
+        easy_handles.resize(urls.size());
 
         for (size_t request_index = 0; request_index < urls.size(); ++request_index)
         {
             const auto& url = urls[request_index];
+            auto& easy_handle = easy_handles[request_index];
+            auto* curl = easy_handle.get();
 
-            CURL* curl = curl_easy_init();
-            if (!curl)
-            {
-                context.report_error(
-                    msgCurlFailedGeneric, msg::exit_code = -1, msg::error_msg = "curl_easy_init failed");
-                ret[request_index] = CURLE_FAILED_INIT;
-                continue;
-            }
-
-            set_common_curl_options(curl, url.c_str(), request_headers);
+            set_common_curl_easy_options(easy_handle, url.c_str(), request_headers);
             if (outputs.empty())
             {
                 curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
@@ -197,49 +186,49 @@ namespace vcpkg
                 const auto& output = outputs[request_index];
                 std::error_code ec;
                 auto& request_write_pointer = write_pointers.emplace_back(output, Append::NO, ec);
-                curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
                 if (ec)
                 {
                     context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
+                    Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                else
-                {
-                    // note explicit cast to void* necessary to go through ...
-                    curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
-                    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-                    curl_multi_add_handle(multi_handle, curl);
-                }
+
+                curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
+                // note explicit cast to void* necessary to go through ...
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+                multi_handle.add_easy_handle(easy_handle);
             }
         }
 
         int still_running = 0;
         do
         {
-            CURLMcode mc = curl_multi_perform(multi_handle, &still_running);
+            CURLMcode mc = curl_multi_perform(multi_handle.get(), &still_running);
             if (mc != CURLM_OK)
             {
-                context.report_error(msg::format(msgCurlFailedGeneric,
-                                                 msg::exit_code = static_cast<int>(mc),
-                                                 msg::error_msg = curl_multi_strerror(mc)));
+                Debug::println("curl_multi_perform failed:");
+                Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
+                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            mc = curl_multi_poll(multi_handle, nullptr, 0, 1000, nullptr);
+            mc = curl_multi_poll(multi_handle.get(), nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
-                context.report_error(msg::format(msgCurlFailedGeneric,
-                                                 msg::exit_code = static_cast<int>(mc),
-                                                 msg::error_msg = curl_multi_strerror(mc)));
+                Debug::println("curl_multi_poll failed:");
+                Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
+                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
         } while (still_running);
 
+        // drain all messages
         int messages_in_queue = 0;
-        while (auto* msg = curl_multi_info_read(multi_handle, &messages_in_queue))
+        while (auto* msg = curl_multi_info_read(multi_handle.get(), &messages_in_queue))
         {
-            // just drain any messages left in the queue from the previous loop
             if (msg->msg == CURLMSG_DONE)
             {
                 CURL* handle = msg->easy_handle;
-
                 if (msg->data.result == CURLE_OK)
                 {
                     size_t idx;
@@ -251,31 +240,27 @@ namespace vcpkg
                     }
                     else
                     {
-                        if (!curlinfo_private) Checks::unreachable(VCPKG_LINE_INFO);
+                        if (!curlinfo_private)
+                        {
+                            Checks::unreachable(VCPKG_LINE_INFO);
+                        }
                         auto request_write_handle = static_cast<WriteFilePointer*>(curlinfo_private);
                         idx = request_write_handle - write_pointers.data();
                     }
 
                     long response_code;
                     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
-                    ret[idx] = static_cast<int>(response_code);
+                    return_codes[idx] = static_cast<int>(response_code);
                 }
                 else
                 {
-                    context.report_error(msg::format(msgCurlFailedGeneric,
-                                                     msg::exit_code = static_cast<int>(msg->data.result),
-                                                     msg::error_msg = curl_easy_strerror(msg->data.result)));
+                    context.report_error(
+                        msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(msg->data.result))
+                            .append_raw(fmt::format(" ({}).", curl_easy_strerror(msg->data.result))));
                 }
-
-                curl_multi_remove_handle(multi_handle, handle);
-                curl_easy_cleanup(handle);
             }
         }
-
-        curl_slist_free_all(request_headers);
-        curl_multi_cleanup(multi_handle);
-
-        return ret;
+        return return_codes;
     }
 
     static std::vector<int> libcurl_bulk_check(DiagnosticContext& context,
@@ -323,24 +308,21 @@ namespace vcpkg
         fmt::format_to(
             std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
-        CURL* curl = curl_easy_init();
-        if (!curl)
-        {
-            context.report_error(
-                msg::format(msgCurlFailedGeneric, msg::exit_code = -1, msg::error_msg = "curl_easy_init failed"));
-            return false;
-        }
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
 
         std::string post_data = Json::stringify(snapshot);
 
-        curl_slist* request_headers = nullptr;
-        request_headers = curl_slist_append(request_headers, "Accept: application/vnd.github+json");
-        request_headers = curl_slist_append(request_headers, ("Authorization: Bearer " + github_token).c_str());
-        request_headers = curl_slist_append(request_headers, "X-GitHub-Api-Version: 2022-11-28");
-        request_headers = curl_slist_append(request_headers, "Content-Type: application/json");
+        std::string headers[]{
+            "Accept: application/vnd.github+json",
+            ("Authorization: Bearer " + github_token),
+            "X-GitHub-Api-Version: 2022-11-28",
+            "Content-Type: application/json",
+        };
 
-        set_common_curl_options(curl, uri.c_str(), request_headers);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent.data());
+        CurlHeaders request_headers(headers);
+        set_common_curl_easy_options(handle, uri.c_str(), request_headers);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
@@ -349,14 +331,10 @@ namespace vcpkg
         long response_code = 0;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
-        curl_slist_free_all(request_headers);
-        curl_easy_cleanup(curl);
-
         if (result != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric,
-                                             msg::exit_code = static_cast<int>(result),
-                                             msg::error_msg = curl_easy_strerror(result)));
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
+                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
             return false;
         }
 
@@ -376,41 +354,32 @@ namespace vcpkg
                               const Path& file)
     {
         std::error_code ec;
-        auto fileptr = std::make_unique<ReadFilePointer>(file, ec);
+        ReadFilePointer fileptr(file, ec);
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, "fopen", {file}));
             return false;
         }
-        auto file_size = fileptr->size(VCPKG_LINE_INFO);
+        auto file_size = fileptr.size(VCPKG_LINE_INFO);
 
-        CURL* curl = curl_easy_init();
-        if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
 
-        curl_slist* request_headers = nullptr;
-        if (!raw_url.starts_with("ftp://"))
-        {
-            for (auto&& header : headers)
-                request_headers = curl_slist_append(request_headers, header.c_str());
-        }
-
+        auto request_headers = raw_url.starts_with("ftp://") ? CurlHeaders() : CurlHeaders(headers);
         auto upload_url = url_encode_spaces(raw_url);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent.data());
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl, CURLOPT_READDATA, fileptr.get());
+        curl_easy_setopt(curl, CURLOPT_READDATA, static_cast<void*>(&fileptr));
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
         curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
 
         auto result = curl_easy_perform(curl);
         if (result != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric,
-                                             msg::exit_code = static_cast<int>(result),
-                                             msg::error_msg = curl_easy_strerror(result)));
-            curl_easy_cleanup(curl);
-            curl_slist_free_all(request_headers);
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
+                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
             return false;
         }
 
@@ -419,18 +388,10 @@ namespace vcpkg
 
         if ((response_code >= 100 && response_code < 200) || response_code >= 300)
         {
-            context.report_error(msg::format(msgCurlFailedToPutHttp,
-                                             msg::exit_code = static_cast<int>(result),
-                                             msg::error_msg = curl_easy_strerror(result),
-                                             msg::url = sanitized_url,
-                                             msg::value = response_code));
-            curl_easy_cleanup(curl);
-            curl_slist_free_all(request_headers);
+            context.report_error(msg::format(msgCurlFailedToPut, msg::url = sanitized_url, msg::value = response_code));
             return false;
         }
 
-        curl_easy_cleanup(curl);
-        curl_slist_free_all(request_headers);
         return true;
     }
 
@@ -546,30 +507,28 @@ namespace vcpkg
         }
 
         std::error_code ec;
-        auto fileptr = std::make_unique<WriteFilePointer>(download_path_part_path, Append::NO, ec);
+        WriteFilePointer fileptr(download_path_part_path, Append::NO, ec);
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, "fopen", {download_path_part_path}));
             return DownloadPrognosis::OtherError;
         }
 
-        curl_slist* request_headers = nullptr;
-        for (auto&& header : headers)
-            request_headers = curl_slist_append(request_headers, header.c_str());
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
+        CurlHeaders request_headers(headers);
 
-        auto curl = curl_easy_init();
-        if (!curl) Checks::unreachable(VCPKG_LINE_INFO);
-
-        set_common_curl_options(curl, url_encode_spaces(raw_url).c_str(), request_headers);
+        set_common_curl_easy_options(handle, url_encode_spaces(raw_url).c_str(), request_headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fileptr.get());
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, &machine_readable_progress);
+        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
 
         // Retry on transient errors:
         // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or 504
         // response code.
+        // https://everything.curl.dev/usingcurl/downloads/retry.html#retry
         bool curl_success = false;
         bool should_retry = true;
         size_t retries_count = 0;
@@ -587,7 +546,7 @@ namespace vcpkg
                 long response_code = -1;
                 if (CURLE_OK == curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code))
                 {
-                    if ((response_code >= 200 && response_code < 300) || response_code == 0)
+                    if (response_code >= 200 && response_code < 300)
                     {
                         curl_success = true;
                         break;
@@ -613,24 +572,17 @@ namespace vcpkg
                 if (curl_code == CURLE_OPERATION_TIMEDOUT)
                 {
                     should_retry = true;
-                    context.report_error(msg::format(msgCurlFailedGenericWithRetry,
-                                                     msg::exit_code = static_cast<int>(curl_code),
-                                                     msg::error_msg = curl_easy_strerror(curl_code),
-                                                     msg::count = retries_count,
-                                                     msg::value = retry_delay.size()));
+                    context.report_error(msg::format(
+                        msgCurlFailedTimeoutRetry, msg::count = retries_count, msg::value = retry_delay.size()));
                 }
                 else
                 {
-                    context.report_error(msg::format(msgCurlFailedGeneric,
-                                                     msg::exit_code = static_cast<int>(curl_code),
-                                                     msg::error_msg = curl_easy_strerror(curl_code)));
+                    context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code))
+                                             .append_raw(fmt::format(" ({}). ", curl_easy_strerror(curl_code)))
+                                             .append(msgCurlFailedGenericNoRetryAddendum, msg::url = sanitized_url));
                 }
             }
         } while (should_retry && retries_count < retry_delay.size());
-
-        curl_easy_cleanup(curl);
-        curl_slist_free_all(request_headers);
-        fileptr.reset();
 
         if (!curl_success)
         {
@@ -1125,6 +1077,11 @@ namespace vcpkg
             report_download_success_and_maybe_upload(
                 context, download_path, display_path, asset_cache_settings, maybe_sha512);
             return true;
+        }
+        else
+        {
+            asset_cache_attempt_context.commit();
+            authoritative_attempt_context.commit();
         }
 
         while (++first_sanitized_url, ++first_raw_url != last_raw_url)

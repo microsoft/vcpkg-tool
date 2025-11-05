@@ -863,7 +863,6 @@ DECLARE_MESSAGE(CmdUpdateRegistryAllOrTargets,
                 (),
                 "",
                 "Update registry requires either a list of artifact registry names or URiIs to update, or --all.")
-DECLARE_MESSAGE(CmdUploadMetricsDeleteFileAfterUpload, (), "", "Delete metrics payload file after upload")
 DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade")
 DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure")
 DECLARE_MESSAGE(CmdUseExample1,
@@ -964,13 +963,17 @@ DECLARE_MESSAGE(CreatingNuGetPackage, (), "", "Creating NuGet package...")
 DECLARE_MESSAGE(CreatingZipArchive, (), "", "Creating zip archive...")
 DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
 DECLARE_MESSAGE(CurlFailedGeneric,
-                (msg::exit_code, msg::error_msg),
+                (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
-                "curl operation failed with error code {exit_code} ({error_msg}).")
-DECLARE_MESSAGE(CurlFailedGenericWithRetry,
-                (msg::exit_code, msg::error_msg, msg::count, msg::value),
-                "curl is the name of a program, see curl.se. {value} is the maximum amount of retries.",
-                "curl operation failed with error code {exit_code} ({error_msg}) retry {count} of {value}.")
+                "curl operation failed with error code {exit_code}")
+DECLARE_MESSAGE(CurlFailedGenericNoRetryAddendum,
+                (msg::url),
+                "curl is the name of a program, see curl.se.",
+                "This is a non-transient error, won't retry downloading from {url}.")
+DECLARE_MESSAGE(CurlFailedTimeoutRetry,
+                (msg::count, msg::value),
+                "{count} is the current retry atttempt, {value} is the maximum amount of retries.",
+                "The operation timed out retry {count} of {value}.")
 DECLARE_MESSAGE(CurlFailedHttpResponse,
                 (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
@@ -979,10 +982,10 @@ DECLARE_MESSAGE(CurlFailedHttpResponseWithRetry,
                 (msg::exit_code, msg::count, msg::value),
                 "curl is the name of a program, see curl.se. {value} is the maximum amount of retries.",
                 "curl operation failed with HTTP response code {exit_code} retry {count} of {value}.")
-DECLARE_MESSAGE(CurlFailedToPutHttp,
-                (msg::exit_code, msg::error_msg, msg::url, msg::value),
+DECLARE_MESSAGE(CurlFailedToPut,
+                (msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
-                "curl failed to put file to {url} with exit code {exit_code} ({error_msg}) and http code {value}.")
+                "curl failed to PUT file to {url} with response code {value}.")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",

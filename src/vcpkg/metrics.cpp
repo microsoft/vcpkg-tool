@@ -18,6 +18,7 @@
 #include <math.h>
 
 #include <iterator>
+#include <limits>
 #include <mutex>
 #include <utility>
 
@@ -568,32 +569,34 @@ namespace vcpkg
         return false;
     }
 
-    bool curl_upload_metrics(StringView payload)
+    bool curl_upload_metrics(const std::string& payload)
     {
-        CURL* curl = curl_easy_init();
-        if (!curl)
+        if (payload.length() > static_cast<size_t>(std::numeric_limits<long>::max()))
         {
-            Debug::println("Failed to initialize curl");
+            Debug::println("Metrics payload too large to upload");
             return false;
         }
 
-        curl_slist* headers = nullptr;
-        headers = curl_slist_append(headers, "Content-Type: application/json");
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
 
-        auto mutable_payload = payload.to_string();
+        std::string headers[] = {
+            "Content-Type: application/json",
+        };
+        CurlHeaders request_headers(headers);
 
         curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, mutable_payload.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(mutable_payload.length()));
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
         curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // CURLFOLLOW_ALL
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, "vcpkg/1.0");
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
 
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-        auto buff = std::make_unique<std::string>();
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, buff.get());
+        std::string buff;
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &string_append_cb);
 
         long response_code = 0;
@@ -603,18 +606,16 @@ namespace vcpkg
         {
             curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
             Debug::println(fmt::format("Metrics upload response code: {}", response_code));
-            Debug::println("Metrics upload response body: ", *buff);
+            Debug::println("Metrics upload response body: ", buff);
             if (response_code == 200)
             {
-                is_success = parse_metrics_response(*buff);
+                is_success = parse_metrics_response(buff);
             }
         }
         else
         {
             Debug::println("Metrics upload failed: ", curl_easy_strerror(res));
         }
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
         return is_success;
     }
 }

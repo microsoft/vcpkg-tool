@@ -198,5 +198,5 @@ namespace vcpkg
     extern std::atomic<bool> g_should_send_metrics;
 
     void flush_global_metrics(const Filesystem&);
-    bool curl_upload_metrics(StringView payload);
+    bool curl_upload_metrics(const std::string& payload);
 }

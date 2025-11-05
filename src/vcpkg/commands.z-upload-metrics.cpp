@@ -8,10 +8,6 @@
 
 namespace vcpkg
 {
-    constexpr CommandSwitch UPLOAD_SWITCHES[] = {
-        {SwitchDeleteFileAfterUpload, msgCmdUploadMetricsDeleteFileAfterUpload},
-    };
-
     constexpr CommandMetadata CommandZUploadMetricsMetadata{
         "z-upload-metrics",
         {/*intentionally undocumented*/},
@@ -20,7 +16,7 @@ namespace vcpkg
         AutocompletePriority::Never,
         1,
         1,
-        {UPLOAD_SWITCHES},
+        {},
         nullptr,
     };
 
@@ -29,17 +25,13 @@ namespace vcpkg
         const auto parsed = args.parse_arguments(CommandZUploadMetricsMetadata);
         const auto& payload_path = parsed.command_arguments[0];
         auto payload = fs.read_contents(payload_path, VCPKG_LINE_INFO);
-        auto success = curl_upload_metrics(payload);
-        if (success)
+        if (curl_upload_metrics(payload))
         {
-            if (parsed.switches.find(SwitchDeleteFileAfterUpload) != parsed.switches.end())
-            {
-                std::error_code ec;
-                fs.remove(payload_path, ec);
+            std::error_code ec;
+            fs.remove(payload_path, ec);
 #ifndef NDEBUG
-                if (ec) fprintf(stderr, "[DEBUG] Failed to remove file after upload: %s\n", ec.message().c_str());
+            if (ec) fprintf(stderr, "[DEBUG] Failed to remove file after upload: %s\n", ec.message().c_str());
 #endif // NDEBUG
-            }
         }
 #ifndef NDEBUG
         else

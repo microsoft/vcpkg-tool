@@ -188,26 +188,10 @@ if (-not ($actual -match $expected)) {
 }
 
 # ... also with multiple authoritative URLs
-if ($IsWindows) {
-    Refresh-TestRoot
-    $expected = @(
-    "^Downloading example3\.html, trying https://nonexistent\.example\.com",
-    "Trying https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
-    "Successfully downloaded example3\.html",
-    "$"
-    ) -join "`n"
-
-    $actual = Run-VcpkgAndCaptureOutput @commonArgs x-download "$TestDownloadsRoot/example3.html" --sha512 65077997890f66f6041bb3284bb7b88e27631411ccbc253201ca4e00c4bcc58c0d77edffda4975498797cc10772c7fd68fbeb13cc4ac493a3471a9d49e5b6f24 --url https://nonexistent.example.com --url https://raw.githubusercontent.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE.txt
-    Throw-IfFailed
-    if (-not ($actual -match $expected)) {
-        throw "Failure: azurl (no), x-block-origin (no), asset-cache (n/a), download (succeed)"
-    }
-}
-
-# Force curl with --header
 Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://nonexistent\.example\.com",
+"error: curl operation failed with error code 6 \(Couldn't resolve host name\)\. This is a non-transient error, won't retry downloading from https://nonexistent\.example\.com",
 "Trying https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt"
 "Successfully downloaded example3\.html",
 "$"
