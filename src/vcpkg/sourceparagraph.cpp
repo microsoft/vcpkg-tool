@@ -1412,7 +1412,6 @@ namespace vcpkg
             control_file->feature_paragraphs = std::move(features_tmp.feature_paragraphs);
             control_file->extra_features_info = std::move(features_tmp.extra_features_info);
 
-            // FIXME copy pasta from ManifestConfiguration?
             auto vcpkg_configuration = obj.get(JsonIdVcpkgConfiguration);
             if (vcpkg_configuration)
             {
