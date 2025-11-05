@@ -448,6 +448,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableXBoxConsoleTarget = "VCPKG_XBOX_CONSOLE_TARGET";
     inline constexpr StringLiteral CMakeVariableZChainloadToolchainFile = "Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE";
     inline constexpr StringLiteral CMakeVariableZVcpkgGameDKLatest = "Z_VCPKG_GameDKLatest";
+    inline constexpr StringLiteral CMakeVariableZVcpkgGameDKXboxLatest = "Z_VCPKG_GameDKXboxLatest";
     inline constexpr StringLiteral CMakeVariableZPostPortfileIncludes = "Z_VCPKG_POST_PORTFILE_INCLUDES";
 
     // Policies are PascalCase

@@ -1283,6 +1283,29 @@ namespace vcpkg
                                  Cache<Path, Optional<std::string>>& grdk_cache,
                                  const PreBuildInfo& pre_build_info)
     {
+        // Handles new layouts for October 2025 or later.
+        if (auto game_dk_xbox_latest = pre_build_info.gamedk_xbox_latest_path.get())
+        {
+            const auto gxdk_header_path = *game_dk_xbox_latest / "xbox/include/gxdk.h";
+            const auto& maybe_header_hash = grdk_cache.get_lazy(gxdk_header_path, [&]() -> Optional<std::string> {
+                auto maybe_hash = Hash::get_file_hash(fs, gxdk_header_path, Hash::Algorithm::Sha256);
+                if (auto hash = maybe_hash.get())
+                {
+                    return std::move(*hash);
+                }
+                else
+                {
+                    return nullopt;
+                }
+            });
+
+            if (auto header_hash = maybe_header_hash.get())
+            {
+                return *header_hash;
+            }
+        }
+
+        // Handles old layouts for April 2025 or earlier for backwards compatibility.
         if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
         {
             const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
@@ -2231,6 +2254,7 @@ namespace vcpkg
         }
 
         Util::assign_if_set_and_nonempty(gamedk_latest_path, cmakevars, CMakeVariableZVcpkgGameDKLatest);
+        Util::assign_if_set_and_nonempty(gamedk_xbox_latest_path, cmakevars, CMakeVariableZVcpkgGameDKXboxLatest);
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
