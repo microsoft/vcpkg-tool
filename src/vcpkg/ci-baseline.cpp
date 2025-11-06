@@ -225,10 +225,10 @@ namespace vcpkg
                     return msg::format(
                         msgCiBaselineUnexpectedFailCascade, msg::spec = spec, msg::triplet = spec.triplet());
                 }
-                else if (cidata.required_success.contains(spec))
+
+                if (cidata.required_success.contains(spec))
                 {
-                    return msg::format(
-                        msgCiBaselineUnexpectedPassCascade, msg::spec = spec, msg::triplet = spec.triplet());
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
                 }
                 break;
             case BuildResult::Unsupported:
@@ -236,7 +236,8 @@ namespace vcpkg
                 {
                     return msg::format(msgCiBaselineUnexpectedFail, msg::spec = spec, msg::triplet = spec.triplet());
                 }
-                else if (cidata.required_success.contains(spec))
+
+                if (cidata.required_success.contains(spec))
                 {
                     return msg::format(
                         msgCiBaselineUnexpectedPassUnsupported, msg::spec = spec, msg::triplet = spec.triplet());

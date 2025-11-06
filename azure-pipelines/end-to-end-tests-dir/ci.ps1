@@ -35,7 +35,7 @@ Throw-IfNotFailed
 if (-not ($ErrorOutput.Contains("REGRESSION: not-sup-host-b:${Triplet} is marked as pass but not supported for ${Triplet}."))) {
     throw "feature-not-sup's baseline pass entry should result in a regression because the port is not supported"
 }
-if (-not ($ErrorOutput.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as pass but one dependency is not supported for ${Triplet}."))) {
+if (-not ($ErrorOutput.Contains("REGRESSION: dep-on-feature-not-sup:${Triplet} cascaded, but it is required to pass. ("))) {
     throw "feature-not-sup's baseline pass entry should result in a regression because the port is cascade for this triplet"
 }
 

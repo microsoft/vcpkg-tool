@@ -360,7 +360,8 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
             return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
-        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"fail", Test::X64_UWP}) ==
+              "REGRESSION: fail:x64-uwp is marked as fail but one dependency is not supported for x64-uwp.");
         CHECK(test({"neither", Test::X64_UWP}) == "");
     }
 }
