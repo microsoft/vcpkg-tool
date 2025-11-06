@@ -62,10 +62,12 @@ if (-not ($Output.Contains("vcpkg.json:3:17: error: Trailing comma"))) {
 }
 
 # test that file conflicts are detected
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 Remove-Problem-Matchers
 $emptyDir = "$TestingRoot/empty"
 New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null
-$Output = Run-VcpkgAndCaptureOutput ci --triplet=$Triplet --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$emptyDir" --binarysource=clear --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-a" --overlay-ports="$PSScriptRoot/../e2e-ports/duplicate-file-b"
 Throw-IfNotFailed
 Restore-Problem-Matchers
 
