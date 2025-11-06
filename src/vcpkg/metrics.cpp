@@ -551,7 +551,7 @@ namespace vcpkg
 
         auto maybe_received = json->get(vcpkg::AppInsightsResponseItemsReceived);
         auto maybe_accepted = json->get(vcpkg::AppInsightsResponseItemsAccepted);
-        auto maybe_errors = json->get("errors");
+        auto maybe_errors = json->get(vcpkg::AppInsightsResponseErrors);
 
         if (maybe_received && maybe_accepted && maybe_errors && maybe_received->is_integer() &&
             maybe_accepted->is_integer() && maybe_errors->is_array())
@@ -590,7 +590,6 @@ namespace vcpkg
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // CURLFOLLOW_ALL
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
 
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
         std::string buff;
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &string_append_cb);

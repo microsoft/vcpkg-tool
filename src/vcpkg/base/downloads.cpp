@@ -137,16 +137,16 @@ namespace vcpkg
         return static_cast<WriteFilePointer*>(param)->write(contents, size, nmemb);
     }
 
-    static size_t progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+    static size_t progress_callback(
+        void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
     {
         (void)ultotal;
         (void)ulnow;
         auto machine_readable_progress = static_cast<MessageSink*>(clientp);
-
-        if (dltotal > 0)
+        if (dltotal && machine_readable_progress)
         {
-            const double percent = (dlnow / dltotal) * 100.0;
-            machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
+            double percentage = (static_cast<double>(dlnow) / static_cast<double>(dltotal)) * 100.0;
+            machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percentage)));
         }
         return 0;
     }
@@ -512,7 +512,7 @@ namespace vcpkg
         set_common_curl_easy_options(handle, raw_url, request_headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
         curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
         curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
         auto curl_code = curl_easy_perform(curl);
