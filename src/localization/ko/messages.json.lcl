@@ -2224,24 +2224,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ChecksUnreachableCode" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unreachable code was reached]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[연결할 수 없는 코드에 도달했습니다]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ChecksUpdateVcpkg" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[bootstrap-vcpkg를 다시 실행하여 vcpkg를 업데이트하면 이 오류가 해결될 수 있습니다.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CiBaselineAllowUnexpectedPassingRequiresBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.]]></Val>
@@ -2319,6 +2301,24 @@
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[통과, FAIL LIST에서 제거: {spec}({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedPassCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[회귀: {spec}이(가) 패스로 표시되었지만 {triplet}에 대해 하나의 종속성이 지원되지 않습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedPassUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as pass but not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[회귀: {spec}이(가) 패스로 표시되었지만 {triplet}에는 지원되지 않습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

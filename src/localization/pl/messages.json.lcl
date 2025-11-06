@@ -2224,24 +2224,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ChecksUnreachableCode" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unreachable code was reached]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[osiągnięto nieosiągalny kod]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ChecksUpdateVcpkg" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[updating vcpkg by rerunning bootstrap-vcpkg may resolve this failure.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[zaktualizowanie pakietu vcpkg przez ponowne uruchomienie pakietu bootstrap-vcpkg może rozwiązać ten problem.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CiBaselineAllowUnexpectedPassingRequiresBaseline" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[--allow-unexpected-passing can only be used if a baseline is provided via --ci-baseline.]]></Val>
@@ -2319,6 +2301,24 @@
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[PRZEKAZYWANIE, USUWANIE Z LISTY BŁĘDÓW: {spec} ({path}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedPassCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESJA: {spec} jest oznaczona jako pass, ale jedna zależność nie jest obsługiwana dla {triplet}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CiBaselineUnexpectedPassUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[REGRESSION: {spec} is marked as pass but not supported for {triplet}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[REGRESJA: {spec} jest oznaczona jako pass, ale nie jest obsługiwana dla {triplet}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -2687,7 +2687,7 @@
         <Str Cat="Text">
           <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wybierz format wyjściowy w postaci jednej z następujących wartości: „list”, „tree”, „mermaid”, „dot” lub „dgml”]]></Val>
+            <Val><![CDATA[Wybierz format wyjściowy w postaci jednej z następujących wartości: `list`, `tree`, `mermaid`, `dot` lub `dgml`]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
@@ -2699,7 +2699,7 @@
         <Str Cat="Text">
           <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Wartość --format={value} nie jest rozpoznawanym formatem. Parametr --format musi określać jedna z następujących wartości: „list”, „tree”, „mermaid”, „dot” lub „dgml”.]]></Val>
+            <Val><![CDATA[Wartość --format={value} nie jest rozpoznawanym formatem. Parametr --format musi określać jedna z następujących wartości: `list`, `tree`, `mermaid`, `dot` lub `dgml`.]]></Val>
           </Tgt>
           <Prev Cat="Text">
             <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
