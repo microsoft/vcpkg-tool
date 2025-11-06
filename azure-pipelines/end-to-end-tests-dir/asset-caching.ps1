@@ -113,6 +113,7 @@ Refresh-TestRoot
 $expected = @(
 "^Downloading https://localhost:1234/foobar\.html -> example3\.html",
 "error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
+"error: Not a transient network error, won't retry download from https://localhost:1234/foobar\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -135,9 +136,11 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://localhost:1234/foobar\.html",
+"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
+"error: Not a transient network error, won't retry download from https://localhost:1234/foobar\.html",
 "Trying https://localhost:1235/baz\.html",
 "error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
-"error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
+"error: Not a transient network error, won't retry download from https://localhost:1235/baz\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -192,7 +195,8 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $expected = @(
 "^Downloading example3\.html, trying https://nonexistent\.example\.com",
-"error: curl operation failed with error code 6 \(Couldn't resolve host name\)\. This is a non-transient error, won't retry downloading from https://nonexistent\.example\.com",
+"error: curl operation failed with error code 6 \(Couldn't resolve host name\)\.",
+"error: Not a transient network error, won't retry download from https://nonexistent\.example\.com",
 "Trying https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt"
 "Successfully downloaded example3\.html",
 "$"
@@ -226,7 +230,9 @@ $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
 "error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
+"error: Not a transient network error, won't retry download from file://$assetCacheRegex/[0-9a-z]+",
 "error: curl operation failed with error code 7 \(Couldn't connect to server\)\.",
+"error: Not a transient network error, won't retry download from https://localhost:1234/foobar\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -286,6 +292,10 @@ $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
 "error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
+"error: Not a transient network error, won't retry download from file://$assetCacheRegex/[0-9a-z]+",
+"[^\n]+example3\.html\.\d+\.part: error: download from https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt had an unexpected hash",
+"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
+"note: Actual  : 65077997890f66f6041bb3284bb7b88e27631411ccbc253201ca4e00c4bcc58c0d77edffda4975498797cc10772c7fd68fbeb13cc4ac493a3471a9d49e5b6f24",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
@@ -295,9 +305,6 @@ $expected = @(
 "The value set by your proxy might be wrong, or have same ``https://`` prefix issue\.",
 "3\. Your proxy's remote server is out of service\.",
 "If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github\.com/Microsoft/vcpkg/issues",
-"[^\n]+example3\.html\.\d+\.part: error: download from https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt had an unexpected hash",
-"note: Expected: d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b",
-"note: Actual  : 65077997890f66f6041bb3284bb7b88e27631411ccbc253201ca4e00c4bcc58c0d77edffda4975498797cc10772c7fd68fbeb13cc4ac493a3471a9d49e5b6f24",
 "$"
 ) -join "`n"
 $actual = Run-VcpkgAndCaptureOutput @commonArgs x-download "$TestDownloadsRoot/example3.html" --sha512 d06b93c883f8126a04589937a884032df031b05518eed9d433efb6447834df2596aebd500d69b8283e5702d988ed49655ae654c1683c7a4ae58bfa6b92f2b73b --url https://raw.githubusercontent.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE.txt "--x-asset-sources=x-azurl,file://$AssetCache,,readwrite"
@@ -348,6 +355,7 @@ Refresh-TestRoot
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
+"error: Not a transient network error, won't retry download from file://$assetCacheRegex/[0-9a-z]+",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
 "note: or https://alternate\.example\.com",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
