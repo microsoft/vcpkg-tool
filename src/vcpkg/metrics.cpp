@@ -1,4 +1,5 @@
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/curl.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -517,16 +518,11 @@ namespace vcpkg
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
-        const StringLiteral executableExtension =
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING
 #if defined(WIN32)
-            ".exe"
-#else
-            ""
+                                                             ".exe"
 #endif
             ;
-
-        const Path temp_folder_path_exe =
-            temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING + executableExtension;
         fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
         if (ec) return;
 
@@ -547,14 +543,14 @@ namespace vcpkg
         return size * nmemb;
     }
 
-    static bool parse_metrics_response(StringView body)
+    bool parse_metrics_response(StringView response_body)
     {
-        auto maybe_json = Json::parse_object(body, "metrics_response");
+        auto maybe_json = Json::parse_object(response_body, "metrics_response");
         auto json = maybe_json.get();
         if (!json) return false;
 
-        auto maybe_received = json->get("itemsReceived");
-        auto maybe_accepted = json->get("itemsAccepted");
+        auto maybe_received = json->get(vcpkg::AppInsightsResponseItemsReceived);
+        auto maybe_accepted = json->get(vcpkg::AppInsightsResponseItemsAccepted);
         auto maybe_errors = json->get("errors");
 
         if (maybe_received && maybe_accepted && maybe_errors && maybe_received->is_integer() &&

@@ -362,7 +362,13 @@ namespace vcpkg
             context.report_error(format_filesystem_call_error(ec, "fopen", {file}));
             return false;
         }
-        auto file_size = fileptr.size(VCPKG_LINE_INFO);
+        ec.clear();
+        auto file_size = fileptr.size(ec);
+        if (ec)
+        {
+            context.report_error(format_filesystem_call_error(ec, "fstat", {file}));
+            return false;
+        }
 
         CurlEasyHandle handle;
         CURL* curl = handle.get();
