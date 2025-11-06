@@ -59,7 +59,8 @@ Throw-IfNotFailed
 $expected = @(
 "A suitable version of cmake was not found \(required v[0-9.]+\)\.",
 "Trying to download cmake-[0-9.]+-[^.]+\.(zip|tar\.gz) using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"error: curl operation failed with error code 37 \(Couldn't read a file:// file\)\.",
+"error: curl operation failed with error code 37 \(Couldn't read a file:\/\/ file\)\.",
+"error: Not a transient network error, won't retry download from file://$assetCacheRegex/[0-9a-z]+"
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://github\.com/Kitware/CMake/releases/download/[^ ]+",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",

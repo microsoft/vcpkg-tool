@@ -22,11 +22,11 @@ using namespace vcpkg;
 
 namespace
 {
-    void set_common_curl_easy_options(CurlEasyHandle& easy_handle, const char* url, const CurlHeaders& request_headers)
+    void set_common_curl_easy_options(CurlEasyHandle& easy_handle, StringView url, const CurlHeaders& request_headers)
     {
         auto* curl = easy_handle.get();
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(url).c_str());
         curl_easy_setopt(curl,
                          CURLOPT_FOLLOWLOCATION,
                          2L); // Follow redirects, change request method based on HTTP response code.
@@ -178,7 +178,7 @@ namespace vcpkg
             auto& easy_handle = easy_handles[request_index];
             auto* curl = easy_handle.get();
 
-            set_common_curl_easy_options(easy_handle, url.c_str(), request_headers);
+            set_common_curl_easy_options(easy_handle, url, request_headers);
             if (outputs.empty())
             {
                 curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
@@ -323,7 +323,7 @@ namespace vcpkg
         };
 
         CurlHeaders request_headers(headers);
-        set_common_curl_easy_options(handle, uri.c_str(), request_headers);
+        set_common_curl_easy_options(handle, uri, request_headers);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
@@ -509,7 +509,7 @@ namespace vcpkg
 
         CurlEasyHandle handle;
         CURL* curl = handle.get();
-        set_common_curl_easy_options(handle, url_encode_spaces(raw_url).c_str(), request_headers);
+        set_common_curl_easy_options(handle, raw_url, request_headers);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // enable progress
@@ -525,7 +525,8 @@ namespace vcpkg
 
         if (curl_code != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code)));
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code))
+                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(curl_code))));
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
@@ -533,11 +534,12 @@ namespace vcpkg
         auto get_info_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
         if (get_info_code != CURLE_OK)
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code)));
+            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(get_info_code))
+                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(get_info_code))));
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
-        if (response_code >= 200 && response_code < 300)
+        if ((response_code >= 200 && response_code < 300) || (raw_url.starts_with("file://") && response_code == 0))
         {
             return DownloadPrognosis::Success;
         }
@@ -545,11 +547,12 @@ namespace vcpkg
         if (response_code == 429 || response_code == 408 || response_code == 500 || response_code == 502 ||
             response_code == 503 || response_code == 504)
         {
-            context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
+            context.report_error(
+                msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
             return DownloadPrognosis::TransientNetworkError;
         }
 
-        context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(curl_code)));
+        context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
         return DownloadPrognosis::NetworkErrorProxyMightHelp;
     }
 
