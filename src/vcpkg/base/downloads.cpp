@@ -583,7 +583,7 @@ namespace vcpkg
         {
             prognosis = perform_download(context, machine_readable_progress, raw_url, download_path_part_path, headers);
 
-            if (DownloadPrognosis::Success != prognosis)
+            if (DownloadPrognosis::Success == prognosis)
             {
                 break;
             }
