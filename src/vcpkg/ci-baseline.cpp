@@ -192,7 +192,6 @@ namespace vcpkg
                                      const std::string* cifile,
                                      bool allow_unexpected_passing)
     {
-        // FIXME how to report msgCiBaselineUnexpectedFailCascade?
         switch (result)
         {
             case BuildResult::Succeeded:
@@ -221,9 +220,15 @@ namespace vcpkg
                 }
                 break;
             case BuildResult::CascadedDueToMissingDependencies:
-                if (cidata.required_success.contains(spec))
+                if (cidata.expected_failures.contains(spec))
                 {
-                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
+                    return msg::format(
+                        msgCiBaselineUnexpectedFailCascade, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                else if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(
+                        msgCiBaselineUnexpectedPassCascade, msg::spec = spec, msg::triplet = spec.triplet());
                 }
                 break;
             case BuildResult::Unsupported:
@@ -238,12 +243,6 @@ namespace vcpkg
                 }
                 break;
             case BuildResult::Excluded:
-                if (cidata.required_success.contains(spec))
-                {
-                    return msg::format(
-                        msgCiBaselineUnexpectedPassCascade, msg::spec = spec, msg::triplet = spec.triplet());
-                }
-                break;
             case BuildResult::ExcludedByParent:
             case BuildResult::ExcludedByDryRun: break;
             case BuildResult::CacheMissing:

@@ -521,7 +521,7 @@ namespace vcpkg
         prune_entirely_known_action_branches(action_plan, pre_build_status.known);
 
         msg::println(msgElapsedTimeForChecks, msg::elapsed = timer.elapsed());
-        std::map<PackageSpec, CiResult> ci_results;
+        std::map<PackageSpec, CiResult> ci_plan_results;
         std::map<PackageSpec, CiResult> ci_full_results;
         for (auto&& pre_known_outcome : pre_build_status.known)
         {
@@ -565,7 +565,7 @@ namespace vcpkg
                                                             ipa->feature_list,
                                                             result.start_time,
                                                             result.timing}};
-                    ci_results.insert_or_assign(result.get_spec(), ci_result);
+                    ci_plan_results.insert_or_assign(result.get_spec(), ci_result);
                     ci_full_results.insert_or_assign(result.get_spec(), std::move(ci_result));
                 }
             }
@@ -579,10 +579,8 @@ namespace vcpkg
         summary_report.push_back(' ');
         target_triplet.to_string(summary_report);
         summary_report.push_back('\n');
-        for (auto&& ci_result : ci_full_results)
+        for (auto&& ci_result : ci_plan_results)
         {
-            summary_counts[ci_result.first.triplet()].increment(ci_result.second.code);
-
             summary_report.append(2, ' ');
             ci_result.first.to_string(summary_report);
             summary_report.append(": ");
@@ -590,10 +588,15 @@ namespace vcpkg
             summary_report.push_back('\n');
         }
 
-        for (auto&& entry : summary_counts)
+        for (auto&& ci_result : ci_full_results)
+        {
+            summary_counts[ci_result.first.triplet()].increment(ci_result.second.code);
+        }
+
+        for (auto&& summary_count : summary_counts)
         {
             summary_report.push_back('\n');
-            summary_report.append(entry.second.format(entry.first).data());
+            summary_report.append(summary_count.second.format(summary_count.first).data());
         }
 
         summary_report.push_back('\n');
@@ -608,7 +611,7 @@ namespace vcpkg
         {
             XunitWriter xunitTestResults;
             const auto& xunit_results =
-                Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_results;
+                Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_plan_results;
             for (auto&& xunit_result : xunit_results)
             {
                 xunitTestResults.add_test_results(xunit_result.first, xunit_result.second);
