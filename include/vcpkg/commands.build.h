@@ -170,6 +170,7 @@ namespace vcpkg
         std::vector<Path> hash_additional_files;
         std::vector<Path> post_portfile_includes;
         Optional<Path> gamedk_latest_path;
+        Optional<Path> gamedk_xbox_latest_path;
 
         Path toolchain_file() const;
         bool using_vcvars() const;

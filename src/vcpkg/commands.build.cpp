@@ -1279,24 +1279,42 @@ namespace vcpkg
         return result;
     }
 
+    static Optional<Path> get_grdk_header_path(const PreBuildInfo& pre_build_info)
+    {
+        // Handles new layouts for October 2025 or later.
+        if (auto game_dk_xbox_latest = pre_build_info.gamedk_xbox_latest_path.get())
+        {
+            return *game_dk_xbox_latest / "xbox/include/gxdk.h";
+        }
+
+        // Handles old layouts for April 2025 or earlier for backwards compatibility.
+        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        {
+            return *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
+        }
+
+        return nullopt;
+    }
+
     static std::string grdk_hash(const Filesystem& fs,
                                  Cache<Path, Optional<std::string>>& grdk_cache,
                                  const PreBuildInfo& pre_build_info)
     {
-        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        auto maybe_gxdk_header_path = get_grdk_header_path(pre_build_info);
+        if (auto gxdk_header_path = maybe_gxdk_header_path.get())
         {
-            const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
-            const auto& maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
-                auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
-                if (auto hash = maybe_hash.get())
-                {
-                    return std::move(*hash);
-                }
-                else
-                {
-                    return nullopt;
-                }
-            });
+            const auto& maybe_header_hash =
+                grdk_cache.get_lazy(*gxdk_header_path, [&fs, gxdk_header_path]() -> Optional<std::string> {
+                    auto maybe_hash = Hash::get_file_hash(fs, *gxdk_header_path, Hash::Algorithm::Sha256);
+                    if (auto hash = maybe_hash.get())
+                    {
+                        return std::move(*hash);
+                    }
+                    else
+                    {
+                        return nullopt;
+                    }
+                });
 
             if (auto header_hash = maybe_header_hash.get())
             {
@@ -2231,6 +2249,7 @@ namespace vcpkg
         }
 
         Util::assign_if_set_and_nonempty(gamedk_latest_path, cmakevars, CMakeVariableZVcpkgGameDKLatest);
+        Util::assign_if_set_and_nonempty(gamedk_xbox_latest_path, cmakevars, CMakeVariableZVcpkgGameDKXboxLatest);
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
