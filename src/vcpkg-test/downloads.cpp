@@ -134,9 +134,11 @@ TEST_CASE ("download_files", "[downloads]")
     std::vector<std::string> headers;
     auto results = download_files_no_cache(bdc, test_downloads, headers);
     REQUIRE(results == std::vector<int>{-1, -1});
-    auto all_errors = bdc.to_string();
-    REQUIRE(all_errors == "error: curl operation failed with error code 1 (Unsupported protocol).\n"
-                          "error: curl operation failed with error code 7 (Couldn't connect to server).");
+    auto all_errors = Strings::split(bdc.to_string(), '\n');
+    REQUIRE(all_errors[0] == "error: curl operation failed with error code 1 (Unsupported protocol).");
+    // Old versions of libcurl use "Couldn't" on error messages
+    REQUIRE((all_errors[1] == "error: curl operation failed with error code 7 (Could not connect to server)." ||
+             all_errors[1] == "error: curl operation failed with error code 7 (Couldn't connect to server)."));
 }
 
 TEST_CASE ("try_parse_curl_max5_size", "[downloads]")
