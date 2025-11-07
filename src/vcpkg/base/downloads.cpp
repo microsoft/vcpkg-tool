@@ -145,7 +145,7 @@ namespace vcpkg
         auto machine_readable_progress = static_cast<MessageSink*>(clientp);
         if (dltotal && machine_readable_progress)
         {
-            double percentage = (static_cast<double>(dlnow) / static_cast<double>(dltotal)) * 100.0;
+            double percentage = static_cast<double>(dlnow) / static_cast<double>(dltotal) * 100.0;
             machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percentage)));
         }
         return 0;
