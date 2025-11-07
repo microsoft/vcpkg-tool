@@ -173,6 +173,8 @@ namespace
                             const std::map<PackageSpec, BuildResult>& known,
                             View<std::string> parent_hashes)
     {
+        // With parent hashes, ports are merely "auto selected" unless the abi hash changed.
+        auto const default_request_type = parent_hashes.empty() ? RequestType::USER_REQUESTED : RequestType::AUTO_SELECTED;
         std::set<PackageSpec> to_keep;
         for (auto it = action_plan.install_actions.rbegin(); it != action_plan.install_actions.rend(); ++it)
         {
@@ -186,6 +188,10 @@ namespace
                 {
                     to_keep.insert(it->spec);
                 }
+            }
+            else
+            {
+                it->request_type = default_request_type;
             }
 
             if (Util::Sets::contains(to_keep, it->spec))
