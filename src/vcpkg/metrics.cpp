@@ -530,7 +530,6 @@ namespace vcpkg
         builder.string_arg(temp_folder_path_exe);
         builder.string_arg("z-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
-        builder.string_arg("--delete-file-after-upload");
         cmd_execute_background(builder);
     }
 
@@ -587,7 +586,7 @@ namespace vcpkg
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
         curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // CURLFOLLOW_ALL
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
 
         std::string buff;
