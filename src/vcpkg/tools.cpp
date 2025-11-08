@@ -39,6 +39,7 @@ namespace
         {"freebsd", ToolOs::FreeBsd},
         {"openbsd", ToolOs::OpenBsd},
         {"netbsd", ToolOs::NetBsd},
+        {"dragonfly", ToolOs::DragonFly},
         {"solaris", ToolOs::Solaris},
     };
 }
@@ -180,6 +181,8 @@ namespace vcpkg
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::OpenBsd);
 #elif defined(__NetBSD__)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::NetBsd);
+#elif defined(__DragonFly__)
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::DragonFly);
 #elif defined(__SVR4) && defined(__sun)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Solaris);
 #else

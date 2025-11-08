@@ -781,6 +781,8 @@ namespace vcpkg
         return "openbsd";
 #elif defined(__NetBSD__)
         return "netbsd";
+#elif defined(__DragonFly__)
+        return "dragonfly";
 #elif defined(__SVR4) && defined(__sun)
         return "solaris";
 #elif defined(__ANDROID__)
