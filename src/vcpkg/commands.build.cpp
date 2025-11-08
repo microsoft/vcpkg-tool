@@ -984,6 +984,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/linux.cmake";
         }
+        else if (cmake_system_name == "AIX")
+        {
+            return m_paths.scripts / "toolchains/aix.cmake";
+        }
         else if (cmake_system_name == "Darwin")
         {
             return m_paths.scripts / "toolchains/osx.cmake";

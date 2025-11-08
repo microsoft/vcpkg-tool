@@ -31,7 +31,7 @@
 #pragma comment(lib, "shell32")
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(_AIX)
 #define TEST_LIBCURL_AVAILABLE
 #include <dlfcn.h>
 #endif
@@ -283,6 +283,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 #endif
+    init_exe_path_of_current_process(argc, argv);
     set_environment_variable(EnvironmentVariableVcpkgCommand, get_exe_path_of_current_process().generic_u8string());
 
     // Prevent child processes (ex. cmake) from producing "colorized"

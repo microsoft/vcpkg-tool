@@ -14,6 +14,29 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         return _mkgmtime(time_ptr);
+#elif defined(_AIX)
+        // AIX doesn't provide a function for this.
+        int64_t year = time_ptr->tm_year + 1900;
+        int64_t month = time_ptr->tm_mon;
+        if (month > 11) {
+                year += month / 12;
+                month %= 12;
+        } else if (month < 0) {
+                int diff = (11 - month) / 12;
+                year -= diff;
+                month += 12 * diff;
+        }
+        month += 1;
+        int64_t day = time_ptr->tm_mday;
+        // Algorithm: http://howardhinnant.github.io/date_algorithms.html
+        year -= month <= 2;
+        int64_t era = (year >= 0 ? year : year - 399) / 400;
+        uint64_t year_of_era = static_cast<uint64_t>(year - era * 400);
+        uint64_t day_of_year = (153 * (month + month > 2 ? -3 : 9) + 2) / 5 + day - 1;
+        uint64_t day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+        int64_t days_since_epoch = era * 146097 + static_cast<int64_t>(day_of_era) - 719468;
+        std::time_t seconds_since_epoch = 60 * (60 * (24LL * days_since_epoch + time_ptr->tm_hour) + time_ptr->tm_min) + time_ptr->tm_sec;
+        return seconds_since_epoch;
 #else
         return timegm(time_ptr);
 #endif

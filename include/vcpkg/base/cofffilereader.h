@@ -12,6 +12,10 @@
 #include <string>
 #include <vector>
 
+#ifdef _AIX
+#undef IA64
+#endif
+
 namespace vcpkg
 {
     // See https://docs.microsoft.com/en-us/windows/win32/debug/pe-format

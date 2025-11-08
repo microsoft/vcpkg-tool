@@ -27,6 +27,14 @@
 
 #include <netpacket/packet.h>
 #define AF_TYPE AF_PACKET
+#elif defined(_AIX)
+#include <sys/ndd.h>
+#include <sys/kinfo.h>
+#include <net/proto_uipc.h>
+
+// No header defines this function in a C++ safe manner
+extern "C" int getkerninfo(int, void*, int*, int32long64_t);
+
 #else
 // Fallback to use ioctl calls for systems without getifaddrs()
 #include <unistd.h>
@@ -284,6 +292,21 @@ namespace vcpkg
                     return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
                 }
             }
+        }
+#elif defined(_AIX)
+        int32long64_t nddSize = getkerninfo(KINFO_NDD, 0, 0, 0);
+        if (nddSize <= -1) {
+                return "0";
+        }
+        std::unique_ptr<char[]> storage(new char[nddSize]);
+        kinfo_ndd* ndd = new (storage.get()) kinfo_ndd{};
+
+        if (getkerninfo(KINFO_NDD, ndd, &nddSize, 0) < 0) {
+                return "0";
+        }
+        auto mac = mac_bytes_to_string(Span<char>((char*)ndd->ndd_addr, ndd->ndd_addrlen));
+        if (is_valid_mac_for_telemetry(mac)) {
+                return Hash::get_string_hash(mac, Hash::Algorithm::Sha256);
         }
 #else
         // fallback for other platforms

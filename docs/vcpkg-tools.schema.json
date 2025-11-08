@@ -22,7 +22,7 @@
           "os": {
             "type": "string",
             "description": "The platform where the record is valid.",
-            "enum": [ "windows", "osx", "linux", "freebsd", "openbsd", "netbsd", "solaris" ]
+            "enum": [ "windows", "osx", "linux", "freebsd", "openbsd", "netbsd", "solaris", "aix" ]
           },
           "version": {
             "type": "string",
@@ -32,7 +32,7 @@
           "arch": {
             "type": "string",
             "description": "The architecture where the record is valid.",
-            "enum": [ "x86", "x64", "amd64", "arm", "arm64", "arm64ec", "s390x", "ppc64le", "riscv32", "riscv64", "loongarch32", "loongarch64", "mips64" ]
+            "enum": [ "x86", "x64", "amd64", "arm", "arm64", "arm64ec", "s390x", "ppc64", "ppc64le", "riscv32", "riscv64", "loongarch32", "loongarch64", "mips64" ]
           },
           "executable": {
             "type": "string",

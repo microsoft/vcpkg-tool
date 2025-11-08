@@ -217,13 +217,17 @@ namespace vcpkg
     void exit_interactive_subprocess() { g_ctrl_c_state.exit_interactive(); }
 #endif
 
-    Path get_exe_path_of_current_process()
+    namespace {
+            Path current_process_exe_path;
+    }
+
+    void init_exe_path_of_current_process(int argc, const char* const* argv)
     {
 #if defined(_WIN32)
         wchar_t buf[_MAX_PATH];
         const DWORD bytes = GetModuleFileNameW(nullptr, buf, _MAX_PATH);
         if (bytes == 0) std::abort();
-        return Strings::to_utf8(buf, bytes);
+        current_process_exe_path = Strings::to_utf8(buf, bytes);
 #elif defined(__APPLE__)
         static constexpr const uint32_t buff_size = 1024 * 32;
         uint32_t size = buff_size;
@@ -232,7 +236,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
         std::unique_ptr<char> canonicalPath(realpath(buf, NULL));
         Checks::check_exit(VCPKG_LINE_INFO, result != -1, "Could not determine current executable path.");
-        return canonicalPath.get();
+        current_process_exe_path = canonicalPath.get();
 #elif defined(__FreeBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
         char exePath[2048];
@@ -240,7 +244,7 @@ namespace vcpkg
         auto rcode = sysctl(mib, 4, exePath, &len, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, rcode == 0, "Could not determine current executable path.");
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
-        return Path(exePath, len - 1);
+        current_process_exe_path = Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
         int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
         size_t argc = 0;
@@ -253,22 +257,32 @@ namespace vcpkg
         char buf[PATH_MAX];
         char* exePath(realpath(argv[0], buf));
         Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
-        return Path(exePath);
+        current_process_exe_path = Path(exePath);
 #elif defined(__SVR4) && defined(__sun)
         char procpath[PATH_MAX];
         (void)snprintf(procpath, sizeof(procpath), "/proc/%d/path/a.out", getpid());
         char buf[PATH_MAX];
         auto written = readlink(procpath, buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf, written);
+        current_process_exe_path = Path(buf, written);
 #elif defined(__linux__) || defined(__NetBSD__)
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
-        return Path(buf, written);
+        current_process_exe_path = Path(buf, written);
+#elif defined(_AIX)
+        // There's just no way to do this on AIX, we have to trust argv[0]
+        Checks::check_exit(VCPKG_LINE_INFO, argc > 0, "Could not determine current executable path.");
+        current_process_exe_path = Path(argv[0]);
 #else
         Checks::check_exit(VCPKG_LINE_INFO, false, "Could not determine current executable path.");
 #endif
+    }
+
+    Path get_exe_path_of_current_process()
+    {
+            Checks::check_exit(VCPKG_LINE_INFO, !current_process_exe_path.empty(), "Could not determine current executable path.");
+            return current_process_exe_path;
     }
 
     Optional<ProcessStat> try_parse_process_stat_file(const FileContents& contents)
@@ -1161,7 +1175,7 @@ namespace
 
         bool create(DiagnosticContext& context)
         {
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_AIX)
             static std::mutex pipe_creation_lock;
             std::lock_guard<std::mutex> lck{pipe_creation_lock};
             if (pipe(pipefd))
@@ -1178,7 +1192,7 @@ namespace
                     return false;
                 }
             }
-#else  // ^^^ Apple // !Apple vvv
+#else  // ^^^ Apple or AIX // !Apple and !AIX vvv
             if (pipe2(pipefd, O_CLOEXEC))
             {
                 context.report_system_error("pipe2", errno);
@@ -1517,13 +1531,13 @@ namespace
                 const auto this_write_clamped = this_write > max_write ? max_write : this_write;
                 const auto actually_written =
                     write(target, static_cast<const void*>(input.data() + offset), this_write_clamped);
-                if (actually_written < 0)
+                if (actually_written < 0 && errno != EAGAIN && errno != EWOULDBLOCK)
                 {
                     context.report_system_error("write", errno);
                     return nullopt;
+                } else if (actually_written > 0) {
+                        offset += actually_written;
                 }
-
-                offset += actually_written;
             }
 
             return offset == input.size();

@@ -413,6 +413,11 @@ if(MINGW)
     target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "AIX")
+    target_link_libraries(vcpkglib PUBLIC bsd)
+    target_link_options(vcpkglib PUBLIC -Wl,-bbigtoc)
+endif()
+
 # === Target: vcpkg-ps1 ===
 add_custom_command(
     OUTPUT

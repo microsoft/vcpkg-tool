@@ -255,7 +255,7 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
     REQUIRE(!invalid_os.has_value());
     CHECK(
         "invalid_os.json: error: $.tools[0].os (a tool data operating system): Invalid tool operating system: notanos. "
-        "Expected one of: windows, osx, linux, freebsd, openbsd, netbsd, solaris" == invalid_os.error());
+        "Expected one of: windows, osx, linux, freebsd, openbsd, netbsd, solaris, aix" == invalid_os.error());
 
     auto invalid_version = parse_tool_data(R"(
 {
@@ -284,7 +284,7 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
                                         "invalid_arch.json");
     REQUIRE(!invalid_arch.has_value());
     CHECK("invalid_arch.json: error: $.tools[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. "
-          "Expected one of: x86, x64, amd64, arm, arm64, arm64ec, s390x, ppc64le, riscv32, riscv64, loongarch32, "
+          "Expected one of: x86, x64, amd64, arm, arm64, arm64ec, s390x, ppc64, ppc64le, riscv32, riscv64, loongarch32, "
           "loongarch64, mips64" == invalid_arch.error());
 
     auto invalid_sha512 = parse_tool_data(R"(

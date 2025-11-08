@@ -33,6 +33,7 @@ namespace vcpkg::PlatformExpression
         bsd,
         solaris,
         osx,
+        aix,
         uwp,
         xbox,
         android,
@@ -70,6 +71,7 @@ namespace vcpkg::PlatformExpression
             {"bsd", Identifier::bsd},
             {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
+            {"aix", Identifier::aix},
             {"uwp", Identifier::uwp},
             {"xbox", Identifier::xbox},
             {"android", Identifier::android},
@@ -692,6 +694,7 @@ namespace vcpkg::PlatformExpression
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD");
                         case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
+                        case Identifier::aix: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "AIX");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
                         case Identifier::xbox: return true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");

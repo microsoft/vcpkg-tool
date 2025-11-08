@@ -150,6 +150,7 @@ namespace
         {"arm64", CPUArchitecture::ARM64},
         {"arm64ec", CPUArchitecture::ARM64EC},
         {"s390x", CPUArchitecture::S390X},
+        {"ppc64", CPUArchitecture::PPC64},
         {"ppc64le", CPUArchitecture::PPC64LE},
         {"riscv32", CPUArchitecture::RISCV32},
         {"riscv64", CPUArchitecture::RISCV64},
@@ -292,7 +293,8 @@ namespace vcpkg
         return CPUArchitecture::S390X;
 #elif (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) &&                    \
     defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-        return CPUArchitecture::PPC64LE;
+#elif (defined(__ppc64__) || defined(__PPC64__)) && defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+        return CPUArchitecture::PPC64;
 #elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 32)
         return CPUArchitecture::RISCV32;
 #elif defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen == 64)
@@ -787,6 +789,8 @@ namespace vcpkg
         return "android";
 #elif defined(__linux__)
         return "linux";
+#elif defined(_AIX)
+        return "aix";
 #else
         return "unknown";
 #endif

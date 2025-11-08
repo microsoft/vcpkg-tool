@@ -73,6 +73,7 @@ namespace vcpkg
                                  const Path& cmake_script,
                                  const std::vector<CMakeVariable>& pass_variables);
 
+    void init_exe_path_of_current_process(int argc, const char* const* argv);
     Path get_exe_path_of_current_process();
 
     struct ExitCodeAndOutput
