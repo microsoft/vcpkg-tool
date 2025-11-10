@@ -635,6 +635,8 @@ namespace vcpkg
             "GameDKLatest",
             "GRDKLatest",
             "GXDKLatest",
+            "GameDKCoreLatest",
+            "GameDKXboxLatest",
         };
 
         std::vector<std::string> env_prefix_string = {

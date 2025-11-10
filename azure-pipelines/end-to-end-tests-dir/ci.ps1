@@ -60,6 +60,8 @@ Throw-IfNotFailed
 Throw-IfNonContains -Actual $Output -Expected "vcpkg.json:3:17: error: Trailing comma"
 
 # test that file conflicts are detected
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 Remove-Problem-Matchers
 $emptyDir = "$TestingRoot/empty"
 New-Item -ItemType Directory -Path $emptyDir -Force | Out-Null

@@ -3928,7 +3928,7 @@ namespace vcpkg
             std::error_code ec;
 #if defined(_WIN32)
             stdfs::last_write_time(to_stdfs_path(target),
-                                   stdfs::file_time_type::time_point{stdfs::file_time_type::time_point::duration {
+                                   stdfs::file_time_type{stdfs::file_time_type::duration {
                                        new_time
                                    }},
                                    ec);
