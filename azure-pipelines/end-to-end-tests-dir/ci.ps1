@@ -94,9 +94,10 @@ SUMMARY FOR $Triplet
 "@
 
 # test that features included only by skipped ports are not included
+$xunitFile = Join-Path $TestingRoot 'xunit.xml'
 Refresh-TestRoot
 Remove-Problem-Matchers
-$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-features/baseline.txt"
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-features/baseline.txt" --x-xunit-all --x-xunit="$xunitFile"
 Restore-Problem-Matchers
 Throw-IfFailed
 if (-not ($Output -match 'skipped-features:[^:]+:      \*:' -and $Output -match 'Building skipped-features:[^@]+@1\.0\.0\.\.\.')) {
@@ -107,3 +108,36 @@ SUMMARY FOR $Triplet
   SUCCEEDED: 1
   EXCLUDED: 1
 "@
+
+$xunitContent = Get-Content $xunitFile -Raw
+$expected = @"
+<\?xml version="1\.0" encoding="utf-8"\?><assemblies>
+  <assembly name="skipped-depends" run-date="\d\d\d\d-\d\d-\d\d" run-time="\d\d:\d\d:\d\d" time="0">
+    <collection name="$Triplet" time="0">
+      <test name="skipped-depends:$Triplet" method="skipped-depends:$Triplet" time="0" result="Skip">
+        <traits>
+          <trait name="owner" value="$Triplet"/>
+        </traits>
+        <reason><!\[CDATA\[EXCLUDED\]\]></reason>
+      </test>
+    </collection>
+  </assembly>
+  <assembly name="skipped-features" run-date="\d\d\d\d-\d\d-\d\d" run-time="\d\d:\d\d:\d\d" time="0">
+    <collection name="$Triplet" time="0">
+      <test name="skipped-features:$Triplet" method="skipped-features\[core\]:$Triplet" time="0" result="Pass">
+        <traits>
+          <trait name="abi_tag" value="[^"]+"/>
+          <trait name="features" value="core"/>
+          <trait name="owner" value="$Triplet"/>
+        </traits>
+      </test>
+    </collection>
+  </assembly>
+</assemblies>
+
+"@
+
+if (-not ($xunitContent -match $expected)) {
+    Write-Diff -Actual $xunitContent -Expected $expected
+    throw 'xUnit output did not match expected output'
+}
