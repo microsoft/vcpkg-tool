@@ -362,7 +362,6 @@ namespace vcpkg
             context.report_error(format_filesystem_call_error(ec, "fopen", {file}));
             return false;
         }
-        ec.clear();
         auto file_size = fileptr.size(ec);
         if (ec)
         {

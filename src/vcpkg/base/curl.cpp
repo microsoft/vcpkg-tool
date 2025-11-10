@@ -99,7 +99,7 @@ namespace vcpkg
         return m_ptr;
     }
 
-    CurlHeaders::CurlHeaders(View<std::string> headers) : m_headers(nullptr)
+    CurlHeaders::CurlHeaders(View<std::string> headers)
     {
         for (const auto& header : headers)
         {
