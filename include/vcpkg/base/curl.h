@@ -52,7 +52,7 @@ namespace vcpkg
 
     struct CurlHeaders
     {
-        CurlHeaders();
+        CurlHeaders() = default;
         CurlHeaders(View<std::string> headers);
         CurlHeaders(CurlHeaders&& other) noexcept;
         CurlHeaders& operator=(CurlHeaders&& other) noexcept;

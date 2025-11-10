@@ -548,9 +548,9 @@ namespace vcpkg
         auto json = maybe_json.get();
         if (!json) return false;
 
-        auto maybe_received = json->get(vcpkg::AppInsightsResponseItemsReceived);
-        auto maybe_accepted = json->get(vcpkg::AppInsightsResponseItemsAccepted);
-        auto maybe_errors = json->get(vcpkg::AppInsightsResponseErrors);
+        auto maybe_received = json->get(AppInsightsResponseItemsReceived);
+        auto maybe_accepted = json->get(AppInsightsResponseItemsAccepted);
+        auto maybe_errors = json->get(AppInsightsResponseErrors);
 
         if (maybe_received && maybe_accepted && maybe_errors && maybe_received->is_integer() &&
             maybe_accepted->is_integer() && maybe_errors->is_array())

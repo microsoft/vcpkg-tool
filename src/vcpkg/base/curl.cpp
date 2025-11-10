@@ -28,7 +28,7 @@ namespace vcpkg
         return g_curl_global_init.get_init_status();
     }
 
-    CurlEasyHandle::CurlEasyHandle() : m_ptr(nullptr) { vcpkg::get_curl_global_init_status(); }
+    CurlEasyHandle::CurlEasyHandle() { get_curl_global_init_status(); }
     CurlEasyHandle::CurlEasyHandle(CurlEasyHandle&& other) noexcept : m_ptr(std::exchange(other.m_ptr, nullptr)) { }
     CurlEasyHandle& CurlEasyHandle::operator=(CurlEasyHandle&& other) noexcept
     {
@@ -55,7 +55,7 @@ namespace vcpkg
         return m_ptr;
     }
 
-    CurlMultiHandle::CurlMultiHandle() : m_ptr(nullptr) { vcpkg::get_curl_global_init_status(); }
+    CurlMultiHandle::CurlMultiHandle() { get_curl_global_init_status(); }
     CurlMultiHandle::CurlMultiHandle(CurlMultiHandle&& other) noexcept
         : m_ptr(std::exchange(other.m_ptr, nullptr)), m_easy_handles(std::move(other.m_easy_handles))
     {
@@ -99,7 +99,6 @@ namespace vcpkg
         return m_ptr;
     }
 
-    CurlHeaders::CurlHeaders() : m_headers(nullptr) { }
     CurlHeaders::CurlHeaders(View<std::string> headers) : m_headers(nullptr)
     {
         for (const auto& header : headers)

@@ -199,7 +199,5 @@ namespace vcpkg
 
     void flush_global_metrics(const Filesystem&);
     bool curl_upload_metrics(const std::string& payload);
-
-    // exposed for testing
     bool parse_metrics_response(StringView response_body);
 }
