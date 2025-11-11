@@ -577,10 +577,10 @@ namespace vcpkg
             (void)fs;
             (void)cache;
 #else
-            const auto* mono_path = cache.get_tool_path(context, fs, Tools::Mono);
+            const auto* mono_path = cache.get_tool_path(context, fs, Tools::MONO);
             if (!mono_path)
             {
-                context.report(DiagnosticLine{DiagKind::Note, msgMonoInstructions});
+                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgMonoInstructions)});
                 return nullopt;
             }
 
@@ -599,7 +599,7 @@ namespace vcpkg
 #if !defined(_WIN32)
             else
             {
-                context.report(DiagnosticLine{DiagKind::Note, msgMonoInstructions});
+                context.report(DiagnosticLine{DiagKind::Note, msg::format(msgMonoInstructions)});
             }
 #endif // ^^^ !_WIN32
 
