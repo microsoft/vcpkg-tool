@@ -30,6 +30,9 @@ namespace vcpkg
 
         LocalizedString join() const;
 
+        bool report(DiagnosticContext& context) const&;
+        bool report(DiagnosticContext& context) &&;
+
     private:
         std::vector<DiagnosticLine> m_lines;
         bool m_good = true;

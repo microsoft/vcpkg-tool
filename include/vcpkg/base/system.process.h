@@ -201,16 +201,6 @@ namespace vcpkg
     Optional<ExitCodeIntegral> cmd_execute_and_stream_data(DiagnosticContext& context,
                                                            const Command& cmd,
                                                            const std::function<void(StringView)>& data_cb);
-    inline ExpectedL<ExitCodeIntegral> cmd_execute_and_stream_data(const Command& cmd,
-                                                                   const std::function<void(StringView)>& data_cb)
-    {
-        return adapt_context_to_expected(
-            static_cast<Optional<ExitCodeIntegral> (*)(
-                DiagnosticContext&, const Command&, const std::function<void(StringView)>&)>(
-                cmd_execute_and_stream_data),
-            cmd,
-            data_cb);
-    }
 
     Optional<ExitCodeIntegral> cmd_execute_and_stream_data(DiagnosticContext& context,
                                                            const Command& cmd,

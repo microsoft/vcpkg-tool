@@ -204,13 +204,13 @@ namespace vcpkg
         var_provider.load_tag_vars(action_plan, host_triplet);
 
         BinaryCache binary_cache(fs);
-        if (!binary_cache.install_providers(args, paths, out_sink))
+        if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
-        binary_cache.fetch(action_plan.install_actions);
+        binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
         const InstallSummary summary = install_execute_plan(
             args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder);
         msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);

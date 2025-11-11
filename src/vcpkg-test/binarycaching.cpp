@@ -14,8 +14,12 @@ using namespace vcpkg;
 
 struct KnowNothingBinaryProvider : IReadBinaryProvider
 {
-    void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const override
+    void fetch(DiagnosticContext&,
+               const Filesystem& fs,
+               View<const InstallPlanAction*> actions,
+               Span<RestoreResult> out_status) const override
     {
+        REQUIRE(&fs == &always_failing_filesystem);
         REQUIRE(actions.size() == out_status.size());
         for (size_t idx = 0; idx < out_status.size(); ++idx)
         {
@@ -23,8 +27,12 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
             CHECK(out_status[idx] == RestoreResult::unavailable);
         }
     }
-    void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const override
+    void precheck(DiagnosticContext&,
+                  const Filesystem& fs,
+                  View<const InstallPlanAction*> actions,
+                  Span<CacheAvailability> out_status) const override
     {
+        REQUIRE(&fs == &always_failing_filesystem);
         REQUIRE(actions.size() == out_status.size());
         for (const auto c : out_status)
         {
@@ -357,7 +365,9 @@ Description:
     ipa_without_abi.package_dir = "pkgs/someheadpackage";
 
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
-    uut.fetch(install_plan); // should have no effects
+    FullyBufferedDiagnosticContext fbdc;
+    uut.fetch(fbdc, always_failing_filesystem, install_plan); // should have no effects
+    REQUIRE(fbdc.empty());
 }
 
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")

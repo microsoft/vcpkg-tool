@@ -289,7 +289,7 @@ namespace vcpkg
         }
 
         BinaryCache binary_cache(fs);
-        if (!binary_cache.install_providers(args, paths, out_sink))
+        if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -598,7 +598,7 @@ namespace vcpkg
         });
 
         return base_env.cmd_cache.get_lazy(build_env_cmd, [&]() {
-            const Path& powershell_exe_path = paths.get_tool_exe("powershell-core", out_sink);
+            const Path& powershell_exe_path = paths.get_tool_path_required("powershell-core");
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
                 return clean_env;
@@ -787,7 +787,7 @@ namespace vcpkg
         out_vars.emplace_back(CMakeVariableConcurrency, std::to_string(get_concurrency()));
         out_vars.emplace_back(CMakeVariablePlatformToolset, toolset.version);
         // Make sure GIT could be found
-        out_vars.emplace_back(CMakeVariableGit, paths.get_tool_exe(Tools::GIT, out_sink));
+        out_vars.emplace_back(CMakeVariableGit, paths.get_tool_path_required(Tools::GIT));
     }
 
     static CompilerInfo load_compiler_info(const VcpkgPaths& paths,
@@ -1504,11 +1504,11 @@ namespace vcpkg
                 Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
         }
 
-        abi_tag_entries.emplace_back(AbiTagCMake, paths.get_tool_version(Tools::CMAKE, out_sink));
+        abi_tag_entries.emplace_back(AbiTagCMake, paths.get_tool_version_required(Tools::CMAKE));
 
         // This #ifdef is mirrored in tools.cpp's PowershellProvider
 #if defined(_WIN32)
-        abi_tag_entries.emplace_back(AbiTagPowershell, paths.get_tool_version("powershell-core", out_sink));
+        abi_tag_entries.emplace_back(AbiTagPowershell, paths.get_tool_version_required("powershell-core"));
 #endif
 
         abi_tag_entries.emplace_back(AbiTagPortsDotCMake, paths.get_ports_cmake_hash().to_string());
@@ -1889,7 +1889,7 @@ namespace vcpkg
             }
         }
         fmt::format_to(
-            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version(Tools::CMAKE, null_sink));
+            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version_required(Tools::CMAKE));
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),

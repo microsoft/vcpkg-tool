@@ -104,15 +104,15 @@ namespace vcpkg
     public:
         OverlayPortPaths overlay_ports;
 
+        Optional<std::string> get_scripts_version(DiagnosticContext& context) const;
         std::string get_toolver_diagnostics() const;
 
         const Filesystem& get_filesystem() const;
         const AssetCachingSettings& get_asset_cache_settings() const;
         const ToolCache& get_tool_cache() const;
-        const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
-        const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
-
-        Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
+        const Path* get_tool_path(DiagnosticContext& context, StringView tool) const;
+        const Path& get_tool_path_required(StringView tool) const;
+        const std::string& get_tool_version_required(StringView tool) const;
 
         // Git manipulation in the vcpkg directory
         ExpectedL<std::string> get_current_git_sha() const;

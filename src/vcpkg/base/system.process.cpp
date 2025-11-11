@@ -539,8 +539,18 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        const std::string& system_root_env = get_system_root().value_or_exit(VCPKG_LINE_INFO).native();
-        const std::string& system32_env = get_system32().value_or_exit(VCPKG_LINE_INFO).native();
+        const Path* system_root_env = get_system_root(console_diagnostic_context);
+        if (!system_root_env)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        const Path* system32_env = get_system32(console_diagnostic_context);
+        if (!system32_env)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         std::string new_path;
         if (!prepend_to_path.empty())
         {
@@ -552,15 +562,15 @@ namespace vcpkg
         }
 
         Strings::append(new_path,
-                        system32_env,
+                        *system32_env,
                         ';',
-                        system_root_env,
+                        *system_root_env,
                         ';',
-                        system32_env,
+                        *system32_env,
                         "\\Wbem;",
-                        system32_env,
+                        *system32_env,
                         "\\WindowsPowerShell\\v1.0\\;",
-                        system32_env,
+                        *system32_env,
                         "\\OpenSSH\\");
 
         std::vector<std::string> env_strings = {
@@ -1629,7 +1639,7 @@ namespace
                     std::replace(buf, buf + bytes_read, '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{buf, bytes_read});
+                        context.statusln(LocalizedString::from_raw(StringView{buf, bytes_read}));
                     }
 
                     data_cb(StringView{buf, bytes_read});
@@ -1644,7 +1654,7 @@ namespace
                     std::replace(encoded.begin(), encoded.end(), '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{encoded});
+                        context.statusln(LocalizedString::from_raw(encoded));
                     }
 
                     data_cb(StringView{encoded});
@@ -1654,10 +1664,8 @@ namespace
                 raw_cb = [&](char* buf, size_t bytes_read) {
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none,
-                                                              Strings::replace_all(StringView{buf, bytes_read},
-                                                                                   StringLiteral{"\0"},
-                                                                                   StringLiteral{"\\0"}));
+                        context.statusln(LocalizedString::from_raw(Strings::replace_all(
+                            StringView{buf, bytes_read}, StringLiteral{"\0"}, StringLiteral{"\\0"})));
                     }
 
                     data_cb(StringView{buf, bytes_read});
@@ -1829,7 +1837,7 @@ namespace
                         data_cb(this_read_data);
                         if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                         {
-                            msg::write_unlocalized_text(Color::none, this_read_data);
+                            context.statusln(LocalizedString::from_raw(this_read_data));
                         }
                     }
                 }
@@ -1865,15 +1873,14 @@ namespace
                     std::replace(buf, buf + read_amount, '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text(Color::none, this_read_data);
+                        context.statusln(LocalizedString::from_raw(this_read_data));
                     }
                     break;
                 case Encoding::Utf8WithNulls:
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(
-                            Color::none,
-                            Strings::replace_all(this_read_data, StringLiteral{"\0"}, StringLiteral{"\\0"}));
+                        context.statusln(LocalizedString::from_raw(
+                            Strings::replace_all(this_read_data, StringLiteral{"\0"}, StringLiteral{"\\0"})));
                     }
 
                     break;

@@ -58,7 +58,7 @@ namespace
     {
         auto& fs = paths.get_filesystem();
         auto& builtin_ports = paths.builtin_ports_directory();
-        auto git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
+        auto git_exe = paths.get_tool_path_required(Tools::GIT);
         auto ports_dir_prefix =
             git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_quiet_exit(VCPKG_LINE_INFO);
         const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
@@ -461,7 +461,7 @@ namespace vcpkg
         const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
 
         BinaryCache binary_cache(fs);
-        if (!binary_cache.install_providers(args, paths, out_sink))
+        if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -715,7 +715,7 @@ namespace vcpkg
         }
 
         msg::println(msgPrecheckBinaryCache);
-        binary_cache.precheck(actions_to_check);
+        binary_cache.precheck(console_diagnostic_context, fs, actions_to_check);
 
         Util::stable_sort(specs_to_test, [](const SpecToTest& left, const SpecToTest& right) noexcept {
             return left.plan.install_actions.size() < right.plan.install_actions.size();
@@ -808,8 +808,8 @@ namespace vcpkg
 
             {
                 const InstallPlanAction* action = &install_plan.install_actions.back();
-                if (binary_cache.precheck(View<const InstallPlanAction*>(&action, 1)).front() ==
-                    CacheAvailability::available)
+                if (binary_cache.precheck(console_diagnostic_context, fs, View<const InstallPlanAction*>(&action, 1))
+                        .front() == CacheAvailability::available)
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
                                  msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
@@ -829,7 +829,7 @@ namespace vcpkg
             }
 
             install_clear_installed_packages(paths, install_plan.install_actions);
-            binary_cache.fetch(install_plan.install_actions);
+            binary_cache.fetch(console_diagnostic_context, fs, install_plan.install_actions);
             const auto summary = install_execute_plan(args,
                                                       paths,
                                                       host_triplet,

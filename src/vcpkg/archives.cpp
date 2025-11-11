@@ -13,10 +13,45 @@ namespace
 {
     using namespace vcpkg;
 
-#if defined(_WIN32)
-    void win32_extract_nupkg(const ToolCache& tools, MessageSink& status_sink, const Path& archive, const Path& to_path)
+    bool postprocess_extract_archive(DiagnosticContext& context,
+                                     Optional<ExitCodeAndOutput>&& maybe_exit_and_output,
+                                     const Path& tool,
+                                     const Path& archive)
     {
-        const auto& nuget_exe = tools.get_tool_path(Tools::NUGET, status_sink);
+        if (auto* exit_and_output = maybe_exit_and_output.get())
+        {
+            if (exit_and_output->exit_code == 0)
+            {
+                return true;
+            }
+
+            auto error_text =
+                msg::format(msgArchiverFailedToExtractExitCode, msg::exit_code = exit_and_output->exit_code);
+            error_text.append_raw('\n');
+            error_text.append_raw(std::move(exit_and_output->output));
+            context.report(DiagnosticLine{DiagKind::Error, tool, std::move(error_text)});
+            context.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgArchiveHere)});
+        }
+        else
+        {
+            context.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgWhileExtractingThisArchive)});
+        }
+
+        return false;
+    }
+
+#if defined(_WIN32)
+    bool win32_extract_nupkg(DiagnosticContext& context,
+                             const Filesystem& fs,
+                             const ToolCache& tools,
+                             const Path& archive,
+                             const Path& to_path)
+    {
+        const auto* nuget_exe = tools.get_tool_path(context, fs, Tools::NUGET);
+        if (!nuget_exe)
+        {
+            return false;
+        }
 
         const auto stem = archive.stem();
 
@@ -27,13 +62,14 @@ namespace
         auto is_digit_or_dot = [](char ch) { return ch == '.' || ParserBase::is_ascii_digit(ch); };
         if (dot_after_name == stem.end() || !std::all_of(dot_after_name, stem.end(), is_digit_or_dot))
         {
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCouldNotDeduceNuGetIdAndVersion, msg::path = archive);
+            context.report(DiagnosticLine{DiagKind::Error, archive, msg::format(msgCouldNotDeduceNuGetIdAndVersion2)});
+            return false;
         }
 
         StringView nugetid{stem.begin(), dot_after_name};
         StringView version{dot_after_name + 1, stem.end()};
 
-        auto cmd = Command{nuget_exe}
+        auto cmd = Command{*nuget_exe}
                        .string_arg("install")
                        .string_arg(nugetid)
                        .string_arg("-Version")
@@ -49,80 +85,85 @@ namespace
                        .string_arg("-PackageSaveMode")
                        .string_arg("nuspec");
 
-        const auto result = flatten(cmd_execute_and_capture_output(cmd), Tools::NUGET);
-        if (!result)
-        {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgFailedToExtract, msg::path = archive).append_raw('\n').append(result.error()));
-        }
+        Optional<ExitCodeAndOutput> maybe_exit_and_output = cmd_execute_and_capture_output(context, cmd);
+        return postprocess_extract_archive(context, std::move(maybe_exit_and_output), *nuget_exe, archive);
     }
 
-    void win32_extract_msi(const Path& archive, const Path& to_path)
+    bool win32_extract_msi(DiagnosticContext& context, const Path& archive, const Path& to_path)
     {
+        // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
+        // until it finishes (wrap in cmd /c).
+        auto cmd = Command{"cmd"}
+                       .string_arg("/c")
+                       .string_arg("msiexec")
+                       // "/a" is administrative mode, which unpacks without modifying the system
+                       .string_arg("/a")
+                       .string_arg(archive)
+                       .string_arg("/qn")
+                       // msiexec requires quotes to be after "TARGETDIR=":
+                       //      TARGETDIR="C:\full\path\to\dest"
+                       .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract()));
+
+        RedirectedProcessLaunchSettings settings;
+        settings.encoding = Encoding::Utf16;
+
         // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
         // to enable retries.
+
+        AttemptDiagnosticContext adc{context};
         for (unsigned int i = 0;; ++i)
         {
-            // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
-            // until it finishes (wrap in cmd /c).
-            auto cmd = Command{"cmd"}
-                           .string_arg("/c")
-                           .string_arg("msiexec")
-                           // "/a" is administrative mode, which unpacks without modifying the system
-                           .string_arg("/a")
-                           .string_arg(archive)
-                           .string_arg("/qn")
-                           // msiexec requires quotes to be after "TARGETDIR=":
-                           //      TARGETDIR="C:\full\path\to\dest"
-                           .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract()));
-
-            RedirectedProcessLaunchSettings settings;
-            settings.encoding = Encoding::Utf16;
-            const auto maybe_code_and_output = cmd_execute_and_capture_output(cmd, settings);
+            auto maybe_code_and_output = cmd_execute_and_capture_output(adc, cmd, settings);
             if (auto code_and_output = maybe_code_and_output.get())
             {
                 if (code_and_output->exit_code == 0)
                 {
                     // Success
-                    break;
+                    adc.handle();
+                    return true;
                 }
 
                 if (i < 19 && code_and_output->exit_code == 1618)
                 {
                     // ERROR_INSTALL_ALREADY_RUNNING
-                    msg::println(msgAnotherInstallationInProgress);
+                    adc.statusln(msg::format(msgAnotherInstallationInProgress));
                     std::this_thread::sleep_for(std::chrono::seconds(6));
                     continue;
                 }
+
+                auto error_text =
+                    msg::format(msgArchiverFailedToExtractExitCode, msg::exit_code = code_and_output->exit_code);
+                error_text.append_raw('\n');
+                error_text.append_raw(std::move(code_and_output->output));
+                adc.report(DiagnosticLine{DiagKind::Error, "msiexec", std::move(error_text)});
+                adc.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgArchiveHere)});
+            }
+            else
+            {
+                adc.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgWhileExtractingThisArchive)});
             }
 
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, flatten(maybe_code_and_output, "msiexec").error());
+            adc.commit();
+            return false;
         }
     }
 
-    void win32_extract_with_seven_zip(const Path& seven_zip, const Path& archive, const Path& to_path)
+    bool win32_extract_with_seven_zip(DiagnosticContext& context,
+                                      const Path& seven_zip,
+                                      const Path& archive,
+                                      const Path& to_path)
     {
         static bool recursion_limiter_sevenzip = false;
         Checks::check_exit(VCPKG_LINE_INFO, !recursion_limiter_sevenzip);
         recursion_limiter_sevenzip = true;
-
-        const auto maybe_output = flatten(cmd_execute_and_capture_output(Command{seven_zip}
-                                                                             .string_arg("x")
-                                                                             .string_arg(archive)
-                                                                             .string_arg(fmt::format("-o{}", to_path))
-                                                                             .string_arg("-y")),
-                                          Tools::SEVEN_ZIP);
-        if (!maybe_output)
-        {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO,
-                msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                    .append_raw('\n')
-                    .append(maybe_output.error()));
-        }
-
+        auto maybe_exit_and_output = cmd_execute_and_capture_output(context,
+                                                                    Command{seven_zip}
+                                                                        .string_arg("x")
+                                                                        .string_arg(archive)
+                                                                        .string_arg(fmt::format("-o{}", to_path))
+                                                                        .string_arg("-y"));
         recursion_limiter_sevenzip = false;
+        return postprocess_extract_archive(context, std::move(maybe_exit_and_output), seven_zip, archive);
     }
 #endif // ^^^ _WIN32
 
@@ -173,9 +214,9 @@ namespace vcpkg
         }
     }
 
-    void extract_archive(const Filesystem& fs,
+    bool extract_archive(DiagnosticContext& context,
+                         const Filesystem& fs,
                          const ToolCache& tools,
-                         MessageSink& status_sink,
                          const Path& archive,
                          const Path& to_path)
     {
@@ -184,62 +225,98 @@ namespace vcpkg
 #if defined(_WIN32)
         switch (ext_type)
         {
-            case ExtractionType::Unknown: break;
-            case ExtractionType::Nupkg: win32_extract_nupkg(tools, status_sink, archive, to_path); break;
-            case ExtractionType::Msi: win32_extract_msi(archive, to_path); break;
+            case ExtractionType::Unknown: break; // try cmake for unkown extensions, i.e., vsix => zip, below
+            case ExtractionType::Nupkg: return win32_extract_nupkg(context, fs, tools, archive, to_path);
+            case ExtractionType::Msi: return win32_extract_msi(context, archive, to_path); break;
             case ExtractionType::SevenZip:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP_R, status_sink), archive, to_path);
-                break;
+                if (const auto* tool = tools.get_tool_path(context, fs, Tools::SEVEN_ZIP_R))
+                {
+                    return win32_extract_with_seven_zip(context, *tool, archive, to_path);
+                }
+
+                return false;
             case ExtractionType::Zip:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
-                break;
+                if (const auto* tool = tools.get_tool_path(context, fs, Tools::SEVEN_ZIP))
+                {
+                    return win32_extract_with_seven_zip(context, *tool, archive, to_path);
+                }
+
+                return false;
             case ExtractionType::Tar:
-                extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
-                break;
+                if (const auto* tool = tools.get_tool_path(context, fs, Tools::TAR))
+                {
+                    return extract_tar(context, *tool, archive, to_path);
+                }
+
+                return false;
             case ExtractionType::Exe:
-                win32_extract_with_seven_zip(tools.get_tool_path(Tools::SEVEN_ZIP, status_sink), archive, to_path);
-                break;
+                if (const auto* tool = tools.get_tool_path(context, fs, Tools::SEVEN_ZIP))
+                {
+                    return win32_extract_with_seven_zip(context, *tool, archive, to_path);
+                }
+
+                return false;
             case ExtractionType::SelfExtracting7z:
+            {
                 const Path filename = archive.filename();
                 const Path stem = filename.stem();
                 const Path to_archive = Path(archive.parent_path()) / stem;
-                win32_extract_self_extracting_7z(fs, archive, to_archive);
-                extract_archive(fs, tools, status_sink, to_archive, to_path);
-                break;
+                if (!win32_extract_self_extracting_7z(context, fs, archive, to_archive))
+                {
+                    return false;
+                }
+
+                return extract_archive(context, fs, tools, to_archive, to_path);
+            }
+
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 #else
-        (void)fs;
         if (ext_type == ExtractionType::Tar)
         {
-            extract_tar(tools.get_tool_path(Tools::TAR, status_sink), archive, to_path);
+            if (const auto* tool = tools.get_tool_path(context, fs, Tools::TAR))
+            {
+                return extract_tar(context, *tool, archive, to_path);
+            }
+
+            return false;
         }
 
         if (ext_type == ExtractionType::Zip)
         {
-            ProcessLaunchSettings settings;
+            auto cmd = Command{"unzip"}.string_arg("-qqo").string_arg(archive);
+            RedirectedProcessLaunchSettings settings;
             settings.working_directory = to_path;
-            const auto code = cmd_execute(Command{"unzip"}.string_arg("-qqo").string_arg(archive), settings)
-                                  .value_or_exit(VCPKG_LINE_INFO);
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   code == 0,
-                                   msgPackageFailedtWhileExtracting,
-                                   msg::value = "unzip",
-                                   msg::path = archive);
-        }
+            auto maybe_code_and_output = cmd_execute_and_capture_output(context, cmd, settings);
+            if (!check_zero_exit_code(context, cmd, maybe_code_and_output))
+            {
+                context.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgWhileExtractingThisArchive)});
+                return false;
+            }
 
+            return true;
+        }
 #endif
-        // Try cmake for unkown extensions, i.e., vsix => zip
+
+        // try cmake for unkown extensions, i.e., vsix => zip
         if (ext_type == ExtractionType::Unknown)
         {
-            extract_tar_cmake(tools.get_tool_path(Tools::CMAKE, status_sink), archive, to_path);
+            if (const auto* tool = tools.get_tool_path(context, fs, Tools::CMAKE))
+            {
+                return extract_tar_cmake(context, *tool, archive, to_path);
+            }
+
+            return false;
         }
+
+        return false;
     }
 
-    Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
-                                              const ToolCache& tools,
-                                              MessageSink& status_sink,
-                                              const Path& archive,
-                                              const Path& to_path)
+    Optional<Path> extract_archive_to_temp_subdirectory(DiagnosticContext& context,
+                                                        const Filesystem& fs,
+                                                        const ToolCache& tools,
+                                                        const Path& archive,
+                                                        const Path& to_path)
     {
         Path to_path_partial = to_path + ".partial";
 #if defined(_WIN32)
@@ -248,30 +325,39 @@ namespace vcpkg
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
-        extract_archive(fs, tools, status_sink, archive, to_path_partial);
-        return to_path_partial;
+        if (extract_archive(context, fs, tools, archive, to_path_partial))
+        {
+            return to_path_partial;
+        }
+
+        return nullopt;
     }
 #ifdef _WIN32
-    void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path)
+    bool win32_extract_self_extracting_7z(DiagnosticContext& context,
+                                          const Filesystem& fs,
+                                          const Path& archive,
+                                          const Path& to_path)
     {
         static constexpr StringLiteral header_7z = "7z\xBC\xAF\x27\x1C";
         const Path stem = archive.stem();
         const auto subext = stem.extension();
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               Strings::case_insensitive_ascii_equals(subext, ".7z"),
-                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissingExtension, msg::extension = ".7z.exe"));
+        if (!Strings::case_insensitive_ascii_equals(subext, ".7z"))
+        {
+            context.report(DiagnosticLine{DiagKind::Error, archive, msg::format(msgSevenZipIncorrectExtension)});
+            return false;
+        }
 
         auto contents = fs.read_contents(archive, VCPKG_LINE_INFO);
-
         // try to chop off the beginning of the self extractor before the embedded 7z archive
         // some 7z self extractors, such as PortableGit-2.43.0-32-bit.7z.exe have 1 header
         // some 7z self extractors, such as 7z2408-x64.exe, have 2 headers
         auto pos = contents.find(header_7z.data(), 0, header_7z.size());
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               pos != std::string::npos,
-                               msg::format(msgPackageFailedtWhileExtracting, msg::value = "7zip", msg::path = archive)
-                                   .append(msgMissing7zHeader));
+        if (pos == std::string::npos)
+        {
+            context.report(DiagnosticLine{DiagKind::Error, archive, msg::format(msgSevenZipIncorrectHeader)});
+            return false;
+        }
+
         // no bounds check necessary because header_7z is nonempty:
         auto pos2 = contents.find(header_7z.data(), pos + 1, header_7z.size());
         if (pos2 != std::string::npos)
@@ -281,33 +367,29 @@ namespace vcpkg
 
         StringView contents_sv = contents;
         fs.write_contents(to_path, contents_sv.substr(pos), VCPKG_LINE_INFO);
+        return true;
     }
 #endif
 
-    void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path)
+    bool extract_tar(DiagnosticContext& context, const Path& tar_tool, const Path& archive, const Path& to_path)
     {
-        ProcessLaunchSettings settings;
+        RedirectedProcessLaunchSettings settings;
         settings.working_directory = to_path;
-        const auto code = cmd_execute(Command{tar_tool}.string_arg("xzf").string_arg(archive), settings);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               succeeded(code),
-                               msgPackageFailedtWhileExtracting,
-                               msg::value = "tar",
-                               msg::path = archive);
+        auto maybe_exit_and_output =
+            cmd_execute_and_capture_output(context, Command{tar_tool}.string_arg("xzf").string_arg(archive), settings);
+        return postprocess_extract_archive(context, std::move(maybe_exit_and_output), tar_tool, archive);
     }
 
-    void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path)
+    bool extract_tar_cmake(DiagnosticContext& context, const Path& cmake_tool, const Path& archive, const Path& to_path)
     {
         // Note that CMake's built in tar can extract more archive types than many system tars; e.g. 7z
-        ProcessLaunchSettings settings;
+        RedirectedProcessLaunchSettings settings;
         settings.working_directory = to_path;
-        const auto code = cmd_execute(
-            Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive), settings);
-        Checks::msg_check_exit(VCPKG_LINE_INFO,
-                               succeeded(code),
-                               msgPackageFailedtWhileExtracting,
-                               msg::value = "CMake",
-                               msg::path = archive);
+        auto maybe_exit_and_output = cmd_execute_and_capture_output(
+            context,
+            Command{cmake_tool}.string_arg("-E").string_arg("tar").string_arg("xzf").string_arg(archive),
+            settings);
+        return postprocess_extract_archive(context, std::move(maybe_exit_and_output), cmake_tool, archive);
     }
 
     bool ZipTool::compress_directory_to_zip(DiagnosticContext& context,
@@ -340,14 +422,23 @@ namespace vcpkg
 #endif
     }
 
-    void ZipTool::setup(const ToolCache& cache, MessageSink& status_sink)
+    bool ZipTool::setup(DiagnosticContext& context, const Filesystem& fs, const ToolCache& cache)
     {
 #if defined(_WIN32)
-        seven_zip.emplace(cache.get_tool_path(Tools::SEVEN_ZIP, status_sink));
-#endif
+        if (const auto* tool = cache.get_tool_path(context, fs, Tools::SEVEN_ZIP))
+        {
+            seven_zip.emplace(*tool);
+            return true;
+        }
+
+        return false;
+#else
         // Unused on non-Windows
+        (void)context;
+        (void)fs;
         (void)cache;
-        (void)status_sink;
+        return true;
+#endif
     }
 
     Command ZipTool::decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const
