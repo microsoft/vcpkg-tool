@@ -392,6 +392,7 @@ namespace vcpkg
         }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem& fs,
                                                   const ToolCache& cache,
                                                   const Path& exe_path) const = 0;
 
@@ -426,7 +427,10 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {0}; }
         virtual bool ignore_version() const override { return true; }
 
-        virtual Optional<std::string> get_version(DiagnosticContext&, const ToolCache&, const Path&) const override
+        virtual Optional<std::string> get_version(DiagnosticContext&,
+                                                  const Filesystem&,
+                                                  const ToolCache&,
+                                                  const Path&) const override
         {
             return {"0"};
         }
@@ -462,6 +466,7 @@ namespace vcpkg
 #endif
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -507,6 +512,7 @@ namespace vcpkg
 
 #endif
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -545,6 +551,7 @@ namespace vcpkg
 #endif // ^^^ !defined(_WIN32)
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -561,13 +568,23 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {4, 6, 2}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem& fs,
                                                   const ToolCache& cache,
                                                   const Path& exe_path) const override
         {
-            (void)cache;
             Command cmd;
-#if !defined(_WIN32)
-            cmd.string_arg(cache.get_tool_path(context, Tools::MONO));
+#if defined(_WIN32)
+            (void)fs;
+            (void)cache;
+#else
+            const auto* mono_path = cache.get_tool_path(context, fs, Tools::Mono);
+            if (!mono_path)
+            {
+                context.report(DiagnosticLine{DiagKind::Note, msgMonoInstructions});
+                return nullopt;
+            }
+
+            cmd.string_arg(*mono_path);
 #endif // ^^^ !_WIN32
             cmd.string_arg(exe_path).string_arg("help").string_arg("-ForceEnglishOutput");
             auto maybe_output = run_to_extract_version(context, Tools::NUGET, exe_path, std::move(cmd));
@@ -610,6 +627,7 @@ namespace vcpkg
 #endif
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -644,6 +662,7 @@ namespace vcpkg
 #endif
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -663,6 +682,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {0, 0, 0}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -695,6 +715,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {4, 56, 0}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -714,6 +735,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {2, 4, 4}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -733,6 +755,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {2, 64, 0}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -759,6 +782,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {0, 11, 0}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -786,6 +810,7 @@ namespace vcpkg
         virtual std::array<int, 3> default_min_version() const override { return {7, 0, 3}; }
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -842,6 +867,7 @@ namespace vcpkg
 #endif // ^^^ _WIN32
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -912,6 +938,7 @@ namespace vcpkg
 #endif
 
         virtual Optional<std::string> get_version(DiagnosticContext& context,
+                                                  const Filesystem&,
                                                   const ToolCache&,
                                                   const Path& exe_path) const override
         {
@@ -953,7 +980,7 @@ namespace vcpkg
          */
         template<typename Func, typename Func2>
         Optional<PathAndVersion> find_first_with_sufficient_version(DiagnosticContext& context,
-                                                                    const ReadOnlyFilesystem& fs,
+                                                                    const Filesystem& fs,
                                                                     const ToolProvider& tool_provider,
                                                                     const std::vector<Path>& candidates,
                                                                     Func&& accept_version,
@@ -964,7 +991,7 @@ namespace vcpkg
                 if (!fs.exists(candidate, IgnoreErrors{})) continue;
                 if (!tool_provider.cheap_is_acceptable(candidate)) continue;
                 AttemptDiagnosticContext adc{context};
-                auto maybe_version = tool_provider.get_version(adc, *this, candidate);
+                auto maybe_version = tool_provider.get_version(adc, fs, *this, candidate);
                 const auto version = maybe_version.get();
                 if (!version)
                 {
@@ -1194,7 +1221,7 @@ namespace vcpkg
                     auto maybe_downloaded_path = download_tool(context, fs, *tool_data);
                     if (auto downloaded_path = maybe_downloaded_path.get())
                     {
-                        auto maybe_downloaded_version = tool.get_version(context, *this, *downloaded_path);
+                        auto maybe_downloaded_version = tool.get_version(context, fs, *this, *downloaded_path);
                         if (auto downloaded_version = maybe_downloaded_version.get())
                         {
                             return PathAndVersion{std::move(*downloaded_path), std::move(*downloaded_version)};

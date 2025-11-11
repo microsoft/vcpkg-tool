@@ -4284,133 +4284,137 @@ namespace vcpkg
                 std::make_error_code(std::errc::not_supported), "read_lines", {file_path});
         }
 
-        std::uint64_t file_size(const Path&, std::error_code& ec) const
+        std::uint64_t file_size(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return 0;
         }
 
-        std::string read_contents(const Path&, std::error_code& ec) const
+        std::string read_contents(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::string();
         }
 
-        std::string best_effort_read_contents_if_shebang(const Path&) const { return std::string(); }
+        std::string best_effort_read_contents_if_shebang(const Path&) const override { return std::string(); }
 
-        Path find_file_recursively_up(const Path&, const Path&, std::error_code& ec) const
+        Path find_file_recursively_up(const Path&, const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return Path();
         }
 
-        std::vector<Path> get_files_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_files_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_files_recursive_lexically_proximate(const Path&, std::error_code& ec) const
+        std::vector<Path> get_files_recursive_lexically_proximate(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_files_non_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_files_non_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_directories_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_directories_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_directories_recursive_lexically_proximate(const Path&, std::error_code& ec) const
+        std::vector<Path> get_directories_recursive_lexically_proximate(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_directories_non_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_directories_non_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_regular_files_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_regular_files_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path&, std::error_code& ec) const
+        std::vector<Path> get_regular_files_recursive_lexically_proximate(const Path&,
+                                                                          std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        std::vector<Path> get_regular_files_non_recursive(const Path&, std::error_code& ec) const
+        std::vector<Path> get_regular_files_non_recursive(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return std::vector<Path>();
         }
 
-        bool is_directory(const Path&) const { return false; }
-        bool is_regular_file(const Path&) const { return false; }
-        bool is_empty(const Path&, std::error_code& ec) const
+        bool is_directory(const Path&) const override { return false; }
+        bool is_regular_file(const Path&) const override { return false; }
+        bool is_empty(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return false;
         }
 
-        FileType status(const Path&, std::error_code& ec) const
+        FileType status(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return FileType::unknown;
         }
 
-        FileType symlink_status(const Path&, std::error_code& ec) const
+        FileType symlink_status(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return FileType::unknown;
         }
 
-        Path almost_canonical(const Path&, std::error_code& ec) const
+        Path almost_canonical(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return Path();
         }
 
-        Path current_path(std::error_code& ec) const
+        Path current_path(std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return Path();
         }
 
-        Path absolute(const Path& p, std::error_code& ec) const
+        Path absolute(const Path& p, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return p;
         }
 
-        std::vector<Path> find_from_PATH(View<StringView>) const { return std::vector<Path>{}; }
-        ReadFilePointer open_for_read(const Path&, std::error_code& ec) const
+        std::vector<Path> find_from_PATH(View<StringView>) const override { return std::vector<Path>{}; }
+        ReadFilePointer open_for_read(const Path&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
             return ReadFilePointer{};
         }
 
-        void write_lines(const Path&, const std::vector<std::string>&, std::error_code& ec) const
+        void write_lines(const Path&, const std::vector<std::string>&, std::error_code& ec) const override
         {
             assign_not_supported(ec);
         }
 
-        void write_contents(const Path&, StringView, std::error_code& ec) const { assign_not_supported(ec); }
+        void write_contents(const Path&, StringView, std::error_code& ec) const override { assign_not_supported(ec); }
 
-        void write_contents_and_dirs(const Path&, StringView, std::error_code& ec) const { assign_not_supported(ec); }
+        void write_contents_and_dirs(const Path&, StringView, std::error_code& ec) const override
+        {
+            assign_not_supported(ec);
+        }
 
         void rename(const Path&, const Path&, std::error_code& ec) const override { assign_not_supported(ec); }
 

@@ -1443,11 +1443,6 @@ DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
                 (),
                 "This is a command line; only the 'update version database' part should be localized",
                 "git commit -m \"Update version database\"")
-DECLARE_MESSAGE(GitFailedToFetch,
-                (msg::value, msg::url),
-                "{value} is a git ref like 'origin/main'",
-                "failed to fetch ref {value} from repository {url}")
-DECLARE_MESSAGE(GitFailedToInitializeLocalRepository, (msg::path), "", "failed to initialize local repository {path}")
 DECLARE_MESSAGE(
     GitRegistryMustHaveBaseline,
     (msg::url, msg::commit_sha),
