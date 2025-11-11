@@ -45,27 +45,58 @@ Copyright (C) 2006, 2019 Tatsuhiro Tsujikawa)");
 
 TEST_CASE ("extract_prefixed_nonwhitespace", "[tools]")
 {
-    CHECK(extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "fooutil version 1.2", "fooutil.exe")
-              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
-    CHECK(extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "fooutil version 1.2   ", "fooutil.exe")
-              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
-    auto error_result =
-        extract_prefixed_nonwhitespace("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
-    CHECK(!error_result.has_value());
-    CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
-                                  "determine the version:\nmalformed output");
+    {
+        Optional<std::string> maybe_output = "fooutil version 1.2";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonwhitespace(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(fbdc.empty());
+        CHECK(maybe_output.value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    }
+
+    {
+        Optional<std::string> maybe_output = "fooutil version 1.2   ";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonwhitespace(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(fbdc.empty());
+        CHECK(maybe_output.value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    }
+
+    {
+        Optional<std::string> maybe_output = "malformed output";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonwhitespace(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(!maybe_output);
+        CHECK(fbdc.to_string() == "fooutil.exe: error: fooutil produced unexpected output when attempting to determine "
+                                  "the version:\nmalformed output");
+    }
 }
 
 TEST_CASE ("extract_prefixed_nonquote", "[tools]")
 {
-    CHECK(extract_prefixed_nonquote("fooutil version ", "fooutil", "fooutil version 1.2\"", "fooutil.exe")
-              .value_or_exit(VCPKG_LINE_INFO) == "1.2");
-    CHECK(extract_prefixed_nonquote("fooutil version ", "fooutil", "fooutil version 1.2 \"  ", "fooutil.exe")
-              .value_or_exit(VCPKG_LINE_INFO) == "1.2 ");
-    auto error_result = extract_prefixed_nonquote("fooutil version ", "fooutil", "malformed output", "fooutil.exe");
-    CHECK(!error_result.has_value());
-    CHECK(error_result.error() == "error: fooutil (fooutil.exe) produced unexpected output when attempting to "
-                                  "determine the version:\nmalformed output");
+    {
+        Optional<std::string> maybe_output = "fooutil version 1.2\"";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonquote(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(fbdc.empty());
+        CHECK(maybe_output.value_or_exit(VCPKG_LINE_INFO) == "1.2");
+    }
+
+    {
+        Optional<std::string> maybe_output = "fooutil version 1.2 \"";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonquote(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(fbdc.empty());
+        CHECK(maybe_output.value_or_exit(VCPKG_LINE_INFO) == "1.2 ");
+    }
+
+    {
+        Optional<std::string> maybe_output = "malformed output";
+        FullyBufferedDiagnosticContext fbdc;
+        extract_prefixed_nonquote(fbdc, "fooutil version ", "fooutil", maybe_output, "fooutil.exe");
+        CHECK(!maybe_output);
+        CHECK(fbdc.to_string() == "fooutil.exe: error: fooutil produced unexpected output when attempting to determine "
+                                  "the version:\nmalformed output");
+    }
 }
 
 TEST_CASE ("parse_tool_data", "[tools]")
@@ -109,7 +140,9 @@ TEST_CASE ("parse_tool_data", "[tools]")
     ]
 })";
 
-    auto maybe_data = parse_tool_data(tool_doc, "vcpkgTools.json");
+    FullyBufferedDiagnosticContext fbdc;
+    auto maybe_data = parse_tool_data(fbdc, tool_doc, "vcpkgTools.json");
+    REQUIRE(fbdc.empty());
     REQUIRE(maybe_data.has_value());
 
     auto data = maybe_data.value_or_exit(VCPKG_LINE_INFO);
@@ -210,24 +243,39 @@ TEST_CASE ("parse_tool_data", "[tools]")
 
 TEST_CASE ("parse_tool_data errors", "[tools]")
 {
-    auto empty = parse_tool_data("", "empty.json");
-    REQUIRE(!empty.has_value());
-    CHECK(Strings::starts_with(empty.error(), "empty.json:1:1: error: Unexpected EOF"));
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto empty = parse_tool_data(fbdc, "", "empty.json");
+        REQUIRE(!empty.has_value());
+        CHECK(fbdc.to_string() == R"(empty.json:1:1: error: Unexpected EOF; expected value
+  on expression: 
+                 ^)");
+    }
 
-    auto top_level_json = parse_tool_data("[]", "top_level.json");
-    REQUIRE(!top_level_json.has_value());
-    CHECK("Expected \"top_level.json\" to be an object." == top_level_json.error());
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto top_level_json = parse_tool_data(fbdc, "[]", "top_level.json");
+        REQUIRE(!top_level_json.has_value());
+        CHECK(fbdc.to_string() == "top_level.json: error: expected an object");
+    }
 
-    auto missing_required =
-        parse_tool_data(R"({ "schema-version": 1, "tools": [{ "executable": "git.exe" }]})", "missing_required.json");
-    REQUIRE(!missing_required.has_value());
-    CHECK("missing_required.json: error: $.tools[0] (tool metadata): missing required field 'name' (a string)\n"
-          "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'os' (a tool data "
-          "operating system)\n"
-          "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'version' (a tool data "
-          "version)" == missing_required.error());
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto missing_required = parse_tool_data(
+            fbdc, R"({ "schema-version": 1, "tools": [{ "executable": "git.exe" }]})", "missing_required.json");
+        REQUIRE(!missing_required.has_value());
+        CHECK(fbdc.to_string() ==
+              "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'name' (a string)\n"
+              "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'os' (a tool data "
+              "operating system)\n"
+              "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'version' (a tool data "
+              "version)");
+    }
 
-    auto uexpected_field = parse_tool_data(R"(
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto uexpected_field = parse_tool_data(fbdc,
+                                               R"(
 {
     "schema-version": 1,
     "tools": [{
@@ -237,12 +285,16 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         "arc": "x64"
     }]
 })",
-                                           "uexpected_field.json");
-    REQUIRE(!uexpected_field.has_value());
-    CHECK("uexpected_field.json: error: $.tools[0] (tool metadata): unexpected field 'arc', did you mean 'arch'?" ==
-          uexpected_field.error());
+                                               "uexpected_field.json");
+        REQUIRE(!uexpected_field.has_value());
+        CHECK(fbdc.to_string() ==
+              "uexpected_field.json: error: $.tools[0] (tool metadata): unexpected field 'arc', did you mean 'arch'?");
+    }
 
-    auto invalid_os = parse_tool_data(R"(
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto invalid_os = parse_tool_data(fbdc,
+                                          R"(
 {
     "schema-version": 1,
     "tools": [{ 
@@ -251,13 +303,18 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         "version": "2.7.4"
     }]
 })",
-                                      "invalid_os.json");
-    REQUIRE(!invalid_os.has_value());
-    CHECK(
-        "invalid_os.json: error: $.tools[0].os (a tool data operating system): Invalid tool operating system: notanos. "
-        "Expected one of: windows, osx, linux, freebsd, openbsd, netbsd, solaris" == invalid_os.error());
+                                          "invalid_os.json");
+        REQUIRE(!invalid_os.has_value());
+        CHECK(fbdc.to_string() ==
+              "invalid_os.json: error: $.tools[0].os (a tool data operating system): Invalid tool operating system: "
+              "notanos. "
+              "Expected one of: windows, osx, linux, freebsd, openbsd, netbsd, solaris");
+    }
 
-    auto invalid_version = parse_tool_data(R"(
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto invalid_version = parse_tool_data(fbdc,
+                                               R"(
 {
     "schema-version": 1,
     "tools": [{ 
@@ -266,12 +323,17 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         "version": "abc"
     }]
 })",
-                                           "invalid_version.json");
-    REQUIRE(!invalid_version.has_value());
-    CHECK("invalid_version.json: error: $.tools[0].version (a tool data version): Invalid tool version; expected a "
-          "string containing a substring of between 1 and 3 numbers separated by dots." == invalid_version.error());
+                                               "invalid_version.json");
+        REQUIRE(!invalid_version.has_value());
+        CHECK(fbdc.to_string() ==
+              "invalid_version.json: error: $.tools[0].version (a tool data version): Invalid tool version; expected a "
+              "string containing a substring of between 1 and 3 numbers separated by dots.");
+    }
 
-    auto invalid_arch = parse_tool_data(R"(
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto invalid_arch = parse_tool_data(fbdc,
+                                            R"(
 {
     "schema-version": 1,
     "tools": [{ 
@@ -281,13 +343,19 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         "arch": "notanarchitecture"
     }]
 })",
-                                        "invalid_arch.json");
-    REQUIRE(!invalid_arch.has_value());
-    CHECK("invalid_arch.json: error: $.tools[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. "
-          "Expected one of: x86, x64, amd64, arm, arm64, arm64ec, s390x, ppc64le, riscv32, riscv64, loongarch32, "
-          "loongarch64, mips64" == invalid_arch.error());
+                                            "invalid_arch.json");
+        REQUIRE(!invalid_arch.has_value());
+        CHECK(
+            fbdc.to_string() ==
+            "invalid_arch.json: error: $.tools[0].arch (a CPU architecture): Invalid architecture: notanarchitecture. "
+            "Expected one of: x86, x64, amd64, arm, arm64, arm64ec, s390x, ppc64le, riscv32, riscv64, loongarch32, "
+            "loongarch64, mips64");
+    }
 
-    auto invalid_sha512 = parse_tool_data(R"(
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto invalid_sha512 = parse_tool_data(fbdc,
+                                              R"(
 {
     "schema-version": 1,
     "tools": [{ 
@@ -298,9 +366,11 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         "sha512": "notasha512"
     }]
 })",
-                                          "invalid_sha512.json");
+                                              "invalid_sha512.json");
 
-    REQUIRE(!invalid_sha512.has_value());
-    CHECK("invalid_sha512.json: error: $.tools[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
-          "SHA-512 hash must be 128 characters long and contain only hexadecimal digits" == invalid_sha512.error());
+        REQUIRE(!invalid_sha512.has_value());
+        CHECK(fbdc.to_string() ==
+              "invalid_sha512.json: error: $.tools[0].sha512 (a SHA-512 hash): invalid SHA-512 hash: notasha512\n"
+              "SHA-512 hash must be 128 characters long and contain only hexadecimal digits");
+    }
 }

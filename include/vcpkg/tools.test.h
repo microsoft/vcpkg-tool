@@ -67,7 +67,9 @@ namespace vcpkg
         std::string archiveName;
     };
 
-    ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin);
+    Optional<std::vector<ToolDataEntry>> parse_tool_data(DiagnosticContext& context,
+                                                         StringView contents,
+                                                         StringView origin);
 
     const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
                                            StringView toolname,

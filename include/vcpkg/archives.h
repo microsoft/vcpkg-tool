@@ -28,30 +28,36 @@ namespace vcpkg
     };
 
     // Extract `archive` to `to_path` using `tar_tool`.
-    void extract_tar(const Path& tar_tool, const Path& archive, const Path& to_path);
+    bool extract_tar(DiagnosticContext& context, const Path& tar_tool, const Path& archive, const Path& to_path);
     // Extract `archive` to `to_path` using `cmake_tool`. (CMake's built in tar)
-    void extract_tar_cmake(const Path& cmake_tool, const Path& archive, const Path& to_path);
-    void extract_archive(const Filesystem& fs,
+    bool extract_tar_cmake(DiagnosticContext& context,
+                           const Path& cmake_tool,
+                           const Path& archive,
+                           const Path& to_path);
+    bool extract_archive(DiagnosticContext& context,
+                         const Filesystem& fs,
                          const ToolCache& tools,
-                         MessageSink& status_sink,
                          const Path& archive,
                          const Path& to_path);
     // extract `archive` to a sibling temporary subdirectory of `to_path` and returns that path
-    Path extract_archive_to_temp_subdirectory(const Filesystem& fs,
-                                              const ToolCache& tools,
-                                              MessageSink& status_sink,
-                                              const Path& archive,
-                                              const Path& to_path);
+    Optional<Path> extract_archive_to_temp_subdirectory(DiagnosticContext& context,
+                                                        const Filesystem& fs,
+                                                        const ToolCache& tools,
+                                                        const Path& archive,
+                                                        const Path& to_path);
 
     ExtractionType guess_extraction_type(const Path& archive);
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer
-    void win32_extract_self_extracting_7z(const Filesystem& fs, const Path& archive, const Path& to_path);
+    bool win32_extract_self_extracting_7z(DiagnosticContext& context,
+                                          const Filesystem& fs,
+                                          const Path& archive,
+                                          const Path& to_path);
 #endif
 
     struct ZipTool
     {
-        void setup(const ToolCache& tools, MessageSink& status_sink);
+        bool setup(DiagnosticContext& context, const Filesystem& fs, const ToolCache& tools);
 
         // Compress the source directory into the destination file.
         bool compress_directory_to_zip(DiagnosticContext& context,

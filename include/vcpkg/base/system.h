@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/fmt.h>
@@ -12,27 +13,35 @@
 
 namespace vcpkg
 {
-    Optional<std::string> get_environment_variable(ZStringView varname) noexcept;
+    Optional<std::string> get_environment_variable(ZStringView varname);
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
 
     std::vector<std::string> get_environment_variables();
 
-    const ExpectedL<Path>& get_home_dir() noexcept;
+    const ExpectedL<Path>& get_home_dir();
+    const Path* get_home_dir(DiagnosticContext& context);
 
-    const ExpectedL<Path>& get_platform_cache_root() noexcept;
+    const ExpectedL<Path>& get_platform_cache_root();
+    const Path* get_platform_cache_root(DiagnosticContext& context);
 
-    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept;
+    const ExpectedL<Path>& get_platform_cache_vcpkg();
+    const Path* get_platform_cache_vcpkg(DiagnosticContext& context);
 
-    const ExpectedL<Path>& get_user_configuration_home() noexcept;
+    const ExpectedL<Path>& get_user_configuration_home();
+    const Path* get_user_configuration_home(DiagnosticContext& context);
 
 #ifdef _WIN32
-    const ExpectedL<Path>& get_appdata_local() noexcept;
+    const ExpectedL<Path>& get_appdata_local();
+    const Path* get_appdata_local(DiagnosticContext&);
 
-    const ExpectedL<Path>& get_system_drive() noexcept;
+    const ExpectedL<Path>& get_system_drive();
+    const Path* get_system_drive(DiagnosticContext&);
 
-    const ExpectedL<Path>& get_system_root() noexcept;
+    const ExpectedL<Path>& get_system_root();
+    const Path* get_system_root(DiagnosticContext&);
 
-    const ExpectedL<Path>& get_system32() noexcept;
+    const ExpectedL<Path>& get_system32();
+    const Path* get_system32(DiagnosticContext&);
 
     std::wstring get_username();
 

@@ -122,8 +122,9 @@ namespace vcpkg
     static void extract_and_strip(
         const Filesystem& fs, const VcpkgPaths& paths, StripSetting strip_setting, Path archive_path, Path output_dir)
     {
-        auto temp_dir =
-            extract_archive_to_temp_subdirectory(fs, paths.get_tool_cache(), null_sink, archive_path, output_dir);
+        auto temp_dir = extract_archive_to_temp_subdirectory(
+                            null_diagnostic_context, fs, paths.get_tool_cache(), archive_path, output_dir)
+                            .value_or_exit(VCPKG_LINE_INFO);
 
         ExtractedArchive archive = {
             temp_dir, output_dir, fs.get_regular_files_recursive_lexically_proximate(temp_dir, VCPKG_LINE_INFO)};
@@ -161,7 +162,10 @@ namespace vcpkg
 
         if (strip_setting.mode == StripMode::Manual && strip_setting.count == 0)
         {
-            extract_archive(fs, paths.get_tool_cache(), null_sink, archive_path, destination_path);
+            if (!extract_archive(null_diagnostic_context, fs, paths.get_tool_cache(), archive_path, destination_path))
+            {
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
         }
         else
         {

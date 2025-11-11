@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/downloads.h>
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/files.h>
@@ -41,25 +42,28 @@ namespace vcpkg
     {
         virtual ~ToolCache() = default;
 
-        virtual const Path& get_tool_path(StringView tool, MessageSink& status_sink) const = 0;
-        virtual const std::string& get_tool_version(StringView tool, MessageSink& status_sink) const = 0;
+        virtual const Path* get_tool_path(DiagnosticContext& context, const Filesystem& fs, StringView tool) const = 0;
+        virtual const std::string* get_tool_version(DiagnosticContext& context,
+                                                    const Filesystem& fs,
+                                                    StringView tool) const = 0;
     };
 
-    ExpectedL<std::string> extract_prefixed_nonquote(StringLiteral prefix,
-                                                     StringLiteral tool_name,
-                                                     std::string&& output,
-                                                     const Path& exe_path);
+    void extract_prefixed_nonquote(DiagnosticContext& context,
+                                   StringLiteral prefix,
+                                   StringLiteral tool_name,
+                                   Optional<std::string>& maybe_output,
+                                   const Path& exe_path);
 
-    ExpectedL<std::string> extract_prefixed_nonwhitespace(StringLiteral prefix,
-                                                          StringLiteral tool_name,
-                                                          std::string&& output,
-                                                          const Path& exe_path);
+    void extract_prefixed_nonwhitespace(DiagnosticContext& context,
+                                        StringLiteral prefix,
+                                        StringLiteral tool_name,
+                                        Optional<std::string>& maybe_output,
+                                        const Path& exe_path);
 
-    ExpectedL<Path> find_system_tar(const ReadOnlyFilesystem& fs);
-    ExpectedL<Path> find_system_cmake(const ReadOnlyFilesystem& fs);
+    Optional<Path> find_system_tar(DiagnosticContext& context, const ReadOnlyFilesystem& fs);
+    Optional<Path> find_system_cmake(DiagnosticContext& context, const ReadOnlyFilesystem& fs);
 
-    std::unique_ptr<ToolCache> get_tool_cache(const Filesystem& fs,
-                                              const AssetCachingSettings& asset_cache_settings,
+    std::unique_ptr<ToolCache> get_tool_cache(const AssetCachingSettings& asset_cache_settings,
                                               Path downloads,
                                               Path config_path,
                                               Path tools,
