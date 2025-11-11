@@ -587,8 +587,10 @@ namespace vcpkg
         using namespace std::chrono_literals;
         static constexpr std::array<std::chrono::seconds, 3> attempt_delays = {0s, 1s, 2s};
         DownloadPrognosis prognosis = DownloadPrognosis::NetworkErrorProxyMightHelp;
-        for (size_t attempt_count = 0; attempt_count < attempt_delays.size() + 1; attempt_count++)
+        for (size_t attempt_count = 0; attempt_count < attempt_delays.size(); attempt_count++)
         {
+            std::this_thread::sleep_for(attempt_delays[attempt_count]);
+
             prognosis = perform_download(context, machine_readable_progress, raw_url, download_path_part_path, headers);
 
             if (DownloadPrognosis::Success == prognosis)
@@ -604,7 +606,6 @@ namespace vcpkg
 
             context.report_error(msg::format(
                 msgDownloadTransientErrorRetry, msg::count = attempt_count + 1, msg::value = attempt_delays.size()));
-            std::this_thread::sleep_for(attempt_delays[attempt_count]);
         }
 
         if (DownloadPrognosis::Success != prognosis)
