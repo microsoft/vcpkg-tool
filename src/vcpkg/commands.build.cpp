@@ -1699,7 +1699,7 @@ namespace vcpkg
         return result;
     }
 
-    void BuildResultCounts::increment(const BuildResult build_result)
+    void BuildResultCounts::increment(BuildResult build_result)
     {
         switch (build_result)
         {

@@ -226,8 +226,7 @@ namespace
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                if (it_known != known.end() &&
-                    (it_known->second == BuildResult::Excluded || it_known->second == BuildResult::Unsupported))
+                if (it_known->second == BuildResult::Excluded || it_known->second == BuildResult::Unsupported)
                 {
                     it->plan_type = InstallPlanType::EXCLUDED;
                 }
@@ -282,7 +281,7 @@ namespace
         return has_error;
     }
 
-    std::vector<PackageSpec> calculate_packages_with_qualified_deps(
+    std::vector<PackageSpec> calculate_packages_with_qualifiers(
         const std::vector<const SourceControlFileAndLocation*>& all_control_files, const Triplet& target_triplet)
     {
         std::vector<PackageSpec> ret;
@@ -309,21 +308,16 @@ namespace
         // it is too late as we have already calculated an action plan with feature dependencies from
         // the skipped ports.
         CiSpecsResult result;
-        const TripletExclusions* target_triplet_exclusions = nullptr;
-        for (auto&& te : exclusions_map.triplets)
-        {
-            if (te.triplet == target_triplet)
-            {
-                target_triplet_exclusions = &te;
-                break;
-            }
-        }
-
+        auto it = Util::find_if(exclusions_map.triplets, [&](const TripletExclusions& exclusions) {
+            return exclusions.triplet == target_triplet;
+        });
+        const SortedVector<std::string>* const target_triplet_exclusions =
+            it == exclusions_map.triplets.end() ? nullptr : &it->exclusions;
         auto all_control_files = provider.load_all_control_files();
 
         // populate `var_provider` to evaluate supports expressions for all ports:
         std::vector<PackageSpec> packages_with_qualified_deps =
-            calculate_packages_with_qualified_deps(all_control_files, target_triplet);
+            calculate_packages_with_qualifiers(all_control_files, target_triplet);
         var_provider.load_dep_info_vars(packages_with_qualified_deps, serialize_options.host_triplet);
 
         for (auto scfl : all_control_files)
@@ -331,7 +325,7 @@ namespace
             auto full_package_spec =
                 FullPackageSpec{PackageSpec{scfl->to_name(), target_triplet},
                                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()}};
-            if (target_triplet_exclusions && target_triplet_exclusions->exclusions.contains(scfl->to_name()))
+            if (target_triplet_exclusions && target_triplet_exclusions->contains(scfl->to_name()))
             {
                 result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Baseline);
                 continue;
@@ -367,6 +361,30 @@ namespace
 
         std::random_device e;
     };
+
+    std::unordered_set<std::string> parse_parent_hashes(
+        const std::map<vcpkg::StringLiteral, std::string, std::less<void>>& settings, const VcpkgPaths& paths)
+    {
+        std::unordered_set<std::string> parent_hashes;
+        const auto& fs = paths.get_filesystem();
+        auto it_parent_hashes = settings.find(SwitchParentHashes);
+        if (it_parent_hashes != settings.end())
+        {
+            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
+            auto parent_hashes_text = fs.try_read_contents(parent_hashes_path).value_or_exit(VCPKG_LINE_INFO);
+            const auto parsed_object =
+                Json::parse(parent_hashes_text.content, parent_hashes_text.origin).value_or_exit(VCPKG_LINE_INFO);
+            const auto& parent_hashes_array = parsed_object.value.array(VCPKG_LINE_INFO);
+            for (const Json::Value& array_value : parent_hashes_array)
+            {
+                auto abi = array_value.object(VCPKG_LINE_INFO).get(JsonIdAbi);
+                Checks::check_exit(VCPKG_LINE_INFO, abi);
+                parent_hashes.insert(abi->string(VCPKG_LINE_INFO).to_string());
+            }
+        }
+
+        return parent_hashes;
+    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -439,25 +457,8 @@ namespace vcpkg
             known_failure_abis.insert(std::make_move_iterator(lines.begin()), std::make_move_iterator(lines.end()));
         }
 
-        std::unordered_set<std::string> parent_hashes;
-        auto it_parent_hashes = settings.find(SwitchParentHashes);
-        if (it_parent_hashes != settings.end())
-        {
-            const Path parent_hashes_path = paths.original_cwd / it_parent_hashes->second;
-            auto parent_hashes_text = fs.try_read_contents(parent_hashes_path).value_or_exit(VCPKG_LINE_INFO);
-            const auto parsed_object =
-                Json::parse(parent_hashes_text.content, parent_hashes_text.origin).value_or_exit(VCPKG_LINE_INFO);
-            const auto& parent_hashes_array = parsed_object.value.array(VCPKG_LINE_INFO);
-            for (const Json::Value& array_value : parent_hashes_array)
-            {
-                auto abi = array_value.object(VCPKG_LINE_INFO).get(JsonIdAbi);
-                Checks::check_exit(VCPKG_LINE_INFO, abi);
-                parent_hashes.insert(abi->string(VCPKG_LINE_INFO).to_string());
-            }
-        }
-
+        const std::unordered_set<std::string> parent_hashes = parse_parent_hashes(settings, paths);
         const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
-
         const IBuildLogsRecorder* build_logs_recorder = &null_build_logs_recorder;
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
@@ -569,11 +570,10 @@ namespace vcpkg
                     ci_full_results.insert_or_assign(result.get_spec(), std::move(ci_result));
                 }
             }
-
-            binary_cache.wait_for_async_complete_and_join();
-            msg::println();
         }
 
+        binary_cache.wait_for_async_complete_and_join();
+        msg::println();
         std::map<Triplet, BuildResultCounts> summary_counts;
         auto summary_report = msg::format(msgTripletLabel).data();
         summary_report.push_back(' ');

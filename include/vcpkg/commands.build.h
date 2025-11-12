@@ -123,7 +123,7 @@ namespace vcpkg
         int downloaded = 0;
         int removed = 0;
 
-        void increment(const BuildResult build_result);
+        void increment(BuildResult build_result);
         LocalizedString format(const Triplet& triplet) const;
     };
 

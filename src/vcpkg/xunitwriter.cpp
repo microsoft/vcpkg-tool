@@ -32,9 +32,7 @@ namespace
             case BuildResult::ExcludedByParent:
             case BuildResult::ExcludedByDryRun:
             case BuildResult::Unsupported:
-            case BuildResult::Cached: // should this be "Pass" instead?
-                result_string = "Skip";
-                break;
+            case BuildResult::Cached: result_string = "Skip"; break;
             case BuildResult::CacheMissing:
             case BuildResult::Downloaded:
             case BuildResult::Removed:
