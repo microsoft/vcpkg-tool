@@ -206,8 +206,8 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
     SECTION ("Applies Skips and Fails")
     {
         ExclusionsMap exclusions;
-        exclusions.insert(x64_uwp);   // example triplet
-        exclusions.insert(x64_linux); // example host triplet
+        exclusions.insert(x64_uwp, {});   // example triplet
+        exclusions.insert(x64_linux, {}); // example host triplet
         auto actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
         const SortedVector<PackageSpec> expected_expected_failures{
             PackageSpec{"aubio", x64_uwp},
@@ -333,7 +333,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("SUCCEEDED")
     {
         const auto test = [&](PackageSpec s, bool allow_unexpected_passing) {
-            return format_ci_result(s, BuildResult::Succeeded, cidata, &cifile, allow_unexpected_passing, false);
+            return format_ci_result(s, BuildResult::Succeeded, cidata, &cifile, allow_unexpected_passing);
         };
         CHECK(test({"pass", Test::X64_UWP}, true) == "");
         CHECK(test({"pass", Test::X64_UWP}, false) == "");
@@ -347,7 +347,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("BUILD_FAILED")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::BuildFailed, cidata, &cifile, false, false);
+            return format_ci_result(s, BuildResult::BuildFailed, cidata, &cifile, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(failmsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == "");
@@ -357,10 +357,11 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false, false);
+            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
-        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"fail", Test::X64_UWP}) ==
+              "REGRESSION: fail:x64-uwp is marked as fail but one dependency is not supported for x64-uwp.");
         CHECK(test({"neither", Test::X64_UWP}) == "");
     }
 }

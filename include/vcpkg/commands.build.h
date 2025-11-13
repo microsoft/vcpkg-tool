@@ -115,11 +115,15 @@ namespace vcpkg
         int file_conflicts = 0;
         int cascaded_due_to_missing_dependencies = 0;
         int excluded = 0;
+        int excluded_by_parent = 0;
+        int excluded_by_dry_run = 0;
+        int unsupported = 0;
         int cache_missing = 0;
+        int cached = 0;
         int downloaded = 0;
         int removed = 0;
 
-        void increment(const BuildResult build_result);
+        void increment(BuildResult build_result);
         LocalizedString format(const Triplet& triplet) const;
     };
 

@@ -786,8 +786,7 @@ namespace vcpkg
             if (auto iter = Util::find_if(install_plan.install_actions,
                                           [&known_failures](const auto& install_action) {
                                               return Util::Sets::contains(
-                                                  known_failures,
-                                                  install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                                  known_failures, install_action.package_abi_or_exit(VCPKG_LINE_INFO));
                                           });
                 iter != install_plan.install_actions.end())
             {
@@ -812,7 +811,7 @@ namespace vcpkg
                     CacheAvailability::available)
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
-                                 msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                 msg::sha = action->package_abi_or_exit(VCPKG_LINE_INFO));
                     handle_pass_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     continue;
                 }
@@ -849,19 +848,16 @@ namespace vcpkg
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
-                            fs.write_contents(
-                                issue_body_path,
-                                create_github_issue(args,
-                                                    build_result,
-                                                    paths,
-                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
-                                                    false),
-                                VCPKG_LINE_INFO);
+                            const auto* ipa = result.get_maybe_install_plan_action();
+                            Checks::check_exit(VCPKG_LINE_INFO, ipa);
+                            fs.write_contents(issue_body_path,
+                                              create_github_issue(args, build_result, paths, *ipa, false),
+                                              VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];
                     case BuildResult::PostBuildChecksFailed:
-                        known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
+                        known_failures.insert(result.package_abi_or_exit(VCPKG_LINE_INFO));
                         break;
                     default: break;
                 }
@@ -896,7 +892,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.results.back().get_abi().get())
+                    if (auto abi = summary.results.back().package_abi())
                     {
                         known_failures.insert(*abi);
                     }
@@ -911,7 +907,11 @@ namespace vcpkg
                     handle_fail_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     break;
                 case BuildResult::Removed:
-                case BuildResult::Excluded: Checks::unreachable(VCPKG_LINE_INFO);
+                case BuildResult::Excluded:
+                case BuildResult::ExcludedByParent:
+                case BuildResult::ExcludedByDryRun:
+                case BuildResult::Cached:
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             msg::println();

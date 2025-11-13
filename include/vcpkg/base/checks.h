@@ -36,6 +36,7 @@ namespace vcpkg::Checks
     }
 
     // If expression is false, call exit_fail.
+    VCPKG_SAL_ANNOTATION(_Post_satisfies_(_Old_(expression)))
     void check_exit(const LineInfo& line_info, bool expression);
 
     // if expression is false, call exit_with_message.

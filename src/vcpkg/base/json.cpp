@@ -1168,18 +1168,6 @@ namespace vcpkg::Json
         return true;
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
-    {
-        std::error_code ec;
-        auto disk_contents = fs.read_contents(json_file, ec);
-        if (ec)
-        {
-            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
-        }
-
-        return parse(disk_contents, json_file).value_or_exit(VCPKG_LINE_INFO);
-    }
-
     ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
 
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
