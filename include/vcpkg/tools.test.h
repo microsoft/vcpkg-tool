@@ -48,6 +48,7 @@ namespace vcpkg
         FreeBsd,
         OpenBsd,
         NetBsd,
+        DragonFly,
         Solaris,
     };
 

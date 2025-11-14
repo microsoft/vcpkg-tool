@@ -1004,6 +1004,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/netbsd.cmake";
         }
+        else if (cmake_system_name == "DragonFly")
+        {
+            return m_paths.scripts / "toolchains/dragonfly.cmake";
+        }
         else if (cmake_system_name == "SunOS")
         {
             return m_paths.scripts / "toolchains/solaris.cmake";
