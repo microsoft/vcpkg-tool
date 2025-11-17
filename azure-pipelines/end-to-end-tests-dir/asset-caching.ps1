@@ -64,7 +64,7 @@ $expected = @(
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://github\.com/Kitware/CMake/releases/download/[^ ]+",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
@@ -116,7 +116,7 @@ $expected = @(
 "error: Not a transient network error, won't retry download from https://localhost:1234/foobar\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
@@ -143,7 +143,7 @@ $expected = @(
 "error: Not a transient network error, won't retry download from https://localhost:1235/baz\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
@@ -235,7 +235,7 @@ $expected = @(
 "error: Not a transient network error, won't retry download from https://localhost:1234/foobar\.html",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
@@ -298,7 +298,7 @@ $expected = @(
 "note: Actual  : 65077997890f66f6041bb3284bb7b88e27631411ccbc253201ca4e00c4bcc58c0d77edffda4975498797cc10772c7fd68fbeb13cc4ac493a3471a9d49e5b6f24",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
@@ -360,7 +360,7 @@ $expected = @(
 "note: or https://alternate\.example\.com",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
-"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https//address:port``\.",
+"1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
 "This is not correct, because ``https://`` prefix claims the proxy is an HTTPS proxy, while your proxy \(v2ray, shadowsocksr, etc\.\.\.\) is an HTTP proxy\.",
 "Try setting ``http://address:port`` to both HTTP_PROXY and HTTPS_PROXY instead\."
 "2\. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software\. See: https://github\.com/microsoft/vcpkg-tool/pull/77",
