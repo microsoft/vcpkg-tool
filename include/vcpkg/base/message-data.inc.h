@@ -1091,7 +1091,7 @@ DECLARE_MESSAGE(
     "If you are using a proxy, please ensure your proxy settings are correct.\n"
     "Possible causes are:\n"
     "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to "
-    "`https//address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
+    "`https://address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
     "proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
     "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
     "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "
