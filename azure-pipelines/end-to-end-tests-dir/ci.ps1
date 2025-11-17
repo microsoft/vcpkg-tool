@@ -93,6 +93,27 @@ SUMMARY FOR $Triplet
   UNSUPPORTED: 1
 "@
 
+# test that skipped ports aren't "put back" by downstream dependencies that aren't skipped
+Refresh-TestRoot
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.txt"
+Throw-IfFailed
+if (-not ($Output -match 'always-built:[^:]+:      \*:' -and $Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.')) {
+    throw 'did not attempt to build always-built'
+}
+if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
+    throw 'tried to build skipped'
+}
+# This should be statically determinable but at the moment we do not
+# if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
+#     throw 'tried to build cascaded'
+# }
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $Triplet
+  SUCCEEDED: 1
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
+  EXCLUDED: 1
+"@
+
 # test that features included only by skipped ports are not included
 $xunitFile = Join-Path $TestingRoot 'xunit.xml'
 Refresh-TestRoot
