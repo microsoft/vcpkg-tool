@@ -147,9 +147,13 @@ Throw-IfFailed
 if (-not ($Output -match 'skipped-features:[^:]+:      \*:' -and $Output -match 'Building skipped-features:[^@]+@1\.0\.0\.\.\.')) {
     throw 'did not attempt to build skipped-features'
 }
+if ($Output -match 'Building skipped-depends') {
+    throw 'should not attempt to build skipped-depends because it is skipped'
+}
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 1
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
   EXCLUDED: 1
 "@
 
