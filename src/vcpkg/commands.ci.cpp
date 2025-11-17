@@ -197,7 +197,7 @@ namespace
             }
 
             ret.report_lines.insert_or_assign(exclusion.first, fmt::format("{:>40}: {}", exclusion.first, *state));
-            ret.known.emplace(exclusion.first, known_result);
+            ret.known.insert_or_assign(exclusion.first, known_result);
         }
 
         return ret;
