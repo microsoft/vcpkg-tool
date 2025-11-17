@@ -37,6 +37,19 @@
       },
       "DevelopmentDependency": false,
       "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "curl",
+          "version": "8.17.0",
+          "downloadUrl": "https://github.com/curl/curl/archive/refs/tags/curl-8_17_0.tar.gz",
+          "hash": "88ab4b7aac12b26a6ad32fb0e1a9675288a45894438cb031102ef5d4ab6b33c2bc99cae0c70b71bdfa12eb49762827e2490555114c5eb4a6876b95e1f2a4eb74"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
     }
   ]
 }
