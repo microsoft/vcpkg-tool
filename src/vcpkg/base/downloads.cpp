@@ -37,6 +37,46 @@ namespace
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
     }
+
+    // Extracts the host part from a URL string.
+    std::string extract_host(StringView url)
+    {
+        // Remove scheme if present
+        StringView http_scheme = "http://";
+        StringView https_scheme = "https://";
+        if (url.starts_with(http_scheme))
+        {
+            url = url.substr(http_scheme.size());
+        }
+        else if (url.starts_with(https_scheme))
+        {
+            url = url.substr(https_scheme.size());
+        }
+
+        // Remove userinfo if present (e.g., user:pass@host)
+        const char* at_sign = Strings::find_first_of(url, "@");
+        size_t at_pos = at_sign[0] == '\0' ? std::string::npos : static_cast<size_t>(at_sign - url.data());
+        if (at_pos != std::string::npos && at_pos + 1 < url.size())
+        {
+            // Move past the '@'
+            url = url.substr(at_pos + 1);
+        }
+
+        // Find the start of the path (first '/')
+        const char* first_slash = Strings::find_first_of(url, "/");
+        size_t slash_pos = first_slash[0] == '\0' ? std::string::npos : static_cast<size_t>(first_slash - url.data());
+        StringView host_part = slash_pos != std::string::npos ? url.substr(0, slash_pos) : url;
+
+        // Remove port if present (e.g., host:port)
+        const char* colon = Strings::find_first_of(host_part, ":");
+        size_t colon_pos = colon[0] == '\0' ? std::string::npos : static_cast<size_t>(colon - host_part.data());
+        if (colon_pos != std::string::npos)
+        {
+            host_part = host_part.substr(0, colon_pos);
+        }
+
+        return std::string(host_part);
+    }
 }
 
 namespace vcpkg
@@ -290,8 +330,16 @@ namespace vcpkg
         std::string uri;
         if (auto github_server_url = maybe_github_server_url.get())
         {
-            uri = *github_server_url;
-            uri.append("/api/v3");
+            const auto host = extract_host(*github_server_url);
+            if (host != "github.com")
+            {
+                uri = *github_server_url;
+                uri.append("/api/v3");
+            }
+            else
+            {
+                uri = "https://api.github.com";
+            }
         }
         else
         {
