@@ -103,8 +103,6 @@ namespace vcpkg
         // reads any remaining chunks of the file; used to implement read_to_end
         void read_to_end_suffix(
             std::string& output, std::error_code& ec, char* buffer, size_t buffer_size, size_t last_read);
-        uint64_t size(LineInfo li) const;
-        uint64_t size(std::error_code& ec) const;
     };
 
     struct WriteFilePointer : FilePointer
