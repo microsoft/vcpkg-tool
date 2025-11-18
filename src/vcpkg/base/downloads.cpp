@@ -214,10 +214,11 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            mc = curl_multi_poll(multi_handle.get(), nullptr, 0, 1000, nullptr);
+            // we use curl_multi_wait rather than curl_multi_poll for wider compatibility
+            mc = curl_multi_wait(multi_handle.get(), nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
-                Debug::println("curl_multi_poll failed:");
+                Debug::println("curl_multi_wait failed:");
                 Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
                                    .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
                 Checks::unreachable(VCPKG_LINE_INFO);
