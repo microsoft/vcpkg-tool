@@ -1,5 +1,4 @@
 #include <vcpkg/base/contractual-constants.h>
-#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -76,7 +75,7 @@ namespace vcpkg
         }
 
         msg::println(msgDownloadingTools, msg::count = urlAndPaths.size());
-        auto result = download_files_no_cache(console_diagnostic_context, urlAndPaths, {}); // no headers
+        auto result = download_files_no_cache(console_diagnostic_context, urlAndPaths, {}, {});
 
         std::unordered_map<std::string, std::string> url_to_fixed_sha;
         auto http_codes_iter = result.begin();
@@ -107,7 +106,7 @@ namespace vcpkg
             ++http_codes_iter;
         }
 
-        if (!has_http_error && !has_sha_error)
+        if (!has_sha_error)
         {
             msg::println(msgAllShasValid);
         }

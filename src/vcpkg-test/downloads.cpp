@@ -120,25 +120,92 @@ TEST_CASE ("parse_split_url_view", "[downloads]")
     }
 }
 
-TEST_CASE ("download_files", "[downloads]")
+TEST_CASE ("parse_curl_status_line", "[downloads]")
 {
-    auto const dst = Test::base_temporary_directory() / "download_files";
-    real_filesystem.create_directories(dst, VCPKG_LINE_INFO);
-
-    static const std::vector<std::pair<std::string, Path>> test_downloads{
-        {"unknown://localhost:9/secret", dst / "test1"},
-        {"http://localhost:9/not-exists/secret", dst / "test2"},
+    std::vector<int> http_codes;
+    StringLiteral malformed_examples[] = {
+        "asdfasdf",                                       // wrong prefix
+        "curl: unknown --write-out variable: 'exitcode'", // wrong prefixes, and also what old curl does
+        "curl: unknown --write-out variable: 'errormsg'",
+        "prefix",      // missing spaces
+        "prefix42",    // missing spaces
+        "prefix42 2",  // missing space
+        "prefix42 2a", // non numeric exitcode
     };
 
     FullyBufferedDiagnosticContext bdc;
+    for (auto&& malformed : malformed_examples)
+    {
+        REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", malformed));
+        REQUIRE(http_codes.empty());
+        REQUIRE(bdc.empty());
+    }
+
+    // old curl output
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix200  "));
+    REQUIRE(http_codes == std::vector<int>{200});
+    REQUIRE(bdc.empty());
+    http_codes.clear();
+
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix404  "));
+    REQUIRE(http_codes == std::vector<int>{404});
+    REQUIRE(bdc.empty());
+    http_codes.clear();
+
+    REQUIRE(!parse_curl_status_line(bdc, http_codes, "prefix", "prefix0  ")); // a failure, but we don't know that yet
+    REQUIRE(http_codes == std::vector<int>{0});
+    REQUIRE(bdc.empty());
+    http_codes.clear();
+
+    // current curl output
+    REQUIRE(parse_curl_status_line(bdc, http_codes, "prefix", "prefix200 0 "));
+    REQUIRE(http_codes == std::vector<int>{200});
+    REQUIRE(bdc.empty());
+    http_codes.clear();
+
+    REQUIRE(parse_curl_status_line(
+        bdc,
+        http_codes,
+        "prefix",
+        "prefix0 60 schannel: SNI or certificate check failed: SEC_E_WRONG_PRINCIPAL (0x80090322) "
+        "- The target principal name is incorrect."));
+    REQUIRE(http_codes == std::vector<int>{0});
+    REQUIRE(bdc.to_string() ==
+            "error: curl operation failed with error code 60. schannel: SNI or certificate check failed: "
+            "SEC_E_WRONG_PRINCIPAL (0x80090322) - The target principal name is incorrect.");
+}
+
+TEST_CASE ("download_files", "[downloads]")
+{
+    auto const dst = Test::base_temporary_directory() / "download_files";
+    auto const url = [&](std::string l) -> auto { return std::pair(l, dst); };
+
+    FullyBufferedDiagnosticContext bdc;
     std::vector<std::string> headers;
-    auto results = download_files_no_cache(bdc, test_downloads, headers);
-    REQUIRE(results == std::vector<int>{-1, -1});
-    auto all_errors = Strings::split(bdc.to_string(), '\n');
-    REQUIRE(all_errors[0] == "error: curl operation failed with error code 1 (Unsupported protocol).");
-    // Old versions of libcurl use "Couldn't" on error messages
-    REQUIRE((all_errors[1] == "error: curl operation failed with error code 7 (Could not connect to server)." ||
-             all_errors[1] == "error: curl operation failed with error code 7 (Couldn't connect to server)."));
+    std::vector<std::string> secrets;
+    auto results = download_files_no_cache(
+        bdc,
+        std::vector{url("unknown://localhost:9/secret"), url("http://localhost:9/not-exists/secret")},
+        headers,
+        secrets);
+    REQUIRE(results == std::vector<int>{0, 0});
+    auto all_errors = bdc.to_string();
+    if (all_errors == "error: curl operation failed with error code 7.")
+    {
+        // old curl, this is OK!
+    }
+    else
+    {
+        // new curl
+        REQUIRE_THAT(
+            all_errors,
+            Catch::Matches("error: curl operation failed with error code 1\\. Protocol \"unknown\" not supported( or "
+                           "disabled in libcurl)?\n"
+                           "error: curl operation failed with error code 7\\. ((Failed to connect to localhost port 9 "
+                           "after [0-9]+ ms: ((Could not|Couldn't) connect to server|Connection refused))"
+                           "|(getsockname\\(\\) failed with errno 22: Invalid argument))",
+                           Catch::CaseSensitive::Yes));
+    }
 }
 
 TEST_CASE ("try_parse_curl_max5_size", "[downloads]")
@@ -307,7 +374,7 @@ TEST_CASE ("azblob", "[.][azblob]")
 
         FullyBufferedDiagnosticContext diagnostics{};
         auto plain_put_success = store_to_asset_cache(
-            diagnostics, plain_put_url, SanitizedUrl{url, {}}, azure_blob_headers(), data_filepath);
+            diagnostics, plain_put_url, SanitizedUrl{url, {}}, "PUT", azure_blob_headers(), data_filepath);
         INFO(diagnostics.to_string());
         CHECK(plain_put_success);
     }
@@ -326,7 +393,7 @@ TEST_CASE ("azblob", "[.][azblob]")
 
     {
         FullyBufferedDiagnosticContext diagnostics{};
-        auto results = download_files_no_cache(diagnostics, url_pairs, azure_blob_headers());
+        auto results = download_files_no_cache(diagnostics, url_pairs, azure_blob_headers(), {});
         INFO(diagnostics.to_string());
         CHECK(results == std::vector<int>{200, 200});
     }

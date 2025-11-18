@@ -70,8 +70,8 @@ namespace vcpkg
         {CommandCheckToolsShaMetadata, command_check_tools_sha_and_exit},
         {CommandInitRegistryMetadata, command_init_registry_and_exit},
         {CommandVersionMetadata, command_version_and_exit},
-        {CommandZUploadMetricsMetadata, command_z_upload_metrics_and_exit},
 #if defined(_WIN32)
+        {CommandZUploadMetricsMetadata, command_z_upload_metrics_and_exit},
         {CommandZApplocalMetadata, command_z_applocal_and_exit},
 #endif // defined(_WIN32)
         {CommandZGenerateDefaultMessageMapMetadata, command_z_generate_default_message_map_and_exit},

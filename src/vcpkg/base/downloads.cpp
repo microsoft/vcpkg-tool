@@ -1,6 +1,5 @@
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/contractual-constants.h>
-#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -16,23 +15,24 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.version.h>
+
 #include <set>
 
 using namespace vcpkg;
 
 namespace
 {
-    void set_common_curl_easy_options(CurlEasyHandle& easy_handle, StringView url, const CurlHeaders& request_headers)
+    constexpr StringLiteral vcpkg_curl_user_agent_header =
+        "User-Agent: vcpkg/" VCPKG_BASE_VERSION_AS_STRING "-" VCPKG_VERSION_AS_STRING " (curl)";
+
+    void add_curl_headers(Command& cmd, View<std::string> headers)
     {
-        auto* curl = easy_handle.get();
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(url).c_str());
-        curl_easy_setopt(curl,
-                         CURLOPT_FOLLOWLOCATION,
-                         2L); // Follow redirects, change request method based on HTTP response code.
-                              // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
-        curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
+        cmd.string_arg("-H").string_arg(vcpkg_curl_user_agent_header);
+        for (auto&& header : headers)
+        {
+            cmd.string_arg("-H").string_arg(header);
+        }
     }
 }
 
@@ -43,6 +43,547 @@ namespace vcpkg
     {
         replace_secrets(m_sanitized_url, secrets);
     }
+
+#if defined(_WIN32)
+    struct FormatMessageHLocalAlloc
+    {
+        LPWSTR buffer = nullptr;
+
+        ~FormatMessageHLocalAlloc()
+        {
+            if (buffer)
+            {
+                LocalFree(buffer);
+            }
+        }
+    };
+
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name,
+                                                             const SanitizedUrl& sanitized_url,
+                                                             DWORD last_error)
+    {
+        const HMODULE winhttp_module = GetModuleHandleW(L"winhttp.dll");
+        FormatMessageHLocalAlloc alloc;
+        DWORD tchars_excluding_terminating_null = 0;
+        if (winhttp_module)
+        {
+            tchars_excluding_terminating_null =
+                FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_HMODULE,
+                               winhttp_module,
+                               last_error,
+                               0,
+                               reinterpret_cast<LPWSTR>(&alloc.buffer),
+                               0,
+                               nullptr);
+        }
+
+        auto result = msg::format(
+            msgDownloadWinHttpError, msg::system_api = api_name, msg::exit_code = last_error, msg::url = sanitized_url);
+        if (tchars_excluding_terminating_null && alloc.buffer)
+        {
+            while (tchars_excluding_terminating_null != 0 &&
+                   (alloc.buffer[tchars_excluding_terminating_null - 1] == L'\r' ||
+                    alloc.buffer[tchars_excluding_terminating_null - 1] == L'\n'))
+            {
+                --tchars_excluding_terminating_null;
+            }
+
+            tchars_excluding_terminating_null = static_cast<DWORD>(
+                std::remove(alloc.buffer, alloc.buffer + tchars_excluding_terminating_null, L'\r') - alloc.buffer);
+            result.append_raw(' ').append_raw(Strings::to_utf8(alloc.buffer, tchars_excluding_terminating_null));
+        }
+
+        return result;
+    }
+
+    static LocalizedString format_winhttp_last_error_message(StringLiteral api_name, const SanitizedUrl& sanitized_url)
+    {
+        return format_winhttp_last_error_message(api_name, sanitized_url, GetLastError());
+    }
+
+    static void maybe_emit_winhttp_progress(MessageSink& machine_readable_progress,
+                                            const Optional<unsigned long long>& maybe_content_length,
+                                            std::chrono::steady_clock::time_point& last_write,
+                                            unsigned long long total_downloaded_size)
+    {
+        if (const auto content_length = maybe_content_length.get())
+        {
+            const auto now = std::chrono::steady_clock::now();
+            if ((now - last_write) >= std::chrono::milliseconds(100))
+            {
+                const double percent =
+                    (static_cast<double>(total_downloaded_size) / static_cast<double>(*content_length)) * 100;
+                machine_readable_progress.println(LocalizedString::from_raw(fmt::format("{:.2f}%", percent)));
+                last_write = now;
+            }
+        }
+    }
+
+    struct WinHttpHandle
+    {
+        WinHttpHandle() = default;
+        WinHttpHandle(const WinHttpHandle&) = delete;
+        WinHttpHandle& operator=(const WinHttpHandle&) = delete;
+
+        void require_null_handle() const
+        {
+            if (h)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "WinHTTP handle type confusion");
+            }
+        }
+
+        void require_created_handle() const
+        {
+            if (!h)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO, "WinHTTP handle not created");
+            }
+        }
+
+        bool Connect(DiagnosticContext& context,
+                     const WinHttpHandle& session,
+                     StringView hostname,
+                     INTERNET_PORT port,
+                     const SanitizedUrl& sanitized_url)
+        {
+            require_null_handle();
+            session.require_created_handle();
+            h = WinHttpConnect(session.h, Strings::to_utf16(hostname).c_str(), port, 0);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpConnect", sanitized_url));
+            return false;
+        }
+
+        bool Open(DiagnosticContext& context,
+                  const SanitizedUrl& sanitized_url,
+                  _In_opt_z_ LPCWSTR pszAgentW,
+                  _In_ DWORD dwAccessType,
+                  _In_opt_z_ LPCWSTR pszProxyW,
+                  _In_opt_z_ LPCWSTR pszProxyBypassW,
+                  _In_ DWORD dwFlags)
+        {
+            require_null_handle();
+            h = WinHttpOpen(pszAgentW, dwAccessType, pszProxyW, pszProxyBypassW, dwFlags);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpOpen", sanitized_url));
+            return false;
+        }
+
+        bool OpenRequest(DiagnosticContext& context,
+                         const WinHttpHandle& hConnect,
+                         const SanitizedUrl& sanitized_url,
+                         IN LPCWSTR pwszVerb,
+                         StringView path_query_fragment,
+                         IN LPCWSTR pwszVersion,
+                         IN LPCWSTR pwszReferrer OPTIONAL,
+                         IN LPCWSTR FAR* ppwszAcceptTypes OPTIONAL,
+                         IN DWORD dwFlags)
+        {
+            require_null_handle();
+            h = WinHttpOpenRequest(hConnect.h,
+                                   pwszVerb,
+                                   Strings::to_utf16(path_query_fragment).c_str(),
+                                   pwszVersion,
+                                   pwszReferrer,
+                                   ppwszAcceptTypes,
+                                   dwFlags);
+            if (h)
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpOpenRequest", sanitized_url));
+            return false;
+        }
+
+        bool SendRequest(DiagnosticContext& context,
+                         const SanitizedUrl& sanitized_url,
+                         _In_reads_opt_(dwHeadersLength) LPCWSTR lpszHeaders,
+                         IN DWORD dwHeadersLength,
+                         _In_reads_bytes_opt_(dwOptionalLength) LPVOID lpOptional,
+                         IN DWORD dwOptionalLength,
+                         IN DWORD dwTotalLength,
+                         IN DWORD_PTR dwContext) const
+        {
+            require_created_handle();
+            if (WinHttpSendRequest(
+                    h, lpszHeaders, dwHeadersLength, lpOptional, dwOptionalLength, dwTotalLength, dwContext))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSendRequest", sanitized_url));
+            return false;
+        }
+
+        bool ReceiveResponse(DiagnosticContext& context, const SanitizedUrl& url)
+        {
+            require_created_handle();
+            if (WinHttpReceiveResponse(h, NULL))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpReceiveResponse", url));
+            return false;
+        }
+
+        bool SetTimeouts(DiagnosticContext& context,
+                         const SanitizedUrl& sanitized_url,
+                         int nResolveTimeout,
+                         int nConnectTimeout,
+                         int nSendTimeout,
+                         int nReceiveTimeout) const
+        {
+            require_created_handle();
+            if (WinHttpSetTimeouts(h, nResolveTimeout, nConnectTimeout, nSendTimeout, nReceiveTimeout))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSetTimeouts", sanitized_url));
+            return false;
+        }
+
+        bool SetOption(DiagnosticContext& context,
+                       const SanitizedUrl& sanitized_url,
+                       DWORD dwOption,
+                       LPVOID lpBuffer,
+                       DWORD dwBufferLength) const
+        {
+            require_created_handle();
+            if (WinHttpSetOption(h, dwOption, lpBuffer, dwBufferLength))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpSetOption", sanitized_url));
+            return false;
+        }
+
+        DWORD QueryHeaders(DiagnosticContext& context,
+                           const SanitizedUrl& sanitized_url,
+                           DWORD dwInfoLevel,
+                           LPWSTR pwszName,
+                           LPVOID lpBuffer,
+                           LPDWORD lpdwBufferLength,
+                           LPDWORD lpdwIndex) const
+        {
+            require_created_handle();
+            if (WinHttpQueryHeaders(h, dwInfoLevel, pwszName, lpBuffer, lpdwBufferLength, lpdwIndex))
+            {
+                return 0;
+            }
+
+            DWORD last_error = GetLastError();
+            context.report_error(format_winhttp_last_error_message("WinHttpQueryHeaders", sanitized_url, last_error));
+            return last_error;
+        }
+
+        bool ReadData(DiagnosticContext& context,
+                      const SanitizedUrl& sanitized_url,
+                      LPVOID buffer,
+                      DWORD dwNumberOfBytesToRead,
+                      DWORD* numberOfBytesRead)
+        {
+            require_created_handle();
+            if (WinHttpReadData(h, buffer, dwNumberOfBytesToRead, numberOfBytesRead))
+            {
+                return true;
+            }
+
+            context.report_error(format_winhttp_last_error_message("WinHttpReadData", sanitized_url));
+            return false;
+        }
+
+        ~WinHttpHandle()
+        {
+            if (h)
+            {
+                // intentionally ignore failures
+                (void)WinHttpCloseHandle(h);
+            }
+        }
+
+    private:
+        HINTERNET h{};
+    };
+
+    enum class WinHttpTrialResult
+    {
+        failed,
+        succeeded,
+        retry
+    };
+
+    struct WinHttpSession
+    {
+        bool open(DiagnosticContext& context, const SanitizedUrl& sanitized_url)
+        {
+            if (!m_hSession.Open(context,
+                                 sanitized_url,
+                                 L"vcpkg/1.0",
+                                 WINHTTP_ACCESS_TYPE_NO_PROXY,
+                                 WINHTTP_NO_PROXY_NAME,
+                                 WINHTTP_NO_PROXY_BYPASS,
+                                 0))
+            {
+                return false;
+            }
+
+            // Increase default timeouts to help connections behind proxies
+            // WinHttpSetTimeouts(HINTERNET hInternet, int nResolveTimeout, int nConnectTimeout, int nSendTimeout, int
+            // nReceiveTimeout);
+            if (!m_hSession.SetTimeouts(context, sanitized_url, 0, 120000, 120000, 120000))
+            {
+                return false;
+            }
+
+            // If the environment variable HTTPS_PROXY is set
+            // use that variable as proxy. This situation might exist when user is in a company network
+            // with restricted network/proxy settings
+            auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+            if (auto p_https_proxy = maybe_https_proxy_env.get())
+            {
+                StringView p_https_proxy_view = *p_https_proxy;
+                if (p_https_proxy_view.size() != 0 && p_https_proxy_view.back() == '/')
+                {
+                    // remove trailing slash
+                    p_https_proxy_view = p_https_proxy_view.substr(0, p_https_proxy_view.size() - 1);
+                }
+
+                std::wstring env_proxy_settings = Strings::to_utf16(p_https_proxy_view);
+                WINHTTP_PROXY_INFO proxy;
+                proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                proxy.lpszProxy = env_proxy_settings.data();
+
+                // Try to get bypass list from environment variable
+                auto maybe_no_proxy_env = get_environment_variable(EnvironmentVariableNoProxy);
+                std::wstring env_noproxy_settings;
+                if (auto p_no_proxy = maybe_no_proxy_env.get())
+                {
+                    env_noproxy_settings = Strings::to_utf16(*p_no_proxy);
+                    proxy.lpszProxyBypass = env_noproxy_settings.data();
+                }
+                else
+                {
+                    proxy.lpszProxyBypass = nullptr;
+                }
+
+                if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+                {
+                    return false;
+                }
+            }
+            // IE Proxy fallback, this works on Windows 10
+            else
+            {
+                // We do not use WPAD anymore
+                // Directly read IE Proxy setting
+                auto ieProxy = get_windows_ie_proxy_server();
+                if (ieProxy.has_value())
+                {
+                    WINHTTP_PROXY_INFO proxy;
+                    proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+                    proxy.lpszProxy = ieProxy.get()->server.data();
+                    proxy.lpszProxyBypass = ieProxy.get()->bypass.data();
+                    if (!m_hSession.SetOption(context, sanitized_url, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            // Use Windows 10 defaults on Windows 7
+            DWORD secure_protocols(WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 |
+                                   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2);
+            if (!m_hSession.SetOption(context,
+                                      sanitized_url,
+                                      WINHTTP_OPTION_SECURE_PROTOCOLS,
+                                      &secure_protocols,
+                                      sizeof(secure_protocols)))
+            {
+                return false;
+            }
+
+            // Many open source mirrors such as https://download.gnome.org/ will redirect to http mirrors.
+            // `curl.exe -L` does follow https -> http redirection.
+            // Additionally, vcpkg hash checks the resulting archive.
+            DWORD redirect_policy(WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS);
+            if (!m_hSession.SetOption(
+                    context, sanitized_url, WINHTTP_OPTION_REDIRECT_POLICY, &redirect_policy, sizeof(redirect_policy)))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        WinHttpHandle m_hSession;
+    };
+
+    struct WinHttpConnection
+    {
+        bool connect(DiagnosticContext& context,
+                     const WinHttpSession& hSession,
+                     StringView hostname,
+                     INTERNET_PORT port,
+                     const SanitizedUrl& sanitized_url)
+        {
+            // Specify an HTTP server.
+            return m_hConnect.Connect(context, hSession.m_hSession, hostname, port, sanitized_url);
+        }
+
+        WinHttpHandle m_hConnect;
+    };
+
+    struct WinHttpRequest
+    {
+        bool open(DiagnosticContext& context,
+                  const WinHttpConnection& hConnect,
+                  StringView path_query_fragment,
+                  const SanitizedUrl& sanitized_url,
+                  bool https,
+                  const wchar_t* method = L"GET")
+        {
+            if (!m_hRequest.OpenRequest(context,
+                                        hConnect.m_hConnect,
+                                        sanitized_url,
+                                        method,
+                                        path_query_fragment,
+                                        nullptr,
+                                        WINHTTP_NO_REFERER,
+                                        WINHTTP_DEFAULT_ACCEPT_TYPES,
+                                        https ? WINHTTP_FLAG_SECURE : 0))
+            {
+                return false;
+            }
+
+            // Send a request.
+            if (!m_hRequest.SendRequest(
+                    context, sanitized_url, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
+            {
+                return false;
+            }
+
+            // End the request.
+            if (!m_hRequest.ReceiveResponse(context, sanitized_url))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        Optional<int> query_status(DiagnosticContext& context, const SanitizedUrl& sanitized_url) const
+        {
+            DWORD status_code;
+            DWORD size = sizeof(status_code);
+            DWORD last_error = m_hRequest.QueryHeaders(context,
+                                                       sanitized_url,
+                                                       WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                                       WINHTTP_HEADER_NAME_BY_INDEX,
+                                                       &status_code,
+                                                       &size,
+                                                       WINHTTP_NO_HEADER_INDEX);
+            if (last_error)
+            {
+                return nullopt;
+            }
+
+            return status_code;
+        }
+
+        bool query_content_length(DiagnosticContext& context,
+                                  const SanitizedUrl& sanitized_url,
+                                  Optional<unsigned long long>& result) const
+        {
+            static constexpr DWORD buff_characters = 21; // 18446744073709551615
+            wchar_t buff[buff_characters];
+            DWORD size = sizeof(buff);
+            AttemptDiagnosticContext adc{context};
+            DWORD last_error = m_hRequest.QueryHeaders(adc,
+                                                       sanitized_url,
+                                                       WINHTTP_QUERY_CONTENT_LENGTH,
+                                                       WINHTTP_HEADER_NAME_BY_INDEX,
+                                                       buff,
+                                                       &size,
+                                                       WINHTTP_NO_HEADER_INDEX);
+            if (!last_error)
+            {
+                adc.commit();
+                result = Strings::strto<unsigned long long>(Strings::to_utf8(buff, size >> 1));
+                return true;
+            }
+
+            if (last_error == ERROR_WINHTTP_HEADER_NOT_FOUND)
+            {
+                adc.handle();
+                return true;
+            }
+
+            adc.commit();
+            return false;
+        }
+
+        WinHttpTrialResult write_response_body(DiagnosticContext& context,
+                                               MessageSink& machine_readable_progress,
+                                               const SanitizedUrl& sanitized_url,
+                                               const WriteFilePointer& file)
+        {
+            static constexpr DWORD buff_size = 65535;
+            std::unique_ptr<char[]> buff{new char[buff_size]};
+            Optional<unsigned long long> maybe_content_length;
+            auto last_write = std::chrono::steady_clock::now();
+            if (!query_content_length(context, sanitized_url, maybe_content_length))
+            {
+                return WinHttpTrialResult::retry;
+            }
+
+            unsigned long long total_downloaded_size = 0;
+            for (;;)
+            {
+                DWORD this_read;
+                if (!m_hRequest.ReadData(context, sanitized_url, buff.get(), buff_size, &this_read))
+                {
+                    return WinHttpTrialResult::retry;
+                }
+
+                if (this_read == 0)
+                {
+                    return WinHttpTrialResult::succeeded;
+                }
+
+                do
+                {
+                    const auto this_write = static_cast<DWORD>(file.write(buff.get(), 1, this_read));
+                    if (this_write == 0)
+                    {
+                        context.report_error(format_filesystem_call_error(
+                            std::error_code{errno, std::generic_category()}, "fwrite", {file.path()}));
+                        return WinHttpTrialResult::failed;
+                    }
+
+                    maybe_emit_winhttp_progress(
+                        machine_readable_progress, maybe_content_length, last_write, total_downloaded_size);
+                    this_read -= this_write;
+                    total_downloaded_size += this_write;
+                } while (this_read > 0);
+            }
+        }
+
+        WinHttpHandle m_hRequest;
+    };
+#endif
 
     Optional<SplitUrlView> parse_split_url_view(StringView raw_url)
     {
@@ -131,164 +672,107 @@ namespace vcpkg
         return true;
     }
 
-    static size_t write_file_callback(void* contents, size_t size, size_t nmemb, void* param)
+    static std::vector<int> curl_bulk_operation(DiagnosticContext& context,
+                                                View<Command> operation_args,
+                                                StringLiteral prefixArgs,
+                                                View<std::string> headers,
+                                                View<std::string> secrets)
     {
-        if (!param) return 0;
-        return static_cast<WriteFilePointer*>(param)->write(contents, size, nmemb);
-    }
-
-    static size_t progress_callback(
-        void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
-    {
-        (void)ultotal;
-        (void)ulnow;
-        auto machine_readable_progress = static_cast<MessageSink*>(clientp);
-        if (dltotal && machine_readable_progress)
+#define GUID_MARKER "5ec47b8e-6776-4d70-b9b3-ac2a57bc0a1c"
+        static constexpr StringLiteral guid_marker = GUID_MARKER;
+        Command prefix_cmd{"curl"};
+        if (!prefixArgs.empty())
         {
-            double percentage = static_cast<double>(dlnow) / static_cast<double>(dltotal) * 100.0;
-            machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percentage)));
-        }
-        return 0;
-    }
-
-    static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
-                                                   View<std::string> urls,
-                                                   View<Path> outputs,
-                                                   View<std::string> headers)
-    {
-        if (!outputs.empty() && outputs.size() != urls.size())
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            prefix_cmd.raw_arg(prefixArgs);
         }
 
-        std::vector<int> return_codes(urls.size(), -1);
+        prefix_cmd.string_arg("--retry").string_arg("3").string_arg("-L").string_arg("-sS").string_arg("-w").string_arg(
+            GUID_MARKER "%{http_code} %{exitcode} %{errormsg}\\n");
+#undef GUID_MARKER
 
-        CurlHeaders request_headers(headers);
-
-        std::vector<WriteFilePointer> write_pointers;
-        write_pointers.reserve(urls.size());
-
-        std::vector<CurlEasyHandle> easy_handles;
-        easy_handles.resize(urls.size());
-
-        CurlMultiHandle multi_handle;
-        for (size_t request_index = 0; request_index < urls.size(); ++request_index)
+        std::vector<int> ret;
+        ret.reserve(operation_args.size());
+        add_curl_headers(prefix_cmd, headers);
+        while (ret.size() != operation_args.size())
         {
-            const auto& url = urls[request_index];
-            auto& easy_handle = easy_handles[request_index];
-            auto* curl = easy_handle.get();
+            // there's an edge case that we aren't handling here where not even one operation fits with the configured
+            // headers but this seems unlikely
 
-            set_common_curl_easy_options(easy_handle, url, request_headers);
-            if (outputs.empty())
+            // form a maximum length command line of operations:
+            auto batch_cmd = prefix_cmd;
+            size_t last_try_op = ret.size();
+            while (last_try_op != operation_args.size() && batch_cmd.try_append(operation_args[last_try_op]))
             {
-                curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
+                ++last_try_op;
+            }
+
+            // actually run curl
+            bool new_curl_seen = false;
+            std::vector<std::string> debug_lines;
+            auto maybe_this_batch_exit_code = cmd_execute_and_stream_lines(context, batch_cmd, [&](StringView line) {
+                debug_lines.emplace_back(line.data(), line.size());
+                new_curl_seen |= parse_curl_status_line(context, ret, guid_marker, line);
+            });
+
+            if (auto this_batch_exit_code = maybe_this_batch_exit_code.get())
+            {
+                if (!new_curl_seen)
+                {
+                    // old version of curl, we only have the result code for the last operation
+                    context.report_error(msgCurlFailedGeneric, msg::exit_code = *this_batch_exit_code);
+                }
+
+                if (ret.size() != last_try_op)
+                {
+                    // curl didn't process everything we asked of it; this usually means curl crashed
+                    auto command_line = std::move(batch_cmd).extract();
+                    replace_secrets(command_line, secrets);
+                    context.report_error_with_log(Strings::join("\n", debug_lines),
+                                                  msgCurlFailedToReturnExpectedNumberOfExitCodes,
+                                                  msg::exit_code = *this_batch_exit_code,
+                                                  msg::command_line = command_line);
+                    return ret;
+                }
             }
             else
             {
-                const auto& output = outputs[request_index];
-                std::error_code ec;
-                auto& request_write_pointer = write_pointers.emplace_back(output, Append::NO, ec);
-                if (ec)
-                {
-                    context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
-                    Checks::unreachable(VCPKG_LINE_INFO);
-                }
-
-                curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
-                // note explicit cast to void* necessary to go through ...
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-                multi_handle.add_easy_handle(easy_handle);
+                // couldn't even launch curl, record this as the last fatal error and give up
+                return ret;
             }
         }
 
-        int still_running = 0;
-        do
-        {
-            CURLMcode mc = curl_multi_perform(multi_handle.get(), &still_running);
-            if (mc != CURLM_OK)
-            {
-                Debug::println("curl_multi_perform failed:");
-                Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
-                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-
-            // we use curl_multi_wait rather than curl_multi_poll for wider compatibility
-            mc = curl_multi_wait(multi_handle.get(), nullptr, 0, 1000, nullptr);
-            if (mc != CURLM_OK)
-            {
-                Debug::println("curl_multi_wait failed:");
-                Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
-                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
-                Checks::unreachable(VCPKG_LINE_INFO);
-            }
-        } while (still_running);
-
-        // drain all messages
-        int messages_in_queue = 0;
-        while (auto* msg = curl_multi_info_read(multi_handle.get(), &messages_in_queue))
-        {
-            if (msg->msg == CURLMSG_DONE)
-            {
-                CURL* handle = msg->easy_handle;
-                if (msg->data.result == CURLE_OK)
-                {
-                    size_t idx;
-                    void* curlinfo_private;
-                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &curlinfo_private);
-                    if (outputs.empty())
-                    {
-                        idx = reinterpret_cast<uintptr_t>(curlinfo_private);
-                    }
-                    else
-                    {
-                        if (!curlinfo_private)
-                        {
-                            Checks::unreachable(VCPKG_LINE_INFO);
-                        }
-                        auto request_write_handle = static_cast<WriteFilePointer*>(curlinfo_private);
-                        idx = request_write_handle - write_pointers.data();
-                    }
-
-                    long response_code;
-                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
-                    return_codes[idx] = static_cast<int>(response_code);
-                }
-                else
-                {
-                    context.report_error(
-                        msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(msg->data.result))
-                            .append_raw(fmt::format(" ({}).", curl_easy_strerror(msg->data.result))));
-                }
-            }
-        }
-        return return_codes;
+        return ret;
     }
 
-    static std::vector<int> libcurl_bulk_check(DiagnosticContext& context,
-                                               View<std::string> urls,
-                                               View<std::string> headers)
+    std::vector<int> url_heads(DiagnosticContext& context,
+                               View<std::string> urls,
+                               View<std::string> headers,
+                               View<std::string> secrets)
     {
-        return libcurl_bulk_operation(context,
-                                      urls,
-                                      {}, // no output
-                                      headers);
-    }
-
-    std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers)
-    {
-        return libcurl_bulk_check(context, urls, headers);
+        return curl_bulk_operation(
+            context,
+            Util::fmap(urls, [](const std::string& url) { return Command{}.string_arg(url_encode_spaces(url)); }),
+            "--head",
+            headers,
+            secrets);
     }
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
                                              View<std::pair<std::string, Path>> url_pairs,
-                                             View<std::string> headers)
+                                             View<std::string> headers,
+                                             View<std::string> secrets)
     {
-        return libcurl_bulk_operation(context,
-                                      Util::fmap(url_pairs, [](auto&& kv) -> std::string { return kv.first; }),
-                                      Util::fmap(url_pairs, [](auto&& kv) -> Path { return kv.second; }),
-                                      headers);
+        return curl_bulk_operation(context,
+                                   Util::fmap(url_pairs,
+                                              [](const std::pair<std::string, Path>& url_pair) {
+                                                  return Command{}
+                                                      .string_arg(url_encode_spaces(url_pair.first))
+                                                      .string_arg("-o")
+                                                      .string_arg(url_pair.second);
+                                              }),
+                                   "--create-dirs",
+                                   headers,
+                                   secrets);
     }
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
@@ -297,6 +781,8 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
+        static constexpr StringLiteral guid_marker = "fcfad8a3-bb68-4a54-ad00-dab1ff671ed2";
+
         std::string uri;
         if (auto github_server_url = maybe_github_server_url.get())
         {
@@ -311,92 +797,93 @@ namespace vcpkg
         fmt::format_to(
             std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
 
-        CurlEasyHandle handle;
-        CURL* curl = handle.get();
-
-        std::string post_data = Json::stringify(snapshot);
-
-        std::string headers[]{
-            "Accept: application/vnd.github+json",
-            ("Authorization: Bearer " + github_token),
-            "X-GitHub-Api-Version: 2022-11-28",
-            "Content-Type: application/json",
-        };
-
-        CurlHeaders request_headers(headers);
-        set_common_curl_easy_options(handle, uri, request_headers);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
-
-        CURLcode result = curl_easy_perform(curl);
-        long response_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-
-        if (result != CURLE_OK)
+        auto cmd = Command{"curl"};
+        cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        cmd.string_arg("-X").string_arg("POST");
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
-            return false;
+            std::string headers[] = {
+                "Accept: application/vnd.github+json",
+                "Authorization: Bearer " + github_token,
+                "X-GitHub-Api-Version: 2022-11-28",
+            };
+            add_curl_headers(cmd, headers);
         }
 
-        return response_code >= 200 && response_code < 300;
-    }
+        cmd.string_arg(uri);
+        cmd.string_arg("-d").string_arg("@-");
 
-    static size_t read_file_callback(char* buffer, size_t size, size_t nitems, void* param)
-    {
-        auto* file = static_cast<ReadFilePointer*>(param);
-        return file->read(buffer, size, nitems);
+        RedirectedProcessLaunchSettings settings;
+        settings.stdin_content = Json::stringify(snapshot);
+        int code = 0;
+        auto result = cmd_execute_and_stream_lines(context, cmd, settings, [&code](StringView line) {
+            if (line.starts_with(guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
+
+        auto r = result.get();
+        if (r && *r == 0 && code >= 200 && code < 300)
+        {
+            return true;
+        }
+        return false;
     }
 
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
+                              StringLiteral method,
                               View<std::string> headers,
                               const Path& file)
     {
-        std::error_code ec;
-        ReadFilePointer fileptr(file, ec);
-        if (ec)
-        {
-            context.report_error(format_filesystem_call_error(ec, "fopen", {file}));
-            return false;
-        }
-        auto file_size = fileptr.size(ec);
-        if (ec)
-        {
-            context.report_error(format_filesystem_call_error(ec, "fstat", {file}));
-            return false;
-        }
+        static constexpr StringLiteral guid_marker = "9a1db05f-a65d-419b-aa72-037fb4d0672e";
 
-        CurlEasyHandle handle;
-        CURL* curl = handle.get();
-
-        auto request_headers = raw_url.starts_with("ftp://") ? CurlHeaders() : CurlHeaders(headers);
-        auto upload_url = url_encode_spaces(raw_url);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
-        curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
-        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl, CURLOPT_READDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
-
-        auto result = curl_easy_perform(curl);
-        if (result != CURLE_OK)
+        if (raw_url.starts_with("ftp://"))
         {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
+            // HTTP headers are ignored for FTP clients
+            auto ftp_cmd = Command{"curl"};
+            ftp_cmd.string_arg(url_encode_spaces(raw_url));
+            ftp_cmd.string_arg("-T").string_arg(file);
+            auto maybe_res = cmd_execute_and_capture_output(context, ftp_cmd);
+            if (auto res = maybe_res.get())
+            {
+                if (res->exit_code == 0)
+                {
+                    return true;
+                }
+
+                context.report_error_with_log(
+                    res->output, msgCurlFailedToPut, msg::exit_code = res->exit_code, msg::url = sanitized_url);
+                return false;
+            }
+
             return false;
         }
 
-        long response_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        auto http_cmd = Command{"curl"}.string_arg("-X").string_arg(method);
+        add_curl_headers(http_cmd, headers);
+        http_cmd.string_arg("-w").string_arg("\\n" + guid_marker.to_string() + "%{http_code}");
+        http_cmd.string_arg(raw_url);
+        http_cmd.string_arg("-T").string_arg(file);
+        int code = 0;
+        auto res = cmd_execute_and_stream_lines(context, http_cmd, [&code](StringView line) {
+            if (line.starts_with(guid_marker))
+            {
+                code = std::strtol(line.data() + guid_marker.size(), nullptr, 10);
+            }
+        });
 
-        if ((response_code >= 100 && response_code < 200) || response_code >= 300)
+        auto pres = res.get();
+        if (!pres)
         {
-            context.report_error(msg::format(msgCurlFailedToPut, msg::url = sanitized_url, msg::value = response_code));
+            return false;
+        }
+
+        if (*pres != 0 || (code >= 100 && code < 200) || code >= 300)
+        {
+            context.report_error(msg::format(
+                msgCurlFailedToPutHttp, msg::exit_code = *pres, msg::url = sanitized_url, msg::value = code));
             return false;
         }
 
@@ -450,14 +937,169 @@ namespace vcpkg
         return fmt::format(FMT_COMPILE("{}?{}"), base_url, fmt::join(query_params, "&"));
     }
 
+    Optional<std::string> invoke_http_request(DiagnosticContext& context,
+                                              StringLiteral method,
+                                              View<std::string> headers,
+                                              StringView raw_url,
+                                              View<std::string> secrets,
+                                              StringView data)
+    {
+        auto cmd = Command{"curl"}.string_arg("-s").string_arg("-L");
+        add_curl_headers(cmd, headers);
+
+        cmd.string_arg("-X").string_arg(method);
+
+        if (!data.empty())
+        {
+            cmd.string_arg("--data-raw").string_arg(data);
+        }
+
+        cmd.string_arg(url_encode_spaces(raw_url));
+
+        auto maybe_output = cmd_execute_and_capture_output(context, cmd);
+        if (auto output = check_zero_exit_code(
+                context, cmd, maybe_output, RedirectedProcessLaunchSettings{}.echo_in_debug, secrets))
+        {
+            return *output;
+        }
+
+        return nullopt;
+    }
+
+#if defined(_WIN32)
+    static WinHttpTrialResult download_winhttp_trial(DiagnosticContext& context,
+                                                     MessageSink& machine_readable_progress,
+                                                     const Filesystem& fs,
+                                                     const WinHttpSession& s,
+                                                     const Path& download_path_part_path,
+                                                     SplitUrlView split_uri_view,
+                                                     StringView hostname,
+                                                     INTERNET_PORT port,
+                                                     const SanitizedUrl& sanitized_url)
+    {
+        WinHttpConnection conn;
+        if (!conn.connect(context, s, hostname, port, sanitized_url))
+        {
+            return WinHttpTrialResult::retry;
+        }
+
+        WinHttpRequest req;
+        if (!req.open(
+                context, conn, split_uri_view.path_query_fragment, sanitized_url, split_uri_view.scheme == "https"))
+        {
+            return WinHttpTrialResult::retry;
+        }
+
+        auto maybe_status = req.query_status(context, sanitized_url);
+        const auto status = maybe_status.get();
+        if (!status)
+        {
+            return WinHttpTrialResult::retry;
+        }
+
+        if (*status < 200 || *status >= 300)
+        {
+            context.report_error(msgDownloadFailedStatusCode, msg::url = sanitized_url, msg::value = *status);
+            return WinHttpTrialResult::failed;
+        }
+
+        return req.write_response_body(context,
+                                       machine_readable_progress,
+                                       sanitized_url,
+                                       fs.open_for_write(download_path_part_path, VCPKG_LINE_INFO));
+    }
+
+    /// <summary>
+    /// Download a file using WinHTTP -- only supports HTTP and HTTPS
+    /// </summary>
+    static bool download_winhttp(DiagnosticContext& context,
+                                 MessageSink& machine_readable_progress,
+                                 const Filesystem& fs,
+                                 const Path& download_path_part_path,
+                                 SplitUrlView split_url_view,
+                                 const SanitizedUrl& sanitized_url)
+    {
+        // `download_winhttp` does not support user or port syntax in authorities
+        auto hostname = split_url_view.authority.value_or_exit(VCPKG_LINE_INFO).substr(2);
+        INTERNET_PORT port;
+        if (split_url_view.scheme == "https")
+        {
+            port = INTERNET_DEFAULT_HTTPS_PORT;
+        }
+        else if (split_url_view.scheme == "http")
+        {
+            port = INTERNET_DEFAULT_HTTP_PORT;
+        }
+        else
+        {
+            Checks::unreachable(VCPKG_LINE_INFO);
+        }
+
+        // Make sure the directories are present, otherwise fopen_s fails
+        const auto dir = download_path_part_path.parent_path();
+        if (!dir.empty())
+        {
+            fs.create_directories(dir, VCPKG_LINE_INFO);
+        }
+
+        WinHttpSession s;
+        if (!s.open(context, sanitized_url))
+        {
+            return false;
+        }
+
+        AttemptDiagnosticContext adc{context};
+        switch (download_winhttp_trial(adc,
+                                       machine_readable_progress,
+                                       fs,
+                                       s,
+                                       download_path_part_path,
+                                       split_url_view,
+                                       hostname,
+                                       port,
+                                       sanitized_url))
+        {
+            case WinHttpTrialResult::succeeded: adc.commit(); return true;
+            case WinHttpTrialResult::failed: adc.commit(); return false;
+            case WinHttpTrialResult::retry: break;
+        }
+
+        for (size_t trials = 1; trials < 4; ++trials)
+        {
+            // 1s, 2s, 4s
+            const auto trialMs = 500 << trials;
+            adc.handle();
+            context.statusln(
+                DiagnosticLine(DiagKind::Warning,
+                               msg::format(msgDownloadFailedRetrying, msg::value = trialMs, msg::url = sanitized_url))
+                    .to_message_line());
+            std::this_thread::sleep_for(std::chrono::milliseconds(trialMs));
+            switch (download_winhttp_trial(adc,
+                                           machine_readable_progress,
+                                           fs,
+                                           s,
+                                           download_path_part_path,
+                                           split_url_view,
+                                           hostname,
+                                           port,
+                                           sanitized_url))
+            {
+                case WinHttpTrialResult::succeeded: adc.commit(); return true;
+                case WinHttpTrialResult::failed: adc.commit(); return false;
+                case WinHttpTrialResult::retry: break;
+            }
+        }
+
+        adc.commit();
+        return false;
+    }
+#endif
+
     enum class DownloadPrognosis
     {
         Success,
         OtherError,
-        NetworkErrorProxyMightHelp,
-        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
-        // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
-        TransientNetworkError
+        NetworkErrorProxyMightHelp
     };
 
     static bool check_combine_download_prognosis(DownloadPrognosis& target, DownloadPrognosis individual_call)
@@ -491,71 +1133,6 @@ namespace vcpkg
         }
     }
 
-    static DownloadPrognosis perform_download(DiagnosticContext& context,
-                                              MessageSink& machine_readable_progress,
-                                              StringView raw_url,
-                                              const Path& download_path,
-                                              View<std::string> headers)
-    {
-        std::error_code ec;
-        WriteFilePointer fileptr(download_path, Append::NO, ec);
-        if (ec)
-        {
-            context.report_error(format_filesystem_call_error(ec, "fopen", {download_path}));
-            return DownloadPrognosis::OtherError;
-        }
-
-        CurlHeaders request_headers(headers);
-
-        CurlEasyHandle handle;
-        CURL* curl = handle.get();
-        set_common_curl_easy_options(handle, raw_url, request_headers);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
-        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
-        auto curl_code = curl_easy_perform(curl);
-
-        if (curl_code == CURLE_OPERATION_TIMEDOUT)
-        {
-            context.report_error(msgCurlDownloadTimeout);
-            return DownloadPrognosis::TransientNetworkError;
-        }
-
-        if (curl_code != CURLE_OK)
-        {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(curl_code))));
-            return DownloadPrognosis::NetworkErrorProxyMightHelp;
-        }
-
-        long response_code = -1;
-        auto get_info_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-        if (get_info_code != CURLE_OK)
-        {
-            context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(get_info_code))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(get_info_code))));
-            return DownloadPrognosis::NetworkErrorProxyMightHelp;
-        }
-
-        if ((response_code >= 200 && response_code < 300) || (raw_url.starts_with("file://") && response_code == 0))
-        {
-            return DownloadPrognosis::Success;
-        }
-
-        if (response_code == 429 || response_code == 408 || response_code == 500 || response_code == 502 ||
-            response_code == 503 || response_code == 504)
-        {
-            context.report_error(
-                msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
-            return DownloadPrognosis::TransientNetworkError;
-        }
-
-        context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
-        return DownloadPrognosis::NetworkErrorProxyMightHelp;
-    }
-
     static DownloadPrognosis try_download_file(DiagnosticContext& context,
                                                MessageSink& machine_readable_progress,
                                                const Filesystem& fs,
@@ -575,6 +1152,59 @@ namespace vcpkg
 #endif
         download_path_part_path += ".part";
 
+#if defined(_WIN32)
+        auto maybe_https_proxy_env = get_environment_variable(EnvironmentVariableHttpsProxy);
+        bool needs_proxy_auth = false;
+        if (auto proxy_url = maybe_https_proxy_env.get())
+        {
+            needs_proxy_auth = proxy_url->find('@') != std::string::npos;
+        }
+        if (headers.size() == 0 && !needs_proxy_auth)
+        {
+            auto maybe_split_uri_view = parse_split_url_view(raw_url);
+            auto split_uri_view = maybe_split_uri_view.get();
+            if (!split_uri_view)
+            {
+                context.report_error(msgInvalidUri, msg::value = sanitized_url);
+                return DownloadPrognosis::OtherError;
+            }
+
+            if (split_uri_view->scheme == "https" || split_uri_view->scheme == "http")
+            {
+                auto maybe_authority = split_uri_view->authority.get();
+                if (!maybe_authority)
+                {
+                    context.report_error(msg::format(msgInvalidUri, msg::value = sanitized_url));
+                    return DownloadPrognosis::OtherError;
+                }
+
+                auto authority = StringView{*maybe_authority}.substr(2);
+                // This check causes complex URLs (non-default port, embedded basic auth) to be passed down to
+                // curl.exe
+                if (Strings::find_first_of(authority, ":@") == authority.end())
+                {
+                    if (!download_winhttp(context,
+                                          machine_readable_progress,
+                                          fs,
+                                          download_path_part_path,
+                                          *split_uri_view,
+                                          sanitized_url))
+                    {
+                        return DownloadPrognosis::NetworkErrorProxyMightHelp;
+                    }
+
+                    if (!check_downloaded_file_hash(
+                            context, fs, sanitized_url, download_path_part_path, maybe_sha512, out_sha512))
+                    {
+                        return DownloadPrognosis::OtherError;
+                    }
+
+                    fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                    return DownloadPrognosis::Success;
+                }
+            }
+        }
+#endif
         // Create directory in advance, otherwise curl will create it in 750 mode on unix style file systems.
         const auto dir = download_path_part_path.parent_path();
         if (!dir.empty())
@@ -582,37 +1212,85 @@ namespace vcpkg
             fs.create_directories(dir, VCPKG_LINE_INFO);
         }
 
-        // Retry on transient errors:
-        // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
-        // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
-        using namespace std::chrono_literals;
-        static constexpr std::array<std::chrono::seconds, 3> attempt_delays = {0s, 1s, 2s};
-        DownloadPrognosis prognosis = DownloadPrognosis::NetworkErrorProxyMightHelp;
-        for (size_t attempt_count = 0; attempt_count < attempt_delays.size(); attempt_count++)
+        auto cmd = Command{"curl"}
+                       .string_arg("--fail")
+                       .string_arg("--retry")
+                       .string_arg("3")
+                       .string_arg("-L")
+                       .string_arg(url_encode_spaces(raw_url))
+                       .string_arg("--create-dirs")
+                       .string_arg("--output")
+                       .string_arg(download_path_part_path);
+        add_curl_headers(cmd, headers);
+        bool seen_any_curl_errors = false;
+        // if seen_any_curl_errors, contains the curl error lines starting with "curl:"
+        // otherwise, contains all curl's output unless it is the machine readable output
+        std::vector<std::string> likely_curl_errors;
+        auto maybe_exit_code = cmd_execute_and_stream_lines(context, cmd, [&](StringView line) {
+            const auto maybe_parsed = try_parse_curl_progress_data(line);
+            if (const auto parsed = maybe_parsed.get())
+            {
+                machine_readable_progress.println(Color::none,
+                                                  LocalizedString::from_raw(fmt::format("{}%", parsed->total_percent)));
+                return;
+            }
+
+            static constexpr StringLiteral WarningColon = "warning: ";
+            if (Strings::case_insensitive_ascii_starts_with(line, WarningColon))
+            {
+                context.statusln(
+                    DiagnosticLine{DiagKind::Warning, LocalizedString::from_raw(line.substr(WarningColon.size()))}
+                        .to_message_line());
+                return;
+            }
+
+            // clang-format off
+            // example:
+            //   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0curl: (6) Could not resolve host: nonexistent.example.com
+            // clang-format on
+            static constexpr StringLiteral CurlColon = "curl:";
+            auto curl_start = std::search(line.begin(), line.end(), CurlColon.begin(), CurlColon.end());
+            if (curl_start == line.end())
+            {
+                if (seen_any_curl_errors)
+                {
+                    return;
+                }
+
+                curl_start = line.begin();
+            }
+            else
+            {
+                if (!seen_any_curl_errors)
+                {
+                    seen_any_curl_errors = true;
+                    likely_curl_errors.clear();
+                }
+            }
+
+            likely_curl_errors.emplace_back(curl_start, line.end());
+        });
+
+        const auto exit_code = maybe_exit_code.get();
+        if (!exit_code)
         {
-            std::this_thread::sleep_for(attempt_delays[attempt_count]);
-
-            prognosis = perform_download(context, machine_readable_progress, raw_url, download_path_part_path, headers);
-
-            if (DownloadPrognosis::Success == prognosis)
-            {
-                break;
-            }
-
-            if (DownloadPrognosis::TransientNetworkError != prognosis)
-            {
-                context.report_error(msg::format(msgDownloadNotTransientErrorWontRetry, msg::url = sanitized_url));
-                return prognosis;
-            }
-
-            context.report_error(msg::format(
-                msgDownloadTransientErrorRetry, msg::count = attempt_count + 1, msg::value = attempt_delays.size()));
+            return DownloadPrognosis::OtherError;
         }
 
-        if (DownloadPrognosis::Success != prognosis)
+        if (*exit_code != 0)
         {
-            context.report_error(msg::format(msgDownloadTransientErrorRetriesExhausted, msg::url = sanitized_url));
-            return prognosis;
+            std::set<StringView> seen_errors;
+            for (StringView likely_curl_error : likely_curl_errors)
+            {
+                auto seen_position = seen_errors.lower_bound(likely_curl_error);
+                if (seen_position == seen_errors.end() || *seen_position != likely_curl_error)
+                {
+                    seen_errors.emplace_hint(seen_position, likely_curl_error);
+                    context.report(DiagnosticLine{DiagKind::Error, LocalizedString::from_raw(likely_curl_error)});
+                }
+            }
+
+            return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
         if (!check_downloaded_file_hash(context, fs, sanitized_url, download_path_part_path, maybe_sha512, out_sha512))
@@ -628,6 +1306,89 @@ namespace vcpkg
     {
         static std::string s_headers[2] = {"x-ms-version: 2020-04-08", "x-ms-blob-type: BlockBlob"};
         return s_headers;
+    }
+
+    bool parse_curl_status_line(DiagnosticContext& context,
+                                std::vector<int>& http_codes,
+                                StringLiteral prefix,
+                                StringView this_line)
+    {
+        if (!this_line.starts_with(prefix))
+        {
+            return false;
+        }
+
+        auto first = this_line.begin();
+        const auto last = this_line.end();
+        first += prefix.size();
+        const auto first_http_code = first;
+
+        int http_code;
+        for (;; ++first)
+        {
+            if (first == last)
+            {
+                // this output is broken, even if we don't know %{exit_code} or ${errormsg}, the spaces in front
+                // of them should still be printed.
+                return false;
+            }
+
+            if (!ParserBase::is_ascii_digit(*first))
+            {
+                http_code = Strings::strto<int>(StringView{first_http_code, first}).value_or_exit(VCPKG_LINE_INFO);
+                break;
+            }
+        }
+
+        if (*first != ' ' || ++first == last)
+        {
+            // didn't see the space after the http_code
+            return false;
+        }
+
+        if (*first == ' ')
+        {
+            // old curl that doesn't understand %{exit_code}, this is the space after it
+            http_codes.emplace_back(http_code);
+            return false;
+        }
+
+        if (!ParserBase::is_ascii_digit(*first))
+        {
+            // not exit_code
+            return false;
+        }
+
+        const auto first_exit_code = first;
+        for (;;)
+        {
+            if (++first == last)
+            {
+                // didn't see the space after %{exit_code}
+                return false;
+            }
+
+            if (*first == ' ')
+            {
+                // the space after exit_code, everything after this space is the error message if any
+                http_codes.emplace_back(http_code);
+                auto exit_code = Strings::strto<int>(StringView{first_exit_code, first}).value_or_exit(VCPKG_LINE_INFO);
+                // note that this gets the space out of the output :)
+                if (exit_code != 0)
+                {
+                    context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = exit_code)
+                                             .append_raw(StringView{first, last}));
+                }
+
+                return true;
+            }
+
+            if (!ParserBase::is_ascii_digit(*first))
+            {
+                // non numeric exit_code?
+                return false;
+            }
+        }
     }
 
     static DownloadPrognosis download_file_azurl_asset_cache(DiagnosticContext& context,
@@ -898,8 +1659,12 @@ namespace vcpkg
             context.statusln(
                 msg::format(msgDownloadSuccesfulUploading, msg::path = display_path, msg::url = sanitized_upload_url));
             WarningDiagnosticContext wdc{context};
-            if (!store_to_asset_cache(
-                    wdc, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, download_path))
+            if (!store_to_asset_cache(wdc,
+                                      raw_upload_url,
+                                      sanitized_upload_url,
+                                      "PUT",
+                                      asset_cache_settings.m_write_headers,
+                                      download_path))
             {
                 context.report(DiagnosticLine{DiagKind::Warning,
                                               msg::format(msgFailedToStoreBackToMirror,
@@ -1104,11 +1869,6 @@ namespace vcpkg
                 context, download_path, display_path, asset_cache_settings, maybe_sha512);
             return true;
         }
-        else
-        {
-            asset_cache_attempt_context.commit();
-            authoritative_attempt_context.commit();
-        }
 
         while (++first_sanitized_url, ++first_raw_url != last_raw_url)
         {
@@ -1224,8 +1984,12 @@ namespace vcpkg
 
             auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
-            return store_to_asset_cache(
-                context, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, file_to_put);
+            return store_to_asset_cache(context,
+                                        raw_upload_url,
+                                        sanitized_upload_url,
+                                        "PUT",
+                                        asset_cache_settings.m_write_headers,
+                                        file_to_put);
         }
 
         return true;

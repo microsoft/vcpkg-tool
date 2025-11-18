@@ -256,39 +256,3 @@ TEST_CASE ("payload smoke test", "[metrics]")
 )json";
     REQUIRE(expected == actual);
 }
-
-TEST_CASE ("parse metrics response", "[metrics]")
-{
-    const std::string response = R"json(
-{
-  "itemsReceived": 1,
-  "itemsAccepted": 1,
-  "errors": []
-}
-)json";
-    auto parsed = parse_metrics_response(response);
-    CHECK(parsed);
-
-    const std::string response_with_errors = R"json(
-{ 
-  "itemsReceived": 2,
-  "itemsAccepted": 1,
-  "errors": [
-    {
-      "message": "Invalid payload"
-    }
-  ]
-}
-)json";
-    auto parsed_with_errors = parse_metrics_response(response_with_errors);
-    CHECK(!parsed_with_errors);
-
-    const std::string response_with_errors2 = R"json(
-{ 
-  "itemsReceived": 2,
-  "errors": []
-}
-)json";
-    auto parsed_with_errors2 = parse_metrics_response(response_with_errors2);
-    CHECK(!parsed_with_errors2);
-}
