@@ -36,6 +36,11 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript, c-cpp
+      - name: Install system libcurl
+        if: matrix.preset == 'linux-arm64-ci' || matrix.preset == 'linux-ci'
+        run: |
+          sudo apt update
+          sudo apt install -y libcurl4-openssl-dev
       - name: Configure and Build
         if: matrix.preset != 'windows-ci'
         run: |
