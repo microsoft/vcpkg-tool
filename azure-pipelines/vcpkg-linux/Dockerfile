@@ -50,13 +50,13 @@ RUN chroot /crossrootfs/x64 apt-get clean && \
 
 # Repeated runs of apt-get install workaround 'hash sum mismatch' errors
 # (This is also why these are a separate cache layer)
-RUN chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" || \
-    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" && \
+RUN chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev || \
+    chroot /crossrootfs/x64 apt-get install -y build-essential symlinks "g++-9" libcurl4-openssl-dev && \
     chroot /crossrootfs/x64 symlinks -cr /usr && \
     chroot /crossrootfs/x64 apt-get clean
 
