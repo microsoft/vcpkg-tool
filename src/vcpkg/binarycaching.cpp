@@ -482,7 +482,7 @@ namespace
                 PrintingDiagnosticContext pdc{msg_sink};
                 WarningDiagnosticContext wdc{pdc};
                 auto maybe_success =
-                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -526,7 +526,7 @@ namespace
             }
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers, m_secrets);
+            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers);
             for (size_t i = 0; i < codes.size(); ++i)
             {
                 if (codes[i] == 200)
@@ -545,7 +545,7 @@ namespace
             }
 
             WarningDiagnosticContext wdc{console_diagnostic_context};
-            auto codes = url_heads(wdc, urls, {}, m_secrets);
+            auto codes = url_heads(wdc, urls, {});
             for (size_t i = 0; i < codes.size(); ++i)
             {
                 out_status[i] = codes[i] == 200 ? CacheAvailability::available : CacheAvailability::unavailable;
@@ -589,7 +589,7 @@ namespace
 
             // cf.
             // https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json
-            constexpr size_t max_single_write = 5000000000;
+            constexpr size_t max_single_write = 5000000000u;
             bool use_azcopy = file_size > max_single_write;
 
             PrintingDiagnosticContext pdc{msg_sink};
@@ -599,9 +599,8 @@ namespace
             {
                 auto url = templ.instantiate_variables(request);
                 auto maybe_success =
-                    use_azcopy
-                        ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
-                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    use_azcopy ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
+                               : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
