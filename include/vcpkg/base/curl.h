@@ -18,6 +18,7 @@ VCPKG_MSVC_WARNING(pop)
 namespace vcpkg
 {
     CURLcode get_curl_global_init_status() noexcept;
+    void curl_set_system_ssl_root_certs(CURL* curl);
 
     struct CurlEasyHandle
     {

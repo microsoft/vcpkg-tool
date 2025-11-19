@@ -1,6 +1,16 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/curl.h>
 
+#include <array>
+#include <string>
+
+#if defined(__linux__)
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+#include <cstdlib>
+
 namespace
 {
     struct CurlGlobalInit
@@ -18,6 +28,97 @@ namespace
     private:
         CURLcode init_status;
     };
+
+#if defined(__linux__)
+    struct CurlCaBundle
+    {
+        std::string ca_file;
+        std::string ca_path;
+        bool initialized = false;
+    };
+
+    bool path_exists(const char* path, bool require_directory)
+    {
+        struct stat st;
+        if (stat(path, &st) != 0)
+        {
+            return false;
+        }
+
+        if (!require_directory)
+        {
+            return S_ISREG(st.st_mode) || S_ISLNK(st.st_mode);
+        }
+
+        return S_ISDIR(st.st_mode);
+    }
+
+    CurlCaBundle& get_global_curl_ca_bundle()
+    {
+        static CurlCaBundle bundle;
+        if (bundle.initialized)
+        {
+            return bundle;
+        }
+
+        bundle.initialized = true;
+
+        const char* ssl_ca_file = std::getenv("SSL_CERT_FILE");
+        const char* ssl_ca_dir = std::getenv("SSL_CERT_DIR");
+
+        if (ssl_ca_file && *ssl_ca_file)
+        {
+            bundle.ca_file = ssl_ca_file;
+        }
+
+        if (ssl_ca_dir && *ssl_ca_dir)
+        {
+            bundle.ca_path = ssl_ca_dir;
+        }
+
+        // If env vars didn't provide values, probe common Linux locations,
+        // largely based on Go's crypto/x509 package.
+        if (bundle.ca_file.empty())
+        {
+            constexpr std::array<const char*, 6> cert_files = {
+                "/etc/ssl/certs/ca-certificates.crt",                // Debian/Ubuntu/Gentoo etc.
+                "/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora/RHEL 6
+                "/etc/ssl/ca-bundle.pem",                            // OpenSUSE
+                "/etc/pki/tls/cacert.pem",                           // OpenELEC
+                "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // CentOS/RHEL 7
+                "/etc/ssl/cert.pem",                                 // Alpine Linux
+            };
+
+            for (const auto* f : cert_files)
+            {
+                if (path_exists(f, false))
+                {
+                    bundle.ca_file = f;
+                    break;
+                }
+            }
+        }
+
+        if (bundle.ca_path.empty())
+        {
+            constexpr std::array<const char*, 2> cert_dirs = {
+                "/etc/ssl/certs",     // SLES10/SLES11
+                "/etc/pki/tls/certs", // Fedora/RHEL
+            };
+
+            for (const auto* d : cert_dirs)
+            {
+                if (path_exists(d, true))
+                {
+                    bundle.ca_path = d;
+                    break;
+                }
+            }
+        }
+
+        return bundle;
+    }
+#endif
 }
 
 namespace vcpkg
@@ -26,6 +127,29 @@ namespace vcpkg
     {
         static CurlGlobalInit g_curl_global_init;
         return g_curl_global_init.get_init_status();
+    }
+
+    void curl_set_system_ssl_root_certs(CURL* curl)
+    {
+#if defined(__linux__)
+        if (!curl)
+        {
+            return;
+        }
+
+        CurlCaBundle& bundle = get_global_curl_ca_bundle();
+        if (!bundle.ca_file.empty())
+        {
+            curl_easy_setopt(curl, CURLOPT_CAINFO, bundle.ca_file.c_str());
+        }
+
+        if (!bundle.ca_path.empty())
+        {
+            curl_easy_setopt(curl, CURLOPT_CAPATH, bundle.ca_path.c_str());
+        }
+#else
+        (void)curl;
+#endif
     }
 
     CurlEasyHandle::CurlEasyHandle() { get_curl_global_init_status(); }

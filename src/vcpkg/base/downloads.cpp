@@ -33,6 +33,7 @@ namespace
                               // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
+        curl_set_system_ssl_root_certs(curl);
     }
 }
 
@@ -375,6 +376,7 @@ namespace vcpkg
 
         auto request_headers = raw_url.starts_with("ftp://") ? CurlHeaders() : CurlHeaders(headers);
         auto upload_url = url_encode_spaces(raw_url);
+        curl_set_system_ssl_root_certs(curl);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());

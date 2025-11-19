@@ -588,6 +588,7 @@ namespace vcpkg
         curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        curl_set_system_ssl_root_certs(curl);
 
         std::string buff;
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
