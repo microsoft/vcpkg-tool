@@ -54,10 +54,10 @@ function(get_libcurl)
         set(CURL_ENABLE_SSL ON)
     endif()
 
-    # vcpkg tool only needs HTTP(S) downloads; disable other protocols and
-    # high-surface features in the embedded libcurl to reduce attack surface.
-    # Keep FILE support in case file:// URLs are ever needed.
-    set(CURL_DISABLE_FTP ON)
+    # vcpkg tool only needs HTTP(S) downloads and uploads (including FTP).
+    # Disable other protocols and high-surface features in the embedded libcurl
+    # to reduce the attack surface.
+    # Keep FILE support enabled for file:// URLs if ever needed.
     set(CURL_DISABLE_GOPHER ON)
     set(CURL_DISABLE_IMAP ON)
     set(CURL_DISABLE_IPFS ON)
