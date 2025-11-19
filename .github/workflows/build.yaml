@@ -61,6 +61,23 @@ jobs:
       - name: '[CI Only] Perform CodeQL Analysis'
         if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
         uses: github/codeql-action/analyze@v3
+      - name: Validate vcpkg Linux binary dependencies
+        if: matrix.preset == 'linux-ci' || matrix.preset == 'linux-arm64-ci'
+        run: |
+          VCPKG_BIN="out/build/${{ matrix.preset }}/vcpkg"
+          if [ ! -x "$VCPKG_BIN" ]; then
+            echo "vcpkg binary not found at $VCPKG_BIN"
+            exit 1
+          fi
+
+          echo "Running ldd on $VCPKG_BIN"
+          ldd "$VCPKG_BIN"
+
+          # Fail if vcpkg links against system curl or OpenSSL
+          if ldd "$VCPKG_BIN" | grep -E 'libcurl\.so|libssl\.so|libcrypto\.so'; then
+            echo "ERROR: vcpkg is linked against forbidden libraries (libcurl/libssl/libcrypto)"
+            exit 1
+          fi
       - name: Run vcpkg and vcpkg-artifacts unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
