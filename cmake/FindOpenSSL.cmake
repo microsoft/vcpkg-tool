@@ -1,4 +1,4 @@
-if(UNIX)
+if(UNIX AND NOT APPLE)
     find_package(BoringSSL REQUIRED)
 
     if(NOT TARGET OpenSSL::SSL)
