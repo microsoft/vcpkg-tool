@@ -44,7 +44,7 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, SwitchXJson))
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
         const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);

@@ -4,7 +4,6 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -20,10 +19,16 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
+#endif
+
+#if defined(__SVR4) && defined(__sun)
+extern char** environ;
+#include <stdio.h>
+#include <unistd.h>
 #endif
 
 #if defined(_WIN32)
@@ -249,11 +254,20 @@ namespace vcpkg
         char* exePath(realpath(argv[0], buf));
         Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
         return Path(exePath);
-#else /* LINUX */
+#elif defined(__SVR4) && defined(__sun)
+        char procpath[PATH_MAX];
+        (void)snprintf(procpath, sizeof(procpath), "/proc/%d/path/a.out", getpid());
+        char buf[PATH_MAX];
+        auto written = readlink(procpath, buf, sizeof(buf));
+        Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
+        return Path(buf, written);
+#elif defined(__linux__) || defined(__NetBSD__)
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
         return Path(buf, written);
+#else
+        Checks::check_exit(VCPKG_LINE_INFO, false, "Could not determine current executable path.");
 #endif
     }
 
@@ -621,6 +635,8 @@ namespace vcpkg
             "GameDKLatest",
             "GRDKLatest",
             "GXDKLatest",
+            "GameDKCoreLatest",
+            "GameDKXboxLatest",
         };
 
         std::vector<std::string> env_prefix_string = {
@@ -730,23 +746,6 @@ namespace vcpkg
     {
         static const Environment clean_env = get_modified_clean_environment({});
         return clean_env;
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands)
-    {
-        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
-        return cmd_execute_and_capture_output_parallel(commands, default_redirected_process_launch_settings);
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> commands, const RedirectedProcessLaunchSettings& settings)
-    {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(commands.size(), LocalizedString{});
-
-        parallel_transform(
-            commands, res.begin(), [&](const Command& cmd) { return cmd_execute_and_capture_output(cmd, settings); });
-
-        return res;
     }
 } // namespace vcpkg
 
@@ -2016,16 +2015,82 @@ namespace vcpkg
         }
     }
 
+    void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit)
+    {
+        auto str_command = command.command_line().to_string();
+        context.report(
+            DiagnosticLine{DiagKind::Error,
+                           LocalizedString::from_raw(str_command)
+                               .append_raw(' ')
+                               .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit))});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(context, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets)
+    {
+        auto str_command = command.command_line().to_string();
+        replace_secrets(str_command, secrets);
+        auto error_line =
+            LocalizedString::from_raw(std::move(str_command))
+                .append_raw(' ')
+                .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code));
+        // add the output iff it was not already echoed in debug
+        if (echo_in_debug == EchoInDebug::Hide || !Debug::g_debugging)
+        {
+            error_line.append_raw('\n').append_raw(exit.output);
+        }
+
+        context.report(DiagnosticLine{DiagKind::Error, std::move(error_line)});
+    }
+
+    bool check_zero_exit_code(DiagnosticContext& context,
+                              const Command& command,
+                              Optional<ExitCodeIntegral>& maybe_exit)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (*exit == 0)
+            {
+                return true;
+            }
+
+            report_nonzero_exit_code(context, command, *exit);
+        }
+
+        return false;
+    }
+
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit)
     {
-        return check_zero_exit_code(context, command, maybe_exit, View<std::string>{});
+        return check_zero_exit_code(
+            context, command, maybe_exit, RedirectedProcessLaunchSettings{}.echo_in_debug, View<std::string>{});
     }
 
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug)
+    {
+        return check_zero_exit_code(context, command, maybe_exit, echo_in_debug, View<std::string>{});
+    }
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug,
                                       View<std::string> secrets)
     {
         if (auto exit = maybe_exit.get())
@@ -2035,15 +2100,7 @@ namespace vcpkg
                 return &exit->output;
             }
 
-            auto str_command = command.command_line().to_string();
-            replace_secrets(str_command, secrets);
-            context.report(DiagnosticLine{
-                DiagKind::Error,
-                LocalizedString::from_raw(str_command)
-                    .append_raw(' ')
-                    .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code))
-                    .append_raw('\n')
-                    .append_raw(exit->output)});
+            report_nonzero_exit_code_and_output(context, command, *exit, echo_in_debug, secrets);
         }
 
         return nullptr;

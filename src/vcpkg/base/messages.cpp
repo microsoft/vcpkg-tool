@@ -14,7 +14,8 @@ using namespace vcpkg;
 namespace vcpkg
 {
     LocalizedString::operator StringView() const noexcept { return m_data; }
-    const std::string& LocalizedString::data() const noexcept { return m_data; }
+    const std::string& LocalizedString::data() const& noexcept { return m_data; }
+    std::string&& LocalizedString::data() && noexcept { return std::move(m_data); }
     const std::string& LocalizedString::to_string() const noexcept { return m_data; }
     std::string LocalizedString::extract_data() { return std::exchange(m_data, std::string{}); }
 
@@ -123,8 +124,6 @@ namespace vcpkg
     LocalizedString error_prefix() { return LocalizedString::from_raw(ErrorPrefix); }
     LocalizedString internal_error_prefix() { return LocalizedString::from_raw(InternalErrorPrefix); }
     LocalizedString message_prefix() { return LocalizedString::from_raw(MessagePrefix); }
-    LocalizedString info_prefix() { return LocalizedString::from_raw(InfoPrefix); }
-    LocalizedString note_prefix() { return LocalizedString::from_raw(NotePrefix); }
     LocalizedString warning_prefix() { return LocalizedString::from_raw(WarningPrefix); }
 }
 

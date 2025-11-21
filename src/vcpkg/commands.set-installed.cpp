@@ -289,6 +289,8 @@ namespace vcpkg
             }
         }
 
+        summary.license_report.print_license_report(msgPackageLicenseSpdxThisInstall);
+
         if (print_usage == PrintUsage::Yes)
         {
             // Note that this differs from the behavior of `vcpkg install` in that it will print usage information for
@@ -366,7 +368,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
-            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 

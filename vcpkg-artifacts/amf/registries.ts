@@ -174,7 +174,7 @@ export class RegistriesDeclaration extends Yaml<YAMLDictionary | YAMLSequence> i
   override *validate(): Iterable<ValidationMessage> {
     yield* super.validate();
     if (this.exists()) {
-      for (const [key, registry] of this) {
+      for (const [, registry] of this) {
         yield* registry.validate();
       }
     }

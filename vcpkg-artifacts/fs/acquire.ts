@@ -107,15 +107,15 @@ async function https(session: Session, uris: Array<Uri>, outputFilename: string,
   return outputFile;
 }
 
-export async function resolveNugetUrl(session: Session, pkg: string) {
+export async function resolveNuGetUrl(session: Session, pkg: string) {
   const [, name, version] = pkg.match(/^(.*)\/(.*)$/) ?? [];
-  strict.ok(version, i`package reference '${pkg}' is not a valid nuget package reference ({name}/{version})`);
+  strict.ok(version, i`package reference '${pkg}' is not a valid NuGet package reference ({name}/{version})`);
 
   // let's resolve the redirect first, since nuget servers don't like us getting HEAD data on the targets via a redirect.
   // even if this wasn't the case, this is lower cost now rather than later.
   return session.fileSystem.parseUri(`https://www.nuget.org/api/v2/package/${name}/${version}`);
 }
 
-export async function acquireNugetFile(session: Session, pkg: string, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions): Promise<Uri> {
-  return https(session, [await resolveNugetUrl(session, pkg)], outputFilename, events, options);
+export async function acquireNuGetFile(session: Session, pkg: string, outputFilename: string, events: Partial<DownloadEvents>, options?: AcquireOptions): Promise<Uri> {
+  return https(session, [await resolveNuGetUrl(session, pkg)], outputFilename, events, options);
 }

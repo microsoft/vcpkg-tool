@@ -296,13 +296,15 @@ namespace vcpkg
                 else if (spec.feature() != FeatureNameDefault)
                 {
                     auto maybe_paragraph = get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                    Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                    maybe_paragraph.has_value(),
-                                                    msgFailedToFindPortFeature,
-                                                    msg::feature = spec.feature(),
-                                                    msg::package_name = spec.port());
+                    if (auto paragraph = maybe_paragraph.get())
+                    {
+                        return paragraph->supports_expression;
+                    }
 
-                    return maybe_paragraph.get()->supports_expression;
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                  msgFailedToFindPortFeature,
+                                                  msg::feature = spec.feature(),
+                                                  msg::package_name = spec.port());
                 }
                 return nullopt;
             }
@@ -552,11 +554,21 @@ namespace vcpkg
         const auto p = abi_info.get();
         return p && !p->package_abi.empty();
     }
-    Optional<const std::string&> InstallPlanAction::package_abi() const
+    const std::string* InstallPlanAction::package_abi() const
     {
         const auto p = abi_info.get();
-        if (!p || p->package_abi.empty()) return nullopt;
-        return p->package_abi;
+        if (p && !p->package_abi.empty()) return &p->package_abi;
+        return nullptr;
+    }
+    const std::string& InstallPlanAction::package_abi_or_exit(LineInfo li) const
+    {
+        auto pabi = package_abi();
+        if (!pabi)
+        {
+            Checks::unreachable(li);
+        }
+
+        return *pabi;
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
@@ -857,13 +869,18 @@ namespace vcpkg
                     {
                         auto maybe_paragraph =
                             clust.get_scfl_or_exit().source_control_file->find_feature(spec.feature());
-                        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                                        maybe_paragraph.has_value(),
-                                                        msgFailedToFindPortFeature,
-                                                        msg::feature = spec.feature(),
-                                                        msg::package_name = spec.port());
-                        paragraph_depends = &maybe_paragraph.value_or_exit(VCPKG_LINE_INFO).dependencies;
-                        has_supports = !maybe_paragraph.get()->supports_expression.is_empty();
+                        if (auto paragraph = maybe_paragraph.get())
+                        {
+                            paragraph_depends = &paragraph->dependencies;
+                            has_supports = !paragraph->supports_expression.is_empty();
+                        }
+                        else
+                        {
+                            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                                          msgFailedToFindPortFeature,
+                                                          msg::feature = spec.feature(),
+                                                          msg::package_name = spec.port());
+                        }
                     }
 
                     // And it has at least one qualified dependency

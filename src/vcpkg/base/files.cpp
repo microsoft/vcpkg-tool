@@ -6,6 +6,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/path.h>
 #include <vcpkg/base/span.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -223,15 +224,6 @@ namespace
         return last;
     }
 
-    StringView parse_filename(const StringView str) noexcept
-    {
-        // attempt to parse str as a path and return the filename if it exists; otherwise, an empty view
-        const auto first = str.data();
-        const auto last = first + str.size();
-        const auto filename = find_filename(first, last);
-        return StringView(filename, static_cast<size_t>(last - filename));
-    }
-
     constexpr const char* find_extension(const char* const filename, const char* const ads) noexcept
     {
         // find dividing point between stem and extension in a generic format filename consisting of [filename, ads)
@@ -326,9 +318,14 @@ namespace
 #endif // ^^^ !_WIN32
     }
 
+#if !defined(_WIN32)
+    bool is_not_found_errno_code(int err) { return err == ENOENT || err == ENOTDIR || err == ELOOP; }
+#endif // ^^^ !_WIN32
+
     void translate_not_found_to_success(std::error_code& ec)
     {
-        if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory))
+        if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory ||
+                   ec == std::errc::too_many_symbolic_link_levels))
         {
             ec.clear();
         }
@@ -1367,6 +1364,14 @@ namespace vcpkg
 
     const char* to_printf_arg(const Path& p) noexcept { return p.m_str.c_str(); }
 
+    StringView parse_filename(const StringView str) noexcept
+    {
+        const auto first = str.data();
+        const auto last = first + str.size();
+        const auto filename = find_filename(first, last);
+        return StringView(filename, static_cast<size_t>(last - filename));
+    }
+
     bool is_symlink(FileType s) { return s == FileType::symlink || s == FileType::junction; }
     bool is_regular_file(FileType s) { return s == FileType::regular; }
     bool is_directory(FileType s) { return s == FileType::directory; }
@@ -1659,13 +1664,37 @@ namespace vcpkg
 
     std::vector<Path> ReadOnlyFilesystem::get_files_recursive(const Path& dir, LineInfo li) const
     {
-        return this->try_get_files_recursive(dir).value_or_exit(li);
+        return this->try_get_files_recursive(console_diagnostic_context, dir).value_or_exit(li);
     }
 
-    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(const Path& dir) const
+    Optional<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive(DiagnosticContext& context,
+                                                                            const Path& dir) const
     {
         std::error_code ec;
         auto maybe_files = this->get_files_recursive(dir, ec);
+        if (ec)
+        {
+            context.report(DiagnosticLine{DiagKind::Error,
+                                          dir,
+                                          msg::format(msgSystemApiErrorMessage,
+                                                      msg::system_api = "get_files_recursive",
+                                                      msg::exit_code = ec.value(),
+                                                      msg::error_msg = ec.message())});
+            return nullopt;
+        }
+
+        return maybe_files;
+    }
+
+    std::vector<Path> ReadOnlyFilesystem::get_files_recursive_lexically_proximate(const Path& dir, LineInfo li) const
+    {
+        return this->try_get_files_recursive_lexically_proximate(dir).value_or_exit(li);
+    }
+
+    ExpectedL<std::vector<Path>> ReadOnlyFilesystem::try_get_files_recursive_lexically_proximate(const Path& dir) const
+    {
+        std::error_code ec;
+        auto maybe_files = this->get_files_recursive_lexically_proximate(dir, ec);
         if (ec)
         {
             return format_filesystem_call_error(ec, __func__, {dir});
@@ -2633,7 +2662,8 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec)
+                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
+                        ec != std::make_error_condition(std::errc::not_a_directory))
                     {
                         ret.clear();
                         break;
@@ -2654,6 +2684,21 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const override
         {
             return get_directories_impl<stdfs::recursive_directory_iterator>(dir, ec);
+        }
+
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            auto ret = this->get_files_recursive(dir, ec);
+            if (!ec)
+            {
+                const auto base = to_stdfs_path(dir);
+                for (auto& p : ret)
+                {
+                    p = from_stdfs_path(to_stdfs_path(p).lexically_proximate(base));
+                }
+            }
+            return ret;
         }
 
         virtual std::vector<Path> get_directories_recursive_lexically_proximate(const Path& dir,
@@ -2694,7 +2739,8 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec)
+                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
+                        ec != std::make_error_condition(std::errc::not_a_directory))
                     {
                         ret.clear();
                         break;
@@ -2850,8 +2896,9 @@ namespace vcpkg
                         default:
                             if (::lstat(full.c_str(), &ls) != 0)
                             {
-                                if (errno == ENOENT || errno == ENOTDIR)
+                                if (is_not_found_errno_code(errno))
                                 {
+                                    // report broken symlink as just a symlink rather than the target
                                     ec.clear();
                                 }
                                 else
@@ -2874,8 +2921,9 @@ namespace vcpkg
                                 {
                                     if (::stat(full.c_str(), &s) != 0)
                                     {
-                                        if (errno == ENOENT || errno == ENOTDIR)
+                                        if (is_not_found_errno_code(errno))
                                         {
+                                            // report broken symlink as just a symlink rather than the target
                                             ec.clear();
                                         }
                                         else
@@ -2959,6 +3007,15 @@ namespace vcpkg
         {
             std::vector<Path> result;
             get_files_recursive_impl(result, dir, dir, ec, true, true, true);
+            return result;
+        }
+
+        virtual std::vector<Path> get_files_recursive_lexically_proximate(const Path& dir,
+                                                                          std::error_code& ec) const override
+        {
+            std::vector<Path> result;
+            Path out_base;
+            get_files_recursive_impl(result, dir, out_base, ec, true, true, true);
             return result;
         }
 
@@ -3124,7 +3181,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT || errno == ENOTDIR)
+            if (is_not_found_errno_code(errno))
             {
                 ec.clear();
                 return FileType::not_found;
@@ -3149,7 +3206,7 @@ namespace vcpkg
                 return posix_translate_stat_mode_to_file_type(s.st_mode);
             }
 
-            if (errno == ENOENT || errno == ENOTDIR)
+            if (is_not_found_errno_code(errno))
             {
                 ec.clear();
                 return FileType::not_found;
@@ -3337,6 +3394,8 @@ namespace vcpkg
             }
 
             const auto remove_errno = errno;
+            // note that this does not treat ELOOP as 'nonexistent' because we still need to remove
+            // the symlink itself
             if (remove_errno == ENOENT || remove_errno == ENOTDIR)
             {
                 ec.clear();
@@ -3363,7 +3422,8 @@ namespace vcpkg
             }
 
             auto mkdir_error = errno;
-            if (mkdir_error == EEXIST)
+            // mkdir returns ENOSYS on Solaris/illumos autofs mount points
+            if (mkdir_error == EEXIST || mkdir_error == ENOSYS)
             {
                 struct stat s;
                 if (::stat(new_directory, &s) == 0)
@@ -3860,6 +3920,59 @@ namespace vcpkg
 
             ec.assign(errno, std::generic_category());
             return {};
+#endif // ^^^ !_WIN32
+        }
+
+        virtual bool last_write_time(DiagnosticContext& context, const Path& target, int64_t new_time) const override
+        {
+            std::error_code ec;
+#if defined(_WIN32)
+            stdfs::last_write_time(to_stdfs_path(target),
+                                   stdfs::file_time_type{stdfs::file_time_type::duration {
+                                       new_time
+                                   }},
+                                   ec);
+            if (ec)
+            {
+                context.report(DiagnosticLine{DiagKind::Error,
+                                              target,
+                                              msg::format(msgSystemApiErrorMessage,
+                                                          msg::system_api = "std::fs::last_write_time",
+                                                          msg::exit_code = ec.value(),
+                                                          msg::error_msg = ec.message())});
+                return false;
+            }
+
+            return true;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            PosixFd fd(target.c_str(), O_WRONLY, ec);
+            if (ec)
+            {
+                context.report(DiagnosticLine{DiagKind::Error,
+                                              target,
+                                              msg::format(msgSystemApiErrorMessage,
+                                                          msg::system_api = "open",
+                                                          msg::exit_code = ec.value(),
+                                                          msg::error_msg = ec.message())});
+                return false;
+            }
+            timespec times[2]; // last access and modification time
+            times[0].tv_nsec = UTIME_OMIT;
+            times[1].tv_nsec = new_time % 1'000'000'000;
+            times[1].tv_sec = new_time / 1'000'000'000;
+            if (futimens(fd.get(), times))
+            {
+                auto local_errno = errno;
+                context.report(
+                    DiagnosticLine{DiagKind::Error,
+                                   target,
+                                   msg::format(msgSystemApiErrorMessage,
+                                               msg::system_api = "futimens",
+                                               msg::exit_code = local_errno,
+                                               msg::error_msg = std::system_category().message(local_errno))});
+            }
+
+            return true;
 #endif // ^^^ !_WIN32
         }
 

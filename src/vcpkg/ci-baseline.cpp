@@ -16,19 +16,6 @@ namespace vcpkg
     {
     }
 
-    void ExclusionsMap::insert(Triplet triplet)
-    {
-        for (auto& triplet_exclusions : triplets)
-        {
-            if (triplet_exclusions.triplet == triplet)
-            {
-                return;
-            }
-        }
-
-        triplets.emplace_back(triplet);
-    }
-
     void ExclusionsMap::insert(Triplet triplet, SortedVector<std::string>&& exclusions)
     {
         for (auto& triplet_exclusions : triplets)
@@ -43,9 +30,9 @@ namespace vcpkg
         triplets.emplace_back(triplet, std::move(exclusions));
     }
 
-    bool ExclusionPredicate::operator()(const PackageSpec& spec) const
+    bool ExclusionsMap::is_excluded(const PackageSpec& spec) const
     {
-        for (const auto& triplet_exclusions : data->triplets)
+        for (const auto& triplet_exclusions : triplets)
         {
             if (triplet_exclusions.triplet == spec.triplet())
             {
@@ -202,44 +189,67 @@ namespace vcpkg
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
                                      const CiBaselineData& cidata,
-                                     StringView cifile,
-                                     bool allow_unexpected_passing,
-                                     bool is_independent)
+                                     const std::string* cifile,
+                                     bool allow_unexpected_passing)
     {
         switch (result)
         {
+            case BuildResult::Succeeded:
+            case BuildResult::Cached:
+                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *cifile);
+                }
+                break;
             case BuildResult::BuildFailed:
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts:
                 if (!cidata.expected_failures.contains(spec))
                 {
-                    if (is_independent)
-                    {
-                        return msg::format(msgCiBaselineIndependentRegression,
-                                           msg::spec = spec,
-                                           msg::build_result = to_string_locale_invariant(result));
-                    }
-                    else
+                    if (cifile)
                     {
                         return msg::format(msgCiBaselineRegression,
                                            msg::spec = spec,
                                            msg::build_result = to_string_locale_invariant(result),
-                                           msg::path = cifile);
+                                           msg::path = *cifile);
                     }
-                }
-                break;
-            case BuildResult::Succeeded:
-                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
-                {
-                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = cifile);
+
+                    return msg::format(msgCiBaselineRegressionNoPath,
+                                       msg::spec = spec,
+                                       msg::build_result = to_string_locale_invariant(result));
                 }
                 break;
             case BuildResult::CascadedDueToMissingDependencies:
+                if (cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(
+                        msgCiBaselineUnexpectedFailCascade, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+
                 if (cidata.required_success.contains(spec))
                 {
-                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = cifile);
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
                 }
-            default: break;
+                break;
+            case BuildResult::Unsupported:
+                if (cidata.expected_failures.contains(spec))
+                {
+                    return msg::format(msgCiBaselineUnexpectedFail, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+
+                if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(
+                        msgCiBaselineUnexpectedPassUnsupported, msg::spec = spec, msg::triplet = spec.triplet());
+                }
+                break;
+            case BuildResult::Excluded:
+            case BuildResult::ExcludedByParent:
+            case BuildResult::ExcludedByDryRun: break;
+            case BuildResult::CacheMissing:
+            case BuildResult::Downloaded:
+            case BuildResult::Removed:
+            default: Checks::unreachable(VCPKG_LINE_INFO); break;
         }
         return {};
     }

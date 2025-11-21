@@ -5,6 +5,21 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "vcpkg linux debug",
+      "type": "cppdbg",
+      "request": "launch",
+      "environment": [
+        {
+          "name": "VCPKG_ROOT",
+          "value": "/vcpkg"
+        }
+      ],
+      "program": "${workspaceRoot}/out/build/linux-debug/vcpkg",
+      "cwd": "${workspaceRoot}/out/build/linux-debug",
+      "args": [
+      ]
+    },
+    {
       "name": "vcpkg-ce cli",
       "request": "launch",
       "type": "node",
@@ -20,7 +35,7 @@
     },
     {
       "name": "MochaTest",
-      "type": "pwa-node",
+      "type": "node",
       "request": "attach",
       "port": 9229,
       "continueOnAttach": true,

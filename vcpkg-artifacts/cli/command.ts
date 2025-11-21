@@ -18,9 +18,7 @@ export abstract class Command {
   readonly force = new Force(this);
   readonly debug = new Debug(this);
 
-  constructor(public commandLine: CommandLine) {
-    commandLine.addCommand(this);
-  }
+  constructor(public commandLine: CommandLine) {}
 
   get inputs() {
     return this.commandLine.inputs.slice(1);

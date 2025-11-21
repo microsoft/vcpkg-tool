@@ -36,7 +36,7 @@
 #include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
-#include <numeric>
+#include <iterator>
 
 using namespace vcpkg;
 
@@ -332,6 +332,10 @@ namespace vcpkg
                 return 1;
             }
             case BuildResult::Excluded:
+            case BuildResult::ExcludedByParent:
+            case BuildResult::ExcludedByDryRun:
+            case BuildResult::Unsupported:
+            case BuildResult::Cached:
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
@@ -435,7 +439,7 @@ namespace vcpkg
             msg::println_error(msgInvalidArchitectureValue,
                                msg::value = target_architecture,
                                msg::expected = all_comma_separated_cpu_architectures());
-            Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+            Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
         auto target_arch = maybe_target_arch.value_or_exit(VCPKG_LINE_INFO);
@@ -464,7 +468,7 @@ namespace vcpkg
                            msg::path = toolset.visual_studio_root_path,
                            msg::list = toolset_list);
         msg::println(msgSeeURL, msg::url = docs::vcpkg_visual_studio_path_url);
-        Checks::exit_maybe_upgrade(VCPKG_LINE_INFO);
+        Checks::exit_fail(VCPKG_LINE_INFO);
     }
 #endif
 
@@ -806,6 +810,7 @@ namespace vcpkg
             // The detect_compiler "port" doesn't depend on the host triplet, so always natively compile
             {CMakeVariableHostTriplet, triplet.canonical_name()},
             {CMakeVariableCompilerCacheFile, paths.installed().compiler_hash_cache_file()},
+            {CMakeVariableZChainloadToolchainFile, pre_build_info.toolchain_file()},
         };
 
         get_generic_cmake_build_args(paths, triplet, toolset, cmake_args);
@@ -995,6 +1000,14 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/openbsd.cmake";
         }
+        else if (cmake_system_name == "NetBSD")
+        {
+            return m_paths.scripts / "toolchains/netbsd.cmake";
+        }
+        else if (cmake_system_name == "SunOS")
+        {
+            return m_paths.scripts / "toolchains/solaris.cmake";
+        }
         else if (cmake_system_name == "Android")
         {
             return m_paths.scripts / "toolchains/android.cmake";
@@ -1019,12 +1032,24 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/windows.cmake";
         }
+        else if (cmake_system_name == "tvOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
+        else if (cmake_system_name == "watchOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
+        else if (cmake_system_name == "visionOS")
+        {
+            return m_paths.scripts / "toolchains/ios.cmake";
+        }
         else
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msgUndeterminedToolChainForTriplet,
-                                           msg::triplet = triplet,
-                                           msg::system_name = cmake_system_name);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msgUndeterminedToolChainForTriplet,
+                                          msg::triplet = triplet,
+                                          msg::system_name = cmake_system_name);
         }
     }
 
@@ -1047,14 +1072,40 @@ namespace vcpkg
 
         const auto now = CTime::now_string();
         const auto& abi = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
 
-        const auto json_path =
-            action.package_dir.value_or_exit(VCPKG_LINE_INFO) / FileShare / action.spec.name() / FileVcpkgSpdxJson;
-        fs.write_contents_and_dirs(
-            json_path,
-            create_spdx_sbom(
-                action, abi.relative_port_files, abi.relative_port_hashes, now, doc_ns, std::move(heuristic_resources)),
-            VCPKG_LINE_INFO);
+        const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
+        // Gather all the files in the package directory
+        // Note: For packages with many files, this sequential hashing may be slow
+        std::vector<Path> package_files;
+        std::vector<std::string> package_hashes;
+        {
+            auto maybe_relative_package_files = fs.try_get_regular_files_recursive_lexically_proximate(package_dir);
+            if (auto relative_package_files = maybe_relative_package_files.get())
+            {
+                package_files.reserve(relative_package_files->size());
+                package_hashes.reserve(relative_package_files->size());
+                for (auto& file : *relative_package_files)
+                {
+                    auto maybe_hash = Hash::get_file_hash(fs, package_dir / file, Hash::Algorithm::Sha256);
+                    if (auto hash = maybe_hash.get())
+                    {
+                        package_files.push_back(std::move(file));
+                        package_hashes.push_back(std::move(*hash));
+                    }
+                }
+            }
+        } // destroy maybe_relative_package_files
+        fs.write_contents_and_dirs(json_path,
+                                   create_spdx_sbom(action,
+                                                    abi.relative_port_files,
+                                                    abi.relative_port_hashes,
+                                                    package_files,
+                                                    package_hashes,
+                                                    now,
+                                                    doc_ns,
+                                                    std::move(heuristic_resources)),
+                                   VCPKG_LINE_INFO);
     }
 
     static ExtendedBuildResult do_build_package(const VcpkgCmdArguments& args,
@@ -1232,24 +1283,42 @@ namespace vcpkg
         return result;
     }
 
+    static Optional<Path> get_grdk_header_path(const PreBuildInfo& pre_build_info)
+    {
+        // Handles new layouts for October 2025 or later.
+        if (auto game_dk_xbox_latest = pre_build_info.gamedk_xbox_latest_path.get())
+        {
+            return *game_dk_xbox_latest / "xbox/include/gxdk.h";
+        }
+
+        // Handles old layouts for April 2025 or earlier for backwards compatibility.
+        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        {
+            return *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
+        }
+
+        return nullopt;
+    }
+
     static std::string grdk_hash(const Filesystem& fs,
                                  Cache<Path, Optional<std::string>>& grdk_cache,
                                  const PreBuildInfo& pre_build_info)
     {
-        if (auto game_dk_latest = pre_build_info.gamedk_latest_path.get())
+        auto maybe_gxdk_header_path = get_grdk_header_path(pre_build_info);
+        if (auto gxdk_header_path = maybe_gxdk_header_path.get())
         {
-            const auto grdk_header_path = *game_dk_latest / "GRDK/gameKit/Include/grdk.h";
-            const auto& maybe_header_hash = grdk_cache.get_lazy(grdk_header_path, [&]() -> Optional<std::string> {
-                auto maybe_hash = Hash::get_file_hash(fs, grdk_header_path, Hash::Algorithm::Sha256);
-                if (auto hash = maybe_hash.get())
-                {
-                    return std::move(*hash);
-                }
-                else
-                {
-                    return nullopt;
-                }
-            });
+            const auto& maybe_header_hash =
+                grdk_cache.get_lazy(*gxdk_header_path, [&fs, gxdk_header_path]() -> Optional<std::string> {
+                    auto maybe_hash = Hash::get_file_hash(fs, *gxdk_header_path, Hash::Algorithm::Sha256);
+                    if (auto hash = maybe_hash.get())
+                    {
+                        return std::move(*hash);
+                    }
+                    else
+                    {
+                        return nullopt;
+                    }
+                });
 
             if (auto header_hash = maybe_header_hash.get())
             {
@@ -1448,6 +1517,7 @@ namespace vcpkg
 
         abi_tag_entries.emplace_back(AbiTagPortsDotCMake, paths.get_ports_cmake_hash().to_string());
         abi_tag_entries.emplace_back(AbiTagPostBuildChecks, "2");
+        abi_tag_entries.emplace_back(AbiTagSbomInfo, "1");
         InternalFeatureSet sorted_feature_list = action.feature_list;
         // Check that no "default" feature is present. Default features must be resolved before attempting to calculate
         // a package ABI, so the "default" should not have made it here.
@@ -1629,7 +1699,7 @@ namespace vcpkg
         return result;
     }
 
-    void BuildResultCounts::increment(const BuildResult build_result)
+    void BuildResultCounts::increment(BuildResult build_result)
     {
         switch (build_result)
         {
@@ -1639,7 +1709,11 @@ namespace vcpkg
             case BuildResult::FileConflicts: ++file_conflicts; return;
             case BuildResult::CascadedDueToMissingDependencies: ++cascaded_due_to_missing_dependencies; return;
             case BuildResult::Excluded: ++excluded; return;
+            case BuildResult::ExcludedByParent: ++excluded_by_parent; return;
+            case BuildResult::ExcludedByDryRun: ++excluded_by_dry_run; return;
+            case BuildResult::Unsupported: ++unsupported; return;
             case BuildResult::CacheMissing: ++cache_missing; return;
+            case BuildResult::Cached: ++cached; return;
             case BuildResult::Downloaded: ++downloaded; return;
             case BuildResult::Removed: ++removed; return;
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1670,7 +1744,11 @@ namespace vcpkg
         append_build_result_summary_line(
             msgBuildResultCascadeDueToMissingDependencies, cascaded_due_to_missing_dependencies, str);
         append_build_result_summary_line(msgBuildResultExcluded, excluded, str);
+        append_build_result_summary_line(msgBuildResultExcludedByParent, excluded_by_parent, str);
+        append_build_result_summary_line(msgBuildResultExcludedByDryRun, excluded_by_dry_run, str);
+        append_build_result_summary_line(msgBuildResultUnsupported, unsupported, str);
         append_build_result_summary_line(msgBuildResultCacheMissing, cache_missing, str);
+        append_build_result_summary_line(msgBuildResultCached, cached, str);
         append_build_result_summary_line(msgBuildResultDownloaded, downloaded, str);
         append_build_result_summary_line(msgBuildResultRemoved, removed, str);
         return str;
@@ -1686,7 +1764,11 @@ namespace vcpkg
             case BuildResult::FileConflicts: return "FILE_CONFLICTS";
             case BuildResult::CascadedDueToMissingDependencies: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
             case BuildResult::Excluded: return "EXCLUDED";
+            case BuildResult::ExcludedByParent: return "EXCLUDED_BY_PARENT";
+            case BuildResult::ExcludedByDryRun: return "EXCLUDED_BY_DRY_RUN";
+            case BuildResult::Unsupported: return "UNSUPPORTED";
             case BuildResult::CacheMissing: return "CACHE_MISSING";
+            case BuildResult::Cached: return "CACHED";
             case BuildResult::Downloaded: return "DOWNLOADED";
             case BuildResult::Removed: return "REMOVED";
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1704,7 +1786,11 @@ namespace vcpkg
             case BuildResult::CascadedDueToMissingDependencies:
                 return msg::format(msgBuildResultCascadeDueToMissingDependencies);
             case BuildResult::Excluded: return msg::format(msgBuildResultExcluded);
+            case BuildResult::ExcludedByParent: return msg::format(msgBuildResultExcludedByParent);
+            case BuildResult::ExcludedByDryRun: return msg::format(msgBuildResultExcludedByDryRun);
+            case BuildResult::Unsupported: return msg::format(msgBuildResultUnsupported);
             case BuildResult::CacheMissing: return msg::format(msgBuildResultCacheMissing);
+            case BuildResult::Cached: return msg::format(msgBuildResultCached);
             case BuildResult::Downloaded: return msg::format(msgBuildResultDownloaded);
             case BuildResult::Removed: return msg::format(msgBuildResultRemoved);
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1822,6 +1908,8 @@ namespace vcpkg
                     std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
             }
         }
+        fmt::format_to(
+            std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version(Tools::CMAKE, null_sink));
 
         fmt::format_to(std::back_inserter(issue_body), "-{}\n", paths.get_toolver_diagnostics());
         fmt::format_to(std::back_inserter(issue_body),
@@ -1867,10 +1955,9 @@ namespace vcpkg
 
     static std::string make_gh_issue_open_url(StringView spec_name, StringView triplet, StringView body)
     {
-        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=[",
-                               spec_name,
-                               "]+Build+error+on+",
-                               triplet,
+        auto title = fmt::format("[{}] build error on {}", spec_name, triplet);
+        return Strings::concat("https://github.com/microsoft/vcpkg/issues/new?title=",
+                               Strings::percent_encode(title),
                                "&body=",
                                Strings::percent_encode(body));
     }
@@ -2004,9 +2091,9 @@ namespace vcpkg
         {
             result
                 .append_raw("https://github.com/microsoft/vcpkg/issues/"
-                            "new?template=report-package-build-failure.md&title=[")
+                            "new?template=report-package-build-failure.md&title=%5B")
                 .append_raw(spec_name)
-                .append_raw("]+Build+error+on+")
+                .append_raw("%5D+Build+error+on+")
                 .append_raw(triplet_name)
                 .append_raw("\n");
             result.append(msgBuildTroubleshootingMessage3, msg::package_name = spec_name).append_raw('\n');
@@ -2095,7 +2182,7 @@ namespace vcpkg
             return inner_create_buildinfo(filepath, std::move(*paragraph));
         }
 
-        Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
+        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgInvalidBuildInfo, msg::error_msg = maybe_paragraph.error());
     }
 
     static ExpectedL<bool> from_cmake_bool(StringView value, StringView name)
@@ -2182,6 +2269,7 @@ namespace vcpkg
         }
 
         Util::assign_if_set_and_nonempty(gamedk_latest_path, cmakevars, CMakeVariableZVcpkgGameDKLatest);
+        Util::assign_if_set_and_nonempty(gamedk_xbox_latest_path, cmakevars, CMakeVariableZVcpkgGameDKXboxLatest);
     }
 
     ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }

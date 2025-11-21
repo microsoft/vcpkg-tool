@@ -136,6 +136,17 @@
             ]
         },
         {
+            "name": "linux-debug",
+            "inherits": [
+                "base",
+                "debug",
+                "linux"
+            ],
+            "cacheVariables": {
+                "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
             "name": "linux-ci",
             "inherits": [
                 "base",
@@ -218,6 +229,10 @@
             "configurePreset": "windows-ci"
         },
         {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug"
+        },
+        {
             "name": "linux-ci",
             "configurePreset": "linux-ci"
         },
@@ -238,6 +253,10 @@
         {
             "name": "windows-ci",
             "configurePreset": "windows-ci"
+        },
+        {
+            "name": "linux-debug",
+            "configurePreset": "linux-debug"
         },
         {
             "name": "linux-ci",

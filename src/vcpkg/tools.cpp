@@ -38,6 +38,8 @@ namespace
         {"linux", ToolOs::Linux},
         {"freebsd", ToolOs::FreeBsd},
         {"openbsd", ToolOs::OpenBsd},
+        {"netbsd", ToolOs::NetBsd},
+        {"solaris", ToolOs::Solaris},
     };
 }
 
@@ -176,8 +178,12 @@ namespace vcpkg
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::FreeBsd);
 #elif defined(__OpenBSD__)
         auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::OpenBsd);
+#elif defined(__NetBSD__)
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::NetBsd);
+#elif defined(__SVR4) && defined(__sun)
+        auto data = get_raw_tool_data(tool_data_table, tool, hp, ToolOs::Solaris);
 #else
-        return nullopt;
+        ToolDataEntry* data = nullptr;
 #endif
         if (!data)
         {
@@ -327,6 +333,45 @@ namespace vcpkg
         virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path&) const override
         {
             return {"0", expected_left_tag};
+        }
+    };
+
+    struct AzCopyProvider : ToolProvider
+    {
+        virtual bool is_abi_sensitive() const override { return false; }
+        virtual StringView tool_data_name() const override { return "azcopy"; }
+        virtual std::vector<StringView> system_exe_stems() const override { return {"azcopy"}; }
+        virtual std::array<int, 3> default_min_version() const override { return {10, 29, 1}; }
+
+#if defined(_WIN32)
+        virtual void add_system_paths(const ReadOnlyFilesystem&, std::vector<Path>& out_candidate_paths) const override
+        {
+            const auto& maybe_appdata_local = get_appdata_local();
+            if (const auto appdata_local = maybe_appdata_local.get())
+            {
+                // as installed by WinGet
+                out_candidate_paths.push_back(*appdata_local / "Microsoft\\WinGet\\Links\\azcopy.exe");
+            }
+
+            // other common installation locations
+            const auto& maybe_system_drive = get_system_drive();
+            if (auto system_drive = maybe_system_drive.get())
+            {
+                // https://devdiv.visualstudio.com/XlabImageFactory/_git/XlabImageFactory?path=/artifacts/windows-azcopy-downloadfile/windows-azcopy-downloadfile.ps1&version=GBmain&_a=contents&line=54&lineStyle=plain&lineEnd=55&lineStartColumn=1&lineEndColumn=1
+                out_candidate_paths.emplace_back(*system_drive / "\\AzCopy10\\azcopy.exe");
+                // https://devdiv.visualstudio.com/XlabImageFactory/_git/XlabImageFactory?path=/artifacts/windows-AZCopy10/windows-AzCopy10.ps1&version=GBmain&_a=contents&line=8&lineStyle=plain&lineEnd=8&lineStartColumn=1&lineEndColumn=79
+                out_candidate_paths.emplace_back(*system_drive / "\\AzCopy10\\AZCopy\\azcopy.exe");
+            }
+        }
+#endif
+
+        virtual ExpectedL<std::string> get_version(const ToolCache&, MessageSink&, const Path& exe_path) const override
+        {
+            // azcopy --version outputs e.g. "azcopy version 10.13.0"
+            return run_to_extract_version("azcopy", exe_path, Command(exe_path).string_arg("--version"))
+                .then([&](std::string&& output) {
+                    return extract_prefixed_nonwhitespace("azcopy version ", "azcopy", std::move(output), exe_path);
+                });
         }
     };
 
@@ -806,11 +851,11 @@ namespace vcpkg
 
             const std::array<int, 3>& version = tool_data.version;
             const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
-            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO,
-                                            !tool_data.url.empty(),
-                                            msgToolOfVersionXNotFound,
-                                            msg::tool_name = tool_data.name,
-                                            msg::version = version_as_string);
+            Checks::msg_check_exit(VCPKG_LINE_INFO,
+                                   !tool_data.url.empty(),
+                                   msgToolOfVersionXNotFound,
+                                   msg::tool_name = tool_data.name,
+                                   msg::version = version_as_string);
             status_sink.println(Color::none,
                                 msgDownloadingPortableToolVersionX,
                                 msg::tool_name = tool_data.name,
@@ -1005,7 +1050,7 @@ namespace vcpkg
                     .append_raw('\n')
                     .append_raw(considered_versions);
             }
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, s);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, s);
         }
 
         const PathAndVersion& get_tool_pathversion(StringView tool, MessageSink& status_sink) const
@@ -1023,6 +1068,7 @@ namespace vcpkg
                 if (tool == Tools::MONO) return get_path(MonoProvider(), status_sink);
                 if (tool == Tools::GSUTIL) return get_path(GsutilProvider(), status_sink);
                 if (tool == Tools::AWSCLI) return get_path(AwsCliProvider(), status_sink);
+                if (tool == Tools::AZCOPY) return get_path(AzCopyProvider(), status_sink);
                 if (tool == Tools::AZCLI) return get_path(AzCliProvider(), status_sink);
                 if (tool == Tools::COSCLI) return get_path(CosCliProvider(), status_sink);
                 if (tool == Tools::PYTHON3) return get_path(Python3Provider(), status_sink);

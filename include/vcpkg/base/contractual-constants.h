@@ -30,6 +30,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdCacheCapitalSize = "cacheSize";
     inline constexpr StringLiteral JsonIdChecksums = "checksums";
     inline constexpr StringLiteral JsonIdComment = "comment";
+    inline constexpr StringLiteral JsonIdConfiguration = "configuration";
     inline constexpr StringLiteral JsonIdContacts = "contacts";
     inline constexpr StringLiteral JsonIdCorrelator = "correlator";
     inline constexpr StringLiteral JsonIdCreated = "created";
@@ -125,7 +126,6 @@ namespace vcpkg
     // would use in other contexts.
     inline constexpr StringLiteral SpdxCCZero = "CC0-1.0";
     inline constexpr StringLiteral SpdxChecksumValue = "checksumValue";
-    inline constexpr StringLiteral SpdxContainedBy = "CONTAINED_BY";
     inline constexpr StringLiteral SpdxContains = "CONTAINS";
     inline constexpr StringLiteral SpdxCopyrightText = "copyrightText";
     inline constexpr StringLiteral SpdxCreationInfo = "creationInfo";
@@ -135,10 +135,10 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
     inline constexpr StringLiteral SpdxElementId = "spdxElementId";
     inline constexpr StringLiteral SpdxFileName = "fileName";
-    inline constexpr StringLiteral SpdxGeneratedFrom = "GENERATED_FROM";
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
     inline constexpr StringLiteral SpdxLicenseDeclared = "licenseDeclared";
+    inline constexpr StringLiteral SpdxLicenseRefVcpkgNull = "LicenseRef-vcpkg-null";
     inline constexpr StringLiteral SpdxNoAssertion = "NOASSERTION";
     inline constexpr StringLiteral SpdxNone = "NONE";
     inline constexpr StringLiteral SpdxPackageFileName = "packageFileName";
@@ -227,6 +227,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostExclude = "host-exclude";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
+    inline constexpr StringLiteral SwitchDereferenceSymlinks = "dereference-symlinks";
     inline constexpr StringLiteral SwitchIgnoreLockFailures = "ignore-lock-failures";
     inline constexpr StringLiteral SwitchInclude = "include";
     inline constexpr StringLiteral SwitchInstalledBinDir = "installed-bin-dir";
@@ -447,6 +448,7 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableXBoxConsoleTarget = "VCPKG_XBOX_CONSOLE_TARGET";
     inline constexpr StringLiteral CMakeVariableZChainloadToolchainFile = "Z_VCPKG_CHAINLOAD_TOOLCHAIN_FILE";
     inline constexpr StringLiteral CMakeVariableZVcpkgGameDKLatest = "Z_VCPKG_GameDKLatest";
+    inline constexpr StringLiteral CMakeVariableZVcpkgGameDKXboxLatest = "Z_VCPKG_GameDKXboxLatest";
     inline constexpr StringLiteral CMakeVariableZPostPortfileIncludes = "Z_VCPKG_POST_PORTFILE_INCLUDES";
 
     // Policies are PascalCase
@@ -520,6 +522,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableProgramFilesX86 = "ProgramFiles(x86)";
     inline constexpr StringLiteral EnvironmentVariableProgramW6432 = "ProgramW6432";
     inline constexpr StringLiteral EnvironmentVariablePythonPath = "PYTHONPATH";
+    inline constexpr StringLiteral EnvironmentVariableSystemDrive = "SystemDrive";
     inline constexpr StringLiteral EnvironmentVariableSystemRoot = "SystemRoot";
     inline constexpr StringLiteral EnvironmentVariableTeamcityVersion = "TEAMCITY_VERSION";
     inline constexpr StringLiteral EnvironmentVariableTfBuild = "TF_BUILD";
@@ -578,6 +581,7 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
     inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
+    inline constexpr StringLiteral AbiTagSbomInfo = "sbom_info";
 
     inline constexpr StringLiteral StatusDeinstall = "deinstall";
     inline constexpr StringLiteral StatusError = "error";

@@ -83,7 +83,7 @@ namespace vcpkg
     StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields)
     {
         auto status_it = fields.find(ParagraphIdStatus);
-        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
         auto status_field = std::move(status_it->second);
         fields.erase(status_it);
         this->package = BinaryParagraph(origin, std::move(fields));

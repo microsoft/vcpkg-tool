@@ -6,7 +6,6 @@ namespace vcpkg
     struct CiBaselineLine;
     struct TripletExclusions;
     struct ExclusionsMap;
-    struct ExclusionPredicate;
 
     enum class CiBaselineState
     {

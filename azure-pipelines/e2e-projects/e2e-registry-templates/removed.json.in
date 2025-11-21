@@ -1,5 +1,5 @@
 {
-  "vcpkg-configuration": {
+  "configuration": {
     "default-registry": {
       "kind": "git",
       "baseline": "$E2ERegistryBaseline",

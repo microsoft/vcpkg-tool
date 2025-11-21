@@ -9,13 +9,14 @@ namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
-        if (row == 0 && column == 0)
+        if (row == 0)
         {
+            if (column != 0)
+            {
+                ++column;
+            }
+
             return;
-        }
-        else if (row == 0 || column == 0)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         if (ch == '\t')
@@ -75,7 +76,7 @@ namespace vcpkg
         append_caret_line(res, loc.it, loc.start_of_line);
     }
 
-    void ParseMessages::exit_if_errors_or_warnings() const
+    void ParseMessages::print_errors_or_warnings() const
     {
         for (const auto& line : m_lines)
         {
@@ -89,6 +90,15 @@ namespace vcpkg
                 DiagnosticLine{DiagKind::Error, msg::format(msgWarningsTreatedAsErrors)}.print_to(out_sink);
             }
 
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+    }
+
+    void ParseMessages::exit_if_errors_or_warnings() const
+    {
+        print_errors_or_warnings();
+        if (!m_good)
+        {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

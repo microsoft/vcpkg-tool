@@ -27,10 +27,10 @@ BeforeAll {
     $VcpkgPredefined = @{
         CommandList         = @(
             'acquire_project', 'acquire', 'activate', 'add', 'create', 'deactivate', 'depend-info', 'edit', 'env'
-            'export', 'fetch', 'find', 'format-feature-baseline', 'format-manifest', 'hash', 'help', 'install', 'integrate', 'list', 'new', 'owns'
-            'portsdiff', 'remove', 'search', 'update', 'upgrade', 'use', 'version', 'x-add-version', 'x-check-support'
-            'x-init-registry', 'x-package-info', 'x-regenerate', 'x-set-installed', 'x-test-features', 'x-update-baseline'
-            'x-update-registry', 'x-vsinstances'
+            'export', 'fetch', 'find', 'format-feature-baseline', 'format-manifest', 'hash', 'help', 'install', 'integrate',
+            'license-report', 'list', 'new', 'owns', 'portsdiff', 'remove', 'search', 'update', 'upgrade', 'use', 'version',
+            'x-add-version', 'x-check-support', 'x-init-registry', 'x-package-info', 'x-regenerate', 'x-set-installed',
+            'x-test-features', 'x-update-baseline', 'x-update-registry', 'x-vsinstances'
         )
         CommonParameterList = @()
         CommandOptionList   = @{
@@ -65,28 +65,6 @@ Describe 'Prerequisites tests' {
 
         It 'Complete-InputCaret self should success' {
             'Complete-InputCaret^' | Complete-InputCaret | Should -Contain 'Complete-InputCaret'
-        }
-    }
-
-    Context 'Exist module and command tests' {
-        It 'Should imported module posh-vcpkg' {
-            (Get-Module -Name posh-vcpkg).Name | Should -Be 'posh-vcpkg'
-        }
-
-        It 'Should version greater than or equal 0.0.2' {
-            (Get-Module posh-vcpkg).Version | Should -BeGreaterOrEqual '0.0.2'
-        }
-
-        It 'Should have executable vcpkg' {
-            $vcpkgExe | Should -Exist
-        }
-
-        It 'Should have command vcpkg' {
-            Get-Command -Name vcpkg | Should -Not -BeNullOrEmpty
-        }
-
-        It 'Should command vcpkg is the executable' {
-            (Get-Command -Name vcpkg).Path | Should -Be $vcpkgExe.FullName
         }
     }
 }

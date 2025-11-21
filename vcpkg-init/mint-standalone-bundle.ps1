@@ -23,7 +23,7 @@ if ($Deployment -eq 'VisualStudio') {
         'usegitregistry' = $True;
         'embeddedsha'    = $sha;
         'deployment'     = $Deployment;
-        'vsversion'      = "17.0";
+        'vsversion'      = "18.0";
     }
 } else {
     $BundleConfig = @{
@@ -98,19 +98,17 @@ try {
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/applocal.ps1" -Destination 'out/scripts/buildsystems/msbuild/applocal.ps1'
 
     # None of the standalone bundles support classic mode, so turn that off in the bundled copy of the props
-    $propsContent = Get-Content "$PSScriptRoot/vcpkg.props" -Raw -Encoding Ascii
+    $propsContent = Get-Content "out/scripts/buildsystems/msbuild/vcpkg.props" -Raw -Encoding Ascii
     $classicEnabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">true</VcpkgEnableClassic>"
     $classicDisabledLine = "<VcpkgEnableClassic Condition=`"'`$(VcpkgEnableClassic)' == ''`">false</VcpkgEnableClassic>"
     $propsContent = $propsContent.Replace($classicEnabledLine, $classicDisabledLine)
     Set-Content -Path "out/scripts/buildsystems/msbuild/vcpkg.props" -Value $propsContent -NoNewline -Encoding Ascii
 
-    Copy-Item -Path "$PSScriptRoot/vcpkg.targets" -Destination 'out/scripts/buildsystems/msbuild/vcpkg.targets'
-
     New-Item -Path 'out/scripts/posh-vcpkg/' -ItemType 'Directory' -Force
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psm1" -Destination 'out/scripts/posh-vcpkg/posh-vcpkg.psm1'
     Copy-Item -Path "$ArchIndependentSignedFilesRoot/scripts/posh-vcpkg.psd1" -Destination 'out/scripts/posh-vcpkg/posh-vcpkg.psd1'
 
-    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-artifacts" -Destination 'out/vcpkg-artifacts' -Recurse
+    Copy-Item -Path "$ArchIndependentSignedFilesRoot/vcpkg-artifacts.mjs" -Destination 'out/vcpkg-artifacts.mjs'
 
     New-Item -Path "out/.vcpkg-root" -ItemType "File"
     Set-Content -Path "out/vcpkg-bundle.json" `

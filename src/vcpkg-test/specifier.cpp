@@ -270,7 +270,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
                 "zlib[feature]:x64-uwp", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                 .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name.value == "zlib");
-        SourceLoc feature_loc{{}, {}, 0, 5};
+        SourceLoc feature_loc{{}, {}, 0, 6};
         REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) ==
                 std::vector<Located<std::string>>{Located<std::string>(feature_loc, "feature")});
         REQUIRE(spec.triplet.value_or_exit(VCPKG_LINE_INFO).value == "x64-uwp");
@@ -301,9 +301,9 @@ TEST_CASE ("specifier parsing", "[specifier]")
                         "zlib[0, 1,2]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                         .value_or_exit(VCPKG_LINE_INFO);
         REQUIRE(spec.name.value == "zlib");
-        SourceLoc zero_loc{{}, {}, 0, 5};
-        SourceLoc one_loc{{}, {}, 0, 8};
-        SourceLoc two_loc{{}, {}, 0, 10};
+        SourceLoc zero_loc{{}, {}, 0, 6};
+        SourceLoc one_loc{{}, {}, 0, 9};
+        SourceLoc two_loc{{}, {}, 0, 11};
         REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) ==
                 std::vector<Located<std::string>>{Located<std::string>{zero_loc, "0"},
                                                   Located<std::string>{one_loc, "1"},
@@ -317,7 +317,7 @@ TEST_CASE ("specifier parsing", "[specifier]")
         auto spec = vcpkg::parse_qualified_specifier(
                         "zlib[*]", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes)
                         .value_or_exit(VCPKG_LINE_INFO);
-        SourceLoc star_loc{{}, {}, 0, 5};
+        SourceLoc star_loc{{}, {}, 0, 6};
         REQUIRE(spec.name.value == "zlib");
         REQUIRE(spec.features.value_or_exit(VCPKG_LINE_INFO) ==
                 std::vector<Located<std::string>>{Located<std::string>{star_loc, "*"}});

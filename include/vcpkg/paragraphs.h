@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/binaryparagraph.h>

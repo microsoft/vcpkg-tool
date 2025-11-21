@@ -98,11 +98,11 @@ if(MSVC)
     # either MSVC, or clang-cl
     string(APPEND CMAKE_C_FLAGS " -FC -permissive- -utf-8 /guard:cf")
     string(APPEND CMAKE_CXX_FLAGS " /EHsc -FC -permissive- -utf-8 /guard:cf")
-    string(APPEND CMAKE_C_FLAGS_RELEASE " /Zi")
-    string(APPEND CMAKE_CXX_FLAGS_RELEASE " /Zi")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /Zi /GL")
+    string(APPEND CMAKE_CXX_FLAGS_RELEASE " /Zi /GL")
 
-    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf")
-    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf /OPT:REF /OPT:ICF /LTCG")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /DEBUG /INCREMENTAL:NO /debugtype:cv,fixup /guard:cf /OPT:REF /OPT:ICF /LTCG")
     if (MSVC_CXX_ARCHITECTURE_ID STREQUAL "x64")
         string(APPEND CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO " /CETCOMPAT")
         string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /CETCOMPAT")
@@ -237,9 +237,16 @@ elseif(VCPKG_OFFICIAL_BUILD)
     message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
 endif()
 
+if(VCPKG_ARTIFACTS_SHA)
+    target_compile_definitions(vcpkglib PUBLIC
+        "VCPKG_ARTIFACTS_SHA=${VCPKG_ARTIFACTS_SHA}"
+    )
+elseif(VCPKG_OFFICIAL_BUILD)
+    message(FATAL_ERROR "VCPKG_ARTIFACTS_SHA is required for official builds.")
+endif()
+
 file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
 if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_BINARY_DIR)
     # The directory constructed by this portion of the build script needs to be kept in sync with
     # that created by azure-pipelines/signing.yml
 
@@ -258,7 +265,7 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     add_custom_command(
         OUTPUT
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-        COMMAND "${NPM}" ARGS "ci"
+        COMMAND "${NPM}" ARGS "ci" "--include=dev"
         WORKING_DIRECTORY
             "${VCPKG_ARTIFACTS_SOURCE_DIR}"
         COMMENT
@@ -301,9 +308,8 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
     set(VCPKG_ARTIFACTS_SOURCES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES})
     list(TRANSFORM VCPKG_ARTIFACTS_SOURCES PREPEND "${VCPKG_ARTIFACTS_SOURCE_DIR}/")
 
-    set(VCPKG_ARTIFACTS_BINARIES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES}) 
-    list(TRANSFORM VCPKG_ARTIFACTS_BINARIES PREPEND "${VCPKG_ARTIFACTS_BINARY_DIR}/")
-    list(TRANSFORM VCPKG_ARTIFACTS_BINARIES REPLACE "\\.ts" ".js")
+    set(VCPKG_ARTIFACTS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts-build")
+    set(VCPKG_ARTIFACTS_BINARY "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts.mjs")
     add_custom_command(
         OUTPUT "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
         COMMAND "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/translate-strings/dist/main.js" "." "--json"
@@ -317,74 +323,30 @@ if (VCPKG_ARTIFACTS_DEVELOPMENT)
 
     add_custom_command(
         OUTPUT
-            ${VCPKG_ARTIFACTS_BINARIES}
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
+            ${VCPKG_ARTIFACTS_BINARY}
         COMMAND
-            "${CMAKE_COMMAND}" ARGS -E rm -rf "${VCPKG_ARTIFACTS_BINARY_DIR}"
+            "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/@vercel/ncc/dist/ncc/cli.js"
+                build "main.ts"
+                --out "${VCPKG_ARTIFACTS_BUILD_DIR}"
         COMMAND
-            "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E make_directory "${VCPKG_ARTIFACTS_BINARY_DIR}/locales"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy_directory
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/node_modules"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy_directory
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/test-resources"
-        # Files are after directories for more accurate cmake tracking of interrupted runs
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy
-                "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-        COMMAND
-            "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/typescript/bin/tsc"
-                -p "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-                --outDir "${VCPKG_ARTIFACTS_BINARY_DIR}"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E touch
-                "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
+            "${CMAKE_COMMAND}" ARGS -E copy "${VCPKG_ARTIFACTS_BUILD_DIR}/index.js" "${VCPKG_ARTIFACTS_BINARY}"
+        WORKING_DIRECTORY
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}"
         DEPENDS
+            npm-restore
             ${VCPKG_ARTIFACTS_SOURCES}
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/mocha-config.yaml"
+            "${VCPKG_ARTIFACTS_SOURCE_DIR}/.mocharc.json"
             "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
         COMMENT
             "Building vcpkg-artifacts..."
         VERBATIM
         )
 
-    add_custom_target(vcpkg-artifacts-target
-        ALL
-        DEPENDS
-            ${VCPKG_ARTIFACTS_BINARIES}
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/package.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/package-lock.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/.npmrc"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/mocha-config.yaml"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/locales/messages.json"
-            "${VCPKG_ARTIFACTS_BINARY_DIR}/artifacts-development.txt"
-            npm-restore
-        )
-    set_target_properties(vcpkg-artifacts-target
-        PROPERTIES
-            ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_BINARY_DIR}")
+    add_custom_target(vcpkg-artifacts-target ALL DEPENDS "${VCPKG_ARTIFACTS_BINARY}")
 endif()
 
 set(CPP_ATOMIC_LIBRARY "")
@@ -431,6 +393,10 @@ elseif(NOT MSVC)
     target_compile_options(vcpkglib PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+    target_link_libraries(vcpkglib PRIVATE socket)
+endif()
+
 if(ANDROID AND CMAKE_SYSTEM_VERSION LESS "28")
     # pkg install libandroid-spawn
     target_link_libraries(vcpkglib PRIVATE android-spawn)
@@ -462,7 +428,7 @@ add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell
 # === Target: vcpkg ===
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
-target_link_libraries(vcpkg PRIVATE vcpkglib)
+target_link_libraries(vcpkg PRIVATE vcpkglib ${CMAKE_DL_LIBS})
 
 if(VCPKG_ADD_SOURCELINK)
     if(VCPKG_VERSION STREQUAL "unknownhash")
@@ -514,10 +480,12 @@ if (BUILD_TESTING)
        target_compile_options(vcpkg-test PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h")
     endif()
 
-    add_test(NAME default COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
-
-    if (VCPKG_BUILD_BENCHMARKING)
+    add_test(NAME vcpkg-test COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
+    if(VCPKG_BUILD_BENCHMARKING)
         target_compile_options(vcpkg-test PRIVATE -DCATCH_CONFIG_ENABLE_BENCHMARKING)
+    endif()
+    if(VCPKG_ARTIFACTS_DEVELOPMENT)
+        add_test(NAME artifacts COMMAND "${NODEJS}" "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/mocha/bin/mocha.js" "--import=tsx" WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}")
     endif()
 endif()
 

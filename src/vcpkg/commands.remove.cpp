@@ -181,7 +181,7 @@ namespace vcpkg
         (void)host_triplet;
         if (paths.manifest_mode_enabled())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgRemoveDependencies);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgRemoveDependencies);
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
