@@ -403,11 +403,17 @@ namespace
             for (auto&& job : jobs)
             {
                 const auto zip_resource = job.zip_resource;
-                if (auto new_path = try_write_back_zip_file(zip_resource->path))
+
+                if (job.success)
                 {
-                    Debug::print("Renamed ", zip_resource->path, " to ", *(new_path.get()), "\n");
+                    if (auto new_path = try_write_back_zip_file(zip_resource->path))
+                    {
+                        Debug::print("Renamed ", zip_resource->path, " to ", *(new_path.get()), "\n");
+                        continue;
+                    }
                 }
-                else if (zip_resource->to_remove == RemoveWhen::always)
+
+                if (zip_resource->to_remove == RemoveWhen::always)
                 {
                     m_fs.remove(zip_resource->path, IgnoreErrors{});
                     Debug::print("Removed ", zip_resource->path, '\n');
