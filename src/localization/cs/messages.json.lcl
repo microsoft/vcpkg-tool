@@ -4219,45 +4219,45 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlDownloadTimeout" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Download timed out.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Vypršel časový limit stahování.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
+          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Operace curl selhala s kódem chyby {exit_code}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+            <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlFailedHttpResponse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl operation failed with HTTP response code {exit_code}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Operace curl selhala s kódem odpovědi HTTP {exit_code}.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
+          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Operace curl nedokázala odeslat soubor metodou PUT na {url}, server vrátil kód odpovědi {value}.]]></Val>
+            <Val><![CDATA[Nástroji curl se nepodařilo vložit soubor na adresu {url} s ukončovacím kódem {exit_code}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
+            <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToPutHttp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code} and http code {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nástroji curl se nepodařilo vložit soubor na adresu {url} s ukončovacím kódem {exit_code} a kódem HTTP {value}.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Curl nevrátil očekávaný počet ukončovacích kódů; k tomu může dojít, pokud se něco zahodí před dokončením. Curl se ukončil s {exit_code}, což je obvykle kód výsledku poslední operace, ale může to být důsledek chybového ukončení. Příkazový řádek byl {command_line} a veškerý výstup je níže:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4555,20 +4555,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Stažení z adresy {url} se nezdařilo – pokus se zopakuje za {value} ms.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadFailedStatusCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: neúspěšné: stavový kód {value}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadNotTransientErrorWontRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Not a transient network error, won't retry download from {url}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Nejedná se o přechodnou chybu sítě, nebude se opakovat stahování z adresy {url}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4615,29 +4615,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadTransientErrorRetriesExhausted" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Reached maximum number of attempts, won't retry download from {url}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dosáhlo se maximálního počtu pokusů, nebude se opakovat stahování z adresy {url}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadTransientErrorRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempt {count} of {value}, retrying download.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pokus {count} z(e) {value}, opakuje se pokus o stažení.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Trying {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Probíhá pokus o {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{url}: {system_api} selhalo s ukončovacím kódem {exit_code}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7959,6 +7950,15 @@
           <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Neplatný triplet: {triplet}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidUri" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to parse uri: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nejde parsovat identifikátor URI: {value}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

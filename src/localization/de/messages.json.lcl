@@ -4219,45 +4219,45 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CurlDownloadTimeout" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Download timed out.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zeitüberschreitung beim Herunterladen.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
+          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Curl-Vorgang. Fehlercode: {exit_code}]]></Val>
+            <Val><![CDATA[Fehler beim Curl-Vorgang. Fehlercode: {exit_code}.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+            <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlFailedHttpResponse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl operation failed with HTTP response code {exit_code}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Curl-Vorgang. HTTP-Antwortcode: {exit_code}.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
+          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Curl konnte die Datei mit dem Antwortcode {value} nicht in {url} einfügen.]]></Val>
+            <Val><![CDATA[CURL konnte die Datei nicht unter {url} mit Exitcode {exit_code} ablegen.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
+            <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToPutHttp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code} and http code {value}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CURL konnte die Datei nicht unter {url} mit dem Exitcode {exit_code} und dem HTTP-Code {value} ablegen.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl konnte die erwartete Anzahl von Exitcodes nicht zurückgeben. dies kann vorkommen, wenn etwas beendet wird, bevor es abgeschlossen ist. curl wurde mit {exit_code} beendet. Dies ist normalerweise der Ergebniscode für den letzten Vorgang, kann aber das Ergebnis eines Absturzes sein. Die Befehlszeile wurde {command_line}, und die gesamte Ausgabe ist unten:]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4555,20 +4555,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Fehler beim Herunterladen von {url}. Der Versuch wird nach {value} Min. wiederholt.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadFailedStatusCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: Fehler: Statuscode {value}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadNotTransientErrorWontRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Not a transient network error, won't retry download from {url}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Kein vorübergehender Netzwerkfehler. Der Download von {url} wird nicht wiederholt]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4615,29 +4615,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadTransientErrorRetriesExhausted" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Reached maximum number of attempts, won't retry download from {url}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die maximale Anzahl von Versuchen wurde erreicht. Der Download von {url} wird nicht wiederholt.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadTransientErrorRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Attempt {count} of {value}, retrying download.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Versuchen Sie {count} von {value}, der Download wird wiederholt.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Trying {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es wird versucht, {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{url}: Fehler bei {system_api}. Exitcode: {exit_code}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7959,6 +7950,15 @@
           <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Ungültiges Triplet: {triplet}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidUri" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[unable to parse uri: {value}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[URI kann nicht geparst werden: {value}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
