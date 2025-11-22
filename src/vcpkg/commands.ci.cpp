@@ -500,7 +500,7 @@ namespace vcpkg
         }
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
-        const auto precheck_results = binary_cache.precheck(console_diagnostic_context, install_actions);
+        const auto precheck_results = binary_cache.precheck(console_diagnostic_context, fs, install_actions);
         const auto pre_build_status =
             compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
         {
