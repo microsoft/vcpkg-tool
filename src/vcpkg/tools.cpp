@@ -537,7 +537,7 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
             cmd.string_arg(exe_path).string_arg("help").string_arg("-ForceEnglishOutput");
             auto maybe_output = run_to_extract_version(context, Tools::NUGET, exe_path, std::move(cmd));
-            if (auto* output = maybe_output.get())
+            if (maybe_output)
             {
                 // Sample output:
                 // NuGet Version: 4.6.2.5055
