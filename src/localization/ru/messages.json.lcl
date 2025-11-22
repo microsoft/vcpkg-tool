@@ -1777,6 +1777,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultCached" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[CACHED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[КЭШИРОВАНО]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultCascadeDueToMissingDependencies" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[CASCADED_DUE_TO_MISSING_DEPENDENCIES]]></Val>
@@ -1800,6 +1809,24 @@
           <Val><![CDATA[EXCLUDED]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ИСКЛЮЧЕНО]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultExcludedByDryRun" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[EXCLUDED_BY_DRY_RUN]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ИСКЛЮЧЕНО_ПРОБНЫМ_ПРОГОНОМ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultExcludedByParent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[EXCLUDED_BY_PARENT]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ИСКЛЮЧЕНО_РОДИТЕЛЬСКИМ_ОБЪЕКТОМ]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1858,6 +1885,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[    {build_result}: {count}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[UNSUPPORTED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[НЕ ПОДДЕРЖИВАЕТСЯ]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2242,15 +2278,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CiBaselineIndependentRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[REGRESSION: Independent {spec} failed with {build_result}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[РЕГРЕССИЯ: сбой независимого объекта {spec} с {build_result}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -2301,15 +2328,6 @@
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ПЕРЕДАЧА, УДАЛЕНИЕ ИЗ СПИСКА СБОЕВ: {spec} ({path}).]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CiBaselineUnexpectedPassCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[РЕГРЕССИЯ: {spec} помечен как успешное прохождение, но одна зависимость не поддерживается для {triplet}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4205,8 +4223,11 @@
         <Str Cat="Text">
           <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Операция завитка завершилась сбоем, код ошибки {exit_code}.]]></Val>
+            <Val><![CDATA[Сбой операции curl с кодом ошибки {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4216,6 +4237,9 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[curl не удалось поместить файл в {url} с кодом завершения {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4521,12 +4545,12 @@
       </Item>
       <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https://address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность его настроек..]A;Возможные причины:]A;1. Фактически вы используете HTTP-прокси, но устанавливаете переменную HTTPS_PROXY на "https//address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является HTTPS-прокси, в то время как ваш прокси-сервер (v2ray, shadowsocksr и т. д.) является HTTP-прокси.]A;Попробуйте вместо "http://address:port" задать значение HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически будет использовать настройки прокси-сервера Windows IE, установленные программным обеспечением прокси-сервера. Сведения: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, установленное прокси-сервером, может быть неправильным или содержать тот же префикс "https://".]A;3. Удаленный сервер этого прокси-сервера не обслуживается.]A;Если вы считаете, что это не временная ошибка сервера скачивания и vcpkg необходимо изменить, чтобы скачать этот файл из другого расположения, отправьте проблему по адресу https://github.com/Microsoft/vcpkg/issues]]></Val>
+            <Val><![CDATA[Если вы используете прокси-сервер, проверьте правильность его настроек.]A;Возможные причины:]A;1. Фактически вы используете прокси-сервер HTTP, но настраиваете для переменной HTTPS_PROXY значение "https://address:port".]A;Это неправильно, так как префикс "https://" утверждает, что прокси-сервер является прокси-сервером HTTPS, в то время как этот прокси-сервер (v2ray, shadowsocksr и т. д.) является прокси-сервером HTTP.]A;Вместо этого попробуйте настроить значение "http://address:port" для HTTP_PROXY и HTTPS_PROXY.]A;2. Если вы используете Windows, vcpkg автоматически будет применять параметры прокси-сервера Windows IE, настроенные программным обеспечением прокси-сервера. Сведения: https://github.com/microsoft/vcpkg-tool/pull/77]A;Значение, настроенное прокси-сервером, может быть неправильным или содержать тот же префикс "https://".]A;3. Удаленный сервер этого прокси-сервера не обслуживается.]A;Если вы считаете, что это не временная ошибка сервера скачивания и vcpkg необходимо изменить, чтобы скачать этот файл из другого расположения, отправьте проблему по адресу https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4537,9 +4561,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Сбой скачивания {url} — повторная попытка через {value} мс]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4609,9 +4630,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: сбой {system_api} с кодом завершения {exit_code}.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10102,6 +10120,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Removing {spec}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RequestedPortsNotInCIPlan" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[один или несколько портов, запрошенных для установки, отсутствуют в плане действий. (Возможно, ошибка vcpkg)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

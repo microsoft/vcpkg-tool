@@ -1777,6 +1777,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultCached" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[CACHED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ULOŽENO V MEZIPAMĚTI]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultCascadeDueToMissingDependencies" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[CASCADED_DUE_TO_MISSING_DEPENDENCIES]]></Val>
@@ -1800,6 +1809,24 @@
           <Val><![CDATA[EXCLUDED]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[VYLOUČENÉ]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultExcludedByDryRun" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[EXCLUDED_BY_DRY_RUN]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[EXCLUDED_BY_DRY_RUN]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultExcludedByParent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[EXCLUDED_BY_PARENT]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[EXCLUDED_BY_PARENT]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1858,6 +1885,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[    {build_result}: {count}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultUnsupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[UNSUPPORTED]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[NEPODPOROVÁNO]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -2242,15 +2278,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CiBaselineIndependentRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[REGRESSION: Independent {spec} failed with {build_result}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[REGRESE: Nezávislá specifikace {spec} selhala s {build_result}.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";CiBaselineRegression" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[REGRESSION: {spec} failed with {build_result}. If expected, add {spec}=fail to {path}.]]></Val>
@@ -2301,15 +2328,6 @@
           <Val><![CDATA[PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[PŘEDÁVÁNÍ, ODEBRAT ZE SEZNAMU SELHÁNÍ: {spec} ({path}).]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CiBaselineUnexpectedPassCascade" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[REGRESE: {spec} je označeno jako úspěšné, ale jedna závislost se pro {triplet} nepodporuje.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4205,8 +4223,11 @@
         <Str Cat="Text">
           <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Operace curl se nezdařila s kódem chyby {exit_code}.]]></Val>
+            <Val><![CDATA[Operace curl selhala s kódem chyby {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4216,6 +4237,9 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Nástroji curl se nepodařilo vložit soubor na adresu {url} s ukončovacím kódem {exit_code}.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4521,12 +4545,12 @@
       </Item>
       <Item ItemId=";DownloadFailedProxySettings" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+          <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https://address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Pokud používáte proxy server, ujistěte se, že je nastavení proxy serveru správné.]A;Možné příčiny:]A;1. Ve skutečnosti používáte proxy server HTTP, ale nastavujete proměnnou HTTPS_PROXY na https//address:port.]A;To není správné, protože předpona „https://“ označuje, že proxy server je typu HTTPS, zatímco váš proxy server (v2ray, shadowsocksr atd...) je proxy server HTTP.]A;Zkuste místo toho nastavit „http://address:port“ u HTTP_PROXY i HTTPS_PROXY.]A;2. Pokud používáte Windows, bude vcpkg automaticky používat nastavení proxy serveru Windows IE nastavená vaším proxy softwarem. Viz: https://github.com/microsoft/vcpkg-tool/pull/77]A;Hodnota nastavená proxy serverem může být chybná nebo může mít stejný problém s předponou „https://“.]A;3. Vzdálený server vašeho proxy serveru je mimo provoz.]A;Pokud se domníváte, že se nejedná o dočasné selhání stahovacího serveru a že je třeba změnit vcpkg tak, aby stahoval tento soubor z jiného umístění, nahlaste prosím problém na adrese https://github.com/Microsoft/vcpkg/issues]]></Val>
+            <Val><![CDATA[Pokud používáte proxy server, ujistěte se, že je nastavení proxy serveru správné.]A;Možné příčiny:]A;1. Ve skutečnosti používáte proxy server HTTP, ale nastavujete proměnnou HTTPS_PROXY na https://address:port.]A;To není správné, protože předpona „https://“ označuje, že proxy server je typu HTTPS, zatímco váš proxy server (v2ray, shadowsocksr atd...) je proxy server HTTP.]A;Zkuste místo toho nastavit „http://address:port“ u HTTP_PROXY i HTTPS_PROXY.]A;2. Pokud používáte Windows, bude vcpkg automaticky používat nastavení proxy serveru Windows IE nastavená vaším proxy softwarem. Viz: https://github.com/microsoft/vcpkg-tool/pull/77]A;Hodnota nastavená proxy serverem může být chybná nebo může mít stejný problém s předponou „https://“.]A;3. Vzdálený server vašeho proxy serveru je mimo provoz.]A;Pokud se domníváte, že se nejedná o dočasné selhání stahovacího serveru a že je třeba změnit vcpkg tak, aby stahoval tento soubor z jiného umístění, nahlaste prosím problém na adrese https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is our of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
+            <Val><![CDATA[If you are using a proxy, please ensure your proxy settings are correct.]A;Possible causes are:]A;1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to `https//address:port`.]A;This is not correct, because `https://` prefix claims the proxy is an HTTPS proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.]A;Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.]A;2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your proxy software. See: https://github.com/microsoft/vcpkg-tool/pull/77]A;The value set by your proxy might be wrong, or have same `https://` prefix issue.]A;3. Your proxy's remote server is out of service.]A;If you believe this is not a temporary download server failure and vcpkg needs to be changed to download this file from a different location, please submit an issue to https://github.com/Microsoft/vcpkg/issues]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -4537,9 +4561,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Stažení z adresy {url} se nezdařilo – pokus se zopakuje za {value} ms.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Download failed -- retrying after {value}ms]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4609,9 +4630,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}: {system_api} selhalo s ukončovacím kódem {exit_code}.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10102,6 +10120,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Removing {spec}]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";RequestedPortsNotInCIPlan" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Minimálně jeden port požadovaný k instalaci nebyl v akčním plánu. (Pravděpodobně chyba vcpkg)]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>

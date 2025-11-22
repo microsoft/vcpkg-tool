@@ -27,18 +27,33 @@ namespace vcpkg
 
         const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
-        Optional<const std::string&> get_abi() const
+        const std::string* package_abi() const
         {
-            return m_install_action ? m_install_action->package_abi() : nullopt;
+            if (m_install_action)
+            {
+                return m_install_action->package_abi();
+            }
+
+            return nullptr;
+        }
+        const std::string& package_abi_or_exit(LineInfo li) const
+        {
+            auto pabi = package_abi();
+            if (!pabi)
+            {
+                Checks::unreachable(li);
+            }
+
+            return *pabi;
         }
         bool is_user_requested_install() const;
         Optional<ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
-        Optional<const InstallPlanAction&> get_install_plan_action() const
-        {
-            return m_install_action ? Optional<const InstallPlanAction&>(*m_install_action) : nullopt;
-        }
+        const InstallPlanAction* get_maybe_install_plan_action() const { return m_install_action; }
+
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
 
     private:
         const InstallPlanAction* m_install_action;

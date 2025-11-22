@@ -188,6 +188,11 @@ DECLARE_MESSAGE(ARegistryPathMustStartWithDollar,
                 "",
                 "A registry path must start with `$` to mean the registry root; for example, `$/foo/bar`.")
 DECLARE_MESSAGE(ARelaxedVersionString, (), "", "a relaxed version string")
+DECLARE_MESSAGE(
+    RequestedPortsNotInCIPlan,
+    (),
+    "",
+    "one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)")
 DECLARE_MESSAGE(ArtifactsBootstrapFailed, (), "", "vcpkg-artifacts is not installed and could not be bootstrapped.")
 DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
 DECLARE_MESSAGE(ArtifactsOptionJson,
@@ -381,6 +386,11 @@ DECLARE_MESSAGE(BuildResultBuildFailed,
                 (),
                 "Printed after the name of an installed entity to indicate that it failed to build.",
                 "BUILD_FAILED")
+DECLARE_MESSAGE(BuildResultCached,
+                (),
+                "Printed after the name of an installed entity to indicate that it was not installed because it "
+                "already existed in a binary cache.",
+                "CACHED")
 DECLARE_MESSAGE(
     BuildResultCacheMissing,
     (),
@@ -402,6 +412,15 @@ DECLARE_MESSAGE(BuildResultExcluded,
                 "Printed after the name of an installed entity to indicate that the user explicitly "
                 "requested it not be installed.",
                 "EXCLUDED")
+DECLARE_MESSAGE(BuildResultExcludedByDryRun,
+                (),
+                "Printed after the name of an entity that would be installed, but is not due to --dry-run.",
+                "EXCLUDED_BY_DRY_RUN")
+DECLARE_MESSAGE(BuildResultExcludedByParent,
+                (),
+                "Printed after the name of an installed entity to indicate that it isn't tested due to an ABI hash in "
+                "--parent-hashes.",
+                "EXCLUDED_BY_PARENT")
 DECLARE_MESSAGE(
     BuildResultFileConflicts,
     (),
@@ -429,6 +448,11 @@ DECLARE_MESSAGE(BuildResultSummaryLine,
                 (msg::build_result, msg::count),
                 "Displayed to show a count of results of a build_result in a summary.",
                 "{build_result}: {count}")
+DECLARE_MESSAGE(
+    BuildResultUnsupported,
+    (),
+    "Printed after the name of an installed entity to indicate that it was not included due to a \"supports\" clause.",
+    "UNSUPPORTED")
 DECLARE_MESSAGE(BuildTreesRootDir, (), "", "Buildtrees directory (experimental)")
 DECLARE_MESSAGE(BuildTroubleshootingMessage1,
                 (),
@@ -469,10 +493,6 @@ DECLARE_MESSAGE(CiBaselineDisallowedCascade,
                 (msg::spec, msg::path),
                 "",
                 "REGRESSION: {spec} cascaded, but it is required to pass. ({path}).")
-DECLARE_MESSAGE(CiBaselineIndependentRegression,
-                (msg::spec, msg::build_result),
-                "",
-                "REGRESSION: Independent {spec} failed with {build_result}.")
 DECLARE_MESSAGE(CiBaselineRegression,
                 (msg::spec, msg::build_result, msg::path),
                 "",
@@ -497,10 +517,6 @@ DECLARE_MESSAGE(CiBaselineUnexpectedPass,
                 (msg::spec, msg::path),
                 "",
                 "PASSING, REMOVE FROM FAIL LIST: {spec} ({path}).")
-DECLARE_MESSAGE(CiBaselineUnexpectedPassCascade,
-                (msg::spec, msg::triplet),
-                "",
-                "REGRESSION: {spec} is marked as pass but one dependency is not supported for {triplet}.")
 DECLARE_MESSAGE(CiBaselineUnexpectedPassUnsupported,
                 (msg::spec, msg::triplet),
                 "",
@@ -1084,7 +1100,7 @@ DECLARE_MESSAGE(
     "If you are using a proxy, please ensure your proxy settings are correct.\n"
     "Possible causes are:\n"
     "1. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to "
-    "`https//address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
+    "`https://address:port`.\nThis is not correct, because `https://` prefix claims the proxy is an HTTPS "
     "proxy, while your proxy (v2ray, shadowsocksr, etc...) is an HTTP proxy.\n"
     "Try setting `http://address:port` to both HTTP_PROXY and HTTPS_PROXY instead.\n"
     "2. If you are using Windows, vcpkg will automatically use your Windows IE Proxy Settings set by your "

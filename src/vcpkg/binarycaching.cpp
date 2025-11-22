@@ -431,7 +431,7 @@ namespace
         {
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                const auto& abi_tag = actions[i]->package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi_tag = actions[i]->package_abi_or_exit(VCPKG_LINE_INFO);
                 auto archive_path = m_dir / files_archive_subpath(abi_tag);
                 if (fs.exists(archive_path, IgnoreErrors{}))
                 {
@@ -448,7 +448,7 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 const auto& action = *actions[idx];
-                const auto& abi_tag = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi_tag = action.package_abi_or_exit(VCPKG_LINE_INFO);
 
                 bool any_available = false;
                 if (fs.exists(m_dir / files_archive_subpath(abi_tag), IgnoreErrors{}))
@@ -1035,7 +1035,7 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                 auto tmp = make_temp_archive_path(m_buildtrees, action.spec, abi);
                 WarningDiagnosticContext wdc{context};
                 auto res = m_tool->download_file(wdc, make_object_path(m_prefix, abi), tmp);
@@ -1057,7 +1057,7 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                 WarningDiagnosticContext wdc{context};
                 auto maybe_res = m_tool->stat(wdc, make_object_path(m_prefix, abi));
                 if (auto res = maybe_res.get())
@@ -1181,7 +1181,7 @@ namespace
             for (size_t idx = 0; idx < actions.size(); ++idx)
             {
                 auto&& action = *actions[idx];
-                const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                 abis.push_back(abi);
                 abi_index_map[abi] = idx;
             }
@@ -1240,7 +1240,7 @@ namespace
                 for (size_t idx = 0; idx < actions.size(); ++idx)
                 {
                     auto&& action = *actions[idx];
-                    const auto& abi = action.package_abi().value_or_exit(VCPKG_LINE_INFO);
+                    const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                     cache_status[idx] =
                         Util::contains(*abis, abi) ? CacheAvailability::available : CacheAvailability::unavailable;
                 }
@@ -2457,7 +2457,7 @@ namespace vcpkg
             statuses.clear();
             for (size_t i = 0; i < actions.size(); ++i)
             {
-                if (auto abi = actions[i].package_abi().get())
+                if (auto abi = actions[i].package_abi())
                 {
                     CacheStatus& status = m_status[*abi];
                     if (status.should_attempt_restore(provider.get()))
@@ -2492,7 +2492,7 @@ namespace vcpkg
 
     bool ReadOnlyBinaryCache::is_restored(const InstallPlanAction& action) const
     {
-        if (auto abi = action.package_abi().get())
+        if (auto abi = action.package_abi())
         {
             auto it = m_status.find(*abi);
             if (it != m_status.end()) return it->second.is_restored();
@@ -2517,10 +2517,9 @@ namespace vcpkg
                                                                  const Filesystem& fs,
                                                                  View<const InstallPlanAction*> actions)
     {
-        std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const auto& action) {
-            Checks::check_exit(VCPKG_LINE_INFO, action && action->package_abi());
-            ASSUME(action);
-            return &m_status[*action->package_abi().get()];
+        const std::vector<CacheStatus*> statuses = Util::fmap(actions, [this](const InstallPlanAction* action) {
+            Checks::check_exit(VCPKG_LINE_INFO, action);
+            return &m_status[action->package_abi_or_exit(VCPKG_LINE_INFO)];
         });
 
         std::vector<const InstallPlanAction*> action_ptrs;
@@ -2546,14 +2545,13 @@ namespace vcpkg
 
             for (size_t i = 0; i < action_ptrs.size(); ++i)
             {
-                auto&& this_status = m_status[*action_ptrs[i]->package_abi().get()];
                 if (cache_result[i] == CacheAvailability::available)
                 {
-                    this_status.mark_available(provider.get());
+                    statuses[i]->mark_available(provider.get());
                 }
                 else if (cache_result[i] == CacheAvailability::unavailable)
                 {
-                    this_status.mark_unavailable(provider.get());
+                    statuses[i]->mark_unavailable(provider.get());
                 }
             }
         }
@@ -2905,7 +2903,7 @@ namespace vcpkg
 
     void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
-        if (auto abi = action.package_abi().get())
+        if (auto abi = action.package_abi())
         {
             bool restored;
             auto it = m_status.find(*abi);
@@ -3113,7 +3111,7 @@ namespace vcpkg
     }
 
     BinaryPackageReadInfo::BinaryPackageReadInfo(const InstallPlanAction& action)
-        : package_abi(action.package_abi().value_or_exit(VCPKG_LINE_INFO))
+        : package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
         , display_name(action.display_name())
         , version(action.version())

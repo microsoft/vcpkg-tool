@@ -476,39 +476,27 @@ namespace vcpkg
         Checks::unreachable(VCPKG_LINE_INFO);
     }
 
-    static LocalizedString format_result_row(const SpecSummary& result)
-    {
-        return LocalizedString()
-            .append_indent()
-            .append_raw(result.get_spec().to_string())
-            .append_raw(": ")
-            .append(to_string(result.build_result.value_or_exit(VCPKG_LINE_INFO).code))
-            .append_raw(": ")
-            .append_raw(result.timing.to_string());
-    }
-
     LocalizedString InstallSummary::format_results() const
     {
-        LocalizedString to_print;
-        to_print.append(msgResultsHeader).append_raw('\n');
-
-        for (const SpecSummary& result : this->results)
-        {
-            to_print.append(format_result_row(result)).append_raw('\n');
-        }
-        to_print.append_raw('\n');
-
-        std::map<Triplet, BuildResultCounts> summary;
+        std::map<Triplet, BuildResultCounts> summary_counts;
+        std::string to_print = msg::format(msgResultsHeader).extract_data();
+        to_print.push_back('\n');
         for (const SpecSummary& r : this->results)
         {
-            summary[r.get_spec().triplet()].increment(r.build_result.value_or_exit(VCPKG_LINE_INFO).code);
+            summary_counts[r.get_spec().triplet()].increment(r.build_result.value_or_exit(VCPKG_LINE_INFO).code);
+
+            to_print.append(2, ' ');
+            r.to_string(to_print);
+            to_print.push_back('\n');
         }
 
-        for (auto&& entry : summary)
+        to_print.push_back('\n');
+        for (auto&& entry : summary_counts)
         {
-            to_print.append(entry.second.format(entry.first));
+            to_print.append(entry.second.format(entry.first).data());
         }
-        return to_print;
+
+        return LocalizedString::from_raw(std::move(to_print));
     }
 
     void InstallSummary::print_failed() const
@@ -520,7 +508,7 @@ namespace vcpkg
         {
             if (result.build_result.value_or_exit(VCPKG_LINE_INFO).code != BuildResult::Succeeded)
             {
-                output.append(format_result_row(result)).append_raw('\n');
+                output.append_raw("  ").append_raw(result.to_string()).append_raw('\n');
             }
         }
         output.append_raw('\n');
@@ -705,11 +693,15 @@ namespace vcpkg
                 case BuildResult::Succeeded:
                 case BuildResult::Removed:
                 case BuildResult::Downloaded:
-                case BuildResult::Excluded: break;
+                case BuildResult::Excluded:
+                case BuildResult::ExcludedByParent:
+                case BuildResult::ExcludedByDryRun:
+                case BuildResult::Cached: break;
                 case BuildResult::BuildFailed:
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::Unsupported:
                 case BuildResult::CacheMissing: summary.failed = true; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
@@ -1484,12 +1476,15 @@ namespace vcpkg
 
             for (auto&& result : summary.results)
             {
-                xwriter.add_test_results(result.get_spec(),
-                                         result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                         result.timing,
-                                         result.start_time,
-                                         "",
-                                         {});
+                if (const auto* ipa = result.get_maybe_install_plan_action())
+                {
+                    xwriter.add_test_results(result.get_spec(),
+                                             CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                                                      CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
+                                                                    ipa->feature_list,
+                                                                    result.start_time,
+                                                                    result.timing}});
+                }
             }
 
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
@@ -1560,6 +1555,16 @@ namespace vcpkg
     bool SpecSummary::is_user_requested_install() const
     {
         return m_install_action && m_install_action->request_type == RequestType::USER_REQUESTED;
+    }
+
+    std::string SpecSummary::to_string() const { return adapt_to_string(*this); }
+    void SpecSummary::to_string(std::string& out_str) const
+    {
+        m_spec.to_string(out_str);
+        out_str.append(": ");
+        out_str.append(vcpkg::to_string(build_result.value_or_exit(VCPKG_LINE_INFO).code).data());
+        out_str.append(": ");
+        timing.to_string(out_str);
     }
 
     void track_install_plan(const ActionPlan& plan)
