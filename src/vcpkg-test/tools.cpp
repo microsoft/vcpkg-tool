@@ -374,3 +374,75 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
               "SHA-512 hash must be 128 characters long and contain only hexadecimal digits");
     }
 }
+
+TEST_CASE ("ContextCache", "[tools]")
+{
+    struct JustOpt
+    {
+        int value;
+        Optional<int> operator()(DiagnosticContext& context) const
+        {
+            context.statusln(LocalizedString::from_raw(fmt::format("The value is {}", value)));
+            return value;
+        }
+    };
+
+    ContextCache<std::string, int> cache;
+
+    // success miss then hit (middle key)
+    FullyBufferedDiagnosticContext fbdc1;
+    const auto* first_ptr = cache.get_lazy(fbdc1, "durian", JustOpt{42});
+    REQUIRE(first_ptr != nullptr);
+    CHECK(*first_ptr == 42);
+    CHECK(fbdc1.to_string() == "The value is 42");
+    // functor should NOT run, status lines not replayed:
+    FullyBufferedDiagnosticContext fbdc1_hit;
+    const auto* hit_ptr = cache.get_lazy(fbdc1_hit, "durian", JustOpt{12345});
+    REQUIRE(hit_ptr == first_ptr);
+    CHECK(fbdc1_hit.empty());
+
+    // insert before existing element
+    FullyBufferedDiagnosticContext fbdc2;
+    const auto* below_ptr = cache.get_lazy(fbdc2, "apple", JustOpt{1729});
+    REQUIRE(below_ptr != nullptr);
+    CHECK(*below_ptr == 1729);
+    CHECK(fbdc2.to_string() == "The value is 1729");
+    FullyBufferedDiagnosticContext fbdc2_hit;
+    const auto* below_hit_ptr = cache.get_lazy(fbdc2_hit, "apple", JustOpt{1});
+    REQUIRE(below_hit_ptr == below_ptr);
+    CHECK(fbdc2_hit.empty());
+
+    // insert above existing element
+    FullyBufferedDiagnosticContext fbdc3;
+    const auto* above_ptr = cache.get_lazy(fbdc3, "melon", JustOpt{1234});
+    REQUIRE(above_ptr != nullptr);
+    CHECK(*above_ptr == 1234);
+    CHECK(fbdc3.to_string() == "The value is 1234");
+    FullyBufferedDiagnosticContext fbdc3_hit;
+    const auto* above_hit_ptr = cache.get_lazy(fbdc3_hit, "melon", JustOpt{2});
+    REQUIRE(above_hit_ptr == above_ptr);
+    CHECK(fbdc3_hit.empty());
+
+    // error case: provider returns empty optional and reports diagnostic; ensure cached error re-reports but provider
+    // not re-run
+    int error_call_count = 0;
+    auto failing_provider = [&error_call_count](DiagnosticContext& ctx) -> Optional<int> {
+        ++error_call_count;
+        ctx.statusln(LocalizedString::from_raw(fmt::format("The number of calls is {}", error_call_count)));
+        ctx.report_error(LocalizedString::from_raw("bad"));
+        return nullopt; // failure
+    };
+    FullyBufferedDiagnosticContext fbdc_err1;
+    const auto* err1 = cache.get_lazy(fbdc_err1, "kiwi", failing_provider);
+    REQUIRE(err1 == nullptr);
+    CHECK(!fbdc_err1.empty());
+    CHECK(fbdc_err1.to_string() == "The number of calls is 1\nerror: bad");
+
+    FullyBufferedDiagnosticContext fbdc_err2;
+    const auto* err2 = cache.get_lazy(fbdc_err2, "kiwi", failing_provider); // should not invoke provider again
+    REQUIRE(err2 == nullptr);
+    CHECK(!fbdc_err2.empty());
+    CHECK(fbdc_err2.to_string() == "error: bad"); // status line not replayed
+    const auto second_error_output = fbdc_err2.to_string();
+    CHECK(error_call_count == 1);
+}

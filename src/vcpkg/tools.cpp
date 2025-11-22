@@ -43,57 +43,6 @@ namespace
         {"netbsd", ToolOs::NetBsd},
         {"solaris", ToolOs::Solaris},
     };
-
-    template<class Key, class Value, class Compare = std::less<>>
-    struct ContextCache
-    {
-        template<class KeyIsh,
-                 class F,
-                 std::enable_if_t<std::is_constructible_v<Key, const KeyIsh&> &&
-                                      detail::is_callable<Compare&, const Key&, const KeyIsh&>::value,
-                                  int> = 0>
-        const Value* get_lazy(DiagnosticContext& context, const KeyIsh& k, F&& f) const
-        {
-            auto it = m_cache.lower_bound(k);
-            // lower_bound returns the first iterator such that it->first is greater than or equal to than k, so k must
-            // be less than or equal to it->first. If k is greater than or equal it->first, then it must be equal so we
-            // have a cache hit.
-            if (it == m_cache.end() || m_cache.key_comp()(k, it->first))
-            {
-                ContextBufferedDiagnosticContext cbdc{context};
-                auto maybe_result = f(context);
-                if (auto success = maybe_result.get())
-                {
-                    it = m_cache.emplace_hint(it,
-                                              std::piecewise_construct,
-                                              std::forward_as_tuple(k),
-                                              std::forward_as_tuple(std::move(*success), expected_left_tag));
-                }
-                else
-                {
-                    it = m_cache.emplace_hint(it,
-                                              std::piecewise_construct,
-                                              std::forward_as_tuple(k),
-                                              std::forward_as_tuple(std::move(cbdc.lines), expected_right_tag));
-                }
-            }
-
-            if (auto success = it->second.get())
-            {
-                return success;
-            }
-
-            for (const auto& line : it->second.error())
-            {
-                context.report(line);
-            }
-
-            return nullptr;
-        }
-
-    private:
-        mutable std::map<Key, ExpectedT<Value, std::vector<DiagnosticLine>>, Compare> m_cache;
-    };
 }
 
 namespace vcpkg

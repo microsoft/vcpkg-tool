@@ -196,8 +196,6 @@ namespace vcpkg
         DiagnosticContext& status_context;
     };
 
-    struct FullyBufferedDiagnosticContext;
-
     struct DiagnosticOrMessageLine
     {
         DiagnosticOrMessageLine(const DiagnosticLine& dl);
