@@ -1115,8 +1115,6 @@
   "_InvalidValuePostPortfileIncludes.comment": "An example of {path} is /foo/bar.",
   "IrregularFile": "path was not a regular file: {path}",
   "_IrregularFile.comment": "An example of {path} is /foo/bar.",
-  "JsonErrorMustBeAnObject": "Expected \"{path}\" to be an object.",
-  "_JsonErrorMustBeAnObject.comment": "An example of {path} is /foo/bar.",
   "JsonFieldNotObject": "value of [\"{json_field}\"] must be an object",
   "_JsonFieldNotObject.comment": "An example of {json_field} is identifer.",
   "JsonFieldNotString": "value of [\"{json_field}\"] must be a string",
