@@ -151,20 +151,13 @@ namespace vcpkg
         MessageSink& sink;
     };
 
-    // Stores all diagnostics into a vector, while passing through status lines to an underlying MessageSink.
-    struct BufferedDiagnosticContext final : DiagnosticContext
+    struct BasicBufferedDiagnosticContext : DiagnosticContext
     {
-        BufferedDiagnosticContext(MessageSink& status_sink) : status_sink(status_sink) { }
-
         virtual void report(const DiagnosticLine& line) override;
         virtual void report(DiagnosticLine&& line) override;
 
-        virtual void statusln(const LocalizedString& message) override;
-        virtual void statusln(LocalizedString&& message) override;
-        virtual void statusln(const MessageLine& message) override;
-        virtual void statusln(MessageLine&& message) override;
+        // statusln intentionally unimplemented
 
-        MessageSink& status_sink;
         std::vector<DiagnosticLine> lines;
 
         // Prints all diagnostics to the supplied sink.
@@ -176,6 +169,60 @@ namespace vcpkg
 
         bool any_errors() const noexcept;
         bool empty() const noexcept;
+    };
+
+    // Stores all diagnostics into a vector, while passing through status lines to an underlying MessageSink.
+    struct SinkBufferedDiagnosticContext final : BasicBufferedDiagnosticContext
+    {
+        SinkBufferedDiagnosticContext(MessageSink& status_sink) : status_sink(status_sink) { }
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        MessageSink& status_sink;
+    };
+
+    struct ContextBufferedDiagnosticContext final : BasicBufferedDiagnosticContext
+    {
+        ContextBufferedDiagnosticContext(DiagnosticContext& status_context) : status_context(status_context) { }
+
+        virtual void statusln(const LocalizedString& message) override;
+        virtual void statusln(LocalizedString&& message) override;
+        virtual void statusln(const MessageLine& message) override;
+        virtual void statusln(MessageLine&& message) override;
+
+        DiagnosticContext& status_context;
+    };
+
+    struct DiagnosticOrMessageLine
+    {
+        DiagnosticOrMessageLine(const DiagnosticLine& dl);
+        DiagnosticOrMessageLine(DiagnosticLine&& dl);
+        DiagnosticOrMessageLine(const MessageLine& ml);
+        DiagnosticOrMessageLine(MessageLine&& ml);
+
+        DiagnosticOrMessageLine(const DiagnosticOrMessageLine& other);
+        DiagnosticOrMessageLine(DiagnosticOrMessageLine&& other);
+
+        DiagnosticOrMessageLine& operator=(const DiagnosticOrMessageLine&) = delete;
+
+        ~DiagnosticOrMessageLine();
+
+        std::string to_string() const;
+        void to_string(std::string& target) const;
+
+    private:
+        friend FullyBufferedDiagnosticContext;
+
+        union
+        {
+            DiagnosticLine dl;
+            MessageLine ml;
+        };
+
+        bool is_diagnostic;
     };
 
     // Stores all diagnostics and status messages into a vector. This is generally used for background thread or similar
@@ -190,27 +237,28 @@ namespace vcpkg
         virtual void statusln(const MessageLine& message) override;
         virtual void statusln(MessageLine&& message) override;
 
-        std::vector<MessageLine> lines;
-
         // Prints all diagnostics to the supplied sink.
         void print_to(MessageSink& sink) const;
         // Converts this message into a string
         // Prefer print() if possible because it applies color
         std::string to_string() const;
         void to_string(std::string& target) const;
+        // Emits all status messages and reports all diagnostics to the supplied context
+        void report_to(DiagnosticContext& context) const&;
+        void report_to(DiagnosticContext& context) &&;
 
         bool empty() const noexcept;
+
+    private:
+        std::vector<DiagnosticOrMessageLine> lines;
     };
 
     // DiagnosticContext for attempted operations that may be recovered.
     // Stores all diagnostics and passes through all status messages. Afterwards, call commit() to report all
     // diagnostics to the outer DiagnosticContext, or handle() to forget them.
-    struct AttemptDiagnosticContext final : DiagnosticContext
+    struct AttemptDiagnosticContext final : BasicBufferedDiagnosticContext
     {
         AttemptDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
-
-        virtual void report(const DiagnosticLine& line) override;
-        virtual void report(DiagnosticLine&& line) override;
 
         virtual void statusln(const LocalizedString& message) override;
         virtual void statusln(LocalizedString&& message) override;
@@ -223,7 +271,6 @@ namespace vcpkg
         ~AttemptDiagnosticContext();
 
         DiagnosticContext& inner_context;
-        std::vector<DiagnosticLine> lines;
     };
 
     // Wraps another DiagnosticContext and reduces the severity of any reported diagnostics to warning from error.
@@ -312,11 +359,11 @@ namespace vcpkg
     // The overload for functors that return Optional<T>
     template<class Fn, class... Args>
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
-        typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+        typename AdaptContextUnwrapOptional<std::invoke_result_t<Fn, SinkBufferedDiagnosticContext&, Args...>>::type>
     {
-        using Unwrapper = AdaptContextUnwrapOptional<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>;
+        using Unwrapper = AdaptContextUnwrapOptional<std::invoke_result_t<Fn, SinkBufferedDiagnosticContext&, Args...>>;
         using ReturnType = ExpectedL<typename Unwrapper::type>;
-        BufferedDiagnosticContext bdc{out_sink};
+        SinkBufferedDiagnosticContext bdc{out_sink};
         decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (auto result = maybe_result.get())
         {
@@ -381,11 +428,11 @@ namespace vcpkg
     // The overload for functors that return std::unique_ptr<T>
     template<class Fn, class... Args>
     auto adapt_context_to_expected(Fn functor, Args&&... args) -> ExpectedL<
-        typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>
+        typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, SinkBufferedDiagnosticContext&, Args...>>::type>
     {
-        using ReturnType = ExpectedL<
-            typename AdaptContextDetectUniquePtr<std::invoke_result_t<Fn, BufferedDiagnosticContext&, Args...>>::type>;
-        BufferedDiagnosticContext bdc{out_sink};
+        using ReturnType = ExpectedL<typename AdaptContextDetectUniquePtr<
+            std::invoke_result_t<Fn, SinkBufferedDiagnosticContext&, Args...>>::type>;
+        SinkBufferedDiagnosticContext bdc{out_sink};
         decltype(auto) maybe_result = functor(bdc, std::forward<Args>(args)...);
         if (maybe_result)
         {

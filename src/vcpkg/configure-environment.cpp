@@ -195,7 +195,7 @@ namespace vcpkg
 
         auto temp_directory = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
 
-        auto cmd = Command{paths.get_tool_exe(Tools::NODE, out_sink)};
+        auto cmd = Command{paths.get_tool_path_required(Tools::NODE)};
         cmd.string_arg(*vcpkg_artifacts_path);
         cmd.forwarded_args(args);
         if (Debug::g_debugging)

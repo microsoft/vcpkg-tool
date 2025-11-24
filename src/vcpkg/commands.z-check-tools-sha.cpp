@@ -41,14 +41,19 @@ namespace vcpkg
 
         auto content = fs.read_contents(file_to_check, VCPKG_LINE_INFO);
 
-        auto data = parse_tool_data(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
+        auto maybe_data = parse_tool_data(console_diagnostic_context, content, file_to_check);
+        auto data = maybe_data.get();
+        if (!data)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto only_name_iter = parsed.settings.find(SwitchOnlyWithName);
 
         std::unordered_map<std::string, std::string> url_to_sha;
 
         std::vector<std::pair<std::string, Path>> urlAndPaths;
-        for (auto& entry : data)
+        for (auto& entry : *data)
         {
             if (entry.url.empty()) continue;
             if (only_name_iter != parsed.settings.end())

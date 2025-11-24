@@ -1,5 +1,6 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/messages.h>
@@ -336,7 +337,7 @@ namespace vcpkg
         return supported_architectures;
     }
 
-    Optional<std::string> get_environment_variable(ZStringView varname) noexcept
+    Optional<std::string> get_environment_variable(ZStringView varname)
     {
 #if defined(_WIN32)
         const auto w_varname = Strings::to_utf16(varname);
@@ -411,7 +412,18 @@ namespace vcpkg
         return result;
     }
 
-    const ExpectedL<Path>& get_home_dir() noexcept
+    static const Path* get_cached_environment_variable(DiagnosticContext& context, const ExpectedL<Path>& cached)
+    {
+        if (auto p = cached.get())
+        {
+            return p;
+        }
+
+        context.report_error(cached.error());
+        return nullptr;
+    }
+
+    const ExpectedL<Path>& get_home_dir()
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
 #ifdef _WIN32
@@ -441,8 +453,13 @@ namespace vcpkg
 #undef HOMEVAR
     }
 
+    const Path* get_home_dir(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_home_dir());
+    }
+
 #ifdef _WIN32
-    const ExpectedL<Path>& get_appdata_local() noexcept
+    const ExpectedL<Path>& get_appdata_local()
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable(EnvironmentVariableLocalAppData);
@@ -481,6 +498,11 @@ namespace vcpkg
         return s_home;
     }
 
+    const Path* get_appdata_local(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_appdata_local());
+    }
+
     static ExpectedL<Path> get_windows_forced_environment_variable(StringLiteral environment_variable)
     {
         auto env = get_environment_variable(environment_variable);
@@ -493,28 +515,43 @@ namespace vcpkg
                            msg::env_var = format_environment_variable(environment_variable));
     }
 
-    const ExpectedL<Path>& get_system_drive() noexcept
+    const ExpectedL<Path>& get_system_drive()
     {
         static const ExpectedL<Path> s_system_drive =
             get_windows_forced_environment_variable(EnvironmentVariableSystemDrive);
         return s_system_drive;
     }
 
-    const ExpectedL<Path>& get_system_root() noexcept
+    const Path* get_system_drive(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_system_drive());
+    }
+
+    const ExpectedL<Path>& get_system_root()
     {
         static const ExpectedL<Path> s_system_root =
             get_windows_forced_environment_variable(EnvironmentVariableSystemRoot);
         return s_system_root;
     }
 
-    const ExpectedL<Path>& get_system32() noexcept
+    const Path* get_system_root(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_system_root());
+    }
+
+    const ExpectedL<Path>& get_system32()
     {
         // This needs to be lowercase or msys-ish tools break. See https://github.com/microsoft/vcpkg-tool/pull/418/
         static const ExpectedL<Path> s_system32 = get_system_root().map([](const Path& p) { return p / "system32"; });
         return s_system32;
     }
+
+    const Path* get_system32(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_system32());
+    }
 #else
-    static const ExpectedL<Path>& get_xdg_cache_home() noexcept
+    static const ExpectedL<Path>& get_xdg_cache_home()
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
@@ -532,7 +569,7 @@ namespace vcpkg
     }
 #endif
 
-    const ExpectedL<Path>& get_platform_cache_root() noexcept
+    const ExpectedL<Path>& get_platform_cache_root()
     {
         static ExpectedL<Path> s_home =
 #if defined(_WIN32)
@@ -544,13 +581,23 @@ namespace vcpkg
         return s_home;
     }
 
-    const ExpectedL<Path>& get_platform_cache_vcpkg() noexcept
+    const Path* get_platform_cache_root(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_platform_cache_root());
+    }
+
+    const ExpectedL<Path>& get_platform_cache_vcpkg()
     {
         static ExpectedL<Path> s_vcpkg = get_platform_cache_root().map([](const Path& p) { return p / "vcpkg"; });
         return s_vcpkg;
     }
 
-    const ExpectedL<Path>& get_user_configuration_home() noexcept
+    const Path* get_platform_cache_vcpkg(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_platform_cache_vcpkg());
+    }
+
+    const ExpectedL<Path>& get_user_configuration_home()
     {
 #if defined(_WIN32)
         static const ExpectedL<Path> result =
@@ -559,6 +606,11 @@ namespace vcpkg
         static const ExpectedL<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
 #endif
         return result;
+    }
+
+    const Path* get_user_configuration_home(DiagnosticContext& context)
+    {
+        return get_cached_environment_variable(context, get_user_configuration_home());
     }
 
 #if defined(_WIN32)
