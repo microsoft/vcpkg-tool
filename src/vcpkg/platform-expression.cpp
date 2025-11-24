@@ -30,6 +30,7 @@ namespace vcpkg::PlatformExpression
         freebsd,
         openbsd,
         netbsd,
+        dragonfly,
         bsd,
         solaris,
         osx,
@@ -67,6 +68,7 @@ namespace vcpkg::PlatformExpression
             {"freebsd", Identifier::freebsd},
             {"openbsd", Identifier::openbsd},
             {"netbsd", Identifier::netbsd},
+            {"dragonfly", Identifier::dragonfly},
             {"bsd", Identifier::bsd},
             {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
@@ -686,10 +688,13 @@ namespace vcpkg::PlatformExpression
                         case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
                         case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
                         case Identifier::netbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD");
+                        case Identifier::dragonfly:
+                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "DragonFly");
                         case Identifier::bsd:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD") ||
-                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD");
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "DragonFly");
                         case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
