@@ -797,7 +797,7 @@ namespace vcpkg
             if (!unknown_fields.empty())
             {
                 msg::println_warning(msg::format(msgUnrecognizedConfigField)
-                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append_raw("\n" + Strings::join("\n", unknown_fields) + "\n")
                                          .append(msgDocumentedFieldsSuggestUpdate));
             }
         }
