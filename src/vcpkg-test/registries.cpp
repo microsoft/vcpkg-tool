@@ -368,8 +368,10 @@ TEST_CASE ("registry_parsing", "[registries]")
     )json");
     {
         Json::Reader r{"test"};
-        visit_default_registry(r, std::move(test_json));
-        CHECK(r.messages().any_errors());
+        auto registry_impl = visit_default_registry(r, std::move(test_json));
+        REQUIRE(registry_impl);
+        INFO(r.messages().join());
+        CHECK_FALSE(r.messages().any_errors());
     }
 
     test_json = parse_json(R"json(

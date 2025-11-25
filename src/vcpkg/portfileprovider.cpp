@@ -372,15 +372,17 @@ namespace vcpkg
         {
             return *scfl;
         }
-        auto maybe_baseline = m_baseline->get_baseline_version(spec);
-        if (auto baseline = maybe_baseline.get())
-        {
-            return m_versioned->get_control_file({spec, *baseline});
-        }
-        else
-        {
-            return std::move(maybe_baseline).error();
-        }
+        return m_baseline->get_baseline_version(spec).then(
+            [&](const Optional<Version>& ver) -> ExpectedL<const SourceControlFileAndLocation&> {
+                if (auto v = ver.get())
+                {
+                    return m_versioned->get_control_file({spec, *v});
+                }
+                else
+                {
+                    return msg::format_error(msgPortNotInBaseline, msg::package_name = spec);
+                }
+            });
     }
 
     std::vector<const SourceControlFileAndLocation*> PathsPortFileProvider::load_all_control_files() const
@@ -399,25 +401,16 @@ namespace vcpkg
             BaselineProviderImpl(const BaselineProviderImpl&) = delete;
             BaselineProviderImpl& operator=(const BaselineProviderImpl&) = delete;
 
-            virtual ExpectedL<Version> get_baseline_version(StringView port_name) const override
+            virtual ExpectedL<Optional<Version>> get_baseline_version(StringView port_name) const override
             {
-                return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Version> {
-                    return registry_set.baseline_for_port(port_name).then(
-                        [&](Optional<Version>&& maybe_version) -> ExpectedL<Version> {
-                            auto version = maybe_version.get();
-                            if (!version)
-                            {
-                                return msg::format_error(msgPortNotInBaseline, msg::package_name = port_name);
-                            }
-
-                            return std::move(*version);
-                        });
+                return m_baseline_cache.get_lazy(port_name, [this, port_name]() -> ExpectedL<Optional<Version>> {
+                    return registry_set.baseline_for_port(port_name);
                 });
             }
 
         private:
             const RegistrySet& registry_set;
-            Cache<std::string, ExpectedL<Version>> m_baseline_cache;
+            Cache<std::string, ExpectedL<Optional<Version>>> m_baseline_cache;
         };
 
         struct VersionedPortfileProviderImpl : IFullVersionedPortfileProvider
