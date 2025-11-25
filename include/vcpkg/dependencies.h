@@ -26,13 +26,7 @@ namespace vcpkg
         PackageSpec spec;
     };
 
-    struct PackageAction : BasicAction
-    {
-        std::vector<PackageSpec> package_dependencies;
-        InternalFeatureSet feature_list;
-    };
-
-    struct InstallPlanAction : PackageAction
+    struct InstallPlanAction : BasicAction
     {
         InstallPlanAction(const InstallPlanAction&) = delete;
         InstallPlanAction(InstallPlanAction&&) = default;
@@ -61,6 +55,9 @@ namespace vcpkg
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
         std::string display_name() const;
+
+        std::vector<PackageSpec> package_dependencies;
+        InternalFeatureSet feature_list;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
         Optional<InstalledPackageView> installed_package;

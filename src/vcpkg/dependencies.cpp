@@ -500,7 +500,9 @@ namespace vcpkg
                                          RequestType request_type,
                                          UseHeadVersion use_head_version,
                                          Editable editable)
-        : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
+        : BasicAction{ipv.spec()}
+        , package_dependencies{ipv.dependencies()}
+        , feature_list{ipv.feature_list()}
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
@@ -519,7 +521,9 @@ namespace vcpkg
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<DiagnosticLine>&& build_failure_messages,
                                          std::vector<std::string> default_features)
-        : PackageAction{{spec}, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
+        : BasicAction{spec}
+        , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
+        , feature_list{fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
