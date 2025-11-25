@@ -31,6 +31,7 @@ namespace vcpkg
     };
 
     struct BasicAction;
+    struct BasicInstallPlanAction;
     struct InstallPlanAction;
     struct NotInstalledAction;
     struct RemovePlanAction;

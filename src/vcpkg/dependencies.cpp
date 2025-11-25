@@ -471,6 +471,17 @@ namespace vcpkg
         return left->spec.name() < right->spec.name();
     }
 
+    std::string BasicInstallPlanAction::display_name() const
+    {
+        if (this->feature_list.empty_or_only_core())
+        {
+            return fmt::format("{}@{}", this->spec.to_string(), version);
+        }
+
+        const std::string features = Strings::join(",", feature_list);
+        return fmt::format("{}[{}]:{}@{}", this->spec.name(), features, this->spec.triplet(), version);
+    }
+
     static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
                                                    const std::map<std::string, std::vector<FeatureSpec>>& dependencies)
     {
@@ -500,9 +511,8 @@ namespace vcpkg
                                          RequestType request_type,
                                          UseHeadVersion use_head_version,
                                          Editable editable)
-        : BasicAction{ipv.spec()}
+        : BasicInstallPlanAction{ipv.spec(), ipv.version(), ipv.feature_list()}
         , package_dependencies{ipv.dependencies()}
-        , feature_list{ipv.feature_list()}
         , installed_package(std::move(ipv))
         , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
@@ -521,9 +531,8 @@ namespace vcpkg
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<DiagnosticLine>&& build_failure_messages,
                                          std::vector<std::string> default_features)
-        : BasicAction{spec}
+        : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies)}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
-        , feature_list{fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
@@ -577,33 +586,6 @@ namespace vcpkg
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info;
-    }
-    Version InstallPlanAction::version() const
-    {
-        if (auto scfl = source_control_file_and_location.get())
-        {
-            return scfl->to_version();
-        }
-        else if (auto ipv = installed_package.get())
-        {
-            return ipv->version();
-        }
-        else
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-
-    std::string InstallPlanAction::display_name() const
-    {
-        auto version = this->version();
-        if (this->feature_list.empty_or_only_core())
-        {
-            return fmt::format("{}@{}", this->spec.to_string(), version);
-        }
-
-        const std::string features = Strings::join(",", feature_list);
-        return fmt::format("{}[{}]:{}@{}", this->spec.name(), features, this->spec.triplet(), version);
     }
 
     NotInstalledAction::NotInstalledAction(const PackageSpec& spec) : BasicAction{spec} { }

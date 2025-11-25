@@ -3001,7 +3001,7 @@ namespace vcpkg
         : package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
         , display_name(action.display_name())
-        , version(action.version())
+        , version(action.version)
         , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
     {
     }
@@ -3298,7 +3298,7 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
 FeedReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
     return ::make_feedref(
-        action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
+        action.spec, action.version, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }
 
 std::vector<std::vector<std::string>> vcpkg::batch_command_arguments_with_fixed_length(
