@@ -950,7 +950,6 @@ DECLARE_MESSAGE(ConsideredVersions,
                 "",
                 "The following executables were considered but discarded because of the version "
                 "requirement of {version}:")
-DECLARE_MESSAGE(ConstraintViolation, (), "", "Found a constraint violation:")
 DECLARE_MESSAGE(ContinueCodeUnitInStart, (), "", "found continue code unit in start position")
 DECLARE_MESSAGE(ControlCharacterInString, (), "", "Control character in string")
 DECLARE_MESSAGE(ControlSupportsMustBeAPlatformExpression, (), "", "\"Supports\" must be a platform expression")

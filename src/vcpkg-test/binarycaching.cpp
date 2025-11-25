@@ -351,7 +351,7 @@ Description:
                               UseHeadVersion::No,
                               Editable::No,
                               std::map<std::string, std::vector<FeatureSpec>>{},
-                              std::vector<LocalizedString>{},
+                              std::vector<DiagnosticLine>{},
                               std::vector<std::string>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
     ipa_without_abi.package_dir = "pkgs/someheadpackage";
@@ -430,7 +430,7 @@ Description: a spiffy compression library wrapper
                                       UseHeadVersion::No,
                                       Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{},
+                                      std::vector<DiagnosticLine>{},
                                       std::vector<std::string>{});
     plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
@@ -459,7 +459,7 @@ Description: a spiffy compression library wrapper
                                       UseHeadVersion::No,
                                       Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{},
+                                      std::vector<DiagnosticLine>{},
                                       std::vector<std::string>{});
     plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";

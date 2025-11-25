@@ -517,7 +517,7 @@ namespace vcpkg
                                          UseHeadVersion use_head_version,
                                          Editable editable,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                                         std::vector<LocalizedString>&& build_failure_messages,
+                                         std::vector<DiagnosticLine>&& build_failure_messages,
                                          std::vector<std::string> default_features)
         : PackageAction{{spec}, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
@@ -1079,7 +1079,7 @@ namespace vcpkg
             // If a cluster only has an installed object and is marked as user requested we should still report it.
             if (auto info_ptr = p_cluster->m_install_info.get())
             {
-                std::vector<LocalizedString> constraint_violations;
+                std::vector<DiagnosticLine> constraint_violations;
                 for (auto&& constraints : info_ptr->version_constraints)
                 {
                     for (auto&& constraint : constraints.second)
@@ -1090,14 +1090,13 @@ namespace vcpkg
                         {
                             if (compare_any(*v, constraint) == VerComp::lt)
                             {
-                                constraint_violations.push_back(msg::format_warning(msgVersionConstraintViolated,
-                                                                                    msg::spec = constraints.first,
-                                                                                    msg::expected_version = constraint,
-                                                                                    msg::actual_version = *v));
-                                msg::println(msg::format(msgConstraintViolation)
-                                                 .append_raw('\n')
-                                                 .append_indent()
-                                                 .append(constraint_violations.back()));
+                                constraint_violations
+                                    .emplace_back(DiagKind::Warning,
+                                                  msg::format(msgVersionConstraintViolated,
+                                                              msg::spec = constraints.first,
+                                                              msg::expected_version = constraint,
+                                                              msg::actual_version = *v))
+                                    .print_to(out_sink);
                             }
                         }
                     }

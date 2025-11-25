@@ -318,15 +318,11 @@ namespace vcpkg
             case BuildResult::Downloaded:
             case BuildResult::Removed:
             {
-                LocalizedString warnings;
                 for (auto&& msg : action->build_failure_messages)
                 {
-                    warnings.append(msg).append_raw('\n');
+                    msg.print_to(out_sink);
                 }
-                if (!warnings.data().empty())
-                {
-                    msg::print(Color::warning, warnings);
-                }
+
                 msg::println_error(create_error_message(result, spec));
                 msg::print(create_user_troubleshooting_message(*action, args.detected_ci(), paths, {}, nullopt));
                 return 1;

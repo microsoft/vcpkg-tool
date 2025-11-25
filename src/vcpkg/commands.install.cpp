@@ -418,15 +418,9 @@ namespace vcpkg
                 all_dependencies_satisfied = result.unmet_dependencies.empty();
                 if (result.code != BuildResult::Succeeded)
                 {
-                    LocalizedString warnings;
                     for (auto&& msg : action.build_failure_messages)
                     {
-                        warnings.append(msg).append_raw('\n');
-                    }
-
-                    if (!warnings.data().empty())
-                    {
-                        msg::print(Color::warning, warnings);
+                        msg.print_to(out_sink);
                     }
 
                     msg::println_error(create_error_message(result, action.spec));
