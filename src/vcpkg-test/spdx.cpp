@@ -374,8 +374,6 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
     InstallPlanAction ipa(
         spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "ABIHASH";
 
     const auto sbom =
         create_spdx_sbom(ipa,
@@ -547,8 +545,6 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
     InstallPlanAction ipa(
         spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "deadbeef";
 
     const auto sbom = create_spdx_sbom(ipa,
                                        std::vector<Path>{"vcpkg.json", "portfile.cmake"},
@@ -664,9 +660,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 
     InstallPlanAction ipa(
         spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "deadbeef";
-
+ 
     auto doc1 = Json::parse(R"json(
 {
   "relationships": [ "r1", "r2", "r3" ],
