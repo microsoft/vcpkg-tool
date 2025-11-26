@@ -68,7 +68,7 @@ namespace vcpkg
                           Editable editable,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                           std::vector<DiagnosticLine>&& build_failure_messages,
-                          std::vector<std::string> default_features);
+                          const std::vector<std::string>& default_features);
 
         const std::string& public_abi() const;
         bool has_package_abi() const;
@@ -87,7 +87,7 @@ namespace vcpkg
             return *m_source_control_file_and_location;
         }
 
-        Optional<std::vector<std::string>> default_features;
+        std::vector<std::string> default_features;
 
         InstallPlanType plan_type;
         UseHeadVersion use_head_version;

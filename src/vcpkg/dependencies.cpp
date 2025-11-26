@@ -529,11 +529,11 @@ namespace vcpkg
                                          Editable editable,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<DiagnosticLine>&& build_failure_messages,
-                                         std::vector<std::string> default_features)
+                                         const std::vector<std::string>& default_features)
         : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
         , m_source_control_file_and_location(&scfl)
-        , default_features(std::move(default_features))
+        , default_features(default_features)
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , use_head_version(use_head_version)
         , editable(editable)
