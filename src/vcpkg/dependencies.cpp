@@ -445,19 +445,17 @@ namespace vcpkg
         {
             out.append_raw(" (+HEAD)");
         }
-        if (auto scfl = action.source_control_file_and_location.get())
+        const auto& scfl = action.source_control_file_and_location();
+        switch (scfl.kind)
         {
-            switch (scfl->kind)
-            {
-                case PortSourceKind::Unknown:
-                case PortSourceKind::Builtin:
-                    // intentionally empty
-                    break;
-                case PortSourceKind::Overlay:
-                case PortSourceKind::Filesystem: out.append_raw(" -- ").append_raw(scfl->port_directory()); break;
-                case PortSourceKind::Git: out.append_raw(" -- ").append_raw(scfl->spdx_location); break;
-                default: Checks::unreachable(VCPKG_LINE_INFO);
-            }
+            case PortSourceKind::Unknown:
+            case PortSourceKind::Builtin:
+                // intentionally empty
+                break;
+            case PortSourceKind::Overlay:
+            case PortSourceKind::Filesystem: out.append_raw(" -- ").append_raw(scfl.port_directory()); break;
+            case PortSourceKind::Git: out.append_raw(" -- ").append_raw(scfl.spdx_location); break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
 
@@ -534,7 +532,7 @@ namespace vcpkg
                                          std::vector<std::string> default_features)
         : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
-        , source_control_file_and_location(scfl)
+        , m_source_control_file_and_location(&scfl)
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , use_head_version(use_head_version)
@@ -1146,9 +1144,8 @@ namespace vcpkg
             else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())
             {
                 auto&& installed = p_cluster->m_installed.value_or_exit(VCPKG_LINE_INFO);
-                plan.already_installed.emplace_back(InstalledPackageView(installed.ipv),
-                                                    p_cluster->request_type,
-                                                    use_head_version_if_user_requested);
+                plan.already_installed.emplace_back(
+                    InstalledPackageView(installed.ipv), p_cluster->request_type, use_head_version_if_user_requested);
             }
         }
         plan.unsupported_features = m_unsupported_features;
@@ -1976,10 +1973,7 @@ namespace vcpkg
                     return msg::format_error(msgCycleDetectedDuring, msg::spec = dep.spec)
                         .append_raw('\n')
                         .append_raw(Strings::join("\n", stack, [](const Frame& p) {
-                            return Strings::concat(
-                                p.ipa.spec,
-                                '@',
-                                p.ipa.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version());
+                            return Strings::concat(p.ipa.spec, '@', p.ipa.version.text);
                         }));
                 }
                 return Unit{};
@@ -2006,10 +2000,7 @@ namespace vcpkg
                     {
                         auto dep = std::move(back.deps.back());
                         back.deps.pop_back();
-                        const auto origin = Strings::concat(
-                            back.ipa.spec,
-                            "@",
-                            back.ipa.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version());
+                        const auto origin = Strings::concat(back.ipa.spec, "@", back.ipa.version);
                         x = push(dep, origin);
                         if (!x.has_value())
                         {
@@ -2026,7 +2017,7 @@ namespace vcpkg
             // Evaluate supports over the produced plan
             for (auto&& action : ret.install_actions)
             {
-                const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+                const auto& scfl = action.source_control_file_and_location();
                 const auto& vars = m_var_provider.get_or_load_dep_info_vars(action.spec, m_host_triplet);
                 // Evaluate core supports condition
                 const auto& supports_expr = scfl.source_control_file->core_paragraph->supports_expression;

@@ -349,7 +349,7 @@ namespace
             {
                 if (auto zip_resource = zip_paths[i].get())
                 {
-                    jobs.push_back({&actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO),
+                    jobs.push_back({&actions[i]->package_dir,
                                     zip_resource,
                                     m_fs.file_size(zip_resource->path, IgnoreErrors{}),
                                     i});
@@ -2836,7 +2836,7 @@ namespace vcpkg
 
         if (clean_packages == CleanPackages::Yes)
         {
-            m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+            m_fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
         }
     }
 
@@ -3002,7 +3002,7 @@ namespace vcpkg
         , spec(action.spec)
         , display_name(action.display_name())
         , version(action.version)
-        , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
+        , package_dir(action.package_dir)
     {
     }
 }
@@ -3141,7 +3141,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const NuGetRepoInfo& rinfo)
 {
     auto& spec = action.spec;
-    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& scf = *action.source_control_file_and_location().source_control_file;
     auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
     const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);

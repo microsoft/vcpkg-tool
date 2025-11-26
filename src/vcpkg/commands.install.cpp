@@ -388,8 +388,7 @@ namespace vcpkg
             std::unique_ptr<BinaryControlFile> bcf;
             if (binary_cache.is_restored(action))
             {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(
-                    fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
+                auto maybe_bcf = Paragraphs::try_load_cached_package(fs, action.package_dir, action.spec);
                 bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
                 all_dependencies_satisfied = true;
             }
@@ -430,8 +429,7 @@ namespace vcpkg
             BuildResult code;
             if (all_dependencies_satisfied)
             {
-                const auto install_result =
-                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, status_db);
+                const auto install_result = install_package(paths, action.package_dir, *bcf, status_db);
                 switch (install_result)
                 {
                     case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
@@ -555,10 +553,9 @@ namespace vcpkg
 
         void print_abi_hash() const
         {
-            auto bpgh = current_summary.get_binary_paragraph();
-            if (bpgh && !bpgh->abi.empty())
+            if (auto abi = current_summary.package_abi())
             {
-                msg::println(msgPackageAbi, msg::spec = bpgh->display_name(), msg::package_abi = bpgh->abi);
+                msg::println(msgPackageAbi, msg::spec = current_summary.get_spec(), msg::package_abi = *abi);
             }
         }
 
@@ -583,7 +580,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         for (auto&& action : install_actions)
         {
-            fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+            fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
         }
     }
 
@@ -623,37 +620,33 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
             if (result.code == BuildResult::Succeeded)
             {
-                if (auto scfl = action.source_control_file_and_location.get())
+                const auto& scfl = action.source_control_file_and_location();
+                const auto& scf = *scfl.source_control_file;
+                auto& license = scf.core_paragraph->license;
+                switch (license.kind())
                 {
-                    const auto& scf = *scfl->source_control_file;
-                    auto& license = scf.core_paragraph->license;
-                    switch (license.kind())
-                    {
-                        case SpdxLicenseDeclarationKind::NotPresent:
-                        case SpdxLicenseDeclarationKind::Null:
-                            summary.license_report.any_unknown_licenses = true;
-                            break;
-                        case SpdxLicenseDeclarationKind::String:
-                            for (auto&& applicable_license : license.applicable_licenses())
-                            {
-                                summary.license_report.named_licenses.insert(applicable_license.to_string());
-                            }
-                            break;
-                        default: Checks::unreachable(VCPKG_LINE_INFO);
-                    }
-
-                    for (const auto& feature_name : action.feature_list)
-                    {
-                        if (feature_name == FeatureNameCore)
-                        {
-                            continue;
-                        }
-
-                        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
-                        for (auto&& applicable_license : feature.license.applicable_licenses())
+                    case SpdxLicenseDeclarationKind::NotPresent:
+                    case SpdxLicenseDeclarationKind::Null: summary.license_report.any_unknown_licenses = true; break;
+                    case SpdxLicenseDeclarationKind::String:
+                        for (auto&& applicable_license : license.applicable_licenses())
                         {
                             summary.license_report.named_licenses.insert(applicable_license.to_string());
                         }
+                        break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
+                }
+
+                for (const auto& feature_name : action.feature_list)
+                {
+                    if (feature_name == FeatureNameCore)
+                    {
+                        continue;
+                    }
+
+                    const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
+                    for (auto&& applicable_license : feature.license.applicable_licenses())
+                    {
+                        summary.license_report.named_licenses.insert(applicable_license.to_string());
                     }
                 }
             }
@@ -1487,11 +1480,16 @@ namespace vcpkg
             for (auto&& result : summary.results)
             {
                 if (!result.is_user_requested_install()) continue;
-                auto bpgh = result.get_binary_paragraph();
-                // If a package failed to build, don't attempt to print usage.
-                // e.g. --keep-going
-                if (!bpgh) continue;
-                install_print_usage_information(*bpgh, printed_usages, fs, paths.installed());
+                if (auto br = result.build_result.get())
+                {
+                    // If a package failed to build, don't attempt to print usage.
+                    // e.g. --keep-going
+                    if (auto built_package = br->binary_control_file.get())
+                    {
+                        install_print_usage_information(
+                            built_package->core_paragraph, printed_usages, fs, paths.installed());
+                    }
+                }
             }
         }
         binary_cache.wait_for_async_complete_and_join();
@@ -1503,7 +1501,8 @@ namespace vcpkg
         : build_result()
         , timing()
         , start_time(std::chrono::system_clock::now())
-        , m_install_action(nullptr) // FIXME
+        , m_install_action(nullptr)
+        , m_package_abi(action.public_abi())
         , m_spec(action.spec)
     {
     }
@@ -1513,6 +1512,7 @@ namespace vcpkg
         , timing()
         , start_time(std::chrono::system_clock::now())
         , m_install_action(&action)
+        , m_package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
         , m_spec(action.spec)
     {
     }
@@ -1522,34 +1522,9 @@ namespace vcpkg
         , timing()
         , start_time(std::chrono::system_clock::now())
         , m_install_action(nullptr)
+        , m_package_abi()
         , m_spec(action.spec)
     {
-    }
-
-    const BinaryParagraph* SpecSummary::get_binary_paragraph() const
-    {
-        // if we actually built this package, the build result will contain the BinaryParagraph for what we built.
-        if (const auto br = build_result.get())
-        {
-            if (br->binary_control_file)
-            {
-                return &br->binary_control_file->core_paragraph;
-            }
-        }
-
-        // if the package was already installed, the installed_package record will contain the BinaryParagraph for what
-        // was built before.
-        if (m_install_action)
-        {
-            // FIXME
-            //
-            // if (auto p_status = m_install_action->installed_package.get())
-            //{
-            //    return &p_status->core->package;
-            //}
-        }
-
-        return nullptr;
     }
 
     bool SpecSummary::is_user_requested_install() const
@@ -1588,14 +1563,13 @@ namespace vcpkg
 
         for (auto&& install_action : plan.install_actions)
         {
-            auto&& version_as_string =
-                install_action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).to_version().to_string();
             if (!specs_string.empty()) specs_string.push_back(',');
-            specs_string += Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
-                                            ":",
-                                            hash_triplet(install_action.spec.triplet()),
-                                            ":",
-                                            Hash::get_string_hash(version_as_string, Hash::Algorithm::Sha256));
+            specs_string +=
+                Strings::concat(Hash::get_string_hash(install_action.spec.name(), Hash::Algorithm::Sha256),
+                                ":",
+                                hash_triplet(install_action.spec.triplet()),
+                                ":",
+                                Hash::get_string_hash(install_action.version.text, Hash::Algorithm::Sha256));
         }
 
         get_global_metrics_collector().track_string(StringMetric::InstallPlan_1, specs_string);

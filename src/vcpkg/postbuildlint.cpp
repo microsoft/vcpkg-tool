@@ -1648,7 +1648,7 @@ namespace vcpkg
         const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
         const auto& fs = paths.get_filesystem();
         const auto build_dir = paths.build_dir(action.spec);
-        const auto& package_dir = action.package_dir.value_or_exit(VCPKG_LINE_INFO);
+        const auto& package_dir = action.package_dir;
         const bool not_release_only = !pre_build_info.build_type;
 
         size_t error_count = 0;
@@ -1900,7 +1900,7 @@ namespace vcpkg
         }
 
         msg_sink.println(LocalizedString::from_raw("-- ").append(msgPerformingPostBuildValidation));
-        const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+        const auto& scfl = action.source_control_file_and_location();
         auto port_dir = scfl.port_directory();
         const auto portfile_cmake = port_dir / FilePortfileDotCMake;
         const size_t error_count = perform_all_checks_and_return_error_count(

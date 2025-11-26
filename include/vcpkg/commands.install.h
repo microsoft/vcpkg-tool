@@ -26,27 +26,9 @@ namespace vcpkg
         explicit SpecSummary(const InstallPlanAction& action);
         explicit SpecSummary(const RemovePlanAction& action);
 
-        const BinaryParagraph* get_binary_paragraph() const;
         const PackageSpec& get_spec() const { return m_spec; }
-        const std::string* package_abi() const
-        {
-            if (m_install_action)
-            {
-                return m_install_action->package_abi();
-            }
-
-            return nullptr;
-        }
-        const std::string& package_abi_or_exit(LineInfo li) const
-        {
-            auto pabi = package_abi();
-            if (!pabi)
-            {
-                Checks::unreachable(li);
-            }
-
-            return *pabi;
-        }
+        const std::string* package_abi() const { return m_package_abi.get(); }
+        const std::string& package_abi_or_exit(LineInfo li) const { return m_package_abi.value_or_exit(li); }
         bool is_user_requested_install() const;
         Optional<ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
@@ -58,6 +40,7 @@ namespace vcpkg
 
     private:
         const InstallPlanAction* m_install_action;
+        Optional<std::string> m_package_abi;
         PackageSpec m_spec;
     };
 

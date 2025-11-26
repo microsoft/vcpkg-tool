@@ -83,13 +83,8 @@ namespace vcpkg
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                const auto scfl = action.source_control_file_and_location.get();
-                if (!scfl)
-                {
-                    return nullopt;
-                }
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
             }
 
             Json::Object manifest;

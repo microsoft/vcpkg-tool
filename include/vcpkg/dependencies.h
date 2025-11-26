@@ -78,7 +78,15 @@ namespace vcpkg
 
         std::vector<PackageSpec> package_dependencies;
 
-        Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
+    private:
+        const SourceControlFileAndLocation* m_source_control_file_and_location;
+
+    public:
+        const SourceControlFileAndLocation& source_control_file_and_location() const noexcept
+        {
+            return *m_source_control_file_and_location;
+        }
+
         Optional<std::vector<std::string>> default_features;
 
         InstallPlanType plan_type;
@@ -88,9 +96,8 @@ namespace vcpkg
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<DiagnosticLine> build_failure_messages;
 
-        // only valid with source_control_file_and_location
         Optional<AbiInfo> abi_info;
-        Optional<Path> package_dir;
+        Path package_dir;
     };
 
     struct NotInstalledAction : BasicAction

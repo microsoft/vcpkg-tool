@@ -697,8 +697,7 @@ namespace vcpkg
                 for (auto& actions : test_spec.plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
-                    port_locations.emplace_back(
-                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
+                    port_locations.emplace_back(actions.source_control_file_and_location().port_directory());
                 }
                 actions_to_check.push_back(&test_spec.plan.install_actions.back());
             }

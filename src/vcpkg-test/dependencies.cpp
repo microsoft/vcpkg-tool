@@ -128,7 +128,6 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
         INFO("features = [" << Strings::join(", ", features) << "]");
@@ -148,10 +147,7 @@ static void check_name_and_version(const InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     check_name_and_features(ipa, name, features);
-    if (auto scfl = ipa.source_control_file_and_location.get())
-    {
-        CHECK(scfl->source_control_file->core_paragraph->version == v);
-    }
+    CHECK(ipa.version == v);
 }
 
 static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
