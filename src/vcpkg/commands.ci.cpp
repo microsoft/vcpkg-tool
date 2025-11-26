@@ -573,19 +573,16 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
 
-            for (auto&& result : summary.results)
+            for (auto&& result : summary.install_results)
             {
-                if (const auto* ipa = result.get_maybe_install_plan_action())
-                {
-                    // note that we assign over the 'known' values from above
-                    auto ci_result = CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                              CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
-                                                            ipa->feature_list,
-                                                            result.start_time,
-                                                            result.timing}};
-                    ci_plan_results.insert_or_assign(result.get_spec(), ci_result);
-                    ci_full_results.insert_or_assign(result.get_spec(), std::move(ci_result));
-                }
+                const auto& ipa = result.install_plan_action();
+                // note that we assign over the 'known' values from above
+                auto ci_result = CiResult{
+                    result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
+                    CiBuiltResult{
+                        ipa.package_abi_or_exit(VCPKG_LINE_INFO), ipa.feature_list, result.start_time, result.timing}};
+                ci_plan_results.insert_or_assign(result.spec(), ci_result);
+                ci_full_results.insert_or_assign(result.spec(), std::move(ci_result));
             }
         }
 

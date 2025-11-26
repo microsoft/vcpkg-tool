@@ -838,7 +838,7 @@ namespace vcpkg
                                                       *build_logs_recorder,
                                                       false);
             binary_cache.mark_all_unrestored();
-            for (const auto& result : summary.results)
+            for (const auto& result : summary.install_results)
             {
                 auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
                 switch (build_result.code)
@@ -847,11 +847,10 @@ namespace vcpkg
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
-                            const auto* ipa = result.get_maybe_install_plan_action();
-                            Checks::check_exit(VCPKG_LINE_INFO, ipa);
-                            fs.write_contents(issue_body_path,
-                                              create_github_issue(args, build_result, paths, *ipa, false),
-                                              VCPKG_LINE_INFO);
+                            fs.write_contents(
+                                issue_body_path,
+                                create_github_issue(args, build_result, paths, result.install_plan_action(), false),
+                                VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];
@@ -862,7 +861,7 @@ namespace vcpkg
                 }
             }
 
-            auto& last_build_result = summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
+            auto& last_build_result = summary.install_results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
             switch (last_build_result.code)
             {
                 case BuildResult::Downloaded:
@@ -891,7 +890,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.results.back().package_abi())
+                    if (auto abi = summary.install_results.back().package_abi())
                     {
                         known_failures.insert(*abi);
                     }

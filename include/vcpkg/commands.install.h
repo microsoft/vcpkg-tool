@@ -23,25 +23,33 @@ namespace vcpkg
     struct SpecSummary
     {
         explicit SpecSummary(const AlreadyInstalledPlanAction& action);
-        explicit SpecSummary(const InstallPlanAction& action);
         explicit SpecSummary(const RemovePlanAction& action);
 
-        const PackageSpec& get_spec() const { return m_spec; }
+        const PackageSpec& spec() const { return m_spec; }
         const std::string* package_abi() const { return m_package_abi.get(); }
         const std::string& package_abi_or_exit(LineInfo li) const { return m_package_abi.value_or_exit(li); }
-        bool is_user_requested_install() const;
         Optional<ExtendedBuildResult> build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
-        const InstallPlanAction* get_maybe_install_plan_action() const { return m_install_action; }
 
         std::string to_string() const;
         void to_string(std::string& out_str) const;
 
+    protected:
+        explicit SpecSummary(const InstallPlanAction& action);
     private:
-        const InstallPlanAction* m_install_action;
         Optional<std::string> m_package_abi;
         PackageSpec m_spec;
+    };
+
+    struct InstallSpecSummary : SpecSummary
+    {
+        explicit InstallSpecSummary(const InstallPlanAction& action);
+        const InstallPlanAction& install_plan_action() const noexcept { return *m_install_action; }
+        bool is_user_requested_install() const;
+
+    private:
+        const InstallPlanAction* m_install_action;
     };
 
     struct LicenseReport
@@ -53,7 +61,9 @@ namespace vcpkg
 
     struct InstallSummary
     {
-        std::vector<SpecSummary> results;
+        std::vector<SpecSummary> removed_results;
+        std::vector<SpecSummary> already_installed_results;
+        std::vector<InstallSpecSummary> install_results;
         ElapsedTime elapsed;
         LicenseReport license_report;
         bool failed = false;
