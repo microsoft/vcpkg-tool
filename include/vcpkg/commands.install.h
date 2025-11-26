@@ -22,6 +22,7 @@ namespace vcpkg
 {
     struct SpecSummary
     {
+        explicit SpecSummary(const AlreadyInstalledPlanAction& action);
         explicit SpecSummary(const InstallPlanAction& action);
         explicit SpecSummary(const RemovePlanAction& action);
 

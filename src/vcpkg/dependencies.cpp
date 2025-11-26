@@ -433,6 +433,11 @@ namespace vcpkg
         };
     }
 
+    static void format_plan_ipa_row(LocalizedString& out, const AlreadyInstalledPlanAction& action)
+    {
+        out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
+    }
+
     static void format_plan_ipa_row(LocalizedString& out, bool add_head_tag, const InstallPlanAction& action)
     {
         out.append_raw(request_type_indent(action.request_type)).append_raw(action.display_name());
@@ -482,6 +487,17 @@ namespace vcpkg
         return fmt::format("{}[{}]:{}@{}", this->spec.name(), features, this->spec.triplet(), version);
     }
 
+    AlreadyInstalledPlanAction::AlreadyInstalledPlanAction(InstalledPackageView&& ipv,
+                                                           RequestType request_type,
+                                                           UseHeadVersion use_head_version)
+        : BasicInstallPlanAction{ipv.spec(), ipv.version(), ipv.feature_list(), request_type}
+        , installed_package(std::move(ipv))
+        , use_head_version(use_head_version)
+    {
+    }
+
+    const std::string& AlreadyInstalledPlanAction::public_abi() const { return installed_package.core->package.abi; }
+
     static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
                                                    const std::map<std::string, std::vector<FeatureSpec>>& dependencies)
     {
@@ -507,21 +523,6 @@ namespace vcpkg
         return ret;
     }
 
-    InstallPlanAction::InstallPlanAction(InstalledPackageView&& ipv,
-                                         RequestType request_type,
-                                         UseHeadVersion use_head_version,
-                                         Editable editable)
-        : BasicInstallPlanAction{ipv.spec(), ipv.version(), ipv.feature_list()}
-        , package_dependencies{ipv.dependencies()}
-        , installed_package(std::move(ipv))
-        , plan_type(InstallPlanType::ALREADY_INSTALLED)
-        , request_type(request_type)
-        , use_head_version(use_head_version)
-        , editable(editable)
-        , feature_dependencies(installed_package.get()->feature_dependencies())
-    {
-    }
-
     InstallPlanAction::InstallPlanAction(const PackageSpec& spec,
                                          const SourceControlFileAndLocation& scfl,
                                          PackagesDirAssigner& packages_dir_assigner,
@@ -531,12 +532,11 @@ namespace vcpkg
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<DiagnosticLine>&& build_failure_messages,
                                          std::vector<std::string> default_features)
-        : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies)}
+        : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
         , source_control_file_and_location(scfl)
         , default_features(std::move(default_features))
         , plan_type(InstallPlanType::BUILD_AND_INSTALL)
-        , request_type(request_type)
         , use_head_version(use_head_version)
         , editable(editable)
         , feature_dependencies(std::move(dependencies))
@@ -549,8 +549,6 @@ namespace vcpkg
     {
         switch (plan_type)
         {
-            case InstallPlanType::ALREADY_INSTALLED:
-                return installed_package.value_or_exit(VCPKG_LINE_INFO).core->package.abi;
             case InstallPlanType::BUILD_AND_INSTALL:
             {
                 auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
@@ -1150,8 +1148,7 @@ namespace vcpkg
                 auto&& installed = p_cluster->m_installed.value_or_exit(VCPKG_LINE_INFO);
                 plan.already_installed.emplace_back(InstalledPackageView(installed.ipv),
                                                     p_cluster->request_type,
-                                                    use_head_version_if_user_requested,
-                                                    editable_if_user_requested);
+                                                    use_head_version_if_user_requested);
             }
         }
         plan.unsupported_features = m_unsupported_features;
@@ -1207,6 +1204,18 @@ namespace vcpkg
 
     static void format_plan_block(LocalizedString& msg,
                                   msg::MessageT<> header,
+                                  View<const AlreadyInstalledPlanAction*> actions)
+    {
+        msg.append(header).append_raw('\n');
+        for (auto action : actions)
+        {
+            format_plan_ipa_row(msg, *action);
+            msg.append_raw('\n');
+        }
+    }
+
+    static void format_plan_block(LocalizedString& msg,
+                                  msg::MessageT<> header,
                                   bool add_head_tag,
                                   View<const InstallPlanAction*> actions)
     {
@@ -1248,8 +1257,8 @@ namespace vcpkg
         std::set<PackageSpec> remove_specs;
         std::vector<const InstallPlanAction*> rebuilt_plans;
         std::vector<const InstallPlanAction*> new_plans;
-        std::vector<const InstallPlanAction*> already_installed_plans;
-        std::vector<const InstallPlanAction*> already_installed_head_plans;
+        std::vector<const AlreadyInstalledPlanAction*> already_installed_plans;
+        std::vector<const AlreadyInstalledPlanAction*> already_installed_head_plans;
         std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
@@ -1299,12 +1308,12 @@ namespace vcpkg
 
         if (!already_installed_head_plans.empty())
         {
-            format_plan_block(ret.warning_text, msgInstalledPackagesHead, false, already_installed_head_plans);
+            format_plan_block(ret.warning_text, msgInstalledPackagesHead, already_installed_head_plans);
         }
 
         if (!already_installed_plans.empty())
         {
-            format_plan_block(ret.normal_text, msgInstalledPackages, false, already_installed_plans);
+            format_plan_block(ret.normal_text, msgInstalledPackages, already_installed_plans);
         }
 
         if (!remove_specs.empty())

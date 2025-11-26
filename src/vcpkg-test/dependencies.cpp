@@ -2428,17 +2428,15 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     install_f.plan_type = InstallPlanType::EXCLUDED;
 
-    InstallPlanAction already_installed_d(
+    AlreadyInstalledPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::AUTO_SELECTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
-    InstallPlanAction already_installed_e(
+    AlreadyInstalledPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::USER_REQUESTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
 
     ActionPlan plan;
     {

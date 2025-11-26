@@ -30,7 +30,27 @@ namespace vcpkg
     {
         Version version;
         InternalFeatureSet feature_list;
+        RequestType request_type;
         std::string display_name() const;
+    };
+
+    struct AlreadyInstalledPlanAction : BasicInstallPlanAction
+    {
+        AlreadyInstalledPlanAction(const AlreadyInstalledPlanAction&) = delete;
+        AlreadyInstalledPlanAction(AlreadyInstalledPlanAction&&) = default;
+        AlreadyInstalledPlanAction& operator=(const AlreadyInstalledPlanAction&) = delete;
+        AlreadyInstalledPlanAction& operator=(AlreadyInstalledPlanAction&&) = default;
+
+        AlreadyInstalledPlanAction(InstalledPackageView&& spghs,
+                                   RequestType request_type,
+                                   UseHeadVersion use_head_version);
+
+        const std::string& public_abi() const;
+
+        InstalledPackageView installed_package;
+
+        InstallPlanType plan_type;
+        UseHeadVersion use_head_version;
     };
 
     struct InstallPlanAction : BasicInstallPlanAction
@@ -39,11 +59,6 @@ namespace vcpkg
         InstallPlanAction(InstallPlanAction&&) = default;
         InstallPlanAction& operator=(const InstallPlanAction&) = delete;
         InstallPlanAction& operator=(InstallPlanAction&&) = default;
-
-        InstallPlanAction(InstalledPackageView&& spghs,
-                          RequestType request_type,
-                          UseHeadVersion use_head_version,
-                          Editable editable);
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
@@ -64,11 +79,9 @@ namespace vcpkg
         std::vector<PackageSpec> package_dependencies;
 
         Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
-        Optional<InstalledPackageView> installed_package;
         Optional<std::vector<std::string>> default_features;
 
         InstallPlanType plan_type;
-        RequestType request_type;
         UseHeadVersion use_head_version;
         Editable editable;
 
@@ -105,7 +118,7 @@ namespace vcpkg
         void print_unsupported_warnings();
 
         std::vector<RemovePlanAction> remove_actions;
-        std::vector<InstallPlanAction> already_installed;
+        std::vector<AlreadyInstalledPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
         std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
     };

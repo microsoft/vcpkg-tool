@@ -172,9 +172,10 @@ namespace vcpkg
             if (Util::Sets::contains(specs_installed, ipa.spec))
             {
                 // convert the 'to install' entry to an already installed entry
-                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
-                ipa.plan_type = InstallPlanType::ALREADY_INSTALLED;
-                action_plan.already_installed.push_back(std::move(ipa));
+                action_plan.already_installed.emplace_back(
+                    status_db.get_installed_package_view(ipa.spec).value_or_exit(VCPKG_LINE_INFO),
+                    ipa.request_type,
+                    ipa.use_head_version);
                 return true;
             }
 

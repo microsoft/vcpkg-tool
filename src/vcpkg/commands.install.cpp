@@ -381,10 +381,6 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
-        if (plan_type == InstallPlanType::ALREADY_INSTALLED)
-        {
-            return ExtendedBuildResult{BuildResult::Succeeded};
-        }
 
         bool all_dependencies_satisfied;
         if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
@@ -616,8 +612,7 @@ namespace vcpkg
 
         for (auto&& action : action_plan.already_installed)
         {
-            summary.results.emplace_back(action).build_result.emplace(perform_install_plan_action(
-                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
+            summary.results.emplace_back(action).build_result.emplace(BuildResult::Succeeded);
         }
 
         for (auto&& action : action_plan.install_actions)
@@ -1504,6 +1499,15 @@ namespace vcpkg
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed);
     }
 
+    SpecSummary::SpecSummary(const AlreadyInstalledPlanAction& action)
+        : build_result()
+        , timing()
+        , start_time(std::chrono::system_clock::now())
+        , m_install_action(nullptr) // FIXME
+        , m_spec(action.spec)
+    {
+    }
+
     SpecSummary::SpecSummary(const InstallPlanAction& action)
         : build_result()
         , timing()
@@ -1537,10 +1541,12 @@ namespace vcpkg
         // was built before.
         if (m_install_action)
         {
-            if (auto p_status = m_install_action->installed_package.get())
-            {
-                return &p_status->core->package;
-            }
+            // FIXME
+            //
+            // if (auto p_status = m_install_action->installed_package.get())
+            //{
+            //    return &p_status->core->package;
+            //}
         }
 
         return nullptr;
