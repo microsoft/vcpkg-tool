@@ -660,7 +660,7 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 
     InstallPlanAction ipa(
         spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
- 
+
     auto doc1 = Json::parse(R"json(
 {
   "relationships": [ "r1", "r2", "r3" ],

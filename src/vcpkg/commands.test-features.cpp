@@ -854,9 +854,7 @@ namespace vcpkg
                         }
 
                         [[fallthrough]];
-                    case BuildResult::PostBuildChecksFailed:
-                        known_failures.insert(result.package_abi_or_exit(VCPKG_LINE_INFO));
-                        break;
+                    case BuildResult::PostBuildChecksFailed: known_failures.insert(result.package_abi()); break;
                     default: break;
                 }
             }
@@ -890,11 +888,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.install_results.back().package_abi())
-                    {
-                        known_failures.insert(*abi);
-                    }
-
+                    known_failures.insert(summary.install_results.back().package_abi());
                     if (maybe_logs_dir)
                     {
                         fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);

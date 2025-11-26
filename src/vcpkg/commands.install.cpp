@@ -535,9 +535,38 @@ namespace vcpkg
         }
     }
 
-    struct TrackedPackageInstallGuard
+    static void print_elapsed_time(const ElapsedTimer& build_timer, SpecSummary& current_summary)
+    {
+        current_summary.timing = build_timer.elapsed();
+        msg::println(msgElapsedForPackage, msg::spec = current_summary.spec(), msg::elapsed = current_summary.timing);
+    }
+
+    struct TrackedPackageRemoveGuard
     {
         SpecSummary& current_summary;
+        const ElapsedTimer build_timer;
+
+        TrackedPackageRemoveGuard(const size_t action_index,
+                                  const size_t action_count,
+                                  std::vector<SpecSummary>& results,
+                                  const RemovePlanAction& action)
+            : current_summary(results.emplace_back(action)), build_timer()
+        {
+            msg::println(msgRemovingPackage,
+                         msg::action_index = action_index,
+                         msg::count = action_count,
+                         msg::spec = action.spec);
+        }
+
+        ~TrackedPackageRemoveGuard() { print_elapsed_time(build_timer, current_summary); }
+
+        TrackedPackageRemoveGuard(const TrackedPackageRemoveGuard&) = delete;
+        TrackedPackageRemoveGuard& operator=(const TrackedPackageRemoveGuard&) = delete;
+    };
+
+    struct TrackedPackageInstallGuard
+    {
+        AbiSpecSummary& current_summary;
         const ElapsedTimer build_timer;
 
         TrackedPackageInstallGuard(const size_t action_index,
@@ -552,31 +581,12 @@ namespace vcpkg
                          msg::spec = action.display_name());
         }
 
-        TrackedPackageInstallGuard(const size_t action_index,
-                                   const size_t action_count,
-                                   std::vector<SpecSummary>& results,
-                                   const RemovePlanAction& action)
-            : current_summary(results.emplace_back(action)), build_timer()
-        {
-            msg::println(msgRemovingPackage,
-                         msg::action_index = action_index,
-                         msg::count = action_count,
-                         msg::spec = action.spec);
-        }
-
-        void print_elapsed_time() const
-        {
-            current_summary.timing = build_timer.elapsed();
-            msg::println(
-                msgElapsedForPackage, msg::spec = current_summary.spec(), msg::elapsed = current_summary.timing);
-        }
+        void print_elapsed_time() const { vcpkg::print_elapsed_time(build_timer, current_summary); }
 
         void print_abi_hash() const
         {
-            if (auto abi = current_summary.package_abi())
-            {
-                msg::println(msgPackageAbi, msg::spec = current_summary.spec(), msg::package_abi = *abi);
-            }
+            msg::println(
+                msgPackageAbi, msg::spec = current_summary.spec(), msg::package_abi = current_summary.package_abi());
         }
 
         ~TrackedPackageInstallGuard()
@@ -622,7 +632,7 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         for (auto&& action : action_plan.remove_actions)
         {
-            TrackedPackageInstallGuard this_install(action_index++, action_count, summary.removed_results, action);
+            TrackedPackageRemoveGuard this_install(action_index++, action_count, summary.removed_results, action);
             remove_package(fs, paths.installed(), action.spec, status_db);
             summary.removed_results.back().build_result.emplace(BuildResult::Removed);
         }
@@ -1515,26 +1525,8 @@ namespace vcpkg
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed);
     }
 
-    SpecSummary::SpecSummary(const AlreadyInstalledPlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
-        , m_package_abi(action.public_abi())
-        , m_spec(action.spec)
-    {
-    }
-
-    SpecSummary::SpecSummary(const InstallPlanAction& action)
-        : build_result()
-        , timing()
-        , start_time(std::chrono::system_clock::now())
-        , m_package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
-        , m_spec(action.spec)
-    {
-    }
-
-    SpecSummary::SpecSummary(const RemovePlanAction& action)
-        : build_result(), timing(), start_time(std::chrono::system_clock::now()), m_package_abi(), m_spec(action.spec)
+    SpecSummary::SpecSummary(const BasicAction& action)
+        : build_result(), timing(), start_time(std::chrono::system_clock::now()), m_spec(action.spec)
     {
     }
 
@@ -1548,8 +1540,18 @@ namespace vcpkg
         timing.to_string(out_str);
     }
 
+    AbiSpecSummary::AbiSpecSummary(const AlreadyInstalledPlanAction& action)
+        : SpecSummary(action), m_package_abi(action.public_abi())
+    {
+    }
+
+    AbiSpecSummary::AbiSpecSummary(const InstallPlanAction& action)
+        : SpecSummary(action), m_package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
+    {
+    }
+
     InstallSpecSummary::InstallSpecSummary(const InstallPlanAction& action)
-        : SpecSummary(action), m_install_action(&action)
+        : AbiSpecSummary(action), m_install_action(&action)
     {
     }
 
