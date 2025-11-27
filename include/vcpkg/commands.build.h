@@ -187,11 +187,15 @@ namespace vcpkg
 
     struct ExtendedBuildResult
     {
-        explicit ExtendedBuildResult(BuildResult code);
-        explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
-        ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps);
-        ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code);
+        ExtendedBuildResult(const PackageSpec& spec,
+                            BuildResult code,
+                            vcpkg::Path stdoutlog,
+                            std::vector<std::string>&& error_logs);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code, std::vector<FullPackageSpec>&& unmet_deps);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
+        PackageSpec spec;
         BuildResult code;
         std::vector<FullPackageSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;

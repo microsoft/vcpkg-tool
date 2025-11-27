@@ -394,7 +394,7 @@ namespace vcpkg
             }
             else if (build_options.build_missing == BuildMissing::No)
             {
-                return ExtendedBuildResult{BuildResult::CacheMissing};
+                return ExtendedBuildResult{action.spec, BuildResult::CacheMissing};
             }
             else
             {
@@ -452,13 +452,13 @@ namespace vcpkg
                 }
             }
 
-            return {code, std::move(bcf)};
+            return {action.spec, code, std::move(bcf)};
         }
 
         if (plan_type == InstallPlanType::EXCLUDED)
         {
             msg::println(Color::warning, msgExcludedPackage, msg::spec = action.spec);
-            return ExtendedBuildResult{BuildResult::Excluded};
+            return ExtendedBuildResult{action.spec, BuildResult::Excluded};
         }
 
         Checks::unreachable(VCPKG_LINE_INFO);
@@ -634,12 +634,13 @@ namespace vcpkg
         {
             TrackedPackageRemoveGuard this_install(action_index++, action_count, summary.removed_results, action);
             remove_package(fs, paths.installed(), action.spec, status_db);
-            summary.removed_results.back().build_result.emplace(BuildResult::Removed);
+            summary.removed_results.back().build_result.emplace(action.spec, BuildResult::Removed);
         }
 
         for (auto&& action : action_plan.already_installed)
         {
-            summary.already_installed_results.emplace_back(action).build_result.emplace(BuildResult::Succeeded);
+            summary.already_installed_results.emplace_back(action).build_result.emplace(action.spec,
+                                                                                        BuildResult::Succeeded);
         }
 
         for (auto&& action : action_plan.install_actions)

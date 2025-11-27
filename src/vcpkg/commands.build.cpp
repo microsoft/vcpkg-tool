@@ -1203,7 +1203,7 @@ namespace vcpkg
             {
                 // TODO: Capture executed command output and evaluate whether the failure was intended.
                 // If an unintended error occurs then return a BuildResult::DOWNLOAD_FAILURE status.
-                return ExtendedBuildResult{BuildResult::Downloaded};
+                return ExtendedBuildResult{action.spec, BuildResult::Downloaded};
             }
         }
 
@@ -1219,7 +1219,7 @@ namespace vcpkg
         get_global_metrics_collector().track_submission(std::move(metrics));
         if (!all_dependencies_satisfied)
         {
-            return ExtendedBuildResult{BuildResult::Downloaded};
+            return ExtendedBuildResult{action.spec, BuildResult::Downloaded};
         }
 
         if (build_failed)
@@ -1231,7 +1231,7 @@ namespace vcpkg
                 error_logs = fs.read_lines(logs).value_or_exit(VCPKG_LINE_INFO);
                 Util::erase_remove_if(error_logs, [](const auto& line) { return line.empty(); });
             }
-            return ExtendedBuildResult{BuildResult::BuildFailed, stdoutlog, std::move(error_logs)};
+            return ExtendedBuildResult{action.spec, BuildResult::BuildFailed, stdoutlog, std::move(error_logs)};
         }
 
         const BuildInfo build_info = read_build_info(fs, action.package_dir / FileBuildInfo);
@@ -1243,14 +1243,14 @@ namespace vcpkg
         };
         if (error_count != 0 && build_options.backcompat_features == BackcompatFeatures::Prohibit)
         {
-            return ExtendedBuildResult{BuildResult::PostBuildChecksFailed};
+            return ExtendedBuildResult{action.spec, BuildResult::PostBuildChecksFailed};
         }
 
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
         write_sbom(paths, action, abi_info.heuristic_resources);
         write_binary_control_file(paths.get_filesystem(), action.package_dir, *bcf);
-        return {BuildResult::Succeeded, std::move(bcf)};
+        return {action.spec, BuildResult::Succeeded, std::move(bcf)};
     }
 
     static ExtendedBuildResult do_build_package_and_clean_buildtrees(const VcpkgCmdArguments& args,
@@ -1650,7 +1650,8 @@ namespace vcpkg
         {
             if (!all_dependencies_satisfied)
             {
-                return {BuildResult::CascadedDueToMissingDependencies,
+                return {action.spec,
+                        BuildResult::CascadedDueToMissingDependencies,
                         Util::fmap(std::move(missing_fspecs),
                                    [](std::pair<PackageSpec, std::set<std::string>>&& missing_features) {
                                        return FullPackageSpec{
@@ -2264,19 +2265,24 @@ namespace vcpkg
         Util::assign_if_set_and_nonempty(gamedk_xbox_latest_path, cmakevars, CMakeVariableZVcpkgGameDKXboxLatest);
     }
 
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code) : code(code) { }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code,
+    ExtendedBuildResult::ExtendedBuildResult(const PackageSpec& spec, BuildResult code) : spec(spec), code(code) { }
+    ExtendedBuildResult::ExtendedBuildResult(const PackageSpec& spec,
+                                             BuildResult code,
                                              vcpkg::Path stdoutlog,
                                              std::vector<std::string>&& error_logs)
-        : code(code), stdoutlog(stdoutlog), error_logs(error_logs)
+        : spec(spec), code(code), stdoutlog(stdoutlog), error_logs(error_logs)
     {
     }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf)
-        : code(code), binary_control_file(std::move(bcf))
+    ExtendedBuildResult::ExtendedBuildResult(const PackageSpec& spec,
+                                             BuildResult code,
+                                             std::unique_ptr<BinaryControlFile>&& bcf)
+        : spec(spec), code(code), binary_control_file(std::move(bcf))
     {
     }
-    ExtendedBuildResult::ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps)
-        : code(code), unmet_dependencies(std::move(unmet_deps))
+    ExtendedBuildResult::ExtendedBuildResult(const PackageSpec& spec,
+                                             BuildResult code,
+                                             std::vector<FullPackageSpec>&& unmet_deps)
+        : spec(spec), code(code), unmet_dependencies(std::move(unmet_deps))
     {
     }
 }
