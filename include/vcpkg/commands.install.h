@@ -22,10 +22,11 @@ namespace vcpkg
 {
     struct SpecSummary
     {
-        explicit SpecSummary(const BasicAction& action);
+        explicit SpecSummary(ExtendedBuildResult&& build_result,
+                             ElapsedTime timing,
+                             std::chrono::system_clock::time_point start_time);
 
-        const PackageSpec& spec() const { return m_spec; }
-        Optional<ExtendedBuildResult> build_result;
+        ExtendedBuildResult build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
 
@@ -38,8 +39,10 @@ namespace vcpkg
 
     struct AbiSpecSummary : SpecSummary
     {
-        explicit AbiSpecSummary(const AlreadyInstalledPlanAction& action);
-        explicit AbiSpecSummary(const InstallPlanAction& action);
+        explicit AbiSpecSummary(ExtendedBuildResult&& build_result,
+                                ElapsedTime timing,
+                                std::chrono::system_clock::time_point start_time,
+                                const std::string& package_abi);
         const std::string& package_abi() const noexcept { return m_package_abi; }
 
     private:
@@ -48,7 +51,10 @@ namespace vcpkg
 
     struct InstallSpecSummary : AbiSpecSummary
     {
-        explicit InstallSpecSummary(const InstallPlanAction& action);
+        explicit InstallSpecSummary(ExtendedBuildResult&& build_result,
+                                    ElapsedTime timing,
+                                    std::chrono::system_clock::time_point start_time,
+                                    const InstallPlanAction& action);
         const InstallPlanAction& install_plan_action() const noexcept { return *m_install_action; }
         bool is_user_requested_install() const;
 

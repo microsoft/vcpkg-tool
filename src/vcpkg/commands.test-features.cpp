@@ -840,7 +840,7 @@ namespace vcpkg
             binary_cache.mark_all_unrestored();
             for (const auto& result : summary.install_results)
             {
-                auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
+                auto& build_result = result.build_result;
                 switch (build_result.code)
                 {
                     case BuildResult::BuildFailed:
@@ -859,7 +859,7 @@ namespace vcpkg
                 }
             }
 
-            auto& last_build_result = summary.install_results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
+            auto& last_build_result = summary.install_results.back().build_result;
             switch (last_build_result.code)
             {
                 case BuildResult::Downloaded:
