@@ -15,4 +15,11 @@ namespace vcpkg
         // If a symlink is detected, follow it and copy the data to which it refers
         CopyData,
     };
+
+    struct SpecSummary;
+    struct AbiSpecSummary;
+    struct InstallSpecSummary;
+    struct LicenseReport;
+    struct InstallSummary;
+    struct CMakeUsageInfo;
 }

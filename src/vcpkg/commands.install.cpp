@@ -370,14 +370,14 @@ namespace vcpkg
         }
     }
 
-    static ExtendedBuildResult perform_install_plan_action(const VcpkgCmdArguments& args,
-                                                           const VcpkgPaths& paths,
-                                                           Triplet host_triplet,
-                                                           const BuildPackageOptions& build_options,
-                                                           const InstallPlanAction& action,
-                                                           StatusParagraphs& status_db,
-                                                           BinaryCache& binary_cache,
-                                                           const IBuildLogsRecorder& build_logs_recorder)
+    static ExtendedBuildResult perform_install_plan_action_2(const VcpkgCmdArguments& args,
+                                                             const VcpkgPaths& paths,
+                                                             Triplet host_triplet,
+                                                             const BuildPackageOptions& build_options,
+                                                             const InstallPlanAction& action,
+                                                             StatusParagraphs& status_db,
+                                                             BinaryCache& binary_cache,
+                                                             const IBuildLogsRecorder& build_logs_recorder)
     {
         auto& fs = paths.get_filesystem();
         const InstallPlanType& plan_type = action.plan_type;
@@ -462,6 +462,23 @@ namespace vcpkg
         }
 
         Checks::unreachable(VCPKG_LINE_INFO);
+    }
+
+    static InstallSpecSummary perform_install_plan_action(const VcpkgCmdArguments& args,
+                                                          const VcpkgPaths& paths,
+                                                          Triplet host_triplet,
+                                                          const BuildPackageOptions& build_options,
+                                                          const InstallPlanAction& action,
+                                                          StatusParagraphs& status_db,
+                                                          BinaryCache& binary_cache,
+                                                          const IBuildLogsRecorder& build_logs_recorder)
+    {
+        const ElapsedTimer install_timer;
+        const auto start_time = std::chrono::system_clock::now();
+        auto build_result = perform_install_plan_action_2(
+            args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
+        const auto timing = install_timer.elapsed();
+        return InstallSpecSummary{std::move(build_result), timing, start_time, action};
     }
 
     template<typename SummaryType>
@@ -573,13 +590,11 @@ namespace vcpkg
                          msg::count = action_count,
                          msg::spec = action.spec);
             ++action_index;
-            const ElapsedTimer remove_timer;
-            const auto start_time = std::chrono::system_clock::now();
-            remove_package(fs, paths.installed(), action.spec, status_db);
-            const auto timing = remove_timer.elapsed();
-            summary.removed_results.emplace_back(
-                ExtendedBuildResult{action.spec, BuildResult::Removed}, timing, start_time);
-            msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = timing);
+            const auto& remove_summary =
+                summary.removed_results.emplace_back(remove_package(fs, paths.installed(), action.spec, status_db));
+            msg::println(msgElapsedForPackage,
+                         msg::spec = remove_summary.build_result.spec,
+                         msg::elapsed = remove_summary.timing);
         }
 
         for (auto&& action : action_plan.already_installed)
@@ -593,8 +608,6 @@ namespace vcpkg
         for (auto&& action : action_plan.install_actions)
         {
             binary_cache.print_updates();
-            const ElapsedTimer install_timer;
-            const auto start_time = std::chrono::system_clock::now();
             const auto action_display_name = action.display_name();
             msg::println(msgInstallingPackage,
                          msg::action_index = action_index,
@@ -605,9 +618,9 @@ namespace vcpkg
                          msg::spec = action_display_name,
                          msg::package_abi = action.package_abi_or_exit(VCPKG_LINE_INFO));
 
-            auto result = perform_install_plan_action(
-                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
-            if (result.code == BuildResult::Succeeded)
+            auto& result = summary.install_results.emplace_back(perform_install_plan_action(
+                args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
+            if (result.build_result.code == BuildResult::Succeeded)
             {
                 const auto& scfl = action.source_control_file_and_location();
                 const auto& scf = *scfl.source_control_file;
@@ -641,17 +654,18 @@ namespace vcpkg
             }
             else if (build_options.keep_going == KeepGoing::No)
             {
-                msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = install_timer.elapsed());
+                msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = result.timing);
                 print_user_troubleshooting_message(
                     action,
                     args.detected_ci(),
                     paths,
-                    result.error_logs,
-                    result.stdoutlog.then([&](auto&) -> Optional<Path> {
+                    result.build_result.error_logs,
+                    result.build_result.stdoutlog.then([&](auto&) -> Optional<Path> {
                         auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
                         paths.get_filesystem().write_contents(
                             issue_body_path,
-                            create_github_issue(args, result, paths, action, include_manifest_in_github_issue),
+                            create_github_issue(
+                                args, result.build_result, paths, action, include_manifest_in_github_issue),
                             VCPKG_LINE_INFO);
                         return issue_body_path;
                     }));
@@ -659,7 +673,7 @@ namespace vcpkg
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
 
-            switch (result.code)
+            switch (result.build_result.code)
             {
                 case BuildResult::Succeeded:
                 case BuildResult::Removed:
@@ -677,9 +691,7 @@ namespace vcpkg
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            const auto timing = install_timer.elapsed();
-            msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = timing);
-            summary.install_results.emplace_back(std::move(result), timing, start_time, action);
+            msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = result.timing);
         }
 
         database_load_collapse(fs, paths.installed());
