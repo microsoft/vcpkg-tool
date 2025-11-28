@@ -24,13 +24,15 @@ On CentOS try the following:
             set(COMPILER "clang")
         elseif(MSVC)
             set(COMPILER "msvc")
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES "LCC")
+            set(COMPILRE "lcc")
         else()
             message(FATAL_ERROR "Unknown compiler: ${CMAKE_CXX_COMPILER_ID}")
         endif()
 
         set(VCPKG_COMPILER ${COMPILER}
             CACHE STRING
-            "The compiler in use; one of gcc, clang, msvc")
+            "The compiler in use; one of gcc, clang, msvc, lcc")
         message(STATUS "Detecting the C++ compiler in use - ${VCPKG_COMPILER}")
     endif()
 endfunction()
