@@ -1,0 +1,13 @@
+# actual test
+always-skip:arm64-osx=skip
+always-skip:x64-linux=skip
+always-skip:x64-osx=skip
+always-skip:x64-windows=skip
+always-skip:x86-windows=skip
+
+# don't build cached artifact
+maybe-transitive-cascade:arm64-osx=skip
+maybe-transitive-cascade:x64-linux=skip
+maybe-transitive-cascade:x64-osx=skip
+maybe-transitive-cascade:x64-windows=skip
+maybe-transitive-cascade:x86-windows=skip
