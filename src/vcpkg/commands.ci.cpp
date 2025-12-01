@@ -83,6 +83,18 @@ namespace
         return supports_expression.evaluate(var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO));
     }
 
+    bool cascade_for_triplet(const std::vector<InstallPlanAction>& install_actions,
+                             const SortedVector<std::string>* triplet_exclusions)
+    {
+        if (!triplet_exclusions) return false;
+
+        return std::any_of(
+            install_actions.begin(), install_actions.end(), [triplet_exclusions](const InstallPlanAction& action) {
+                return action.source_control_file_and_location.has_value() &&
+                       triplet_exclusions->contains(action.source_control_file_and_location.get()->to_name());
+            });
+    }
+
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
@@ -332,15 +344,21 @@ namespace
             }
 
             PackagesDirAssigner this_packages_dir_not_used{""};
-            if (!create_feature_install_plan(
-                     provider, var_provider, {&full_package_spec, 1}, {}, this_packages_dir_not_used, serialize_options)
-                     .unsupported_features.empty())
+            const ActionPlan action_plan = create_feature_install_plan(
+                provider, var_provider, {&full_package_spec, 1}, {}, this_packages_dir_not_used, serialize_options);
+            if (!action_plan.unsupported_features.empty())
             {
                 result.excluded.insert_or_assign(
                     std::move(full_package_spec.package_spec),
                     supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
                         ? ExcludeReason::Cascade
                         : ExcludeReason::Supports);
+                continue;
+            }
+
+            if (cascade_for_triplet(action_plan.install_actions, target_triplet_exclusions))
+            {
+                result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Cascade);
                 continue;
             }
 

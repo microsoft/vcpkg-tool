@@ -103,13 +103,9 @@ if (-not ($Output -match 'always-built:[^:]+:      \*:' -and $Output -match 'Bui
 if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
     throw 'did not identify always-skip as skipped'
 }
-if (-not ($Output -match 'always-cascade:[^:]+ failed with: CASCADED_DUE_TO_MISSING_DEPENDENCIES\n')) {
+if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
     throw 'did not identify always-cascade as cascaded'
 }
-# This should be statically determinable but at the moment we do not
-# if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
-#     throw 'tried to build cascaded'
-# }
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 3
@@ -131,14 +127,14 @@ if (-not ($Output -match 'always-built:[^:]+: cached:') -or $Output -match 'Buil
 if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
     throw 'did not identify always-skip as skipped'
 }
-if (-not ($Output -match 'always-cascade:[^:]+ failed with: CASCADED_DUE_TO_MISSING_DEPENDENCIES\n')) {
+if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
     throw 'did not identify always-cascade as cascaded'
 }
 if (-not ($Output -match 'maybe-skip:[^:]+: skip\n')) {
     throw 'did not identify maybe-skip as skipped'
 }
 # not cached and transitive dependency on maybe-skip which is excluded
-if (-not ($Output -match 'maybe-transitive-cascade:[^:]+ failed with: CASCADED_DUE_TO_MISSING_DEPENDENCIES\n')) {
+if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: cascade\n')) {
     throw 'did not identify maybe-transitive-cascade as cascaded'
 }
 
