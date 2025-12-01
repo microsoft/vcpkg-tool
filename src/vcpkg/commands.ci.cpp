@@ -90,8 +90,7 @@ namespace
 
         return std::any_of(
             install_actions.begin(), install_actions.end(), [triplet_exclusions](const InstallPlanAction& action) {
-                return action.source_control_file_and_location.has_value() &&
-                       triplet_exclusions->contains(action.source_control_file_and_location.get()->to_name());
+                return triplet_exclusions->contains(action.spec.name());
             });
     }
 
