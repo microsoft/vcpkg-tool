@@ -879,7 +879,7 @@ namespace vcpkg
     {
         auto& scfl = action.source_control_file_and_location();
         auto& scf = *scfl.source_control_file;
-        auto& port_name = scf.to_name();
+        auto& port_name = action.spec.name();
 
         std::string all_features;
         for (auto& feature : scf.feature_paragraphs)
@@ -1057,7 +1057,7 @@ namespace vcpkg
         const auto& scf = *scfl.source_control_file;
 
         auto doc_ns = Strings::concat("https://spdx.org/spdxdocs/",
-                                      scf.to_name(),
+                                      action.spec.name(),
                                       '-',
                                       action.spec.triplet(),
                                       '-',
