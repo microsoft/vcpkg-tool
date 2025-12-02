@@ -41,9 +41,9 @@ namespace vcpkg
 
         bool operator<(const PackageSpec& other) const
         {
-            if (name() < other.name()) return true;
-            if (name() > other.name()) return false;
-            return triplet() < other.triplet();
+            if (m_name < other.m_name) return true;
+            if (m_name > other.m_name) return false;
+            return m_triplet < other.m_triplet;
         }
 
     private:
