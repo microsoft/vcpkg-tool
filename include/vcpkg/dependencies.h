@@ -67,7 +67,7 @@ namespace vcpkg
                           UseHeadVersion use_head_version,
                           Editable editable,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                          std::vector<DiagnosticLine>&& build_failure_messages,
+                          std::vector<DiagnosticLine>&& dependency_diagnostics,
                           const std::vector<std::string>& default_features);
 
         const std::string& public_abi() const;
@@ -94,7 +94,7 @@ namespace vcpkg
         Editable editable;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
-        std::vector<DiagnosticLine> build_failure_messages;
+        std::vector<DiagnosticLine> dependency_diagnostics;
 
         Optional<AbiInfo> abi_info;
         Path package_dir;

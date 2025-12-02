@@ -413,7 +413,7 @@ namespace vcpkg
                 all_dependencies_satisfied = result.unmet_dependencies.empty();
                 if (result.code != BuildResult::Succeeded)
                 {
-                    for (auto&& msg : action.build_failure_messages)
+                    for (auto&& msg : action.dependency_diagnostics)
                     {
                         msg.print_to(out_sink);
                     }

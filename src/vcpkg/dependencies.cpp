@@ -528,7 +528,7 @@ namespace vcpkg
                                          UseHeadVersion use_head_version,
                                          Editable editable,
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                                         std::vector<DiagnosticLine>&& build_failure_messages,
+                                         std::vector<DiagnosticLine>&& dependency_diagnostics,
                                          const std::vector<std::string>& default_features)
         : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
@@ -538,7 +538,7 @@ namespace vcpkg
         , use_head_version(use_head_version)
         , editable(editable)
         , feature_dependencies(std::move(dependencies))
-        , build_failure_messages(std::move(build_failure_messages))
+        , dependency_diagnostics(std::move(dependency_diagnostics))
         , package_dir(packages_dir_assigner.generate(spec))
     {
     }
@@ -1061,7 +1061,7 @@ namespace vcpkg
             // If a cluster only has an installed object and is marked as user requested we should still report it.
             if (auto info_ptr = p_cluster->m_install_info.get())
             {
-                std::vector<DiagnosticLine> constraint_violations;
+                std::vector<DiagnosticLine> dependency_diagnostics;
                 for (auto&& constraints : info_ptr->version_constraints)
                 {
                     for (auto&& constraint : constraints.second)
@@ -1072,7 +1072,7 @@ namespace vcpkg
                         {
                             if (compare_any(*v, constraint) == VerComp::lt)
                             {
-                                constraint_violations
+                                dependency_diagnostics
                                     .emplace_back(DiagKind::Warning,
                                                   msg::format(msgVersionConstraintViolated,
                                                               msg::spec = constraints.first,
@@ -1138,7 +1138,7 @@ namespace vcpkg
                                                   use_head_version,
                                                   editable,
                                                   std::move(computed_edges),
-                                                  std::move(constraint_violations),
+                                                  std::move(dependency_diagnostics),
                                                   info_ptr->default_features);
             }
             else if (p_cluster->request_type == RequestType::USER_REQUESTED && p_cluster->m_installed.has_value())

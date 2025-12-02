@@ -318,7 +318,7 @@ namespace vcpkg
             case BuildResult::Downloaded:
             case BuildResult::Removed:
             {
-                for (auto&& msg : action->build_failure_messages)
+                for (auto&& msg : action->dependency_diagnostics)
                 {
                     msg.print_to(out_sink);
                 }
