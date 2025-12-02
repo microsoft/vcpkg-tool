@@ -1647,7 +1647,7 @@ namespace vcpkg
     {
         const bool windows_target = Util::Vectors::contains(windows_system_names, pre_build_info.cmake_system_name);
         const auto& fs = paths.get_filesystem();
-        const auto build_dir = paths.build_dir(action.spec);
+        const auto build_dir = paths.build_dir(action.spec.name());
         const auto& package_dir = action.package_dir;
         const bool not_release_only = !pre_build_info.build_type;
 

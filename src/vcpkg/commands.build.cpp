@@ -74,7 +74,7 @@ namespace vcpkg
         }
 
         auto& filesystem = paths.get_filesystem();
-        const auto source_path = paths.build_dir(spec);
+        const auto source_path = paths.build_dir(spec.name());
         auto children = filesystem.get_regular_files_non_recursive(source_path, IgnoreErrors{});
         Util::erase_remove_if(children, NotExtensionCaseInsensitive{".log"});
         if (minimum_last_write_time > 0)
@@ -1177,7 +1177,7 @@ namespace vcpkg
         auto& env = settings.environment.emplace(
             paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
 
-        auto buildpath = paths.build_dir(action.spec);
+        auto buildpath = paths.build_dir(action.spec.name());
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         env.add_entry(EnvironmentVariableGitCeilingDirectories, fs.absolute(buildpath.parent_path(), VCPKG_LINE_INFO));
         auto stdoutlog = buildpath / ("stdout-" + action.spec.triplet().canonical_name() + ".log");
@@ -1266,7 +1266,7 @@ namespace vcpkg
         {
             auto& fs = paths.get_filesystem();
             // Will keep the logs, which are regular files
-            auto buildtree_dirs = fs.get_directories_non_recursive(paths.build_dir(action.spec), IgnoreErrors{});
+            auto buildtree_dirs = fs.get_directories_non_recursive(paths.build_dir(action.spec.name()), IgnoreErrors{});
             for (auto&& dir : buildtree_dirs)
             {
                 fs.remove_all(dir, IgnoreErrors{});
@@ -1554,7 +1554,7 @@ namespace vcpkg
             return;
         }
 
-        Path abi_file_path = paths.build_dir(action.spec) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
+        Path abi_file_path = paths.build_dir(action.spec.name()) / (triplet_canonical_name + ".vcpkg_abi_info.txt");
         fs.write_contents_and_dirs(abi_file_path, full_abi_info, VCPKG_LINE_INFO);
         abi_info.package_abi = Hash::get_string_sha256(full_abi_info);
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
