@@ -534,7 +534,6 @@ namespace vcpkg
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
         , m_source_control_file_and_location(&scfl)
         , default_features(default_features)
-        , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , use_head_version(use_head_version)
         , editable(editable)
         , feature_dependencies(std::move(dependencies))
@@ -545,18 +544,13 @@ namespace vcpkg
 
     const std::string& InstallPlanAction::public_abi() const
     {
-        switch (plan_type)
+        auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
+        if (auto o = i.pre_build_info->public_abi_override.get())
         {
-            case InstallPlanType::BUILD_AND_INSTALL:
-            {
-                auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
-                if (auto o = i.pre_build_info->public_abi_override.get())
-                    return *o;
-                else
-                    return i.package_abi;
-            }
-            default: Checks::unreachable(VCPKG_LINE_INFO);
+            return *o;
         }
+
+        return i.package_abi;
     }
     bool InstallPlanAction::has_package_abi() const
     {
@@ -1256,7 +1250,6 @@ namespace vcpkg
         std::vector<const InstallPlanAction*> new_plans;
         std::vector<const AlreadyInstalledPlanAction*> already_installed_plans;
         std::vector<const AlreadyInstalledPlanAction*> already_installed_head_plans;
-        std::vector<const InstallPlanAction*> excluded;
 
         const bool has_non_user_requested_packages =
             Util::any_of(action_plan.install_actions, [](const InstallPlanAction& action) -> bool {
@@ -1282,8 +1275,7 @@ namespace vcpkg
             auto it = remove_specs.find(install_action.spec);
             if (it == remove_specs.end())
             {
-                (install_action.plan_type == InstallPlanType::EXCLUDED ? &excluded : &new_plans)
-                    ->push_back(&install_action);
+                new_plans.push_back(&install_action);
             }
             else
             {
@@ -1296,12 +1288,6 @@ namespace vcpkg
         Util::sort(new_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_head_plans, &InstallPlanAction::compare_by_name);
-        Util::sort(excluded, &InstallPlanAction::compare_by_name);
-
-        if (!excluded.empty())
-        {
-            format_plan_block(ret.warning_text, msgExcludedPackages, false, excluded);
-        }
 
         if (!already_installed_head_plans.empty())
         {

@@ -2422,7 +2422,6 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     InstallPlanAction install_f(
         {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    install_f.plan_type = InstallPlanType::EXCLUDED;
 
     AlreadyInstalledPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
@@ -2499,8 +2498,6 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     plan.install_actions.push_back(std::move(install_f));
     REQUIRE_LINES(format_plan(plan).all_text(),
-                  "The following packages are excluded:\n"
-                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
                   "The following packages are already installed:\n"
                   "  * d:x86-windows@1\n"
                   "    e:x86-windows@1\n"

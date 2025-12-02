@@ -180,7 +180,6 @@ TEST_CASE ("existing package scheme", "[plan]")
     REQUIRE(install_plan.size() == 1);
     const auto p = &install_plan.already_installed.at(0);
     REQUIRE(p->spec.name() == "a");
-    REQUIRE(p->plan_type == InstallPlanType::ALREADY_INSTALLED);
     REQUIRE(p->request_type == RequestType::USER_REQUESTED);
 }
 
@@ -201,12 +200,10 @@ TEST_CASE ("user requested package scheme", "[plan]")
     REQUIRE(install_plan.size() == 2);
     const auto p = &install_plan.install_actions.at(0);
     REQUIRE(p->spec.name() == "b");
-    REQUIRE(p->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p->request_type == RequestType::AUTO_SELECTED);
 
     const auto p2 = &install_plan.install_actions.at(1);
     REQUIRE(p2->spec.name() == "a");
-    REQUIRE(p2->plan_type == InstallPlanType::BUILD_AND_INSTALL);
     REQUIRE(p2->request_type == RequestType::USER_REQUESTED);
 }
 

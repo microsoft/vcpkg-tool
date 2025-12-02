@@ -49,7 +49,6 @@ namespace vcpkg
 
         InstalledPackageView installed_package;
 
-        InstallPlanType plan_type;
         UseHeadVersion use_head_version;
     };
 
@@ -89,7 +88,6 @@ namespace vcpkg
 
         std::vector<std::string> default_features;
 
-        InstallPlanType plan_type;
         UseHeadVersion use_head_version;
         Editable editable;
 
