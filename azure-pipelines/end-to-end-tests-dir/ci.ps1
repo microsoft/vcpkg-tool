@@ -70,19 +70,17 @@ Restore-Problem-Matchers
 Throw-IfNotFailed
 
 # test effect of parent hashes
-Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
-Remove-Item -Recurse -Force $ArchiveRoot -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $ArchiveRoot -Force | Out-Null
-# Not a dry run in order to populate the artifact cache.
-$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource="clear;files,$ArchiveRoot" --output-hashes="$TestingRoot/parent-hashes.json"
+Refresh-TestRoot
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource=clear --output-hashes="$TestingRoot/parent-hashes.json"
 Throw-IfFailed
-if (-not ($Output.Contains("base-port:${Triplet}: SUCCEEDED:"))) {
-    throw 'base-port build must succeed'
-}
-Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
-$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource="clear;files,$ArchiveRoot" --parent-hashes="$TestingRoot/parent-hashes.json"
+Throw-IfNonContains -Actual $Output -Expected "base-port:${Triplet}:      *: "
+Throw-IfNonContains -Actual $Output -Expected @"
+The following packages will be built and installed:
+    base-port:${Triplet}@1
+    feature-dep-missing:${Triplet}@1
+    feature-not-sup:${Triplet}@1
+"@
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci" --binarysource=clear --parent-hashes="$TestingRoot/parent-hashes.json"
 Throw-IfFailed
 # base-port must not be rebuilt again
 Throw-IfNonContains -Actual $Output -Expected "base-port:${Triplet}: parent: "
