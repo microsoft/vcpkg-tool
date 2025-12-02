@@ -84,14 +84,27 @@ namespace
     }
 
     bool cascade_for_triplet(const std::vector<InstallPlanAction>& install_actions,
-                             const SortedVector<std::string>* triplet_exclusions)
+                             const Triplet& target_triplet,
+                             const SortedVector<std::string>* target_triplet_exclusions,
+                             const Triplet& host_triplet,
+                             const SortedVector<std::string>* host_triplet_exclusions)
     {
-        if (!triplet_exclusions) return false;
+        return std::any_of(install_actions.begin(), install_actions.end(), [&](const InstallPlanAction& action) {
+            if (target_triplet_exclusions && action.spec.triplet() == target_triplet)
+                return target_triplet_exclusions->contains(action.spec.name());
+            if (host_triplet_exclusions && action.spec.triplet() == host_triplet)
+                return host_triplet_exclusions->contains(action.spec.name());
+            return false;
+        });
+    }
 
-        return std::any_of(
-            install_actions.begin(), install_actions.end(), [triplet_exclusions](const InstallPlanAction& action) {
-                return triplet_exclusions->contains(action.spec.name());
-            });
+    const SortedVector<std::string>* find_triplet_exclusions(const ExclusionsMap& exclusions_map,
+                                                             const Triplet& triplet)
+    {
+        auto it = Util::find_if(exclusions_map.triplets, [&triplet](const TripletExclusions& exclusions) {
+            return exclusions.triplet == triplet;
+        });
+        return it == exclusions_map.triplets.end() ? nullptr : &it->exclusions;
     }
 
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
@@ -310,6 +323,7 @@ namespace
 
     CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
                                      const Triplet& target_triplet,
+                                     const Triplet& host_triplet,
                                      PortFileProvider& provider,
                                      const CMakeVars::CMakeVarProvider& var_provider,
                                      const CreateInstallPlanOptions& serialize_options)
@@ -319,11 +333,10 @@ namespace
         // it is too late as we have already calculated an action plan with feature dependencies from
         // the skipped ports.
         CiSpecsResult result;
-        auto it = Util::find_if(exclusions_map.triplets, [&](const TripletExclusions& exclusions) {
-            return exclusions.triplet == target_triplet;
-        });
         const SortedVector<std::string>* const target_triplet_exclusions =
-            it == exclusions_map.triplets.end() ? nullptr : &it->exclusions;
+            find_triplet_exclusions(exclusions_map, target_triplet);
+        const SortedVector<std::string>* const host_triplet_exclusions =
+            (host_triplet == target_triplet) ? nullptr : find_triplet_exclusions(exclusions_map, host_triplet);
         auto all_control_files = provider.load_all_control_files();
 
         // populate `var_provider` to evaluate supports expressions for all ports:
@@ -355,7 +368,11 @@ namespace
                 continue;
             }
 
-            if (cascade_for_triplet(action_plan.install_actions, target_triplet_exclusions))
+            if (cascade_for_triplet(action_plan.install_actions,
+                                    target_triplet,
+                                    target_triplet_exclusions,
+                                    host_triplet,
+                                    host_triplet_exclusions))
             {
                 result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Cascade);
                 continue;
@@ -504,8 +521,8 @@ namespace vcpkg
         }
         CreateInstallPlanOptions create_install_plan_options(
             randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
-        auto ci_specs =
-            calculate_ci_specs(exclusions_map, target_triplet, provider, var_provider, create_install_plan_options);
+        auto ci_specs = calculate_ci_specs(
+            exclusions_map, target_triplet, host_triplet, provider, var_provider, create_install_plan_options);
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = compute_full_plan(
