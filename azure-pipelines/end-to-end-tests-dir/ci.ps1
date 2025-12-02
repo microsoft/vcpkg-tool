@@ -108,13 +108,16 @@ if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
 }
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
-  SUCCEEDED: 3
+  SUCCEEDED: 4
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
   EXCLUDED: 2
 "@
-# prerequisite for next test
+# prerequisite for next tests
 if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: skip\n')) {
     throw 'did not identify maybe-transitive-cascade as skip'
+}
+if (-not ($Output -match 'maybe-cross-cascade:[^:]+:      \*:' -and $Output -match 'Building maybe-cross-cascade:[^@]+@1\.0\.0\.\.\.')) {
+    throw 'did not attempt to build maybe-cross-cascade'
 }
 # test with --skip-failures and cached artifacts
 Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
@@ -136,6 +139,31 @@ if (-not ($Output -match 'maybe-skip:[^:]+: skip\n')) {
 # not cached and transitive dependency on maybe-skip which is excluded
 if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: cascade\n')) {
     throw 'did not identify maybe-transitive-cascade as cascaded'
+}
+# cached, but direct dependency on maybe-skip which is excluded
+if (-not ($Output -match 'maybe-cross-cascade:[^:]+: cascade\n')) {
+    throw 'did not identify maybe-cross-cascade as cascaded'
+}
+# test cross build; skipping always-skip and host maybe-skip
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+Copy-Item "$env:VCPKG_ROOT/triplets/$Triplet.cmake" "$installRoot/cross.cmake"
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures --triplet cross --overlay-triplets $installRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
+Throw-IfFailed
+if (-not ($Output -match 'always-built:cross:      \*:')) {
+    throw 'did not attempt to build always-built [cross build]'
+}
+if (-not ($Output -match 'always-cascade:cross: cascade\n')) {
+    throw 'did not identify always-cascade as cascaded [cross build]'
+}
+if (-not ($Output -match 'maybe-skip:cross:      \*:')) {
+    throw 'did not attempt to build maybe-skip [cross build]'
+}
+if (-not ($Output -match 'maybe-transitive-cascade:cross:      \*:')) {
+    throw 'did not attempt to build maybe-transitive-cascade [cross build]'
+}
+if (-not ($Output -match 'maybe-cross-cascade:cross: cascade\n')) {
+    throw 'did not identify maybe-cross-cascade as cascaded [cross build]'
 }
 
 # test that features included only by skipped ports are not included
