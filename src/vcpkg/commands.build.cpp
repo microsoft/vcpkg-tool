@@ -747,15 +747,13 @@ namespace vcpkg
         }
         bcf->core_paragraph = std::move(bpgh);
 
-        bcf->features.reserve(action.feature_list.size());
-        for (auto&& feature : action.feature_list)
+        bcf->features.reserve(action.feature_dependencies.size());
+        for (auto&& feature_dependency : action.feature_dependencies)
         {
-            find_itr = action.feature_dependencies.find(feature);
-            Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-            auto maybe_fpgh = scfl.source_control_file->find_feature(feature);
+            auto maybe_fpgh = scfl.source_control_file->find_feature(feature_dependency.first);
             if (auto fpgh = maybe_fpgh.get())
             {
-                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second));
+                bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(feature_dependency.second));
             }
         }
         return bcf;
