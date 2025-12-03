@@ -526,6 +526,7 @@ TEST_CASE ("missing closing )", "[platform-expression]")
 {
     CHECK_FALSE(parse_expr("(windows & arm | linux"));
     CHECK_FALSE(parse_expr("( (windows & arm) | (osx & arm64) | linux"));
+    CHECK_FALSE(parse_expr("(!((windows & x64 & !uwp) & !(linux & x64))"));
 }
 
 TEST_CASE ("missing or invalid identifier", "[platform-expression]")
