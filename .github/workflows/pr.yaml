@@ -15,7 +15,7 @@ jobs:
     uses: ./.github/workflows/build.yaml
 
   format:
-    runs-on: windows-2022
+    runs-on: windows-2025
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
           path: out/format.patch
 
   json-schema:
-    runs-on: windows-2022
+    runs-on: windows-2025
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

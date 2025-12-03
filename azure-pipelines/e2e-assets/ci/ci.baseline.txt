@@ -1,5 +1,4 @@
 not-sup-host-b:arm64-osx=fail
-not-sup-host-b:x64-osx=fail
 not-sup-host-b:x86-windows=fail
 not-sup-host-b:x64-windows=fail
 not-sup-host-b:arm64-windows=fail
@@ -8,7 +7,6 @@ not-sup-host-b:arm64-linux=fail
 
 
 dep-on-feature-not-sup:arm64-osx=fail
-dep-on-feature-not-sup:x64-osx=fail
 dep-on-feature-not-sup:x86-windows=fail
 dep-on-feature-not-sup:x64-windows=fail
 dep-on-feature-not-sup:arm64-windows=fail
