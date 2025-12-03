@@ -71,12 +71,12 @@ jobs:
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
       - name: Install Mono (Linux) (for NuGet export)
-        if: matrix.preset == 'linux-arm64' || matrix.preset == 'linux-arm64-ci'
+        if: matrix.preset == 'linux-ci' || matrix.preset == 'linux-arm64-ci'
         run: |
           sudo apt update
           sudo apt install -y mono-complete
       - name: Install Mono (macOS) (for NuGet export)
-        if: matrix.preset == 'macos-arm64'
+        if: matrix.preset == 'macos-ci'
         run: |
           brew install mono
       - name: Run vcpkg end-to-end tests
