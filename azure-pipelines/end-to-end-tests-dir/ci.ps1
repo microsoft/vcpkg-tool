@@ -93,26 +93,79 @@ SUMMARY FOR $Triplet
 
 # test that skipped ports aren't "put back" by downstream dependencies that aren't skipped
 Refresh-TestRoot
-$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.txt"
+$Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource="clear;files,$ArchiveRoot,readwrite" --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.skip.txt"
 Throw-IfFailed
 if (-not ($Output -match 'always-built:[^:]+:      \*:' -and $Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.')) {
     throw 'did not attempt to build always-built'
 }
 if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
-    throw 'tried to build skipped'
+    throw 'did not identify always-skip as skipped'
 }
-# This should be statically determinable but at the moment we do not
-# if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
-#     throw 'tried to build cascaded'
-# }
+if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
+    throw 'did not identify always-cascade as cascaded'
+}
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
-  SUCCEEDED: 1
+  SUCCEEDED: 4
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 1
+  EXCLUDED: 2
 "@
+# prerequisite for next tests
+if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: skip\n')) {
+    throw 'did not identify maybe-transitive-cascade as skip'
+}
+if (-not ($Output -match 'maybe-cross-cascade:[^:]+:      \*:' -and $Output -match 'Building maybe-cross-cascade:[^@]+@1\.0\.0\.\.\.')) {
+    throw 'did not attempt to build maybe-cross-cascade'
+}
+# test with --skip-failures and cached artifacts
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+$Output = Run-VcpkgAndCaptureOutput ci --skip-failures @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource="clear;files,$ArchiveRoot" --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
+Throw-IfFailed
+if (-not ($Output -match 'always-built:[^:]+: cached:') -or $Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.') {
+    throw 'did not reuse the cached artifact for always-built'
+}
+if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
+    throw 'did not identify always-skip as skipped'
+}
+if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
+    throw 'did not identify always-cascade as cascaded'
+}
+if (-not ($Output -match 'maybe-skip:[^:]+: skip\n')) {
+    throw 'did not identify maybe-skip as skipped'
+}
+# not cached and transitive dependency on maybe-skip which is excluded
+if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: cascade\n')) {
+    throw 'did not identify maybe-transitive-cascade as cascaded'
+}
+# cached, but direct dependency on maybe-skip which is excluded
+if (-not ($Output -match 'maybe-cross-cascade:[^:]+: cascade\n')) {
+    throw 'did not identify maybe-cross-cascade as cascaded'
+}
+# test cross build; skipping always-skip and host maybe-skip
+Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
+Copy-Item "$env:VCPKG_ROOT/triplets/$Triplet.cmake" "$installRoot/cross.cmake"
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures --triplet cross --overlay-triplets $installRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
+Throw-IfFailed
+if (-not ($Output -match 'always-built:cross:      \*:')) {
+    throw 'did not attempt to build always-built [cross build]'
+}
+if (-not ($Output -match 'always-cascade:cross: cascade\n')) {
+    throw 'did not identify always-cascade as cascaded [cross build]'
+}
+if (-not ($Output -match 'maybe-skip:cross:      \*:')) {
+    throw 'did not attempt to build maybe-skip [cross build]'
+}
+if (-not ($Output -match 'maybe-transitive-cascade:cross:      \*:')) {
+    throw 'did not attempt to build maybe-transitive-cascade [cross build]'
+}
+if (-not ($Output -match 'maybe-cross-cascade:cross: cascade\n')) {
+    throw 'did not identify maybe-cross-cascade as cascaded [cross build]'
+}
 
 # test that features included only by skipped ports are not included
+Refresh-TestRoot
 $xunitFile = Join-Path $TestingRoot 'xunit.xml'
 Refresh-TestRoot
 Remove-Problem-Matchers

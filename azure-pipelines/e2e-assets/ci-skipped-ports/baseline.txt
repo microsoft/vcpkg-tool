@@ -1,5 +1,0 @@
-always-skip:arm64-osx=skip
-always-skip:x64-linux=skip
-always-skip:x64-osx=skip
-always-skip:x64-windows=skip
-always-skip:x86-windows=skip

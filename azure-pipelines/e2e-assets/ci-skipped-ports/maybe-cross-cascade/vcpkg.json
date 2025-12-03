@@ -1,0 +1,10 @@
+{
+  "name": "maybe-cross-cascade",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "maybe-skip",
+      "host": true
+    }
+  ]
+}
