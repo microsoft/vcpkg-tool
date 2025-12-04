@@ -1,10 +1,5 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-$tripletFile = "$env:VCPKG_ROOT/triplets/$Triplet.cmake";
-if (-not (Test-Path $tripletFile)) {
-    $tripletFile = "$env:VCPKG_ROOT/triplets/community/$Triplet.cmake"
-}
-
 $hostTripletContent = Get-Content $tripletFile -Raw
 $tripletContent = "$hostTripletContent`n"
 $tripletContent += @"

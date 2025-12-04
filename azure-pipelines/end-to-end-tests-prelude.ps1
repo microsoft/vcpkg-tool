@@ -9,6 +9,11 @@ $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
 $TestDownloadsRoot = Join-Path $TestingRoot 'downloads'
 $AssetCache = Join-Path $TestingRoot 'asset-cache'
 
+$tripletFile = "$env:VCPKG_ROOT/triplets/$Triplet.cmake";
+if (-not (Test-Path $tripletFile)) {
+    $tripletFile = "$env:VCPKG_ROOT/triplets/community/$Triplet.cmake"
+}
+
 $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
