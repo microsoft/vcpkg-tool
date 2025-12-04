@@ -591,4 +591,9 @@ namespace vcpkg
     inline constexpr StringLiteral StatusInstalled = "installed";
     inline constexpr StringLiteral StatusNotInstalled = "not-installed";
     inline constexpr StringLiteral StatusPurge = "purge";
+
+    // App Insights JSON response fields
+    inline constexpr StringLiteral AppInsightsResponseItemsReceived = "itemsReceived";
+    inline constexpr StringLiteral AppInsightsResponseItemsAccepted = "itemsAccepted";
+    inline constexpr StringLiteral AppInsightsResponseErrors = "errors";
 }
