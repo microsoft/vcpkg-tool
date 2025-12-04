@@ -2437,6 +2437,9 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         UseHeadVersion::No,
         Editable::No);
 
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+
     ActionPlan plan;
     {
         auto formatted = format_plan(plan);
@@ -2499,6 +2502,19 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                       "    c:x64-osx@1 -- c\n"
                       "Additional packages (*) will be modified to complete this operation.\n");
     }
+
+    plan.install_actions.push_back(std::move(install_f));
+    REQUIRE_LINES(format_plan(plan).all_text(),
+                  "The following packages are already installed:\n"
+                  "  * d:x86-windows@1\n"
+                  "    e:x86-windows@1\n"
+                  "The following packages will be rebuilt:\n"
+                  "  * a:x64-osx@1\n"
+                  "  * b[1]:x64-osx@1\n"
+                  "    c:x64-osx@1 -- c\n"
+                  "The following packages will be built and installed:\n"
+                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
+                  "Additional packages (*) will be modified to complete this operation.\n");
 }
 
 TEST_CASE ("dependency graph API snapshot: host and target")
