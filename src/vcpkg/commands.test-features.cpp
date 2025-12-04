@@ -681,6 +681,7 @@ namespace vcpkg
 
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
+        StatusParagraphs empty_status_db;
         std::vector<FullPackageSpec> specs;
         std::vector<const InstallPlanAction*> actions_to_check;
         for (auto&& test_spec : specs_to_test)
@@ -688,7 +689,7 @@ namespace vcpkg
             test_spec.plan = create_feature_install_plan(provider,
                                                          var_provider,
                                                          Span<FullPackageSpec>(&test_spec, 1),
-                                                         {},
+                                                         empty_status_db,
                                                          packages_dir_assigner,
                                                          install_plan_options);
             if (test_spec.plan.unsupported_features.empty())
@@ -707,7 +708,7 @@ namespace vcpkg
         {
             if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, test_spec.plan, var_provider, status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, port_dir_abi_info_cache);
             }
         }
 

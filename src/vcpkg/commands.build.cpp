@@ -744,7 +744,7 @@ namespace vcpkg
         BinaryParagraph bpgh(*scfl.source_control_file->core_paragraph,
                              action.default_features.value_or_exit(VCPKG_LINE_INFO),
                              action.spec.triplet(),
-                             action.package_abi_or_exit(VCPKG_LINE_INFO),
+                             action.package_abi_or_empty(),
                              fspecs_to_pspecs(find_itr->second));
         if (const auto p_ver = build_info.detected_head_version.get())
         {
@@ -1593,7 +1593,8 @@ namespace vcpkg
 
                 if (it2 == it)
                 {
-                    // Finally, look in current installed
+                    // If the action plan was built from an existing install tree, existing dependencies won't be in the
+                    // plan. Look for their ABI from the installed tree.
                     auto status_it = status_db.find(pspec);
                     if (status_it == status_db.end())
                     {
@@ -1602,11 +1603,15 @@ namespace vcpkg
                             fmt::format("Failed to find dependency abi for {} -> {}", action.spec, pspec));
                     }
 
+                    // Note that this may be empty string if the installed dependency was itself UseHeadVersion or
+                    // Editable
                     dependency_abis.emplace_back(pspec.name(), status_it->get()->package.abi);
                 }
                 else
                 {
-                    dependency_abis.emplace_back(pspec.name(), it2->package_abi_or_exit(VCPKG_LINE_INFO));
+                    // Note that the ABI of the dependency may be empty if it depends on something with UseHeadVersion
+                    // or Editable
+                    dependency_abis.emplace_back(pspec.name(), it2->package_abi_or_empty());
                 }
             }
 

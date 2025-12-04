@@ -114,14 +114,15 @@ namespace
                                  PackagesDirAssigner& packages_dir_assigner,
                                  const CreateInstallPlanOptions& serialize_options)
     {
+        StatusParagraphs empty_status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, applicable_specs, {}, packages_dir_assigner, serialize_options);
+            provider, var_provider, applicable_specs, empty_status_db, packages_dir_assigner, serialize_options);
         var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, action_plan, var_provider, StatusParagraphs{});
+        compute_all_abis(paths, action_plan, var_provider, empty_status_db);
         return action_plan;
     }
 

@@ -554,6 +554,15 @@ namespace vcpkg
 
         return *pabi;
     }
+    ZStringView InstallPlanAction::package_abi_or_empty() const
+    {
+        if (auto pabi = package_abi())
+        {
+            return *pabi;
+        }
+
+        return ZStringView{};
+    }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
         return *abi_info.value_or_exit(li).pre_build_info;
