@@ -1329,8 +1329,11 @@ namespace
 
     struct AwsStorageTool : IObjectStorageTool
     {
-        AwsStorageTool(const ToolCache& cache, MessageSink& sink, bool no_sign_request)
-            : m_tool(cache.get_tool_path(Tools::AWSCLI, sink)), m_no_sign_request(no_sign_request)
+        AwsStorageTool(const ToolCache& cache, MessageSink& sink, bool no_sign_request, bool trace_ops)
+            : m_out_sink(sink)
+            , m_tool(cache.get_tool_path(Tools::AWSCLI, sink))
+            , m_no_sign_request(no_sign_request)
+            , m_trace_ops(trace_ops)
         {
         }
 
@@ -1342,6 +1345,14 @@ namespace
 
         ExpectedL<CacheAvailability> stat(StringView url) const override
         {
+            if (m_trace_ops)
+            {
+                MessageLine line{};
+                line.print("aws s3 ls ");
+                line.print(url);
+                m_out_sink.println(std::move(line));
+            }
+
             auto cmd = Command{m_tool}.string_arg("s3").string_arg("ls").string_arg(url);
             if (m_no_sign_request)
             {
@@ -1387,6 +1398,16 @@ namespace
                 return r.error();
             }
 
+            if (m_trace_ops)
+            {
+                MessageLine line{};
+                line.print("aws s3 cp ");
+                line.print(object);
+                line.print(" ");
+                line.print(archive);
+                m_out_sink.println(std::move(line));
+            }
+
             auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(object).string_arg(archive);
             if (m_no_sign_request)
             {
@@ -1398,6 +1419,16 @@ namespace
 
         ExpectedL<Unit> upload_file(StringView object, const Path& archive) const override
         {
+            if (m_trace_ops)
+            {
+                MessageLine line{};
+                line.print("aws s3 cp ");
+                line.print(archive);
+                line.print(" ");
+                line.print(object);
+                m_out_sink.println(std::move(line));
+            }
+
             auto cmd = Command{m_tool}.string_arg("s3").string_arg("cp").string_arg(archive).string_arg(object);
             if (m_no_sign_request)
             {
@@ -1406,8 +1437,10 @@ namespace
             return flatten(cmd_execute_and_capture_output(cmd), Tools::AWSCLI);
         }
 
+        MessageSink& m_out_sink;
         Path m_tool;
         bool m_no_sign_request;
+        bool m_trace_ops;
     };
 
     struct CosStorageTool : IObjectStorageTool
@@ -2020,23 +2053,32 @@ namespace
             }
             else if (segments[0].second == "x-aws-config")
             {
-                if (segments.size() != 2)
+                if (segments.size() != 2 && segments.size() != 3)
                 {
-                    return add_error(msg::format(msgInvalidArgumentRequiresSingleStringArgument,
-                                                 msg::binary_source = "x-aws-config"));
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresOneOrTwoArguments, msg::binary_source = "x-aws-config"));
                 }
 
                 bool no_sign_request = false;
-                if (segments[1].second == "no-sign-request")
+                bool trace_ops = false;
+                for (size_t i = 1; i < segments.size(); ++i)
                 {
-                    no_sign_request = true;
-                }
-                else
-                {
-                    return add_error(msg::format(msgInvalidArgument), segments[1].first);
+                    if (!no_sign_request && segments[i].second == "no-sign-request")
+                    {
+                        no_sign_request = true;
+                    }
+                    else if (!trace_ops && segments[i].second == "trace-ops")
+                    {
+                        trace_ops = true;
+                    }
+                    else
+                    {
+                        return add_error(msg::format(msgInvalidArgument), segments[1].first);
+                    }
                 }
 
                 state->aws_no_sign_request = no_sign_request;
+                state->aws_trace_ops = trace_ops;
                 state->binary_cache_providers.insert("aws");
             }
             else if (segments[0].second == "x-cos")
@@ -2653,7 +2695,7 @@ namespace vcpkg
             std::shared_ptr<const AwsStorageTool> aws_tool;
             if (!s.aws_read_prefixes.empty() || !s.aws_write_prefixes.empty())
             {
-                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request);
+                aws_tool = std::make_shared<AwsStorageTool>(tools, out_sink, s.aws_no_sign_request, s.aws_trace_ops);
             }
             std::shared_ptr<const CosStorageTool> cos_tool;
             if (!s.cos_read_prefixes.empty() || !s.cos_write_prefixes.empty())
