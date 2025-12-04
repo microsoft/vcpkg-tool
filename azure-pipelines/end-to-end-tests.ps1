@@ -55,7 +55,7 @@ if ($IsLinux) {
 } elseif ($IsMacOS) {
     $Triplet = 'arm64-osx'
 } else {
-    $Triplet = 'x86-windows'
+    $Triplet = 'x64-windows'
 }
 
 New-Item -Path $WorkingRoot -ItemType Directory -Force | Out-Null
