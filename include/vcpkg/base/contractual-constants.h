@@ -433,7 +433,6 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariablePortConfigs = "VCPKG_PORT_CONFIGS";
     inline constexpr StringLiteral CMakeVariablePostPortfileIncludes = "VCPKG_POST_PORTFILE_INCLUDES";
     inline constexpr StringLiteral CMakeVariableProhibitBackcompatFeatures = "_VCPKG_PROHIBIT_BACKCOMPAT_FEATURES";
-    inline constexpr StringLiteral CMakeVariablePublicAbiOverride = "VCPKG_PUBLIC_ABI_OVERRIDE";
     inline constexpr StringLiteral CMakeVariableRef = "REF";
     inline constexpr StringLiteral CMakeVariableRepo = "REPO";
     inline constexpr StringLiteral CMakeVariableSHA512 = "SHA512";
@@ -580,7 +579,6 @@ namespace vcpkg
     inline constexpr StringLiteral AbiTagPortsDotCMake = "ports.cmake";
     inline constexpr StringLiteral AbiTagPostBuildChecks = "post_build_checks";
     inline constexpr StringLiteral AbiTagPowershell = "powershell";
-    inline constexpr StringLiteral AbiTagPublicAbiOverride = "public_abi_override";
     inline constexpr StringLiteral AbiTagSbomInfo = "sbom_info";
 
     inline constexpr StringLiteral StatusDeinstall = "deinstall";

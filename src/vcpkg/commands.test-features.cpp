@@ -682,7 +682,6 @@ namespace vcpkg
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
         std::vector<FullPackageSpec> specs;
-        std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
         for (auto&& test_spec : specs_to_test)
         {
@@ -697,15 +696,13 @@ namespace vcpkg
                 for (auto& actions : test_spec.plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
-                    port_locations.emplace_back(
-                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
                 }
                 actions_to_check.push_back(&test_spec.plan.install_actions.back());
             }
         }
 
         msg::println(msgComputeAllAbis);
-        var_provider.load_tag_vars(specs, port_locations, host_triplet);
+        var_provider.load_tag_vars(specs, host_triplet);
         for (auto&& test_spec : specs_to_test)
         {
             if (test_spec.plan.unsupported_features.empty())

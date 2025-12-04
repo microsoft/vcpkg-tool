@@ -1236,8 +1236,6 @@ DECLARE_MESSAGE(ErrorWhileParsing, (msg::path), "", "Errors occurred while parsi
 DECLARE_MESSAGE(ErrorWhileWriting, (msg::path), "", "Error occurred while writing {path}.")
 DECLARE_MESSAGE(ExamplesHeader, (), "Printed before a list of example command lines", "Examples:")
 DECLARE_MESSAGE(ExceededRecursionDepth, (), "", "Recursion depth exceeded.")
-DECLARE_MESSAGE(ExcludedPackage, (msg::spec), "", "Excluded {spec}")
-DECLARE_MESSAGE(ExcludedPackages, (), "", "The following packages are excluded:")
 DECLARE_MESSAGE(ExecutablesRelativeToThePackageDirectoryHere,
                 (),
                 "",

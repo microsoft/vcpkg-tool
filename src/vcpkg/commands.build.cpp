@@ -744,7 +744,7 @@ namespace vcpkg
         BinaryParagraph bpgh(*scfl.source_control_file->core_paragraph,
                              action.default_features.value_or_exit(VCPKG_LINE_INFO),
                              action.spec.triplet(),
-                             action.public_abi(),
+                             action.package_abi_or_exit(VCPKG_LINE_INFO),
                              fspecs_to_pspecs(find_itr->second));
         if (const auto p_ver = build_info.detected_head_version.get())
         {
@@ -1334,14 +1334,6 @@ namespace vcpkg
                                                 const PreBuildInfo& pre_build_info,
                                                 std::vector<AbiEntry>& abi_tag_entries)
     {
-        if (pre_build_info.public_abi_override)
-        {
-            abi_tag_entries.emplace_back(
-                AbiTagPublicAbiOverride,
-                Hash::get_string_hash(pre_build_info.public_abi_override.value_or_exit(VCPKG_LINE_INFO),
-                                      Hash::Algorithm::Sha256));
-        }
-
         for (const auto& env_var : pre_build_info.passthrough_env_vars_tracked)
         {
             if (auto e = get_environment_variable(env_var))
@@ -1595,9 +1587,10 @@ namespace vcpkg
             for (auto&& pspec : action.package_dependencies)
             {
                 if (pspec == action.spec) continue;
+                auto it2 = std::find_if(action_plan.install_actions.begin(), it, [&](const InstallPlanAction& ipa) {
+                    return ipa.spec == pspec;
+                });
 
-                auto pred = [&](const InstallPlanAction& ipa) { return ipa.spec == pspec; };
-                auto it2 = std::find_if(action_plan.install_actions.begin(), it, pred);
                 if (it2 == it)
                 {
                     // Finally, look in current installed
@@ -1613,7 +1606,7 @@ namespace vcpkg
                 }
                 else
                 {
-                    dependency_abis.emplace_back(pspec.name(), it2->public_abi());
+                    dependency_abis.emplace_back(pspec.name(), it2->package_abi_or_exit(VCPKG_LINE_INFO));
                 }
             }
 
@@ -2237,7 +2230,6 @@ namespace vcpkg
             Util::Vectors::append(passthrough_env_vars, Strings::split(*value, ';'));
         }
 
-        Util::assign_if_set_and_nonempty(public_abi_override, cmakevars, CMakeVariablePublicAbiOverride);
         if (auto value = Util::value_if_set_and_nonempty(cmakevars, CMakeVariableHashAdditionalFiles))
         {
             hash_additional_files =

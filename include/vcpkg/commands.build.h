@@ -168,7 +168,6 @@ namespace vcpkg
         Optional<Path> visual_studio_path;
         Optional<Path> external_toolchain_file;
         Optional<ConfigurationType> build_type;
-        Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
