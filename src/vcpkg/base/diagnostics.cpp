@@ -196,9 +196,9 @@ namespace vcpkg
     void PrintingDiagnosticContext::statusln(const MessageLine& message) { sink.println(message); }
     void PrintingDiagnosticContext::statusln(MessageLine&& message) { sink.println(std::move(message)); }
 
-    void BufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
-    void BufferedDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
-    void BufferedDiagnosticContext::print_to(MessageSink& sink) const
+    void BasicBufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
+    void BasicBufferedDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
+    void BasicBufferedDiagnosticContext::print_to(MessageSink& sink) const
     {
         for (auto&& line : lines)
         {
@@ -209,25 +209,90 @@ namespace vcpkg
     // Converts this message into a string
     // Prefer print() if possible because it applies color
     // Not safe to use in the face of concurrent calls to report()
-    std::string BufferedDiagnosticContext::to_string() const { return adapt_to_string(*this); }
-    void BufferedDiagnosticContext::to_string(std::string& target) const { joined_line_to_string(lines, target); }
+    std::string BasicBufferedDiagnosticContext::to_string() const { return adapt_to_string(*this); }
+    void BasicBufferedDiagnosticContext::to_string(std::string& target) const { joined_line_to_string(lines, target); }
 
-    bool BufferedDiagnosticContext::any_errors() const noexcept { return diagnostic_lines_any_errors(lines); }
-    bool BufferedDiagnosticContext::empty() const noexcept { return lines.empty(); }
+    bool BasicBufferedDiagnosticContext::any_errors() const noexcept { return diagnostic_lines_any_errors(lines); }
+    bool BasicBufferedDiagnosticContext::empty() const noexcept { return lines.empty(); }
 
-    void BufferedDiagnosticContext::statusln(const LocalizedString& message) { status_sink.println(message); }
-    void BufferedDiagnosticContext::statusln(LocalizedString&& message) { status_sink.println(std::move(message)); }
-    void BufferedDiagnosticContext::statusln(const MessageLine& message) { status_sink.println(message); }
-    void BufferedDiagnosticContext::statusln(MessageLine&& message) { status_sink.println(std::move(message)); }
+    void SinkBufferedDiagnosticContext::statusln(const LocalizedString& message) { status_sink.println(message); }
+    void SinkBufferedDiagnosticContext::statusln(LocalizedString&& message) { status_sink.println(std::move(message)); }
+    void SinkBufferedDiagnosticContext::statusln(const MessageLine& message) { status_sink.println(message); }
+    void SinkBufferedDiagnosticContext::statusln(MessageLine&& message) { status_sink.println(std::move(message)); }
 
-    void FullyBufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line.to_message_line()); }
-    void FullyBufferedDiagnosticContext::report(DiagnosticLine&& line)
+    void ContextBufferedDiagnosticContext::statusln(const LocalizedString& message)
     {
-        lines.push_back(std::move(line).to_message_line());
+        status_context.statusln(message);
+    }
+    void ContextBufferedDiagnosticContext::statusln(LocalizedString&& message)
+    {
+        status_context.statusln(std::move(message));
+    }
+    void ContextBufferedDiagnosticContext::statusln(const MessageLine& message) { status_context.statusln(message); }
+    void ContextBufferedDiagnosticContext::statusln(MessageLine&& message)
+    {
+        status_context.statusln(std::move(message));
     }
 
-    void FullyBufferedDiagnosticContext::statusln(const LocalizedString& message) { lines.emplace_back(message); }
-    void FullyBufferedDiagnosticContext::statusln(LocalizedString&& message) { lines.emplace_back(std::move(message)); }
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(const DiagnosticLine& dl) : dl(dl), is_diagnostic(true) { }
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(DiagnosticLine&& dl) : dl(std::move(dl)), is_diagnostic(true) { }
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(const MessageLine& ml) : ml(ml), is_diagnostic(false) { }
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(MessageLine&& ml) : ml(std::move(ml)), is_diagnostic(false) { }
+
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(const DiagnosticOrMessageLine& other)
+        : is_diagnostic(other.is_diagnostic)
+    {
+        if (is_diagnostic)
+            new (&dl) DiagnosticLine(other.dl);
+        else
+            new (&ml) MessageLine(other.ml);
+    }
+
+    DiagnosticOrMessageLine::DiagnosticOrMessageLine(DiagnosticOrMessageLine&& other)
+        : is_diagnostic(other.is_diagnostic)
+    {
+        if (is_diagnostic)
+            new (&dl) DiagnosticLine(std::move(other.dl));
+        else
+            new (&ml) MessageLine(std::move(other.ml));
+    }
+
+    DiagnosticOrMessageLine::~DiagnosticOrMessageLine()
+    {
+        if (is_diagnostic)
+        {
+            dl.~DiagnosticLine();
+        }
+        else
+        {
+            ml.~MessageLine();
+        }
+    }
+
+    std::string DiagnosticOrMessageLine::to_string() const { return adapt_to_string(*this); }
+    void DiagnosticOrMessageLine::to_string(std::string& target) const
+    {
+        if (is_diagnostic)
+        {
+            dl.to_string(target);
+        }
+        else
+        {
+            ml.to_string(target);
+        }
+    }
+
+    void FullyBufferedDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
+    void FullyBufferedDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
+
+    void FullyBufferedDiagnosticContext::statusln(const LocalizedString& message)
+    {
+        lines.emplace_back(MessageLine{message});
+    }
+    void FullyBufferedDiagnosticContext::statusln(LocalizedString&& message)
+    {
+        lines.emplace_back(MessageLine{std::move(message)});
+    }
     void FullyBufferedDiagnosticContext::statusln(const MessageLine& message) { lines.emplace_back(message); }
     void FullyBufferedDiagnosticContext::statusln(MessageLine&& message) { lines.emplace_back(std::move(message)); }
 
@@ -235,7 +300,14 @@ namespace vcpkg
     {
         for (auto&& line : lines)
         {
-            sink.println(line);
+            if (line.is_diagnostic)
+            {
+                line.dl.print_to(sink);
+            }
+            else
+            {
+                sink.println(line.ml);
+            }
         }
     }
 
@@ -244,8 +316,35 @@ namespace vcpkg
 
     bool FullyBufferedDiagnosticContext::empty() const noexcept { return lines.empty(); }
 
-    void AttemptDiagnosticContext::report(const DiagnosticLine& line) { lines.push_back(line); }
-    void AttemptDiagnosticContext::report(DiagnosticLine&& line) { lines.push_back(std::move(line)); }
+    void FullyBufferedDiagnosticContext::report_to(DiagnosticContext& context) const&
+    {
+        for (auto&& line : lines)
+        {
+            if (line.is_diagnostic)
+            {
+                context.report(line.dl);
+            }
+            else
+            {
+                context.statusln(line.ml);
+            }
+        }
+    }
+
+    void FullyBufferedDiagnosticContext::report_to(DiagnosticContext& context) &&
+    {
+        for (auto&& line : lines)
+        {
+            if (line.is_diagnostic)
+            {
+                context.report(std::move(line.dl));
+            }
+            else
+            {
+                context.statusln(std::move(line.ml));
+            }
+        }
+    }
 
     void AttemptDiagnosticContext::statusln(const LocalizedString& message) { inner_context.statusln(message); }
     void AttemptDiagnosticContext::statusln(LocalizedString&& message) { inner_context.statusln(std::move(message)); }
@@ -307,17 +406,8 @@ namespace
     };
 
     NullDiagnosticContext null_diagnostic_context_instance;
-
-    struct ConsoleDiagnosticContext final : DiagnosticContext
-    {
-        virtual void report(const DiagnosticLine& line) override { line.print_to(out_sink); }
-        virtual void statusln(const LocalizedString& message) override { out_sink.println(message); }
-        virtual void statusln(LocalizedString&& message) override { out_sink.println(std::move(message)); }
-        virtual void statusln(const MessageLine& message) override { out_sink.println(message); }
-        virtual void statusln(MessageLine&& message) override { out_sink.println(std::move(message)); }
-    };
-
-    ConsoleDiagnosticContext console_diagnostic_context_instance;
+    PrintingDiagnosticContext console_diagnostic_context_instance{out_sink};
+    PrintingDiagnosticContext stderr_diagnostic_context_instance{stderr_sink};
 
     struct StatusOnlyDiagnosticContext final : DiagnosticContext
     {
@@ -335,5 +425,6 @@ namespace vcpkg
 {
     DiagnosticContext& null_diagnostic_context = null_diagnostic_context_instance;
     DiagnosticContext& console_diagnostic_context = console_diagnostic_context_instance;
+    DiagnosticContext& stderr_diagnostic_context = stderr_diagnostic_context_instance;
     DiagnosticContext& status_only_diagnostic_context = status_only_diagnostic_context_instance;
 }

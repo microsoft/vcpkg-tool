@@ -136,6 +136,26 @@ namespace vcpkg
         return LocalizedString::from_raw(std::move(combined_messages));
     }
 
+    bool ParseMessages::report(DiagnosticContext& context) const&
+    {
+        for (const auto& line : m_lines)
+        {
+            context.report(line);
+        }
+
+        return !any_errors();
+    }
+
+    bool ParseMessages::report(DiagnosticContext& context) &&
+    {
+        for (auto&& line : m_lines)
+        {
+            context.report(std::move(line));
+        }
+
+        return !any_errors();
+    }
+
     ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
         : m_it(text.begin(), text.end())
         , m_start_of_line(m_it)
