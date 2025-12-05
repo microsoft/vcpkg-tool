@@ -1,19 +1,10 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
-# Testing x-script
-Refresh-TestRoot
 $env:VCPKG_FORCE_DOWNLOADED_BINARIES = "ON"
-Run-Vcpkg @commonArgs fetch cmake
-Throw-IfFailed
-Run-Vcpkg @commonArgs fetch ninja
-Throw-IfFailed
-if ($IsWindows)
-{
-    Run-Vcpkg @commonArgs fetch powershell-core
-    Throw-IfFailed
-}
 
-Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
+# Testing x-script
+Run-Vcpkg @commonArgs install vcpkg-test-x-script-prerequisites --x-binarysource=clear "--overlay-ports=$PSScriptRoot/../e2e-ports"
+Throw-IfFailed
 $helloPath = Join-Path $DefaultDownloadsRoot 'hello-world.txt'
 if (Test-Path $helloPath) {
     Remove-Item $helloPath
@@ -21,8 +12,6 @@ if (Test-Path $helloPath) {
 
 Run-Vcpkg @commonArgs install vcpkg-test-x-script --x-binarysource=clear "--overlay-ports=$PSScriptRoot/../e2e-ports" "--x-asset-sources=x-script,$TestScriptAssetCacheExe {url} {sha512} {dst};x-block-origin"
 Throw-IfFailed
-
-$env:VCPKG_FORCE_DOWNLOADED_BINARIES = "ON"
 $assetCacheRegex = [regex]::Escape($AssetCache)
 
 # Testing asset cache miss (not configured) + x-block-origin enabled
