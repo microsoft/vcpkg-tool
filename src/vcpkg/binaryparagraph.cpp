@@ -92,7 +92,7 @@ namespace vcpkg
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
                                      const std::vector<std::string>& default_features,
                                      Triplet triplet,
-                                     const std::string& abi_tag,
+                                     StringView abi_tag,
                                      std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
         , version(spgh.version)
@@ -101,7 +101,7 @@ namespace vcpkg
         , feature()
         , default_features(default_features)
         , dependencies(std::move(deps))
-        , abi(abi_tag)
+        , abi(abi_tag.data(), abi_tag.size())
     {
         canonicalize();
     }

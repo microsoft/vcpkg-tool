@@ -380,100 +380,89 @@ namespace vcpkg
                                                            const IBuildLogsRecorder& build_logs_recorder)
     {
         auto& fs = paths.get_filesystem();
-        const InstallPlanType& plan_type = action.plan_type;
-        if (plan_type == InstallPlanType::ALREADY_INSTALLED)
+        if (action.installed_package.has_value())
         {
+            // already installed
             return ExtendedBuildResult{BuildResult::Succeeded};
         }
 
         bool all_dependencies_satisfied;
-        if (plan_type == InstallPlanType::BUILD_AND_INSTALL)
+        std::unique_ptr<BinaryControlFile> bcf;
+        if (binary_cache.is_restored(action))
         {
-            std::unique_ptr<BinaryControlFile> bcf;
-            if (binary_cache.is_restored(action))
-            {
-                auto maybe_bcf = Paragraphs::try_load_cached_package(
-                    fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
-                bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
-                all_dependencies_satisfied = true;
-            }
-            else if (build_options.build_missing == BuildMissing::No)
-            {
-                return ExtendedBuildResult{BuildResult::CacheMissing};
-            }
-            else
-            {
-                msg::println(action.use_head_version == UseHeadVersion::Yes ? msgBuildingFromHead : msgBuildingPackage,
-                             msg::spec = action.display_name());
+            auto maybe_bcf =
+                Paragraphs::try_load_cached_package(fs, action.package_dir.value_or_exit(VCPKG_LINE_INFO), action.spec);
+            bcf = std::make_unique<BinaryControlFile>(std::move(maybe_bcf).value_or_exit(VCPKG_LINE_INFO));
+            all_dependencies_satisfied = true;
+        }
+        else if (build_options.build_missing == BuildMissing::No)
+        {
+            return ExtendedBuildResult{BuildResult::CacheMissing};
+        }
+        else
+        {
+            msg::println(action.use_head_version == UseHeadVersion::Yes ? msgBuildingFromHead : msgBuildingPackage,
+                         msg::spec = action.display_name());
 
-                auto result =
-                    build_package(args, paths, host_triplet, build_options, action, build_logs_recorder, status_db);
+            auto result =
+                build_package(args, paths, host_triplet, build_options, action, build_logs_recorder, status_db);
 
-                if (BuildResult::Downloaded == result.code)
+            if (BuildResult::Downloaded == result.code)
+            {
+                msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
+                return result;
+            }
+
+            all_dependencies_satisfied = result.unmet_dependencies.empty();
+            if (result.code != BuildResult::Succeeded)
+            {
+                LocalizedString warnings;
+                for (auto&& msg : action.build_failure_messages)
                 {
-                    msg::println(Color::success, msgDownloadedSources, msg::spec = action.display_name());
-                    return result;
+                    warnings.append(msg).append_raw('\n');
                 }
 
-                all_dependencies_satisfied = result.unmet_dependencies.empty();
-                if (result.code != BuildResult::Succeeded)
+                if (!warnings.data().empty())
                 {
-                    LocalizedString warnings;
-                    for (auto&& msg : action.build_failure_messages)
-                    {
-                        warnings.append(msg).append_raw('\n');
-                    }
-
-                    if (!warnings.data().empty())
-                    {
-                        msg::print(Color::warning, warnings);
-                    }
-
-                    msg::println_error(create_error_message(result, action.spec));
-                    return result;
+                    msg::print(Color::warning, warnings);
                 }
 
-                bcf = std::move(result.binary_control_file);
-            }
-            // Build or restore succeeded and `bcf` is populated with the control file.
-            Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
-            BuildResult code;
-            if (all_dependencies_satisfied)
-            {
-                const auto install_result =
-                    install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, status_db);
-                switch (install_result)
-                {
-                    case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
-                    case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
-                binary_cache.push_success(build_options.clean_packages, action);
-            }
-            else
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, build_options.only_downloads == OnlyDownloads::Yes);
-                code = BuildResult::Downloaded;
+                msg::println_error(create_error_message(result, action.spec));
+                return result;
             }
 
-            if (build_options.clean_downloads == CleanDownloads::Yes)
+            bcf = std::move(result.binary_control_file);
+        }
+        // Build or restore succeeded and `bcf` is populated with the control file.
+        Checks::check_exit(VCPKG_LINE_INFO, bcf != nullptr);
+        BuildResult code;
+        if (all_dependencies_satisfied)
+        {
+            const auto install_result =
+                install_package(paths, action.package_dir.value_or_exit(VCPKG_LINE_INFO), *bcf, status_db);
+            switch (install_result)
             {
-                for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
-                {
-                    fs.remove(p, VCPKG_LINE_INFO);
-                }
+                case InstallResult::SUCCESS: code = BuildResult::Succeeded; break;
+                case InstallResult::FILE_CONFLICTS: code = BuildResult::FileConflicts; break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-
-            return {code, std::move(bcf)};
+            binary_cache.push_success(build_options.clean_packages, action);
+        }
+        else
+        {
+            Checks::check_exit(VCPKG_LINE_INFO, build_options.only_downloads == OnlyDownloads::Yes);
+            code = BuildResult::Downloaded;
         }
 
-        if (plan_type == InstallPlanType::EXCLUDED)
+        if (build_options.clean_downloads == CleanDownloads::Yes)
         {
-            msg::println(Color::warning, msgExcludedPackage, msg::spec = action.spec);
-            return ExtendedBuildResult{BuildResult::Excluded};
+            for (auto& p : fs.get_regular_files_non_recursive(paths.downloads, IgnoreErrors{}))
+            {
+                fs.remove(p, VCPKG_LINE_INFO);
+            }
         }
 
-        Checks::unreachable(VCPKG_LINE_INFO);
+        return {code, std::move(bcf)};
     }
 
     LocalizedString InstallSummary::format_results() const

@@ -502,7 +502,6 @@ namespace vcpkg
                                          Editable editable)
         : PackageAction{{ipv.spec()}, ipv.dependencies(), ipv.feature_list()}
         , installed_package(std::move(ipv))
-        , plan_type(InstallPlanType::ALREADY_INSTALLED)
         , request_type(request_type)
         , use_head_version(use_head_version)
         , editable(editable)
@@ -522,7 +521,6 @@ namespace vcpkg
         : PackageAction{{spec}, fdeps_to_pdeps(spec, dependencies), fdeps_to_feature_list(dependencies)}
         , source_control_file_and_location(scfl)
         , default_features(std::move(default_features))
-        , plan_type(InstallPlanType::BUILD_AND_INSTALL)
         , request_type(request_type)
         , use_head_version(use_head_version)
         , editable(editable)
@@ -532,32 +530,18 @@ namespace vcpkg
     {
     }
 
-    const std::string& InstallPlanAction::public_abi() const
-    {
-        switch (plan_type)
-        {
-            case InstallPlanType::ALREADY_INSTALLED:
-                return installed_package.value_or_exit(VCPKG_LINE_INFO).core->package.abi;
-            case InstallPlanType::BUILD_AND_INSTALL:
-            {
-                auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
-                if (auto o = i.pre_build_info->public_abi_override.get())
-                    return *o;
-                else
-                    return i.package_abi;
-            }
-            default: Checks::unreachable(VCPKG_LINE_INFO);
-        }
-    }
-    bool InstallPlanAction::has_package_abi() const
-    {
-        const auto p = abi_info.get();
-        return p && !p->package_abi.empty();
-    }
     const std::string* InstallPlanAction::package_abi() const
     {
         const auto p = abi_info.get();
         if (p && !p->package_abi.empty()) return &p->package_abi;
+        if (const auto* ipv = installed_package.get())
+        {
+            if (!ipv->core->package.abi.empty())
+            {
+                return &ipv->core->package.abi;
+            }
+        }
+
         return nullptr;
     }
     const std::string& InstallPlanAction::package_abi_or_exit(LineInfo li) const
@@ -569,6 +553,15 @@ namespace vcpkg
         }
 
         return *pabi;
+    }
+    ZStringView InstallPlanAction::package_abi_or_empty() const
+    {
+        if (auto pabi = package_abi())
+        {
+            return *pabi;
+        }
+
+        return ZStringView{};
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
@@ -641,15 +634,12 @@ namespace vcpkg
     ExportPlanAction::ExportPlanAction(const PackageSpec& spec,
                                        InstalledPackageView&& installed_package,
                                        RequestType request_type)
-        : BasicAction{spec}
-        , plan_type(ExportPlanType::ALREADY_BUILT)
-        , request_type(request_type)
-        , m_installed_package(std::move(installed_package))
+        : BasicAction{spec}, request_type(request_type), m_installed_package(std::move(installed_package))
     {
     }
 
     ExportPlanAction::ExportPlanAction(const PackageSpec& spec, RequestType request_type)
-        : BasicAction{spec}, plan_type(ExportPlanType::NOT_BUILT), request_type(request_type)
+        : BasicAction{spec}, request_type(request_type)
     {
     }
 
@@ -1291,8 +1281,7 @@ namespace vcpkg
             auto it = remove_specs.find(install_action.spec);
             if (it == remove_specs.end())
             {
-                (install_action.plan_type == InstallPlanType::EXCLUDED ? &excluded : &new_plans)
-                    ->push_back(&install_action);
+                new_plans.push_back(&install_action);
             }
             else
             {
@@ -1305,12 +1294,6 @@ namespace vcpkg
         Util::sort(new_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_head_plans, &InstallPlanAction::compare_by_name);
-        Util::sort(excluded, &InstallPlanAction::compare_by_name);
-
-        if (!excluded.empty())
-        {
-            format_plan_block(ret.warning_text, msgExcludedPackages, false, excluded);
-        }
 
         if (!already_installed_head_plans.empty())
         {

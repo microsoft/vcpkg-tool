@@ -54,10 +54,9 @@ namespace vcpkg
                           std::vector<LocalizedString>&& build_failure_messages,
                           std::vector<std::string> default_features);
 
-        const std::string& public_abi() const;
-        bool has_package_abi() const;
         const std::string* package_abi() const;
         const std::string& package_abi_or_exit(LineInfo li) const;
+        ZStringView package_abi_or_empty() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
         Version version() const;
         std::string display_name() const;
@@ -66,7 +65,6 @@ namespace vcpkg
         Optional<InstalledPackageView> installed_package;
         Optional<std::vector<std::string>> default_features;
 
-        InstallPlanType plan_type;
         RequestType request_type;
         UseHeadVersion use_head_version;
         Editable editable;
@@ -120,7 +118,6 @@ namespace vcpkg
 
         ExportPlanAction(const PackageSpec& spec, RequestType request_type);
 
-        ExportPlanType plan_type;
         RequestType request_type;
 
         Optional<const BinaryParagraph&> core_paragraph() const;

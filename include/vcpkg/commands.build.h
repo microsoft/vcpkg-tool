@@ -168,7 +168,6 @@ namespace vcpkg
         Optional<Path> visual_studio_path;
         Optional<Path> external_toolchain_file;
         Optional<ConfigurationType> build_type;
-        Optional<std::string> public_abi_override;
         std::vector<std::string> passthrough_env_vars;
         std::vector<std::string> passthrough_env_vars_tracked;
         std::vector<Path> hash_additional_files;
@@ -302,6 +301,9 @@ namespace vcpkg
         std::vector<Json::Object> heuristic_resources;
     };
 
+    // It is important that `status_db` is the same status database as was used when constructing `action_plan`. Note
+    // that this is expected to be a default constructed / empty StatusParagraphs for the "versioned" install plan types
+    // as they always start from a clean state.
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
