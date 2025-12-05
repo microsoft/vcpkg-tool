@@ -76,6 +76,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
+    inline constexpr StringLiteral JsonIdEditables = "editables";
     inline constexpr StringLiteral JsonIdPackages = "packages";
     inline constexpr StringLiteral JsonIdPackageUnderscoreName = "package_name";
     inline constexpr StringLiteral JsonIdPackageUnderscoreUrl = "package_url";
