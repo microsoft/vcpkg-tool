@@ -1,5 +1,5 @@
 skipped-depends:arm64-osx=skip
 skipped-depends:x64-linux=skip
-skipped-depends:x64-osx=skip
+skipped-depends:arm64-linux=skip
 skipped-depends:x64-windows=skip
 skipped-depends:x86-windows=skip

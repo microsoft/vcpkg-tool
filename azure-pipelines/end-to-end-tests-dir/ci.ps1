@@ -143,10 +143,8 @@ if (-not ($Output -match 'maybe-cross-cascade:[^:]+: cascade\n')) {
     throw 'did not identify maybe-cross-cascade as cascaded'
 }
 # test cross build; skipping always-skip and host maybe-skip
-Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
-New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
-Copy-Item "$env:VCPKG_ROOT/triplets/$Triplet.cmake" "$installRoot/cross.cmake"
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures --triplet cross --overlay-triplets $installRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
 Throw-IfFailed
 if (-not ($Output -match 'always-built:cross:      \*:')) {
     throw 'did not attempt to build always-built [cross build]'

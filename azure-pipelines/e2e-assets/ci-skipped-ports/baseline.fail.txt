@@ -3,7 +3,6 @@ always-skip:cross=fail
 always-skip:arm64-linux=fail
 always-skip:arm64-osx=fail
 always-skip:x64-linux=fail
-always-skip:x64-osx=fail
 always-skip:x64-windows=fail
 always-skip:x86-windows=fail
 
@@ -12,6 +11,5 @@ always-skip:x86-windows=fail
 maybe-skip:arm64-linux=fail
 maybe-skip:arm64-osx=fail
 maybe-skip:x64-linux=fail
-maybe-skip:x64-osx=fail
 maybe-skip:x64-windows=fail
 maybe-skip:x86-windows=fail
