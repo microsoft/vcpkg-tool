@@ -12,13 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2022
+          - os: windows-2025
             preset: windows-ci
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             preset: linux-ci
           - os: ubuntu-24.04-arm
             preset: linux-arm64-ci
-          - os: macos-14
+          - os: macos-26
             preset: macos-ci
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
@@ -70,11 +70,15 @@ jobs:
           path: ${{ github.workspace }}/vcpkg-root
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
-      - name: Install Mono (for NuGet export)
-        if: matrix.preset == 'linux-arm64-ci'
+      - name: Install Mono (Linux) (for NuGet export)
+        if: matrix.preset == 'linux-ci' || matrix.preset == 'linux-arm64-ci'
         run: |
           sudo apt update
           sudo apt install -y mono-complete
+      - name: Install Mono (macOS) (for NuGet export)
+        if: matrix.preset == 'macos-ci'
+        run: |
+          brew install mono
       - name: Run vcpkg end-to-end tests
         shell: pwsh
         run: |

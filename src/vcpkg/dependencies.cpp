@@ -494,7 +494,7 @@ namespace vcpkg
     {
     }
 
-    const std::string& AlreadyInstalledPlanAction::public_abi() const { return installed_package.core->package.abi; }
+    const std::string& AlreadyInstalledPlanAction::package_abi() const { return installed_package.core->package.abi; }
 
     static std::vector<PackageSpec> fdeps_to_pdeps(const PackageSpec& self,
                                                    const std::map<std::string, std::vector<FeatureSpec>>& dependencies)
@@ -542,21 +542,6 @@ namespace vcpkg
     {
     }
 
-    const std::string& InstallPlanAction::public_abi() const
-    {
-        auto&& i = abi_info.value_or_exit(VCPKG_LINE_INFO);
-        if (auto o = i.pre_build_info->public_abi_override.get())
-        {
-            return *o;
-        }
-
-        return i.package_abi;
-    }
-    bool InstallPlanAction::has_package_abi() const
-    {
-        const auto p = abi_info.get();
-        return p && !p->package_abi.empty();
-    }
     const std::string* InstallPlanAction::package_abi() const
     {
         const auto p = abi_info.get();
@@ -572,6 +557,15 @@ namespace vcpkg
         }
 
         return *pabi;
+    }
+    ZStringView InstallPlanAction::package_abi_or_empty() const
+    {
+        if (auto pabi = package_abi())
+        {
+            return *pabi;
+        }
+
+        return ZStringView{};
     }
     const PreBuildInfo& InstallPlanAction::pre_build_info(LineInfo li) const
     {
@@ -617,15 +611,12 @@ namespace vcpkg
     ExportPlanAction::ExportPlanAction(const PackageSpec& spec,
                                        InstalledPackageView&& installed_package,
                                        RequestType request_type)
-        : BasicAction{spec}
-        , plan_type(ExportPlanType::ALREADY_BUILT)
-        , request_type(request_type)
-        , m_installed_package(std::move(installed_package))
+        : BasicAction{spec}, request_type(request_type), m_installed_package(std::move(installed_package))
     {
     }
 
     ExportPlanAction::ExportPlanAction(const PackageSpec& spec, RequestType request_type)
-        : BasicAction{spec}, plan_type(ExportPlanType::NOT_BUILT), request_type(request_type)
+        : BasicAction{spec}, request_type(request_type)
     {
     }
 
@@ -1288,7 +1279,6 @@ namespace vcpkg
         Util::sort(new_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_plans, &InstallPlanAction::compare_by_name);
         Util::sort(already_installed_head_plans, &InstallPlanAction::compare_by_name);
-
         if (!already_installed_head_plans.empty())
         {
             format_plan_block(ret.warning_text, msgInstalledPackagesHead, already_installed_head_plans);

@@ -42,7 +42,7 @@ namespace vcpkg
         explicit AbiSpecSummary(ExtendedBuildResult&& build_result,
                                 ElapsedTime timing,
                                 std::chrono::system_clock::time_point start_time,
-                                const std::string& package_abi);
+                                StringView package_abi);
         const std::string& package_abi() const noexcept { return m_package_abi; }
 
     private:

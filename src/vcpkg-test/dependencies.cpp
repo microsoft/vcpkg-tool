@@ -2420,8 +2420,6 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                                 {});
     InstallPlanAction install_c(
         {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
 
     AlreadyInstalledPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
@@ -2432,6 +2430,9 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::USER_REQUESTED,
         UseHeadVersion::No);
+
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
 
     ActionPlan plan;
     {
@@ -2505,6 +2506,8 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "  * a:x64-osx@1\n"
                   "  * b[1]:x64-osx@1\n"
                   "    c:x64-osx@1 -- c\n"
+                  "The following packages will be built and installed:\n"
+                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
 }
 

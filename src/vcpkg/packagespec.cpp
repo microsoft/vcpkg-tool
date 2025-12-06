@@ -376,32 +376,51 @@ namespace vcpkg
                 return nullopt;
             }
 
-            auto loc = parser.cur_loc();
-            std::string platform_string;
-            int depth = 1;
-            while (depth > 0 && (ch = parser.next()) != 0)
+            ch = parser.next();
+            if (ch == '\r' || ch == '\n' || ch == Unicode::end_of_file)
             {
-                if (ch == '(') ++depth;
-                if (ch == ')') --depth;
-            }
-            if (depth > 0)
-            {
-                parser.add_error(msg::format(msgMissingClosingParen), loc);
+                parser.add_error(msg::format(msgMissingClosingParen));
                 return nullopt;
             }
-            platform_string.append((++loc.it).pointer_to_current(), parser.it().pointer_to_current());
+
+            auto expr_loc = parser.cur_loc();
+            int depth = 1;
+            for (;;)
+            {
+                if (ch == '(')
+                {
+                    ++depth;
+                }
+                else if (ch == ')')
+                {
+                    --depth;
+                    if (depth == 0)
+                    {
+                        break;
+                    }
+                }
+
+                ch = parser.next();
+                if (ch == '\r' || ch == '\n' || ch == Unicode::end_of_file)
+                {
+                    parser.add_error(msg::format(msgMissingClosingParen));
+                    return nullopt;
+                }
+            }
+
             auto platform_opt = PlatformExpression::parse_platform_expression(
-                platform_string, PlatformExpression::MultipleBinaryOperators::Allow);
+                std::string(expr_loc.it.pointer_to_current(), parser.it().pointer_to_current()),
+                PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto platform = platform_opt.get())
             {
-                ret.platform.emplace(loc, std::move(*platform));
+                ret.platform.emplace(expr_loc, std::move(*platform));
             }
             else
             {
-                parser.add_error(std::move(platform_opt).error(), loc);
+                parser.add_error(std::move(platform_opt).error(), expr_loc);
             }
 
-            parser.next();
+            parser.next(); // consume ')'
         }
         // This makes the behavior of the parser more consistent -- otherwise, it will skip tabs and spaces only if
         // there isn't a qualifier.

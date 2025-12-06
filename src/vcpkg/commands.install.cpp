@@ -590,7 +590,7 @@ namespace vcpkg
             summary.already_installed_results.emplace_back(ExtendedBuildResult{action.spec, BuildResult::Succeeded},
                                                            ElapsedTime{},
                                                            std::chrono::system_clock::now(),
-                                                           action.public_abi());
+                                                           action.package_abi());
         }
 
         for (auto&& action : action_plan.install_actions)
@@ -1503,8 +1503,9 @@ namespace vcpkg
     AbiSpecSummary::AbiSpecSummary(ExtendedBuildResult&& build_result,
                                    ElapsedTime timing,
                                    std::chrono::system_clock::time_point start_time,
-                                   const std::string& package_abi)
-        : SpecSummary(std::move(build_result), timing, start_time), m_package_abi(package_abi)
+                                   StringView package_abi)
+        : SpecSummary(std::move(build_result), timing, start_time)
+        , m_package_abi(package_abi.data(), package_abi.size())
     {
     }
 
@@ -1512,7 +1513,8 @@ namespace vcpkg
                                            ElapsedTime timing,
                                            std::chrono::system_clock::time_point start_time,
                                            const InstallPlanAction& action)
-        : AbiSpecSummary(std::move(build_result), timing, start_time, action.public_abi()), m_install_action(&action)
+        : AbiSpecSummary(std::move(build_result), timing, start_time, action.package_abi_or_empty())
+        , m_install_action(&action)
     {
     }
 

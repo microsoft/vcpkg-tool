@@ -45,7 +45,7 @@ namespace vcpkg
                                    RequestType request_type,
                                    UseHeadVersion use_head_version);
 
-        const std::string& public_abi() const;
+        const std::string& package_abi() const;
 
         InstalledPackageView installed_package;
 
@@ -69,10 +69,9 @@ namespace vcpkg
                           std::vector<DiagnosticLine>&& dependency_diagnostics,
                           const std::vector<std::string>& default_features);
 
-        const std::string& public_abi() const;
-        bool has_package_abi() const;
         const std::string* package_abi() const;
         const std::string& package_abi_or_exit(LineInfo li) const;
+        ZStringView package_abi_or_empty() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
 
         std::vector<PackageSpec> package_dependencies;
@@ -139,7 +138,6 @@ namespace vcpkg
 
         ExportPlanAction(const PackageSpec& spec, RequestType request_type);
 
-        ExportPlanType plan_type;
         RequestType request_type;
 
         Optional<const BinaryParagraph&> core_paragraph() const;

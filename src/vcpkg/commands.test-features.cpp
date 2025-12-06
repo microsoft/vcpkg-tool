@@ -681,15 +681,15 @@ namespace vcpkg
 
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
+        StatusParagraphs empty_status_db;
         std::vector<FullPackageSpec> specs;
-        std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
         for (auto&& test_spec : specs_to_test)
         {
             test_spec.plan = create_feature_install_plan(provider,
                                                          var_provider,
                                                          Span<FullPackageSpec>(&test_spec, 1),
-                                                         {},
+                                                         empty_status_db,
                                                          packages_dir_assigner,
                                                          install_plan_options);
             if (test_spec.plan.unsupported_features.empty())
@@ -697,19 +697,18 @@ namespace vcpkg
                 for (auto& actions : test_spec.plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
-                    port_locations.emplace_back(actions.source_control_file_and_location().port_directory());
                 }
                 actions_to_check.push_back(&test_spec.plan.install_actions.back());
             }
         }
 
         msg::println(msgComputeAllAbis);
-        var_provider.load_tag_vars(specs, port_locations, host_triplet);
+        var_provider.load_tag_vars(specs, host_triplet);
         for (auto&& test_spec : specs_to_test)
         {
             if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, test_spec.plan, var_provider, status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, port_dir_abi_info_cache);
             }
         }
 

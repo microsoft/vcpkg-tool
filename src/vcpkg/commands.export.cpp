@@ -85,38 +85,45 @@ namespace
                            target_path);
     }
 
-    void print_export_plan(const std::map<ExportPlanType, std::vector<const ExportPlanAction*>>& group_by_plan_type)
+    void print_and_sort_export_plan_block(const msg::MessageT<>& header, std::vector<const ExportPlanAction*>& actions)
     {
-        static constexpr ExportPlanType ORDER[] = {
-            ExportPlanType::ALREADY_BUILT,
-            ExportPlanType::NOT_BUILT,
-        };
-
-        for (const ExportPlanType plan_type : ORDER)
+        if (actions.empty())
         {
-            const auto it = group_by_plan_type.find(plan_type);
-            if (it == group_by_plan_type.cend())
-            {
-                continue;
-            }
-
-            std::vector<const ExportPlanAction*> cont = it->second;
-            std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
-            LocalizedString msg;
-            if (plan_type == ExportPlanType::ALREADY_BUILT)
-                msg = msg::format(msgExportingAlreadyBuiltPackages);
-            else if (plan_type == ExportPlanType::NOT_BUILT)
-                msg = msg::format(msgPackagesToInstall);
-            else
-                Checks::unreachable(VCPKG_LINE_INFO);
-
-            msg.append_raw('\n');
-            for (auto&& action : cont)
-            {
-                msg.append_raw(request_type_indent(action->request_type)).append_raw(action->spec).append_raw('\n');
-            }
-            msg::print(msg);
+            return;
         }
+
+        std::sort(actions.begin(), actions.end(), ExportPlanAction::compare_by_name);
+        LocalizedString msg = msg::format(header);
+        msg.append_raw('\n');
+        for (auto&& action : actions)
+        {
+            msg.append_raw(request_type_indent(action->request_type)).append_raw(action->spec).append_raw('\n');
+        }
+
+        msg::print(msg);
+    }
+
+    std::vector<const ExportPlanAction*> print_export_plan_and_return_not_built(
+        const std::vector<ExportPlanAction>& plan)
+    {
+        std::vector<const ExportPlanAction*> already_built;
+        std::vector<const ExportPlanAction*> not_built;
+
+        for (const ExportPlanAction& action : plan)
+        {
+            if (action.core_paragraph().has_value())
+            {
+                already_built.push_back(&action);
+            }
+            else
+            {
+                not_built.push_back(&action);
+            }
+        }
+
+        print_and_sort_export_plan_block(msgExportingAlreadyBuiltPackages, already_built);
+        print_and_sort_export_plan_block(msgPackagesToInstall, not_built);
+        return not_built;
     }
 
     std::string create_export_id()
@@ -411,14 +418,9 @@ namespace
             const InstalledPaths export_paths(raw_exported_dir_path / "installed");
             for (const ExportPlanAction& action : export_plan)
             {
-                if (action.plan_type != ExportPlanType::ALREADY_BUILT)
-                {
-                    Checks::unreachable(VCPKG_LINE_INFO);
-                }
-
+                const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
                 msg::println(msgExportingPackage, msg::package_name = action.spec);
 
-                const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
                 const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
 
                 auto lines =
@@ -553,9 +555,7 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
-        Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
-        print_export_plan(group_by_plan_type);
+        auto not_built = print_export_plan_and_return_not_built(export_plan);
 
         const bool has_non_user_requested_packages =
             Util::any_of(export_plan, [](const ExportPlanAction& package) -> bool {
@@ -567,15 +567,13 @@ namespace vcpkg
             msg::println(Color::warning, msgAdditionalPackagesToExport);
         }
 
-        const auto it = group_by_plan_type.find(ExportPlanType::NOT_BUILT);
-        if (it != group_by_plan_type.cend() && !it->second.empty())
+        if (!not_built.empty())
         {
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
-            std::vector<const ExportPlanAction*> unbuilt = it->second;
             Util::erase_remove_if(
-                unbuilt, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
+                not_built, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
 
-            const auto s = Strings::join(" ", unbuilt, [](const ExportPlanAction* a) { return a->spec.to_string(); });
+            const auto s = Strings::join(" ", not_built, [](const ExportPlanAction* a) { return a->spec.to_string(); });
             msg::println(msg::format(msgPrebuiltPackages).append_raw('\n').append_raw("vcpkg install ").append_raw(s));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
