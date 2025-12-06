@@ -1,4 +1,7 @@
 {
-	"name": "vcpkg-test-x-script",
-	"version-string": "1.0.0"
+  "name": "vcpkg-test-x-script",
+  "version": "1.0.0",
+  "dependencies": [
+    "vcpkg-test-x-script-prerequisites"
+  ]
 }

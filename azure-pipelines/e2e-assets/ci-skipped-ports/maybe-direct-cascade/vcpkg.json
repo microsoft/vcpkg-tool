@@ -1,0 +1,7 @@
+{
+  "name": "maybe-direct-cascade",
+  "version": "1.0.0",
+  "dependencies": [
+    "maybe-skip"
+  ]
+}

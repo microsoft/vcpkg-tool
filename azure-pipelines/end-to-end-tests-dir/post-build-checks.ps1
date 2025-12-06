@@ -310,7 +310,7 @@ if ($IsWindows) {
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The following executables were found in `${CURRENT_PACKAGES_DIR}/bin or `${CURRENT_PACKAGES_DIR}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using ``vcpkg_copy_tools``. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)
-$($packagesRoot)$($NativeSlash)test-exe_x86-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-exe_x64-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/test_exe.exe
 "@
 
@@ -322,7 +322,7 @@ note: bin/test_exe.exe
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The following executables were found in `${CURRENT_PACKAGES_DIR}/bin or `${CURRENT_PACKAGES_DIR}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using ``vcpkg_copy_tools``. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)
-$($packagesRoot)$($NativeSlash)test-exe_x86-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-exe_x64-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
 note: debug/bin/test_exe.exe
 note: bin/test_exe.exe
 "@
@@ -368,7 +368,7 @@ if ($IsWindows) {
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x86-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/bin/test_dll.dll
@@ -382,7 +382,7 @@ note: Release binaries were not found.
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x86-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: Debug binaries were not found.
 note: The following are release binaries:
 note: lib/test_dll.lib
@@ -396,7 +396,7 @@ note: bin/test_dll.dll
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x86-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/lib/test_dll2.lib
@@ -414,7 +414,7 @@ note: bin/test_dll.dll
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x86-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/bin/test_dll.dll
@@ -567,11 +567,11 @@ if ($IsWindows) {
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/wrong-architecture/test-dll"
     Run-Vcpkg env "$TestingRoot/wrong-architecture/test-dll/build.cmd" --Triplet x64-windows
     $PortfilePath = "$TestingRoot/wrong-architecture$($NativeSlash)test-dll$($NativeSlash)portfile.cmake"
-    $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/wrong-architecture" test-dll --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/wrong-architecture" test-dll:x86-windows --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The triplet requests that binaries are built for x86, but the following binaries were built for a different architecture. This usually means toolchain information is incorrectly conveyed to the binaries' build system. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled)
-$($packagesRoot)$($NativeSlash)test-dll_$($Triplet): note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_x86-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: debug/lib/test_dll.lib is built for x64
 note: lib/test_dll.lib is built for x64
 note: debug/bin/test_dll.dll is built for x64
@@ -582,7 +582,7 @@ note: bin/test_dll.dll is built for x64
         throw 'Did not detect DLL with wrong architecture.'
     }
 
-    $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/wrong-architecture" 'test-dll[policy-skip-architecture-check]' --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/wrong-architecture" 'test-dll[policy-skip-architecture-check]:x86-windows' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
     if ($buildOutput.Contains("warning: The following files were built for an incorrect architecture. To suppress this message, add set(VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK enabled) to portfile.cmake.")) {
         throw 'VCPKG_POLICY_SKIP_ARCHITECTURE_CHECK didn''t suppress'

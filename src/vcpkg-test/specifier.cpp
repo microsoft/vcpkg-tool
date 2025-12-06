@@ -367,4 +367,76 @@ TEST_CASE ("specifier parsing", "[specifier]")
   on expression: zlib (windows)
                       ^)"));
     }
+
+    SECTION ("parsed specifier from string with unclosed empty qualifier")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib(", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(s.error() == LocalizedString::from_raw(
+                                     R"(error: missing closing )
+  on expression: zlib(
+                      ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with unclosed empty qualifier newline")
+    {
+        auto s = vcpkg::parse_qualified_specifier(
+            "zlib(\n", AllowFeatures::Yes, ParseExplicitTriplet::Allow, AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(s.error() == LocalizedString::from_raw(
+                                     R"(error: missing closing )
+  on expression: zlib(
+                      ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with unclosed qualifier")
+    {
+        auto s = vcpkg::parse_qualified_specifier("zlib:x64-windows(!((windows & x64 & !uwp) & !(linux & x64))",
+                                                  AllowFeatures::Yes,
+                                                  ParseExplicitTriplet::Allow,
+                                                  AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(s.error() == LocalizedString::from_raw(
+                                     R"(error: missing closing )
+  on expression: zlib:x64-windows(!((windows & x64 & !uwp) & !(linux & x64))
+                                                                            ^)"));
+        }
+    }
+
+    SECTION ("parsed specifier from string with unclosed qualifier newline")
+    {
+        auto s = vcpkg::parse_qualified_specifier("zlib:x64-windows(!((windows & x64 & !uwp) & !(linux & x64))\n",
+                                                  AllowFeatures::Yes,
+                                                  ParseExplicitTriplet::Allow,
+                                                  AllowPlatformSpec::Yes);
+        if (s.has_value())
+        {
+            FAIL();
+        }
+        else
+        {
+            REQUIRE(s.error() == LocalizedString::from_raw(
+                                     R"(error: missing closing )
+  on expression: zlib:x64-windows(!((windows & x64 & !uwp) & !(linux & x64))
+                                                                            ^)"));
+        }
+    }
 }
