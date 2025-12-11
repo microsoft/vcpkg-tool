@@ -1159,6 +1159,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ArchiveHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[the archive is here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[el archivo está aquí]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ArchiverFailedToExtractExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to extract with exit code {exit_code}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[error al extraer con el código de salida {exit_code}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";Artifact" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Artifact]]></Val>
@@ -4111,11 +4129,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";CouldNotDeduceNuGetIdAndVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";CouldNotDeduceNuGetIdAndVersion2" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Could not deduce NuGet id and version from filename: {path}]]></Val>
+          <Val><![CDATA[could not deduce NuGet id and version from filename]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se pudo deducir el id. y la versión de NuGet del nombre de archivo: {path}]]></Val>
+            <Val><![CDATA[no se ha podido deducir el id. y la versión de NuGet del nombre de archivo]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5422,11 +5440,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ExpectedPathToExist" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";ExpectedPathToExistAfterExtractingTool" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Expected {path} to exist after fetching]]></Val>
+          <Val><![CDATA[expected this path to exist after extracting {tool_name}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Se esperaba que {path} existiera después de hacer “fetch”]]></Val>
+            <Val><![CDATA[se esperaba que esta ruta existiera después de extraer {tool_name}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5554,6 +5572,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ExtractedHere" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[extracted here]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[extraído aquí]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ExtractedInto" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[extracted into {path}]]></Val>
@@ -5643,15 +5670,6 @@
           <Val><![CDATA[Failed to determine the current commit:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[No se pudo determinar commit actual:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToExtract" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to extract "{path}":]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se pudieron extraer "{path}":]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5788,18 +5806,6 @@
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[[comprobación de integridad]5D; No se pudo analizar un párrafo binario serializado.]A;Abra una incidencia en https://github.com/microsoft/vcpkg, con la siguiente salida:]A;{error_msg}]A; Párrafo binario serializado:]]></Val>
           </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";FailedToRunToolToDetermineVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Failed to run "{path}" to determine the {tool_name} version.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se pudo ejecutar "{path}" para determinar la versión de {tool_name}.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to run {path} to determine the {tool_name} version.]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6214,38 +6220,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";GitCommandFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to execute: {command_line}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[no se pudo ejecutar: {command_line}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";GitCommitUpdateVersionDatabase" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[git commit -m "Update version database"]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[git commit -m "Actualizar base de datos de versión"]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitFailedToFetch" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to fetch ref {value} from repository {url}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[error al capturar la referencia {value} del repositorio {url}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";GitFailedToInitializeLocalRepository" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to initialize local repository {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[no se pudo inicializar el repositorio local {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7990,18 +7969,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";JsonErrorMustBeAnObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Expected "{path}" to be an object.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Se esperaba que "{path}" fuera un objeto.]]></Val>
-          </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Expected {path} to be an object.]]></Val>
-          </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";JsonFieldNotObject" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[value of ["{json_field}"]5D; must be an object]]></Val>
@@ -8428,15 +8395,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";Missing7zHeader" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Unable to find 7z header.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[No se encuentra el encabezado 7z.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";MissingArgFormatManifest" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[format-manifest was passed --convert-control without '--all'.]A;This doesn't do anything: control files passed explicitly are converted automatically.]]></Val>
@@ -8460,15 +8418,6 @@
           <Val><![CDATA[Package {spec} is installed, but dependency {package_name} is not.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[El paquete {spec} está instalado, pero la dependencia {package_name} no lo está.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";MissingExtension" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Missing '{extension}' extension.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Falta la extensión '{extension}'.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9072,15 +9021,6 @@
           <Val><![CDATA[Package Discovery]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Detección de paquetes]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";PackageFailedtWhileExtracting" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA['{value}' failed while extracting {path}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Error de '{value}' al extraer {path}.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10282,6 +10222,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";SevenZipIncorrectExtension" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to extract self-extracting 7zip archive because it is missing the .7z.exe file extension]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[no se ha podido extraer el archivo autoextraíble de 7zip porque falta la extensión de archivo .7z.exe]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";SevenZipIncorrectHeader" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to extract self-extracting 7zip archive because a 7z header could not be found]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[no se ha podido extraer el archivo autoextraíble de 7zip porque no se encontró un encabezado 7z]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ShaPassedAsArgAndOption" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[SHA512 passed as both an argument and as an option. Only pass one of these.]]></Val>
@@ -11245,11 +11203,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UnexpectedToolOutput" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UnexpectedToolOutput2" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[{tool_name} ({path}) produced unexpected output when attempting to determine the version:]]></Val>
+          <Val><![CDATA[{tool_name} produced unexpected output when attempting to determine the version:]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{tool_name} ({path}) produjo una salida inesperada al intentar determinar la versión:]]></Val>
+            <Val><![CDATA[{tool_name} ha producido una salida inesperada al intentar determinar la versión:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12400,6 +12358,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";WhileDeterminingVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[failed to run to determine the {tool_name} version]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[no se ha podido ejecutar para determinar la versión {tool_name}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";WhileExtractingThisArchive" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[while extracting this archive]]></Val>
@@ -12510,10 +12477,13 @@
       </Item>
       <Item ItemId=";WindowsEnvMustAlwaysBePresent" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Expected {env_var} to be always set on Windows.]]></Val>
+          <Val><![CDATA[expected {env_var} to be always set on Windows]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Se esperaba que {env_var} estuviera siempre activado en Windows.]]></Val>
+            <Val><![CDATA[Se esperaba que {env_var} estuviera siempre establecido en Windows]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[Expected {env_var} to be always set on Windows.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
