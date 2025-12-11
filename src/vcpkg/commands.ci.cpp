@@ -114,14 +114,15 @@ namespace
                                  PackagesDirAssigner& packages_dir_assigner,
                                  const CreateInstallPlanOptions& serialize_options)
     {
+        StatusParagraphs empty_status_db;
         auto action_plan = create_feature_install_plan(
-            provider, var_provider, applicable_specs, {}, packages_dir_assigner, serialize_options);
+            provider, var_provider, applicable_specs, empty_status_db, packages_dir_assigner, serialize_options);
         var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
 
-        compute_all_abis(paths, action_plan, var_provider, StatusParagraphs{});
+        compute_all_abis(paths, action_plan, var_provider, empty_status_db);
         return action_plan;
     }
 
@@ -150,7 +151,7 @@ namespace
         {
             const auto& action = action_plan.install_actions[action_idx];
             missing_specs.erase(action.spec); // note action.spec won't be in missing_specs if it's a host dependency
-            const std::string& public_abi = action.public_abi();
+            const std::string& public_abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
             const StringLiteral* state;
             BuildResult known_result;
             if (Util::Sets::contains(known_failure_abis, public_abi))
@@ -250,11 +251,7 @@ namespace
 
             if (Util::Sets::contains(to_keep, it->spec))
             {
-                if (it_known->second == BuildResult::Excluded || it_known->second == BuildResult::Unsupported)
-                {
-                    it->plan_type = InstallPlanType::EXCLUDED;
-                }
-                else
+                if (it_known->second != BuildResult::Excluded && it_known->second != BuildResult::Unsupported)
                 {
                     to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
                 }

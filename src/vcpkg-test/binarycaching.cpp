@@ -23,7 +23,7 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
         REQUIRE(actions.size() == out_status.size());
         for (size_t idx = 0; idx < out_status.size(); ++idx)
         {
-            CHECK(actions[idx]->has_package_abi());
+            CHECK(actions[idx]->package_abi());
             CHECK(out_status[idx] == RestoreResult::unavailable);
         }
     }

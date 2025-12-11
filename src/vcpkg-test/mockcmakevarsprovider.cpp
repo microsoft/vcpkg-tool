@@ -17,11 +17,8 @@ namespace vcpkg::Test
         }
     }
 
-    void MockCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs,
-                                             View<Path> port_locations,
-                                             Triplet host_triplet) const
+    void MockCMakeVarProvider::load_tag_vars(View<FullPackageSpec> specs, Triplet host_triplet) const
     {
-        (void)port_locations;
         (void)host_triplet;
         for (auto&& spec : specs)
         {

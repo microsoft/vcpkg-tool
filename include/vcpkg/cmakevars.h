@@ -34,9 +34,7 @@ namespace vcpkg::CMakeVars
 
         virtual void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const = 0;
 
-        virtual void load_tag_vars(View<FullPackageSpec> specs,
-                                   View<Path> port_locations,
-                                   Triplet host_triplet) const = 0;
+        virtual void load_tag_vars(View<FullPackageSpec> specs, Triplet host_triplet) const = 0;
 
         void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const;
     };
