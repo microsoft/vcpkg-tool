@@ -503,8 +503,6 @@
   "ErrorWhileWriting": "{path} の書き込み中にエラーが発生しました。",
   "ExamplesHeader": "例:",
   "ExceededRecursionDepth": "再帰深度を超過しました。",
-  "ExcludedPackage": "{spec} を除外しました",
-  "ExcludedPackages": "次のパッケージは除外されています。",
   "ExecutablesRelativeToThePackageDirectoryHere": "実行可能ファイルは ${{CURRENT_PACKAGES_DIR}} に対して相対的です",
   "ExpectedAnObject": "オブジェクトが必要です",
   "ExpectedAtMostOneSetOfTags": "{old_value} の {count} セットが見つかりました。*{new_value} ですが、block:\n{value} でほぼ 1 が予測されます",
