@@ -1331,6 +1331,17 @@ namespace vcpkg
                                     .value_or_exit(VCPKG_LINE_INFO);
 
             install_plan.print_unsupported_warnings();
+            for (InstallPlanAction& action : install_plan.install_actions)
+            {
+                if(std::find(manifest_core.editables.cbegin(), manifest_core.editables.cend(), action.spec.name()) != manifest_core.editables.cend())
+                {
+                    action.editable = Editable::Yes;
+                }
+                else
+                {
+                    action.editable = Editable::No;
+                }
+            }
 
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
