@@ -78,7 +78,7 @@ jobs:
       - name: Install Mono (macOS) (for NuGet export)
         if: matrix.preset == 'macos-ci'
         run: |
-          brew install mono
+          arch -arm64 brew install mono
       - name: Run vcpkg end-to-end tests
         shell: pwsh
         run: |
