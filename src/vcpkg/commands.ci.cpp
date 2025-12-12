@@ -523,13 +523,13 @@ namespace vcpkg
         auto action_plan = compute_full_plan(
             paths, provider, var_provider, ci_specs.requested, packages_dir_assigner, create_install_plan_options);
         BinaryCache binary_cache(fs);
-        if (!binary_cache.install_providers(args, paths, out_sink))
+        if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
-        const auto precheck_results = binary_cache.precheck(install_actions);
+        const auto precheck_results = binary_cache.precheck(console_diagnostic_context, fs, install_actions);
         const auto pre_build_status =
             compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
         {
@@ -579,7 +579,7 @@ namespace vcpkg
             }
 
             install_preclear_plan_packages(paths, action_plan);
-            binary_cache.fetch(action_plan.install_actions);
+            binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
 
             auto summary = install_execute_plan(
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);

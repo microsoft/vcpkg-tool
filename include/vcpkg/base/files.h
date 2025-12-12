@@ -140,6 +140,7 @@ namespace vcpkg
         std::string read_contents(const Path& file_path, LineInfo li) const;
 
         ExpectedL<FileContents> try_read_contents(const Path& file_path) const;
+        Optional<FileContents> try_read_contents(DiagnosticContext& context, const Path& file_path) const;
 
         // Tries to read `file_path`, and if the file starts with a shebang sequence #!, returns the contents of the
         // file. If an I/O error occurs or the file does not start with a shebang sequence, returns an empty string.
@@ -163,6 +164,7 @@ namespace vcpkg
         virtual std::vector<Path> get_files_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_files_non_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_files_non_recursive(const Path& dir) const;
+        Optional<std::vector<Path>> try_get_files_non_recursive(DiagnosticContext& context, const Path& dir) const;
 
         virtual std::vector<Path> get_directories_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_directories_recursive(const Path& dir, LineInfo li) const;
@@ -176,6 +178,8 @@ namespace vcpkg
         virtual std::vector<Path> get_directories_non_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_directories_non_recursive(const Path& dir, LineInfo li) const;
         ExpectedL<std::vector<Path>> try_get_directories_non_recursive(const Path& dir) const;
+        Optional<std::vector<Path>> try_get_directories_non_recursive(DiagnosticContext& context,
+                                                                      const Path& dir) const;
 
         virtual std::vector<Path> get_regular_files_recursive(const Path& dir, std::error_code& ec) const = 0;
         std::vector<Path> get_regular_files_recursive(const Path& dir, LineInfo li) const;
@@ -243,6 +247,7 @@ namespace vcpkg
 
         virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) const = 0;
         void write_contents(const Path& file_path, StringView data, LineInfo li) const;
+        bool write_contents(DiagnosticContext& context, const Path& file_path, StringView data) const;
 
         void write_rename_contents(const Path& file_path, const Path& temp_name, StringView data, LineInfo li) const;
         void write_contents_and_dirs(const Path& file_path, StringView data, LineInfo li) const;
@@ -250,6 +255,7 @@ namespace vcpkg
 
         virtual void rename(const Path& old_path, const Path& new_path, std::error_code& ec) const = 0;
         void rename(const Path& old_path, const Path& new_path, LineInfo li) const;
+        bool rename(DiagnosticContext& context, const Path& old_path, const Path& new_path) const;
 
         void rename_with_retry(const Path& old_path, const Path& new_path, std::error_code& ec) const;
         void rename_with_retry(const Path& old_path, const Path& new_path, LineInfo li) const;
@@ -268,6 +274,7 @@ namespace vcpkg
 
         virtual bool remove(const Path& target, std::error_code& ec) const = 0;
         bool remove(const Path& target, LineInfo li) const;
+        Optional<bool> remove(DiagnosticContext& context, const Path& target) const;
 
         virtual void remove_all(const Path& base, std::error_code& ec, Path& failure_point) const = 0;
         void remove_all(const Path& base, std::error_code& ec) const;
@@ -338,20 +345,12 @@ namespace vcpkg
         // however, if `/a/b` doesn't exist, then the functions will fail.
 
         // waits forever for the file lock
-        virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
-                                                                             MessageSink& status_sink,
-                                                                             std::error_code&) const = 0;
-        std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(const Path& lockfile,
-                                                                     MessageSink& status_sink,
-                                                                     LineInfo li) const;
+        virtual std::unique_ptr<IExclusiveFileLock> take_exclusive_file_lock(DiagnosticContext& context,
+                                                                             const Path& lockfile) const = 0;
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
-                                                                                 MessageSink& status_sink,
-                                                                                 std::error_code&) const = 0;
-        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(const Path& lockfile,
-                                                                         MessageSink& status_sink,
-                                                                         LineInfo li) const;
+        virtual Optional<std::unique_ptr<IExclusiveFileLock>> try_take_exclusive_file_lock(
+            DiagnosticContext& context, const Path& lockfile) const = 0;
 
         virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) const = 0;
         WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li) const;
@@ -360,6 +359,7 @@ namespace vcpkg
     };
 
     extern const Filesystem& real_filesystem;
+    extern const Filesystem& always_failing_filesystem;
 
     extern const StringLiteral FILESYSTEM_INVALID_CHARACTERS;
 

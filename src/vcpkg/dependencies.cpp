@@ -541,11 +541,11 @@ namespace vcpkg
         , package_dir(packages_dir_assigner.generate(spec))
     {
     }
-
     const std::string* InstallPlanAction::package_abi() const
     {
         const auto p = abi_info.get();
         if (p && !p->package_abi.empty()) return &p->package_abi;
+
         return nullptr;
     }
     const std::string& InstallPlanAction::package_abi_or_exit(LineInfo li) const
