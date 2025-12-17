@@ -32,7 +32,7 @@
           "arch": {
             "type": "string",
             "description": "The architecture where the record is valid.",
-            "enum": [ "x86", "x64", "amd64", "arm", "arm64", "arm64ec", "s390x", "ppc64le", "riscv32", "riscv64", "loongarch32", "loongarch64", "mips64" ]
+            "enum": [ "x86", "x64", "amd64", "arm", "arm64", "arm64ec", "s390x", "ppc64le", "riscv32", "riscv64", "loongarch32", "loongarch64", "mips64", "e2k" ]
           },
           "executable": {
             "type": "string",
