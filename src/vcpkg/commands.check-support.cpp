@@ -140,7 +140,7 @@ namespace vcpkg
             auto action_plan = create_feature_install_plan(
                 provider, *cmake_vars, {&user_spec, 1}, {}, packages_dir_assigner, create_options);
 
-            cmake_vars->load_tag_vars(action_plan, host_triplet);
+            cmake_vars->load_tag_vars(action_plan.install_actions, host_triplet);
 
             Port user_port;
             user_port.port_name = user_spec.package_spec.name();

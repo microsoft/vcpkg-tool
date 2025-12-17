@@ -1360,7 +1360,7 @@ namespace vcpkg
             provider, var_provider, specs, status_db, packages_dir_assigner, create_options);
 
         action_plan.print_unsupported_warnings();
-        var_provider.load_tag_vars(action_plan, host_triplet);
+        var_provider.load_tag_vars(action_plan.install_actions, host_triplet);
 
         // install plan will be empty if it is already installed - need to change this at status paragraph part
         if (action_plan.empty())

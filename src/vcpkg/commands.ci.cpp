@@ -117,7 +117,7 @@ namespace
         StatusParagraphs empty_status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, applicable_specs, empty_status_db, packages_dir_assigner, serialize_options);
-        var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
+        var_provider.load_tag_vars(action_plan.install_actions, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());

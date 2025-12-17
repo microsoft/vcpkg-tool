@@ -255,7 +255,7 @@ namespace vcpkg
             packages_dir_assigner,
             {nullptr, host_triplet, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::Yes});
 
-        var_provider.load_tag_vars(action_plan, host_triplet);
+        var_provider.load_tag_vars(action_plan.install_actions, host_triplet);
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
 
