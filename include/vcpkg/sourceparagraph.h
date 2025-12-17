@@ -183,6 +183,7 @@ namespace vcpkg
         std::string documentation;
         std::vector<Dependency> dependencies;
         std::vector<DependencyOverride> overrides;
+        std::vector<std::string> editables;
         std::vector<DependencyRequestedFeature> default_features;
 
         ParsedSpdxLicenseDeclaration license;

@@ -1367,6 +1367,7 @@ namespace vcpkg
                 JsonIdOverrides,
                 JsonIdSummary,
                 JsonIdSupports,
+                JsonIdEditables,
                 JsonIdVcpkgConfiguration,
             };
 
@@ -1399,6 +1400,8 @@ namespace vcpkg
             r.optional_object_field(obj, JsonIdDependencies, spgh.dependencies, DependencyArrayDeserializer::instance);
             r.optional_object_field(
                 obj, JsonIdOverrides, spgh.overrides, DependencyOverrideArrayDeserializer::instance);
+            r.optional_object_field(
+                obj, JsonIdEditables, spgh.editables, Json::ParagraphDeserializer::instance);
 
             r.optional_object_field_emplace(
                 obj, JsonIdBuiltinBaseline, spgh.builtin_baseline, BaselineCommitDeserializer::instance);
