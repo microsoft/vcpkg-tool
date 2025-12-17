@@ -839,17 +839,14 @@ namespace vcpkg
             binary_cache.mark_all_unrestored();
             for (const auto& result : summary.install_results)
             {
-                auto& build_result = result.build_result;
-                switch (build_result.code)
+                switch (result.build_result.code)
                 {
                     case BuildResult::BuildFailed:
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
                             fs.write_contents(
-                                issue_body_path,
-                                create_github_issue(args, build_result, paths, result.install_plan_action(), false),
-                                VCPKG_LINE_INFO);
+                                issue_body_path, create_github_issue(args, paths, result, false), VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];

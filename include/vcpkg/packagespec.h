@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/fwd/packagespec.h>
+#include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
@@ -194,6 +195,10 @@ namespace vcpkg
         }
         friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
     };
+
+    std::string format_full_version_spec(const PackageSpec& spec,
+                                         const InternalFeatureSet& feature_list,
+                                         const Version& version);
 
     struct ParsedQualifiedSpecifier
     {

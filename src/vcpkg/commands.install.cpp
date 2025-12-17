@@ -466,7 +466,15 @@ namespace vcpkg
         auto build_result = perform_install_plan_action_2(
             args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder);
         const auto timing = install_timer.elapsed();
-        return InstallSpecSummary{std::move(build_result), timing, start_time, action};
+        const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        return InstallSpecSummary{std::move(build_result),
+                                  action.feature_list,
+                                  action.version,
+                                  action.request_type,
+                                  timing,
+                                  start_time,
+                                  abi_info.package_abi,
+                                  abi_info.compiler_info.get()};
     }
 
     template<typename SummaryType>
@@ -588,9 +596,13 @@ namespace vcpkg
         for (auto&& action : action_plan.already_installed)
         {
             summary.already_installed_results.emplace_back(ExtendedBuildResult{action.spec, BuildResult::Succeeded},
+                                                           action.feature_list,
+                                                           action.version,
+                                                           action.request_type,
                                                            ElapsedTime{},
                                                            std::chrono::system_clock::now(),
-                                                           action.package_abi());
+                                                           action.package_abi(),
+                                                           nullptr);
         }
 
         for (auto&& action : action_plan.install_actions)
@@ -652,8 +664,7 @@ namespace vcpkg
                         auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
                         paths.get_filesystem().write_contents(
                             issue_body_path,
-                            create_github_issue(
-                                args, result.build_result, paths, action, include_manifest_in_github_issue),
+                            create_github_issue(args, paths, result, include_manifest_in_github_issue),
                             VCPKG_LINE_INFO);
                         return issue_body_path;
                     }));
@@ -1449,13 +1460,11 @@ namespace vcpkg
 
             for (auto&& result : summary.install_results)
             {
-                const auto& ipa = result.install_plan_action();
-                xwriter.add_test_results(result.build_result.spec,
-                                         CiResult{result.build_result.code,
-                                                  CiBuiltResult{ipa.package_abi_or_exit(VCPKG_LINE_INFO),
-                                                                ipa.feature_list,
-                                                                result.start_time,
-                                                                result.timing}});
+                xwriter.add_test_results(
+                    result.build_result.spec,
+                    CiResult{
+                        result.build_result.code,
+                        CiBuiltResult{result.package_abi(), result.feature_list(), result.start_time, result.timing}});
             }
 
             fs.write_contents(it_xunit->second, xwriter.build_xml(default_triplet), VCPKG_LINE_INFO);
@@ -1493,34 +1502,28 @@ namespace vcpkg
     std::string SpecSummary::to_string() const { return adapt_to_string(*this); }
     void SpecSummary::to_string(std::string& out_str) const
     {
-        m_spec.to_string(out_str);
+        build_result.spec.to_string(out_str);
         out_str.append(": ");
         out_str.append(vcpkg::to_string(build_result.code).data());
         out_str.append(": ");
         timing.to_string(out_str);
     }
 
-    AbiSpecSummary::AbiSpecSummary(ExtendedBuildResult&& build_result,
-                                   ElapsedTime timing,
-                                   std::chrono::system_clock::time_point start_time,
-                                   StringView package_abi)
-        : SpecSummary(std::move(build_result), timing, start_time)
-        , m_package_abi(package_abi.data(), package_abi.size())
-    {
-    }
-
     InstallSpecSummary::InstallSpecSummary(ExtendedBuildResult&& build_result,
+                                           const InternalFeatureSet& feature_list,
+                                           const Version& version,
+                                           RequestType request_type,
                                            ElapsedTime timing,
                                            std::chrono::system_clock::time_point start_time,
-                                           const InstallPlanAction& action)
-        : AbiSpecSummary(std::move(build_result), timing, start_time, action.package_abi_or_empty())
-        , m_install_action(&action)
+                                           StringView package_abi,
+                                           const CompilerInfo* compiler_info)
+        : SpecSummary(std::move(build_result), timing, start_time)
+        , m_package_abi(package_abi.data(), package_abi.size())
+        , m_feature_list(feature_list)
+        , m_version(version)
+        , m_request_type(request_type)
+        , m_compiler_info(compiler_info)
     {
-    }
-
-    bool InstallSpecSummary::is_user_requested_install() const
-    {
-        return m_install_action->request_type == RequestType::USER_REQUESTED;
     }
 
     void track_install_plan(const ActionPlan& plan)

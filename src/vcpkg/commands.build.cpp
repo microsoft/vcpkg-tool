@@ -19,6 +19,7 @@
 #include <vcpkg/buildenvironment.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
@@ -1873,9 +1874,8 @@ namespace vcpkg
     }
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
-                                    const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action,
+                                    const InstallSpecSummary& install_summary,
                                     bool include_manifest)
     {
         constexpr size_t MAX_ISSUE_SIZE = 65536;
@@ -1885,17 +1885,16 @@ namespace vcpkg
         issue_body.reserve(MAX_ISSUE_SIZE);
         fmt::format_to(std::back_inserter(issue_body),
                        "Package: {}\n\n**Host Environment**\n\n- Host: {}-{}\n",
-                       action.display_name(),
+                       format_full_version_spec(install_summary.build_result.spec,
+                                                install_summary.feature_list(),
+                                                install_summary.version()),
                        get_host_processor(),
                        get_host_os_name());
 
-        if (const auto* abi_info = action.abi_info.get())
+        if (const auto* compiler_info = install_summary.maybe_compiler_info())
         {
-            if (const auto* compiler_info = abi_info->compiler_info.get())
-            {
-                fmt::format_to(
-                    std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
-            }
+            fmt::format_to(
+                std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
         }
         fmt::format_to(
             std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version_required(Tools::CMAKE));
@@ -1907,8 +1906,8 @@ namespace vcpkg
                        Strings::join(" ", args.get_forwardable_arguments()));
         fmt::format_to(std::back_inserter(issue_body),
                        "**Failure logs**\n\n```\n{}\n```\n\n",
-                       paths.get_filesystem().read_contents(build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO),
-                                                            VCPKG_LINE_INFO));
+                       paths.get_filesystem().read_contents(
+                           install_summary.build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO));
 
         std::string postfix;
         const auto maybe_manifest = paths.get_manifest();
@@ -1926,9 +1925,10 @@ namespace vcpkg
         if (issue_body.size() + postfix.size() < MAX_ISSUE_SIZE)
         {
             size_t remaining_body_size = MAX_ISSUE_SIZE - issue_body.size() - postfix.size();
-            auto logs = Util::fmap(build_result.error_logs, [&](auto&& path) -> std::pair<Path, std::string> {
-                return {path, fs.read_contents(path, VCPKG_LINE_INFO)};
-            });
+            auto logs =
+                Util::fmap(install_summary.build_result.error_logs, [&](auto&& path) -> std::pair<Path, std::string> {
+                    return {path, fs.read_contents(path, VCPKG_LINE_INFO)};
+                });
             append_logs(std::move(logs), remaining_body_size, issue_body);
         }
 

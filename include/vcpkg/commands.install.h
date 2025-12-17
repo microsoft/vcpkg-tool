@@ -32,34 +32,31 @@ namespace vcpkg
 
         std::string to_string() const;
         void to_string(std::string& out_str) const;
-
-    private:
-        PackageSpec m_spec;
     };
 
-    struct AbiSpecSummary : SpecSummary
+    struct InstallSpecSummary : SpecSummary
     {
-        explicit AbiSpecSummary(ExtendedBuildResult&& build_result,
-                                ElapsedTime timing,
-                                std::chrono::system_clock::time_point start_time,
-                                StringView package_abi);
+        explicit InstallSpecSummary(ExtendedBuildResult&& build_result,
+                                    const InternalFeatureSet& feature_list,
+                                    const Version& version,
+                                    RequestType request_type,
+                                    ElapsedTime timing,
+                                    std::chrono::system_clock::time_point start_time,
+                                    StringView package_abi,
+                                    const CompilerInfo* maybe_compiler_info);
+
         const std::string& package_abi() const noexcept { return m_package_abi; }
+        const InternalFeatureSet& feature_list() const noexcept { return m_feature_list; }
+        const Version& version() const noexcept { return m_version; }
+        bool is_user_requested_install() const noexcept { return m_request_type == RequestType::USER_REQUESTED; }
+        const CompilerInfo* maybe_compiler_info() const noexcept { return m_compiler_info; }
 
     private:
         std::string m_package_abi;
-    };
-
-    struct InstallSpecSummary : AbiSpecSummary
-    {
-        explicit InstallSpecSummary(ExtendedBuildResult&& build_result,
-                                    ElapsedTime timing,
-                                    std::chrono::system_clock::time_point start_time,
-                                    const InstallPlanAction& action);
-        const InstallPlanAction& install_plan_action() const noexcept { return *m_install_action; }
-        bool is_user_requested_install() const;
-
-    private:
-        const InstallPlanAction* m_install_action;
+        InternalFeatureSet m_feature_list;
+        Version m_version;
+        RequestType m_request_type;
+        const CompilerInfo* m_compiler_info;
     };
 
     struct LicenseReport
@@ -72,7 +69,7 @@ namespace vcpkg
     struct InstallSummary
     {
         std::vector<SpecSummary> removed_results;
-        std::vector<AbiSpecSummary> already_installed_results;
+        std::vector<InstallSpecSummary> already_installed_results;
         std::vector<InstallSpecSummary> install_results;
         ElapsedTime elapsed;
         LicenseReport license_report;

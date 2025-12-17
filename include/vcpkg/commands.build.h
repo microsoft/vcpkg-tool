@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
+#include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
@@ -208,9 +209,8 @@ namespace vcpkg
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
-                                    const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action,
+                                    const InstallSpecSummary& install_summary,
                                     bool include_manifest);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,

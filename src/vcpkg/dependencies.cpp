@@ -476,13 +476,7 @@ namespace vcpkg
 
     std::string BasicInstallPlanAction::display_name() const
     {
-        if (this->feature_list.empty_or_only_core())
-        {
-            return fmt::format("{}@{}", this->spec.to_string(), version);
-        }
-
-        const std::string features = Strings::join(",", feature_list);
-        return fmt::format("{}[{}]:{}@{}", this->spec.name(), features, this->spec.triplet(), version);
+        return format_full_version_spec(spec, feature_list, version);
     }
 
     AlreadyInstalledPlanAction::AlreadyInstalledPlanAction(InstalledPackageView&& ipv,

@@ -587,12 +587,10 @@ namespace vcpkg
 
             for (auto&& result : summary.install_results)
             {
-                const auto& ipa = result.install_plan_action();
                 // note that we assign over the 'known' values from above
                 auto ci_result = CiResult{
                     result.build_result.code,
-                    CiBuiltResult{
-                        ipa.package_abi_or_exit(VCPKG_LINE_INFO), ipa.feature_list, result.start_time, result.timing}};
+                    CiBuiltResult{result.package_abi(), result.feature_list(), result.start_time, result.timing}};
                 ci_plan_results.insert_or_assign(result.build_result.spec, ci_result);
                 ci_full_results.insert_or_assign(result.build_result.spec, std::move(ci_result));
             }

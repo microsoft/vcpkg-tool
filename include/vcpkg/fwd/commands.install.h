@@ -17,7 +17,6 @@ namespace vcpkg
     };
 
     struct SpecSummary;
-    struct AbiSpecSummary;
     struct InstallSpecSummary;
     struct LicenseReport;
     struct InstallSummary;
