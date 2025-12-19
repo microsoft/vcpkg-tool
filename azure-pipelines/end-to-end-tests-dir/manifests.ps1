@@ -150,40 +150,33 @@ The following packages will be built and installed:
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $vcpkgJson = @{
-  "name": "mylib2",
-  "description": "MyLib2 short description",
-  "default-features": ["core-lib", "math", "tests"],
-  "features": {
-    "core-lib": {
-      "description": "Dependencies for core component",
-      "dependencies": [
-        "zlib"
-      ]
-    },
-    "math": {
-      "description": "Dependencies for math component",
-      "dependencies": [
-        {
-          "name": "mylib2",
-          "features": [
-            "core-lib"
-          ]
+  'name' = 'mylib2';
+  'description' = 'MyLib2 short description';
+  'default-features' = @( 'core-lib', 'math', 'tests' );
+  'features' = @{
+    'core-lib' = @{
+      'description' = 'Dependencies for core component';
+      'dependencies' = @( 'zlib' );
+    };
+    'math' = @{
+      'description' = 'Dependencies for math component';
+      'dependencies' = @(
+        @{
+          'name' = 'mylib2';
+          'features' = @( 'core-lib' );
         }
-      ]
-    },
-    "tests": {
-      "description": "Build mylib2 tests option",
-      "dependencies": [
-        {
-          "name": "mylib2",
-          "features": [
-            "core-lib",
-            "math"
-          ]
+      );
+    };
+    'tests' = @{
+      'description' = 'Build mylib2 tests option';
+      'dependencies' = @(
+        @{
+          'name' = 'mylib2';
+          'features' = @( 'core-lib', 'math' );
         }
-      ]
-    }
-  }
+      );
+    };
+  };
 }
 
 New-Item -Path $manifestDir/manifest-test -ItemType Directory
