@@ -156,7 +156,6 @@ $vcpkgJson = @{
   'features' = @{
     'core-lib' = @{
       'description' = 'Dependencies for core component';
-      'dependencies' = @( 'zlib' );
     };
     'math' = @{
       'description' = 'Dependencies for math component';
