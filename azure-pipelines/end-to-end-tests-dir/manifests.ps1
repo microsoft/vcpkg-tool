@@ -235,3 +235,41 @@ The following packages will be built and installed:
     vcpkg-empty-port:
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
+
+$vcpkgJson = @{
+  'name' = 'mylib2';
+  'description' = 'MyLib2 short description';
+  'default-features' = @( 'core-lib', 'math', 'tests' );
+  'features' = @{
+    'core-lib' = @{
+      'description' = 'Dependencies for core component';
+    };
+    'math' = @{
+      'description' = 'Dependencies for math component';
+      'dependencies' = @(
+        @{
+          'name' = 'mylib2';
+          'features' = @( 'core-lib' );
+        }
+      );
+    };
+    'tests' = @{
+      'description' = 'Build mylib2 tests option';
+      'dependencies' = @(
+        @{
+          'name' = 'mylib2';
+          'features' = @( 'core-lib', 'math' );
+        }
+      );
+    };
+  };
+}
+
+Set-Content -Path "$manifestDir/vcpkg.json" `
+    -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
+    -Encoding Ascii -NoNewline
+
+Write-Trace "test manifest features: self-reference default features"
+Run-Vcpkg install @manifestDirArgs
+Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir
