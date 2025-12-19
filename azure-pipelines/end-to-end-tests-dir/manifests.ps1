@@ -179,8 +179,7 @@ $vcpkgJson = @{
   };
 }
 
-New-Item -Path $manifestDir/manifest-test -ItemType Directory
-Set-Content -Path "$manifestDir/manifest-test/vcpkg.json" `
+Set-Content -Path "$manifestDir/vcpkg.json" `
     -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
     -Encoding Ascii -NoNewline
 
