@@ -1392,7 +1392,8 @@ namespace vcpkg
 
             void solve_with_roots(View<Dependency> dep, const PackageSpec& toplevel);
 
-            ExpectedL<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel, UnsupportedPortAction unsupported_port_action,
+            ExpectedL<ActionPlan> finalize_extract_plan(const PackageSpec& toplevel,
+                                                        UnsupportedPortAction unsupported_port_action,
                                                         UseHeadVersion use_head_version_if_user_requested,
                                                         Editable editable_if_user_requested);
 
@@ -2079,7 +2080,8 @@ namespace vcpkg
         }
 
         vpg.solve_with_roots(deps, toplevel);
-        return vpg.finalize_extract_plan(toplevel, options.unsupported_port_action,
+        return vpg.finalize_extract_plan(toplevel,
+                                         options.unsupported_port_action,
                                          options.use_head_version_if_user_requested,
                                          options.editable_if_user_requested);
     }
