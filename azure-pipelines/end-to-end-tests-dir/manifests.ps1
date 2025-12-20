@@ -236,29 +236,30 @@ The following packages will be built and installed:
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
 
+# This e2e tests is mirred in the dependencies.cpp test.
 $vcpkgJson = @{
-  'name' = 'mylib2';
-  'description' = 'MyLib2 short description';
+  'name' = 'deps-in-toplevel';
+  'description' = 'Testing dependencies within top-level manifest';
   'default-features' = @( 'core-lib', 'math', 'tests' );
   'features' = @{
-    'core-lib' = @{
-      'description' = 'Dependencies for core component';
+    'corelib' = @{
+      'description' = 'core';
     };
     'math' = @{
-      'description' = 'Dependencies for math component';
+      'description' = 'math with corelib';
       'dependencies' = @(
         @{
-          'name' = 'mylib2';
-          'features' = @( 'core-lib' );
+          'name' = 'deps-in-toplevel';
+          'features' = @( 'corelib' );
         }
       );
     };
     'tests' = @{
-      'description' = 'Build mylib2 tests option';
+      'description' = 'tests with math and corelib';
       'dependencies' = @(
         @{
-          'name' = 'mylib2';
-          'features' = @( 'core-lib', 'math' );
+          'name' = 'deps-in-toplevel';
+          'features' = @( 'corelib', 'math' );
         }
       );
     };
