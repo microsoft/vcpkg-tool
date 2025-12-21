@@ -1725,8 +1725,7 @@ namespace vcpkg
         {
             for (auto&& dep : deps)
             {
-                if (!dep.platform.is_empty() &&
-                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(m_toplevel, m_host_triplet)))
+                if (!dep.platform.is_empty() && !evaluate(m_toplevel, dep.platform))
                 {
                     continue;
                 }
@@ -1815,9 +1814,7 @@ namespace vcpkg
                         // Ignore intra-package dependencies
                         if (fspec == node.first) continue;
 
-                        if (!fdep.platform.is_empty() &&
-                            !fdep.platform.evaluate(
-                                m_var_provider.get_or_load_dep_info_vars(node.first, m_host_triplet)))
+                        if (!fdep.platform.is_empty() && !evaluate(node.first, fdep.platform))
                         {
                             continue;
                         }
