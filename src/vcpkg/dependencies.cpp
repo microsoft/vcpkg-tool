@@ -1725,10 +1725,6 @@ namespace vcpkg
 
         void VersionedPackageGraph::solve_with_roots(View<Dependency> deps)
         {
-            auto dep_to_spec = [this](const Dependency& d) {
-                return PackageSpec{d.name, d.host ? m_host_triplet : m_toplevel.triplet()};
-            };
-
             for (auto&& dep : deps)
             {
                 if (!dep.platform.is_empty() &&
@@ -1737,7 +1733,7 @@ namespace vcpkg
                     continue;
                 }
 
-                auto spec = dep_to_spec(dep);
+                auto spec = PackageSpec{dep.name, dep.host ? m_host_triplet : m_toplevel.triplet()};
                 m_user_requested.insert(spec);
                 m_roots.push_back(DepSpec{std::move(spec), dep.constraint, dep.features});
             }
