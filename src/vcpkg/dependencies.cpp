@@ -1665,41 +1665,38 @@ namespace vcpkg
                 it->second.overlay_or_override = true;
                 it->second.scfl = p_overlay;
             }
-            else
+            else if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
             {
-                if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
+                auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
+                if (auto p_scfl = maybe_scfl.get())
                 {
-                    auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
-                    if (auto p_scfl = maybe_scfl.get())
-                    {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
-                        it->second.overlay_or_override = true;
-                        it->second.scfl = p_scfl;
-                    }
-                    else
-                    {
-                        m_errors.push_back(std::move(maybe_scfl).error());
-                        m_failed_nodes.insert(spec.name());
-                        return nullopt;
-                    }
+                    it = m_graph.emplace(spec, PackageNodeData{}).first;
+                    it->second.overlay_or_override = true;
+                    it->second.scfl = p_scfl;
                 }
                 else
                 {
-                    auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
-                        return m_ver_provider.get_control_file({spec.name(), ver});
-                    });
-                    if (auto p_scfl = maybe_scfl.get())
-                    {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
-                        it->second.baseline = p_scfl->schemed_version();
-                        it->second.scfl = p_scfl;
-                    }
-                    else
-                    {
-                        m_errors.push_back(std::move(maybe_scfl).error());
-                        m_failed_nodes.insert(spec.name());
-                        return nullopt;
-                    }
+                    m_errors.push_back(std::move(maybe_scfl).error());
+                    m_failed_nodes.insert(spec.name());
+                    return nullopt;
+                }
+            }
+            else
+            {
+                auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
+                    return m_ver_provider.get_control_file({spec.name(), ver});
+                });
+                if (auto p_scfl = maybe_scfl.get())
+                {
+                    it = m_graph.emplace(spec, PackageNodeData{}).first;
+                    it->second.baseline = p_scfl->schemed_version();
+                    it->second.scfl = p_scfl;
+                }
+                else
+                {
+                    m_errors.push_back(std::move(maybe_scfl).error());
+                    m_failed_nodes.insert(spec.name());
+                    return nullopt;
                 }
             }
 
