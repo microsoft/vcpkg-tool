@@ -1667,7 +1667,6 @@ namespace vcpkg
             }
             else
             {
-                Version ver;
                 if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
                 {
                     auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
