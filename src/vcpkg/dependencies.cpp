@@ -1465,7 +1465,7 @@ namespace vcpkg
             void require_port_defaults(PackageNode& ref, const std::string& origin);
 
             void resolve_stack(const ConstraintFrame& frame);
-            const CMakeVars::CMakeVars& batch_load_vars(const PackageSpec& spec);
+            const CMakeVars::CMakeVars& batch_load_vars(const ConstraintFrame& frame);
 
             Optional<const PackageNode&> find_package(const PackageSpec& spec) const;
 
@@ -1485,13 +1485,15 @@ namespace vcpkg
             std::vector<LocalizedString> m_errors;
         };
 
-        const CMakeVars::CMakeVars& VersionedPackageGraph::batch_load_vars(const PackageSpec& spec)
+        const CMakeVars::CMakeVars& VersionedPackageGraph::batch_load_vars(const ConstraintFrame& frame)
         {
-            auto vars = m_var_provider.get_dep_info_vars(spec);
+            auto vars = m_var_provider.get_dep_info_vars(frame.spec);
             if (!vars)
             {
-                // We want to batch as many dep_infos as possible, so look ahead in the stack
-                std::unordered_set<PackageSpec> spec_set = {spec};
+                // We want to batch as many dep_infos as possible, so look ahead in the frame and stack
+                std::unordered_set<PackageSpec> spec_set = {frame.spec};
+                for (auto&& d : frame.deps)
+                    spec_set.emplace(d.name, d.host ? m_host_triplet : frame.spec.triplet());
                 for (auto&& s : m_resolve_stack)
                 {
                     spec_set.insert(s.spec);
@@ -1500,7 +1502,7 @@ namespace vcpkg
                 }
                 std::vector<PackageSpec> spec_vec(spec_set.begin(), spec_set.end());
                 m_var_provider.load_dep_info_vars(spec_vec, m_host_triplet);
-                return m_var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+                return m_var_provider.get_dep_info_vars(frame.spec).value_or_exit(VCPKG_LINE_INFO);
             }
             return *vars.get();
         }
@@ -1509,7 +1511,7 @@ namespace vcpkg
         {
             for (auto&& dep : frame.deps)
             {
-                if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame.spec))) continue;
+                if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame))) continue;
 
                 PackageSpec dep_spec(dep.name, dep.host ? m_host_triplet : frame.spec.triplet());
                 auto maybe_node = require_package(dep_spec, frame.spec.name());
