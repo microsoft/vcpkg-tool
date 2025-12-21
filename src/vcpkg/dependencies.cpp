@@ -1728,10 +1728,7 @@ namespace vcpkg
             auto dep_to_spec = [this](const Dependency& d) {
                 return PackageSpec{d.name, d.host ? m_host_triplet : m_toplevel.triplet()};
             };
-            auto specs = Util::fmap(deps, dep_to_spec);
 
-            specs.push_back(m_toplevel);
-            Util::sort_unique_erase(specs);
             for (auto&& dep : deps)
             {
                 if (!dep.platform.is_empty() &&
