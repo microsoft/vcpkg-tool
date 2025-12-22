@@ -1642,14 +1642,10 @@ namespace vcpkg
         Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(const PackageSpec& spec,
                                                                                              const std::string& origin)
         {
-            // Implicit defaults are disabled if spec is requested from top-level spec.
-            const bool default_features_mask = origin != m_toplevel.name();
-
             auto it = m_graph.find(spec);
             if (it != m_graph.end())
             {
                 it->second.origins.insert(origin);
-                it->second.default_features &= default_features_mask;
                 return *it;
             }
 
@@ -1704,8 +1700,9 @@ namespace vcpkg
                 }
             }
 
-            it->second.default_features = default_features_mask;
+            // Implicit defaults are disabled if spec is requested from top-level spec.
             // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
+            it->second.default_features = origin != m_toplevel.name();
             it->second.requested_features.insert(FeatureNameCore.to_string());
 
             require_scfl(*it, it->second.scfl, origin);
