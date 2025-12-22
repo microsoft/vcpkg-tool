@@ -235,3 +235,42 @@ The following packages will be built and installed:
     vcpkg-empty-port:
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
+
+# This e2e tests is mirred in the dependencies.cpp test.
+$vcpkgJson = @{
+  'name' = 'deps-in-toplevel';
+  'description' = 'Testing dependencies within top-level manifest';
+  'default-features' = @( 'core-lib', 'math', 'tests' );
+  'features' = @{
+    'corelib' = @{
+      'description' = 'core';
+    };
+    'math' = @{
+      'description' = 'math with corelib';
+      'dependencies' = @(
+        @{
+          'name' = 'deps-in-toplevel';
+          'features' = @( 'corelib' );
+        }
+      );
+    };
+    'tests' = @{
+      'description' = 'tests with math and corelib';
+      'dependencies' = @(
+        @{
+          'name' = 'deps-in-toplevel';
+          'features' = @( 'corelib', 'math' );
+        }
+      );
+    };
+  };
+}
+
+Set-Content -Path "$manifestDir/vcpkg.json" `
+    -Value (ConvertTo-Json -Depth 5 -InputObject $vcpkgJson) `
+    -Encoding Ascii -NoNewline
+
+Write-Trace "test manifest features: self-reference default features"
+Run-Vcpkg install @manifestDirArgs
+Throw-IfFailed
+Test-ManifestInfo -ManifestInfoPath $ManifestInfoPath -VcpkgDir $vcpkgDir -ManifestRoot $manifestDir

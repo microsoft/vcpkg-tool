@@ -1731,6 +1731,64 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
 }
 
+// This intentionally mirrors the 'deps-in-toplevel' test in e2e manifest
+// tests. In the e2e test, the input is processed by commnands.install.cpp.
+// create_versioned_install_plan() does not receive the requested features
+// literally, but only the direct dependencies of the original request.
+TEST_CASE ("manifest mode input from commands.ci.cpp", "[versionplan]")
+{
+    const std::string name = "deps-in-toplevel";
+
+    // top-level manifests are provided as overlay
+    MockOverlayProvider oprovider;
+
+    auto f_corelib = make_fpgh("corelib");
+    auto f_math = make_fpgh("math");
+    f_math->dependencies = {Dependency{name, {{"corelib"}}}};
+    auto f_tests = make_fpgh("tests");
+    f_tests->dependencies = {Dependency{name, {{"corelib"}, {"maths"}}}};
+    auto scf = oprovider.emplace(name, {"3", 14}).source_control_file.get();
+    scf->core_paragraph->default_features = {{"corelib"}, {"math"}, {"tests"}};
+    scf->core_paragraph->dependencies = {CoreDependency{name, {{"w"}}}};
+    scf->feature_paragraphs.push_back(std::move(f_corelib));
+    scf->feature_paragraphs.push_back(std::move(f_math));
+    scf->feature_paragraphs.push_back(std::move(f_tests));
+
+    MockVersionedPortfileProvider vp;
+    MockCMakeVarProvider var_provider;
+    MockBaselineProvider bp;
+
+    auto toplevel = PackageSpec{name, toplevel_spec().triplet()};
+
+    SECTION ("default features -> request dependencies of math,tests")
+    {
+        auto install_plan =
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          oprovider,
+                                          var_provider,
+                                          {Dependency{name, {{"corelib"}}}, Dependency{name, {{"corelib"}, {"math"}}}},
+                                          {},
+                                          toplevel)
+                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(
+            install_plan.install_actions[0], "deps-in-toplevel", {"3", 14}, {"corelib", "math", "tests"});
+    }
+
+    SECTION ("core,math -> request dependencies of math")
+    {
+        auto install_plan = create_versioned_install_plan(
+                                vp, bp, oprovider, var_provider, {Dependency{name, {{"corelib"}}}}, {}, toplevel)
+                                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(
+            install_plan.install_actions[0], "deps-in-toplevel", {"3", 14}, {"corelib", "math", "tests"});
+    }
+}
+
 static PlatformExpression::Expr parse_platform(StringView l)
 {
     return PlatformExpression::parse_platform_expression(l, PlatformExpression::MultipleBinaryOperators::Deny)
