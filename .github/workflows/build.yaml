@@ -32,8 +32,8 @@ jobs:
       - name: Enable Problem Matchers
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'
-        if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
-        uses: github/codeql-action/init@v3
+        if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript, c-cpp
       - name: Configure and Build
@@ -54,8 +54,8 @@ jobs:
           IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
           cmake --build --preset ${{ matrix.preset }} -- -k0
       - name: '[CI Only] Perform CodeQL Analysis'
-        if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
-        uses: github/codeql-action/analyze@v3
+        if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
+        uses: github/codeql-action/analyze@v4
       - name: Run vcpkg and vcpkg-artifacts unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
