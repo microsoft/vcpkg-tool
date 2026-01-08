@@ -679,6 +679,7 @@ namespace vcpkg::PlatformExpression
                             return true_if_exists_and_equal("VCPKG_TARGET_ARCHITECTURE", "arm64ec");
                         case Identifier::windows:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Windows") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore") ||
                                    true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
                         case Identifier::mingw: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "MinGW");
