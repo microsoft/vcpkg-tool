@@ -614,9 +614,12 @@ namespace vcpkg
                          msg::count = action_count,
                          msg::spec = action_display_name);
             ++action_index;
-            msg::println(msgPackageAbi,
-                         msg::spec = action_display_name,
-                         msg::package_abi = action.package_abi_or_exit(VCPKG_LINE_INFO));
+            if (auto package_abi = action.package_abi())
+            {
+                msg::println(msgPackageAbi,
+                             msg::spec = action_display_name,
+                             msg::package_abi = *package_abi);
+            }
 
             auto& result = summary.install_results.emplace_back(perform_install_plan_action(
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
