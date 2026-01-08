@@ -207,6 +207,16 @@ $expected = @"
       </test>
     </collection>
   </assembly>
+  <assembly name="unskipped-cascade" run-date="1970-01-01" run-time="00:00:00" time="0">
+    <collection name="$Triplet" time="0">
+      <test name="unskipped-cascade:$Triplet" method="unskipped-cascade:$Triplet" time="0" result="Skip">
+        <traits>
+          <trait name="owner" value="$Triplet"/>
+        </traits>
+        <reason><!\[CDATA\[CASCADED_DUE_TO_MISSING_DEPENDENCIES\]\]></reason>
+      </test>
+    </collection>
+  </assembly>
 </assemblies>
 
 "@
