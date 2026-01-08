@@ -129,7 +129,6 @@ namespace vcpkg
 
             auto target = destination_triplet / proximate_file;
 
-            bool use_hard_link = true;
             switch (status)
             {
                 case FileType::directory:
@@ -158,25 +157,17 @@ namespace vcpkg
                         msg::println_warning(msgOverwritingFile, msg::path = target);
                         fs.remove_all(target, IgnoreErrors{});
                     }
-                    if (use_hard_link)
-                    {
-                        fs.create_hard_link(source_file, target, ec);
-                        if (ec)
-                        {
-                            Debug::println("Install from packages to installed: Fallback to copy "
-                                           "instead creating hard links because of: ",
-                                           ec.message());
-                            use_hard_link = false;
-                        }
-                    }
-                    if (!use_hard_link)
-                    {
-                        fs.copy_file(source_file, target, CopyOptions::overwrite_existing, ec);
-                    }
-
+                    fs.create_hard_link(source_file, target, ec);
                     if (ec)
                     {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                        Debug::println("Install from packages to installed: Fallback to copy "
+                                       "instead creating hard links because of: ",
+                                       ec.message());
+                        fs.copy_file(source_file, target, CopyOptions::overwrite_existing, ec);
+                        if (ec)
+                        {
+                            msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                        }
                     }
 
                     listfile_lines.push_back(list_listfile_line);
