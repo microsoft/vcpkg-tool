@@ -482,7 +482,7 @@ namespace vcpkg
     AlreadyInstalledPlanAction::AlreadyInstalledPlanAction(InstalledPackageView&& ipv,
                                                            RequestType request_type,
                                                            UseHeadVersion use_head_version)
-        : BasicInstallPlanAction{ipv.spec(), ipv.version(), ipv.feature_list(), request_type}
+        : BasicInstallPlanAction{{ipv.spec()}, ipv.version(), ipv.feature_list(), request_type}
         , installed_package(std::move(ipv))
         , use_head_version(use_head_version)
     {
@@ -524,7 +524,7 @@ namespace vcpkg
                                          std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
                                          std::vector<DiagnosticLine>&& dependency_diagnostics,
                                          const std::vector<std::string>& default_features)
-        : BasicInstallPlanAction{spec, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
+        : BasicInstallPlanAction{{spec}, scfl.to_version(), fdeps_to_feature_list(dependencies), request_type}
         , package_dependencies{fdeps_to_pdeps(spec, dependencies)}
         , m_source_control_file_and_location(&scfl)
         , default_features(default_features)

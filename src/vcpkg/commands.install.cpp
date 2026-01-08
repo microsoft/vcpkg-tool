@@ -616,9 +616,7 @@ namespace vcpkg
             ++action_index;
             if (auto package_abi = action.package_abi())
             {
-                msg::println(msgPackageAbi,
-                             msg::spec = action_display_name,
-                             msg::package_abi = *package_abi);
+                msg::println(msgPackageAbi, msg::spec = action_display_name, msg::package_abi = *package_abi);
             }
 
             auto& result = summary.install_results.emplace_back(perform_install_plan_action(

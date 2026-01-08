@@ -15,7 +15,8 @@ using namespace vcpkg;
 namespace vcpkg::CMakeVars
 {
 
-    void CMakeVarProvider::load_tag_vars(const std::vector<InstallPlanAction>& install_actions, Triplet host_triplet) const
+    void CMakeVarProvider::load_tag_vars(const std::vector<InstallPlanAction>& install_actions,
+                                         Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
         install_package_specs.reserve(install_actions.size());
