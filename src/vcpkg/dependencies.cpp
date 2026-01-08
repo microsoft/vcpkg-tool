@@ -1493,13 +1493,19 @@ namespace vcpkg
                 // We want to batch as many dep_infos as possible, so look ahead in the frame and stack
                 std::unordered_set<PackageSpec> spec_set = {frame.spec};
                 for (auto&& d : frame.deps)
+                {
                     spec_set.emplace(d.name, d.host ? m_host_triplet : frame.spec.triplet());
+                }
+
                 for (auto&& s : m_resolve_stack)
                 {
                     spec_set.insert(s.spec);
                     for (auto&& d : s.deps)
+                    {
                         spec_set.emplace(d.name, d.host ? m_host_triplet : s.spec.triplet());
+                    }
                 }
+
                 std::vector<PackageSpec> spec_vec(spec_set.begin(), spec_set.end());
                 m_var_provider.load_dep_info_vars(spec_vec, m_host_triplet);
                 return m_var_provider.get_dep_info_vars(frame.spec).value_or_exit(VCPKG_LINE_INFO);
@@ -1511,6 +1517,7 @@ namespace vcpkg
         {
             for (auto&& dep : frame.deps)
             {
+                // duplicate is_empty check avoids possibly needless batch_load_vars call
                 if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame))) continue;
 
                 PackageSpec dep_spec(dep.name, dep.host ? m_host_triplet : frame.spec.triplet());
@@ -1546,7 +1553,11 @@ namespace vcpkg
                     // apply selected features
                     for (auto&& f : dep.features)
                     {
-                        if (f.name == FeatureNameDefault) abort();
+                        if (f.name == FeatureNameDefault)
+                        {
+                            Checks::unreachable(VCPKG_LINE_INFO);
+                        }
+
                         if (evaluate(frame.spec, f.platform))
                         {
                             require_port_feature(*node, f.name, frame.spec.name());
@@ -1710,6 +1721,11 @@ namespace vcpkg
         bool VersionedPackageGraph::evaluate(const PackageSpec& spec,
                                              const PlatformExpression::Expr& platform_expr) const
         {
+            if (platform_expr.is_empty())
+            {
+                return true;
+            }
+
             return platform_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet));
         }
 
@@ -1722,7 +1738,7 @@ namespace vcpkg
         {
             for (auto&& dep : deps)
             {
-                if (!dep.platform.is_empty() && !evaluate(m_toplevel, dep.platform))
+                if (!evaluate(m_toplevel, dep.platform))
                 {
                     continue;
                 }
@@ -1809,9 +1825,12 @@ namespace vcpkg
                         PackageSpec fspec{fdep.name, fdep.host ? m_host_triplet : node.first.triplet()};
 
                         // Ignore intra-package dependencies
-                        if (fspec == node.first) continue;
+                        if (fspec == node.first)
+                        {
+                            continue;
+                        }
 
-                        if (!fdep.platform.is_empty() && !evaluate(node.first, fdep.platform))
+                        if (!evaluate(node.first, fdep.platform))
                         {
                             continue;
                         }
@@ -1824,6 +1843,7 @@ namespace vcpkg
                                 fspecs.emplace_back(fspec, g.name);
                             }
                         }
+
                         out_dep_specs.push_back({std::move(fspec), fdep.constraint, fdep.features});
                     }
                     Util::sort_unique_erase(fspecs);
