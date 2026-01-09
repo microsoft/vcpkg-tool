@@ -4,6 +4,7 @@
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/system.debug.h>
@@ -67,6 +68,9 @@ namespace
             return Strings::case_insensitive_ascii_less(lhs.file_path, rhs.file_path);
         }
     };
+
+    static constexpr StringLiteral SYMLINK_STATUS = "symlink_status";
+    static constexpr StringLiteral STATUS = "status";
 }
 
 namespace vcpkg
@@ -91,52 +95,85 @@ namespace vcpkg
         std::vector<std::string> listfile_lines;
         listfile_lines.push_back(listfile_triplet_prefix);
 
-        std::string list_listfile_line;
-        for (auto&& proximate_file : proximate_files)
-        {
-            const StringView filename = parse_filename(proximate_file);
+        std::mutex console_mutex;
+        std::vector<Path> source_files(proximate_files.size());
+        std::vector<vcpkg::FileType> statuses(proximate_files.size());
+        execute_in_parallel(proximate_files.size(), [&, hydrate](size_t idx) {
+            const auto& proximate_file = proximate_files[idx];
+            const auto filename = parse_filename(proximate_file);
             if (filename == FileDotDsStore)
             {
-                // Do not copy .DS_Store files
-                continue;
+                // Do not copy .DS_Store files (leaves file_type::none)
+                return;
             }
 
             auto source_file = source_dir / proximate_file;
             std::error_code ec;
+            const StringLiteral* status_call_name;
             vcpkg::FileType status;
-            StringView status_call_name;
             switch (hydrate)
             {
                 case SymlinkHydrate::CopySymlinks:
                     status = fs.symlink_status(source_file, ec);
-                    status_call_name = "symlink_status";
+                    status_call_name = &SYMLINK_STATUS;
                     break;
                 case SymlinkHydrate::CopyData:
                     status = fs.status(source_file, ec);
-                    status_call_name = "status";
+                    status_call_name = &STATUS;
                     break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-
             if (ec)
             {
-                msg::println_warning(format_filesystem_call_error(ec, status_call_name, {source_file}));
-                continue;
+                std::lock_guard<std::mutex> lock(console_mutex);
+                msg::println_warning(format_filesystem_call_error(ec, *status_call_name, {source_file}));
+                status = FileType::none;
+            }
+            else
+            {
+                switch (status)
+                {
+                    case FileType::regular:
+                        if (filename == FileControl || filename == FileVcpkgDotJson || filename == FileBuildInfo)
+                        {
+                            // Do not copy the control file or manifest file
+                            status = FileType::none;
+                        }
+                        break;
+                    case FileType::directory:
+                    case FileType::symlink:
+                    case FileType::junction: break;
+                    default:
+                        std::lock_guard<std::mutex> lock(console_mutex);
+                        msg::println_error(msgInvalidFileType, msg::path = source_file);
+                        status = FileType::none;
+                }
             }
 
+            source_files[idx] = std::move(source_file);
+            statuses[idx] = status;
+        });
+
+        // At this point, each corresponding index between proximate_files, filenames, source_files, and statuses is
+        // either has file_type::none (skip), or is filled out
+        // Copy all the non-regular-files serially to avoid races with missing parent directories.
+        std::vector<Path> target_regular_files(proximate_files.size());
+        std::error_code ec;
+        std::string list_listfile_line;
+        for (std::size_t idx = 0; idx < proximate_files.size(); ++idx)
+        {
+            const auto& proximate_file = proximate_files[idx];
             list_listfile_line = listfile_triplet_prefix;
             list_listfile_line.append(proximate_file);
-
-            auto target = destination_triplet / proximate_file;
-
-            switch (status)
+            auto target_file = destination_triplet / proximate_file;
+            switch (statuses[idx])
             {
                 case FileType::directory:
                 {
-                    fs.create_directory(target, ec);
+                    fs.create_directory(target_file, ec);
                     if (ec)
                     {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target_file, msg::error_msg = ec.message());
                     }
 
                     // Trailing slash for directories
@@ -146,53 +183,66 @@ namespace vcpkg
                 }
                 case FileType::regular:
                 {
-                    if (filename == FileControl || filename == FileVcpkgDotJson || filename == FileBuildInfo)
-                    {
-                        // Do not copy the control file or manifest file
-                        continue;
-                    }
-
-                    if (fs.exists(target, IgnoreErrors{}))
-                    {
-                        msg::println_warning(msgOverwritingFile, msg::path = target);
-                        fs.remove_all(target, IgnoreErrors{});
-                    }
-                    fs.create_hard_link(source_file, target, ec);
-                    if (ec)
-                    {
-                        Debug::println("Install from packages to installed: Fallback to copy "
-                                       "instead creating hard links because of: ",
-                                       ec.message());
-                        fs.copy_file(source_file, target, CopyOptions::overwrite_existing, ec);
-                        if (ec)
-                        {
-                            msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
-                        }
-                    }
-
+                    target_regular_files[idx] = std::move(target_file);
                     listfile_lines.push_back(list_listfile_line);
                     break;
                 }
                 case FileType::symlink:
                 case FileType::junction:
                 {
-                    if (fs.exists(target, IgnoreErrors{}))
+                    if (fs.exists(target_file, IgnoreErrors{}))
                     {
-                        msg::println_warning(msgOverwritingFile, msg::path = target);
+                        msg::println_warning(msgOverwritingFile, msg::path = target_file);
                     }
 
-                    fs.copy_symlink(source_file, target, ec);
+                    fs.copy_symlink(source_files[idx], target_file, ec);
                     if (ec)
                     {
-                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target_file, msg::error_msg = ec.message());
                     }
 
                     listfile_lines.push_back(list_listfile_line);
                     break;
                 }
-                default: msg::println_error(msgInvalidFileType, msg::path = source_file); break;
+                case FileType::none: break; // .DS_Store or error case
+                default: Checks::unreachable(VCPKG_LINE_INFO); break;
             }
         }
+
+        // explicit captures to avoid capturing outer 'ec'
+        execute_in_parallel(
+            proximate_files.size(),
+            [&statuses, &proximate_files, &target_regular_files, &source_files, &fs, &console_mutex](size_t idx) {
+                if (statuses[idx] == FileType::regular)
+                {
+                    const auto& target = target_regular_files[idx];
+                    if (fs.exists(target, IgnoreErrors{}))
+                    {
+                        std::lock_guard<std::mutex> lock(console_mutex);
+                        msg::println_warning(msgOverwritingFile, msg::path = target);
+                        fs.remove_all(target, IgnoreErrors{});
+                    } // unlock
+
+                    std::error_code ec;
+                    fs.create_hard_link(source_files[idx], target, ec);
+                    if (ec)
+                    {
+                        {
+                            std::lock_guard<std::mutex> lock(console_mutex);
+                            Debug::println("Install from packages to installed: Fallback to copy "
+                                           "instead creating hard links because of: ",
+                                           ec.message());
+                        } // unlock
+
+                        fs.copy_file(source_files[idx], target, CopyOptions::overwrite_existing, ec);
+                        if (ec)
+                        {
+                            std::lock_guard<std::mutex> lock(console_mutex);
+                            msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
+                        } // unlock
+                    }
+                }
+            });
 
         std::sort(listfile_lines.begin(), listfile_lines.end());
         fs.write_lines(listfile, listfile_lines, VCPKG_LINE_INFO);
