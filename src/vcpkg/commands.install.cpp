@@ -211,8 +211,7 @@ namespace vcpkg
 
         // explicit captures to avoid capturing outer 'ec'
         execute_in_parallel(
-            proximate_files.size(),
-            [&statuses, &proximate_files, &target_regular_files, &source_files, &fs, &console_mutex](size_t idx) {
+            proximate_files.size(), [&statuses, &target_regular_files, &source_files, &fs, &console_mutex](size_t idx) {
                 if (statuses[idx] == FileType::regular)
                 {
                     const auto& target = target_regular_files[idx];
