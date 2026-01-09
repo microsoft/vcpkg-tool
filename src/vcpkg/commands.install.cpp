@@ -109,8 +109,8 @@ namespace vcpkg
 
             auto source_file = source_dir / proximate_file;
             std::error_code ec;
-            const StringLiteral* status_call_name;
             vcpkg::FileType status;
+            const StringLiteral* status_call_name;
             switch (hydrate)
             {
                 case SymlinkHydrate::CopySymlinks:
@@ -165,15 +165,15 @@ namespace vcpkg
             const auto& proximate_file = proximate_files[idx];
             list_listfile_line = listfile_triplet_prefix;
             list_listfile_line.append(proximate_file);
-            auto target_file = destination_triplet / proximate_file;
+            auto target = destination_triplet / proximate_file;
             switch (statuses[idx])
             {
                 case FileType::directory:
                 {
-                    fs.create_directory(target_file, ec);
+                    fs.create_directory(target, ec);
                     if (ec)
                     {
-                        msg::println_error(msgInstallFailed, msg::path = target_file, msg::error_msg = ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
 
                     // Trailing slash for directories
@@ -183,22 +183,22 @@ namespace vcpkg
                 }
                 case FileType::regular:
                 {
-                    target_regular_files[idx] = std::move(target_file);
+                    target_regular_files[idx] = std::move(target);
                     listfile_lines.push_back(list_listfile_line);
                     break;
                 }
                 case FileType::symlink:
                 case FileType::junction:
                 {
-                    if (fs.exists(target_file, IgnoreErrors{}))
+                    if (fs.exists(target, IgnoreErrors{}))
                     {
-                        msg::println_warning(msgOverwritingFile, msg::path = target_file);
+                        msg::println_warning(msgOverwritingFile, msg::path = target);
                     }
 
-                    fs.copy_symlink(source_files[idx], target_file, ec);
+                    fs.copy_symlink(source_files[idx], target, ec);
                     if (ec)
                     {
-                        msg::println_error(msgInstallFailed, msg::path = target_file, msg::error_msg = ec.message());
+                        msg::println_error(msgInstallFailed, msg::path = target, msg::error_msg = ec.message());
                     }
 
                     listfile_lines.push_back(list_listfile_line);
