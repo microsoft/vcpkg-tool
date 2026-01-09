@@ -173,9 +173,13 @@ Throw-IfFailed
 if (-not ($Output -match 'skipped-features:[^:]+:      \*:' -and $Output -match 'Building skipped-features:[^@]+@1\.0\.0\.\.\.')) {
     throw 'did not attempt to build skipped-features'
 }
+if ($Output -match 'Building skipped-depends') {
+    throw 'should not attempt to build skipped-depends because it is skipped'
+}
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 1
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
   EXCLUDED: 1
 "@
 
@@ -200,6 +204,16 @@ $expected = @"
           <trait name="features" value="core"/>
           <trait name="owner" value="$Triplet"/>
         </traits>
+      </test>
+    </collection>
+  </assembly>
+  <assembly name="unskipped-cascade" run-date="1970-01-01" run-time="00:00:00" time="0">
+    <collection name="$Triplet" time="0">
+      <test name="unskipped-cascade:$Triplet" method="unskipped-cascade:$Triplet" time="0" result="Skip">
+        <traits>
+          <trait name="owner" value="$Triplet"/>
+        </traits>
+        <reason><!\[CDATA\[CASCADED_DUE_TO_MISSING_DEPENDENCIES\]\]></reason>
       </test>
     </collection>
   </assembly>

@@ -48,7 +48,7 @@ Throw-IfNotFailed
 $expected = @(
 "A suitable version of cmake was not found \(required v[0-9.]+\)\.",
 "Trying to download cmake-[0-9.]+-[^.]+\.(zip|tar\.gz) using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl: \(37\) (Could not|Couldn't) open file [^\n]+",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://github\.com/Kitware/CMake/releases/download/[^ ]+",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
@@ -236,7 +236,7 @@ Refresh-TestRoot
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://localhost:1234/foobar\.html",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl: \(37\) (Could not|Couldn't) open file [^\n]+",
 "error: curl: \(7\) Failed to connect to localhost port 1234( after \d+ ms)?: ((Could not|Couldn't) connect to server|Connection refused)",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
@@ -296,7 +296,7 @@ if (-not ($actual -match $expected)) {
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
 "Asset cache miss; trying authoritative source https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl: \(37\) (Could not|Couldn't) open file [^\n]+",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",
 "Possible causes are:",
 "1\. You are actually using an HTTP proxy, but setting HTTPS_PROXY variable to ``https://address:port``\.",
@@ -358,7 +358,7 @@ if (-not ($actual -match $expected)) {
 Refresh-TestRoot
 $expected = @(
 "^Trying to download example3\.html using asset cache file://$assetCacheRegex/[0-9a-z]+",
-"error: curl: \(37\) Couldn't open file [^\n]+",
+"error: curl: \(37\) (Could not|Couldn't) open file [^\n]+",
 "error: there were no asset cache hits, and x-block-origin blocks trying the authoritative source https://raw\.githubusercontent\.com/microsoft/vcpkg-tool/1767aaee7b229c609f7ad5cf2f57b6a6cc309fb8/LICENSE\.txt",
 "note: or https://alternate\.example\.com",
 "note: If you are using a proxy, please ensure your proxy settings are correct\.",

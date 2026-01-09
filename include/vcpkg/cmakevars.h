@@ -36,7 +36,7 @@ namespace vcpkg::CMakeVars
 
         virtual void load_tag_vars(View<FullPackageSpec> specs, Triplet host_triplet) const = 0;
 
-        void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const;
+        void load_tag_vars(const std::vector<InstallPlanAction>& install_actions, Triplet host_triplet) const;
     };
 
     std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);

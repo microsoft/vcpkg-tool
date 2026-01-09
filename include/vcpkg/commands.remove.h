@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/files.h>
 
+#include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/statusparagraphs.h>
@@ -17,10 +18,10 @@ namespace vcpkg
         YES
     };
 
-    void remove_package(const Filesystem& fs,
-                        const InstalledPaths& installed,
-                        const PackageSpec& spec,
-                        StatusParagraphs& status_db);
+    SpecSummary remove_package(const Filesystem& fs,
+                               const InstalledPaths& installed,
+                               const PackageSpec& spec,
+                               StatusParagraphs& status_db);
 
     extern const CommandMetadata CommandRemoveMetadata;
     void command_remove_and_exit(const VcpkgCmdArguments& args,

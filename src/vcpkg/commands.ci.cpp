@@ -117,7 +117,7 @@ namespace
         StatusParagraphs empty_status_db;
         auto action_plan = create_feature_install_plan(
             provider, var_provider, applicable_specs, empty_status_db, packages_dir_assigner, serialize_options);
-        var_provider.load_tag_vars(action_plan, serialize_options.host_triplet);
+        var_provider.load_tag_vars(action_plan.install_actions, serialize_options.host_triplet);
 
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.already_installed.empty());
         Checks::check_exit(VCPKG_LINE_INFO, action_plan.remove_actions.empty());
@@ -249,12 +249,10 @@ namespace
                 }
             }
 
-            if (Util::Sets::contains(to_keep, it->spec))
+            if (Util::Sets::contains(to_keep, it->spec) && it_known->second != BuildResult::Excluded &&
+                it_known->second != BuildResult::Unsupported)
             {
-                if (it_known->second != BuildResult::Excluded && it_known->second != BuildResult::Unsupported)
-                {
-                    to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
-                }
+                to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
             }
         }
 
@@ -587,19 +585,14 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
 
-            for (auto&& result : summary.results)
+            for (auto&& result : summary.install_results)
             {
-                if (const auto* ipa = result.get_maybe_install_plan_action())
-                {
-                    // note that we assign over the 'known' values from above
-                    auto ci_result = CiResult{result.build_result.value_or_exit(VCPKG_LINE_INFO).code,
-                                              CiBuiltResult{ipa->package_abi_or_exit(VCPKG_LINE_INFO),
-                                                            ipa->feature_list,
-                                                            result.start_time,
-                                                            result.timing}};
-                    ci_plan_results.insert_or_assign(result.get_spec(), ci_result);
-                    ci_full_results.insert_or_assign(result.get_spec(), std::move(ci_result));
-                }
+                // note that we assign over the 'known' values from above
+                auto ci_result = CiResult{
+                    result.build_result.code,
+                    CiBuiltResult{result.package_abi(), result.feature_list(), result.start_time, result.timing}};
+                ci_plan_results.insert_or_assign(result.build_result.spec, ci_result);
+                ci_full_results.insert_or_assign(result.build_result.spec, std::move(ci_result));
             }
         }
 

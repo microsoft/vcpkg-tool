@@ -293,7 +293,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
     Checks::check_exit(VCPKG_LINE_INFO, relative_package_paths.size() == package_hashes.size());
 
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};
     if (auto package_abi = action.package_abi())
@@ -406,7 +406,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
 std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
 {
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& scf = *scfl.source_control_file;
     const auto& cpgh = *scf.core_paragraph;
     bool all_licenses_undeclared = cpgh.license.kind() == SpdxLicenseDeclarationKind::NotPresent;

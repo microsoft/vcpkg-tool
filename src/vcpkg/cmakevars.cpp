@@ -15,11 +15,12 @@ using namespace vcpkg;
 namespace vcpkg::CMakeVars
 {
 
-    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
+    void CMakeVarProvider::load_tag_vars(const std::vector<InstallPlanAction>& install_actions,
+                                         Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
-        install_package_specs.reserve(action_plan.install_actions.size());
-        for (auto&& action : action_plan.install_actions)
+        install_package_specs.reserve(install_actions.size());
+        for (auto&& action : install_actions)
         {
             install_package_specs.emplace_back(action.spec, action.feature_list);
         }

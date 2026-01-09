@@ -7,6 +7,7 @@
 
 #include <vcpkg/documentation.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/versions.h>
 
 namespace
 {
@@ -152,6 +153,19 @@ namespace vcpkg
         {
             out.emplace_back(package_spec, feature);
         }
+    }
+
+    std::string format_full_version_spec(const PackageSpec& spec,
+                                         const InternalFeatureSet& feature_list,
+                                         const Version& version)
+    {
+        if (feature_list.empty_or_only_core())
+        {
+            return fmt::format("{}@{}", spec.to_string(), version);
+        }
+
+        const std::string features = Strings::join(",", feature_list);
+        return fmt::format("{}[{}]:{}@{}", spec.name(), features, spec.triplet(), version);
     }
 
     const std::string& PackageSpec::name() const { return this->m_name; }
