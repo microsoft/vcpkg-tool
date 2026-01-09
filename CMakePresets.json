@@ -247,6 +247,10 @@
         {
             "name": "macos-ci",
             "configurePreset": "macos-ci"
+        },
+        {
+            "name": "Win-x64-Debug-WithArtifacts",
+            "configurePreset": "Win-x64-Debug-WithArtifacts"
         }
     ],
     "testPresets": [
