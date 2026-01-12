@@ -204,7 +204,7 @@ namespace vcpkg
                     listfile_lines.push_back(list_listfile_line);
                     break;
                 }
-                case FileType::none: break; // .DS_Store or error case
+                case FileType::none: break; // skip or error case
                 default: Checks::unreachable(VCPKG_LINE_INFO); break;
             }
         }
@@ -217,10 +217,13 @@ namespace vcpkg
                     const auto& target = target_regular_files[idx];
                     if (fs.exists(target, IgnoreErrors{}))
                     {
-                        std::lock_guard<std::mutex> lock(console_mutex);
-                        msg::println_warning(msgOverwritingFile, msg::path = target);
+                        {
+                            std::lock_guard<std::mutex> lock(console_mutex);
+                            msg::println_warning(msgOverwritingFile, msg::path = target);
+                        } // unlock
+
                         fs.remove_all(target, IgnoreErrors{});
-                    } // unlock
+                    }
 
                     std::error_code ec;
                     fs.create_hard_link(source_files[idx], target, ec);
