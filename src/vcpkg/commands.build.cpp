@@ -939,12 +939,9 @@ namespace vcpkg
             variables.emplace_back(CMakeVariableProhibitBackcompatFeatures, "1");
         }
 
-        get_generic_cmake_build_args(
-            paths,
-            action.spec.triplet(),
-            action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
-            variables);
-
+        const auto* maybe_toolset = action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset;
+        Checks::check_exit(VCPKG_LINE_INFO, maybe_toolset != nullptr);
+        get_generic_cmake_build_args(paths, action.spec.triplet(), *maybe_toolset, variables);
         if (Util::Enum::to_bool(build_options.only_downloads))
         {
             variables.emplace_back(CMakeVariableDownloadMode, "true");
@@ -1173,14 +1170,15 @@ namespace vcpkg
         }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto* toolset = abi_info.toolset;
+        Checks::check_exit(VCPKG_LINE_INFO, toolset != nullptr);
 
         const ElapsedTimer timer;
         auto cmd = vcpkg::make_cmake_cmd(
             paths, paths.ports_cmake, get_cmake_build_args(args, paths, host_triplet, build_options, action));
 
         RedirectedProcessLaunchSettings settings;
-        auto& env = settings.environment.emplace(
-            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
+        auto& env = settings.environment.emplace(paths.get_action_env(*abi_info.pre_build_info, *toolset));
 
         auto buildpath = paths.build_dir(action.spec);
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -1360,7 +1358,7 @@ namespace vcpkg
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
-        abi_info.toolset.emplace(toolset);
+        abi_info.toolset = &toolset;
 
         if (action.use_head_version == UseHeadVersion::Yes)
         {
@@ -1373,7 +1371,7 @@ namespace vcpkg
             return;
         }
 
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+        abi_info.compiler_info = &paths.get_compiler_info(*abi_info.pre_build_info, toolset);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1390,7 +1388,7 @@ namespace vcpkg
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
         const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
-        abi_info.triplet_abi.emplace(triplet_abi);
+        abi_info.triplet_abi = &triplet_abi;
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back(AbiTagTriplet, triplet_canonical_name);
         abi_tag_entries.emplace_back(AbiTagTripletAbi, triplet_abi);
@@ -1898,12 +1896,14 @@ namespace vcpkg
 
         if (const auto* abi_info = action.abi_info.get())
         {
-            if (const auto* compiler_info = abi_info->compiler_info.get())
+            if (abi_info->compiler_info)
             {
+                const auto& compiler_info = *abi_info->compiler_info;
                 fmt::format_to(
-                    std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info->id, compiler_info->version);
+                    std::back_inserter(issue_body), "- Compiler: {} {}\n", compiler_info.id, compiler_info.version);
             }
         }
+
         fmt::format_to(
             std::back_inserter(issue_body), "- CMake Version: {}\n", paths.get_tool_version_required(Tools::CMAKE));
 

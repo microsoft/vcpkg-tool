@@ -238,12 +238,12 @@ Build-Depends: bzip
     ipa.abi_info = AbiInfo{};
     ipa.abi_info.get()->package_abi = "packageabi";
     std::string tripletabi("tripletabi");
-    ipa.abi_info.get()->triplet_abi = tripletabi;
+    ipa.abi_info.get()->triplet_abi = &tripletabi;
     CompilerInfo compiler_info;
     compiler_info.hash = "compilerhash";
     compiler_info.id = "compilerid";
     compiler_info.version = "compilerversion";
-    ipa.abi_info.get()->compiler_info = compiler_info;
+    ipa.abi_info.get()->compiler_info = &compiler_info;
 
     FeedReference ref2 = make_nugetref(ipa, "prefix_");
 

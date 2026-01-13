@@ -290,10 +290,10 @@ namespace vcpkg
     {
         // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
-        Optional<const Toolset&> toolset;
+        const Toolset* toolset = nullptr;
         // These might not be known if compiler tracking is turned off or the port is --editable
-        Optional<const CompilerInfo&> compiler_info;
-        Optional<const std::string&> triplet_abi;
+        const CompilerInfo* compiler_info = nullptr;
+        const std::string* triplet_abi = nullptr;
         std::string package_abi;
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
