@@ -1246,14 +1246,7 @@ namespace vcpkg
         return std::move(maybe_extraction).error();
     }
 
-    Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
-    {
-        if (auto p = m_pimpl->m_manifest_doc.get())
-        {
-            return *p;
-        }
-        return nullopt;
-    }
+    const ManifestAndPath* VcpkgPaths::get_manifest() const { return m_pimpl->m_manifest_doc.get(); }
 
     bool VcpkgPaths::manifest_mode_enabled() const { return m_pimpl->m_manifest_doc.has_value(); }
 

@@ -104,7 +104,7 @@ namespace vcpkg
     struct IOverlayProvider
     {
         virtual ~IOverlayProvider() = default;
-        virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const = 0;
+        virtual const SourceControlFileAndLocation* get_control_file(StringView port_name) const = 0;
     };
 
     struct IFullOverlayProvider : IOverlayProvider

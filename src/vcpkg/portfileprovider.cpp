@@ -367,20 +367,18 @@ namespace vcpkg
     ExpectedL<const SourceControlFileAndLocation&> PathsPortFileProvider::get_control_file(
         const std::string& spec) const
     {
-        auto maybe_scfl = m_overlay->get_control_file(spec);
-        if (auto scfl = maybe_scfl.get())
+        if (auto scfl = m_overlay->get_control_file(spec))
         {
             return *scfl;
         }
+
         auto maybe_baseline = m_baseline->get_baseline_version(spec);
         if (auto baseline = maybe_baseline.get())
         {
             return m_versioned->get_control_file({spec, *baseline});
         }
-        else
-        {
-            return std::move(maybe_baseline).error();
-        }
+
+        return std::move(maybe_baseline).error();
     }
 
     std::vector<const SourceControlFileAndLocation*> PathsPortFileProvider::load_all_control_files() const
@@ -536,15 +534,15 @@ namespace vcpkg
 
             OverlayProviderImpl(const OverlayProviderImpl&) = delete;
             OverlayProviderImpl& operator=(const OverlayProviderImpl&) = delete;
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
+            virtual const SourceControlFileAndLocation* get_control_file(StringView port_name) const override
             {
                 auto loaded = m_overlay_index.try_load_port(m_fs, port_name);
                 if (loaded)
                 {
-                    return loaded->value_or_exit(VCPKG_LINE_INFO);
+                    return &loaded->value_or_exit(VCPKG_LINE_INFO);
                 }
 
-                return nullopt;
+                return nullptr;
             }
 
             virtual void load_all_control_files(
@@ -569,11 +567,11 @@ namespace vcpkg
             {
             }
 
-            virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView port_name) const override
+            virtual const SourceControlFileAndLocation* get_control_file(StringView port_name) const override
             {
                 if (port_name == m_manifest_scf_and_location.to_name())
                 {
-                    return m_manifest_scf_and_location;
+                    return &m_manifest_scf_and_location;
                 }
 
                 return m_overlay_ports.get_control_file(port_name);

@@ -649,8 +649,9 @@ namespace vcpkg
                             continue;
                         }
 
-                        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
-                        for (auto&& applicable_license : feature.license.applicable_licenses())
+                        const auto* feature = scf.find_feature(feature_name);
+                        Checks::check_exit(VCPKG_LINE_INFO, feature != nullptr);
+                        for (auto&& applicable_license : feature->license.applicable_licenses())
                         {
                             summary.license_report.named_licenses.insert(applicable_license.to_string());
                         }
@@ -1106,7 +1107,7 @@ namespace vcpkg
                                   Triplet default_triplet,
                                   Triplet host_triplet)
     {
-        auto manifest = paths.get_manifest().get();
+        const auto* manifest = paths.get_manifest();
         const ParsedArguments options =
             args.parse_arguments(manifest ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 

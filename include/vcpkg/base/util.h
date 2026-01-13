@@ -189,15 +189,11 @@ namespace vcpkg::Util
     }
 
     template<class Map, class Key>
-    Optional<const typename Map::mapped_type&> lookup_value(const Map& map, Key&& key)
+    const typename Map::mapped_type* lookup_value(const Map& map, Key&& key)
     {
         const auto it = map.find(static_cast<Key&&>(key));
-        if (it == map.end())
-        {
-            return nullopt;
-        }
-
-        return it->second;
+        if (it == map.end()) return nullptr;
+        return &it->second;
     }
 
     template<class Map, class Key>

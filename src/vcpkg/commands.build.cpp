@@ -757,8 +757,7 @@ namespace vcpkg
         {
             find_itr = action.feature_dependencies.find(feature);
             Checks::check_exit(VCPKG_LINE_INFO, find_itr != action.feature_dependencies.end());
-            auto maybe_fpgh = scfl.source_control_file->find_feature(feature);
-            if (auto fpgh = maybe_fpgh.get())
+            if (const auto* fpgh = scfl.source_control_file->find_feature(feature))
             {
                 bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(find_itr->second));
             }
@@ -1615,15 +1614,14 @@ namespace vcpkg
                 }
             }
 
-            populate_abi_tag(
-                paths,
-                action,
-                std::make_unique<PreBuildInfo>(paths,
-                                               action.spec.triplet(),
-                                               var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
-                dependency_abis,
-                port_dir_cache,
-                grdk_cache);
+            const auto* tag_vars = var_provider.get_tag_vars(action.spec);
+            Checks::check_exit(VCPKG_LINE_INFO, tag_vars != nullptr);
+            populate_abi_tag(paths,
+                             action,
+                             std::make_unique<PreBuildInfo>(paths, action.spec.triplet(), *tag_vars),
+                             dependency_abis,
+                             port_dir_cache,
+                             grdk_cache);
         }
     }
 
@@ -1920,8 +1918,7 @@ namespace vcpkg
                                                             VCPKG_LINE_INFO));
 
         std::string postfix;
-        const auto maybe_manifest = paths.get_manifest();
-        if (auto manifest = maybe_manifest.get())
+        if (const auto* manifest = paths.get_manifest())
         {
             if (include_manifest || manifest->manifest.contains("builtin-baseline"))
             {

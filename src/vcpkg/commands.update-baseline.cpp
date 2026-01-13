@@ -74,8 +74,9 @@ namespace vcpkg
 
         auto configuration = paths.get_configuration();
 
-        const bool has_manifest = paths.get_manifest().has_value();
-        auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
+        const auto* manifest_ptr = paths.get_manifest();
+        const bool has_manifest = manifest_ptr != nullptr;
+        auto manifest = has_manifest ? *manifest_ptr : ManifestAndPath{};
 
         if (configuration.source == ConfigurationSource::None && !has_manifest)
         {

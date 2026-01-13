@@ -419,10 +419,11 @@ std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
             continue;
         }
 
-        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
-        const auto& feature_appplicable_licenses = feature.license.applicable_licenses();
-        all_licenses_undeclared &= feature.license.kind() == SpdxLicenseDeclarationKind::NotPresent;
-        any_explicitly_null_licenses |= feature.license.kind() == SpdxLicenseDeclarationKind::Null;
+        const auto* feature = scf.find_feature(feature_name);
+        Checks::check_exit(VCPKG_LINE_INFO, feature != nullptr);
+        const auto& feature_appplicable_licenses = feature->license.applicable_licenses();
+        all_licenses_undeclared &= feature->license.kind() == SpdxLicenseDeclarationKind::NotPresent;
+        any_explicitly_null_licenses |= feature->license.kind() == SpdxLicenseDeclarationKind::Null;
         licenses.insert(licenses.end(), feature_appplicable_licenses.begin(), feature_appplicable_licenses.end());
     }
 

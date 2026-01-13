@@ -80,7 +80,9 @@ namespace
             return true;
         }
 
-        return supports_expression.evaluate(var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO));
+        const auto* dep_vars = var_provider.get_dep_info_vars(spec);
+        Checks::check_exit(VCPKG_LINE_INFO, dep_vars != nullptr);
+        return supports_expression.evaluate(*dep_vars);
     }
 
     bool cascade_for_triplet(const std::vector<InstallPlanAction>& install_actions,

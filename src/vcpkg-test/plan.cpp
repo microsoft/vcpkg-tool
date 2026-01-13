@@ -1413,7 +1413,7 @@ TEST_CASE ("basic export scheme", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with recurse", "[plan]")
@@ -1431,10 +1431,10 @@ TEST_CASE ("basic export scheme with recurse", "[plan]")
 
     REQUIRE(plan.size() == 2);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 
     REQUIRE(plan.at(1).spec.name() == "b");
-    REQUIRE(plan.at(1).core_paragraph().has_value());
+    REQUIRE(plan.at(1).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with bystander", "[plan]")
@@ -1452,7 +1452,7 @@ TEST_CASE ("basic export scheme with bystander", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with missing", "[plan]")
@@ -1466,7 +1466,7 @@ TEST_CASE ("basic export scheme with missing", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(!plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() == nullptr);
 }
 
 TEST_CASE ("basic export scheme with features", "[plan]")
@@ -1485,8 +1485,8 @@ TEST_CASE ("basic export scheme with features", "[plan]")
     REQUIRE(plan.size() == 2);
 
     REQUIRE(plan.at(0).spec.name() == "b");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 
     REQUIRE(plan.at(1).spec.name() == "a");
-    REQUIRE(plan.at(1).core_paragraph().has_value());
+    REQUIRE(plan.at(1).core_paragraph() != nullptr);
 }
