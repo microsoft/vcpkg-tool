@@ -35,8 +35,9 @@ namespace vcpkg::CMakeVars
         {
             load_dep_info_vars({&spec, 1}, host_triplet);
             vars = get_dep_info_vars(spec);
+            Checks::check_exit(VCPKG_LINE_INFO, vars != nullptr);
         }
-        Checks::check_exit(VCPKG_LINE_INFO, vars != nullptr);
+
         return *vars;
     }
 

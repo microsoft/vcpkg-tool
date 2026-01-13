@@ -1784,10 +1784,12 @@ namespace vcpkg
     {
         auto it = Util::find_if(feature_paragraphs,
                                 [&](const std::unique_ptr<FeatureParagraph>& p) { return p->name == featurename; });
-        if (it != feature_paragraphs.end())
-            return it->get();
-        else
+        if (it == feature_paragraphs.end())
+        {
             return nullptr;
+        }
+
+        return it->get();
     }
 
     bool SourceControlFile::has_qualified_dependencies() const
@@ -1809,14 +1811,17 @@ namespace vcpkg
     const std::vector<Dependency>* SourceControlFile::find_dependencies_for_feature(
         const std::string& featurename) const
     {
-        if (featurename == "core")
+        if (featurename == FeatureNameCore)
         {
             return &core_paragraph->dependencies;
         }
-        else if (auto p_feature = find_feature(featurename))
+
+        if (auto p_feature = find_feature(featurename))
+        {
             return &p_feature->dependencies;
-        else
-            return nullptr;
+        }
+
+        return nullptr;
     }
 
     std::vector<FullPackageSpec> filter_dependencies(const std::vector<vcpkg::Dependency>& deps,
