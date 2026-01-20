@@ -1419,20 +1419,8 @@ namespace vcpkg
                 port_dir_cache_entry.files = std::move(rel_port_files);
             }
             const auto& rel_port_files = port_dir_cache_entry.files;
-            // Technically the pre_build_info is not part of the port_dir cache key, but a given port_dir is only going
-            // to be associated with 1 port
-            for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
-            {
-                const auto& file = abi_info.pre_build_info->hash_additional_files[i];
-                if (file.is_relative() || !fs.is_regular_file(file))
-                {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
-                }
-                abi_tag_entries.emplace_back(
-                    fmt::format("additional_file_{}", i),
-                    Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO));
-            }
+            // Note: hash_additional_files are triplet-specific, not port-specific,
+            // so they are processed outside this cache lambda (see lines 1474-1488)
 
             for (const Path& rel_port_file : rel_port_files)
             {
