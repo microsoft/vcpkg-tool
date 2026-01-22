@@ -1,8 +1,11 @@
 # This was written by GPT-5.1-Codex-Max to generate the table in vcpkg release notes.
 
+[CmdletBinding(DefaultParameterSetName = 'Path')]
 param(
-    [Parameter(Position = 0)]
+    [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Path')]
     [string]$Path,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'BuildUri')]
     [string]$BuildUri
 )
 
@@ -17,14 +20,6 @@ function Normalize-TripletName {
 $cleanupPath = $null
 $downloadPath = $null
 try {
-    if (-not $Path -and -not $BuildUri) {
-        throw "Specify either -Path or -BuildUri."
-    }
-
-    if ($Path -and $BuildUri) {
-        throw "Specify only one of -Path or -BuildUri."
-    }
-
     if ($BuildUri) {
         if ($BuildUri -match 'buildId=([0-9]+)') {
             $buildId = $matches[1]
@@ -40,10 +35,10 @@ try {
             $downloadUri = $BuildUri
         }
         else {
-            $downloadUri = "https://dev.azure.com/vcpkg/c1ee48cb-0df2-4ab3-8384-b1df5a79fe53/_apis/build/builds/{0}/logs?$format=zip" -f $buildId
+            $downloadUri = "https://dev.azure.com/vcpkg/c1ee48cb-0df2-4ab3-8384-b1df5a79fe53/_apis/build/builds/$buildId/logs?format=zip"
         }
 
-        $downloadPath = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath ("build_logs_{0}_{1}.zip" -f $buildId, [guid]::NewGuid())
+        $downloadPath = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath ("build_logs_${buildId}_{0}.zip" -f [guid]::NewGuid())
         Invoke-WebRequest -Uri $downloadUri -OutFile $downloadPath -Headers @{ Accept = 'application/zip' }
 
         $sig = Get-Content -LiteralPath $downloadPath -AsByteStream -TotalCount 2
@@ -136,7 +131,7 @@ try {
     Write-Output '|---|---|'
     foreach ($result in $orderedResults) {
         $tripletLabel = if ($boldTriplets -contains $result.Triplet) { "**$($result.Triplet)**" } else { $result.Triplet }
-        Write-Output ("|{0}|{1}|" -f $tripletLabel, $result.Succeeded)
+        Write-Output "|$tripletLabel|$($result.Succeeded)|"
     }
 }
 finally {
