@@ -99,26 +99,6 @@ namespace vcpkg
                                const SanitizedUrl& sanitized_url,
                                const Path& file);
 
-    Optional<unsigned long long> try_parse_curl_max5_size(StringView sv);
-
-    struct CurlProgressData
-    {
-        unsigned int total_percent;
-        unsigned long long total_size;
-        unsigned int received_percent;
-        unsigned long long received_size;
-        unsigned int transfer_percent;
-        unsigned long long transfer_size;
-        unsigned long long average_download_speed; // bytes per second
-        unsigned long long average_upload_speed;   // bytes per second
-        // ElapsedTime total_time;
-        // ElapsedTime time_spent;
-        // ElapsedTime time_left;
-        unsigned long long current_speed;
-    };
-
-    Optional<CurlProgressData> try_parse_curl_progress_data(StringView curl_progress_line);
-
     // Replaces spaces with %20 for purposes of including in a URL.
     // This is typically used to filter a command line passed to `x-download` or similar which
     // might contain spaces that we, in turn, pass to curl.
