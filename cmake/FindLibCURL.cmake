@@ -1,4 +1,4 @@
-if (WIN32)
+if (WIN32 OR APPLE)
     option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
 else()
     option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
