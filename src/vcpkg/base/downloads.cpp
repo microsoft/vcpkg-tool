@@ -44,25 +44,6 @@ namespace vcpkg
         replace_secrets(m_sanitized_url, secrets);
     }
 
-    Optional<SplitUrlView> parse_split_url_view(StringView raw_url)
-    {
-        auto sep = std::find(raw_url.begin(), raw_url.end(), ':');
-        if (sep == raw_url.end())
-        {
-            return nullopt;
-        }
-
-        StringView scheme(raw_url.begin(), sep);
-        if (Strings::starts_with({sep + 1, raw_url.end()}, "//"))
-        {
-            auto path_start = std::find(sep + 3, raw_url.end(), '/');
-            return SplitUrlView{scheme, StringView{sep + 1, path_start}, StringView{path_start, raw_url.end()}};
-        }
-
-        // no authority
-        return SplitUrlView{scheme, {}, StringView{sep + 1, raw_url.end()}};
-    }
-
     static bool check_downloaded_file_hash(DiagnosticContext& context,
                                            const ReadOnlyFilesystem& fs,
                                            const SanitizedUrl& sanitized_url,
@@ -438,16 +419,6 @@ namespace vcpkg
         }
 
         return true;
-    }
-
-    std::string format_url_query(StringView base_url, View<std::string> query_params)
-    {
-        if (query_params.empty())
-        {
-            return base_url.to_string();
-        }
-
-        return fmt::format(FMT_COMPILE("{}?{}"), base_url, fmt::join(query_params, "&"));
     }
 
     enum class DownloadPrognosis

@@ -25,16 +25,6 @@ namespace vcpkg
         std::string m_sanitized_url;
     };
 
-    struct SplitUrlView
-    {
-        StringView scheme;
-        Optional<StringView> authority;
-        StringView path_query_fragment;
-    };
-
-    // e.g. {"https","//example.org", "/index.html"}
-    Optional<SplitUrlView> parse_split_url_view(StringView raw_url);
-
     View<std::string> azure_blob_headers();
 
     std::vector<int> download_files_no_cache(DiagnosticContext& context,
@@ -46,8 +36,6 @@ namespace vcpkg
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
-
-    std::string format_url_query(StringView base_url, View<std::string> query_params);
 
     std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers);
 
