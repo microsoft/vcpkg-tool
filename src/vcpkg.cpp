@@ -66,7 +66,18 @@ namespace
 #if defined(TEST_LIBCURL_AVAILABLE)
         // calling dlclose() on the handle after calling curl_version() causes asan to
         // report a false leak, so we intentionally don't unload the library
-        if (auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL))
+        auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL);
+        if (!handle)
+        {
+            // Ubuntu 16.04 has this if the user only installs `curl`
+            handle = dlopen("libcurl-gnutls.so.4", RTLD_NOW | RTLD_LOCAL);
+        }
+        if (!handle)
+        {
+            // It's possible that someone explicitly installs this one
+            handle = dlopen("libcurl-nss.so.4", RTLD_NOW | RTLD_LOCAL);
+        }
+        if (handle)
         {
             auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
             if (!dlerror() && curl_version_fn)
