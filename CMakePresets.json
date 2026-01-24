@@ -18,7 +18,8 @@
             "installDir": "out/install/${presetName}",
             "cacheVariables": {
                 "VCPKG_BUILD_BENCHMARKING": true,
-                "VCPKG_BUILD_FUZZING": true
+                "VCPKG_BUILD_FUZZING": true,
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true
             }
         },
         {
