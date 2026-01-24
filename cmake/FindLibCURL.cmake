@@ -1,93 +1,49 @@
 if (WIN32 OR APPLE)
-    option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" OFF)
+    set(VCPKG_LIBCURL "SYSTEM" CACHE STRING "Select libcurl provider (SYSTEM|DLSYM)")
 else()
-    option(VCPKG_DEPENDENCY_EXTERNAL_LIBCURL "Use an external version of the libcurl library" ON)
+    set(VCPKG_LIBCURL "DLSYM" CACHE STRING "Select libcurl provider (SYSTEM|DLSYM)")
 endif()
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if (VCPKG_DEPENDENCY_EXTERNAL_LIBCURL)
+if (VCPKG_LIBCURL STREQUAL "SYSTEM")
     find_package(CURL REQUIRED)
     return()
+elseif (NOT VCPKG_LIBCURL STREQUAL "DLSYM")
+    message(FATAL_ERROR "Unsupported VCPKG_LIBCURL value '${VCPKG_LIBCURL}'. Expected SYSTEM or DLSYM.")
 endif()
 
 # This option exists to allow the URI to be replaced with a Microsoft-internal URI in official
 # builds which have restricted internet access; see azure-pipelines/signing.yml
 # Note that the SHA512 is the same, so vcpkg-tool contributors need not be concerned that we built
 # with different content.
+#
+# We're using curl-7_23_0 headers here because that's what comes with RHEL 7 and curl has not broken
+# ABI in a very long time, so that should still be acceptable on modern *nix
 if(NOT VCPKG_LIBCURL_URL)
-    set(VCPKG_LIBCURL_URL "https://github.com/curl/curl/releases/download/curl-8_17_0/curl-8.17.0.tar.gz")
+    set(VCPKG_LIBCURL_URL "https://github.com/curl/curl/archive/refs/tags/curl-7_23_0.tar.gz")
 endif()
 
 include(FetchContent)
 FetchContent_Declare(
-    LibCURL
+    LibCURLHeaders
     URL "${VCPKG_LIBCURL_URL}"
-    URL_HASH "SHA512=88ab4b7aac12b26a6ad32fb0e1a9675288a45894438cb031102ef5d4ab6b33c2bc99cae0c70b71bdfa12eb49762827e2490555114c5eb4a6876b95e1f2a4eb74"
+    URL_HASH "SHA512=d927d76c43b9803d260b2a400e3b5ac6bbd9517d00a2083dc55da066a7f7393ded22ccda3778ff4faa812461b779f92e4d0775d8985ceaddc28e349598fe8362"
 )
-
-if(NOT LibCURL_FIND_REQUIRED)
-    message(FATAL_ERROR "LibCURL must be REQUIRED")
+FetchContent_GetProperties(LibCURLHeaders)
+# This dance is done rather than `FetchContent_MakeAvailable` because we only want to download
+# curl's headers for use with dlopen/dlsym rather than building curl.
+if(NOT LibCURLHeaders_POPULATED)
+    FetchContent_Populate(LibCURLHeaders)
 endif()
-
-# This is in function() so no need to backup the variables
-function(get_libcurl)
-    set(BUILD_CURL_EXE OFF)
-    set(BUILD_EXAMPLES OFF)
-    set(BUILD_LIBCURL_DOCS  OFF)
-    set(BUILD_MISC_DOCS OFF)
-    set(BUILD_SHARED_LIBS OFF)
-    set(BUILD_TESTING OFF)
-    set(CURL_ENABLE_EXPORT_TARGET OFF)
-    set(CURL_USE_LIBSSH2 OFF)
-    set(CURL_USE_LIBPSL OFF)
-    if (WIN32)
-        set(CURL_USE_SCHANNEL ON)
-    endif()
-    set(ENABLE_CURL_MANUAL OFF)
-    set(ENABLE_UNICODE ON)
-    set(PICKY_COMPILER OFF)
-    set(USE_NGHTTP2 OFF)
-    set(USE_LIBIDN2 OFF)
-    set(CMAKE_DISABLE_FIND_PACKAGE_Perl ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_LibPSL ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_LibSSH2 ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_Brotli ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_Zstd ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_NGHTTP2 ON)
-    set(CMAKE_DISABLE_FIND_PACKAGE_Libidn2 ON)
-    if(MSVC)
-        string(APPEND CMAKE_C_FLAGS " /wd6101")
-        string(APPEND CMAKE_C_FLAGS " /wd6011")
-        string(APPEND CMAKE_C_FLAGS " /wd6054")
-        string(APPEND CMAKE_C_FLAGS " /wd6287")
-        string(APPEND CMAKE_C_FLAGS " /wd6323")
-        string(APPEND CMAKE_C_FLAGS " /wd6385")
-        string(APPEND CMAKE_C_FLAGS " /wd6387")
-        string(APPEND CMAKE_C_FLAGS " /wd28182")
-        string(APPEND CMAKE_C_FLAGS " /wd28251")
-        string(APPEND CMAKE_C_FLAGS " /wd28301")
-    else()
-        string(APPEND CMAKE_C_FLAGS " -Wno-error")
-    endif()
-    FetchContent_MakeAvailable(LibCURL)
-endfunction()
-
-get_libcurl()
 
 if(NOT TARGET CURL::libcurl)
-    if(TARGET libcurl_static)
-        add_library(CURL::libcurl ALIAS libcurl_static)
-        target_compile_definitions(libcurl_static INTERFACE CURL_STATICLIB)
-    elseif(TARGET libcurl)
-        add_library(CURL::libcurl ALIAS libcurl)
-        if(NOT BUILD_SHARED_LIBS)
-            target_compile_definitions(libcurl INTERFACE CURL_STATICLIB)
-        endif()
-    else()
-        message(FATAL_ERROR "After FetchContent_MakeAvailable(LibCURL) no suitable curl target (libcurl or libcurl_static) was found.")
-    endif()
+    add_library(CURL::libcurl INTERFACE IMPORTED)
 endif()
+
+set_target_properties(CURL::libcurl PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${LibCURLHeaders_SOURCE_DIR}/include"
+    INTERFACE_COMPILE_DEFINITIONS "VCPKG_LIBCURL_DLSYM=1"
+)

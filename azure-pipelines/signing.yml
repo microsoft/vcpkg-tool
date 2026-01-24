@@ -19,6 +19,10 @@ resources:
     type: git
     name: 1ESPipelineTemplates/MicroBuildTemplate
     ref: refs/tags/release
+  - repository: vcpkg
+    type: git
+    name: microsoft/vcpkg
+    ref: 544a4c5c297e60e4ac4a5a1810df66748d908869
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:

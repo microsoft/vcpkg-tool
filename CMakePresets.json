@@ -16,6 +16,7 @@
             "generator": "Ninja",
             "binaryDir": "out/build/${presetName}",
             "installDir": "out/install/${presetName}",
+            "toolchainFile": "D:/vcpkg/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "VCPKG_BUILD_BENCHMARKING": true,
                 "VCPKG_BUILD_FUZZING": true,
@@ -64,6 +65,9 @@
             "architecture": {
                 "value": "x64",
                 "strategy": "external"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static"
             }
         },
         {

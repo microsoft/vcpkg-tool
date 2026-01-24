@@ -1,0 +1,15 @@
+{
+  "dependencies": [
+    {
+      "name": "curl",
+      "default-features": false,
+      "features": [
+        "brotli",
+        "http2",
+        "ssl",
+        "zstd"
+      ],
+      "platform": "windows"
+    }
+  ]
+}
