@@ -20,30 +20,31 @@ endif()
 # Note that the SHA512 is the same, so vcpkg-tool contributors need not be concerned that we built
 # with different content.
 #
-# We're using curl-7_23_0 headers here because that's what comes with RHEL 7 and curl has not broken
-# ABI in a very long time, so that should still be acceptable on modern *nix
+# We're using curl-7_29_0 headers here because that's what comes with RHEL 7 (and inherited by
+# similarly ancient Oracle Linux 7)
 if(NOT VCPKG_LIBCURL_URL)
-    set(VCPKG_LIBCURL_URL "https://github.com/curl/curl/archive/refs/tags/curl-7_23_0.tar.gz")
-endif()
-
-include(FetchContent)
-FetchContent_Declare(
-    LibCURLHeaders
-    URL "${VCPKG_LIBCURL_URL}"
-    URL_HASH "SHA512=d927d76c43b9803d260b2a400e3b5ac6bbd9517d00a2083dc55da066a7f7393ded22ccda3778ff4faa812461b779f92e4d0775d8985ceaddc28e349598fe8362"
-)
-FetchContent_GetProperties(LibCURLHeaders)
-# This dance is done rather than `FetchContent_MakeAvailable` because we only want to download
-# curl's headers for use with dlopen/dlsym rather than building curl.
-if(NOT LibCURLHeaders_POPULATED)
-    FetchContent_Populate(LibCURLHeaders)
+    set(VCPKG_LIBCURL_URL "https://curl.se/download/archeology/curl-7.29.0.tar.gz")
 endif()
 
 if(NOT TARGET CURL::libcurl)
-    add_library(CURL::libcurl INTERFACE IMPORTED)
-endif()
+include(FetchContent)
+    FetchContent_Declare(
+        LibCURLHeaders
+        URL "${VCPKG_LIBCURL_URL}"
+        URL_HASH "SHA512=08bafd09fa6d14362a426932fed8528c13133895477d8134c829e085637956d66d6be5a791057c1c04da04af6baa6496a6d59e00abf9ca6be5d29e798718b9bc"
+    )
 
-set_target_properties(CURL::libcurl PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${LibCURLHeaders_SOURCE_DIR}/include"
-    INTERFACE_COMPILE_DEFINITIONS "VCPKG_LIBCURL_DLSYM=1"
-)
+    FetchContent_GetProperties(LibCURLHeaders)
+    # This dance is done rather than `FetchContent_MakeAvailable` because we only want to download
+    # curl's headers for use with dlopen/dlsym rather than building curl.
+    if(NOT LibCURLHeaders_POPULATED)
+        FetchContent_Populate(LibCURLHeaders)
+    endif()
+
+    add_library(CURL::libcurl INTERFACE IMPORTED)
+
+    set_target_properties(CURL::libcurl PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${libcurlheaders_SOURCE_DIR}/include"
+        INTERFACE_COMPILE_DEFINITIONS "VCPKG_LIBCURL_DLSYM=1"
+    )
+endif()

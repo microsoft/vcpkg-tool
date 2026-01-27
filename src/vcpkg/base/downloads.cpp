@@ -32,7 +32,9 @@ namespace
                          2L); // Follow redirects, change request method based on HTTP response code.
                               // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
-        curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // don't send headers to proxy CONNECT
+
+        // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
+        curl_easy_setopt(curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
     }
 }
 
@@ -118,19 +120,21 @@ namespace vcpkg
         return static_cast<WriteFilePointer*>(param)->write(contents, size, nmemb);
     }
 
-    static size_t progress_callback(
-        void* clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
-    {
-        (void)ultotal;
+    static int progress_callback(void *clientp,
+                      double dltotal,
+                      double dlnow,
+                      double ultotal,
+                      double ulnow) {
+                                (void)ultotal;
         (void)ulnow;
         auto machine_readable_progress = static_cast<MessageSink*>(clientp);
         if (dltotal && machine_readable_progress)
         {
-            double percentage = static_cast<double>(dlnow) / static_cast<double>(dltotal) * 100.0;
+            double percentage = dlnow / dltotal * 100.0;
             machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percentage)));
         }
         return 0;
-    }
+                      }
 
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
                                                    View<std::string> urls,
@@ -184,7 +188,7 @@ namespace vcpkg
         }
 
         int still_running = 0;
-        do
+        for (;;)
         {
             CURLMcode mc = curl_multi_perform(multi_handle.get(), &still_running);
             if (mc != CURLM_OK)
@@ -195,7 +199,12 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            // we use curl_multi_wait rather than curl_multi_poll for wider compatibility
+            if (still_running == 0)
+            {
+                break;
+            }
+
+            // FIXME use curl_multi_poll if available
             mc = curl_multi_wait(multi_handle.get(), nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
@@ -204,7 +213,7 @@ namespace vcpkg
                                    .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
-        } while (still_running);
+        }
 
         // drain all messages
         int messages_in_queue = 0;
@@ -484,8 +493,10 @@ namespace vcpkg
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
         curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
-        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, &progress_callback);
-        curl_easy_setopt(curl, CURLOPT_XFERINFODATA, static_cast<void*>(&machine_readable_progress));
+        // curlopt_progressfucntion is deprecated, but we want the values as doubles anyway and
+        // the replacement isn't available on all versions of libcurl we support
+        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, static_cast<curl_progress_callback>(&progress_callback));
+        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, static_cast<void*>(&machine_readable_progress));
         auto curl_code = curl_easy_perform(curl);
 
         if (curl_code == CURLE_OPERATION_TIMEDOUT)

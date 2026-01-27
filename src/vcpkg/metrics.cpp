@@ -28,6 +28,17 @@
 #pragma comment(lib, "winhttp")
 #endif
 
+// Polyfill this value from newer versions of libcurl
+#ifndef CURL_SSLVERSION_TLSv1_0
+#define CURL_SSLVERSION_TLSv1_0 4L
+#endif
+#ifndef CURL_SSLVERSION_TLSv1_1
+#define CURL_SSLVERSION_TLSv1_1 5L
+#endif
+#ifndef CURL_SSLVERSION_TLSv1_2
+#define CURL_SSLVERSION_TLSv1_2 6L
+#endif
+
 namespace
 {
     using namespace vcpkg;
@@ -585,7 +596,12 @@ namespace vcpkg
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        if (curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK) {
+            if (curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK) {
+                curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_0);
+            }
+        }
+
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
         curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
 
