@@ -6,8 +6,9 @@
             "hidden": true,
             "cacheVariables": {
                 "VCPKG_OFFICIAL_BUILD": true,
-                "VCPKG_BASE_VERSION": "2023-09-15",
-                "VCPKG_STANDALONE_BUNDLE_SHA": "8b28c1829802a133941805c68004427052588ba6eefbdf9fb6061151a92c131491df7e29470309e804450c075d2f0673515d5d8c19997148ebcb2874493d304d"
+                "VCPKG_BASE_VERSION": "2025-12-16",
+                "VCPKG_STANDALONE_BUNDLE_SHA": "23c77d1dd70bf861328a8e35203aed2db0deb9a83aa924cadaf96ffaae42e8629363184b99168e33158b819d695c748bd7cb9eb39528bd374f8b7e2ab6d4f6de",
+                "VCPKG_ARTIFACTS_SHA": "def65b1f4a710c0b521603a275ff6bae31ad8c5b938cd4445fb69c4d0da97c21d753c274c9b9b1cc2f8a86ba694759d4f3f4f325f88be02a5d8ad10c8f56e5df"
             }
         },
         {

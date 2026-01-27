@@ -19,10 +19,6 @@ resources:
     type: git
     name: 1ESPipelineTemplates/MicroBuildTemplate
     ref: refs/tags/release
-  - repository: vcpkg
-    type: git
-    name: microsoft/vcpkg
-    ref: 544a4c5c297e60e4ac4a5a1810df66748d908869
 extends:
   template: azure-pipelines/MicroBuild.1ES.Official.yml@MicroBuildTemplate
   parameters:
@@ -368,6 +364,15 @@ extends:
             packagesToPush: '$(Build.ArtifactStagingDirectory)/vs-insertion/drop/VS.Redist.Vcpkg.amd64.1.0.0-$(VCPKG_FULL_VERSION).nupkg'
             publishVstsFeed: '97a41293-2972-4f48-8c0e-05493ae82010'
         steps:
+        - task: NuGetToolInstaller@1
+          inputs:
+            versionSpec: 5.7
+        - task: NuGetCommand@2
+          displayName: 'Extract Microsoft.Build.Vcpkg'
+          inputs:
+            command: custom
+            feedsToUse: config
+            arguments: 'install Microsoft.Build.Vcpkg -Version 2026.1.26.329-f14401ca0f -OutputDirectory "$(Build.BinariesDirectory)" -ConfigFile "$(Build.SourcesDirectory)\azure-pipelines\signing-nuget.config" -ExcludeVersion -NonInteractive'
         - task: CmdLine@2
           displayName: "Build vcpkg amd64 with CMake"
           inputs:
@@ -375,7 +380,8 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
+              set X_VCPKG_ASSET_SOURCES=x-script,$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\trt\TerrapinRetrievalTool.exe -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u Environment -p {url} -s {sha512} -d {dst};x-block-origin
+              cmake.exe -G Ninja -DCMAKE_TOOLCHAIN_FILE="$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\tools\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\amd64"
         - task: CmdLine@2
           displayName: "Build vcpkg arm64 with CMake"
@@ -384,11 +390,9 @@ extends:
             script: |
               call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
               cmake.exe --version
-              cmake.exe -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
+              set X_VCPKG_ASSET_SOURCES=x-script,$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\trt\TerrapinRetrievalTool.exe -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u Environment -p {url} -s {sha512} -d {dst};x-block-origin
+              cmake.exe -G Ninja -DCMAKE_TOOLCHAIN_FILE="$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\tools\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=arm64-windows-static-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
               ninja.exe -C "$(Build.BinariesDirectory)\arm64"
-        - task: NuGetToolInstaller@1
-          inputs:
-            versionSpec: 5.7
         - task: NuGetCommand@2
           displayName: 'NuGet Restore MicroBuild Signing Extension'
           inputs:
