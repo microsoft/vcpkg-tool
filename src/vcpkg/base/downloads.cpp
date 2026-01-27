@@ -25,16 +25,16 @@ namespace
     void set_common_curl_easy_options(CurlEasyHandle& easy_handle, StringView url, const CurlHeaders& request_headers)
     {
         auto* curl = easy_handle.get();
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(url).c_str());
-        curl_easy_setopt(curl,
+        vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(url).c_str());
+        vcpkg_curl_easy_setopt(curl,
                          CURLOPT_FOLLOWLOCATION,
                          2L); // Follow redirects, change request method based on HTTP response code.
                               // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
 
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
-        curl_easy_setopt(curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
+        vcpkg_curl_easy_setopt(curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
     }
 }
 
@@ -166,7 +166,7 @@ namespace vcpkg
             set_common_curl_easy_options(easy_handle, url, request_headers);
             if (outputs.empty())
             {
-                curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
+                vcpkg_curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
             }
             else
             {
@@ -179,10 +179,10 @@ namespace vcpkg
                     Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
-                curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
+                vcpkg_curl_easy_setopt(curl, CURLOPT_PRIVATE, static_cast<void*>(&request_write_pointer));
                 // note explicit cast to void* necessary to go through ...
-                curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
-                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+                vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
+                vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
                 multi_handle.add_easy_handle(easy_handle);
             }
         }
@@ -190,12 +190,12 @@ namespace vcpkg
         int still_running = 0;
         for (;;)
         {
-            CURLMcode mc = curl_multi_perform(multi_handle.get(), &still_running);
+            CURLMcode mc = vcpkg_curl_multi_perform(multi_handle.get(), &still_running);
             if (mc != CURLM_OK)
             {
                 Debug::println("curl_multi_perform failed:");
                 Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
-                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
+                                   .append_raw(fmt::format(" ({}).", vcpkg_curl_multi_strerror(mc))));
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
@@ -204,20 +204,19 @@ namespace vcpkg
                 break;
             }
 
-            // FIXME use curl_multi_poll if available
-            mc = curl_multi_wait(multi_handle.get(), nullptr, 0, 1000, nullptr);
+            mc = vcpkg_curl_multi_poll(multi_handle.get(), nullptr, 0, 1000, nullptr);
             if (mc != CURLM_OK)
             {
-                Debug::println("curl_multi_wait failed:");
+                Debug::println("curl_multi_wait/poll failed:");
                 Debug::println(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(mc))
-                                   .append_raw(fmt::format(" ({}).", curl_multi_strerror(mc))));
+                                   .append_raw(fmt::format(" ({}).", vcpkg_curl_multi_strerror(mc))));
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
 
         // drain all messages
         int messages_in_queue = 0;
-        while (auto* msg = curl_multi_info_read(multi_handle.get(), &messages_in_queue))
+        while (auto* msg = vcpkg_curl_multi_info_read(multi_handle.get(), &messages_in_queue))
         {
             if (msg->msg == CURLMSG_DONE)
             {
@@ -226,7 +225,7 @@ namespace vcpkg
                 {
                     size_t idx;
                     void* curlinfo_private;
-                    curl_easy_getinfo(handle, CURLINFO_PRIVATE, &curlinfo_private);
+                    vcpkg_curl_easy_getinfo(handle, CURLINFO_PRIVATE, &curlinfo_private);
                     if (outputs.empty())
                     {
                         idx = reinterpret_cast<uintptr_t>(curlinfo_private);
@@ -242,14 +241,14 @@ namespace vcpkg
                     }
 
                     long response_code;
-                    curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
+                    vcpkg_curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
                     return_codes[idx] = static_cast<int>(response_code);
                 }
                 else
                 {
                     context.report_error(
                         msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(msg->data.result))
-                            .append_raw(fmt::format(" ({}).", curl_easy_strerror(msg->data.result))));
+                            .append_raw(fmt::format(" ({}).", vcpkg_curl_easy_strerror(msg->data.result))));
                 }
             }
         }
@@ -315,19 +314,19 @@ namespace vcpkg
 
         CurlHeaders request_headers(headers);
         set_common_curl_easy_options(handle, uri, request_headers);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POST, 1L);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
 
-        CURLcode result = curl_easy_perform(curl);
+        CURLcode result = vcpkg_curl_easy_perform(curl);
         long response_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        vcpkg_curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
         if (result != CURLE_OK)
         {
             context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
+                                     .append_raw(fmt::format(" ({}).", vcpkg_curl_easy_strerror(result))));
             return false;
         }
 
@@ -365,24 +364,24 @@ namespace vcpkg
 
         auto request_headers = raw_url.starts_with("ftp://") ? CurlHeaders() : CurlHeaders(headers);
         auto upload_url = url_encode_spaces(raw_url);
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
-        curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
-        curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl, CURLOPT_READDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
-        curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_URL, upload_url.c_str());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_READDATA, static_cast<void*>(&fileptr));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
 
-        auto result = curl_easy_perform(curl);
+        auto result = vcpkg_curl_easy_perform(curl);
         if (result != CURLE_OK)
         {
             context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(result))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(result))));
+                                     .append_raw(fmt::format(" ({}).", vcpkg_curl_easy_strerror(result))));
             return false;
         }
 
         long response_code = 0;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        vcpkg_curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
 
         if ((response_code >= 100 && response_code < 200) || response_code >= 300)
         {
@@ -490,14 +489,14 @@ namespace vcpkg
         CurlEasyHandle handle;
         CURL* curl = handle.get();
         set_common_curl_easy_options(handle, raw_url, request_headers);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
-        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
         // curlopt_progressfucntion is deprecated, but we want the values as doubles anyway and
         // the replacement isn't available on all versions of libcurl we support
-        curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, static_cast<curl_progress_callback>(&progress_callback));
-        curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, static_cast<void*>(&machine_readable_progress));
-        auto curl_code = curl_easy_perform(curl);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, static_cast<curl_progress_callback>(&progress_callback));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, static_cast<void*>(&machine_readable_progress));
+        auto curl_code = vcpkg_curl_easy_perform(curl);
 
         if (curl_code == CURLE_OPERATION_TIMEDOUT)
         {
@@ -508,16 +507,16 @@ namespace vcpkg
         if (curl_code != CURLE_OK)
         {
             context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(curl_code))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(curl_code))));
+                                     .append_raw(fmt::format(" ({}).", vcpkg_curl_easy_strerror(curl_code))));
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 
         long response_code = -1;
-        auto get_info_code = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        auto get_info_code = vcpkg_curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
         if (get_info_code != CURLE_OK)
         {
             context.report_error(msg::format(msgCurlFailedGeneric, msg::exit_code = static_cast<int>(get_info_code))
-                                     .append_raw(fmt::format(" ({}).", curl_easy_strerror(get_info_code))));
+                                     .append_raw(fmt::format(" ({}).", vcpkg_curl_easy_strerror(get_info_code))));
             return DownloadPrognosis::NetworkErrorProxyMightHelp;
         }
 

@@ -591,30 +591,30 @@ namespace vcpkg
         };
         CurlHeaders request_headers(headers);
 
-        curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-        if (curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK) {
-            if (curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK) {
-                curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_0);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+        if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK) {
+            if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK) {
+                vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_0);
             }
         }
 
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
-        curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
+        vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
 
         std::string buff;
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &string_append_cb);
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &string_append_cb);
 
         long response_code = 0;
-        CURLcode res = curl_easy_perform(curl);
+        CURLcode res = vcpkg_curl_easy_perform(curl);
         bool is_success = false;
         if (res == CURLE_OK)
         {
-            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+            vcpkg_curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
             Debug::println(fmt::format("Metrics upload response code: {}", response_code));
             Debug::println("Metrics upload response body: ", buff);
             if (response_code == 200)
@@ -624,7 +624,7 @@ namespace vcpkg
         }
         else
         {
-            Debug::println("Metrics upload failed: ", curl_easy_strerror(res));
+            Debug::println("Metrics upload failed: ", vcpkg_curl_easy_strerror(res));
         }
         return is_success;
     }

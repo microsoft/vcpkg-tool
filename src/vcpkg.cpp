@@ -32,11 +32,6 @@
 #pragma comment(lib, "shell32")
 #endif
 
-#if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
-#define TEST_LIBCURL_AVAILABLE
-#include <dlfcn.h>
-#endif
-
 using namespace vcpkg;
 
 namespace
@@ -56,37 +51,6 @@ namespace
                 .append_raw('\n'));
         msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
         Checks::exit_fail(VCPKG_LINE_INFO);
-    }
-
-    Optional<std::string> detect_libcurl()
-    {
-        // Determine if libcurl.so.4 is installed in the system by attempting to load it
-        // At the moment we don't do anything with it, but we're tracking availability
-        // of libcurl to replace the current download/upload implementation
-#if defined(TEST_LIBCURL_AVAILABLE)
-        // calling dlclose() on the handle after calling curl_version() causes asan to
-        // report a false leak, so we intentionally don't unload the library
-        auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL);
-        if (!handle)
-        {
-            // Ubuntu 16.04 has this if the user only installs `curl`
-            handle = dlopen("libcurl-gnutls.so.4", RTLD_NOW | RTLD_LOCAL);
-        }
-        if (!handle)
-        {
-            // It's possible that someone explicitly installs this one
-            handle = dlopen("libcurl-nss.so.4", RTLD_NOW | RTLD_LOCAL);
-        }
-        if (handle)
-        {
-            auto curl_version_fn = reinterpret_cast<const char* (*)()>(dlsym(handle, "curl_version"));
-            if (!dlerror() && curl_version_fn)
-            {
-                return {curl_version_fn()};
-            }
-        }
-#endif
-        return nullopt;
     }
 
     bool detect_container(const Filesystem& fs)
@@ -147,12 +111,19 @@ namespace
 
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
+        vcpkg_curl_global_init(CURL_GLOBAL_DEFAULT);
+
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
 
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+
+        const auto* detected_curl_version = vcpkg_curl_version();
+        if (!detected_curl_version) {
+            detected_curl_version = "unknown";
+        }
         get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
-                                                    detect_libcurl().value_or("unknown"));
+                                                    detected_curl_version);
 
         if (args.get_command().empty())
         {
