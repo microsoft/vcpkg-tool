@@ -1,8 +1,10 @@
 if (WIN32 OR APPLE)
-    set(VCPKG_LIBCURL "SYSTEM" CACHE STRING "Select libcurl provider (SYSTEM|DLSYM)")
+    set(VCPKG_LIBCURL_DEFAULT "SYSTEM")
 else()
-    set(VCPKG_LIBCURL "DLSYM" CACHE STRING "Select libcurl provider (SYSTEM|DLSYM)")
+    set(VCPKG_LIBCURL_DEFAULT "DLSYM")
 endif()
+
+option(VCPKG_LIBCURL "Select libcurl provider (SYSTEM|DLSYM)" "${VCPKG_LIBCURL_DEFAULT}")
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
