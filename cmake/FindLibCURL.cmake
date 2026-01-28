@@ -1,20 +1,18 @@
 if (WIN32 OR APPLE)
-    set(VCPKG_LIBCURL_DEFAULT "SYSTEM")
+    set(VCPKG_LIBCURL_DEFAULT "OFF")
 else()
-    set(VCPKG_LIBCURL_DEFAULT "DLSYM")
+    set(VCPKG_LIBCURL_DEFAULT "ON")
 endif()
 
-option(VCPKG_LIBCURL "Select libcurl provider (SYSTEM|DLSYM)" "${VCPKG_LIBCURL_DEFAULT}")
+option(VCPKG_LIBCURL_DLSYM "Select libcurl provider (SYSTEM|DLSYM)" "${VCPKG_LIBCURL_DEFAULT}")
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
 
-if (VCPKG_LIBCURL STREQUAL "SYSTEM")
+if (NOT VCPKG_LIBCURL_DLSYM)
     find_package(CURL REQUIRED)
     return()
-elseif (NOT VCPKG_LIBCURL STREQUAL "DLSYM")
-    message(FATAL_ERROR "Unsupported VCPKG_LIBCURL value '${VCPKG_LIBCURL}'. Expected SYSTEM or DLSYM.")
 endif()
 
 # This option exists to allow the URI to be replaced with a Microsoft-internal URI in official
