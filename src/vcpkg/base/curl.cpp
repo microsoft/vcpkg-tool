@@ -27,63 +27,68 @@ decltype(&curl_slist_free_all) vcpkg_curl_slist_free_all;
 decltype(&curl_version) vcpkg_curl_version;
 
 template<typename FnT>
-static void load_symbol(FnT (&target), void* handle, const char* symbol_name) {
+static void load_symbol(FnT(&target), void* handle, const char* symbol_name)
+{
     target = reinterpret_cast<FnT>(dlsym(handle, symbol_name));
-    if (!target) {
+    if (!target)
+    {
         vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
     }
 }
 
-    void vcpkg_curl_global_init(long flags) {
-                // calling dlclose() on the handle after calling curl_version() causes asan to
-        // report a false leak, so we intentionally don't unload the library
-        auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL);
-        if (!handle)
-        {
-            // Ubuntu 16.04 has this if the user only installs `curl`
-            handle = dlopen("libcurl-gnutls.so.4", RTLD_NOW | RTLD_LOCAL);
-        }
-        if (!handle)
-        {
-            // It's possible that someone explicitly installs this one
-            handle = dlopen("libcurl-nss.so.4", RTLD_NOW | RTLD_LOCAL);
-        }
-
-        if (!handle) {
-            vcpkg::Checks::unreachable(VCPKG_LINE_INFO); // FIXME emit an error for users
-        }
-
-        {
-            decltype(&curl_global_init) global_init;
-            load_symbol(global_init, handle, "curl_global_init");
-            global_init(flags);
-        }
-
-        load_symbol(vcpkg_curl_easy_cleanup, handle, "curl_easy_cleanup");
-        load_symbol(vcpkg_curl_easy_getinfo, handle, "curl_easy_getinfo");
-        load_symbol(vcpkg_curl_easy_init, handle, "curl_easy_init");
-        load_symbol(vcpkg_curl_easy_perform, handle, "curl_easy_perform");
-        load_symbol(vcpkg_curl_easy_setopt, handle, "curl_easy_setopt");
-        load_symbol(vcpkg_curl_easy_strerror, handle, "curl_easy_strerror");
-
-        load_symbol(vcpkg_curl_multi_add_handle, handle, "curl_multi_add_handle");
-        load_symbol(vcpkg_curl_multi_cleanup, handle, "curl_multi_cleanup");
-        load_symbol(vcpkg_curl_multi_info_read, handle, "curl_multi_info_read");
-        load_symbol(vcpkg_curl_multi_init, handle, "curl_multi_init");
-        load_symbol(vcpkg_curl_multi_remove_handle, handle, "curl_multi_remove_handle");
-        load_symbol(vcpkg_curl_multi_strerror, handle, "curl_multi_strerror");
-        load_symbol(vcpkg_curl_multi_perform, handle, "curl_multi_perform");
-        // try to load curl_multi_poll first, fall back to curl_multi_wait
-        vcpkg_curl_multi_poll = reinterpret_cast<decltype(&curl_multi_wait)>(dlsym(handle, "curl_multi_poll"));
-        if (!vcpkg_curl_multi_poll) {
-            load_symbol(vcpkg_curl_multi_poll, handle, "curl_multi_wait");
-        }
-
-        load_symbol(vcpkg_curl_slist_append, handle, "curl_slist_append");
-        load_symbol(vcpkg_curl_slist_free_all, handle, "curl_slist_free_all");
-
-        load_symbol(vcpkg_curl_version, handle, "curl_version");
+void vcpkg_curl_global_init(long flags)
+{
+    // calling dlclose() on the handle after calling curl_version() causes asan to
+    // report a false leak, so we intentionally don't unload the library
+    auto handle = dlopen("libcurl.so.4", RTLD_NOW | RTLD_LOCAL);
+    if (!handle)
+    {
+        // Ubuntu 16.04 has this if the user only installs `curl`
+        handle = dlopen("libcurl-gnutls.so.4", RTLD_NOW | RTLD_LOCAL);
     }
+    if (!handle)
+    {
+        // It's possible that someone explicitly installs this one
+        handle = dlopen("libcurl-nss.so.4", RTLD_NOW | RTLD_LOCAL);
+    }
+
+    if (!handle)
+    {
+        vcpkg::Checks::unreachable(VCPKG_LINE_INFO); // FIXME emit an error for users
+    }
+
+    {
+        decltype(&curl_global_init) global_init;
+        load_symbol(global_init, handle, "curl_global_init");
+        global_init(flags);
+    }
+
+    load_symbol(vcpkg_curl_easy_cleanup, handle, "curl_easy_cleanup");
+    load_symbol(vcpkg_curl_easy_getinfo, handle, "curl_easy_getinfo");
+    load_symbol(vcpkg_curl_easy_init, handle, "curl_easy_init");
+    load_symbol(vcpkg_curl_easy_perform, handle, "curl_easy_perform");
+    load_symbol(vcpkg_curl_easy_setopt, handle, "curl_easy_setopt");
+    load_symbol(vcpkg_curl_easy_strerror, handle, "curl_easy_strerror");
+
+    load_symbol(vcpkg_curl_multi_add_handle, handle, "curl_multi_add_handle");
+    load_symbol(vcpkg_curl_multi_cleanup, handle, "curl_multi_cleanup");
+    load_symbol(vcpkg_curl_multi_info_read, handle, "curl_multi_info_read");
+    load_symbol(vcpkg_curl_multi_init, handle, "curl_multi_init");
+    load_symbol(vcpkg_curl_multi_remove_handle, handle, "curl_multi_remove_handle");
+    load_symbol(vcpkg_curl_multi_strerror, handle, "curl_multi_strerror");
+    load_symbol(vcpkg_curl_multi_perform, handle, "curl_multi_perform");
+    // try to load curl_multi_poll first, fall back to curl_multi_wait
+    vcpkg_curl_multi_poll = reinterpret_cast<decltype(&curl_multi_wait)>(dlsym(handle, "curl_multi_poll"));
+    if (!vcpkg_curl_multi_poll)
+    {
+        load_symbol(vcpkg_curl_multi_poll, handle, "curl_multi_wait");
+    }
+
+    load_symbol(vcpkg_curl_slist_append, handle, "curl_slist_append");
+    load_symbol(vcpkg_curl_slist_free_all, handle, "curl_slist_free_all");
+
+    load_symbol(vcpkg_curl_version, handle, "curl_version");
+}
 #endif // ^^^ VCPKG_LIBCURL_DLSYM
 
 namespace vcpkg

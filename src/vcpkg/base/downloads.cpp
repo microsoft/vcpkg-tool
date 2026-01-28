@@ -28,13 +28,14 @@ namespace
         vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
         vcpkg_curl_easy_setopt(curl, CURLOPT_URL, url_encode_spaces(url).c_str());
         vcpkg_curl_easy_setopt(curl,
-                         CURLOPT_FOLLOWLOCATION,
-                         2L); // Follow redirects, change request method based on HTTP response code.
-                              // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
+                               CURLOPT_FOLLOWLOCATION,
+                               2L); // Follow redirects, change request method based on HTTP response code.
+                                    // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
 
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
-        vcpkg_curl_easy_setopt(curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
+        vcpkg_curl_easy_setopt(
+            curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
     }
 }
 
@@ -120,12 +121,9 @@ namespace vcpkg
         return static_cast<WriteFilePointer*>(param)->write(contents, size, nmemb);
     }
 
-    static int progress_callback(void *clientp,
-                      double dltotal,
-                      double dlnow,
-                      double ultotal,
-                      double ulnow) {
-                                (void)ultotal;
+    static int progress_callback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+    {
+        (void)ultotal;
         (void)ulnow;
         auto machine_readable_progress = static_cast<MessageSink*>(clientp);
         if (dltotal && machine_readable_progress)
@@ -134,7 +132,7 @@ namespace vcpkg
             machine_readable_progress->println(LocalizedString::from_raw(fmt::format("{:.2f}%", percentage)));
         }
         return 0;
-                      }
+    }
 
     static std::vector<int> libcurl_bulk_operation(DiagnosticContext& context,
                                                    View<std::string> urls,
@@ -166,7 +164,8 @@ namespace vcpkg
             set_common_curl_easy_options(easy_handle, url, request_headers);
             if (outputs.empty())
             {
-                vcpkg_curl_easy_setopt(curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
+                vcpkg_curl_easy_setopt(
+                    curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
             }
             else
             {

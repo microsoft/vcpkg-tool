@@ -596,8 +596,10 @@ namespace vcpkg
         vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         vcpkg_curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-        if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK) {
-            if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK) {
+        if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK)
+        {
+            if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK)
+            {
                 vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_0);
             }
         }

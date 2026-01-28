@@ -119,11 +119,11 @@ namespace
         get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
         const auto* detected_curl_version = vcpkg_curl_version();
-        if (!detected_curl_version) {
+        if (!detected_curl_version)
+        {
             detected_curl_version = "unknown";
         }
-        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion,
-                                                    detected_curl_version);
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detected_curl_version);
 
         if (args.get_command().empty())
         {

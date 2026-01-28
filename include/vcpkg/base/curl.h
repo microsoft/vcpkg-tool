@@ -51,16 +51,14 @@ extern decltype(&curl_version) vcpkg_curl_version;
 
 #define vcpkg_curl_multi_add_handle(multi_handle, easy_handle) curl_multi_add_handle(multi_handle, easy_handle)
 #define vcpkg_curl_multi_cleanup(multi_handle) curl_multi_cleanup(multi_handle)
-#define vcpkg_curl_multi_info_read(multi_handle, messages_in_queue) \
+#define vcpkg_curl_multi_info_read(multi_handle, messages_in_queue)                                                    \
     curl_multi_info_read(multi_handle, messages_in_queue)
 #define vcpkg_curl_multi_init() curl_multi_init()
-#define vcpkg_curl_multi_remove_handle(multi_handle, easy_handle) \
-    curl_multi_remove_handle(multi_handle, easy_handle)
+#define vcpkg_curl_multi_remove_handle(multi_handle, easy_handle) curl_multi_remove_handle(multi_handle, easy_handle)
 #define vcpkg_curl_multi_strerror(code) curl_multi_strerror(code)
-#define vcpkg_curl_multi_poll(multi_handle, extra_fds, extra_nfds, timeout_ms, numfds) \
+#define vcpkg_curl_multi_poll(multi_handle, extra_fds, extra_nfds, timeout_ms, numfds)                                 \
     curl_multi_poll(multi_handle, extra_fds, extra_nfds, timeout_ms, numfds)
-#define vcpkg_curl_multi_perform(multi_handle, running_handles) \
-    curl_multi_perform(multi_handle, running_handles)
+#define vcpkg_curl_multi_perform(multi_handle, running_handles) curl_multi_perform(multi_handle, running_handles)
 
 #define vcpkg_curl_slist_append(list, string) curl_slist_append(list, string)
 #define vcpkg_curl_slist_free_all(list) curl_slist_free_all(list)
