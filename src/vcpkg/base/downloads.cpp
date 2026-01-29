@@ -595,10 +595,8 @@ namespace vcpkg
                 return prognosis;
             }
 
-            context.statusln(DiagnosticKind::Warning,
-                             msg::format(msgDownloadTransientErrorRetry,
-                                         msg::count = attempt_count + 1,
-                                         msg::value = attempt_delays.size()));
+            context.statusln(msg::format(
+                msgDownloadTransientErrorRetry, msg::count = attempt_count + 1, msg::value = attempt_delays.size()));
         }
 
         if (DownloadPrognosis::Success != prognosis)
