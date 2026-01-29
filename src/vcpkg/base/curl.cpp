@@ -54,7 +54,7 @@ void vcpkg_curl_global_init(long flags)
 
     if (!handle)
     {
-        vcpkg::Checks::unreachable(VCPKG_LINE_INFO); // FIXME emit an error for users
+        vcpkg::Checks::msg_exit_with_error(vcpkg::msgUnableToFindCurl);
     }
 
     {

@@ -2860,6 +2860,11 @@ DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                 (msg::value),
                 "'{value}' is a feature flag.",
                 "Both '{value}' and -'{value}' were specified as feature flags.")
+DECLARE_MESSAGE(UnableToFindCurl,
+                (),
+                "",
+                "vcpkg was unable to find a libcurl.so.4, libcurl-gnutls.so.4, or libcurl-nss.so.4 to use on this "
+                "system. Please install libcurl from your system package manager and retry vcpkg.")
 DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable")
 DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}")
 DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
