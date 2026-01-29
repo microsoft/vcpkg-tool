@@ -576,27 +576,27 @@ namespace vcpkg
         // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
         // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
         using namespace std::chrono_literals;
-        static constexpr std::array<std::chrono::seconds, 3> attempt_delays = {0s, 1s, 2s};
+        static constexpr std::array<std::chrono::seconds, 2> attempt_delays = {1s, 2s};
         DownloadPrognosis prognosis = DownloadPrognosis::NetworkErrorProxyMightHelp;
         for (size_t attempt_count = 0; attempt_count < attempt_delays.size(); attempt_count++)
         {
-            std::this_thread::sleep_for(attempt_delays[attempt_count]);
-
             prognosis = perform_download(context, machine_readable_progress, raw_url, download_path_part_path, headers);
-
             if (DownloadPrognosis::Success == prognosis)
             {
                 break;
             }
 
-            if (DownloadPrognosis::TransientNetworkError != prognosis)
+            if (DownloadPrognosis::TransientNetworkError == prognosis)
             {
-                context.report_error(msg::format(msgDownloadNotTransientErrorWontRetry, msg::url = sanitized_url));
-                return prognosis;
+                context.statusln(msg::format(msgDownloadTransientErrorRetry,
+                                             msg::count = attempt_count + 1,
+                                             msg::value = attempt_delays.size() + 1));
+                std::this_thread::sleep_for(attempt_delays[attempt_count]);
+                continue;
             }
 
-            context.statusln(msg::format(
-                msgDownloadTransientErrorRetry, msg::count = attempt_count + 1, msg::value = attempt_delays.size()));
+            context.report_error(msg::format(msgDownloadNotTransientErrorWontRetry, msg::url = sanitized_url));
+            return prognosis;
         }
 
         if (DownloadPrognosis::Success != prognosis)
