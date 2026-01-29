@@ -166,6 +166,7 @@ namespace vcpkg
             {
                 vcpkg_curl_easy_setopt(
                     curl, CURLOPT_PRIVATE, reinterpret_cast<void*>(static_cast<uintptr_t>(request_index)));
+                vcpkg_curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
             }
             else
             {
@@ -182,8 +183,9 @@ namespace vcpkg
                 // note explicit cast to void* necessary to go through ...
                 vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&request_write_pointer));
                 vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
-                multi_handle.add_easy_handle(easy_handle);
             }
+
+            multi_handle.add_easy_handle(easy_handle);
         }
 
         int still_running = 0;
