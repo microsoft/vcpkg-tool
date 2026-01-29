@@ -433,11 +433,11 @@ namespace vcpkg
     enum class DownloadPrognosis
     {
         Success,
-        OtherError,
-        NetworkErrorProxyMightHelp,
         // Transient error means either: a timeout, an FTP 4xx response code or an HTTP 408, 429, 500, 502, 503 or
         // 504 response code. https://everything.curl.dev/usingcurl/downloads/retry.html#retry
-        TransientNetworkError
+        TransientNetworkError,
+        OtherError,
+        NetworkErrorProxyMightHelp,
     };
 
     static bool check_combine_download_prognosis(DownloadPrognosis& target, DownloadPrognosis individual_call)
@@ -445,15 +445,23 @@ namespace vcpkg
         switch (individual_call)
         {
             case DownloadPrognosis::Success: return true;
-            case DownloadPrognosis::OtherError:
+            case DownloadPrognosis::TransientNetworkError:
                 if (target == DownloadPrognosis::Success)
+                {
+                    target = DownloadPrognosis::TransientNetworkError;
+                }
+
+                return false;
+            case DownloadPrognosis::OtherError:
+                if (target == DownloadPrognosis::Success || target == DownloadPrognosis::TransientNetworkError)
                 {
                     target = DownloadPrognosis::OtherError;
                 }
 
                 return false;
             case DownloadPrognosis::NetworkErrorProxyMightHelp:
-                if (target == DownloadPrognosis::Success || target == DownloadPrognosis::OtherError)
+                if (target == DownloadPrognosis::Success || target == DownloadPrognosis::TransientNetworkError ||
+                    target == DownloadPrognosis::OtherError)
                 {
                     target = DownloadPrognosis::NetworkErrorProxyMightHelp;
                 }
@@ -852,6 +860,7 @@ namespace vcpkg
                                                 out_sha512))
         {
             case DownloadPrognosis::Success: return DownloadPrognosis::Success;
+            case DownloadPrognosis::TransientNetworkError: return DownloadPrognosis::TransientNetworkError;
             case DownloadPrognosis::OtherError:
                 return download_file_script_asset_cache(context,
                                                         asset_cache_settings,
