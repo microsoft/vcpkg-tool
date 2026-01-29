@@ -96,7 +96,7 @@ namespace vcpkg
     CurlEasyHandle::CurlEasyHandle(CurlEasyHandle&& other) noexcept : m_ptr(std::exchange(other.m_ptr, nullptr)) { }
     CurlEasyHandle& CurlEasyHandle::operator=(CurlEasyHandle&& other) noexcept
     {
-        m_ptr = std::exchange(other.m_ptr, nullptr);
+        CurlEasyHandle{std::move(other)}.swap(*this);
         return *this;
     }
     CurlEasyHandle::~CurlEasyHandle()
@@ -106,6 +106,7 @@ namespace vcpkg
             vcpkg_curl_easy_cleanup(m_ptr);
         }
     }
+    void CurlEasyHandle::swap(CurlEasyHandle& other) noexcept { std::swap(m_ptr, other.m_ptr); }
     CURL* CurlEasyHandle::get()
     {
         if (!m_ptr)
@@ -126,8 +127,7 @@ namespace vcpkg
     }
     CurlMultiHandle& CurlMultiHandle::operator=(CurlMultiHandle&& other) noexcept
     {
-        m_ptr = std::exchange(other.m_ptr, nullptr);
-        m_easy_handles = std::move(other.m_easy_handles);
+        CurlMultiHandle{std::move(other)}.swap(*this);
         return *this;
     }
     CurlMultiHandle::~CurlMultiHandle()
@@ -143,6 +143,12 @@ namespace vcpkg
         }
 
         vcpkg_curl_multi_cleanup(m_ptr);
+    }
+    void CurlMultiHandle::swap(CurlMultiHandle& other) noexcept
+    {
+        using std::swap;
+        swap(m_ptr, other.m_ptr);
+        swap(m_easy_handles, other.m_easy_handles);
     }
     void CurlMultiHandle::add_easy_handle(CurlEasyHandle& easy_handle)
     {
@@ -175,7 +181,7 @@ namespace vcpkg
     CurlHeaders::CurlHeaders(CurlHeaders&& other) noexcept : m_headers(std::exchange(other.m_headers, nullptr)) { }
     CurlHeaders& CurlHeaders::operator=(CurlHeaders&& other) noexcept
     {
-        m_headers = std::exchange(other.m_headers, nullptr);
+        CurlHeaders{std::move(other)}.swap(*this);
         return *this;
     }
     CurlHeaders::~CurlHeaders()
@@ -184,6 +190,11 @@ namespace vcpkg
         {
             vcpkg_curl_slist_free_all(m_headers);
         }
+    }
+    void CurlHeaders::swap(CurlHeaders& other) noexcept
+    {
+        using std::swap;
+        swap(m_headers, other.m_headers);
     }
     curl_slist* CurlHeaders::get() const { return m_headers; }
 }

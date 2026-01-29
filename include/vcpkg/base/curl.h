@@ -74,6 +74,8 @@ namespace vcpkg
         CurlEasyHandle(CurlEasyHandle&& other) noexcept;
         CurlEasyHandle& operator=(CurlEasyHandle&& other) noexcept;
         ~CurlEasyHandle();
+         
+        void swap(CurlEasyHandle& other) noexcept;
 
         CURL* get();
 
@@ -87,6 +89,8 @@ namespace vcpkg
         CurlMultiHandle(CurlMultiHandle&& other) noexcept;
         CurlMultiHandle& operator=(CurlMultiHandle&& other) noexcept;
         ~CurlMultiHandle();
+
+        void swap(CurlMultiHandle& other) noexcept;
 
         // Adds an easy handle to the multi handle but doesn't take ownership of it.
         // Makes sure that the easy handle is removed from the multi handle on cleanup.
@@ -106,6 +110,8 @@ namespace vcpkg
         CurlHeaders(CurlHeaders&& other) noexcept;
         CurlHeaders& operator=(CurlHeaders&& other) noexcept;
         ~CurlHeaders();
+        
+        void swap(CurlHeaders& other) noexcept;
 
         curl_slist* get() const;
 
