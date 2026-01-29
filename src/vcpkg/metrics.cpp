@@ -593,7 +593,7 @@ namespace vcpkg
 
         vcpkg_curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
         vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
-        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(payload.length()));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(payload.length()));
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
         vcpkg_curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
         if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK)

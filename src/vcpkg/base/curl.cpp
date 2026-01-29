@@ -153,9 +153,10 @@ namespace vcpkg
     void CurlMultiHandle::add_easy_handle(CurlEasyHandle& easy_handle)
     {
         auto* handle = easy_handle.get();
-        if (vcpkg_curl_multi_add_handle(this->get(), handle) == CURLM_OK)
+        m_easy_handles.push_back(handle);
+        if (vcpkg_curl_multi_add_handle(this->get(), handle) != CURLM_OK)
         {
-            m_easy_handles.push_back(handle);
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
     }
     CURLM* CurlMultiHandle::get()
@@ -175,7 +176,13 @@ namespace vcpkg
     {
         for (const auto& header : headers)
         {
-            m_headers = vcpkg_curl_slist_append(m_headers, header.c_str());
+            auto new_headers = vcpkg_curl_slist_append(m_headers, header.c_str());
+            if (!new_headers)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            m_headers = new_headers;
         }
     }
     CurlHeaders::CurlHeaders(CurlHeaders&& other) noexcept : m_headers(std::exchange(other.m_headers, nullptr)) { }

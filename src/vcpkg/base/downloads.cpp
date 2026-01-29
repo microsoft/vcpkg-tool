@@ -318,7 +318,7 @@ namespace vcpkg
         vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
         vcpkg_curl_easy_setopt(curl, CURLOPT_POST, 1L);
         vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_data.c_str());
-        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, post_data.length());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(post_data.size()));
 
         CURLcode result = vcpkg_curl_easy_perform(curl);
         long response_code = 0;
@@ -493,7 +493,7 @@ namespace vcpkg
         vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_file_callback);
         vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&fileptr));
         vcpkg_curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L); // change from default to enable progress
-        // curlopt_progressfucntion is deprecated, but we want the values as doubles anyway and
+        // curlopt_progressfunction is deprecated, but we want the values as doubles anyway and
         // the replacement isn't available on all versions of libcurl we support
         vcpkg_curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, static_cast<curl_progress_callback>(&progress_callback));
         vcpkg_curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, static_cast<void*>(&machine_readable_progress));
