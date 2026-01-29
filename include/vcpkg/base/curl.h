@@ -74,7 +74,7 @@ namespace vcpkg
         CurlEasyHandle(CurlEasyHandle&& other) noexcept;
         CurlEasyHandle& operator=(CurlEasyHandle&& other) noexcept;
         ~CurlEasyHandle();
-         
+
         void swap(CurlEasyHandle& other) noexcept;
 
         CURL* get();
@@ -110,7 +110,7 @@ namespace vcpkg
         CurlHeaders(CurlHeaders&& other) noexcept;
         CurlHeaders& operator=(CurlHeaders&& other) noexcept;
         ~CurlHeaders();
-        
+
         void swap(CurlHeaders& other) noexcept;
 
         curl_slist* get() const;
