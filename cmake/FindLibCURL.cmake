@@ -4,7 +4,7 @@ else()
     set(VCPKG_LIBCURL_DLSYM_DEFAULT "ON")
 endif()
 
-option(VCPKG_LIBCURL_DLSYM "Select libcurl provider (SYSTEM|DLSYM)" "${VCPKG_LIBCURL_DLSYM_DEFAULT}")
+option(VCPKG_LIBCURL_DLSYM "Use dlsym to dynamically load libcurl at runtime instead of using the system libcurl" "${VCPKG_LIBCURL_DLSYM_DEFAULT}")
 option(VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS "Use more recent libcurl headers when using DLSYM than 7.29.0" OFF)
 
 if(POLICY CMP0135)

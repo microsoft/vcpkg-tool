@@ -132,15 +132,17 @@ namespace vcpkg
     }
     CurlMultiHandle::~CurlMultiHandle()
     {
+        if (!m_ptr)
+        {
+            return;
+        }
+
         for (auto* easy_handle : m_easy_handles)
         {
             vcpkg_curl_multi_remove_handle(m_ptr, easy_handle);
         }
 
-        if (m_ptr)
-        {
-            vcpkg_curl_multi_cleanup(m_ptr);
-        }
+        vcpkg_curl_multi_cleanup(m_ptr);
     }
     void CurlMultiHandle::add_easy_handle(CurlEasyHandle& easy_handle)
     {
