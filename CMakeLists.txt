@@ -34,6 +34,8 @@ if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
         "file vcpkg.disable_metrics next to the binary.")
 endif()
 
+set(VCPKG_MANIFEST_DIR "${CMAKE_CURRENT_LIST_DIR}/src" CACHE PATH "Path to vcpkg manifest directory")
+
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
