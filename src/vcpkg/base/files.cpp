@@ -37,6 +37,7 @@
 #include <vector>
 
 #if defined(_WIN32)
+#include <io.h>
 #include <share.h>
 
 #include <filesystem>
@@ -1578,7 +1579,34 @@ namespace vcpkg
     {
         ec.clear();
 #if _WIN32
-        return stdfs::file_size(to_stdfs_path(m_path), ec);
+        if (!m_fs)
+        {
+            ec.assign(EBADF, std::generic_category());
+            return 0;
+        }
+
+        const auto file_number = ::_fileno(m_fs);
+        if (file_number == -1)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        const auto os_handle = ::_get_osfhandle(file_number);
+        if (os_handle == -1)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        LARGE_INTEGER size;
+        if (!::GetFileSizeEx(reinterpret_cast<HANDLE>(os_handle), &size))
+        {
+            ec.assign(::GetLastError(), std::system_category());
+            return 0;
+        }
+
+        return static_cast<uint64_t>(size.QuadPart);
 #else
         struct stat st;
         if (::fstat(::fileno(m_fs), &st) != 0)
