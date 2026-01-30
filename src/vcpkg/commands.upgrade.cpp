@@ -60,7 +60,7 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        static const BuildPackageOptions build_options{
+        const BuildPackageOptions build_options{
             BuildMissing::Yes,
             AllowDownloads::Yes,
             OnlyDownloads::No,

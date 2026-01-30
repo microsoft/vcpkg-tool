@@ -988,6 +988,28 @@
           "format": "uri"
         }
       }
+    },
+    "editable-ports-config": {
+      "type": "object",
+      "description": "Configuration for editable ports workflow. Allows building ports from local source with development-friendly paths.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Directory containing editable ports (default: 'editable-ports'). Each port has subdirectories: port/ (portfiles), sources/ (src1/, src2/, etc.), build/ (artifacts), packages/ (output).",
+          "default": "editable-ports"
+        },
+        "ports": {
+          "type": "array",
+          "description": "List of port names or patterns to treat as editable. Supports wildcards like 'boost*', 'zlib-*'. Matched ports are built from editable-ports/<port>/port/ with sources in editable-ports/<port>/sources/.",
+          "items": {
+            "$ref": "#/definitions/package-pattern"
+          }
+        }
+      },
+      "patternProperties": {
+        "^\\$": {}
+      },
+      "additionalProperties": false
     }
   }
 }
