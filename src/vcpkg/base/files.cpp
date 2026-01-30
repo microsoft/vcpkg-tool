@@ -2446,6 +2446,40 @@ namespace vcpkg
         return result;
     }
 
+    bool Filesystem::copy_file_preserving_timestamp(const Path& source, const Path& dest) const
+    {
+        std::error_code ec;
+        const auto timestamp = this->last_write_time(source, ec);
+        if (ec) return false;
+
+        this->create_directories(dest.parent_path(), ec);
+        if (ec) return false;
+
+        this->copy_file(source, dest, CopyOptions::overwrite_existing, ec);
+        if (ec) return false;
+
+        this->last_write_time(null_diagnostic_context, dest, timestamp);
+        return true;
+    }
+
+    bool Filesystem::files_are_identical(const Path& file1, const Path& file2) const
+    {
+        std::error_code ec;
+        const auto size1 = this->file_size(file1, ec);
+        if (ec) return false;
+        const auto size2 = this->file_size(file2, ec);
+        if (ec) return false;
+
+        if (size1 != size2) return false;
+
+        auto contents1 = this->read_contents(file1, ec);
+        if (ec) return false;
+        auto contents2 = this->read_contents(file2, ec);
+        if (ec) return false;
+
+        return contents1 == contents2;
+    }
+
     void Filesystem::write_lines(const Path& file_path, const std::vector<std::string>& lines, LineInfo li) const
     {
         std::error_code ec;
