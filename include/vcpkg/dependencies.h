@@ -89,12 +89,17 @@ namespace vcpkg
 
         UseHeadVersion use_head_version;
         Editable editable;
+        EditableSubtree editable_subtree; // True if this port or any dependency is editable
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
         std::vector<DiagnosticLine> dependency_diagnostics;
 
         Optional<AbiInfo> abi_info;
         Path package_dir;
+
+        // For editable ports: paths to editable directories
+        Optional<Path> editable_sources_path; // e.g. editable-ports/zlib/sources (base for src1, src2, etc.)
+        Optional<Path> editable_build_dir;    // e.g. editable-ports/zlib/build
     };
 
     struct NotInstalledAction : BasicAction

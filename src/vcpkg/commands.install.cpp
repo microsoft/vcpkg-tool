@@ -38,6 +38,34 @@ namespace
 {
     using namespace vcpkg;
 
+    // Editable port source info parsed from portfile.cmake
+    // Initialize an editable port: copy port files to editable-ports/<port>/port/ folder
+    // Structure:
+    //   editable-ports/<port>/port/     <- port files (portfile.cmake, vcpkg.json, etc.)
+    //   editable-ports/<port>/sources/  <- source code (src1/, src2/, etc. for multi-source ports)
+    //   editable-ports/<port>/build/    <- build artifacts
+    //   editable-ports/<port>/packages/ <- package output
+    // Note: Source handling is done by CMake macros (vcpkg_from_github, etc.)
+    // which check _VCPKG_EDITABLE flag and use local source if available
+    void initialize_editable_port(const Filesystem& fs,
+                                  const SourceControlFileAndLocation& scfl,
+                                  const Path& editable_port_dir)
+    {
+        const auto port_dir = scfl.port_directory();
+        const auto port_name = port_dir.filename().to_string();
+
+        msg::println(Color::success, LocalizedString::from_raw("Initializing editable port: " + port_name));
+
+        // Copy all port files to <editable_port_dir>/port/
+        const auto port_files_path = editable_port_dir / "port";
+        fs.create_directories(port_files_path, VCPKG_LINE_INFO);
+        fs.copy_regular_recursive(port_dir, port_files_path, VCPKG_LINE_INFO);
+
+        msg::println(LocalizedString::from_raw("  Port files copied to: " + port_files_path.native()));
+        msg::println(LocalizedString::from_raw("  Sources will be cloned automatically on first build to: " +
+                                               (editable_port_dir / "sources").native()));
+    }
+
     struct InstalledFile
     {
         std::string file_path;
@@ -1505,6 +1533,84 @@ namespace vcpkg
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
+
+            // Check configuration for editable ports
+            const auto& config = paths.get_configuration();
+            const auto& editable_config = config.config.editable_ports;
+            const auto config_dir = config.directory;
+
+            // Print warning if editable mode is active
+            if (editable_config.has_value() && !editable_config.get()->ports.empty())
+            {
+                msg::println(Color::warning,
+                             LocalizedString::from_raw("\n"
+                                                       "=============== EDITABLE MODE ENABLED ===============\n"
+                                                       "Editable ports are experimental and may cause:\n"
+                                                       "  - Inconsistent builds between machines\n"
+                                                       "  - Binary caching disabled for editable ports\n"
+                                                       "  - Sources cloned to editable-ports/<port>/sources/\n"
+                                                       "Use for development only, not production builds.\n"
+                                                       "======================================================\n"));
+            }
+
+            for (InstallPlanAction& action : install_plan.install_actions)
+            {
+                const auto& port_name = action.spec.name();
+                const bool port_is_editable =
+                    editable_config.has_value() && editable_config.get()->is_port_editable(port_name);
+
+                if (port_is_editable)
+                {
+                    action.editable = Editable::Yes;
+
+                    msg::println(Color::success, LocalizedString::from_raw("Editable port: " + port_name));
+
+                    const auto editable_ports_path = editable_config.get()->get_editable_ports_path(config_dir);
+                    const auto editable_port_path = editable_ports_path / port_name;
+                    action.editable_sources_path = editable_port_path / "sources";
+                    action.editable_build_dir = editable_port_path / "build";
+                    // Override package_dir to use editable location
+                    action.package_dir = editable_port_path / "packages";
+
+                    // Initialize if port directory doesn't exist yet
+                    if (!fs.exists(editable_port_path, IgnoreErrors{}))
+                    {
+                        initialize_editable_port(fs, action.source_control_file_and_location(), editable_port_path);
+                    }
+                    else
+                    {
+                        msg::println(LocalizedString::from_raw("  Using existing editable port at: " +
+                                                               editable_port_path.native()));
+                    }
+                }
+            }
+
+            // Compute editable subtree: mark ports that are editable or have editable dependencies
+            // The install plan is topologically sorted (dependencies first), so we can propagate forward
+            std::set<std::string> editable_subtree_ports;
+            for (InstallPlanAction& action : install_plan.install_actions)
+            {
+                bool in_subtree = (action.editable == Editable::Yes);
+
+                // Check if any dependency is in the editable subtree
+                if (!in_subtree)
+                {
+                    for (const auto& dep_spec : action.package_dependencies)
+                    {
+                        if (editable_subtree_ports.count(dep_spec.name()))
+                        {
+                            in_subtree = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (in_subtree)
+                {
+                    editable_subtree_ports.insert(action.spec.name());
+                    action.editable_subtree = EditableSubtree::Yes;
+                }
+            }
 
             command_set_installed_and_exit_ex(args,
                                               paths,

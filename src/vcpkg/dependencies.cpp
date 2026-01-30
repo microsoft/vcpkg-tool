@@ -528,6 +528,7 @@ namespace vcpkg
         , default_features(default_features)
         , use_head_version(use_head_version)
         , editable(editable)
+        , editable_subtree(EditableSubtree::No)
         , feature_dependencies(std::move(dependencies))
         , dependency_diagnostics(std::move(dependency_diagnostics))
         , package_dir(packages_dir_assigner.generate(spec))
