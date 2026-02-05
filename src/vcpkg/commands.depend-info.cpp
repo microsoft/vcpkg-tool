@@ -78,10 +78,10 @@ namespace
     }
 
     constexpr CommandSwitch DEPEND_SWITCHES[] = {
+        {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchDot, {}},
         {SwitchDgml, {}},
         {SwitchShowDepth, msgCmdDependInfoOptDepth},
-        {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
     };
 
     constexpr CommandSetting DEPEND_SETTINGS[] = {
@@ -466,6 +466,9 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
+        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
+                                                 ? UnsupportedPortAction::Warn
+                                                 : UnsupportedPortAction::Error;
 
         ActionPlan action_plan = {};
         if (manifest)
@@ -557,9 +560,6 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                     ? UnsupportedPortAction::Warn
-                                                     : UnsupportedPortAction::Error;
             const CreateInstallPlanOptions create_options{
                 nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
             action_plan = create_versioned_install_plan(*verprovider,
@@ -590,7 +590,7 @@ namespace vcpkg
                 specs,
                 status_db,
                 packages_dir_assigner,
-                {nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
+                {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
         }
         action_plan.print_unsupported_warnings();
 
