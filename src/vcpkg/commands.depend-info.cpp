@@ -463,7 +463,6 @@ namespace vcpkg
 
             auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
-            auto registry_set = paths.make_registry_set();
             manifest_scf
                 ->check_against_feature_flags(
                     manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
