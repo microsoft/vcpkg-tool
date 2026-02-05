@@ -424,6 +424,7 @@ namespace vcpkg
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
 
         ActionPlan action_plan = {};
         if (manifest)
@@ -458,7 +459,6 @@ namespace vcpkg
 
             auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
-            auto registry_set = paths.make_registry_set();
             manifest_scf
                 ->check_against_feature_flags(
                     manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
@@ -530,7 +530,6 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            PackagesDirAssigner packages_dir_assigner{paths.packages()};
             const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
                                                      ? UnsupportedPortAction::Warn
                                                      : UnsupportedPortAction::Error;
@@ -558,7 +557,6 @@ namespace vcpkg
             // By passing an empty status_db, we should get a plan containing all dependencies.
             // All actions in the plan should be install actions, as there's no installed packages to remove.
             StatusParagraphs status_db;
-            PackagesDirAssigner packages_dir_assigner{paths.packages()};
             action_plan = create_feature_install_plan(
                 provider,
                 var_provider,
