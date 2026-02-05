@@ -420,14 +420,6 @@ namespace vcpkg
             args.parse_arguments(manifest ? CommandDependInfoMetadataManifest : CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
-        auto& fs = paths.get_filesystem();
-        auto registry_set = paths.make_registry_set();
-        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
-        auto& var_provider = *var_provider_storage;
-        PackagesDirAssigner packages_dir_assigner{paths.packages()};
-
-        ActionPlan action_plan = {};
         if (manifest)
         {
             bool failure = false;
@@ -443,7 +435,18 @@ namespace vcpkg
                 msg::print(usage_for_command(CommandDependInfoMetadataManifest));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
+        }
 
+        auto& fs = paths.get_filesystem();
+        auto registry_set = paths.make_registry_set();
+        PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto& var_provider = *var_provider_storage;
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
+
+        ActionPlan action_plan = {};
+        if (manifest)
+        {
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
