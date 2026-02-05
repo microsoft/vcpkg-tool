@@ -90,6 +90,10 @@ namespace
         {SwitchFormat, msgCmdDependInfoFormatHelp},
     };
 
+    static constexpr CommandMultiSetting DEPEND_MULTISETTINGS[] = {
+        {SwitchXFeature, msgHelpTxtOptManifestFeature},
+    };
+
     void assign_depth_to_dependencies(const std::vector<PackageDependInfo>& packages,
                                       const std::map<std::string, PackageDependInfo&>& dependencies_map)
     {
@@ -260,7 +264,7 @@ namespace vcpkg
         AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {DEPEND_SWITCHES, DEPEND_SETTINGS},
+        {DEPEND_SWITCHES, DEPEND_SETTINGS, DEPEND_MULTISETTINGS},
         nullptr,
     };
 
@@ -272,7 +276,7 @@ namespace vcpkg
         AutocompletePriority::Public,
         0,
         SIZE_MAX,
-        {DEPEND_SWITCHES, DEPEND_SETTINGS},
+        {DEPEND_SWITCHES, DEPEND_SETTINGS, DEPEND_MULTISETTINGS},
         nullptr,
     };
 
@@ -433,6 +437,25 @@ namespace vcpkg
             {
                 msg::println(msgUsingManifestAt, msg::path = manifest->path);
                 msg::print(usage_for_command(CommandDependInfoMetadataManifest));
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+        else
+        {
+            bool failure = false;
+            if (options.command_arguments.empty())
+            {
+                msg::println_error(msgErrorRequirePackagesList);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.multisettings, SwitchXFeature))
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXFeature);
+                failure = true;
+            }
+            if (failure)
+            {
+                msg::write_unlocalized_text_to_stderr(Color::none, usage_for_command(CommandDependInfoMetadata));
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
