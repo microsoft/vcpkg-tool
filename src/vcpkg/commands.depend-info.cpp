@@ -81,6 +81,7 @@ namespace
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchDot, {}},
         {SwitchDgml, {}},
+        {SwitchXNoDefaultFeatures, msgHelpTxtOptManifestNoDefault},
         {SwitchShowDepth, msgCmdDependInfoOptDepth},
     };
 
@@ -448,6 +449,11 @@ namespace vcpkg
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
+            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
+                failure = true;
+            }
             if (Util::Sets::contains(options.multisettings, SwitchXFeature))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXFeature);
@@ -470,7 +476,7 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
 
-        ActionPlan action_plan = {};
+        ActionPlan action_plan;
         if (manifest)
         {
             auto maybe_manifest_scf =
