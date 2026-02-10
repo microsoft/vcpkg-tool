@@ -990,10 +990,10 @@ DECLARE_MESSAGE(CurlFailedGeneric,
                 "curl is the name of a program, see curl.se.",
                 "curl operation failed with error code {exit_code}")
 DECLARE_MESSAGE(CurlDownloadTimeout, (), "", "Download timed out.")
-DECLARE_MESSAGE(CurlFailedHttpResponse,
+DECLARE_MESSAGE(CurlFailedResponse,
                 (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
-                "curl operation failed with HTTP response code {exit_code}.")
+                "curl operation failed with response code {exit_code}.")
 DECLARE_MESSAGE(CurlFailedToPut,
                 (msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",

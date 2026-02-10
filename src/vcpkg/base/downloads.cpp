@@ -534,15 +534,15 @@ namespace vcpkg
             return DownloadPrognosis::Success;
         }
 
-        if (response_code == 429 || response_code == 408 || response_code == 500 || response_code == 502 ||
-            response_code == 503 || response_code == 504)
+        context.report_error(msg::format(msgCurlFailedResponse, msg::exit_code = static_cast<int>(response_code)));
+
+        if ((raw_url.starts_with("ftp://") && response_code >= 400 && response_code < 500) ||
+            (response_code == 429 || response_code == 408 || response_code == 500 || response_code == 502 ||
+             response_code == 503 || response_code == 504))
         {
-            context.report_error(
-                msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
             return DownloadPrognosis::TransientNetworkError;
         }
 
-        context.report_error(msg::format(msgCurlFailedHttpResponse, msg::exit_code = static_cast<int>(response_code)));
         return DownloadPrognosis::NetworkErrorProxyMightHelp;
     }
 
