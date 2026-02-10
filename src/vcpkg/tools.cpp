@@ -1052,6 +1052,7 @@ namespace vcpkg
                 return nullopt;
             }
 
+            fs.set_executable(context, exe_path);
             return exe_path;
         }
 

@@ -334,6 +334,8 @@ namespace vcpkg
 
         virtual bool last_write_time(DiagnosticContext& context, const Path& target, int64_t new_time) const = 0;
 
+        virtual bool set_executable(DiagnosticContext& context, const Path& target) const = 0;
+
         using ReadOnlyFilesystem::current_path;
         virtual void current_path(const Path& new_current_path, std::error_code&) const = 0;
         void current_path(const Path& new_current_path, LineInfo li) const;
