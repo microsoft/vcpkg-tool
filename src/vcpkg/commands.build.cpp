@@ -1345,7 +1345,7 @@ namespace vcpkg
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
-                                 PortDirAbiInfoCache& port_dir_cache,
+                                 SpecAbiInfoCache& spec_abi_cache,
                                  Cache<Path, Optional<std::string>>& grdk_cache)
     {
         Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
@@ -1391,8 +1391,8 @@ namespace vcpkg
         abi_entries_from_pre_build_info(fs, grdk_cache, pre_build_info, abi_tag_entries);
 
         auto&& port_dir = action.source_control_file_and_location().port_directory();
-        const auto& port_dir_cache_entry = port_dir_cache.get_lazy(port_dir, [&]() {
-            PortDirAbiInfoCacheEntry port_dir_cache_entry;
+        const auto& port_dir_cache_entry = spec_abi_cache.get_lazy(action.spec, [&]() {
+            SpecAbiInfoCacheEntry port_dir_cache_entry;
 
             std::string portfile_cmake_contents;
             {
@@ -1411,8 +1411,6 @@ namespace vcpkg
                 port_dir_cache_entry.files = std::move(rel_port_files);
             }
             const auto& rel_port_files = port_dir_cache_entry.files;
-            // Technically the pre_build_info is not part of the port_dir cache key, but a given port_dir is only going
-            // to be associated with 1 port
             for (size_t i = 0; i < abi_info.pre_build_info->hash_additional_files.size(); ++i)
             {
                 const auto& file = abi_info.pre_build_info->hash_additional_files[i];
@@ -1462,22 +1460,6 @@ namespace vcpkg
         });
 
         Util::Vectors::append(abi_tag_entries, port_dir_cache_entry.abi_entries);
-
-        {
-            size_t i = 0;
-            for (auto& filestr : abi_info.pre_build_info->hash_additional_files)
-            {
-                Path file(filestr);
-                if (file.is_relative() || !fs.is_regular_file(file))
-                {
-                    Checks::msg_exit_with_message(
-                        VCPKG_LINE_INFO, msgInvalidValueHashAdditionalFiles, msg::path = file);
-                }
-                const auto hash =
-                    vcpkg::Hash::get_file_hash(fs, file, Hash::Algorithm::Sha256).value_or_exit(VCPKG_LINE_INFO);
-                abi_tag_entries.emplace_back(fmt::format("additional_file_{}", i++), hash);
-            }
-        }
 
         for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
         {
@@ -1559,15 +1541,15 @@ namespace vcpkg
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db)
     {
-        PortDirAbiInfoCache port_dir_cache;
-        compute_all_abis(paths, action_plan, var_provider, status_db, port_dir_cache);
+        SpecAbiInfoCache spec_abi_cache;
+        compute_all_abis(paths, action_plan, var_provider, status_db, spec_abi_cache);
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db,
-                          PortDirAbiInfoCache& port_dir_cache)
+                          SpecAbiInfoCache& spec_abi_cache)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
@@ -1614,7 +1596,7 @@ namespace vcpkg
                                                action.spec.triplet(),
                                                var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
                 dependency_abis,
-                port_dir_cache,
+                spec_abi_cache,
                 grdk_cache);
         }
     }
