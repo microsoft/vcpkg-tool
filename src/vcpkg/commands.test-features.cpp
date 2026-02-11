@@ -563,7 +563,7 @@ namespace vcpkg
             KeepGoing::Yes,
         };
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
-        SpecAbiInfoCache port_dir_abi_info_cache;
+        SpecAbiInfoCache spec_abi_info_cache;
 
         // check what should be tested
         std::vector<SpecToTest> specs_to_test;
@@ -708,7 +708,7 @@ namespace vcpkg
         {
             if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, spec_abi_info_cache);
             }
         }
 
