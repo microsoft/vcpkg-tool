@@ -563,7 +563,7 @@ namespace vcpkg
             KeepGoing::Yes,
         };
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
-        PortDirAbiInfoCache port_dir_abi_info_cache;
+        SpecAbiInfoCache port_dir_abi_info_cache;
 
         // check what should be tested
         std::vector<SpecToTest> specs_to_test;

@@ -1,13 +1,12 @@
 set(ABI_FILE "${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}.vcpkg_abi_info.txt")
 file(STRINGS "${ABI_FILE}" lines)
-list(GET lines 0 first_line)
+list(FILTER lines INCLUDE REGEX "additional_file_.+")
 
-set(expected "additional_file_0 61ba0c7fc1f696e28c1b7aa9460980a571025ff8c97bb90a57e990463aa25660")
-
-if(first_line STREQUAL "${expected}")
+if(lines STREQUAL "additional_file_0 61ba0c7fc1f696e28c1b7aa9460980a571025ff8c97bb90a57e990463aa25660")
     message(STATUS "Test successful!")
 else()
-    message(FATAL_ERROR "First line in abi info ( ${ABI_FILE} ) is not the additional file to be hashed but:\n first_line: '${first_line}'\n expected: '${expected}' ")
+    list(JOIN lines "\n    " lines)
+    message(FATAL_ERROR "Expected exactly one expected additional file in ${ABI_FILE} but got:\n    ${lines}")
 endif()
 
 set(VCPKG_POLICY_EMPTY_PACKAGE enabled)
