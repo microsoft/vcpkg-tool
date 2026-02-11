@@ -1443,7 +1443,7 @@ namespace vcpkg
             void require_port_defaults(PackageNode& ref, const std::string& origin);
 
             void resolve_stack(const ConstraintFrame& frame);
-            const CMakeVars::CMakeVars& batch_load_vars(const PackageSpec& spec);
+            const CMakeVars::CMakeVars& batch_load_vars(const ConstraintFrame& frame);
 
             Optional<const PackageNode&> find_package(const PackageSpec& spec) const;
 
@@ -1463,22 +1463,30 @@ namespace vcpkg
             std::vector<LocalizedString> m_errors;
         };
 
-        const CMakeVars::CMakeVars& VersionedPackageGraph::batch_load_vars(const PackageSpec& spec)
+        const CMakeVars::CMakeVars& VersionedPackageGraph::batch_load_vars(const ConstraintFrame& frame)
         {
-            auto vars = m_var_provider.get_dep_info_vars(spec);
+            auto vars = m_var_provider.get_dep_info_vars(frame.spec);
             if (!vars)
             {
-                // We want to batch as many dep_infos as possible, so look ahead in the stack
-                std::unordered_set<PackageSpec> spec_set = {spec};
+                // We want to batch as many dep_infos as possible, so look ahead in the frame and stack
+                std::unordered_set<PackageSpec> spec_set = {frame.spec};
+                for (auto&& d : frame.deps)
+                {
+                    spec_set.emplace(d.name, d.host ? m_host_triplet : frame.spec.triplet());
+                }
+
                 for (auto&& s : m_resolve_stack)
                 {
                     spec_set.insert(s.spec);
                     for (auto&& d : s.deps)
+                    {
                         spec_set.emplace(d.name, d.host ? m_host_triplet : s.spec.triplet());
+                    }
                 }
+
                 std::vector<PackageSpec> spec_vec(spec_set.begin(), spec_set.end());
                 m_var_provider.load_dep_info_vars(spec_vec, m_host_triplet);
-                return m_var_provider.get_dep_info_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+                return m_var_provider.get_dep_info_vars(frame.spec).value_or_exit(VCPKG_LINE_INFO);
             }
             return *vars.get();
         }
@@ -1487,7 +1495,8 @@ namespace vcpkg
         {
             for (auto&& dep : frame.deps)
             {
-                if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame.spec))) continue;
+                // duplicate is_empty check avoids possibly needless batch_load_vars call
+                if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame))) continue;
 
                 PackageSpec dep_spec(dep.name, dep.host ? m_host_triplet : frame.spec.triplet());
                 auto maybe_node = require_package(dep_spec, frame.spec.name());
@@ -1522,7 +1531,11 @@ namespace vcpkg
                     // apply selected features
                     for (auto&& f : dep.features)
                     {
-                        if (f.name == FeatureNameDefault) abort();
+                        if (f.name == FeatureNameDefault)
+                        {
+                            Checks::unreachable(VCPKG_LINE_INFO);
+                        }
+
                         if (evaluate(frame.spec, f.platform))
                         {
                             require_port_feature(*node, f.name, frame.spec.name());
@@ -1620,14 +1633,10 @@ namespace vcpkg
         Optional<VersionedPackageGraph::PackageNode&> VersionedPackageGraph::require_package(const PackageSpec& spec,
                                                                                              const std::string& origin)
         {
-            // Implicit defaults are disabled if spec is requested from top-level spec.
-            const bool default_features_mask = origin != m_toplevel.name();
-
             auto it = m_graph.find(spec);
             if (it != m_graph.end())
             {
                 it->second.origins.insert(origin);
-                it->second.default_features &= default_features_mask;
                 return *it;
             }
 
@@ -1643,47 +1652,44 @@ namespace vcpkg
                 it->second.overlay_or_override = true;
                 it->second.scfl = p_overlay;
             }
-            else
+            else if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
             {
-                Version ver;
-                if (const auto over_it = m_overrides.find(spec.name()); over_it != m_overrides.end())
+                auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
+                if (auto p_scfl = maybe_scfl.get())
                 {
-                    auto maybe_scfl = m_ver_provider.get_control_file({spec.name(), over_it->second});
-                    if (auto p_scfl = maybe_scfl.get())
-                    {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
-                        it->second.overlay_or_override = true;
-                        it->second.scfl = p_scfl;
-                    }
-                    else
-                    {
-                        m_errors.push_back(std::move(maybe_scfl).error());
-                        m_failed_nodes.insert(spec.name());
-                        return nullopt;
-                    }
+                    it = m_graph.emplace(spec, PackageNodeData{}).first;
+                    it->second.overlay_or_override = true;
+                    it->second.scfl = p_scfl;
                 }
                 else
                 {
-                    auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
-                        return m_ver_provider.get_control_file({spec.name(), ver});
-                    });
-                    if (auto p_scfl = maybe_scfl.get())
-                    {
-                        it = m_graph.emplace(spec, PackageNodeData{}).first;
-                        it->second.baseline = p_scfl->schemed_version();
-                        it->second.scfl = p_scfl;
-                    }
-                    else
-                    {
-                        m_errors.push_back(std::move(maybe_scfl).error());
-                        m_failed_nodes.insert(spec.name());
-                        return nullopt;
-                    }
+                    m_errors.push_back(std::move(maybe_scfl).error());
+                    m_failed_nodes.insert(spec.name());
+                    return nullopt;
+                }
+            }
+            else
+            {
+                auto maybe_scfl = m_base_provider.get_baseline_version(spec.name()).then([&](const Version& ver) {
+                    return m_ver_provider.get_control_file({spec.name(), ver});
+                });
+                if (auto p_scfl = maybe_scfl.get())
+                {
+                    it = m_graph.emplace(spec, PackageNodeData{}).first;
+                    it->second.baseline = p_scfl->schemed_version();
+                    it->second.scfl = p_scfl;
+                }
+                else
+                {
+                    m_errors.push_back(std::move(maybe_scfl).error());
+                    m_failed_nodes.insert(spec.name());
+                    return nullopt;
                 }
             }
 
-            it->second.default_features = default_features_mask;
+            // Implicit defaults are disabled if spec is requested from top-level spec.
             // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
+            it->second.default_features = origin != m_toplevel.name();
             it->second.requested_features.insert(FeatureNameCore.to_string());
 
             require_scfl(*it, it->second.scfl, origin);
@@ -1693,6 +1699,11 @@ namespace vcpkg
         bool VersionedPackageGraph::evaluate(const PackageSpec& spec,
                                              const PlatformExpression::Expr& platform_expr) const
         {
+            if (platform_expr.is_empty())
+            {
+                return true;
+            }
+
             return platform_expr.evaluate(m_var_provider.get_or_load_dep_info_vars(spec, m_host_triplet));
         }
 
@@ -1703,22 +1714,14 @@ namespace vcpkg
 
         void VersionedPackageGraph::solve_with_roots(View<Dependency> deps)
         {
-            auto dep_to_spec = [this](const Dependency& d) {
-                return PackageSpec{d.name, d.host ? m_host_triplet : m_toplevel.triplet()};
-            };
-            auto specs = Util::fmap(deps, dep_to_spec);
-
-            specs.push_back(m_toplevel);
-            Util::sort_unique_erase(specs);
             for (auto&& dep : deps)
             {
-                if (!dep.platform.is_empty() &&
-                    !dep.platform.evaluate(m_var_provider.get_or_load_dep_info_vars(m_toplevel, m_host_triplet)))
+                if (!evaluate(m_toplevel, dep.platform))
                 {
                     continue;
                 }
 
-                auto spec = dep_to_spec(dep);
+                auto spec = PackageSpec{dep.name, dep.host ? m_host_triplet : m_toplevel.triplet()};
                 m_user_requested.insert(spec);
                 m_roots.push_back(DepSpec{std::move(spec), dep.constraint, dep.features});
             }
@@ -1800,11 +1803,12 @@ namespace vcpkg
                         PackageSpec fspec{fdep.name, fdep.host ? m_host_triplet : node.first.triplet()};
 
                         // Ignore intra-package dependencies
-                        if (fspec == node.first) continue;
+                        if (fspec == node.first)
+                        {
+                            continue;
+                        }
 
-                        if (!fdep.platform.is_empty() &&
-                            !fdep.platform.evaluate(
-                                m_var_provider.get_or_load_dep_info_vars(node.first, m_host_triplet)))
+                        if (!evaluate(node.first, fdep.platform))
                         {
                             continue;
                         }
@@ -1817,6 +1821,7 @@ namespace vcpkg
                                 fspecs.emplace_back(fspec, g.name);
                             }
                         }
+
                         out_dep_specs.push_back({std::move(fspec), fdep.constraint, fdep.features});
                     }
                     Util::sort_unique_erase(fspecs);

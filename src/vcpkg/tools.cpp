@@ -488,7 +488,7 @@ namespace vcpkg
         virtual bool is_abi_sensitive() const override { return false; }
         virtual StringView tool_data_name() const override { return Tools::NINJA; }
         virtual std::vector<StringView> system_exe_stems() const override { return {Tools::NINJA}; }
-        virtual std::array<int, 3> default_min_version() const override { return {3, 5, 1}; }
+        virtual std::array<int, 3> default_min_version() const override { return {1, 12, 1}; }
 #if !defined(_WIN32)
         virtual void add_system_paths(DiagnosticContext&,
                                       const ReadOnlyFilesystem&,
@@ -1052,6 +1052,7 @@ namespace vcpkg
                 return nullopt;
             }
 
+            fs.set_executable(context, exe_path);
             return exe_path;
         }
 
