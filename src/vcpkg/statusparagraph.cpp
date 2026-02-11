@@ -114,20 +114,6 @@ namespace vcpkg
         }
     }
 
-    std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
-    {
-        auto extract_deps = [](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore}; };
-
-        std::map<std::string, std::vector<FeatureSpec>> deps;
-        deps.emplace(FeatureNameCore, Util::fmap(core->package.dependencies, extract_deps));
-        for (const StatusParagraph* feature : features)
-        {
-            deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
-        }
-
-        return deps;
-    }
-
     InternalFeatureSet InstalledPackageView::feature_list() const
     {
         InternalFeatureSet ret;

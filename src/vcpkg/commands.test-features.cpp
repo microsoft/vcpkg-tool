@@ -563,7 +563,7 @@ namespace vcpkg
             KeepGoing::Yes,
         };
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
-        PortDirAbiInfoCache port_dir_abi_info_cache;
+        SpecAbiInfoCache spec_abi_info_cache;
 
         // check what should be tested
         std::vector<SpecToTest> specs_to_test;
@@ -708,7 +708,7 @@ namespace vcpkg
         {
             if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, spec_abi_info_cache);
             }
         }
 
@@ -837,31 +837,25 @@ namespace vcpkg
                                                       *build_logs_recorder,
                                                       false);
             binary_cache.mark_all_unrestored();
-            for (const auto& result : summary.results)
+            for (const auto& result : summary.install_results)
             {
-                auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
-                switch (build_result.code)
+                switch (result.build_result.code)
                 {
                     case BuildResult::BuildFailed:
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
-                            const auto* ipa = result.get_maybe_install_plan_action();
-                            Checks::check_exit(VCPKG_LINE_INFO, ipa);
-                            fs.write_contents(issue_body_path,
-                                              create_github_issue(args, build_result, paths, *ipa, false),
-                                              VCPKG_LINE_INFO);
+                            fs.write_contents(
+                                issue_body_path, create_github_issue(args, paths, result, false), VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];
-                    case BuildResult::PostBuildChecksFailed:
-                        known_failures.insert(result.package_abi_or_exit(VCPKG_LINE_INFO));
-                        break;
+                    case BuildResult::PostBuildChecksFailed: known_failures.insert(result.package_abi()); break;
                     default: break;
                 }
             }
 
-            auto& last_build_result = summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
+            auto& last_build_result = summary.install_results.back().build_result;
             switch (last_build_result.code)
             {
                 case BuildResult::Downloaded:
@@ -890,11 +884,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.results.back().package_abi())
-                    {
-                        known_failures.insert(*abi);
-                    }
-
+                    known_failures.insert(summary.install_results.back().package_abi());
                     if (maybe_logs_dir)
                     {
                         fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);

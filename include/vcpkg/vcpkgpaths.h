@@ -55,8 +55,6 @@ namespace vcpkg
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
 
-        Path package_dir(const PackageSpec& spec) const;
-        Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
 
         const TripletDatabase& get_triplet_db() const;
