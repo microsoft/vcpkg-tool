@@ -268,7 +268,7 @@ namespace vcpkg
 
     // The parts of AbiInfo which depend only on the port directory and thus can be reused across multiple feature
     // builds
-    struct PortDirAbiInfoCacheEntry
+    struct SpecAbiInfoCacheEntry
     {
         std::vector<AbiEntry> abi_entries;
         std::vector<Path> files;
@@ -276,7 +276,7 @@ namespace vcpkg
         Json::Object heuristic_resources;
     };
 
-    using PortDirAbiInfoCache = Cache<Path, PortDirAbiInfoCacheEntry>;
+    using SpecAbiInfoCache = Cache<PackageSpec, SpecAbiInfoCacheEntry>;
 
     struct CompilerInfo
     {
@@ -313,7 +313,7 @@ namespace vcpkg
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db,
-                          PortDirAbiInfoCache& port_dir_cache);
+                          SpecAbiInfoCache& port_dir_cache);
 
     struct EnvCache
     {
