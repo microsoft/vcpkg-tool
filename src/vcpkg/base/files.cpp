@@ -37,6 +37,7 @@
 #include <vector>
 
 #if defined(_WIN32)
+#include <io.h>
 #include <share.h>
 
 #include <filesystem>
@@ -1560,6 +1561,62 @@ namespace vcpkg
         }
 
         ec.clear();
+    }
+
+    uint64_t ReadFilePointer::size(LineInfo li) const
+    {
+        std::error_code ec;
+        auto result = this->size(ec);
+        if (ec)
+        {
+            exit_filesystem_call_error(li, ec, __func__, {m_path});
+        }
+
+        return result;
+    }
+
+    uint64_t ReadFilePointer::size(std::error_code& ec) const
+    {
+        ec.clear();
+#if _WIN32
+        if (!m_fs)
+        {
+            ec.assign(EBADF, std::generic_category());
+            return 0;
+        }
+
+        const auto file_number = ::_fileno(m_fs);
+        if (file_number == -1)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        const auto os_handle = ::_get_osfhandle(file_number);
+        if (os_handle == -1)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        LARGE_INTEGER size;
+        if (!::GetFileSizeEx(reinterpret_cast<HANDLE>(os_handle), &size))
+        {
+            ec.assign(::GetLastError(), std::system_category());
+            return 0;
+        }
+
+        return static_cast<uint64_t>(size.QuadPart);
+#else
+        struct stat st;
+        if (::fstat(::fileno(m_fs), &st) != 0)
+        {
+            ec.assign(errno, std::generic_category());
+            return 0;
+        }
+
+        return st.st_size;
+#endif
     }
 
     WriteFilePointer::WriteFilePointer() noexcept = default;
@@ -4051,6 +4108,31 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
+        virtual bool set_executable(DiagnosticContext& context, const Path& target) const override
+        {
+#if defined(_WIN32)
+            // On Windows, executability is determined by file extension, not permissions.
+            (void)context;
+            (void)target;
+            return true;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::chmod(target.c_str(), 0755) != 0)
+            {
+                auto local_errno = errno;
+                context.report(
+                    DiagnosticLine{DiagKind::Error,
+                                   target,
+                                   msg::format(msgSystemApiErrorMessage,
+                                               msg::system_api = "chmod",
+                                               msg::exit_code = local_errno,
+                                               msg::error_msg = std::generic_category().message(local_errno))});
+                return false;
+            }
+
+            return true;
+#endif // ^^^ !_WIN32
+        }
+
         virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
@@ -4484,6 +4566,19 @@ namespace vcpkg
         bool last_write_time(DiagnosticContext& context, const Path&, int64_t) const override
         {
             context.report_system_error("last_write_time",
+#if defined(_WIN32)
+                                        ERROR_NOT_SUPPORTED
+#else
+                                        ENOTSUP
+#endif
+            );
+
+            return false;
+        }
+
+        bool set_executable(DiagnosticContext& context, const Path&) const override
+        {
+            context.report_system_error("set_executable",
 #if defined(_WIN32)
                                         ERROR_NOT_SUPPORTED
 #else

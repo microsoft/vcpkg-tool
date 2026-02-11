@@ -988,22 +988,16 @@ DECLARE_MESSAGE(CreationFailed, (msg::path), "", "Creating {path} failed.")
 DECLARE_MESSAGE(CurlFailedGeneric,
                 (msg::exit_code),
                 "curl is the name of a program, see curl.se.",
-                "curl operation failed with error code {exit_code}.")
+                "curl operation failed with error code {exit_code}")
+DECLARE_MESSAGE(CurlDownloadTimeout, (), "", "Download timed out.")
+DECLARE_MESSAGE(CurlFailedResponse,
+                (msg::exit_code),
+                "curl is the name of a program, see curl.se.",
+                "curl operation failed with response code {exit_code}.")
 DECLARE_MESSAGE(CurlFailedToPut,
-                (msg::exit_code, msg::url),
-                "curl is the name of a program, see curl.se",
-                "curl failed to put file to {url} with exit code {exit_code}.")
-DECLARE_MESSAGE(CurlFailedToPutHttp,
-                (msg::exit_code, msg::url, msg::value),
+                (msg::url, msg::value),
                 "curl is the name of a program, see curl.se. {value} is an HTTP status code",
-                "curl failed to put file to {url} with exit code {exit_code} and http code {value}.")
-DECLARE_MESSAGE(
-    CurlFailedToReturnExpectedNumberOfExitCodes,
-    (msg::exit_code, msg::command_line),
-    "",
-    "curl failed to return the expected number of exit codes; this can happen if something terminates curl "
-    "before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, "
-    "but may be the result of a crash. The command line was {command_line}, and all output is below:")
+                "curl failed to PUT file to {url} with response code {value}.")
 DECLARE_MESSAGE(CurrentCommitBaseline,
                 (msg::commit_sha),
                 "",
@@ -1085,10 +1079,6 @@ DECLARE_MESSAGE(
     (msg::sha),
     "",
     "failing download because the expected SHA512 was all zeros, please change the expected SHA512 to: {sha}")
-DECLARE_MESSAGE(DownloadFailedRetrying,
-                (msg::value, msg::url),
-                "{value} is a number of milliseconds",
-                "Download {url} failed -- retrying after {value}ms")
 DECLARE_MESSAGE(DownloadFailedStatusCode,
                 (msg::url, msg::value),
                 "{value} is an HTTP status code",
@@ -1125,6 +1115,18 @@ DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundle, (msg::version), "", "Downloadi
 DECLARE_MESSAGE(DownloadingVcpkgStandaloneBundleLatest, (), "", "Downloading latest standalone bundle.")
 DECLARE_MESSAGE(DownloadingTools, (msg::count), "", "Downloading {count} tools")
 DECLARE_MESSAGE(DownloadOrUrl, (msg::url), "", "or {url}")
+DECLARE_MESSAGE(DownloadTransientErrorRetry,
+                (msg::count, msg::value),
+                "{value} is the maximum number of attempts to download a file",
+                "Attempt {count} of {value}, retrying download.")
+DECLARE_MESSAGE(DownloadTransientErrorRetriesExhausted,
+                (msg::url),
+                "",
+                "Reached maximum number of attempts, won't retry download from {url}.")
+DECLARE_MESSAGE(DownloadNotTransientErrorWontRetry,
+                (msg::url),
+                "",
+                "Not a transient network error, won't retry download from {url}")
 DECLARE_MESSAGE(DownloadTryingAuthoritativeSource, (msg::url), "", "Trying {url}")
 DECLARE_MESSAGE(DownloadRootsDir, (msg::env_var), "", "Downloads directory (default: {env_var})")
 DECLARE_MESSAGE(DownloadSuccesful, (msg::path), "", "Successfully downloaded {path}")
@@ -1132,10 +1134,6 @@ DECLARE_MESSAGE(DownloadSuccesfulUploading,
                 (msg::path, msg::url),
                 "",
                 "Successfully downloaded {path}, storing to {url}")
-DECLARE_MESSAGE(DownloadWinHttpError,
-                (msg::system_api, msg::exit_code, msg::url),
-                "",
-                "{url}: {system_api} failed with exit code {exit_code}.")
 DECLARE_MESSAGE(DuplicateDependencyOverride, (msg::package_name), "", "{package_name} already has an override")
 DECLARE_MESSAGE(DuplicatedKeyInObj,
                 (msg::value),
@@ -2600,7 +2598,7 @@ DECLARE_MESSAGE(
     "the license is not installed to ${{CURRENT_PACKAGES_DIR}}/share/${{PORT}}/copyright . This can be fixed by adding "
     "a call to vcpkg_install_copyright. To suppress this message, add set(VCPKG_POLICY_SKIP_COPYRIGHT_CHECK enabled)")
 DECLARE_MESSAGE(PortBugMissingLicenseFixIt,
-                (msg ::value),
+                (msg::value),
                 "{value} is a CMake function call for the user to paste into their file, for example: "
                 "vcpkg_install_copyright(FILE_LIST ${{SOURCE_PATH}}/COPYING ${{SOURCE_PATH}}/LICENSE.txt)",
                 "Consider adding: {value}")
@@ -2862,6 +2860,11 @@ DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
                 (msg::value),
                 "'{value}' is a feature flag.",
                 "Both '{value}' and -'{value}' were specified as feature flags.")
+DECLARE_MESSAGE(UnableToFindCurl,
+                (),
+                "",
+                "vcpkg was unable to find a libcurl.so.4, libcurl-gnutls.so.4, or libcurl-nss.so.4 to use on this "
+                "system. Please install libcurl from your system package manager and retry vcpkg.")
 DECLARE_MESSAGE(UnableToReadAppDatas, (), "", "both %LOCALAPPDATA% and %APPDATA% were unreadable")
 DECLARE_MESSAGE(UnableToReadEnvironmentVariable, (msg::env_var), "", "unable to read {env_var}")
 DECLARE_MESSAGE(UndeterminedToolChainForTriplet,
@@ -3160,7 +3163,6 @@ DECLARE_MESSAGE(VcpkgUsage,
                 "[]s, or --s should be preserved. @response_file should be localized to be consistent with the message "
                 "named 'ResponseFileCode'.",
                 "usage: vcpkg <command> [--switches] [--options=values] [arguments] @response_file")
-DECLARE_MESSAGE(InvalidUri, (msg::value), "{value} is the URI we attempted to parse.", "unable to parse uri: {value}")
 DECLARE_MESSAGE(VcpkgInVsPrompt,
                 (msg::value, msg::triplet),
                 "'{value}' is a VS prompt",
