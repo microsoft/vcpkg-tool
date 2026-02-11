@@ -1099,7 +1099,9 @@ namespace
 
             DWORD bytes_read = 0;
             static constexpr DWORD buffer_size = 1024 * 32;
-            char buf[buffer_size];
+            // the alignment is forced here for callers that are expecting the buffer to contain UTF-16
+            // on Windows
+            alignas(wchar_t) char buf[buffer_size];
             while (stdout_pipe.read_pipe != INVALID_HANDLE_VALUE)
             {
                 switch (WaitForSingleObjectEx(stdout_pipe.read_pipe, INFINITE, TRUE))
@@ -1650,7 +1652,9 @@ namespace
                     // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
                     // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
                     std::string encoded;
-                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2);
+                    // clang-format off
+                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2); // CodeQL [SM02986] This is not an incorrect cast to shut up the compiler, the suggested "call an encoding conversion function instead" is exactly what this is doing.
+                    // clang-format on
                     std::replace(encoded.begin(), encoded.end(), '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
