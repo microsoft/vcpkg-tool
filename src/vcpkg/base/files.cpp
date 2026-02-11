@@ -4051,6 +4051,31 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
         }
 
+        virtual bool set_executable(DiagnosticContext& context, const Path& target) const override
+        {
+#if defined(_WIN32)
+            // On Windows, executability is determined by file extension, not permissions.
+            (void)context;
+            (void)target;
+            return true;
+#else  // ^^^ _WIN32 // !_WIN32 vvv
+            if (::chmod(target.c_str(), 0755) != 0)
+            {
+                auto local_errno = errno;
+                context.report(
+                    DiagnosticLine{DiagKind::Error,
+                                   target,
+                                   msg::format(msgSystemApiErrorMessage,
+                                               msg::system_api = "chmod",
+                                               msg::exit_code = local_errno,
+                                               msg::error_msg = std::generic_category().message(local_errno))});
+                return false;
+            }
+
+            return true;
+#endif // ^^^ !_WIN32
+        }
+
         virtual void write_contents(const Path& file_path, StringView data, std::error_code& ec) const override
         {
             StatsTimer t(g_us_filesystem_stats);
@@ -4484,6 +4509,19 @@ namespace vcpkg
         bool last_write_time(DiagnosticContext& context, const Path&, int64_t) const override
         {
             context.report_system_error("last_write_time",
+#if defined(_WIN32)
+                                        ERROR_NOT_SUPPORTED
+#else
+                                        ENOTSUP
+#endif
+            );
+
+            return false;
+        }
+
+        bool set_executable(DiagnosticContext& context, const Path&) const override
+        {
+            context.report_system_error("set_executable",
 #if defined(_WIN32)
                                         ERROR_NOT_SUPPORTED
 #else
