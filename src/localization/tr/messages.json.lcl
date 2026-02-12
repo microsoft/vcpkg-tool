@@ -4237,45 +4237,45 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CurlDownloadTimeout" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Download timed out.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[İndirme zaman aşımına uğradı.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CurlFailedGeneric" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
+          <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl işlemi {exit_code} hata koduyla başarısız oldu.]]></Val>
+            <Val><![CDATA[curl işlemi {exit_code} hata koduyla başarısız oldu]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl operation failed with error code {exit_code}]]></Val>
+            <Val><![CDATA[curl operation failed with error code {exit_code}.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CurlFailedResponse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[curl operation failed with response code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[curl işlemi {exit_code} yanıt koduyla başarısız oldu.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CurlFailedToPut" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
+          <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl, {exit_code} çıkış koduyla dosyayı {url} URL’sine yerleştiremedi.]]></Val>
+            <Val><![CDATA[curl, {url} adresine {value} yanıt koduyla dosya PUT işlemini gerçekleştiremedi.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[curl failed to PUT file to {url} with response code {value}.]]></Val>
+            <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code}.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlFailedToPutHttp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl failed to put file to {url} with exit code {exit_code} and http code {value}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl, {exit_code} çıkış kodu ve {value} http kodu ile dosyayı {url} URL’sine yerleştiremedi.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";CurlFailedToReturnExpectedNumberOfExitCodes" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[curl failed to return the expected number of exit codes; this can happen if something terminates curl before it has finished. curl exited with {exit_code} which is normally the result code for the last operation, but may be the result of a crash. The command line was {command_line}, and all output is below:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[curl beklenen sayıda çıkış kodu döndüremedi; bu durum, bir şey bitmeden önce kıvrımı sonlandırılırsa oluşabilir. curl, {exit_code} işlem için normalde sonuç kodu olan bir hatayla çıkıldı, ancak kilitlenme sonucu olabilir. Komut satırı {command_line} ve tüm çıkışlar aşağıdadır:]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -4573,20 +4573,20 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";DownloadFailedRetrying" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Download {url} failed -- retrying after {value}ms]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url} indirme başarısız - {value} ms sonra yeniden denenecek]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";DownloadFailedStatusCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[{url}: failed: status code {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url} URL’si {value} durum koduyla başarısız oldu]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadNotTransientErrorWontRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Not a transient network error, won't retry download from {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Geçici bir ağ hatası değil, indirme, {url} adresinden yeniden denenmeyecek]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4633,20 +4633,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";DownloadTransientErrorRetriesExhausted" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Reached maximum number of attempts, won't retry download from {url}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Maksimum deneme sayısına ulaşıldı, {url} adresinden indirmeyi tekrar denemeyeceğiz.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DownloadTransientErrorRetry" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Attempt {count} of {value}, retrying download.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{value} için {count} deneme, indirme yeniden deneniyor.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";DownloadTryingAuthoritativeSource" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Trying {url}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{url}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";DownloadWinHttpError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[{url}: {system_api} failed with exit code {exit_code}.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{url}: {system_api} {exit_code} çıkış koduyla başarısız oldu.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -5229,24 +5238,6 @@
           <Val><![CDATA[Recursion depth exceeded.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Özyineleme derinliği aşıldı.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExcludedPackage" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Excluded {spec}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Dışlanan {spec}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ExcludedPackages" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[The following packages are excluded:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Aşağıdaki paketler hariç tutuldu:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7929,15 +7920,6 @@
           <Val><![CDATA[Invalid triplet: {triplet}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Geçersiz üçlü: {triplet}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";InvalidUri" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[unable to parse uri: {value}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{value} URI’si ayrıştırılamıyor]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10683,6 +10665,15 @@
           <Val><![CDATA[Unable to fetch git data for (${p0}) in folder (${p1})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[(${p1}) klasöründeki (${p0}) için git verileri getirilemiyor]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UnableToFindCurl" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg was unable to find a libcurl.so.4, libcurl-gnutls.so.4, or libcurl-nss.so.4 to use on this system. Please install libcurl from your system package manager and retry vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg, bu sistemde kullanmak üzere bir libcurl.so.4, libcurl-gnutls.so.4 veya libcurl-nss.so.4 bulamadı. Lütfen sistem paket yöneticinizden libcurl kitaplığını yükleyin ve vcpkg'yi yeniden deneyin.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
