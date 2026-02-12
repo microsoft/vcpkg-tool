@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "{{\"configuration\", \"vcpkg-configuration\"}} 중 하나만 사용할 수 있습니다.",
   "ConflictingFiles": "다음 파일은 {path}에 이미 설치되어 있으며 {spec}과(와) 충돌합니다.",
   "ConsideredVersions": "{version}의 버전 요구 사항으로 인해 다음 실행 파일이 고려되었지만 삭제되었습니다.",
-  "ConstraintViolation": "제약 조건 위반 발견:",
   "ContinueCodeUnitInStart": "시작 위치에서 계속 코드 단위를 찾음",
   "ControlCharacterInString": "문자열의 제어 문자",
   "ControlSupportsMustBeAPlatformExpression": "\"Supports\"는 반드시 플랫폼 식이어야 합니다.",
