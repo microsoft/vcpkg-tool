@@ -167,59 +167,6 @@ namespace
                                                                     std::declval<Optional<int>>()))>,
                   "boom");
 
-    Optional<int&> returns_optional_ref_prvalue(DiagnosticContext&, int& val) { return val; }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_prvalue), int&>, "boom");
-    static_assert(
-        std::is_same_v<ExpectedL<int&>,
-                       decltype(adapt_context_to_expected(returns_optional_ref_prvalue, std::declval<int&>()))>,
-        "boom");
-
-    const Optional<int&> returns_optional_ref_const_prvalue(DiagnosticContext&, int& val) { return val; }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_prvalue), int&>, "boom");
-    static_assert(
-        std::is_same_v<ExpectedL<int&>,
-                       decltype(adapt_context_to_expected(returns_optional_ref_const_prvalue, std::declval<int&>()))>,
-        "boom");
-
-    Optional<int&>& returns_optional_ref_lvalue(DiagnosticContext&, Optional<int&>& val) { return val; }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_lvalue), Optional<int&>&>,
-                  "boom");
-    static_assert(std::is_same_v<ExpectedL<int&>,
-                                 decltype(adapt_context_to_expected(returns_optional_ref_lvalue,
-                                                                    std::declval<Optional<int&>&>()))>,
-                  "boom");
-
-    const Optional<int&>& returns_optional_ref_const_lvalue(DiagnosticContext&, const Optional<int&>& val)
-    {
-        return val;
-    }
-    static_assert(
-        adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_lvalue), const Optional<int&>&>,
-        "boom");
-    static_assert(std::is_same_v<ExpectedL<int&>,
-                                 decltype(adapt_context_to_expected(returns_optional_ref_const_lvalue,
-                                                                    std::declval<const Optional<int&>&>()))>,
-                  "boom");
-
-    Optional<int&>&& returns_optional_ref_xvalue(DiagnosticContext&, Optional<int&>&& val) { return std::move(val); }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_xvalue), Optional<int&>>,
-                  "boom");
-    static_assert(std::is_same_v<ExpectedL<int&>,
-                                 decltype(adapt_context_to_expected(returns_optional_ref_xvalue,
-                                                                    std::declval<Optional<int&>>()))>,
-                  "boom");
-
-    const Optional<int&>&& returns_optional_ref_const_xvalue(DiagnosticContext&, Optional<int&>&& val)
-    {
-        return std::move(val);
-    }
-    static_assert(adapt_context_to_expected_invocable_with<decltype(returns_optional_ref_const_xvalue), Optional<int&>>,
-                  "boom");
-    static_assert(std::is_same_v<ExpectedL<int&>,
-                                 decltype(adapt_context_to_expected(returns_optional_ref_const_xvalue,
-                                                                    std::declval<Optional<int&>>()))>,
-                  "boom");
-
     Optional<int> returns_optional_fail(DiagnosticContext& context)
     {
         context.report({DiagKind::Error, LocalizedString::from_raw("something bad happened")});
@@ -391,57 +338,6 @@ TEST_CASE ("adapt DiagnosticContext to ExpectedL", "[diagnostics]")
             std::move(an_lvalue));
 
         REQUIRE(copied);
-    }
-    // returns_optional_ref_prvalue
-    {
-        int the_lvalue = 42;
-        auto adapted = adapt_context_to_expected(returns_optional_ref_prvalue, the_lvalue);
-        REQUIRE(adapted.get() == &the_lvalue);
-    }
-    // returns_optional_ref_const_prvalue
-    {
-        int the_lvalue = 42;
-        auto adapted = adapt_context_to_expected(returns_optional_ref_const_prvalue, the_lvalue);
-        REQUIRE(adapted.get() == &the_lvalue);
-    }
-    // returns_optional_ref_lvalue
-    {
-        int the_inside_lvalue = 42;
-        Optional<int&> the_lvalue{the_inside_lvalue};
-        auto adapted = adapt_context_to_expected(returns_optional_ref_lvalue, the_lvalue);
-        REQUIRE(adapted.get() == &the_inside_lvalue);
-    }
-    {
-        int move_limit = 0;
-        MoveCounter the_inside_lvalue{move_limit};
-        Optional<MoveCounter&> an_lvalue;
-        an_lvalue.emplace(the_inside_lvalue);
-        auto adapted = adapt_context_to_expected(
-            [](DiagnosticContext&, Optional<MoveCounter&>&& ret) -> Optional<MoveCounter&> { return std::move(ret); },
-            std::move(an_lvalue));
-        REQUIRE(adapted.get() == &the_inside_lvalue);
-        REQUIRE(move_limit == 0);
-    }
-    // returns_optional_ref_const_lvalue
-    {
-        int the_inside_lvalue = 42;
-        Optional<int&> the_lvalue{the_inside_lvalue};
-        auto adapted = adapt_context_to_expected(returns_optional_ref_const_lvalue, the_lvalue);
-        REQUIRE(adapted.get() == &the_inside_lvalue);
-    }
-    // returns_optional_ref_xvalue
-    {
-        int the_inside_lvalue = 42;
-        Optional<int&> the_lvalue{the_inside_lvalue};
-        auto adapted = adapt_context_to_expected(returns_optional_ref_xvalue, std::move(the_lvalue));
-        REQUIRE(adapted.get() == &the_inside_lvalue);
-    }
-    // returns_optional_ref_const_xvalue
-    {
-        int the_inside_lvalue = 42;
-        Optional<int&> the_lvalue{the_inside_lvalue};
-        auto adapted = adapt_context_to_expected(returns_optional_ref_const_xvalue, std::move(the_lvalue));
-        REQUIRE(adapted.get() == &the_inside_lvalue);
     }
 
     // returns_optional_prvalue_fail

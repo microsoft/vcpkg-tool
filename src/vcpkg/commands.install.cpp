@@ -1141,6 +1141,43 @@ namespace vcpkg
         return Util::any_of(args.cmake_args, [](StringView s) { return s.starts_with("-D"); });
     }
 
+#if defined(_WIN32)
+    static void maybe_print_vs_prompt_warning(const std::vector<InstallPlanAction>& install_actions)
+    {
+        if (!install_actions.empty())
+        {
+            const auto first = install_actions.begin();
+            auto next = first;
+            const auto last = install_actions.end();
+            while (++next != last)
+            {
+                if (first->spec.triplet() != next->spec.triplet())
+                {
+                    return;
+                }
+            }
+
+            const auto maybe_common_arch = first->spec.triplet().guess_architecture();
+            if (auto common_arch = maybe_common_arch.get())
+            {
+                const auto maybe_vs_prompt = guess_visual_studio_prompt_target_architecture();
+                if (auto vs_prompt = maybe_vs_prompt.get())
+                {
+                    // There is no "Developer Command Prompt for ARM64EC". ARM64EC and ARM64 use the same developer
+                    // command prompt, and compiler toolset version. The only difference is adding a /arm64ec switch to
+                    // the build
+                    if (*common_arch != *vs_prompt &&
+                        !(*common_arch == CPUArchitecture::ARM64EC && *vs_prompt == CPUArchitecture::ARM64))
+                    {
+                        msg::println_warning(
+                            msgVcpkgInVsPrompt, msg::value = *vs_prompt, msg::triplet = first->spec.triplet());
+                    }
+                }
+            }
+        }
+    }
+#endif // ^^^ _WIN32
+
     void command_install_and_exit(const VcpkgCmdArguments& args,
                                   const VcpkgPaths& paths,
                                   Triplet default_triplet,
@@ -1415,28 +1452,7 @@ namespace vcpkg
         }
 
 #if defined(_WIN32)
-        const auto maybe_common_triplet = Util::common_projection(
-            action_plan.install_actions, [](const InstallPlanAction& to_install) { return to_install.spec.triplet(); });
-        if (auto common_triplet = maybe_common_triplet.get())
-        {
-            const auto maybe_common_arch = common_triplet->guess_architecture();
-            if (auto common_arch = maybe_common_arch.get())
-            {
-                const auto maybe_vs_prompt = guess_visual_studio_prompt_target_architecture();
-                if (auto vs_prompt = maybe_vs_prompt.get())
-                {
-                    // There is no "Developer Command Prompt for ARM64EC". ARM64EC and ARM64 use the same developer
-                    // command prompt, and compiler toolset version. The only difference is adding a /arm64ec switch to
-                    // the build
-                    if (*common_arch != *vs_prompt &&
-                        !(*common_arch == CPUArchitecture::ARM64EC && *vs_prompt == CPUArchitecture::ARM64))
-                    {
-                        msg::println_warning(
-                            msgVcpkgInVsPrompt, msg::value = *vs_prompt, msg::triplet = *common_triplet);
-                    }
-                }
-            }
-        }
+        maybe_print_vs_prompt_warning(action_plan.install_actions);
 #endif // defined(_WIN32)
 
         const auto formatted = print_plan(action_plan);
