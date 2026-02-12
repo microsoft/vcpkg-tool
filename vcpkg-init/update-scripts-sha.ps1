@@ -12,4 +12,6 @@ $config = Get-Content -LiteralPath $configPath -Raw -Encoding Ascii | ConvertFro
 if (-not $config.'default-registry') { throw "Missing default-registry in vcpkg-configuration.json." }
 
 $config.'default-registry'.baseline = $sha
-$config | ConvertTo-Json -Depth 100 | Out-File -LiteralPath $configPath -Encoding Ascii
+$configJson = $config | ConvertTo-Json -Depth 100
+$configJson = $configJson -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText($configPath, "$configJson`n", [System.Text.Encoding]::ASCII)
