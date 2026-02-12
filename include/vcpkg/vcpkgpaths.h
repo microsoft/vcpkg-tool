@@ -131,7 +131,7 @@ namespace vcpkg
         ExpectedL<Unit> git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const;
         ExpectedL<Path> git_extract_tree_from_remote_registry(StringView tree) const;
 
-        Optional<const ManifestAndPath&> get_manifest() const;
+        const ManifestAndPath* get_manifest() const;
         bool manifest_mode_enabled() const;
         const ConfigurationAndSource& get_configuration() const;
         std::unique_ptr<RegistrySet> make_registry_set() const;

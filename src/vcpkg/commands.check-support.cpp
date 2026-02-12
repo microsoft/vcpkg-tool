@@ -154,14 +154,15 @@ namespace vcpkg
                 const auto& supports_expression =
                     action.source_control_file_and_location().source_control_file->core_paragraph->supports_expression;
 
-                PlatformExpression::Context context = cmake_vars->get_tag_vars(spec).value_or_exit(VCPKG_LINE_INFO);
+                const auto* context = cmake_vars->get_tag_vars(spec);
+                Checks::check_exit(VCPKG_LINE_INFO, context != nullptr);
 
                 if (spec.name() == user_port.port_name && spec.triplet() == user_port.triplet)
                 {
                     user_port.features = action.feature_list;
                     user_port.supports_expr = to_string(supports_expression);
 
-                    if (supports_expression.evaluate(context))
+                    if (supports_expression.evaluate(*context))
                     {
                         user_supported = true;
                     }
@@ -169,7 +170,7 @@ namespace vcpkg
                     continue;
                 }
 
-                if (!supports_expression.evaluate(context))
+                if (!supports_expression.evaluate(*context))
                 {
                     Port port;
                     port.port_name = spec.name();

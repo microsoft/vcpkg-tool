@@ -140,7 +140,7 @@ namespace vcpkg
 
         RequestType request_type;
 
-        Optional<const BinaryParagraph&> core_paragraph() const;
+        const BinaryParagraph* core_paragraph() const;
         std::vector<PackageSpec> dependencies() const;
 
     private:

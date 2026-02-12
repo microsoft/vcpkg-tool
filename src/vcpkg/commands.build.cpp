@@ -751,8 +751,7 @@ namespace vcpkg
         bcf->features.reserve(action.feature_dependencies.size());
         for (auto&& feature_dependency : action.feature_dependencies)
         {
-            auto maybe_fpgh = scfl.source_control_file->find_feature(feature_dependency.first);
-            if (auto fpgh = maybe_fpgh.get())
+            if (auto fpgh = scfl.source_control_file->find_feature(feature_dependency.first))
             {
                 bcf->features.emplace_back(action.spec, *fpgh, fspecs_to_pspecs(feature_dependency.second));
             }
@@ -934,12 +933,9 @@ namespace vcpkg
             variables.emplace_back(CMakeVariableProhibitBackcompatFeatures, "1");
         }
 
-        get_generic_cmake_build_args(
-            paths,
-            action.spec.triplet(),
-            action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset.value_or_exit(VCPKG_LINE_INFO),
-            variables);
-
+        const auto* maybe_toolset = action.abi_info.value_or_exit(VCPKG_LINE_INFO).toolset;
+        Checks::check_exit(VCPKG_LINE_INFO, maybe_toolset != nullptr);
+        get_generic_cmake_build_args(paths, action.spec.triplet(), *maybe_toolset, variables);
         if (Util::Enum::to_bool(build_options.only_downloads))
         {
             variables.emplace_back(CMakeVariableDownloadMode, "true");
@@ -1167,14 +1163,15 @@ namespace vcpkg
         }
 
         const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
+        const auto* toolset = abi_info.toolset;
+        Checks::check_exit(VCPKG_LINE_INFO, toolset != nullptr);
 
         const ElapsedTimer timer;
         auto cmd = vcpkg::make_cmake_cmd(
             paths, paths.ports_cmake, get_cmake_build_args(args, paths, host_triplet, build_options, action));
 
         RedirectedProcessLaunchSettings settings;
-        auto& env = settings.environment.emplace(
-            paths.get_action_env(*abi_info.pre_build_info, abi_info.toolset.value_or_exit(VCPKG_LINE_INFO)));
+        auto& env = settings.environment.emplace(paths.get_action_env(*abi_info.pre_build_info, *toolset));
 
         auto buildpath = paths.build_dir(action.spec.name());
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -1353,7 +1350,7 @@ namespace vcpkg
         const auto& toolset = paths.get_toolset(pre_build_info);
         auto& abi_info = action.abi_info.emplace();
         abi_info.pre_build_info = std::move(proto_pre_build_info);
-        abi_info.toolset.emplace(toolset);
+        abi_info.toolset = &toolset;
 
         if (action.use_head_version == UseHeadVersion::Yes)
         {
@@ -1366,7 +1363,7 @@ namespace vcpkg
             return;
         }
 
-        abi_info.compiler_info = paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+        abi_info.compiler_info = &paths.get_compiler_info(*abi_info.pre_build_info, toolset);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1383,7 +1380,7 @@ namespace vcpkg
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
         const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
-        abi_info.triplet_abi.emplace(triplet_abi);
+        abi_info.triplet_abi = &triplet_abi;
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back(AbiTagTriplet, triplet_canonical_name);
         abi_tag_entries.emplace_back(AbiTagTripletAbi, triplet_abi);
@@ -1589,15 +1586,14 @@ namespace vcpkg
                 }
             }
 
-            populate_abi_tag(
-                paths,
-                action,
-                std::make_unique<PreBuildInfo>(paths,
-                                               action.spec.triplet(),
-                                               var_provider.get_tag_vars(action.spec).value_or_exit(VCPKG_LINE_INFO)),
-                dependency_abis,
-                spec_abi_cache,
-                grdk_cache);
+            const auto* tag_vars = var_provider.get_tag_vars(action.spec);
+            Checks::check_exit(VCPKG_LINE_INFO, tag_vars != nullptr);
+            populate_abi_tag(paths,
+                             action,
+                             std::make_unique<PreBuildInfo>(paths, action.spec.triplet(), *tag_vars),
+                             dependency_abis,
+                             spec_abi_cache,
+                             grdk_cache);
         }
     }
 
@@ -1892,8 +1888,7 @@ namespace vcpkg
                            install_summary.build_result.stdoutlog.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO));
 
         std::string postfix;
-        const auto maybe_manifest = paths.get_manifest();
-        if (auto manifest = maybe_manifest.get())
+        if (const auto* manifest = paths.get_manifest())
         {
             if (include_manifest || manifest->manifest.contains("builtin-baseline"))
             {

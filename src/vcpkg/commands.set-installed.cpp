@@ -302,7 +302,7 @@ namespace vcpkg
             }
         }
 
-        const auto manifest = paths.get_manifest().get();
+        const auto* manifest = paths.get_manifest();
         const auto installed_paths = paths.maybe_installed().get();
         if (manifest && installed_paths)
         {
