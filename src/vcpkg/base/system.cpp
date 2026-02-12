@@ -157,6 +157,7 @@ namespace
         {"loongarch32", CPUArchitecture::LOONGARCH32},
         {"loongarch64", CPUArchitecture::LOONGARCH64},
         {"mips64", CPUArchitecture::MIPS64},
+        {"e2k", CPUArchitecture::E2K},
     };
 }
 
@@ -304,6 +305,8 @@ namespace vcpkg
         return CPUArchitecture::LOONGARCH64;
 #elif defined(__mips64)
         return CPUArchitecture::MIPS64;
+#elif defined(__e2k__)
+        return CPUArchitecture::E2K;
 #else // choose architecture
 #error "Unknown host architecture"
 #endif // choose architecture
