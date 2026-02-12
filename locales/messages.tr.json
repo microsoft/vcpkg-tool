@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "sadece bir {{\"configuration\", \"vcpkg-configuration\"}} kullanılabilir",
   "ConflictingFiles": "Aşağıdaki dosyalar zaten {path} yolunda yüklü ve {spec} ile çakışıyor",
   "ConsideredVersions": "Aşağıdaki yürütülebilir dosyalar dikkate alındı ancak {version} gereksinimi nedeniyle atıldı:",
-  "ConstraintViolation": "Bir kısıtlama ihlali bulundu:",
   "ContinueCodeUnitInStart": "başlangıç konumunda devam kodu birimi bulundu",
   "ControlCharacterInString": "Control character in string",
   "ControlSupportsMustBeAPlatformExpression": "“Destekler”, bir platform ifadesi olmalıdır",

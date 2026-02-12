@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "une seule de {{\"configuration\", \"vcpkg-configuration\"}} peut être utilisée",
   "ConflictingFiles": "Les fichiers suivants sont déjà installés dans {path} et sont en conflit avec {spec}",
   "ConsideredVersions": "Les exécutables suivants ont été pris en compte mais ignorés en raison de l’exigence de version de {version} :",
-  "ConstraintViolation": "Une violation de contrainte a été trouvée :",
   "ContinueCodeUnitInStart": "unité de code continue trouvée en position de départ",
   "ControlCharacterInString": "Caractère de contrôle dans la chaîne",
   "ControlSupportsMustBeAPlatformExpression": "« Supports » doit être une expression de plateforme",

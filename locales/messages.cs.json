@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "lze použít pouze jednu z {{\"configuration\", \"vcpkg-configuration\"}}",
   "ConflictingFiles": "Následující soubory jsou už nainstalované v {path} a jsou v konfliktu s {spec}.",
   "ConsideredVersions": "Následující spustitelné soubory byly zvažovány, ale byly vyřazeny, protože je vyžadována verze {version}:",
-  "ConstraintViolation": "Bylo nalezeno porušení omezení:",
   "ContinueCodeUnitInStart": "našla se jednotka kódu pro pokračování na počáteční pozici",
   "ControlCharacterInString": "Řídicí znak v řetězci",
   "ControlSupportsMustBeAPlatformExpression": "„Supports“ musí být výraz platformy.",

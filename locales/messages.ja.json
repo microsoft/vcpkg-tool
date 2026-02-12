@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "{{\"configuration\", \"vcpkg-configuration\"}} のうち 1 つだけを使用できます",
   "ConflictingFiles": "次のファイルはすでに {path} にインストールされており、{spec} と競合しています",
   "ConsideredVersions": "次の実行可能ファイルが検討されましたが、{version} のバージョン要件により破棄されました。",
-  "ConstraintViolation": "以下の制約違反が見つかりました。",
   "ContinueCodeUnitInStart": "開始位置で continue コード単位が見つかりました",
   "ControlCharacterInString": "文字列内の制御文字",
   "ControlSupportsMustBeAPlatformExpression": "\"Supports\" はプラットフォーム式である必要があります",

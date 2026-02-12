@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "只能使用 {{\"configuration\", \"vcpkg-configuration\"}} 之一",
   "ConflictingFiles": "以下文件已安装在 {path} 中，并与 {spec} 发生冲突",
   "ConsideredVersions": "考虑了以下可执行文件，但由于 {version} 的版本要求而被放弃:",
-  "ConstraintViolation": "发现约束冲突:",
   "ContinueCodeUnitInStart": "在“开始”位置找到了继续码位",
   "ControlCharacterInString": "字符串中的控件字符",
   "ControlSupportsMustBeAPlatformExpression": "“Supports”必须是平台表达式",

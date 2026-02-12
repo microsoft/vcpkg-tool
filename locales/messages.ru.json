@@ -397,7 +397,6 @@
   "ConflictingEmbeddedConfiguration": "можно использовать только один из {{\"configuration\", \"vcpkg-configuration\"}}",
   "ConflictingFiles": "Следующие файлы уже установлены в {path} и конфликтуют с {spec}",
   "ConsideredVersions": "Следующие исполняемые файлы были рассмотрены, но отклонены из-за требования версии {version}:",
-  "ConstraintViolation": "Обнаружено нарушение ограничения:",
   "ContinueCodeUnitInStart": "найдена единица кода продолжения в начальной позиции",
   "ControlCharacterInString": "Управляющий символ в строке",
   "ControlSupportsMustBeAPlatformExpression": "\"Supports\" должно быть выражением платформы",
