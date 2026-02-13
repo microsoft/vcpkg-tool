@@ -9,6 +9,7 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -476,6 +477,17 @@ namespace vcpkg
         ActionPlan action_plan;
         if (manifest)
         {
+            const CreateInstallPlanOptions create_options{
+                nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
+
+            /* vvv shared by install and depend-info vvv */
+            Optional<Path> pkgsconfig;
+            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
+            if (it_pkgsconfig != options.settings.end())
+            {
+                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
+                pkgsconfig = Path(it_pkgsconfig->second);
+            }
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
@@ -550,6 +562,18 @@ namespace vcpkg
                 }
             }
 
+            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
+                    return dep.constraint.type != VersionConstraintKind::None;
+                }))
+            {
+                get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
+            }
+
+            if (!manifest_core.overrides.empty())
+            {
+                get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
+            }
+
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
             auto verprovider = make_versioned_portfile_provider(*registry_set);
@@ -563,8 +587,6 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            const CreateInstallPlanOptions create_options{
-                nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
             action_plan = create_versioned_install_plan(*verprovider,
                                                         *baseprovider,
                                                         *oprovider,
@@ -575,6 +597,7 @@ namespace vcpkg
                                                         packages_dir_assigner,
                                                         create_options)
                               .value_or_exit(VCPKG_LINE_INFO);
+            /* ^^^ shared by install and depend-info ^^^ */
         }
         else
         {
