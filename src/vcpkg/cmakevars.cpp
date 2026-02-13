@@ -15,11 +15,12 @@ using namespace vcpkg;
 namespace vcpkg::CMakeVars
 {
 
-    void CMakeVarProvider::load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const
+    void CMakeVarProvider::load_tag_vars(const std::vector<InstallPlanAction>& install_actions,
+                                         Triplet host_triplet) const
     {
         std::vector<FullPackageSpec> install_package_specs;
-        install_package_specs.reserve(action_plan.install_actions.size());
-        for (auto&& action : action_plan.install_actions)
+        install_package_specs.reserve(install_actions.size());
+        for (auto&& action : install_actions)
         {
             install_package_specs.emplace_back(action.spec, action.feature_list);
         }
@@ -30,13 +31,15 @@ namespace vcpkg::CMakeVars
     const std::unordered_map<std::string, std::string>& CMakeVarProvider::get_or_load_dep_info_vars(
         const PackageSpec& spec, Triplet host_triplet) const
     {
-        auto maybe_vars = get_dep_info_vars(spec);
-        if (!maybe_vars.has_value())
+        auto vars = get_dep_info_vars(spec);
+        if (!vars)
         {
             load_dep_info_vars({&spec, 1}, host_triplet);
-            maybe_vars = get_dep_info_vars(spec);
+            vars = get_dep_info_vars(spec);
+            Checks::check_exit(VCPKG_LINE_INFO, vars != nullptr);
         }
-        return maybe_vars.value_or_exit(VCPKG_LINE_INFO);
+
+        return *vars;
     }
 
     namespace
@@ -53,14 +56,13 @@ namespace vcpkg::CMakeVars
 
             void load_tag_vars(View<FullPackageSpec> specs, Triplet host_triplet) const override;
 
-            Optional<const std::unordered_map<std::string, std::string>&> get_generic_triplet_vars(
+            const std::unordered_map<std::string, std::string>* get_generic_triplet_vars(
                 Triplet triplet) const override;
 
-            Optional<const std::unordered_map<std::string, std::string>&> get_dep_info_vars(
+            const std::unordered_map<std::string, std::string>* get_dep_info_vars(
                 const PackageSpec& spec) const override;
 
-            Optional<const std::unordered_map<std::string, std::string>&> get_tag_vars(
-                const PackageSpec& spec) const override;
+            const std::unordered_map<std::string, std::string>* get_tag_vars(const PackageSpec& spec) const override;
 
         public:
             Path create_tag_extraction_file(const View<FullPackageSpec> spec_abi_settings) const;
@@ -380,19 +382,19 @@ endfunction()
         }
     }
 
-    Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_generic_triplet_vars(
+    const std::unordered_map<std::string, std::string>* TripletCMakeVarProvider::get_generic_triplet_vars(
         Triplet triplet) const
     {
         return Util::lookup_value(generic_triplet_vars, triplet);
     }
 
-    Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_dep_info_vars(
+    const std::unordered_map<std::string, std::string>* TripletCMakeVarProvider::get_dep_info_vars(
         const PackageSpec& spec) const
     {
         return Util::lookup_value(dep_resolution_vars, spec);
     }
 
-    Optional<const std::unordered_map<std::string, std::string>&> TripletCMakeVarProvider::get_tag_vars(
+    const std::unordered_map<std::string, std::string>* TripletCMakeVarProvider::get_tag_vars(
         const PackageSpec& spec) const
     {
         return Util::lookup_value(tag_vars, spec);

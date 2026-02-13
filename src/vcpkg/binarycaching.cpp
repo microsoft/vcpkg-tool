@@ -352,10 +352,8 @@ namespace
             {
                 if (auto zip_resource = zip_paths[i].get())
                 {
-                    jobs.push_back({&actions[i]->package_dir.value_or_exit(VCPKG_LINE_INFO),
-                                    zip_resource,
-                                    fs.file_size(zip_resource->path, IgnoreErrors{}),
-                                    i});
+                    jobs.push_back(
+                        {&actions[i]->package_dir, zip_resource, fs.file_size(zip_resource->path, IgnoreErrors{}), i});
                 }
             }
 
@@ -491,7 +489,7 @@ namespace
                 auto url = templ.instantiate_variables(request);
                 WarningDiagnosticContext wdc{context};
                 auto maybe_success =
-                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -536,7 +534,7 @@ namespace
             }
 
             WarningDiagnosticContext wdc{context};
-            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers, m_secrets);
+            auto codes = download_files_no_cache(wdc, url_paths, m_url_template.headers);
             for (size_t i = 0; i < codes.size(); ++i)
             {
                 if (codes[i] == 200)
@@ -558,7 +556,7 @@ namespace
             }
 
             WarningDiagnosticContext wdc{context};
-            auto codes = url_heads(wdc, urls, {}, m_secrets);
+            auto codes = url_heads(wdc, urls, {});
             for (size_t i = 0; i < codes.size(); ++i)
             {
                 out_status[i] = codes[i] == 200 ? CacheAvailability::available : CacheAvailability::unavailable;
@@ -602,7 +600,7 @@ namespace
 
             // cf.
             // https://learn.microsoft.com/en-us/rest/api/storageservices/understanding-block-blobs--append-blobs--and-page-blobs?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json
-            constexpr size_t max_single_write = 5000000000;
+            constexpr size_t max_single_write = 5000000000u;
             bool use_azcopy = file_size > max_single_write;
 
             WarningDiagnosticContext wdc{context};
@@ -611,9 +609,8 @@ namespace
             {
                 auto url = templ.instantiate_variables(request);
                 auto maybe_success =
-                    use_azcopy
-                        ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
-                        : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, "PUT", templ.headers, zip_path);
+                    use_azcopy ? azcopy_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, zip_path)
+                               : store_to_asset_cache(wdc, url, SanitizedUrl{url, m_secrets}, templ.headers, zip_path);
                 if (maybe_success)
                 {
                     count_stored++;
@@ -2948,7 +2945,7 @@ namespace vcpkg
 
         if (clean_packages == CleanPackages::Yes)
         {
-            m_fs.remove_all(action.package_dir.value_or_exit(VCPKG_LINE_INFO), VCPKG_LINE_INFO);
+            m_fs.remove_all(action.package_dir, VCPKG_LINE_INFO);
         }
     }
 
@@ -3114,8 +3111,8 @@ namespace vcpkg
         : package_abi(action.package_abi_or_exit(VCPKG_LINE_INFO))
         , spec(action.spec)
         , display_name(action.display_name())
-        , version(action.version())
-        , package_dir(action.package_dir.value_or_exit(VCPKG_LINE_INFO))
+        , version(action.version)
+        , package_dir(action.package_dir)
     {
     }
 }
@@ -3254,10 +3251,12 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                                    const NuGetRepoInfo& rinfo)
 {
     auto& spec = action.spec;
-    auto& scf = *action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).source_control_file;
+    auto& scf = *action.source_control_file_and_location().source_control_file;
     auto& version = scf.core_paragraph->version;
     const auto& abi_info = action.abi_info.value_or_exit(VCPKG_LINE_INFO);
-    const auto& compiler_info = abi_info.compiler_info.value_or_exit(VCPKG_LINE_INFO);
+    Checks::check_exit(VCPKG_LINE_INFO, abi_info.compiler_info != nullptr);
+    const auto& compiler_info = *abi_info.compiler_info;
+    Checks::check_exit(VCPKG_LINE_INFO, abi_info.triplet_abi != nullptr);
     auto ref = make_nugetref(action, id_prefix);
     std::string description =
         Strings::concat("NOT FOR DIRECT USE. Automatically generated cache package.\n\n",
@@ -3271,7 +3270,7 @@ std::string vcpkg::generate_nuspec(const Path& package_dir,
                         "\nCXX Compiler version: ",
                         compiler_info.version,
                         "\nTriplet/Compiler hash: ",
-                        abi_info.triplet_abi.value_or_exit(VCPKG_LINE_INFO),
+                        *abi_info.triplet_abi,
                         "\nFeatures:",
                         Strings::join(",", action.feature_list, [](const std::string& s) { return " " + s; }),
                         "\nDependencies:\n");
@@ -3411,7 +3410,7 @@ std::string vcpkg::generate_nuget_packages_config(const ActionPlan& plan, String
 FeedReference vcpkg::make_nugetref(const InstallPlanAction& action, StringView prefix)
 {
     return ::make_feedref(
-        action.spec, action.version(), action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
+        action.spec, action.version, action.abi_info.value_or_exit(VCPKG_LINE_INFO).package_abi, prefix);
 }
 
 std::vector<std::vector<std::string>> vcpkg::batch_command_arguments_with_fixed_length(

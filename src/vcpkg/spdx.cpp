@@ -293,7 +293,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
     Checks::check_exit(VCPKG_LINE_INFO, relative_package_paths.size() == package_hashes.size());
 
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};
     if (auto package_abi = action.package_abi())
@@ -406,7 +406,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
 std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
 {
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& scf = *scfl.source_control_file;
     const auto& cpgh = *scf.core_paragraph;
     bool all_licenses_undeclared = cpgh.license.kind() == SpdxLicenseDeclarationKind::NotPresent;
@@ -419,10 +419,11 @@ std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
             continue;
         }
 
-        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
-        const auto& feature_appplicable_licenses = feature.license.applicable_licenses();
-        all_licenses_undeclared &= feature.license.kind() == SpdxLicenseDeclarationKind::NotPresent;
-        any_explicitly_null_licenses |= feature.license.kind() == SpdxLicenseDeclarationKind::Null;
+        const auto* feature = scf.find_feature(feature_name);
+        Checks::check_exit(VCPKG_LINE_INFO, feature != nullptr);
+        const auto& feature_appplicable_licenses = feature->license.applicable_licenses();
+        all_licenses_undeclared &= feature->license.kind() == SpdxLicenseDeclarationKind::NotPresent;
+        any_explicitly_null_licenses |= feature->license.kind() == SpdxLicenseDeclarationKind::Null;
         licenses.insert(licenses.end(), feature_appplicable_licenses.begin(), feature_appplicable_licenses.end());
     }
 

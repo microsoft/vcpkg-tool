@@ -83,13 +83,8 @@ namespace vcpkg
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                const auto scfl = action.source_control_file_and_location.get();
-                if (!scfl)
-                {
-                    return nullopt;
-                }
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
             }
 
             Json::Object manifest;
@@ -172,8 +167,10 @@ namespace vcpkg
             if (Util::Sets::contains(specs_installed, ipa.spec))
             {
                 // convert the 'to install' entry to an already installed entry
-                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
-                action_plan.already_installed.push_back(std::move(ipa));
+                action_plan.already_installed.emplace_back(
+                    status_db.get_installed_package_view(ipa.spec).value_or_exit(VCPKG_LINE_INFO),
+                    ipa.request_type,
+                    ipa.use_head_version);
                 return true;
             }
 
@@ -196,7 +193,7 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, host_triplet);
+        cmake_vars.load_tag_vars(action_plan.install_actions, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, StatusParagraphs{});
 
         std::vector<PackageSpec> user_requested_specs;
@@ -305,7 +302,7 @@ namespace vcpkg
             }
         }
 
-        const auto manifest = paths.get_manifest().get();
+        const auto* manifest = paths.get_manifest();
         const auto installed_paths = paths.maybe_installed().get();
         if (manifest && installed_paths)
         {

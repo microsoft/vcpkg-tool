@@ -128,7 +128,6 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
         INFO("features = [" << Strings::join(", ", features) << "]");
@@ -148,10 +147,7 @@ static void check_name_and_version(const InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     check_name_and_features(ipa, name, features);
-    if (auto scfl = ipa.source_control_file_and_location.get())
-    {
-        CHECK(scfl->source_control_file->core_paragraph->version == v);
-    }
+    CHECK(ipa.version == v);
 }
 
 static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
@@ -202,15 +198,15 @@ struct MockOverlayProvider : IOverlayProvider
     MockOverlayProvider(const MockOverlayProvider&) = delete;
     MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
 
-    virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
+    virtual const SourceControlFileAndLocation* get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
         {
-            return nullopt;
+            return nullptr;
         }
 
-        return it->second;
+        return &it->second;
     }
 
     SourceControlFileAndLocation& emplace(const std::string& name,
@@ -2483,17 +2479,15 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
     InstallPlanAction install_c(
         {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
 
-    InstallPlanAction already_installed_d(
+    AlreadyInstalledPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::AUTO_SELECTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
-    InstallPlanAction already_installed_e(
+    AlreadyInstalledPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::USER_REQUESTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
 
     InstallPlanAction install_f(
         {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});

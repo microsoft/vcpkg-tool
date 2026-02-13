@@ -238,12 +238,12 @@ Build-Depends: bzip
     ipa.abi_info = AbiInfo{};
     ipa.abi_info.get()->package_abi = "packageabi";
     std::string tripletabi("tripletabi");
-    ipa.abi_info.get()->triplet_abi = tripletabi;
+    ipa.abi_info.get()->triplet_abi = &tripletabi;
     CompilerInfo compiler_info;
     compiler_info.hash = "compilerhash";
     compiler_info.id = "compilerid";
     compiler_info.version = "compilerversion";
-    ipa.abi_info.get()->compiler_info = compiler_info;
+    ipa.abi_info.get()->compiler_info = &compiler_info;
 
     FeedReference ref2 = make_nugetref(ipa, "prefix_");
 
@@ -359,7 +359,7 @@ Description:
                               UseHeadVersion::No,
                               Editable::No,
                               std::map<std::string, std::vector<FeatureSpec>>{},
-                              std::vector<LocalizedString>{},
+                              std::vector<DiagnosticLine>{},
                               std::vector<std::string>{});
     InstallPlanAction& ipa_without_abi = install_plan.back();
     ipa_without_abi.package_dir = "pkgs/someheadpackage";
@@ -440,7 +440,7 @@ Description: a spiffy compression library wrapper
                                       UseHeadVersion::No,
                                       Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{},
+                                      std::vector<DiagnosticLine>{},
                                       std::vector<std::string>{});
     plan.install_actions[0].abi_info = AbiInfo{};
     plan.install_actions[0].abi_info.get()->package_abi = "packageabi";
@@ -469,7 +469,7 @@ Description: a spiffy compression library wrapper
                                       UseHeadVersion::No,
                                       Editable::No,
                                       std::map<std::string, std::vector<FeatureSpec>>{},
-                                      std::vector<LocalizedString>{},
+                                      std::vector<DiagnosticLine>{},
                                       std::vector<std::string>{});
     plan.install_actions[1].abi_info = AbiInfo{};
     plan.install_actions[1].abi_info.get()->package_abi = "packageabi2";

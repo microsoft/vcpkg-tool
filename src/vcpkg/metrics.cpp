@@ -1,4 +1,6 @@
 #include <vcpkg/base/chrono.h>
+#include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/json.h>
@@ -17,12 +19,24 @@
 #include <math.h>
 
 #include <iterator>
+#include <limits>
 #include <mutex>
 #include <utility>
 
 #if defined(_WIN32)
 #pragma comment(lib, "version")
 #pragma comment(lib, "winhttp")
+#endif
+
+// Polyfill this value from newer versions of libcurl
+#ifndef CURL_SSLVERSION_TLSv1_0
+#define CURL_SSLVERSION_TLSv1_0 4L
+#endif
+#ifndef CURL_SSLVERSION_TLSv1_1
+#define CURL_SSLVERSION_TLSv1_1 5L
+#endif
+#ifndef CURL_SSLVERSION_TLSv1_2
+#define CURL_SSLVERSION_TLSv1_2 6L
 #endif
 
 namespace
@@ -477,99 +491,6 @@ namespace vcpkg
     std::atomic<bool> g_should_print_metrics = false;
     std::atomic<bool> g_metrics_enabled = false;
 
-#if defined(_WIN32)
-    void winhttp_upload_metrics(StringView payload)
-    {
-        HINTERNET connect = nullptr, request = nullptr;
-        BOOL results = FALSE;
-
-        const HINTERNET session = WinHttpOpen(
-            L"vcpkg/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-
-        unsigned long secure_protocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
-        if (session && WinHttpSetOption(session, WINHTTP_OPTION_SECURE_PROTOCOLS, &secure_protocols, sizeof(DWORD)))
-        {
-            connect = WinHttpConnect(session, L"dc.services.visualstudio.com", INTERNET_DEFAULT_HTTPS_PORT, 0);
-        }
-
-        if (connect)
-        {
-            request = WinHttpOpenRequest(connect,
-                                         L"POST",
-                                         L"/v2/track",
-                                         nullptr,
-                                         WINHTTP_NO_REFERER,
-                                         WINHTTP_DEFAULT_ACCEPT_TYPES,
-                                         WINHTTP_FLAG_SECURE);
-        }
-
-        if (request)
-        {
-            auto mutable_payload = payload.to_string();
-            if (MAXDWORD <= mutable_payload.size()) abort();
-            std::wstring hdrs = L"Content-Type: application/json\r\n";
-            results = WinHttpSendRequest(request,
-                                         hdrs.c_str(),
-                                         static_cast<DWORD>(hdrs.size()),
-                                         static_cast<void*>(mutable_payload.data()),
-                                         static_cast<DWORD>(mutable_payload.size()),
-                                         static_cast<DWORD>(mutable_payload.size()),
-                                         0);
-        }
-
-        if (results)
-        {
-            results = WinHttpReceiveResponse(request, nullptr);
-        }
-
-        DWORD http_code = 0, junk = sizeof(DWORD);
-
-        if (results)
-        {
-            results = WinHttpQueryHeaders(request,
-                                          WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
-                                          nullptr,
-                                          &http_code,
-                                          &junk,
-                                          WINHTTP_NO_HEADER_INDEX);
-        }
-
-        std::vector<char> response_buffer;
-        if (results)
-        {
-            DWORD available_data = 0, read_data = 0, total_data = 0;
-            while ((results = WinHttpQueryDataAvailable(request, &available_data)) == TRUE && available_data > 0)
-            {
-                response_buffer.resize(response_buffer.size() + available_data);
-
-                results = WinHttpReadData(request, &response_buffer[total_data], available_data, &read_data);
-
-                if (!results)
-                {
-                    break;
-                }
-
-                total_data += read_data;
-
-                response_buffer.resize(total_data);
-            }
-        }
-
-        if (!results)
-        {
-#ifndef NDEBUG
-            __debugbreak();
-            auto err = GetLastError();
-            fprintf(stderr, "[DEBUG] failed to connect to server: %08lu\n", err);
-#endif // NDEBUG
-        }
-
-        if (request) WinHttpCloseHandle(request);
-        if (connect) WinHttpCloseHandle(connect);
-        if (session) WinHttpCloseHandle(session);
-    }
-#endif // ^^^ _WIN32
-
     void flush_global_metrics(const Filesystem& fs)
     {
         if (!g_metrics_enabled.load())
@@ -608,32 +529,105 @@ namespace vcpkg
         fs.write_contents(vcpkg_metrics_txt_path, payload, ec);
         if (ec) return;
 
-#if defined(_WIN32)
-        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING ".exe";
+        const Path temp_folder_path_exe = temp_folder_path / "vcpkg-" VCPKG_BASE_VERSION_AS_STRING
+#if defined(WIN32)
+                                                             ".exe"
+#endif
+            ;
         fs.copy_file(get_exe_path_of_current_process(), temp_folder_path_exe, CopyOptions::skip_existing, ec);
         if (ec) return;
+
         Command builder;
         builder.string_arg(temp_folder_path_exe);
         builder.string_arg("z-upload-metrics");
         builder.string_arg(vcpkg_metrics_txt_path);
         cmd_execute_background(builder);
-#else
-        cmd_execute_background(Command("curl")
-                                   .string_arg("https://dc.services.visualstudio.com/v2/track")
-                                   .string_arg("--max-time")
-                                   .string_arg("60")
-                                   .string_arg("-H")
-                                   .string_arg("Content-Type: application/json")
-                                   .string_arg("-X")
-                                   .string_arg("POST")
-                                   .string_arg("--tlsv1.2")
-                                   .string_arg("--data")
-                                   .string_arg(Strings::concat("@", vcpkg_metrics_txt_path))
-                                   .raw_arg(">/dev/null")
-                                   .raw_arg("2>&1")
-                                   .raw_arg(";")
-                                   .string_arg("rm")
-                                   .string_arg(vcpkg_metrics_txt_path));
-#endif
+    }
+
+    static size_t string_append_cb(void* buff, size_t size, size_t nmemb, void* param)
+    {
+        auto* str = reinterpret_cast<std::string*>(param);
+        if (!str || !buff) return 0;
+        if (size != 1) return 0;
+        str->append(reinterpret_cast<char*>(buff), nmemb);
+        return size * nmemb;
+    }
+
+    bool parse_metrics_response(StringView response_body)
+    {
+        auto maybe_json = Json::parse_object(response_body, "metrics_response");
+        auto json = maybe_json.get();
+        if (!json) return false;
+
+        auto maybe_received = json->get(AppInsightsResponseItemsReceived);
+        auto maybe_accepted = json->get(AppInsightsResponseItemsAccepted);
+        auto maybe_errors = json->get(AppInsightsResponseErrors);
+
+        if (maybe_received && maybe_accepted && maybe_errors && maybe_received->is_integer() &&
+            maybe_accepted->is_integer() && maybe_errors->is_array())
+        {
+            auto item_received = maybe_received->integer(VCPKG_LINE_INFO);
+            auto item_accepted = maybe_accepted->integer(VCPKG_LINE_INFO);
+            auto errors = maybe_errors->array(VCPKG_LINE_INFO);
+            return (errors.size() == 0) && (item_received == item_accepted);
+        }
+        Debug::println("Metrics response has unexpected format");
+        return false;
+    }
+
+    bool curl_upload_metrics(const std::string& payload)
+    {
+        if (payload.length() > static_cast<size_t>(std::numeric_limits<long>::max()))
+        {
+            Debug::println("Metrics payload too large to upload");
+            return false;
+        }
+
+        CurlEasyHandle handle;
+        CURL* curl = handle.get();
+
+        std::string headers[] = {
+            "Content-Type: application/json",
+        };
+        CurlHeaders request_headers(headers);
+
+        vcpkg_curl_easy_setopt(curl, CURLOPT_URL, "https://dc.services.visualstudio.com/v2/track");
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDS, payload.c_str());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, static_cast<curl_off_t>(payload.length()));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+        if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2) != CURLE_OK)
+        {
+            if (vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1) != CURLE_OK)
+            {
+                vcpkg_curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_0);
+            }
+        }
+
+        vcpkg_curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L); // follow redirects
+        vcpkg_curl_easy_setopt(curl, CURLOPT_USERAGENT, vcpkg_curl_user_agent);
+
+        std::string buff;
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEDATA, static_cast<void*>(&buff));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &string_append_cb);
+
+        long response_code = 0;
+        CURLcode res = vcpkg_curl_easy_perform(curl);
+        bool is_success = false;
+        if (res == CURLE_OK)
+        {
+            vcpkg_curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+            Debug::println(fmt::format("Metrics upload response code: {}", response_code));
+            Debug::println("Metrics upload response body: ", buff);
+            if (response_code == 200)
+            {
+                is_success = parse_metrics_response(buff);
+            }
+        }
+        else
+        {
+            Debug::println("Metrics upload failed: ", vcpkg_curl_easy_strerror(res));
+        }
+        return is_success;
     }
 }

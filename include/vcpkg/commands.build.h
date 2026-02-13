@@ -5,6 +5,7 @@
 #include <vcpkg/fwd/binarycaching.h>
 #include <vcpkg/fwd/build.h>
 #include <vcpkg/fwd/cmakevars.h>
+#include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
@@ -186,11 +187,15 @@ namespace vcpkg
 
     struct ExtendedBuildResult
     {
-        explicit ExtendedBuildResult(BuildResult code);
-        explicit ExtendedBuildResult(BuildResult code, vcpkg::Path stdoutlog, std::vector<std::string>&& error_logs);
-        ExtendedBuildResult(BuildResult code, std::vector<FullPackageSpec>&& unmet_deps);
-        ExtendedBuildResult(BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code);
+        ExtendedBuildResult(const PackageSpec& spec,
+                            BuildResult code,
+                            vcpkg::Path stdoutlog,
+                            std::vector<std::string>&& error_logs);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code, std::vector<FullPackageSpec>&& unmet_deps);
+        ExtendedBuildResult(const PackageSpec& spec, BuildResult code, std::unique_ptr<BinaryControlFile>&& bcf);
 
+        PackageSpec spec;
         BuildResult code;
         std::vector<FullPackageSpec> unmet_dependencies;
         std::unique_ptr<BinaryControlFile> binary_control_file;
@@ -204,9 +209,8 @@ namespace vcpkg
     LocalizedString create_error_message(const ExtendedBuildResult& build_result, const PackageSpec& spec);
 
     std::string create_github_issue(const VcpkgCmdArguments& args,
-                                    const ExtendedBuildResult& build_result,
                                     const VcpkgPaths& paths,
-                                    const InstallPlanAction& action,
+                                    const InstallSpecSummary& install_summary,
                                     bool include_manifest);
 
     ExtendedBuildResult build_package(const VcpkgCmdArguments& args,
@@ -268,7 +272,7 @@ namespace vcpkg
 
     // The parts of AbiInfo which depend only on the port directory and thus can be reused across multiple feature
     // builds
-    struct PortDirAbiInfoCacheEntry
+    struct SpecAbiInfoCacheEntry
     {
         std::vector<AbiEntry> abi_entries;
         std::vector<Path> files;
@@ -276,7 +280,7 @@ namespace vcpkg
         Json::Object heuristic_resources;
     };
 
-    using PortDirAbiInfoCache = Cache<Path, PortDirAbiInfoCacheEntry>;
+    using SpecAbiInfoCache = Cache<PackageSpec, SpecAbiInfoCacheEntry>;
 
     struct CompilerInfo
     {
@@ -290,10 +294,10 @@ namespace vcpkg
     {
         // These should always be known if an AbiInfo exists
         std::unique_ptr<PreBuildInfo> pre_build_info;
-        Optional<const Toolset&> toolset;
+        const Toolset* toolset = nullptr;
         // These might not be known if compiler tracking is turned off or the port is --editable
-        Optional<const CompilerInfo&> compiler_info;
-        Optional<const std::string&> triplet_abi;
+        const CompilerInfo* compiler_info = nullptr;
+        const std::string* triplet_abi = nullptr;
         std::string package_abi;
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
@@ -313,7 +317,7 @@ namespace vcpkg
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db,
-                          PortDirAbiInfoCache& port_dir_cache);
+                          SpecAbiInfoCache& port_dir_cache);
 
     struct EnvCache
     {

@@ -34,6 +34,8 @@ if(DEFINE_DISABLE_METRICS OR VCPKG_DISABLE_METRICS)
         "file vcpkg.disable_metrics next to the binary.")
 endif()
 
+set(VCPKG_MANIFEST_DIR "${CMAKE_CURRENT_LIST_DIR}/src" CACHE PATH "Path to vcpkg manifest directory")
+
 project(vcpkg
     DESCRIPTION "vcpkg helps you manage C and C++ libraries on Windows, Linux and MacOS."
     HOMEPAGE_URL "https://github.com/microsoft/vcpkg"
@@ -195,6 +197,7 @@ set(TEST_SCRIPT_ASSET_CACHE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/test-script
 
 find_package(fmt REQUIRED)
 find_package(CMakeRC REQUIRED)
+find_package(LibCURL REQUIRED)
 
 # === Target: locale-resources ===
 
@@ -228,6 +231,8 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
     _FILE_OFFSET_BITS=64
 )
+
+target_link_libraries(vcpkglib PUBLIC CURL::libcurl)
 
 if(VCPKG_STANDALONE_BUNDLE_SHA)
     target_compile_definitions(vcpkglib PUBLIC

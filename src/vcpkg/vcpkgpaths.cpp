@@ -710,9 +710,7 @@ namespace vcpkg
 
     VcpkgPaths::~VcpkgPaths() = default;
 
-    Path VcpkgPaths::package_dir(const PackageSpec& spec) const { return this->packages() / spec.dir(); }
-    Path VcpkgPaths::build_dir(const PackageSpec& spec) const { return this->buildtrees() / spec.name(); }
-    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name.to_string(); }
+    Path VcpkgPaths::build_dir(StringView package_name) const { return this->buildtrees() / package_name; }
 
     const TripletDatabase& VcpkgPaths::get_triplet_db() const
     {
@@ -1246,14 +1244,7 @@ namespace vcpkg
         return std::move(maybe_extraction).error();
     }
 
-    Optional<const ManifestAndPath&> VcpkgPaths::get_manifest() const
-    {
-        if (auto p = m_pimpl->m_manifest_doc.get())
-        {
-            return *p;
-        }
-        return nullopt;
-    }
+    const ManifestAndPath* VcpkgPaths::get_manifest() const { return m_pimpl->m_manifest_doc.get(); }
 
     bool VcpkgPaths::manifest_mode_enabled() const { return m_pimpl->m_manifest_doc.has_value(); }
 

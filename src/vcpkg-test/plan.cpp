@@ -180,7 +180,6 @@ TEST_CASE ("existing package scheme", "[plan]")
     REQUIRE(install_plan.size() == 1);
     const auto p = &install_plan.already_installed.at(0);
     REQUIRE(p->spec.name() == "a");
-    REQUIRE(p->installed_package.has_value());
     REQUIRE(p->request_type == RequestType::USER_REQUESTED);
 }
 
@@ -201,12 +200,10 @@ TEST_CASE ("user requested package scheme", "[plan]")
     REQUIRE(install_plan.size() == 2);
     const auto p = &install_plan.install_actions.at(0);
     REQUIRE(p->spec.name() == "b");
-    REQUIRE(!p->installed_package.has_value());
     REQUIRE(p->request_type == RequestType::AUTO_SELECTED);
 
     const auto p2 = &install_plan.install_actions.at(1);
     REQUIRE(p2->spec.name() == "a");
-    REQUIRE(!p2->installed_package.has_value());
     REQUIRE(p2->request_type == RequestType::USER_REQUESTED);
 }
 
@@ -1413,7 +1410,7 @@ TEST_CASE ("basic export scheme", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with recurse", "[plan]")
@@ -1431,10 +1428,10 @@ TEST_CASE ("basic export scheme with recurse", "[plan]")
 
     REQUIRE(plan.size() == 2);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 
     REQUIRE(plan.at(1).spec.name() == "b");
-    REQUIRE(plan.at(1).core_paragraph().has_value());
+    REQUIRE(plan.at(1).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with bystander", "[plan]")
@@ -1452,7 +1449,7 @@ TEST_CASE ("basic export scheme with bystander", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 }
 
 TEST_CASE ("basic export scheme with missing", "[plan]")
@@ -1466,7 +1463,7 @@ TEST_CASE ("basic export scheme with missing", "[plan]")
 
     REQUIRE(plan.size() == 1);
     REQUIRE(plan.at(0).spec.name() == "a");
-    REQUIRE(!plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() == nullptr);
 }
 
 TEST_CASE ("basic export scheme with features", "[plan]")
@@ -1485,8 +1482,8 @@ TEST_CASE ("basic export scheme with features", "[plan]")
     REQUIRE(plan.size() == 2);
 
     REQUIRE(plan.at(0).spec.name() == "b");
-    REQUIRE(plan.at(0).core_paragraph().has_value());
+    REQUIRE(plan.at(0).core_paragraph() != nullptr);
 
     REQUIRE(plan.at(1).spec.name() == "a");
-    REQUIRE(plan.at(1).core_paragraph().has_value());
+    REQUIRE(plan.at(1).core_paragraph() != nullptr);
 }
