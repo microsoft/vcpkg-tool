@@ -4,6 +4,8 @@
 
 #include <vcpkg/metrics.h>
 
+#include <cmath>
+#include <limits>
 #include <set>
 
 using namespace vcpkg;
@@ -291,4 +293,33 @@ TEST_CASE ("parse metrics response", "[metrics]")
 )json";
     auto parsed_with_errors2 = parse_metrics_response(response_with_errors2);
     CHECK(!parsed_with_errors2);
+}
+
+TEST_CASE ("track_elapsed_us clamps invalid values", "[metrics]")
+{
+    MetricsSubmission submission;
+
+    // Negative values should be clamped to 0
+    submission.track_elapsed_us(-100.0);
+    CHECK(submission.elapsed_us == 0.0);
+
+    // NaN should be clamped to 0
+    submission.track_elapsed_us(std::numeric_limits<double>::quiet_NaN());
+    CHECK(submission.elapsed_us == 0.0);
+
+    // Positive infinity should be clamped to 0
+    submission.track_elapsed_us(std::numeric_limits<double>::infinity());
+    CHECK(submission.elapsed_us == 0.0);
+
+    // Negative infinity should be clamped to 0
+    submission.track_elapsed_us(-std::numeric_limits<double>::infinity());
+    CHECK(submission.elapsed_us == 0.0);
+
+    // Valid positive value should be stored as-is
+    submission.track_elapsed_us(42.5);
+    CHECK(submission.elapsed_us == 42.5);
+
+    // Zero should be stored as-is
+    submission.track_elapsed_us(0.0);
+    CHECK(submission.elapsed_us == 0.0);
 }
