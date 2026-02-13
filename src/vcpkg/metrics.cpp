@@ -188,9 +188,9 @@ namespace vcpkg
 
     void MetricsSubmission::track_elapsed_us(double value)
     {
-        if (!isfinite(value) || value <= 0.0)
+        if (!isfinite(value) || value < 0.0)
         {
-            Checks::unreachable(VCPKG_LINE_INFO);
+            value = 0.0;
         }
 
         elapsed_us = value;
