@@ -78,7 +78,6 @@ namespace
     }
 
     constexpr CommandSwitch DEPEND_SWITCHES[] = {
-        {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchDot, {}},
         {SwitchDgml, {}},
         {SwitchXNoDefaultFeatures, msgHelpTxtOptManifestNoDefault},
@@ -472,9 +471,7 @@ namespace vcpkg
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
         auto& var_provider = *var_provider_storage;
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
+        const auto unsupported_port_action = UnsupportedPortAction::Warn;
 
         ActionPlan action_plan;
         if (manifest)
