@@ -8,7 +8,7 @@
     "default": {
       "name": "default",
       "createdDate": "2026-02-13 02:22:58Z",
-      "lastUpdatedDate": "2026-02-13 02:22:58Z"
+      "lastUpdatedDate": "2026-02-17 19:19:31Z"
     }
   },
   "results": {
@@ -37,6 +37,34 @@
       "tool": "binskim",
       "ruleId": "BA2007",
       "createdDate": "2026-02-13 02:22:58Z"
+    },
+    "851c303fe466217ae5f4070e364f12be43adaee5b7cb7210c8938d26422f91f8": {
+      "signature": "851c303fe466217ae5f4070e364f12be43adaee5b7cb7210c8938d26422f91f8",
+      "alternativeSignatures": [
+        "916d9a8f29beb46b89eba5f35beae08c971d0e2da4dd6cf46fa6158fce9edc09"
+      ],
+      "target": "symbols/vcpkg-arm64.exe",
+      "uriBaseId": "file:///D:/a/_work/1/a/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "createdDate": "2026-02-17 19:19:31Z"
+    },
+    "429980b0375dcf915b7ebb4371eb99f94679e8bb772e766bf0bede6af8d75aa4": {
+      "signature": "429980b0375dcf915b7ebb4371eb99f94679e8bb772e766bf0bede6af8d75aa4",
+      "alternativeSignatures": [
+        "7c59bd5acbba1a692f480f7f9ad64ccc8d290b0baf6a7c7cf14296a1e2164ab1"
+      ],
+      "target": "symbols/vcpkg.exe",
+      "uriBaseId": "file:///D:/a/_work/1/a/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "createdDate": "2026-02-17 19:19:31Z"
     }
   }
 }
