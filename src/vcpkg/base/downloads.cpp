@@ -37,7 +37,6 @@ namespace
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
     }
-
 }
 
 namespace vcpkg
