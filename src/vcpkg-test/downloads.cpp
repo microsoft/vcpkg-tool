@@ -53,6 +53,26 @@ TEST_CASE ("url_encode_spaces", "[downloads]")
             "https://example.com/a%20%20space/b?query=value&query2=value2");
 }
 
+TEST_CASE ("github_dependency_graph_snapshots_uri", "[downloads]")
+{
+    REQUIRE(github_dependency_graph_snapshots_uri(nullopt, "owner/repo") ==
+            "https://api.github.com/repos/owner/repo/dependency-graph/snapshots");
+
+    REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.com"}, "owner/repo") ==
+            "https://api.github.com/repos/owner/repo/dependency-graph/snapshots");
+
+    REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://user:pass@github.com:443"},
+                                                  "owner/repo") ==
+            "https://api.github.com/repos/owner/repo/dependency-graph/snapshots");
+
+    REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.example.com"}, "owner/repo") ==
+            "https://github.example.com/api/v3/repos/owner/repo/dependency-graph/snapshots");
+
+    REQUIRE(
+        github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.com"}, "owner/repo with space") ==
+        "https://api.github.com/repos/owner/repo%20with%20space/dependency-graph/snapshots");
+}
+
 /*
  * To run this test:
  * - Set environment variables VCPKG_TEST_AZBLOB_URL and VCPKG_TEST_AZBLOB_SAS.

@@ -327,27 +327,7 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
-        std::string uri;
-        if (auto github_server_url = maybe_github_server_url.get())
-        {
-            const auto host = extract_host(*github_server_url);
-            if (host != "github.com")
-            {
-                uri = *github_server_url;
-                uri.append("/api/v3");
-            }
-            else
-            {
-                uri = "https://api.github.com";
-            }
-        }
-        else
-        {
-            uri = "https://api.github.com";
-        }
-
-        fmt::format_to(
-            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
+        const auto uri = github_dependency_graph_snapshots_uri(maybe_github_server_url, github_repository);
 
         CurlEasyHandle handle;
         CURL* curl = handle.get();
@@ -380,6 +360,33 @@ namespace vcpkg
         }
 
         return response_code >= 200 && response_code < 300;
+    }
+
+    std::string github_dependency_graph_snapshots_uri(const Optional<std::string>& maybe_github_server_url,
+                                                      StringView github_repository)
+    {
+        std::string uri;
+        if (auto github_server_url = maybe_github_server_url.get())
+        {
+            const auto host = extract_host(*github_server_url);
+            if (host != "github.com")
+            {
+                uri = *github_server_url;
+                uri.append("/api/v3");
+            }
+            else
+            {
+                uri = "https://api.github.com";
+            }
+        }
+        else
+        {
+            uri = "https://api.github.com";
+        }
+
+        fmt::format_to(
+            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
+        return uri;
     }
 
     static size_t read_file_callback(char* buffer, size_t size, size_t nitems, void* param)
