@@ -23,6 +23,8 @@ namespace vcpkg
 
     void command_z_upload_metrics_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        g_should_send_metrics = false; // avoid recursion
+
         // note that z-upload-metrics is usually going to have metrics disabled as it is usually
         // invoked inside vcpkg, and we don't collect vcpkg-in-vcpkg metrics.
         const auto parsed = args.parse_arguments(CommandZUploadMetricsMetadata);
@@ -40,6 +42,7 @@ namespace vcpkg
         {
             Debug::println("Failed to remove file after upload: {}", ec.message());
         }
+        
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
