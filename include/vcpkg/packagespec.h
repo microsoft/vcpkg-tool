@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/fwd/packagespec.h>
+#include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/optional.h>
@@ -41,9 +42,9 @@ namespace vcpkg
 
         bool operator<(const PackageSpec& other) const
         {
-            if (name() < other.name()) return true;
-            if (name() > other.name()) return false;
-            return triplet() < other.triplet();
+            if (m_name < other.m_name) return true;
+            if (m_name > other.m_name) return false;
+            return m_triplet < other.m_triplet;
         }
 
     private:
@@ -112,7 +113,7 @@ namespace vcpkg
 
         friend bool operator==(const Located& lhs, const Located& rhs)
         {
-            return lhs.loc.row == rhs.loc.row && rhs.loc.column == rhs.loc.column && lhs.value == rhs.value;
+            return lhs.loc.row == rhs.loc.row && lhs.loc.column == rhs.loc.column && lhs.value == rhs.value;
         }
         friend bool operator!=(const Located& lhs, const Located& rhs) { return !(lhs == rhs); }
     };
@@ -194,6 +195,10 @@ namespace vcpkg
         }
         friend bool operator!=(const FullPackageSpec& l, const FullPackageSpec& r) { return !(l == r); }
     };
+
+    std::string format_full_version_spec(const PackageSpec& spec,
+                                         const InternalFeatureSet& feature_list,
+                                         const Version& version);
 
     struct ParsedQualifiedSpecifier
     {

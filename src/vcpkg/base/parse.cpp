@@ -9,13 +9,14 @@ namespace vcpkg
 {
     static void advance_rowcol(char32_t ch, int& row, int& column)
     {
-        if (row == 0 && column == 0)
+        if (row == 0)
         {
+            if (column != 0)
+            {
+                ++column;
+            }
+
             return;
-        }
-        else if (row == 0 || column == 0)
-        {
-            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         if (ch == '\t')
@@ -133,6 +134,26 @@ namespace vcpkg
         }
 
         return LocalizedString::from_raw(std::move(combined_messages));
+    }
+
+    bool ParseMessages::report(DiagnosticContext& context) const&
+    {
+        for (const auto& line : m_lines)
+        {
+            context.report(line);
+        }
+
+        return !any_errors();
+    }
+
+    bool ParseMessages::report(DiagnosticContext& context) &&
+    {
+        for (auto&& line : m_lines)
+        {
+            context.report(std::move(line));
+        }
+
+        return !any_errors();
     }
 
     ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)

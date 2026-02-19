@@ -1,6 +1,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/dependencies.h>
@@ -15,11 +16,14 @@
 
 namespace vcpkg
 {
-    void remove_package(const Filesystem& fs,
-                        const InstalledPaths& installed,
-                        const PackageSpec& spec,
-                        StatusParagraphs& status_db)
+    SpecSummary remove_package(const Filesystem& fs,
+                               const InstalledPaths& installed,
+                               const PackageSpec& spec,
+                               StatusParagraphs& status_db)
     {
+        const ElapsedTimer remove_timer;
+        const auto start_time = std::chrono::system_clock::now();
+
         auto maybe_ipv = status_db.get_installed_package_view(spec);
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, maybe_ipv.has_value(), msgPackageAlreadyRemoved, msg::spec = spec);
@@ -100,6 +104,8 @@ namespace vcpkg
             write_update(fs, installed, spgh);
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
+
+        return SpecSummary{ExtendedBuildResult{spec, BuildResult::Removed}, remove_timer.elapsed(), start_time};
     }
 } // namespace vcpkg
 
@@ -181,7 +187,7 @@ namespace vcpkg
         (void)host_triplet;
         if (paths.manifest_mode_enabled())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgRemoveDependencies);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgRemoveDependencies);
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 

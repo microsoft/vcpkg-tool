@@ -82,7 +82,11 @@ namespace vcpkg
 
         /// Called upon a successful build of `action` to store those contents in the binary cache.
         /// returns the number of successful uploads
-        virtual size_t push_success(const BinaryPackageWriteInfo& request, MessageSink& msg_sink) = 0;
+        ///
+        /// Note that as this is considered non-fatal, only warnings or lower will be emitted to `context`.
+        virtual size_t push_success(DiagnosticContext& context,
+                                    const Filesystem& fs,
+                                    const BinaryPackageWriteInfo& request) = 0;
 
         virtual bool needs_nuspec_data() const = 0;
         virtual bool needs_zip_file() const = 0;
@@ -93,20 +97,27 @@ namespace vcpkg
         virtual ~IReadBinaryProvider() = default;
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for executing
-        /// `actions`.
+        /// `actions`. Note that as this API can't fail, only warnings or lower will be emitted to `context`.
         ///
         /// IBinaryProvider should set out_status[i] to RestoreResult::restored for each fetched package.
         ///
         /// Prerequisites: actions[i].package_abi(), out_status.size() == actions.size()
-        virtual void fetch(View<const InstallPlanAction*> actions, Span<RestoreResult> out_status) const = 0;
+        virtual void fetch(DiagnosticContext& context,
+                           const Filesystem& fs,
+                           View<const InstallPlanAction*> actions,
+                           Span<RestoreResult> out_status) const = 0;
 
         /// Checks whether the `actions` are present in the cache, without restoring them.
+        /// Note that as this API can't fail, only warnings or lower will be emitted to `context`.
         ///
         /// Used by CI to determine missing packages. For each `i`, out_status[i] should be set to
         /// CacheAvailability::available or CacheAvailability::unavailable
         ///
         /// Prerequisites: actions[i].package_abi(), out_status.size() == actions.size()
-        virtual void precheck(View<const InstallPlanAction*> actions, Span<CacheAvailability> out_status) const = 0;
+        virtual void precheck(DiagnosticContext& context,
+                              const Filesystem& fs,
+                              View<const InstallPlanAction*> actions,
+                              Span<CacheAvailability> out_status) const = 0;
 
         virtual LocalizedString restored_message(size_t count,
                                                  std::chrono::high_resolution_clock::duration elapsed) const = 0;
@@ -135,6 +146,15 @@ namespace vcpkg
         std::string feed;
     };
 
+    struct AzCopyUrl
+    {
+        std::string url;
+        std::string sas;
+
+        std::string make_object_path(const std::string& abi) const;
+        std::string make_container_path() const;
+    };
+
     struct BinaryConfigParserState
     {
         bool nuget_interactive = false;
@@ -149,6 +169,9 @@ namespace vcpkg
         std::vector<UrlTemplate> url_templates_to_put;
 
         std::vector<UrlTemplate> azblob_templates_to_put;
+
+        std::vector<AzCopyUrl> azcopy_read_templates;
+        std::vector<AzCopyUrl> azcopy_write_templates;
 
         std::vector<std::string> gcs_read_prefixes;
         std::vector<std::string> gcs_write_prefixes;
@@ -197,7 +220,7 @@ namespace vcpkg
 
         /// Gives the IBinaryProvider an opportunity to batch any downloading or server communication for
         /// executing `actions`.
-        void fetch(View<InstallPlanAction> actions);
+        void fetch(DiagnosticContext& context, const Filesystem& fs, View<InstallPlanAction> actions);
 
         bool is_restored(const InstallPlanAction& ipa) const;
 
@@ -206,7 +229,9 @@ namespace vcpkg
         /// Checks whether the `actions` are present in the cache, without restoring them. Used by CI to determine
         /// missing packages.
         /// Returns a vector where each index corresponds to the matching index in `actions`.
-        std::vector<CacheAvailability> precheck(View<const InstallPlanAction*> actions);
+        std::vector<CacheAvailability> precheck(DiagnosticContext& context,
+                                                const Filesystem& fs,
+                                                View<const InstallPlanAction*> actions);
 
         // Informs the binary cache that the packages directory has been reset. Used when the same port-name is built
         // more than once in a single invocation of vcpkg.
@@ -264,8 +289,9 @@ namespace vcpkg
     //   upload is no longer being actively written by the foreground thread.
     struct BinaryCache : ReadOnlyBinaryCache
     {
-        bool install_providers(const VcpkgCmdArguments& args, const VcpkgPaths& paths, MessageSink& status_sink);
+        bool install_providers(DiagnosticContext& context, const VcpkgCmdArguments& args, const VcpkgPaths& paths);
 
+        // fs must outlive the BinaryCache, and will be accessed from the background thread that does pushes
         explicit BinaryCache(const Filesystem& fs);
         BinaryCache(const BinaryCache&) = delete;
         BinaryCache& operator=(const BinaryCache&) = delete;
@@ -303,4 +329,11 @@ namespace vcpkg
 
     LocalizedString format_help_topic_asset_caching();
     LocalizedString format_help_topic_binary_caching();
+
+    std::vector<std::vector<std::string>> batch_command_arguments_with_fixed_length(
+        const std::vector<std::string>& entries,
+        const std::size_t reserved_len,
+        const std::size_t max_len,
+        const std::size_t fixed_len,
+        const std::size_t separator_len);
 }

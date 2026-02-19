@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 
-import { Index, IndexSchema, SemverKey, StringKey } from '../../registries/indexer';
-import { strict } from 'assert';
 import { describe, it } from 'mocha';
 import { SemVer } from 'semver';
+import { Index, IndexSchema, SemverKey, StringKey } from '../../registries/indexer';
+import { strictSequenceEqual } from '../sequence-equal';
 
 interface TestData {
   id: string,
@@ -67,6 +67,6 @@ describe('Index Tests', () => {
     const results2 = index.where.
       version.greaterThan(new SemVer('0.3.0')).
       items;
-    strict.sequenceEqual(results2, [ 'sam/blam/bam', 'foo/bob', 'foo/tom' ]);
+    strictSequenceEqual(results2, [ 'sam/blam/bam', 'foo/bob', 'foo/tom' ]);
   });
 });

@@ -86,8 +86,9 @@ namespace vcpkg
 
         var_provider.load_generic_triplet_vars(triplet);
 
-        const PreBuildInfo pre_build_info(
-            paths, triplet, var_provider.get_generic_triplet_vars(triplet).value_or_exit(VCPKG_LINE_INFO));
+        const auto* triplet_vars = var_provider.get_generic_triplet_vars(triplet);
+        Checks::check_exit(VCPKG_LINE_INFO, triplet_vars != nullptr);
+        const PreBuildInfo pre_build_info(paths, triplet, *triplet_vars);
         const Toolset& toolset = paths.get_toolset(pre_build_info);
         auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
 

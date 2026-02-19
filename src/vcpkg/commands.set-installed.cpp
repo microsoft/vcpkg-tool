@@ -83,13 +83,8 @@ namespace vcpkg
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                const auto scfl = action.source_control_file_and_location.get();
-                if (!scfl)
-                {
-                    return nullopt;
-                }
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
             }
 
             Json::Object manifest;
@@ -172,9 +167,10 @@ namespace vcpkg
             if (Util::Sets::contains(specs_installed, ipa.spec))
             {
                 // convert the 'to install' entry to an already installed entry
-                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
-                ipa.plan_type = InstallPlanType::ALREADY_INSTALLED;
-                action_plan.already_installed.push_back(std::move(ipa));
+                action_plan.already_installed.emplace_back(
+                    status_db.get_installed_package_view(ipa.spec).value_or_exit(VCPKG_LINE_INFO),
+                    ipa.request_type,
+                    ipa.use_head_version);
                 return true;
             }
 
@@ -223,8 +219,8 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, host_triplet);
-        compute_all_abis(paths, action_plan, cmake_vars, {}, UseCompilerInfoCache::Yes);
+        cmake_vars.load_tag_vars(action_plan.install_actions, host_triplet);
+        compute_all_abis(paths, action_plan, cmake_vars, StatusParagraphs{}, UseCompilerInfoCache::Yes);
 
         std::vector<PackageSpec> user_requested_specs;
         for (const auto& action : action_plan.install_actions)
@@ -266,9 +262,7 @@ namespace vcpkg
 
         bool used_cached_compiler_info =
             Util::any_of(action_plan.install_actions, [](const InstallPlanAction& install_action) {
-                return install_action.abi_info.value_or_exit(VCPKG_LINE_INFO)
-                    .compiler_info.value_or_exit(VCPKG_LINE_INFO)
-                    .from_cache;
+                return install_action.abi_info.value_or_exit(VCPKG_LINE_INFO).compiler_info->from_cache;
             });
 
         if (used_cached_compiler_info)
@@ -314,13 +308,13 @@ namespace vcpkg
         BinaryCache binary_cache(fs);
         if (build_options.only_downloads == OnlyDownloads::No)
         {
-            if (!binary_cache.install_providers(args, paths, out_sink))
+            if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
-        binary_cache.fetch(action_plan.install_actions);
+        binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
         const auto summary = install_execute_plan(args,
                                                   paths,
                                                   host_triplet,
@@ -358,7 +352,7 @@ namespace vcpkg
             }
         }
 
-        const auto manifest = paths.get_manifest().get();
+        const auto* manifest = paths.get_manifest();
         const auto installed_paths = paths.maybe_installed().get();
         if (manifest && installed_paths)
         {
@@ -420,7 +414,7 @@ namespace vcpkg
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
-            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 

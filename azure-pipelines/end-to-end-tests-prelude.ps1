@@ -9,6 +9,11 @@ $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
 $TestDownloadsRoot = Join-Path $TestingRoot 'downloads'
 $AssetCache = Join-Path $TestingRoot 'asset-cache'
 
+$tripletFile = "$env:VCPKG_ROOT/triplets/$Triplet.cmake";
+if (-not (Test-Path $tripletFile)) {
+    $tripletFile = "$env:VCPKG_ROOT/triplets/community/$Triplet.cmake"
+}
+
 $directoryArgs = @(
     "--x-buildtrees-root=$buildtreesRoot",
     "--x-install-root=$installRoot",
@@ -234,16 +239,25 @@ function Set-EmptyTestPort {
     git -C $PortsRoot status
 }
 
+function Write-Diff {
+    Param(
+        [string]$Actual,
+        [string]$Expected
+    )
+
+    Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
+    Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
+    git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
+    Write-Stack
+}
+
 function Throw-IfNonEqual {
     Param(
         [string]$Actual,
         [string]$Expected
     )
     if ($Actual -ne $Expected) {
-        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
-        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
-        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
-        Write-Stack
+        Write-Diff -Actual $Actual -Expected $Expected
         throw "Expected '$Expected' but got '$Actual'"
     }
 }
@@ -261,10 +275,7 @@ function Throw-IfNonEndsWith {
     }
 
     if ($actualSuffix -ne $Expected) {
-        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
-        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
-        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
-        Write-Stack
+        Write-Diff -Actual $Actual -Expected $Expected
         throw "Expected '$Expected' but got '$actualSuffix'"
     }
 }
@@ -275,10 +286,7 @@ function Throw-IfContains {
         [string]$Expected
     )
     if ($Actual.Contains($Expected)) {
-        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
-        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
-        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
-        Write-Stack
+        Write-Diff -Actual $Actual -Expected $Expected
         throw "Expected '$Expected' to not be in '$Actual'"
     }
 }
@@ -289,10 +297,7 @@ function Throw-IfNonContains {
         [string]$Expected
     )
     if (-not ($Actual.Contains($Expected))) {
-        Set-Content -Value $Expected -LiteralPath "$TestingRoot/expected.txt"
-        Set-Content -Value $Actual -LiteralPath "$TestingRoot/actual.txt"
-        git diff --no-index -- "$TestingRoot/expected.txt" "$TestingRoot/actual.txt"
-        Write-Stack
+        Write-Diff -Actual $Actual -Expected $Expected
         throw "Expected '$Expected' to be in '$Actual'"
     }
 }

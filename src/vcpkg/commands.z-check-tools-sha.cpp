@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
@@ -41,14 +42,19 @@ namespace vcpkg
 
         auto content = fs.read_contents(file_to_check, VCPKG_LINE_INFO);
 
-        auto data = parse_tool_data(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
+        auto maybe_data = parse_tool_data(console_diagnostic_context, content, file_to_check);
+        auto data = maybe_data.get();
+        if (!data)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
 
         auto only_name_iter = parsed.settings.find(SwitchOnlyWithName);
 
         std::unordered_map<std::string, std::string> url_to_sha;
 
         std::vector<std::pair<std::string, Path>> urlAndPaths;
-        for (auto& entry : data)
+        for (auto& entry : *data)
         {
             if (entry.url.empty()) continue;
             if (only_name_iter != parsed.settings.end())
@@ -75,7 +81,7 @@ namespace vcpkg
         }
 
         msg::println(msgDownloadingTools, msg::count = urlAndPaths.size());
-        auto result = download_files_no_cache(console_diagnostic_context, urlAndPaths, {}, {});
+        auto result = download_files_no_cache(console_diagnostic_context, urlAndPaths, {}); // no headers
 
         std::unordered_map<std::string, std::string> url_to_fixed_sha;
         auto http_codes_iter = result.begin();
@@ -106,7 +112,7 @@ namespace vcpkg
             ++http_codes_iter;
         }
 
-        if (!has_sha_error)
+        if (!has_http_error && !has_sha_error)
         {
             msg::println(msgAllShasValid);
         }

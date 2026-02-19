@@ -55,8 +55,6 @@ namespace vcpkg
         VcpkgPaths& operator=(const VcpkgPaths&) = delete;
         ~VcpkgPaths();
 
-        Path package_dir(const PackageSpec& spec) const;
-        Path build_dir(const PackageSpec& spec) const;
         Path build_dir(StringView package_name) const;
 
         const TripletDatabase& get_triplet_db() const;
@@ -80,7 +78,6 @@ namespace vcpkg
 
         const Path original_cwd;
         const Path root;
-        bool try_provision_vcpkg_artifacts() const;
 
     private:
         const std::unique_ptr<VcpkgPathsImpl> m_pimpl;
@@ -105,15 +102,15 @@ namespace vcpkg
     public:
         OverlayPortPaths overlay_ports;
 
+        Optional<std::string> get_scripts_version(DiagnosticContext& context) const;
         std::string get_toolver_diagnostics() const;
 
         const Filesystem& get_filesystem() const;
         const AssetCachingSettings& get_asset_cache_settings() const;
         const ToolCache& get_tool_cache() const;
-        const Path& get_tool_exe(StringView tool, MessageSink& status_messages) const;
-        const std::string& get_tool_version(StringView tool, MessageSink& status_messages) const;
-
-        Command git_cmd_builder(const Path& dot_git_dir, const Path& work_tree) const;
+        const Path* get_tool_path(DiagnosticContext& context, StringView tool) const;
+        const Path& get_tool_path_required(StringView tool) const;
+        const std::string& get_tool_version_required(StringView tool) const;
 
         // Git manipulation in the vcpkg directory
         ExpectedL<std::string> get_current_git_sha() const;
@@ -134,7 +131,7 @@ namespace vcpkg
         ExpectedL<Unit> git_read_tree(const Path& destination, StringView tree, const Path& dot_git_dir) const;
         ExpectedL<Path> git_extract_tree_from_remote_registry(StringView tree) const;
 
-        Optional<const ManifestAndPath&> get_manifest() const;
+        const ManifestAndPath* get_manifest() const;
         bool manifest_mode_enabled() const;
         const ConfigurationAndSource& get_configuration() const;
         std::unique_ptr<RegistrySet> make_registry_set() const;

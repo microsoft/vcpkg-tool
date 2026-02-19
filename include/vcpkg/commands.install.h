@@ -22,27 +22,41 @@ namespace vcpkg
 {
     struct SpecSummary
     {
-        explicit SpecSummary(const InstallPlanAction& action);
-        explicit SpecSummary(const RemovePlanAction& action);
+        explicit SpecSummary(ExtendedBuildResult&& build_result,
+                             ElapsedTime timing,
+                             std::chrono::system_clock::time_point start_time);
 
-        const BinaryParagraph* get_binary_paragraph() const;
-        const PackageSpec& get_spec() const { return m_spec; }
-        Optional<const std::string&> get_abi() const
-        {
-            return m_install_action ? m_install_action->package_abi() : nullopt;
-        }
-        bool is_user_requested_install() const;
-        Optional<ExtendedBuildResult> build_result;
+        ExtendedBuildResult build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
-        Optional<const InstallPlanAction&> get_install_plan_action() const
-        {
-            return m_install_action ? Optional<const InstallPlanAction&>(*m_install_action) : nullopt;
-        }
+
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
+    };
+
+    struct InstallSpecSummary : SpecSummary
+    {
+        explicit InstallSpecSummary(ExtendedBuildResult&& build_result,
+                                    const InternalFeatureSet& feature_list,
+                                    const Version& version,
+                                    RequestType request_type,
+                                    ElapsedTime timing,
+                                    std::chrono::system_clock::time_point start_time,
+                                    StringView package_abi,
+                                    const CompilerInfo* maybe_compiler_info);
+
+        const std::string& package_abi() const noexcept { return m_package_abi; }
+        const InternalFeatureSet& feature_list() const noexcept { return m_feature_list; }
+        const Version& version() const noexcept { return m_version; }
+        bool is_user_requested_install() const noexcept { return m_request_type == RequestType::USER_REQUESTED; }
+        const CompilerInfo* maybe_compiler_info() const noexcept { return m_compiler_info; }
 
     private:
-        const InstallPlanAction* m_install_action;
-        PackageSpec m_spec;
+        std::string m_package_abi;
+        InternalFeatureSet m_feature_list;
+        Version m_version;
+        RequestType m_request_type;
+        const CompilerInfo* m_compiler_info;
     };
 
     struct LicenseReport
@@ -54,7 +68,9 @@ namespace vcpkg
 
     struct InstallSummary
     {
-        std::vector<SpecSummary> results;
+        std::vector<SpecSummary> removed_results;
+        std::vector<InstallSpecSummary> already_installed_results;
+        std::vector<InstallSpecSummary> install_results;
         ElapsedTime elapsed;
         LicenseReport license_report;
         bool failed = false;
@@ -64,23 +80,26 @@ namespace vcpkg
         void print_complete_message() const;
     };
 
-    struct InstallDir
-    {
-        static InstallDir from_destination_root(const InstalledPaths& ip, Triplet t, const BinaryParagraph& pgh);
-
-    private:
-        Path m_destination;
-        Path m_listfile;
-
-    public:
-        const Path& destination() const;
-        const Path& listfile() const;
-    };
-
+    // First, writes triplet_canonical_name / (including the trailing slash) to listfile. Then:
+    // For each directory in source_dir / proximate_files
+    //  * create directory destination_installed / triplet_canonical_name / proximate_file
+    //  * write a line in listfile triplet_canonical_name / proximate_file /  (note the trailing slash)
+    // For each regular file in source_dir / proximate_files
+    //  * copy source_dir / proximate_file -> destination_installed / triplet_canonical_name / proximate_file
+    //  * write a line in listfile triplet_canonical_name / proximate_file
+    // For each symlink or junction in source_dir / proximate_files:
+    //  * if hydrate == SymlinkHydrate::yes, resolve symlinks and follow the rules above, otherwise,
+    //    * copy the symlink or junction source_dir / proximate_file
+    //       -> destination_installed / triplet_canonical_name / proximate_file
+    //    * write a line in listfile triplet_canonical_name / proximate_file
+    //      (note *no* trailing slash, even for directory symlinks)
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
-                                          const std::vector<Path>& files,
-                                          const InstallDir& destination_dir);
+                                          const std::vector<std::string>& proximate_files,
+                                          const Path& destination_installed,
+                                          StringView triplet_canonical_name,
+                                          const Path& listfile,
+                                          const SymlinkHydrate hydrate);
 
     struct CMakeUsageInfo
     {

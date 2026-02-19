@@ -74,8 +74,9 @@ namespace vcpkg
 
         auto configuration = paths.get_configuration();
 
-        const bool has_manifest = paths.get_manifest().has_value();
-        auto manifest = has_manifest ? *paths.get_manifest().get() : ManifestAndPath{};
+        const auto* manifest_ptr = paths.get_manifest();
+        const bool has_manifest = manifest_ptr != nullptr;
+        auto manifest = has_manifest ? *manifest_ptr : ManifestAndPath{};
 
         if (configuration.source == ConfigurationSource::None && !has_manifest)
         {
@@ -99,7 +100,7 @@ namespace vcpkg
         if (has_builtin_baseline || add_builtin_baseline)
         {
             // remove default_reg, since that's filled in with the builtin-baseline
-            configuration.config.default_reg = nullopt;
+            configuration.config.default_reg.clear();
 
             RegistryConfig synthesized_registry;
             synthesized_registry.kind = JsonIdBuiltin.to_string();
@@ -126,16 +127,26 @@ namespace vcpkg
             update_baseline_in_config(paths, reg);
         }
 
-        if (configuration.source == ConfigurationSource::ManifestFile)
+        switch (configuration.source)
         {
-            manifest.manifest.insert_or_replace(JsonIdVcpkgConfiguration, configuration.config.serialize());
-        }
-
-        if (!dry_run && configuration.source == ConfigurationSource::VcpkgConfigurationFile)
-        {
-            paths.get_filesystem().write_contents(configuration.directory / FileVcpkgConfigurationDotJson,
-                                                  Json::stringify(configuration.config.serialize()),
-                                                  VCPKG_LINE_INFO);
+            case ConfigurationSource::None:
+                // nothing to do
+                break;
+            case ConfigurationSource::ManifestFileVcpkgConfiguration:
+                manifest.manifest.insert_or_replace(JsonIdVcpkgConfiguration, configuration.config.serialize());
+                break;
+            case ConfigurationSource::ManifestFileConfiguration:
+                manifest.manifest.insert_or_replace(JsonIdConfiguration, configuration.config.serialize());
+                break;
+            case ConfigurationSource::VcpkgConfigurationFile:
+                if (!dry_run)
+                {
+                    paths.get_filesystem().write_contents(configuration.directory / FileVcpkgConfigurationDotJson,
+                                                          Json::stringify(configuration.config.serialize()),
+                                                          VCPKG_LINE_INFO);
+                }
+                break;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
         }
 
         if (!dry_run && has_manifest)

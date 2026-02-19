@@ -264,7 +264,9 @@ namespace vcpkg
             }
 
             get_global_metrics_collector().track_submission(std::move(metrics));
-            perform_find_artifact_and_exit(paths, filter, Util::lookup_value(options.settings, SwitchVersion));
+            const auto* version_ptr = Util::lookup_value(options.settings, SwitchVersion);
+            perform_find_artifact_and_exit(
+                paths, filter, version_ptr ? Optional<StringView>(*version_ptr) : Optional<StringView>{});
         }
 
         if (selector == "port")

@@ -188,7 +188,9 @@ namespace vcpkg
         ParsedSpdxLicenseDeclaration license;
 
         Optional<std::string> builtin_baseline;
-        Optional<Json::Object> vcpkg_configuration;
+
+        Optional<Json::Object> configuration;
+        ConfigurationSource configuration_source = ConfigurationSource::None;
         // Currently contacts is only a Json::Object but it will eventually be unified with maintainers
         Json::Object contacts;
 
@@ -257,8 +259,8 @@ namespace vcpkg
         std::vector<std::unique_ptr<FeatureParagraph>> feature_paragraphs;
         Json::Object extra_features_info;
 
-        Optional<const FeatureParagraph&> find_feature(StringView featurename) const;
-        Optional<const std::vector<Dependency>&> find_dependencies_for_feature(const std::string& featurename) const;
+        const FeatureParagraph* find_feature(StringView featurename) const;
+        const std::vector<Dependency>* find_dependencies_for_feature(const std::string& featurename) const;
         bool has_qualified_dependencies() const;
 
         ExpectedL<Unit> check_against_feature_flags(const Path& origin,

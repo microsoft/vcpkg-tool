@@ -42,15 +42,8 @@ namespace vcpkg
     {
         std::vector<TripletExclusions> triplets;
 
-        void insert(Triplet triplet);
         void insert(Triplet triplet, SortedVector<std::string>&& exclusions);
-    };
-
-    struct ExclusionPredicate
-    {
-        const ExclusionsMap* data;
-
-        bool operator()(const PackageSpec& spec) const;
+        bool is_excluded(const PackageSpec& spec) const;
     };
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
@@ -68,7 +61,6 @@ namespace vcpkg
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
                                      const CiBaselineData& cidata,
-                                     StringView cifile,
-                                     bool allow_unexpected_passing,
-                                     bool is_independent);
+                                     const std::string* cifile,
+                                     bool allow_unexpected_passing);
 }

@@ -4,7 +4,6 @@
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/parallel-algorithms.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/system.debug.h>
@@ -20,7 +19,7 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
@@ -262,11 +261,13 @@ namespace vcpkg
         auto written = readlink(procpath, buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
         return Path(buf, written);
-#else /* LINUX */
+#elif defined(__linux__) || defined(__NetBSD__)
         char buf[1024 * 4] = {};
         auto written = readlink("/proc/self/exe", buf, sizeof(buf));
         Checks::check_exit(VCPKG_LINE_INFO, written != -1, "Could not determine current executable path.");
         return Path(buf, written);
+#else
+        Checks::check_exit(VCPKG_LINE_INFO, false, "Could not determine current executable path.");
 #endif
     }
 
@@ -538,8 +539,18 @@ namespace vcpkg
     Environment get_modified_clean_environment(const std::unordered_map<std::string, std::string>& extra_env,
                                                StringView prepend_to_path)
     {
-        const std::string& system_root_env = get_system_root().value_or_exit(VCPKG_LINE_INFO).native();
-        const std::string& system32_env = get_system32().value_or_exit(VCPKG_LINE_INFO).native();
+        const Path* system_root_env = get_system_root(console_diagnostic_context);
+        if (!system_root_env)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        const Path* system32_env = get_system32(console_diagnostic_context);
+        if (!system32_env)
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
         std::string new_path;
         if (!prepend_to_path.empty())
         {
@@ -551,15 +562,15 @@ namespace vcpkg
         }
 
         Strings::append(new_path,
-                        system32_env,
+                        *system32_env,
                         ';',
-                        system_root_env,
+                        *system_root_env,
                         ';',
-                        system32_env,
+                        *system32_env,
                         "\\Wbem;",
-                        system32_env,
+                        *system32_env,
                         "\\WindowsPowerShell\\v1.0\\;",
-                        system32_env,
+                        *system32_env,
                         "\\OpenSSH\\");
 
         std::vector<std::string> env_strings = {
@@ -634,6 +645,8 @@ namespace vcpkg
             "GameDKLatest",
             "GRDKLatest",
             "GXDKLatest",
+            "GameDKCoreLatest",
+            "GameDKXboxLatest",
         };
 
         std::vector<std::string> env_prefix_string = {
@@ -743,23 +756,6 @@ namespace vcpkg
     {
         static const Environment clean_env = get_modified_clean_environment({});
         return clean_env;
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(View<Command> commands)
-    {
-        RedirectedProcessLaunchSettings default_redirected_process_launch_settings;
-        return cmd_execute_and_capture_output_parallel(commands, default_redirected_process_launch_settings);
-    }
-
-    std::vector<ExpectedL<ExitCodeAndOutput>> cmd_execute_and_capture_output_parallel(
-        View<Command> commands, const RedirectedProcessLaunchSettings& settings)
-    {
-        std::vector<ExpectedL<ExitCodeAndOutput>> res(commands.size(), LocalizedString{});
-
-        parallel_transform(
-            commands, res.begin(), [&](const Command& cmd) { return cmd_execute_and_capture_output(cmd, settings); });
-
-        return res;
     }
 } // namespace vcpkg
 
@@ -1103,7 +1099,9 @@ namespace
 
             DWORD bytes_read = 0;
             static constexpr DWORD buffer_size = 1024 * 32;
-            char buf[buffer_size];
+            // the alignment is forced here for callers that are expecting the buffer to contain UTF-16
+            // on Windows
+            alignas(wchar_t) char buf[buffer_size];
             while (stdout_pipe.read_pipe != INVALID_HANDLE_VALUE)
             {
                 switch (WaitForSingleObjectEx(stdout_pipe.read_pipe, INFINITE, TRUE))
@@ -1643,7 +1641,7 @@ namespace
                     std::replace(buf, buf + bytes_read, '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{buf, bytes_read});
+                        context.statusln(LocalizedString::from_raw(StringView{buf, bytes_read}));
                     }
 
                     data_cb(StringView{buf, bytes_read});
@@ -1654,11 +1652,13 @@ namespace
                     // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
                     // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
                     std::string encoded;
-                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2);
+                    // clang-format off
+                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2); // CodeQL [SM02986] This is not an incorrect cast to shut up the compiler, the suggested "call an encoding conversion function instead" is exactly what this is doing.
+                    // clang-format on
                     std::replace(encoded.begin(), encoded.end(), '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none, StringView{encoded});
+                        context.statusln(LocalizedString::from_raw(encoded));
                     }
 
                     data_cb(StringView{encoded});
@@ -1668,10 +1668,8 @@ namespace
                 raw_cb = [&](char* buf, size_t bytes_read) {
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(Color::none,
-                                                              Strings::replace_all(StringView{buf, bytes_read},
-                                                                                   StringLiteral{"\0"},
-                                                                                   StringLiteral{"\\0"}));
+                        context.statusln(LocalizedString::from_raw(Strings::replace_all(
+                            StringView{buf, bytes_read}, StringLiteral{"\0"}, StringLiteral{"\\0"})));
                     }
 
                     data_cb(StringView{buf, bytes_read});
@@ -1843,7 +1841,7 @@ namespace
                         data_cb(this_read_data);
                         if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                         {
-                            msg::write_unlocalized_text(Color::none, this_read_data);
+                            context.statusln(LocalizedString::from_raw(this_read_data));
                         }
                     }
                 }
@@ -1879,15 +1877,14 @@ namespace
                     std::replace(buf, buf + read_amount, '\0', '?');
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text(Color::none, this_read_data);
+                        context.statusln(LocalizedString::from_raw(this_read_data));
                     }
                     break;
                 case Encoding::Utf8WithNulls:
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
                     {
-                        msg::write_unlocalized_text_to_stdout(
-                            Color::none,
-                            Strings::replace_all(this_read_data, StringLiteral{"\0"}, StringLiteral{"\\0"}));
+                        context.statusln(LocalizedString::from_raw(
+                            Strings::replace_all(this_read_data, StringLiteral{"\0"}, StringLiteral{"\\0"})));
                     }
 
                     break;
@@ -2029,16 +2026,82 @@ namespace vcpkg
         }
     }
 
+    void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit)
+    {
+        auto str_command = command.command_line().to_string();
+        context.report(
+            DiagnosticLine{DiagKind::Error,
+                           LocalizedString::from_raw(str_command)
+                               .append_raw(' ')
+                               .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit))});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(context, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets)
+    {
+        auto str_command = command.command_line().to_string();
+        replace_secrets(str_command, secrets);
+        auto error_line =
+            LocalizedString::from_raw(std::move(str_command))
+                .append_raw(' ')
+                .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit.exit_code));
+        // add the output iff it was not already echoed in debug
+        if (echo_in_debug == EchoInDebug::Hide || !Debug::g_debugging)
+        {
+            error_line.append_raw('\n').append_raw(exit.output);
+        }
+
+        context.report(DiagnosticLine{DiagKind::Error, std::move(error_line)});
+    }
+
+    bool check_zero_exit_code(DiagnosticContext& context,
+                              const Command& command,
+                              Optional<ExitCodeIntegral>& maybe_exit)
+    {
+        if (auto exit = maybe_exit.get())
+        {
+            if (*exit == 0)
+            {
+                return true;
+            }
+
+            report_nonzero_exit_code(context, command, *exit);
+        }
+
+        return false;
+    }
+
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit)
     {
-        return check_zero_exit_code(context, command, maybe_exit, View<std::string>{});
+        return check_zero_exit_code(
+            context, command, maybe_exit, RedirectedProcessLaunchSettings{}.echo_in_debug, View<std::string>{});
     }
 
     std::string* check_zero_exit_code(DiagnosticContext& context,
                                       const Command& command,
                                       Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug)
+    {
+        return check_zero_exit_code(context, command, maybe_exit, echo_in_debug, View<std::string>{});
+    }
+
+    std::string* check_zero_exit_code(DiagnosticContext& context,
+                                      const Command& command,
+                                      Optional<ExitCodeAndOutput>& maybe_exit,
+                                      EchoInDebug echo_in_debug,
                                       View<std::string> secrets)
     {
         if (auto exit = maybe_exit.get())
@@ -2048,15 +2111,7 @@ namespace vcpkg
                 return &exit->output;
             }
 
-            auto str_command = command.command_line().to_string();
-            replace_secrets(str_command, secrets);
-            context.report(DiagnosticLine{
-                DiagKind::Error,
-                LocalizedString::from_raw(str_command)
-                    .append_raw(' ')
-                    .append(msg::format(msgProgramPathReturnedNonzeroExitCode, msg::exit_code = exit->exit_code))
-                    .append_raw('\n')
-                    .append_raw(exit->output)});
+            report_nonzero_exit_code_and_output(context, command, *exit, echo_in_debug, secrets);
         }
 
         return nullptr;

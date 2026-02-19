@@ -7,6 +7,7 @@
 
 #include <vcpkg/documentation.h>
 #include <vcpkg/packagespec.h>
+#include <vcpkg/versions.h>
 
 namespace
 {
@@ -154,6 +155,19 @@ namespace vcpkg
         }
     }
 
+    std::string format_full_version_spec(const PackageSpec& spec,
+                                         const InternalFeatureSet& feature_list,
+                                         const Version& version)
+    {
+        if (feature_list.empty_or_only_core())
+        {
+            return fmt::format("{}@{}", spec.to_string(), version);
+        }
+
+        const std::string features = Strings::join(",", feature_list);
+        return fmt::format("{}[{}]:{}@{}", spec.name(), features, spec.triplet(), version);
+    }
+
     const std::string& PackageSpec::name() const { return this->m_name; }
 
     Triplet PackageSpec::triplet() const { return this->m_triplet; }
@@ -218,7 +232,7 @@ namespace vcpkg
                                                                   AllowPlatformSpec allow_platform_spec)
     {
         // there is no origin because this function is used for user inputs
-        auto parser = ParserBase(input, nullopt, {0, 0});
+        auto parser = ParserBase(input, nullopt, {0, 1});
         auto maybe_pqs = parse_qualified_specifier(parser, allow_features, parse_explicit_triplet, allow_platform_spec);
         if (!parser.at_eof())
         {
@@ -376,32 +390,51 @@ namespace vcpkg
                 return nullopt;
             }
 
-            auto loc = parser.cur_loc();
-            std::string platform_string;
-            int depth = 1;
-            while (depth > 0 && (ch = parser.next()) != 0)
+            ch = parser.next();
+            if (ch == '\r' || ch == '\n' || ch == Unicode::end_of_file)
             {
-                if (ch == '(') ++depth;
-                if (ch == ')') --depth;
-            }
-            if (depth > 0)
-            {
-                parser.add_error(msg::format(msgMissingClosingParen), loc);
+                parser.add_error(msg::format(msgMissingClosingParen));
                 return nullopt;
             }
-            platform_string.append((++loc.it).pointer_to_current(), parser.it().pointer_to_current());
+
+            auto expr_loc = parser.cur_loc();
+            int depth = 1;
+            for (;;)
+            {
+                if (ch == '(')
+                {
+                    ++depth;
+                }
+                else if (ch == ')')
+                {
+                    --depth;
+                    if (depth == 0)
+                    {
+                        break;
+                    }
+                }
+
+                ch = parser.next();
+                if (ch == '\r' || ch == '\n' || ch == Unicode::end_of_file)
+                {
+                    parser.add_error(msg::format(msgMissingClosingParen));
+                    return nullopt;
+                }
+            }
+
             auto platform_opt = PlatformExpression::parse_platform_expression(
-                platform_string, PlatformExpression::MultipleBinaryOperators::Allow);
+                std::string(expr_loc.it.pointer_to_current(), parser.it().pointer_to_current()),
+                PlatformExpression::MultipleBinaryOperators::Allow);
             if (auto platform = platform_opt.get())
             {
-                ret.platform.emplace(loc, std::move(*platform));
+                ret.platform.emplace(expr_loc, std::move(*platform));
             }
             else
             {
-                parser.add_error(std::move(platform_opt).error(), loc);
+                parser.add_error(std::move(platform_opt).error(), expr_loc);
             }
 
-            parser.next();
+            parser.next(); // consume ')'
         }
         // This makes the behavior of the parser more consistent -- otherwise, it will skip tabs and spaces only if
         // there isn't a qualifier.

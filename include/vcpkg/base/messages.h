@@ -75,7 +75,8 @@ namespace vcpkg
     {
         LocalizedString() = default;
         operator StringView() const noexcept;
-        const std::string& data() const noexcept;
+        const std::string& data() const& noexcept;
+        std::string&& data() && noexcept;
         const std::string& to_string() const noexcept;
         std::string extract_data();
 
@@ -149,9 +150,7 @@ namespace vcpkg
     inline constexpr StringLiteral MessagePrefix = "message: ";
     LocalizedString message_prefix();
     inline constexpr StringLiteral InfoPrefix = "info: ";
-    LocalizedString info_prefix();
     inline constexpr StringLiteral NotePrefix = "note: ";
-    LocalizedString note_prefix();
     inline constexpr StringLiteral WarningPrefix = "warning: ";
     LocalizedString warning_prefix();
 }
@@ -214,9 +213,9 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_error(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = error_prefix();
-        msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
-        println(Color::error, s);
+        msg::write_unlocalized_text(Color::error, "error");
+        msg::write_unlocalized_text(Color::none, ": ");
+        msg::write_unlocalized_text(Color::none, msg::format(VCPKG_EXPAND_MSG_ARGS).append_raw('\n'));
     }
 
     [[nodiscard]] LocalizedString format_warning(const LocalizedString& s);
@@ -231,9 +230,9 @@ namespace vcpkg::msg
     template<VCPKG_DECL_MSG_TEMPLATE>
     void println_warning(VCPKG_DECL_MSG_ARGS)
     {
-        auto s = LocalizedString::from_raw(WarningPrefix);
-        msg::format_to(s, VCPKG_EXPAND_MSG_ARGS);
-        println(Color::warning, s);
+        msg::write_unlocalized_text(Color::warning, "warning");
+        msg::write_unlocalized_text(Color::none, ": ");
+        msg::write_unlocalized_text(Color::none, msg::format(VCPKG_EXPAND_MSG_ARGS).append_raw('\n'));
     }
 
     template<VCPKG_DECL_MSG_TEMPLATE>

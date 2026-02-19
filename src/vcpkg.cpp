@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/curl.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
@@ -110,16 +111,25 @@ namespace
 
     void inner(const Filesystem& fs, const VcpkgCmdArguments& args, const BundleSettings& bundle)
     {
+        vcpkg_curl_global_init(CURL_GLOBAL_DEFAULT);
+
         // track version on each invocation
         get_global_metrics_collector().track_string(StringMetric::VcpkgVersion, vcpkg_executable_version);
+
+        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
+
+        const auto* detected_curl_version = vcpkg_curl_version();
+        if (!detected_curl_version)
+        {
+            detected_curl_version = "unknown";
+        }
+        get_global_metrics_collector().track_string(StringMetric::DetectedLibCurlVersion, detected_curl_version);
 
         if (args.get_command().empty())
         {
             msg::write_unlocalized_text_to_stderr(Color::none, get_zero_args_usage());
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
-
-        get_global_metrics_collector().track_bool(BoolMetric::DetectedContainer, detect_container(fs));
 
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {

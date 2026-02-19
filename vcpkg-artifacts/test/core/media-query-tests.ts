@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { parseQuery } from '../../mediaquery/media-query';
 import { strict } from 'assert';
-import * as s from '../sequence-equal';
-
-// forces the global function for sequence equal to be added to strict before this exectues:
-s;
+import { parseQuery } from '../../mediaquery/media-query';
+import { strictSequenceEqual } from '../sequence-equal';
 
 describe('MediaQuery', () => {
   it('windows', async () => {
@@ -20,7 +17,7 @@ describe('MediaQuery', () => {
     const queryList = parseQuery('windows and arm');
     strict.equal(queryList.length, 1, 'should be just one query');
     strict.equal(queryList.queries[0].expressions.length, 2, 'should be two expressions');
-    strict.sequenceEqual(queryList.queries[0].expressions.map(each => each.feature), ['windows', 'arm']);
+    strictSequenceEqual(queryList.queries[0].expressions.map(each => each.feature), ['windows', 'arm']);
   });
 
   it('target:x64', async () => {

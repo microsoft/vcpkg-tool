@@ -156,7 +156,7 @@ export class CommandLine {
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       // eslint-disable-next-line prefer-const
-      let [, name, sep, value] = /^--([^=:]+)([=:])?(.+)?$/g.exec(arg) || [];
+      let [, name, , value] = /^--([^=:]+)([=:])?(.+)?$/g.exec(arg) || [];
       if (name) {
         if (!value) {
           if (i + 1 < args.length && !args[i + 1].startsWith('--')) {

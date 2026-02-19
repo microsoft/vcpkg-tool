@@ -221,37 +221,24 @@ namespace
         }
         else if (kind == JsonIdFilesystem)
         {
-            std::string baseline;
-            if (r.optional_object_field(obj, JsonIdBaseline, baseline, BaselineShaDeserializer::instance))
-            {
-                res.baseline = std::move(baseline);
-            }
-
+            r.optional_object_field_emplace(obj, JsonIdBaseline, res.baseline, BaselineShaDeserializer::instance);
             r.required_object_field(msg::format(msgAFilesystemRegistry),
                                     obj,
                                     JsonIdPath,
                                     res.path.emplace(),
                                     Json::PathDeserializer::instance);
-
             r.check_for_unexpected_fields(obj, valid_filesystem_fields, msg::format(msgAFilesystemRegistry));
         }
         else if (kind == JsonIdGit)
         {
             r.required_object_field(
                 msg::format(msgAGitRegistry), obj, JsonIdRepository, res.repo.emplace(), GitUrlDeserializer::instance);
-
-            if (!r.optional_object_field(
-                    obj, JsonIdReference, res.reference.emplace(), GitReferenceDeserializer::instance))
-            {
-                res.reference = nullopt;
-            }
-
+            r.optional_object_field_emplace(obj, JsonIdReference, res.reference, GitReferenceDeserializer::instance);
             r.required_object_field(msg::format(msgAGitRegistry),
                                     obj,
                                     JsonIdBaseline,
                                     res.baseline.emplace(),
                                     BaselineShaDeserializer::instance);
-
             r.check_for_unexpected_fields(obj, valid_git_fields, msg::format(msgAGitRegistry));
         }
         else if (kind == JsonIdArtifact)
@@ -261,13 +248,11 @@ namespace
                                     JsonIdName,
                                     res.name.emplace(),
                                     Json::IdentifierDeserializer::instance);
-
             r.required_object_field(msg::format(msgAnArtifactsRegistry),
                                     obj,
                                     JsonIdLocation,
                                     res.location.emplace(),
                                     ArtifactsGitRegistryUrlDeserializer::instance);
-
             r.check_for_unexpected_fields(obj, valid_artifact_fields, msg::format(msgAnArtifactsRegistry));
         }
         else
@@ -551,18 +536,14 @@ namespace
         r.optional_object_field(
             obj, JsonIdOverlayTriplets, ret.overlay_triplets, OverlayTripletsPathArrayDeserializer::instance);
 
-        RegistryConfig default_registry;
-        if (r.optional_object_field(obj, JsonIdDefaultRegistry, default_registry, RegistryConfigDeserializer::instance))
+        RegistryConfig* default_registry = r.optional_object_field_emplace(
+            obj, JsonIdDefaultRegistry, ret.default_reg, RegistryConfigDeserializer::instance);
+        if (default_registry && default_registry->kind.value_or("") == JsonIdArtifact)
         {
-            if (default_registry.kind.value_or("") == JsonIdArtifact)
-            {
-                r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
-            }
-            ret.default_reg = std::move(default_registry);
+            r.add_generic_error(type_name(), msg::format(msgDefaultRegistryIsArtifact));
         }
 
         r.optional_object_field(obj, JsonIdRegistries, ret.registries, RegistriesArrayDeserializer::instance);
-
         for (auto&& warning : collect_package_pattern_warnings(ret.registries))
         {
             r.add_warning(type_name(), warning);
@@ -783,6 +764,31 @@ namespace vcpkg
         return known_fields;
     }
 
+    StringLiteral configuration_source_file_name(ConfigurationSource source)
+    {
+        switch (source)
+        {
+            case ConfigurationSource::ManifestFileVcpkgConfiguration:
+            case ConfigurationSource::ManifestFileConfiguration: return FileVcpkgDotJson;
+            case ConfigurationSource::None: // we always make the configuration as a separate file by default, so use
+                                            // that name if we don't already have one
+            case ConfigurationSource::VcpkgConfigurationFile: return FileVcpkgConfigurationDotJson;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
+    StringLiteral configuration_source_field(ConfigurationSource source)
+    {
+        switch (source)
+        {
+            case ConfigurationSource::None:
+            case ConfigurationSource::VcpkgConfigurationFile: return "";
+            case ConfigurationSource::ManifestFileVcpkgConfiguration: return JsonIdVcpkgConfiguration;
+            case ConfigurationSource::ManifestFileConfiguration: return JsonIdConfiguration;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
     void Configuration::validate_as_active() const
     {
         if (!ce_metadata.is_empty())
@@ -791,7 +797,7 @@ namespace vcpkg
             if (!unknown_fields.empty())
             {
                 msg::println_warning(msg::format(msgUnrecognizedConfigField)
-                                         .append_raw("\n\n" + Strings::join("\n", unknown_fields))
+                                         .append_raw("\n" + Strings::join("\n", unknown_fields) + "\n")
                                          .append(msgDocumentedFieldsSuggestUpdate));
             }
         }

@@ -10,7 +10,11 @@ namespace vcpkg
         FileConflicts,
         CascadedDueToMissingDependencies,
         Excluded,
+        ExcludedByParent,
+        ExcludedByDryRun,
+        Unsupported,
         CacheMissing,
+        Cached,
         Downloaded,
         Removed
     };

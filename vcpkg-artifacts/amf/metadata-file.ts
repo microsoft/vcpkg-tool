@@ -10,7 +10,6 @@ import { Session } from '../session';
 import { Uri } from '../util/uri';
 import { BaseMap } from '../yaml/BaseMap';
 import { Options } from '../yaml/Options';
-import { Strings } from '../yaml/strings';
 import { Yaml, YAMLDictionary } from '../yaml/yaml-types';
 import { Contacts } from './contact';
 import { DemandBlock, Demands } from './demands';
@@ -111,6 +110,7 @@ export class MetadataFile extends BaseMap {
 
   #errors!: Array<string>;
   get formatErrors(): Array<string> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const t = this;
     return this.#errors || (this.#errors = this.document.errors.map(each => {
       const message = each.message;
@@ -249,7 +249,7 @@ export class MetadataFile extends BaseMap {
     }
   }
 
-  /** @internal */override assert(recreateIfDisposed = false, node = this.node): asserts this is Yaml<YAMLDictionary> & { node: YAMLDictionary } {
+  /** @internal */override assert(_recreateIfDisposed = false, _node = this.node): asserts this is Yaml<YAMLDictionary> & { node: YAMLDictionary } {
     if (!isMap(this.node)) {
       this.document = parseDocument('{}\n', { prettyErrors: false, lineCounter: this.lineCounter, strict: true });
       this.node = <YAMLMap<string, any>><any>this.document.contents;

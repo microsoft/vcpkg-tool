@@ -16,12 +16,15 @@ namespace vcpkg
     struct DiagnosticLine;
     struct DiagnosticContext;
     struct PrintingDiagnosticContext;
-    struct BufferedDiagnosticContext;
+    struct BasicBufferedDiagnosticContext;
+    struct SinkBufferedDiagnosticContext;
+    struct ContextBufferedDiagnosticContext;
     struct FullyBufferedDiagnosticContext;
     struct AttemptDiagnosticContext;
     struct WarningDiagnosticContext;
 
-    extern DiagnosticContext& console_diagnostic_context;
-    extern DiagnosticContext& status_only_diagnostic_context;
     extern DiagnosticContext& null_diagnostic_context;
+    extern DiagnosticContext& console_diagnostic_context;
+    extern DiagnosticContext& stderr_diagnostic_context;
+    extern DiagnosticContext& status_only_diagnostic_context;
 }

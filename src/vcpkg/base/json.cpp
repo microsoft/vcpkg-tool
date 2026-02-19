@@ -72,7 +72,7 @@ namespace vcpkg::Json
 
         private:
             template<class T>
-            ValueImpl& internal_assign(ValueKind vk, T ValueImpl::*mp, ValueImpl& other) noexcept
+            ValueImpl& internal_assign(ValueKind vk, T ValueImpl::* mp, ValueImpl& other) noexcept
             {
                 if (tag == vk)
                 {
@@ -1084,6 +1084,31 @@ namespace vcpkg::Json
                 return ParsedJson{std::move(val), parser.style()};
             }
 
+            static Optional<ParsedJson> parse(DiagnosticContext& context, StringView json, StringView origin)
+            {
+                StatsTimer t(g_json_parsing_stats);
+
+                json.remove_bom();
+
+                auto parser = Parser(json, origin, {1, 1});
+
+                auto val = parser.parse_value();
+
+                parser.skip_whitespace();
+                if (!parser.at_eof())
+                {
+                    parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
+                }
+
+                if (parser.messages().any_errors())
+                {
+                    std::move(parser).messages().report(context);
+                    return nullopt;
+                }
+
+                return ParsedJson{std::move(val), parser.style()};
+            }
+
             JsonStyle style() const noexcept { return style_; }
 
         private:
@@ -1172,19 +1197,12 @@ namespace vcpkg::Json
         return true;
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
-    {
-        std::error_code ec;
-        auto disk_contents = fs.read_contents(json_file, ec);
-        if (ec)
-        {
-            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
-        }
-
-        return parse(disk_contents, json_file).value_or_exit(VCPKG_LINE_INFO);
-    }
-
     ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
+
+    Optional<ParsedJson> parse(DiagnosticContext& context, StringView text, StringView origin)
+    {
+        return Parser::parse(context, text, origin);
+    }
 
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
@@ -1195,7 +1213,22 @@ namespace vcpkg::Json
                 return std::move(*as_object);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
+            return LocalizedString::from_raw(
+                DiagnosticLine{DiagKind::Error, origin, msg::format(msgExpectedAnObject)}.to_string());
+        });
+    }
+
+    Optional<Json::Object> parse_object(DiagnosticContext& context, StringView text, StringView origin)
+    {
+        return parse(context, text, origin).then([&](ParsedJson&& mabeValueIsh) -> Optional<Json::Object> {
+            auto& asValue = mabeValueIsh.value;
+            if (auto as_object = asValue.maybe_object())
+            {
+                return std::move(*as_object);
+            }
+
+            context.report(DiagnosticLine{DiagKind::Error, origin, msg::format(msgExpectedAnObject)});
+            return nullopt;
         });
     }
     // } auto parse()

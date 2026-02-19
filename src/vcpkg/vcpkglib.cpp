@@ -198,7 +198,7 @@ namespace vcpkg
 
         for (auto&& ipv : ipv_map)
         {
-            Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
+            Checks::msg_check_exit(VCPKG_LINE_INFO, ipv.second.core != nullptr, msgCorruptedDatabase);
         }
 
         return Util::fmap(ipv_map, [](auto&& p) -> InstalledPackageView { return std::move(p.second); });
@@ -237,8 +237,7 @@ namespace vcpkg
             Util::erase_remove_if(installed_files_of_current_pgh,
                                   [](const std::string& file) { return file.back() == '/'; });
 
-            StatusParagraphAndAssociatedFiles pgh_and_files = {
-                *pgh, SortedVector<std::string>(std::move(installed_files_of_current_pgh))};
+            StatusParagraphAndAssociatedFiles pgh_and_files{*pgh, std::move(installed_files_of_current_pgh)};
             installed_files.push_back(std::move(pgh_and_files));
         }
 

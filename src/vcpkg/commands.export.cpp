@@ -85,38 +85,45 @@ namespace
                            target_path);
     }
 
-    void print_export_plan(const std::map<ExportPlanType, std::vector<const ExportPlanAction*>>& group_by_plan_type)
+    void print_and_sort_export_plan_block(const msg::MessageT<>& header, std::vector<const ExportPlanAction*>& actions)
     {
-        static constexpr ExportPlanType ORDER[] = {
-            ExportPlanType::ALREADY_BUILT,
-            ExportPlanType::NOT_BUILT,
-        };
-
-        for (const ExportPlanType plan_type : ORDER)
+        if (actions.empty())
         {
-            const auto it = group_by_plan_type.find(plan_type);
-            if (it == group_by_plan_type.cend())
-            {
-                continue;
-            }
-
-            std::vector<const ExportPlanAction*> cont = it->second;
-            std::sort(cont.begin(), cont.end(), &ExportPlanAction::compare_by_name);
-            LocalizedString msg;
-            if (plan_type == ExportPlanType::ALREADY_BUILT)
-                msg = msg::format(msgExportingAlreadyBuiltPackages);
-            else if (plan_type == ExportPlanType::NOT_BUILT)
-                msg = msg::format(msgPackagesToInstall);
-            else
-                Checks::unreachable(VCPKG_LINE_INFO);
-
-            msg.append_raw('\n');
-            for (auto&& action : cont)
-            {
-                msg.append_raw(request_type_indent(action->request_type)).append_raw(action->spec).append_raw('\n');
-            }
-            msg::print(msg);
+            return;
         }
+
+        std::sort(actions.begin(), actions.end(), ExportPlanAction::compare_by_name);
+        LocalizedString msg = msg::format(header);
+        msg.append_raw('\n');
+        for (auto&& action : actions)
+        {
+            msg.append_raw(request_type_indent(action->request_type)).append_raw(action->spec).append_raw('\n');
+        }
+
+        msg::print(msg);
+    }
+
+    std::vector<const ExportPlanAction*> print_export_plan_and_return_not_built(
+        const std::vector<ExportPlanAction>& plan)
+    {
+        std::vector<const ExportPlanAction*> already_built;
+        std::vector<const ExportPlanAction*> not_built;
+
+        for (const ExportPlanAction& action : plan)
+        {
+            if (action.core_paragraph())
+            {
+                already_built.push_back(&action);
+            }
+            else
+            {
+                not_built.push_back(&action);
+            }
+        }
+
+        print_and_sort_export_plan_block(msgExportingAlreadyBuiltPackages, already_built);
+        print_and_sort_export_plan_block(msgPackagesToInstall, not_built);
+        return not_built;
     }
 
     std::string create_export_id()
@@ -166,9 +173,9 @@ namespace
         // -NoDefaultExcludes is needed for ".vcpkg-root"
         Command cmd;
 #ifndef _WIN32
-        cmd.string_arg(paths.get_tool_exe(Tools::MONO, out_sink));
+        cmd.string_arg(paths.get_tool_path_required(Tools::MONO));
 #endif
-        cmd.string_arg(paths.get_tool_exe(Tools::NUGET, out_sink))
+        cmd.string_arg(paths.get_tool_path_required(Tools::NUGET))
             .string_arg("pack")
             .string_arg(nuspec_file_path)
             .string_arg("-OutputDirectory")
@@ -218,7 +225,7 @@ namespace
                            const Path& output_dir,
                            const ArchiveFormat& format)
     {
-        const Path& cmake_exe = paths.get_tool_exe(Tools::CMAKE, out_sink);
+        const Path& cmake_exe = paths.get_tool_path_required(Tools::CMAKE);
 
         const auto exported_dir_filename = raw_exported_dir.filename();
         const auto exported_archive_filename = fmt::format("{}.{}", exported_dir_filename, format.extension());
@@ -250,6 +257,7 @@ namespace
         bool zip = false;
         bool seven_zip = false;
         bool all_installed = false;
+        bool dereference_symlinks = false;
 
         Optional<std::string> maybe_output;
         Path output_dir;
@@ -264,18 +272,19 @@ namespace
     constexpr CommandSwitch EXPORT_SWITCHES[] = {
         {SwitchDryRun, msgCmdExportOptDryRun},
         {SwitchRaw, msgCmdExportOptRaw},
-        {SwitchNuGet, msgCmdExportOptNuget},
+        {SwitchNuGet, msgCmdExportOptNuGet},
         {SwitchZip, msgCmdExportOptZip},
         {SwitchSevenZip, msgCmdExportOpt7Zip},
         {SwitchXAllInstalled, msgCmdExportOptInstalled},
+        {SwitchDereferenceSymlinks, msgCmdExportOptDereferenceSymlinks},
     };
 
     constexpr CommandSetting EXPORT_SETTINGS[] = {
         {SwitchOutput, msgCmdExportSettingOutput},
         {SwitchOutputDir, msgCmdExportSettingOutputDir},
-        {SwitchNuGetId, msgCmdExportSettingNugetID},
-        {SwitchNuGetDescription, msgCmdExportSettingNugetDesc},
-        {SwitchNuGetVersion, msgCmdExportSettingNugetVersion},
+        {SwitchNuGetId, msgCmdExportSettingNuGetID},
+        {SwitchNuGetDescription, msgCmdExportSettingNuGetDesc},
+        {SwitchNuGetVersion, msgCmdExportSettingNuGetVersion},
     };
 
     ExportArguments handle_export_command_arguments(const VcpkgPaths& paths,
@@ -294,15 +303,15 @@ namespace
         ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
         ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
+        ret.dereference_symlinks = Util::Sets::contains(options.switches, SwitchDereferenceSymlinks);
+        const auto* output_dir_opt = Util::lookup_value(options.settings, SwitchOutputDir);
 
         if (paths.manifest_mode_enabled())
         {
-            auto output_dir_opt = Util::lookup_value(options.settings, SwitchOutputDir);
-
             // --output-dir is required in manifest mode
-            if (auto d = output_dir_opt.get())
+            if (output_dir_opt)
             {
-                ret.output_dir = paths.original_cwd / *d;
+                ret.output_dir = paths.original_cwd / *output_dir_opt;
             }
             else
             {
@@ -321,10 +330,10 @@ namespace
             }
         }
 
-        ret.output_dir = ret.output_dir.empty() ? Util::lookup_value(options.settings, SwitchOutputDir)
-                                                      .map([&](const Path& p) { return paths.original_cwd / p; })
-                                                      .value_or(paths.root)
-                                                : ret.output_dir;
+        if (ret.output_dir.empty())
+        {
+            ret.output_dir = output_dir_opt ? paths.original_cwd / *output_dir_opt : paths.root;
+        }
 
         if (ret.all_installed)
         {
@@ -408,30 +417,23 @@ namespace
             const InstalledPaths export_paths(raw_exported_dir_path / "installed");
             for (const ExportPlanAction& action : export_plan)
             {
-                if (action.plan_type != ExportPlanType::ALREADY_BUILT)
-                {
-                    Checks::unreachable(VCPKG_LINE_INFO);
-                }
-
+                const BinaryParagraph* binary_paragraph = action.core_paragraph();
+                Checks::check_exit(VCPKG_LINE_INFO, binary_paragraph != nullptr);
                 msg::println(msgExportingPackage, msg::package_name = action.spec);
 
-                const BinaryParagraph& binary_paragraph = action.core_paragraph().value_or_exit(VCPKG_LINE_INFO);
-
-                const InstallDir dirs =
-                    InstallDir::from_destination_root(export_paths, action.spec.triplet(), binary_paragraph);
+                const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
 
                 auto lines =
-                    fs.read_lines(paths.installed().listfile_path(binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
-                std::vector<Path> files;
-                for (auto&& suffix : lines)
-                {
-                    if (suffix.empty()) continue;
-                    if (suffix.back() == '/') suffix.pop_back();
-                    if (suffix == action.spec.triplet().to_string()) continue;
-                    files.push_back(paths.installed().root() / suffix);
-                }
-
-                install_files_and_write_listfile(fs, paths.installed().triplet_dir(action.spec.triplet()), files, dirs);
+                    fs.read_lines(paths.installed().listfile_path(*binary_paragraph)).value_or_exit(VCPKG_LINE_INFO);
+                auto proximate_files = convert_list_to_proximate_files(std::move(lines), triplet_canonical_name);
+                install_files_and_write_listfile(fs,
+                                                 paths.installed().triplet_dir(action.spec.triplet()),
+                                                 proximate_files,
+                                                 export_paths.root(),
+                                                 triplet_canonical_name,
+                                                 export_paths.listfile_path(*binary_paragraph),
+                                                 opts.dereference_symlinks ? SymlinkHydrate::CopyData
+                                                                           : SymlinkHydrate::CopySymlinks);
             }
         }
 
@@ -450,7 +452,7 @@ namespace
             const auto nuget_version = opts.maybe_nuget_version.value_or("1.0.0");
             const auto nuget_description = opts.maybe_nuget_description.value_or("Vcpkg NuGet export");
 
-            msg::println(msgCreatingNugetPackage);
+            msg::println(msgCreatingNuGetPackage);
 
             const auto output_path = do_nuget_export(
                 paths, nuget_id, nuget_version, nuget_description, raw_exported_dir_path, opts.output_dir);
@@ -553,9 +555,7 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        std::map<ExportPlanType, std::vector<const ExportPlanAction*>> group_by_plan_type;
-        Util::group_by(export_plan, &group_by_plan_type, [](const ExportPlanAction& p) { return p.plan_type; });
-        print_export_plan(group_by_plan_type);
+        auto not_built = print_export_plan_and_return_not_built(export_plan);
 
         const bool has_non_user_requested_packages =
             Util::any_of(export_plan, [](const ExportPlanAction& package) -> bool {
@@ -567,15 +567,13 @@ namespace vcpkg
             msg::println(Color::warning, msgAdditionalPackagesToExport);
         }
 
-        const auto it = group_by_plan_type.find(ExportPlanType::NOT_BUILT);
-        if (it != group_by_plan_type.cend() && !it->second.empty())
+        if (!not_built.empty())
         {
             // No need to show all of them, just the user-requested ones. Dependency resolution will handle the rest.
-            std::vector<const ExportPlanAction*> unbuilt = it->second;
             Util::erase_remove_if(
-                unbuilt, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
+                not_built, [](const ExportPlanAction* a) { return a->request_type != RequestType::USER_REQUESTED; });
 
-            const auto s = Strings::join(" ", unbuilt, [](const ExportPlanAction* a) { return a->spec.to_string(); });
+            const auto s = Strings::join(" ", not_built, [](const ExportPlanAction* a) { return a->spec.to_string(); });
             msg::println(msg::format(msgPrebuiltPackages).append_raw('\n').append_raw("vcpkg install ").append_raw(s));
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -593,5 +591,26 @@ namespace vcpkg
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
+    }
+
+    std::vector<std::string> convert_list_to_proximate_files(std::vector<std::string>&& lines,
+                                                             StringView triplet_canonical_name)
+    {
+        auto prefix_length = triplet_canonical_name.size() + 1; // +1 for the trailing '/'
+        std::vector<std::string> proximate_files;
+        for (auto&& suffix : lines)
+        {
+            if (suffix.size() <= prefix_length)
+            {
+                continue;
+            }
+
+            suffix.erase(0, prefix_length);
+            if (suffix.back() == '/') suffix.pop_back();
+            if (suffix.empty()) continue;
+            proximate_files.emplace_back(std::move(suffix));
+        }
+
+        return proximate_files;
     }
 } // namespace vcpkg

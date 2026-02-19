@@ -359,7 +359,7 @@ namespace vcpkg
 #if defined(WIN32)
         auto& fs = paths.get_filesystem();
 
-        const Path& nuget_exe = paths.get_tool_exe(Tools::NUGET, out_sink);
+        const Path& nuget_exe = paths.get_tool_path_required(Tools::NUGET);
 
         const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
         const auto targets_file_path = tmp_dir / "vcpkg.nuget.targets";
@@ -397,7 +397,7 @@ namespace vcpkg
         const auto nuget_package = paths.original_cwd / fmt::format("{}.{}.nupkg", nuget_id, nupkg_version);
         Checks::msg_check_exit(VCPKG_LINE_INFO,
                                fs.exists(nuget_package, IgnoreErrors{}),
-                               msgNugetPackageFileSucceededButCreationFailed,
+                               msgNuGetPackageFileSucceededButCreationFailed,
                                msg::path = nuget_package);
         msg::println(Color::success, msgCreatedNuGetPackage, msg::path = nuget_package);
 
@@ -418,7 +418,7 @@ namespace vcpkg
         static constexpr StringLiteral TITLE = "PowerShell Tab-Completion";
         const auto script_path = paths.scripts / "addPoshVcpkgToPowershellProfile.ps1";
 
-        const auto& ps = paths.get_tool_exe("powershell-core", out_sink);
+        const auto& ps = paths.get_tool_path_required("powershell-core");
         const auto rc = cmd_execute(Command{ps}
                                         .string_arg("-NoProfile")
                                         .string_arg("-ExecutionPolicy")
@@ -655,7 +655,7 @@ namespace vcpkg
             return integrate_fish(paths);
         }
 
-        Checks::msg_exit_maybe_upgrade(
+        Checks::msg_exit_with_message(
             VCPKG_LINE_INFO, msgUnknownParameterForIntegrate, msg::value = parsed.command_arguments[0]);
     }
 }

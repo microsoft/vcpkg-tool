@@ -284,16 +284,19 @@ Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView vers
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<Path> relative_paths,
                                     View<std::string> hashes,
+                                    View<Path> relative_package_paths,
+                                    View<std::string> package_hashes,
                                     std::string created_time,
                                     std::string document_namespace,
                                     std::vector<Json::Object>&& resource_docs)
 {
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
+    Checks::check_exit(VCPKG_LINE_INFO, relative_package_paths.size() == package_hashes.size());
 
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& cpgh = *scfl.source_control_file->core_paragraph;
     StringView abi{SpdxNone};
-    if (auto package_abi = action.package_abi().get())
+    if (auto package_abi = action.package_abi())
     {
         abi = *package_abi;
     }
@@ -337,13 +340,6 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             rel.insert(SpdxRelationshipType, SpdxGenerates);
             rel.insert(SpdxRelatedSpdxElement, SpdxRefBinary);
         }
-        for (size_t i = 0; i < relative_paths.size(); ++i)
-        {
-            auto& rel = rels.push_back(Json::Object());
-            rel.insert(SpdxElementId, SpdxRefPort);
-            rel.insert(SpdxRelationshipType, SpdxContains);
-            rel.insert(SpdxRelatedSpdxElement, fmt::format("SPDXRef-file-{}", i));
-        }
     }
     {
         auto& obj = packages.push_back(Json::Object());
@@ -355,46 +351,48 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
         obj.insert(SpdxCopyrightText, SpdxNoAssertion);
         obj.insert(JsonIdComment, "This is a binary package built by vcpkg.");
-        {
-            auto& rel = rels.push_back(Json::Object());
-            rel.insert(SpdxElementId, SpdxRefBinary);
-            rel.insert(SpdxRelationshipType, SpdxGeneratedFrom);
-            rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
-        }
     }
 
     auto& files = doc.insert(JsonIdFiles, Json::Array());
-    {
-        for (size_t i = 0; i < relative_paths.size(); ++i)
-        {
-            const auto& path = relative_paths[i];
-            const auto& hash = hashes[i];
 
-            auto& obj = files.push_back(Json::Object());
-            obj.insert(SpdxFileName, "./" + path.generic_u8string());
-            const auto ref = fmt::format("SPDXRef-file-{}", i);
-            obj.insert(SpdxSpdxId, ref);
-            auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
-            auto& checksum1 = checksum.push_back(Json::Object());
-            checksum1.insert(JsonIdAlgorithm, JsonIdAllCapsSHA256);
-            checksum1.insert(SpdxChecksumValue, hash);
-            obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
-            obj.insert(SpdxCopyrightText, SpdxNoAssertion);
+    // Helper function to process files and create relationships
+    auto process_files =
+        [&files,
+         &rels](View<Path> paths, View<std::string> file_hashes, StringLiteral ref_name, StringLiteral ref_type) {
+            for (size_t i = 0; i < paths.size(); ++i)
             {
-                auto& rel = rels.push_back(Json::Object());
-                rel.insert(SpdxElementId, ref);
-                rel.insert(SpdxRelationshipType, SpdxContainedBy);
-                rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
+                const auto& path = paths[i];
+                const auto& hash = file_hashes[i];
+
+                auto& obj = files.push_back(Json::Object());
+                obj.insert(SpdxFileName, "./" + path.generic_u8string());
+                const auto ref = fmt::format("SPDXRef-{}-file-{}", ref_name, i);
+                obj.insert(SpdxSpdxId, ref);
+                auto& checksum = obj.insert(JsonIdChecksums, Json::Array());
+                auto& checksum1 = checksum.push_back(Json::Object());
+                checksum1.insert(JsonIdAlgorithm, JsonIdAllCapsSHA256);
+                checksum1.insert(SpdxChecksumValue, hash);
+                obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
+                obj.insert(SpdxCopyrightText, SpdxNoAssertion);
+                {
+                    auto& rel = rels.push_back(Json::Object());
+                    rel.insert(SpdxElementId, ref_type);
+                    rel.insert(SpdxRelationshipType, SpdxContains);
+                    rel.insert(SpdxRelatedSpdxElement, ref);
+                }
+                if (path == FileVcpkgDotJson && ref_type == SpdxRefPort)
+                {
+                    auto& rel = rels.push_back(Json::Object());
+                    rel.insert(SpdxElementId, ref);
+                    rel.insert(SpdxRelationshipType, SpdxDependencyManifestOf);
+                    rel.insert(SpdxRelatedSpdxElement, ref_type);
+                }
             }
-            if (path == FileVcpkgDotJson)
-            {
-                auto& rel = rels.push_back(Json::Object());
-                rel.insert(SpdxElementId, ref);
-                rel.insert(SpdxRelationshipType, SpdxDependencyManifestOf);
-                rel.insert(SpdxRelatedSpdxElement, SpdxRefPort);
-            }
-        }
-    }
+        };
+
+    // Process port files first, then package files
+    process_files(relative_paths, hashes, "port", SpdxRefPort);
+    process_files(relative_package_paths, package_hashes, "binary", SpdxRefBinary);
 
     for (auto&& rdoc : resource_docs)
     {
@@ -408,7 +406,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
 std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
 {
-    const auto& scfl = action.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO);
+    const auto& scfl = action.source_control_file_and_location();
     const auto& scf = *scfl.source_control_file;
     const auto& cpgh = *scf.core_paragraph;
     bool all_licenses_undeclared = cpgh.license.kind() == SpdxLicenseDeclarationKind::NotPresent;
@@ -421,10 +419,11 @@ std::string vcpkg::calculate_spdx_license(const InstallPlanAction& action)
             continue;
         }
 
-        const auto& feature = scf.find_feature(feature_name).value_or_exit(VCPKG_LINE_INFO);
-        const auto& feature_appplicable_licenses = feature.license.applicable_licenses();
-        all_licenses_undeclared &= feature.license.kind() == SpdxLicenseDeclarationKind::NotPresent;
-        any_explicitly_null_licenses |= feature.license.kind() == SpdxLicenseDeclarationKind::Null;
+        const auto* feature = scf.find_feature(feature_name);
+        Checks::check_exit(VCPKG_LINE_INFO, feature != nullptr);
+        const auto& feature_appplicable_licenses = feature->license.applicable_licenses();
+        all_licenses_undeclared &= feature->license.kind() == SpdxLicenseDeclarationKind::NotPresent;
+        any_explicitly_null_licenses |= feature->license.kind() == SpdxLicenseDeclarationKind::Null;
         licenses.insert(licenses.end(), feature_appplicable_licenses.begin(), feature_appplicable_licenses.end());
     }
 

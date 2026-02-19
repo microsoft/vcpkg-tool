@@ -58,7 +58,7 @@ namespace
     {
         auto& fs = paths.get_filesystem();
         auto& builtin_ports = paths.builtin_ports_directory();
-        auto git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
+        auto git_exe = paths.get_tool_path_required(Tools::GIT);
         auto ports_dir_prefix =
             git_prefix(console_diagnostic_context, git_exe, builtin_ports).value_or_quiet_exit(VCPKG_LINE_INFO);
         const auto locator = GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports};
@@ -176,7 +176,8 @@ namespace
                                             const FullPackageSpec& spec,
                                             const std::string* ci_feature_baseline_file_name,
                                             const CiFeatureBaselineEntry* baseline,
-                                            std::string&& cascade_reason)
+                                            std::string&& cascade_reason,
+                                            LocalizedString&& fix_msg = {})
     {
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
@@ -192,6 +193,10 @@ namespace
             case CiFeatureBaselineOutcome::ConfigurationFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
+                if (!fix_msg.empty())
+                {
+                    diagnostics.push_back(DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedFail:
             case CiFeatureBaselineOutcome::FeatureFail:
@@ -201,6 +206,10 @@ namespace
                                                      *ci_feature_baseline_file_name,
                                                      TextRowCol{outcome.loc.row, outcome.loc.column},
                                                      msg::format(msgUnexpectedStateCascadePortNote)});
+                if (!fix_msg.empty())
+                {
+                    diagnostics.push_back(DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedCascade:
             case CiFeatureBaselineOutcome::FeatureCascade:
@@ -452,7 +461,7 @@ namespace vcpkg
         const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
 
         BinaryCache binary_cache(fs);
-        if (!binary_cache.install_providers(args, paths, out_sink))
+        if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
@@ -554,7 +563,7 @@ namespace vcpkg
             KeepGoing::Yes,
         };
         StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
-        PortDirAbiInfoCache port_dir_abi_info_cache;
+        SpecAbiInfoCache spec_abi_info_cache;
 
         // check what should be tested
         std::vector<SpecToTest> specs_to_test;
@@ -672,15 +681,15 @@ namespace vcpkg
 
         msg::println(msgComputeInstallPlans, msg::count = specs_to_test.size());
 
+        StatusParagraphs empty_status_db;
         std::vector<FullPackageSpec> specs;
-        std::vector<Path> port_locations;
         std::vector<const InstallPlanAction*> actions_to_check;
         for (auto&& test_spec : specs_to_test)
         {
             test_spec.plan = create_feature_install_plan(provider,
                                                          var_provider,
                                                          Span<FullPackageSpec>(&test_spec, 1),
-                                                         {},
+                                                         empty_status_db,
                                                          packages_dir_assigner,
                                                          install_plan_options);
             if (test_spec.plan.unsupported_features.empty())
@@ -688,25 +697,23 @@ namespace vcpkg
                 for (auto& actions : test_spec.plan.install_actions)
                 {
                     specs.emplace_back(actions.spec, actions.feature_list);
-                    port_locations.emplace_back(
-                        actions.source_control_file_and_location.value_or_exit(VCPKG_LINE_INFO).port_directory());
                 }
                 actions_to_check.push_back(&test_spec.plan.install_actions.back());
             }
         }
 
         msg::println(msgComputeAllAbis);
-        var_provider.load_tag_vars(specs, port_locations, host_triplet);
+        var_provider.load_tag_vars(specs, host_triplet);
         for (auto&& test_spec : specs_to_test)
         {
             if (test_spec.plan.unsupported_features.empty())
             {
-                compute_all_abis(paths, test_spec.plan, var_provider, status_db, port_dir_abi_info_cache);
+                compute_all_abis(paths, test_spec.plan, var_provider, empty_status_db, spec_abi_info_cache);
             }
         }
 
         msg::println(msgPrecheckBinaryCache);
-        binary_cache.precheck(actions_to_check);
+        binary_cache.precheck(console_diagnostic_context, fs, actions_to_check);
 
         Util::stable_sort(specs_to_test, [](const SpecToTest& left, const SpecToTest& right) noexcept {
             return left.plan.install_actions.size() < right.plan.install_actions.size();
@@ -727,29 +734,57 @@ namespace vcpkg
             if (!install_plan.unsupported_features.empty())
             {
                 std::vector<std::string> out;
+                std::vector<PlatformExpression::Expr> exprs;
                 for (const auto& entry : install_plan.unsupported_features)
                 {
                     out.push_back(msg::format(msgOnlySupports,
                                               msg::feature_spec = entry.first,
                                               msg::supports_expression = to_string(entry.second))
                                       .extract_data());
+                    if (spec.kind != SpecToTestKind::Combined && ci_feature_baseline_file_name)
+                    {
+                        exprs.push_back(entry.second);
+                    }
                 }
+                LocalizedString fix_msg;
+                if (!exprs.empty())
+                {
+                    auto all_or = PlatformExpression::Expr::And(std::move(exprs)).negate().simplify();
+                    fix_msg = msg::format(msgUnexpectedStateCascadeSuggestLine).append_raw('\n');
+                    if (spec.kind == SpecToTestKind::Core)
+                    {
+                        fix_msg.append_raw(
+                            fmt::format("{}({}) = cascade", spec.package_spec.name(), to_string(all_or)));
+                    }
+                    else if (spec.kind == SpecToTestKind::Separate)
+                    {
+                        fix_msg.append_raw(fmt::format("{}[{}]({}) = cascade",
+                                                       spec.package_spec.name(),
+                                                       spec.separate_feature,
+                                                       to_string(all_or)));
+                    }
+                }
+
                 msg::print(msg::format(msgSkipTestingOfPort,
                                        msg::feature_spec = install_plan.install_actions.back().display_name(),
                                        msg::triplet = target_triplet)
                                .append_raw('\n')
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
-                handle_cascade_feature_test_result(
-                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, Strings::join(", ", out));
+                handle_cascade_feature_test_result(diagnostics,
+                                                   all_ports,
+                                                   spec,
+                                                   ci_feature_baseline_file_name,
+                                                   baseline,
+                                                   Strings::join(", ", out),
+                                                   std::move(fix_msg));
                 continue;
             }
 
             if (auto iter = Util::find_if(install_plan.install_actions,
                                           [&known_failures](const auto& install_action) {
                                               return Util::Sets::contains(
-                                                  known_failures,
-                                                  install_action.package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                                  known_failures, install_action.package_abi_or_exit(VCPKG_LINE_INFO));
                                           });
                 iter != install_plan.install_actions.end())
             {
@@ -770,11 +805,11 @@ namespace vcpkg
 
             {
                 const InstallPlanAction* action = &install_plan.install_actions.back();
-                if (binary_cache.precheck(View<const InstallPlanAction*>(&action, 1)).front() ==
-                    CacheAvailability::available)
+                if (binary_cache.precheck(console_diagnostic_context, fs, View<const InstallPlanAction*>(&action, 1))
+                        .front() == CacheAvailability::available)
                 {
                     msg::println(msgSkipTestingOfPortAlreadyInBinaryCache,
-                                 msg::sha = action->package_abi().value_or_exit(VCPKG_LINE_INFO));
+                                 msg::sha = action->package_abi_or_exit(VCPKG_LINE_INFO));
                     handle_pass_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     continue;
                 }
@@ -791,7 +826,7 @@ namespace vcpkg
             }
 
             install_clear_installed_packages(paths, install_plan.install_actions);
-            binary_cache.fetch(install_plan.install_actions);
+            binary_cache.fetch(console_diagnostic_context, fs, install_plan.install_actions);
             const auto summary = install_execute_plan(args,
                                                       paths,
                                                       host_triplet,
@@ -802,34 +837,25 @@ namespace vcpkg
                                                       *build_logs_recorder,
                                                       false);
             binary_cache.mark_all_unrestored();
-            for (const auto& result : summary.results)
+            for (const auto& result : summary.install_results)
             {
-                auto& build_result = result.build_result.value_or_exit(VCPKG_LINE_INFO);
-                switch (build_result.code)
+                switch (result.build_result.code)
                 {
                     case BuildResult::BuildFailed:
                         if (Path* logs_dir = maybe_logs_dir.get())
                         {
                             auto issue_body_path = *logs_dir / FileIssueBodyMD;
                             fs.write_contents(
-                                issue_body_path,
-                                create_github_issue(args,
-                                                    build_result,
-                                                    paths,
-                                                    result.get_install_plan_action().value_or_exit(VCPKG_LINE_INFO),
-                                                    false),
-                                VCPKG_LINE_INFO);
+                                issue_body_path, create_github_issue(args, paths, result, false), VCPKG_LINE_INFO);
                         }
 
                         [[fallthrough]];
-                    case BuildResult::PostBuildChecksFailed:
-                        known_failures.insert(result.get_abi().value_or_exit(VCPKG_LINE_INFO));
-                        break;
+                    case BuildResult::PostBuildChecksFailed: known_failures.insert(result.package_abi()); break;
                     default: break;
                 }
             }
 
-            auto& last_build_result = summary.results.back().build_result.value_or_exit(VCPKG_LINE_INFO);
+            auto& last_build_result = summary.install_results.back().build_result;
             switch (last_build_result.code)
             {
                 case BuildResult::Downloaded:
@@ -858,11 +884,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CacheMissing:
-                    if (auto abi = summary.results.back().get_abi().get())
-                    {
-                        known_failures.insert(*abi);
-                    }
-
+                    known_failures.insert(summary.install_results.back().package_abi());
                     if (maybe_logs_dir)
                     {
                         fs.create_directories(*maybe_logs_dir.get(), VCPKG_LINE_INFO);
@@ -873,7 +895,11 @@ namespace vcpkg
                     handle_fail_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     break;
                 case BuildResult::Removed:
-                case BuildResult::Excluded: Checks::unreachable(VCPKG_LINE_INFO);
+                case BuildResult::Excluded:
+                case BuildResult::ExcludedByParent:
+                case BuildResult::ExcludedByDryRun:
+                case BuildResult::Cached:
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
             msg::println();

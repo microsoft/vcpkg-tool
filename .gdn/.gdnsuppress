@@ -1,0 +1,42 @@
+{
+  "hydrated": true,
+  "properties": {
+    "helpUri": "https://eng.ms/docs/microsoft-security/security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/microsoft-guardian/general/suppressions"
+  },
+  "version": "1.0.0",
+  "suppressionSets": {
+    "default": {
+      "name": "default",
+      "createdDate": "2026-02-13 02:22:58Z",
+      "lastUpdatedDate": "2026-02-13 02:22:58Z"
+    }
+  },
+  "results": {
+    "efa66ecd750b4d106d4dd6f2fbd2441065152c41829202ed0567d6a0d961d5f9": {
+      "signature": "efa66ecd750b4d106d4dd6f2fbd2441065152c41829202ed0567d6a0d961d5f9",
+      "alternativeSignatures": [
+        "50994ed25a8d9dacffa70b1439e8a6039f1234848aa6df2d46af8cbd9e9b9adb"
+      ],
+      "target": "drop/vcpkg-arm64.exe",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "createdDate": "2026-02-13 02:22:58Z"
+    },
+    "e5f0d1f2deb7b0d91c5445a071db89df338a885af13e14634ee632a6d5623252": {
+      "signature": "e5f0d1f2deb7b0d91c5445a071db89df338a885af13e14634ee632a6d5623252",
+      "alternativeSignatures": [
+        "9f676c3724626658b72a0890c5a279eb7f7766b310368f82c048839878584923"
+      ],
+      "target": "drop/vcpkg.exe",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "binskim",
+      "ruleId": "BA2007",
+      "createdDate": "2026-02-13 02:22:58Z"
+    }
+  }
+}

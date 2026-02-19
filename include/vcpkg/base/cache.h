@@ -49,14 +49,14 @@ namespace vcpkg
         }
 
         template<class KeyIsh>
-        Optional<const Value&> get(const KeyIsh& k) const
+        Value* get(const KeyIsh& k) const
         {
             auto iter = m_cache.find(k);
             if (iter != m_cache.end())
             {
-                return iter->second;
+                return &iter->second;
             }
-            return nullopt;
+            return nullptr;
         }
 
     private:

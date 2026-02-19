@@ -134,34 +134,6 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 #endif
 }
 
-TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
-{
-    std::vector<Command> vec;
-    for (size_t i = 0; i < 50; ++i)
-    {
-#if defined(_WIN32)
-        vec.push_back(Command("cmd.exe").string_arg("/d").string_arg("/c").string_arg(fmt::format("echo {}", i)));
-#else
-        vec.push_back(Command("echo").string_arg(std::string(i, 'a')));
-#endif
-    }
-
-    auto res = cmd_execute_and_capture_output_parallel(vec);
-
-    for (size_t i = 0; i != res.size(); ++i)
-    {
-        auto out = res[i].get();
-        REQUIRE(out != nullptr);
-        REQUIRE(out->exit_code == 0);
-
-#if defined(_WIN32)
-        REQUIRE(out->output == (fmt::format("{}\r\n", i)));
-#else
-        REQUIRE(out->output == (std::string(i, 'a') + "\n"));
-#endif
-    }
-}
-
 TEST_CASE ("append_shell_escaped", "[system]")
 {
     Command cmd;
