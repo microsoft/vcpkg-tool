@@ -23,6 +23,8 @@ namespace vcpkg
 
     void command_z_upload_metrics_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
+        // note that z-upload-metrics is usually going to have metrics disabled as it is usually
+        // invoked inside vcpkg, and we don't collect vcpkg-in-vcpkg metrics.
         const auto parsed = args.parse_arguments(CommandZUploadMetricsMetadata);
         const auto& payload_path = parsed.command_arguments[0];
         auto payload = fs.read_contents(payload_path, VCPKG_LINE_INFO);
