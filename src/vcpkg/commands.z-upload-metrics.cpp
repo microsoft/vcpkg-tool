@@ -42,7 +42,7 @@ namespace vcpkg
         {
             Debug::println("Failed to remove file after upload: {}", ec.message());
         }
-        
+
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }
