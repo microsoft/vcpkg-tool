@@ -889,9 +889,11 @@ namespace vcpkg
         std::string all_post_portfile_includes =
             Strings::join(";", Util::fmap(post_portfile_includes, [](const Path& p) { return p.generic_u8string(); }));
 
+        // For editable ports, use editable_build_dir instead of buildtrees
+        const Path build_dir = action.editable_build_dir.value_or(paths.build_dir(port_name));
         std::vector<CMakeVariable> variables{
             {CMakeVariableAllFeatures, all_features},
-            {CMakeVariableCurrentBuildtreesDir, paths.build_dir(port_name)},
+            {CMakeVariableCurrentBuildtreesDir, build_dir},
             {CMakeVariableCurrentPackagesDir, action.package_dir},
             {CMakeVariableCurrentPortDir, scfl.port_directory()},
             {CMakeVariableHostTriplet, host_triplet.canonical_name()},
@@ -900,10 +902,17 @@ namespace vcpkg
             {CMakeVariableVersion, scf.to_version().text},
             {CMakeVariableUseHeadVersion, Util::Enum::to_bool(action.use_head_version) ? "1" : "0"},
             {CMakeVariableEditable, Util::Enum::to_bool(action.editable) ? "1" : "0"},
+            {CMakeVariableEditableSubtree, Util::Enum::to_bool(action.editable_subtree) ? "1" : "0"},
             {CMakeVariableNoDownloads, !Util::Enum::to_bool(build_options.allow_downloads) ? "1" : "0"},
             {CMakeVariableZChainloadToolchainFile, action.pre_build_info(VCPKG_LINE_INFO).toolchain_file()},
             {CMakeVariableZPostPortfileIncludes, all_post_portfile_includes},
         };
+
+        // Pass editable sources path to CMake macros (base directory for src1, src2, etc.)
+        if (auto* editable_sources = action.editable_sources_path.get())
+        {
+            variables.emplace_back(CMakeVariableEditableSourcesPath, *editable_sources);
+        }
 
         if (auto cmake_debug = args.cmake_debug.get())
         {
@@ -1357,10 +1366,11 @@ namespace vcpkg
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --head\n");
             return;
         }
+        // Note: For editable ports, we still compute ABI (including source hashes) so that
+        // dependencies can compute their ABI. Binary cache push/pull is disabled elsewhere.
         if (action.editable == Editable::Yes)
         {
             Debug::print("Binary caching for package ", action.spec, " is disabled due to --editable\n");
-            return;
         }
 
         abi_info.compiler_info = &paths.get_compiler_info(*abi_info.pre_build_info, toolset);
@@ -1457,6 +1467,68 @@ namespace vcpkg
         });
 
         Util::Vectors::append(abi_tag_entries, port_dir_cache_entry.abi_entries);
+
+        // For editable ports, compute a single hash for all sources (sources/src1, sources/src2, etc.)
+        auto* editable_sources_for_abi = action.editable_sources_path.get();
+        if (action.editable == Editable::Yes && editable_sources_for_abi)
+        {
+            const auto& sources_path = *editable_sources_for_abi;
+            if (fs.exists(sources_path, IgnoreErrors{}))
+            {
+                const ElapsedTimer hash_timer;
+                auto source_files = fs.get_regular_files_recursive_lexically_proximate(sources_path, VCPKG_LINE_INFO);
+                // Exclude .git directories (match path component, not substring)
+                Util::erase_remove_if(source_files, [](const Path& p) {
+                    const auto& native = p.native();
+                    // Match ".git" as a full path component: starts with ".git/" or contains "/.git/" or "\.git/"
+                    if (native.size() >= 4 && native[0] == '.' && native[1] == 'g' && native[2] == 'i' &&
+                        native[3] == 't' && (native.size() == 4 || native[4] == '/' || native[4] == '\\'))
+                    {
+                        return true;
+                    }
+                    return native.find("/.git/") != std::string::npos || native.find("\\.git\\") != std::string::npos ||
+                           native.find("/.git\\") != std::string::npos || native.find("\\.git/") != std::string::npos;
+                });
+
+                // Sort for deterministic hash
+                std::sort(source_files.begin(), source_files.end());
+
+                // Compute combined hash: concatenate "path|hash\n" for each file, then hash the result
+                std::string combined_hashes;
+                size_t files_hashed = 0;
+                for (const Path& rel_source_file : source_files)
+                {
+                    const Path abs_source_file = sources_path / rel_source_file;
+                    auto hash = Hash::get_file_hash(fs, abs_source_file, Hash::Algorithm::Sha256);
+                    if (hash)
+                    {
+                        combined_hashes += rel_source_file.native();
+                        combined_hashes += "|";
+                        combined_hashes += hash.value_or_exit(VCPKG_LINE_INFO);
+                        combined_hashes += "\n";
+                        ++files_hashed;
+                    }
+                }
+
+                // Single ABI entry for entire sources directory
+                auto sources_hash = Hash::get_string_sha256(combined_hashes);
+                abi_tag_entries.emplace_back("editable_sources", sources_hash);
+                Debug::print("Editable sources hash: ",
+                             sources_hash,
+                             " (",
+                             std::to_string(files_hashed),
+                             " files) in ",
+                             std::to_string(hash_timer.us_64() / 1000),
+                             "ms [",
+                             sources_path,
+                             "]\n");
+            }
+            else
+            {
+                abi_tag_entries.emplace_back("editable_sources", "0");
+                Debug::print("Editable sources hash: initializing.\n");
+            }
+        }
 
         for (size_t i = 0; i < abi_info.pre_build_info->post_portfile_includes.size(); ++i)
         {

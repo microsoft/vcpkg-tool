@@ -124,19 +124,55 @@ namespace
         }
     }
 
-    // Merges overlay settings from the 3 major sources in the usual priority order, where command line wins first, then
-    // manifest, then environment. The parameter order is specifically chosen to group information that comes from the
-    // manifest together and make parameter order confusion less likely to compile.
+    // Scans the editable-ports directory for subdirectories matching any configured pattern,
+    // returning their port/ subpaths as overlay paths (sorted for deterministic order).
+    static std::vector<Path> compute_editable_overlays(const ReadOnlyFilesystem& fs,
+                                                       const Optional<EditablePortsConfig>& editable_ports,
+                                                       const Path& config_directory)
+    {
+        std::vector<Path> result;
+        if (auto editable_config = editable_ports.get())
+        {
+            if (!editable_config->ports.empty())
+            {
+                auto editable_base_path = editable_config->get_editable_ports_path(config_directory);
+                for (auto& port_dir : fs.get_directories_non_recursive(editable_base_path, IgnoreErrors{}))
+                {
+                    auto port_name = port_dir.filename().to_string();
+                    for (const auto& pattern : editable_config->ports)
+                    {
+                        if (package_pattern_match(port_name, pattern) != 0)
+                        {
+                            auto port_overlay_path = port_dir / "port";
+                            if (fs.exists(port_overlay_path, IgnoreErrors{}))
+                            {
+                                result.push_back(port_overlay_path);
+                                Debug::print("Added editable-ports overlay: ", port_overlay_path, '\n');
+                            }
+                            break; // No need to check other patterns for this port
+                        }
+                    }
+                }
+                std::sort(result.begin(), result.end());
+            }
+        }
+        return result;
+    }
+
+    // Merges overlay settings from all sources in priority order: editable (highest), then command line, then
+    // config, then environment (lowest). The parameter order is specifically chosen to group information that comes
+    // from the manifest together and make parameter order confusion less likely to compile.
     static std::vector<Path> merge_overlays(const ReadOnlyFilesystem& fs,
                                             const std::vector<std::string>& cli_overlays,
                                             const std::vector<std::string>& env_overlays,
                                             const Path& original_cwd,
                                             bool forbid_config_dot,
                                             const std::vector<std::string>& config_overlays,
-                                            const Path& config_directory)
+                                            const Path& config_directory,
+                                            std::vector<Path>&& editable_overlays = {})
     {
-        std::vector<Path> result;
-        result.reserve(cli_overlays.size() + config_overlays.size() + env_overlays.size());
+        std::vector<Path> result = std::move(editable_overlays);
+        result.reserve(result.size() + cli_overlays.size() + config_overlays.size() + env_overlays.size());
         append_overlays(result, fs, cli_overlays, original_cwd, config_directory, false);
         append_overlays(result, fs, config_overlays, config_directory, config_directory, forbid_config_dot);
         append_overlays(result, fs, env_overlays, original_cwd, config_directory, false);
@@ -685,13 +721,17 @@ namespace vcpkg
 
         m_pimpl->m_config = merge_validate_configs(
             std::move(maybe_manifest_config), m_pimpl->m_manifest_dir, std::move(maybe_json_config), config_dir, *this);
-        overlay_ports.overlay_ports = merge_overlays(m_pimpl->m_fs,
-                                                     args.cli_overlay_ports,
-                                                     args.env_overlay_ports,
-                                                     original_cwd,
-                                                     true,
-                                                     m_pimpl->m_config.config.overlay_ports,
-                                                     m_pimpl->m_config.directory);
+        overlay_ports.overlay_ports =
+            merge_overlays(m_pimpl->m_fs,
+                           args.cli_overlay_ports,
+                           args.env_overlay_ports,
+                           original_cwd,
+                           true,
+                           m_pimpl->m_config.config.overlay_ports,
+                           m_pimpl->m_config.directory,
+                           compute_editable_overlays(
+                               m_pimpl->m_fs, m_pimpl->m_config.config.editable_ports, m_pimpl->m_config.directory));
+
         overlay_triplets = merge_overlays(m_pimpl->m_fs,
                                           args.cli_overlay_triplets,
                                           args.env_overlay_triplets,

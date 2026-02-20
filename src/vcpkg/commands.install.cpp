@@ -32,10 +32,39 @@
 #include <vcpkg/xunitwriter.h>
 
 #include <iterator>
+#include <unordered_map>
 
 namespace
 {
     using namespace vcpkg;
+
+    // Editable port source info parsed from portfile.cmake
+    // Initialize an editable port: copy port files to editable-ports/<port>/port/ folder
+    // Structure:
+    //   editable-ports/<port>/port/     <- port files (portfile.cmake, vcpkg.json, etc.)
+    //   editable-ports/<port>/sources/  <- source code (src1/, src2/, etc. for multi-source ports)
+    //   editable-ports/<port>/build/    <- build artifacts
+    //   editable-ports/<port>/packages/ <- package output
+    // Note: Source handling is done by CMake macros (vcpkg_from_github, etc.)
+    // which check _VCPKG_EDITABLE flag and use local source if available
+    void initialize_editable_port(const Filesystem& fs,
+                                  const SourceControlFileAndLocation& scfl,
+                                  const Path& editable_port_dir)
+    {
+        const auto port_dir = scfl.port_directory();
+        const auto port_name = port_dir.filename().to_string();
+
+        msg::println(Color::success, LocalizedString::from_raw("Initializing editable port: " + port_name));
+
+        // Copy all port files to <editable_port_dir>/port/
+        const auto port_files_path = editable_port_dir / "port";
+        fs.create_directories(port_files_path, VCPKG_LINE_INFO);
+        fs.copy_regular_recursive(port_dir, port_files_path, VCPKG_LINE_INFO);
+
+        msg::println(LocalizedString::from_raw("  Port files copied to: " + port_files_path.native()));
+        msg::println(LocalizedString::from_raw("  Sources will be cloned automatically on first build to: " +
+                                               (editable_port_dir / "sources").native()));
+    }
 
     struct InstalledFile
     {
@@ -68,6 +97,24 @@ namespace
             return Strings::case_insensitive_ascii_less(lhs.file_path, rhs.file_path);
         }
     };
+
+    // Restore timestamp from old file to new file if they are identical
+    void restore_timestamp_if_unchanged(const Filesystem& fs, const Path& new_file, const Path& old_file_in_temp)
+    {
+        if (!fs.exists(old_file_in_temp, IgnoreErrors{})) return;
+        if (!fs.exists(new_file, IgnoreErrors{})) return;
+
+        if (fs.files_are_identical(new_file, old_file_in_temp))
+        {
+            std::error_code ec;
+            const auto old_timestamp = fs.last_write_time(old_file_in_temp, ec);
+            if (!ec)
+            {
+                fs.last_write_time(null_diagnostic_context, new_file, old_timestamp);
+                Debug::println("Restored timestamp for unchanged file: ", new_file);
+            }
+        }
+    }
 
     static constexpr StringLiteral SYMLINK_STATUS = "symlink_status";
     static constexpr StringLiteral STATUS = "status";
@@ -622,6 +669,51 @@ namespace vcpkg
         size_t action_index = 1;
 
         auto& fs = paths.get_filesystem();
+        const auto& installed = paths.installed();
+
+        // Create temporary directory for storing old files
+        const auto temp_base = fs.create_or_get_temp_directory(VCPKG_LINE_INFO) / "vcpkg-incremental-install";
+        // Clear any existing temp directory from previous runs
+        fs.remove_all(temp_base, IgnoreErrors{});
+        fs.create_directories(temp_base, VCPKG_LINE_INFO);
+
+        // For each package to remove, copy its files to temp directory preserving timestamps
+        // (files stay in installed/ so remove_package can clean them up normally)
+        std::unordered_map<PackageSpec, Path> temp_package_dirs;
+        for (const auto& action : action_plan.remove_actions)
+        {
+            auto maybe_ipv = status_db.get_installed_package_view(action.spec);
+            if (auto ipv = maybe_ipv.get())
+            {
+                auto maybe_lines = fs.read_lines(installed.listfile_path(ipv->core->package));
+                if (auto lines = maybe_lines.get())
+                {
+                    // Create subfolder named like the listfile: <port>_<version>_<triplet>
+                    const auto& spec = action.spec;
+                    const auto temp_pkg_dir = temp_base / ipv->core->package.fullstem();
+                    fs.create_directories(temp_pkg_dir, VCPKG_LINE_INFO);
+                    temp_package_dirs[spec] = temp_pkg_dir;
+
+                    Debug::println("Copying old files for ", spec, " to temp: ", temp_pkg_dir);
+
+                    // Copy each file to temp, preserving timestamps
+                    for (const auto& suffix : *lines)
+                    {
+                        if (suffix.empty() || suffix.back() == '/') continue; // Skip directories
+
+                        const auto source = installed.root() / suffix;
+                        const auto dest = temp_pkg_dir / suffix;
+
+                        if (fs.copy_file_preserving_timestamp(source, dest))
+                        {
+                            Debug::println("  Copied: ", suffix);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Process removals
         for (auto&& action : action_plan.remove_actions)
         {
             msg::println(msgRemovingPackage,
@@ -630,7 +722,7 @@ namespace vcpkg
                          msg::spec = action.spec);
             ++action_index;
             const auto& remove_summary =
-                summary.removed_results.emplace_back(remove_package(fs, paths.installed(), action.spec, status_db));
+                summary.removed_results.emplace_back(remove_package(fs, installed, action.spec, status_db));
             msg::println(msgElapsedForPackage,
                          msg::spec = remove_summary.build_result.spec,
                          msg::elapsed = remove_summary.timing);
@@ -648,6 +740,7 @@ namespace vcpkg
                                                            nullptr);
         }
 
+        // Install packages and restore timestamps for unchanged files
         for (auto&& action : action_plan.install_actions)
         {
             binary_cache.print_updates();
@@ -666,6 +759,30 @@ namespace vcpkg
                 args, paths, host_triplet, build_options, action, status_db, binary_cache, build_logs_recorder));
             if (result.build_result.code == BuildResult::Succeeded)
             {
+                // For reinstalled packages, restore timestamps for unchanged files
+                auto temp_it = temp_package_dirs.find(action.spec);
+                if (temp_it != temp_package_dirs.end())
+                {
+                    const auto& temp_pkg_dir = temp_it->second;
+                    if (auto bcf = result.build_result.binary_control_file.get())
+                    {
+                        auto maybe_lines = fs.read_lines(installed.listfile_path(bcf->core_paragraph));
+                        if (auto lines = maybe_lines.get())
+                        {
+                            Debug::println("Checking for unchanged files in ", action.spec);
+                            for (const auto& suffix : *lines)
+                            {
+                                if (suffix.empty() || suffix.back() == '/') continue; // Skip directories
+
+                                const auto new_file = installed.root() / suffix;
+                                const auto old_file = temp_pkg_dir / suffix;
+
+                                restore_timestamp_if_unchanged(fs, new_file, old_file);
+                            }
+                        }
+                    }
+                }
+
                 const auto& scfl = action.source_control_file_and_location();
                 const auto& scf = *scfl.source_control_file;
                 auto& license = scf.core_paragraph->license;
@@ -737,6 +854,10 @@ namespace vcpkg
 
             msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = result.timing);
         }
+
+        // Clean up temporary directory
+        Debug::println("Cleaning up temporary directory: ", temp_base);
+        fs.remove_all(temp_base, VCPKG_LINE_INFO);
 
         database_load_collapse(fs, paths.installed());
         summary.elapsed = timer.elapsed();
@@ -1412,6 +1533,84 @@ namespace vcpkg
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
+
+            // Check configuration for editable ports
+            const auto& config = paths.get_configuration();
+            const auto& editable_config = config.config.editable_ports;
+            const auto config_dir = config.directory;
+
+            // Print warning if editable mode is active
+            if (editable_config.has_value() && !editable_config.get()->ports.empty())
+            {
+                msg::println(Color::warning,
+                             LocalizedString::from_raw("\n"
+                                                       "=============== EDITABLE MODE ENABLED ===============\n"
+                                                       "Editable ports are experimental and may cause:\n"
+                                                       "  - Inconsistent builds between machines\n"
+                                                       "  - Binary caching disabled for editable ports\n"
+                                                       "  - Sources cloned to editable-ports/<port>/sources/\n"
+                                                       "Use for development only, not production builds.\n"
+                                                       "======================================================\n"));
+            }
+
+            for (InstallPlanAction& action : install_plan.install_actions)
+            {
+                const auto& port_name = action.spec.name();
+                const bool port_is_editable =
+                    editable_config.has_value() && editable_config.get()->is_port_editable(port_name);
+
+                if (port_is_editable)
+                {
+                    action.editable = Editable::Yes;
+
+                    msg::println(Color::success, LocalizedString::from_raw("Editable port: " + port_name));
+
+                    const auto editable_ports_path = editable_config.get()->get_editable_ports_path(config_dir);
+                    const auto editable_port_path = editable_ports_path / port_name;
+                    action.editable_sources_path = editable_port_path / "sources";
+                    action.editable_build_dir = editable_port_path / "build";
+                    // Override package_dir to use editable location
+                    action.package_dir = editable_port_path / "packages";
+
+                    // Initialize if port directory doesn't exist yet
+                    if (!fs.exists(editable_port_path, IgnoreErrors{}))
+                    {
+                        initialize_editable_port(fs, action.source_control_file_and_location(), editable_port_path);
+                    }
+                    else
+                    {
+                        msg::println(LocalizedString::from_raw("  Using existing editable port at: " +
+                                                               editable_port_path.native()));
+                    }
+                }
+            }
+
+            // Compute editable subtree: mark ports that are editable or have editable dependencies
+            // The install plan is topologically sorted (dependencies first), so we can propagate forward
+            std::set<std::string> editable_subtree_ports;
+            for (InstallPlanAction& action : install_plan.install_actions)
+            {
+                bool in_subtree = (action.editable == Editable::Yes);
+
+                // Check if any dependency is in the editable subtree
+                if (!in_subtree)
+                {
+                    for (const auto& dep_spec : action.package_dependencies)
+                    {
+                        if (editable_subtree_ports.count(dep_spec.name()))
+                        {
+                            in_subtree = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (in_subtree)
+                {
+                    editable_subtree_ports.insert(action.spec.name());
+                    action.editable_subtree = EditableSubtree::Yes;
+                }
+            }
 
             command_set_installed_and_exit_ex(args,
                                               paths,

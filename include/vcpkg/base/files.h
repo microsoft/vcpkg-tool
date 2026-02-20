@@ -338,6 +338,12 @@ namespace vcpkg
 
         virtual bool set_executable(DiagnosticContext& context, const Path& target) const = 0;
 
+        // Copy a file while preserving its timestamp. Returns true on success.
+        bool copy_file_preserving_timestamp(const Path& source, const Path& dest) const;
+
+        // Compare two files byte-by-byte. Returns true if files are identical.
+        bool files_are_identical(const Path& file1, const Path& file2) const;
+
         using ReadOnlyFilesystem::current_path;
         virtual void current_path(const Path& new_current_path, std::error_code&) const = 0;
         void current_path(const Path& new_current_path, LineInfo li) const;
