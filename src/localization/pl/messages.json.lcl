@@ -4261,6 +4261,9 @@
       <Item ItemId=";CurlFailedResponse" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[curl operation failed with response code {exit_code}.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Operacja curl nie powiodła się. Kod odpowiedzi: {exit_code}.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -10666,6 +10669,9 @@
       <Item ItemId=";UnableToFindCurl" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[vcpkg was unable to find a libcurl.so.4, libcurl-gnutls.so.4, or libcurl-nss.so.4 to use on this system. Please install libcurl from your system package manager and retry vcpkg.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Program vcpkg nie może odnaleźć pliku libcurl.so.4, libcurl-gnutls.so.4 lub libcurl-nss.so.4 do użycia w tym systemie. Zainstaluj bibliotekę libcurl z menedżera pakietów systemowych i ponów próbę użycia narzędzia vcpkg.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
