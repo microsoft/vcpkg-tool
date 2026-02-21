@@ -420,6 +420,7 @@ namespace vcpkg
 
         Json::Object& tags = obj.insert("tags", Json::Object());
 
+        // "ai" means "Application Insights" not artifical intelligence :)
         tags.insert("ai.device.os", Json::Value::string("Other"));
 
         tags.insert("ai.device.osVersion", Json::Value::string(session.os_version));
@@ -433,6 +434,10 @@ namespace vcpkg
         Json::Object& base_data = data.insert("baseData", Json::Object());
 
         base_data.insert("ver", Json::Value::integer(2));
+        // commandline_test7 is the "the user ran vcpkg.exe once" event, and is the only event we
+        // ever emit. (This may have initially been left that way for example testing but it makes
+        // no difference since we only ever emit one event, and trying to change it would just make
+        // comparing between different vcpkg versions harder.)
         base_data.insert("name", Json::Value::string("commandline_test7"));
         Json::Object& properties = base_data.insert("properties", Json::Object());
         for (auto&& define_property : submission.defines)
