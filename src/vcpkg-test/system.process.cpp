@@ -187,7 +187,7 @@ TEST_CASE ("environment remove_entry is case insensitive", "[system.process]")
     env.add_entry("Second", "two words");
     env.add_entry("Third", "3");
 
-    env.remove_entry("sEcOnD");
+    REQUIRE(env.remove_entry("sEcOnD").value_or_exit(VCPKG_LINE_INFO) == "two words");
 
 #if defined(_WIN32)
     std::wstring expected;
@@ -208,7 +208,7 @@ TEST_CASE ("environment remove_entry of missing key is no-op", "[system.process]
     env.add_entry("Two", "2");
     const auto original = env.get();
 
-    env.remove_entry("DoesNotExist");
+    REQUIRE(!env.remove_entry("DoesNotExist"));
 
     REQUIRE(env.get() == original);
 }
@@ -220,7 +220,7 @@ TEST_CASE ("environment remove_entry handles first and last entries", "[system.p
     env.add_entry("Middle", "two words");
     env.add_entry("Last", "three");
 
-    env.remove_entry("FIRST");
+    REQUIRE(env.remove_entry("FIRST").value_or_exit(VCPKG_LINE_INFO) == "one");
 #if defined(_WIN32)
     std::wstring expected_after_first;
     expected_after_first.append(L"Middle=two words");
@@ -232,7 +232,7 @@ TEST_CASE ("environment remove_entry handles first and last entries", "[system.p
     REQUIRE(env.get() == "Middle=\"two words\" Last=three ");
 #endif
 
-    env.remove_entry("last");
+    REQUIRE(env.remove_entry("last").value_or_exit(VCPKG_LINE_INFO) == "three");
 #if defined(_WIN32)
     std::wstring expected_after_last;
     expected_after_last.append(L"Middle=two words");
@@ -263,7 +263,7 @@ TEST_CASE ("environment handles embedded quotes and slashes", "[system.process]"
     REQUIRE(env.get() == "KEEP=plain WEIRD=\"C:/tool\\\\\\\"quoted\\\"/bin\" TAIL=done ");
 #endif
 
-    env.remove_entry("wEiRd");
+    REQUIRE(env.remove_entry("wEiRd").value_or_exit(VCPKG_LINE_INFO) == "C:/tool\\\"quoted\"/bin");
 
 #if defined(_WIN32)
     std::wstring expected_without_weird;
