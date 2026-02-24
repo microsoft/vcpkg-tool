@@ -294,6 +294,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchToolDataFile = "tool-data-file";
     inline constexpr StringLiteral SwitchTriplet = "triplet";
     inline constexpr StringLiteral SwitchUrl = "url";
+    inline constexpr StringLiteral SwitchUseTestData = "use-test-data";
     inline constexpr StringLiteral SwitchVcpkgRoot = "vcpkg-root";
     inline constexpr StringLiteral SwitchVerbose = "verbose";
     inline constexpr StringLiteral SwitchVerifyGitTrees = "verify-git-trees";
