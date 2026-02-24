@@ -2454,6 +2454,11 @@ namespace vcpkg
             statuses.clear();
             for (size_t i = 0; i < actions.size(); ++i)
             {
+                // Skip editable ports and their dependents - they should always be built from source
+                if (actions[i].editable == Editable::Yes || actions[i].editable_subtree == EditableSubtree::Yes)
+                {
+                    continue;
+                }
                 if (auto abi = actions[i].package_abi())
                 {
                     CacheStatus& status = m_status[*abi];
@@ -2900,6 +2905,11 @@ namespace vcpkg
 
     void BinaryCache::push_success(CleanPackages clean_packages, const InstallPlanAction& action)
     {
+        // Don't push editable ports or their dependents to binary cache
+        if (action.editable == Editable::Yes || action.editable_subtree == EditableSubtree::Yes)
+        {
+            return;
+        }
         if (auto abi = action.package_abi())
         {
             bool restored;

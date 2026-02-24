@@ -67,6 +67,12 @@ namespace vcpkg
         Yes
     };
 
+    enum class EditableSubtree
+    {
+        No = 0,
+        Yes
+    };
+
     enum class BackcompatFeatures
     {
         Allow = 0,

@@ -76,6 +76,8 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
     inline constexpr StringLiteral JsonIdOverrides = "overrides";
+    inline constexpr StringLiteral JsonIdEditablePorts = "editable-ports";
+    inline constexpr StringLiteral JsonIdPorts = "ports";
     inline constexpr StringLiteral JsonIdPackages = "packages";
     inline constexpr StringLiteral JsonIdPackageUnderscoreName = "package_name";
     inline constexpr StringLiteral JsonIdPackageUnderscoreUrl = "package_url";
@@ -383,6 +385,8 @@ namespace vcpkg
     inline constexpr StringLiteral CMakeVariableDownloadMode = "VCPKG_DOWNLOAD_MODE";
     inline constexpr StringLiteral CMakeVariableDownloads = "DOWNLOADS";
     inline constexpr StringLiteral CMakeVariableEditable = "_VCPKG_EDITABLE";
+    inline constexpr StringLiteral CMakeVariableEditableSubtree = "_VCPKG_EDITABLE_SUBTREE";
+    inline constexpr StringLiteral CMakeVariableEditableSourcesPath = "_VCPKG_EDITABLE_SOURCES_PATH";
     inline constexpr StringLiteral CMakeVariableEnvPassthrough = "VCPKG_ENV_PASSTHROUGH";
     inline constexpr StringLiteral CMakeVariableEnvPassthroughUntracked = "VCPKG_ENV_PASSTHROUGH_UNTRACKED";
     inline constexpr StringLiteral CMakeVariableFeatures = "FEATURES";

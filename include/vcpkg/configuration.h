@@ -45,6 +45,18 @@ namespace vcpkg
         StringView pretty_location() const;
     };
 
+    /// <summary>
+    /// Configuration for editable ports workflow.
+    /// </summary>
+    struct EditablePortsConfig
+    {
+        std::string path;                      // Directory containing editable ports (default: "editable-ports")
+        std::vector<std::string> ports;        // List of port names to treat as editable
+
+        Path get_editable_ports_path(const Path& config_dir) const;
+        bool is_port_editable(StringView port_name) const;
+    };
+
     struct Configuration
     {
         Optional<RegistryConfig> default_reg;
@@ -53,6 +65,7 @@ namespace vcpkg
         Json::Object extra_info;
         std::vector<std::string> overlay_ports;
         std::vector<std::string> overlay_triplets;
+        Optional<EditablePortsConfig> editable_ports;
 
         Json::Object serialize() const;
         void validate_as_active() const;
