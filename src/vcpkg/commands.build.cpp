@@ -602,9 +602,13 @@ namespace vcpkg
             const Path& powershell_exe_path = paths.get_tool_path_required("powershell-core");
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
+            {
                 return clean_env;
-            else
-                return cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            }
+
+            auto vcvars_env = cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            vcvars_env.remove_entry(EnvironmentVariableVcpkgRoot);
+            return vcvars_env;
         });
     }
 #else

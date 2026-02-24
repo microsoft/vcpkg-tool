@@ -108,10 +108,37 @@ namespace vcpkg::Strings
     std::string to_utf8(const std::wstring& ws);
 #endif
 
-    const char* case_insensitive_ascii_search(StringView s, StringView pattern) noexcept;
-    bool case_insensitive_ascii_contains(StringView s, StringView pattern) noexcept;
-    bool case_insensitive_ascii_equals(StringView left, StringView right) noexcept;
-    bool case_insensitive_ascii_less(StringView left, StringView right) noexcept;
+    struct case_insensitive_ascii_search_impl
+    {
+        const char* operator()(StringView s, StringView pattern) const noexcept;
+        const wchar_t* operator()(WStringView s, WStringView pattern) const noexcept;
+    };
+
+    inline constexpr case_insensitive_ascii_search_impl case_insensitive_ascii_search{};
+
+    struct case_insensitive_ascii_contains_impl
+    {
+        bool operator()(StringView s, StringView pattern) const noexcept;
+        bool operator()(WStringView s, WStringView pattern) const noexcept;
+    };
+
+    inline constexpr case_insensitive_ascii_contains_impl case_insensitive_ascii_contains{};
+
+    struct case_insensitive_ascii_equals_impl
+    {
+        bool operator()(StringView left, StringView right) const noexcept;
+        bool operator()(WStringView left, WStringView right) const noexcept;
+    };
+
+    inline constexpr case_insensitive_ascii_equals_impl case_insensitive_ascii_equals{};
+
+    struct case_insensitive_ascii_less_impl
+    {
+        bool operator()(StringView left, StringView right) const noexcept;
+        bool operator()(WStringView left, WStringView right) const noexcept;
+    };
+
+    inline constexpr case_insensitive_ascii_less_impl case_insensitive_ascii_less{};
 
     void inplace_ascii_to_lowercase(char* first, char* last);
     void inplace_ascii_to_lowercase(std::string& s);
@@ -238,6 +265,7 @@ namespace vcpkg::Strings
     Optional<double> strto<double>(StringView);
 
     const char* search(StringView haystack, StringView needle);
+    const wchar_t* search(WStringView haystack, WStringView needle);
 
     // base 32 encoding, following IETF RFC 4648
     [[nodiscard]] std::string b32_encode(std::uint64_t x) noexcept;
