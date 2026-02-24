@@ -56,11 +56,11 @@ namespace
         {
             new_entry.push_back(path_separator_char);
             include_value->insert(0, new_entry);
-            env.add_entry(EnvironmentVariableInclude, *include_value);
+            env.add_entry(env_var, *include_value);
         }
         else
         {
-            env.add_entry(EnvironmentVariableInclude, new_entry);
+            env.add_entry(env_var, new_entry);
         }
     }
 } // unnamed namespace
