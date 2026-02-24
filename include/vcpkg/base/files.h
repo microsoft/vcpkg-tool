@@ -54,6 +54,17 @@ namespace vcpkg
         }
     };
 
+    constexpr char path_separator_char =
+#if defined(_WIN32)
+        ';'
+#else
+        ':'
+#endif
+        ;
+
+    inline constexpr char path_separator_buf[] = {path_separator_char, '\0'};
+    inline constexpr StringLiteral path_separator{path_separator_buf};
+
     bool is_symlink(FileType s);
     bool is_regular_file(FileType s);
     bool is_directory(FileType s);

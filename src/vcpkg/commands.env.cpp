@@ -49,6 +49,20 @@ namespace
          }},
     };
 
+    void prepend_path_entry(Environment& env, StringLiteral env_var, std::string&& new_entry)
+    {
+        auto maybe_include_value = env.remove_entry(env_var);
+        if (auto include_value = maybe_include_value.get())
+        {
+            new_entry.push_back(path_separator_char);
+            include_value->insert(0, new_entry);
+            env.add_entry(env_var, *include_value);
+        }
+        else
+        {
+            env.add_entry(env_var, new_entry);
+        }
+    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -90,9 +104,12 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, triplet_vars != nullptr);
         const PreBuildInfo pre_build_info(paths, triplet, *triplet_vars);
         const Toolset& toolset = paths.get_toolset(pre_build_info);
-        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
 
-        std::unordered_map<std::string, std::string> extra_env = {};
+        EnvCache env_cache(false);
+
+        ProcessLaunchSettings settings;
+        auto& build_env = settings.environment.emplace(env_cache.get_action_env(paths, pre_build_info, toolset));
+
         const bool add_bin = Util::Sets::contains(options.switches, SwitchBin);
         const bool add_include = Util::Sets::contains(options.switches, SwitchInclude);
         const bool add_debug_bin = Util::Sets::contains(options.switches, SwitchDebugBin);
@@ -103,7 +120,11 @@ namespace vcpkg
         const auto current_triplet_path = paths.installed().triplet_dir(triplet);
         if (add_bin) path_vars.push_back((current_triplet_path / FileBin).native());
         if (add_debug_bin) path_vars.push_back((current_triplet_path / FileDebug / FileBin).native());
-        if (add_include) extra_env.emplace(EnvironmentVariableInclude, (current_triplet_path / FileInclude).native());
+        if (add_include)
+        {
+            prepend_path_entry(build_env, EnvironmentVariableInclude, (current_triplet_path / FileInclude).native());
+        }
+
         if (add_tools)
         {
             auto tools_dir = current_triplet_path / FileTools;
@@ -115,26 +136,15 @@ namespace vcpkg
         }
         if (add_python)
         {
-            extra_env.emplace(EnvironmentVariablePythonPath, (current_triplet_path / "python").native());
+            build_env.add_entry(EnvironmentVariablePythonPath, (current_triplet_path / "python").native());
         }
 
-        if (path_vars.size() > 0) extra_env.emplace(EnvironmentVariablePath, Strings::join(";", path_vars));
-        for (auto&& passthrough : pre_build_info.passthrough_env_vars)
+        if (!path_vars.empty())
         {
-            if (auto e = get_environment_variable(passthrough))
-            {
-                extra_env.emplace(passthrough, std::move(e.value_or_exit(VCPKG_LINE_INFO)));
-            }
+            prepend_path_entry(build_env, EnvironmentVariablePath, Strings::join(path_separator, path_vars));
         }
 
 #if defined(_WIN32)
-        ProcessLaunchSettings settings;
-        auto& env = settings.environment.emplace(get_modified_clean_environment(extra_env));
-        if (!build_env_cmd.empty())
-        {
-            env = cmd_execute_and_capture_environment(build_env_cmd, env);
-        }
-
         auto cmd = Command{"cmd"}.string_arg("/d");
         if (!options.command_arguments.empty())
         {

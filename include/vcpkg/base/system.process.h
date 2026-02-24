@@ -89,6 +89,7 @@ namespace vcpkg
         using string_t = std::string;
 #endif
         void add_entry(StringView key, StringView value);
+        Optional<std::string> remove_entry(StringView key);
         const string_t& get() const;
 
     private:

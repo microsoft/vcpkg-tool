@@ -750,6 +750,105 @@ namespace vcpkg
 #endif
     }
 
+    Optional<std::string> Environment::remove_entry(StringView key)
+    {
+#if defined(_WIN32)
+        const auto key_utf16 = Strings::to_utf16(key);
+        auto first = m_env_data.data();
+        const auto last = first + m_env_data.size();
+        while (first != last)
+        {
+            auto equal = std::find(first, last, L'=');
+            auto value_first = equal;
+            if (value_first != last)
+            {
+                ++value_first;
+            }
+            auto next = std::find(value_first, last, L'\0');
+            const size_t value_size = next - value_first;
+            if (next != last)
+            {
+                ++next;
+            }
+
+            if (Strings::case_insensitive_ascii_equals(WStringView(first, equal), key_utf16))
+            {
+                auto result = Strings::to_utf8(value_first, value_size);
+                m_env_data.erase(first - m_env_data.data(), next - first);
+                return result;
+            }
+
+            first = next;
+        }
+
+        return nullopt;
+#else
+        auto first = m_env_data.data();
+        const auto last = first + m_env_data.size();
+        while (first != last)
+        {
+            auto equal = std::find(first, last, '=');
+            auto value_start = equal;
+            if (value_start != last)
+            {
+                ++value_start;
+            }
+            auto next = value_start;
+            std::string value;
+            if (next != last)
+            {
+                // seek next to the end of the value (see append_shell_escaped)
+                if (*next == '"')
+                {
+                    ++next;
+                    while (next != last)
+                    {
+                        if (*next == '\\')
+                        {
+                            ++next;
+                            if (next != last)
+                            {
+                                value.push_back(*next);
+                                ++next;
+                            }
+                        }
+                        else if (*next == '"')
+                        {
+                            ++next;
+                            break;
+                        }
+                        else
+                        {
+                            value.push_back(*next);
+                            ++next;
+                        }
+                    }
+                }
+                else
+                {
+                    next = std::find(next, last, ' ');
+                    value.assign(value_start, next);
+                }
+
+                if (next != last)
+                {
+                    ++next; // skip over the terminal space added by add_entry
+                }
+            }
+
+            if (Strings::case_insensitive_ascii_equals(StringView(first, equal), key))
+            {
+                m_env_data.erase(first - m_env_data.data(), next - first);
+                return value;
+            }
+
+            first = next;
+        }
+
+        return nullopt;
+#endif
+    }
+
     const Environment::string_t& Environment::get() const { return m_env_data; }
 
     const Environment& get_clean_environment()
