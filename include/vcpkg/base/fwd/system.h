@@ -16,5 +16,6 @@ namespace vcpkg
         LOONGARCH32,
         LOONGARCH64,
         MIPS64,
+        E2K,
     };
 }
