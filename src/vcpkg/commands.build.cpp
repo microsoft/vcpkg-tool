@@ -4,6 +4,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/file_sink.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/message_sinks.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/optional.h>
@@ -638,9 +639,100 @@ namespace vcpkg
         });
     }
 
+    struct CompilerInfoCache
+    {
+        CompilerInfo compiler_info;
+        int64_t c_compiler_last_write_time;
+        int64_t cxx_compiler_last_write_time;
+    };
+
+    struct CompilerInfoCacheDeserializer : Json::IDeserializer<CompilerInfoCache>
+    {
+        LocalizedString type_name() const override { return LocalizedString::from_raw("CompilerInfoCache"); }
+
+        constexpr static StringLiteral ID = "id";
+        constexpr static StringLiteral VERSION = "version";
+        constexpr static StringLiteral HASH = "hash";
+        constexpr static StringLiteral C_COMPILER_PATH = "c_compiler_path";
+        constexpr static StringLiteral CXX_COMPILER_PATH = "cxx_compiler_path";
+        constexpr static StringLiteral C_COMPILER_PATH_LAST_WRITE_TIME = "c_compiler_path_last_write_time";
+        constexpr static StringLiteral CXX_COMPILER_PATH_LAST_WRITE_TIME = "cxx_compiler_path_last_write_time";
+
+        virtual View<StringLiteral> valid_fields() const noexcept override
+        {
+            static const StringLiteral t[] = {ID,
+                                              VERSION,
+                                              HASH,
+                                              C_COMPILER_PATH,
+                                              CXX_COMPILER_PATH,
+                                              C_COMPILER_PATH_LAST_WRITE_TIME,
+                                              CXX_COMPILER_PATH_LAST_WRITE_TIME};
+            return t;
+        }
+
+        Optional<CompilerInfoCache> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            CompilerInfoCache cache;
+            // This is an internal structure never written by a user by hand, so we don't need localization.
+            r.required_object_field(LocalizedString::from_raw(ID),
+                                    obj,
+                                    ID,
+                                    cache.compiler_info.id,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(VERSION),
+                                    obj,
+                                    VERSION,
+                                    cache.compiler_info.version,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(HASH),
+                                    obj,
+                                    HASH,
+                                    cache.compiler_info.hash,
+                                    Json::UntypedStringDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH),
+                                    obj,
+                                    C_COMPILER_PATH,
+                                    cache.compiler_info.c_compiler_path,
+                                    Json::PathDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH),
+                                    obj,
+                                    CXX_COMPILER_PATH,
+                                    cache.compiler_info.cxx_compiler_path,
+                                    Json::PathDeserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(C_COMPILER_PATH_LAST_WRITE_TIME),
+                                    obj,
+                                    C_COMPILER_PATH_LAST_WRITE_TIME,
+                                    cache.c_compiler_last_write_time,
+                                    Json::Int64Deserializer::instance);
+            r.required_object_field(LocalizedString::from_raw(CXX_COMPILER_PATH_LAST_WRITE_TIME),
+                                    obj,
+                                    CXX_COMPILER_PATH_LAST_WRITE_TIME,
+                                    cache.cxx_compiler_last_write_time,
+                                    Json::Int64Deserializer::instance);
+            cache.compiler_info.from_cache = true;
+            return cache;
+        }
+        static CompilerInfoCacheDeserializer instance;
+
+        static Json::Object serialize(const CompilerInfoCache& cache)
+        {
+            Json::Object obj;
+            obj.insert(ID, cache.compiler_info.id);
+            obj.insert(VERSION, cache.compiler_info.version);
+            obj.insert(HASH, cache.compiler_info.hash);
+            obj.insert(C_COMPILER_PATH, cache.compiler_info.c_compiler_path);
+            obj.insert(CXX_COMPILER_PATH, cache.compiler_info.cxx_compiler_path);
+            obj.insert(C_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.c_compiler_last_write_time));
+            obj.insert(CXX_COMPILER_PATH_LAST_WRITE_TIME, Json::Value::integer(cache.cxx_compiler_last_write_time));
+            return obj;
+        }
+    };
+    CompilerInfoCacheDeserializer CompilerInfoCacheDeserializer::instance;
+
     const CompilerInfo& EnvCache::get_compiler_info(const VcpkgPaths& paths,
                                                     const PreBuildInfo& pre_build_info,
-                                                    const Toolset& toolset)
+                                                    const Toolset& toolset,
+                                                    UseCompilerInfoCache use_compiler_info_cache)
     {
         if (!m_compiler_tracking || pre_build_info.disable_compiler_tracking)
         {
@@ -656,21 +748,59 @@ namespace vcpkg
 
         auto&& triplet_entry = get_triplet_cache(fs, triplet_file_path);
 
+        if (use_compiler_info_cache == UseCompilerInfoCache::Yes)
+        {
+            auto maybe_entry = triplet_entry.compiler_info.get(toolchain_hash);
+            if (maybe_entry)
+            {
+                return *maybe_entry;
+            }
+            auto result = triplet_entry.cached_compiler_info.get_lazy(toolchain_hash, [&]() -> Optional<CompilerInfo> {
+                auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
+                auto& fs = paths.get_filesystem();
+                if (fs.exists(cache_file, VCPKG_LINE_INFO))
+                {
+                    auto json_object = Json::parse_object(fs.read_contents(cache_file, VCPKG_LINE_INFO), cache_file)
+                                           .value_or_exit(VCPKG_LINE_INFO);
+                    Json::Reader reader(cache_file);
+                    CompilerInfoCache cache = CompilerInfoCacheDeserializer::instance.visit(reader, json_object)
+                                                  .value_or_exit(VCPKG_LINE_INFO);
+                    auto needs_update = [&](const Path& path, int64_t last_write_time) {
+                        return !fs.exists(path, VCPKG_LINE_INFO) ||
+                               fs.last_write_time(path, VCPKG_LINE_INFO) != last_write_time;
+                    };
+                    if (!needs_update(cache.compiler_info.c_compiler_path, cache.c_compiler_last_write_time) &&
+                        !needs_update(cache.compiler_info.cxx_compiler_path, cache.cxx_compiler_last_write_time))
+                    {
+                        return cache.compiler_info;
+                    }
+                }
+                return nullopt;
+            });
+            if (result)
+            {
+                return *result.get();
+            }
+        }
+
         return triplet_entry.compiler_info.get_lazy(toolchain_hash, [&]() -> CompilerInfo {
-            if (m_compiler_tracking)
-            {
-                return load_compiler_info(paths, pre_build_info, toolset);
-            }
-            else
-            {
-                return CompilerInfo{};
-            }
+            auto cache_file = paths.installed().compiler_info_cache_file(pre_build_info.triplet);
+            auto& fs = paths.get_filesystem();
+            auto compiler_info = load_compiler_info(paths, pre_build_info, toolset);
+            CompilerInfoCache cache;
+            cache.compiler_info = compiler_info;
+            cache.c_compiler_last_write_time = fs.last_write_time(compiler_info.c_compiler_path, VCPKG_LINE_INFO);
+            cache.cxx_compiler_last_write_time = fs.last_write_time(compiler_info.cxx_compiler_path, VCPKG_LINE_INFO);
+            fs.write_contents_and_dirs(
+                cache_file, Json::stringify(CompilerInfoCacheDeserializer::serialize(cache)), VCPKG_LINE_INFO);
+            return compiler_info;
         });
     }
 
     const std::string& EnvCache::get_triplet_info(const VcpkgPaths& paths,
                                                   const PreBuildInfo& pre_build_info,
-                                                  const Toolset& toolset)
+                                                  const Toolset& toolset,
+                                                  UseCompilerInfoCache use_compiler_info_cache)
     {
         const auto& fs = paths.get_filesystem();
         const auto& triplet_file_path = paths.get_triplet_db().get_triplet_file_path(pre_build_info.triplet);
@@ -682,7 +812,7 @@ namespace vcpkg
         if (m_compiler_tracking && !pre_build_info.disable_compiler_tracking)
         {
             return triplet_entry.triplet_infos.get_lazy(toolchain_hash, [&]() -> std::string {
-                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset);
+                auto& compiler_info = get_compiler_info(paths, pre_build_info, toolset, use_compiler_info_cache);
                 return Strings::concat(triplet_entry.hash, '-', toolchain_hash, '-', compiler_info.hash);
             });
         }
@@ -836,11 +966,17 @@ namespace vcpkg
             {
                 compiler_info.id = s.substr(MarkerCompilerCxxId.size()).to_string();
             }
-            static constexpr StringLiteral s_path_marker = "#COMPILER_CXX_PATH#";
-            if (s.starts_with(s_path_marker))
+            static constexpr StringLiteral cxx_path_marker = "#COMPILER_CXX_PATH#";
+            if (s.starts_with(cxx_path_marker))
             {
-                const auto compiler_cxx_path = s.substr(s_path_marker.size());
-                compiler_info.path.assign(compiler_cxx_path.data(), compiler_cxx_path.size());
+                const auto compiler_cxx_path = s.substr(cxx_path_marker.size());
+                compiler_info.cxx_compiler_path = compiler_cxx_path;
+            }
+            static constexpr StringLiteral c_path_marker = "#COMPILER_C_PATH#";
+            if (Strings::starts_with(s, c_path_marker))
+            {
+                const auto compiler_c_path = s.substr(c_path_marker.size());
+                compiler_info.c_compiler_path = compiler_c_path;
             }
             Debug::println(s);
             const auto old_buf_size = buf.size();
@@ -866,9 +1002,9 @@ namespace vcpkg
         }
 
         Debug::println("Detected compiler hash for triplet ", triplet, ": ", compiler_info.hash);
-        if (!compiler_info.path.empty())
+        if (!compiler_info.cxx_compiler_path.empty())
         {
-            msg::println(msgCompilerPath, msg::path = compiler_info.path);
+            msg::println(msgCompilerPath, msg::path = compiler_info.cxx_compiler_path);
         }
         return compiler_info;
     }
@@ -1346,8 +1482,9 @@ namespace vcpkg
                                  InstallPlanAction& action,
                                  std::unique_ptr<PreBuildInfo>&& proto_pre_build_info,
                                  Span<const AbiEntry> dependency_abis,
+                                 Cache<Path, Optional<std::string>>& grdk_cache,
                                  SpecAbiInfoCache& spec_abi_cache,
-                                 Cache<Path, Optional<std::string>>& grdk_cache)
+                                 UseCompilerInfoCache use_compiler_info_cache)
     {
         Checks::check_exit(VCPKG_LINE_INFO, static_cast<bool>(proto_pre_build_info));
         const auto& pre_build_info = *proto_pre_build_info;
@@ -1367,7 +1504,7 @@ namespace vcpkg
             return;
         }
 
-        abi_info.compiler_info = &paths.get_compiler_info(*abi_info.pre_build_info, toolset);
+        abi_info.compiler_info = &paths.get_compiler_info(*abi_info.pre_build_info, toolset, use_compiler_info_cache);
         for (auto&& dep_abi : dependency_abis)
         {
             if (dep_abi.value.empty())
@@ -1383,7 +1520,7 @@ namespace vcpkg
 
         std::vector<AbiEntry> abi_tag_entries(dependency_abis.begin(), dependency_abis.end());
 
-        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset);
+        const auto& triplet_abi = paths.get_triplet_info(pre_build_info, toolset, use_compiler_info_cache);
         abi_info.triplet_abi = &triplet_abi;
         const auto& triplet_canonical_name = action.spec.triplet().canonical_name();
         abi_tag_entries.emplace_back(AbiTagTriplet, triplet_canonical_name);
@@ -1540,17 +1677,19 @@ namespace vcpkg
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
-                          const StatusParagraphs& status_db)
+                          const StatusParagraphs& status_db,
+                          UseCompilerInfoCache use_compiler_info_cache)
     {
         SpecAbiInfoCache spec_abi_cache;
-        compute_all_abis(paths, action_plan, var_provider, status_db, spec_abi_cache);
+        compute_all_abis(paths, action_plan, var_provider, status_db, spec_abi_cache, use_compiler_info_cache);
     }
 
     void compute_all_abis(const VcpkgPaths& paths,
                           ActionPlan& action_plan,
                           const CMakeVars::CMakeVarProvider& var_provider,
                           const StatusParagraphs& status_db,
-                          SpecAbiInfoCache& spec_abi_cache)
+                          SpecAbiInfoCache& spec_abi_cache,
+                          UseCompilerInfoCache use_compiler_info_cache)
     {
         Cache<Path, Optional<std::string>> grdk_cache;
         for (auto it = action_plan.install_actions.begin(); it != action_plan.install_actions.end(); ++it)
@@ -1596,8 +1735,9 @@ namespace vcpkg
                              action,
                              std::make_unique<PreBuildInfo>(paths, action.spec.triplet(), *tag_vars),
                              dependency_abis,
+                             grdk_cache,
                              spec_abi_cache,
-                             grdk_cache);
+                             use_compiler_info_cache);
         }
     }
 

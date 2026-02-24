@@ -307,6 +307,15 @@ namespace vcpkg::Json
         static const NaturalNumberDeserializer instance;
     };
 
+    struct Int64Deserializer final : IDeserializer<int64_t>
+    {
+        LocalizedString type_name() const override;
+
+        Optional<int64_t> visit_integer(Reader&, int64_t value) const override { return value; }
+
+        static Int64Deserializer instance;
+    };
+
     struct BooleanDeserializer final : IDeserializer<bool>
     {
         virtual LocalizedString type_name() const override;

@@ -1141,6 +1141,10 @@ namespace vcpkg::Json
 
     const NaturalNumberDeserializer NaturalNumberDeserializer::instance;
 
+    LocalizedString Int64Deserializer::type_name() const { return msg::format(msgAnInt64); }
+
+    Int64Deserializer Int64Deserializer::instance;
+
     LocalizedString BooleanDeserializer::type_name() const { return msg::format(msgABoolean); }
 
     Optional<bool> BooleanDeserializer::visit_boolean(Reader&, bool b) const { return b; }
