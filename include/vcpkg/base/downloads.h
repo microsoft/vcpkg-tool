@@ -37,6 +37,10 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
 
+    // Builds the dependency graph snapshots endpoint used for GitHub submission.
+    std::string github_dependency_graph_snapshots_uri(const Optional<std::string>& maybe_github_server_url,
+                                                      StringView github_repository);
+
     std::vector<int> url_heads(DiagnosticContext& context, View<std::string> urls, View<std::string> headers);
 
     struct AssetCachingSettings
