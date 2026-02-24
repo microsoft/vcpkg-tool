@@ -183,7 +183,7 @@ namespace vcpkg
         const VcpkgPaths& m_paths;
     };
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
+    vcpkg::Command make_vcvars_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
 
     struct ExtendedBuildResult
     {

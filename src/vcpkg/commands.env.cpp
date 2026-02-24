@@ -90,7 +90,7 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, triplet_vars != nullptr);
         const PreBuildInfo pre_build_info(paths, triplet, *triplet_vars);
         const Toolset& toolset = paths.get_toolset(pre_build_info);
-        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
+        auto build_env_cmd = make_vcvars_env_cmd(pre_build_info, toolset);
 
         std::unordered_map<std::string, std::string> extra_env = {};
         const bool add_bin = Util::Sets::contains(options.switches, SwitchBin);

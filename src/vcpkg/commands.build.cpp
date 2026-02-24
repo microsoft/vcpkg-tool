@@ -474,7 +474,7 @@ namespace vcpkg
                                                 const PreBuildInfo& pre_build_info,
                                                 const Toolset& toolset)
     {
-        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
+        auto build_env_cmd = make_vcvars_env_cmd(pre_build_info, toolset);
         const auto& base_env = envs.get_lazy(pre_build_info.passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
 
@@ -690,7 +690,7 @@ namespace vcpkg
         }
     }
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset)
+    vcpkg::Command make_vcvars_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset)
     {
         if (!pre_build_info.using_vcvars()) return {};
 
