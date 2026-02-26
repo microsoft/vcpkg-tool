@@ -41,11 +41,6 @@ namespace
     };
 
     using DiagnosticVec = std::vector<SpecDiagnostic>;
-    void add_diagnostic(DiagnosticVec& diagnostics, const PackageSpec& spec, DiagnosticLine&& line)
-    {
-        diagnostics.push_back(SpecDiagnostic{&spec, std::move(line)});
-    }
-
     void add_diagnostic(DiagnosticVec& diagnostics, const FullPackageSpec& spec, DiagnosticLine&& line)
     {
         diagnostics.push_back(SpecDiagnostic{&spec.package_spec, std::move(line)});
