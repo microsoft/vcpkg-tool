@@ -308,17 +308,6 @@ namespace vcpkg
         return false;
     }
 
-    Optional<bool> git_check_is_commit(DiagnosticContext& context,
-                                       const Path& git_exe,
-                                       GitRepoLocator locator,
-                                       StringView git_commit_id)
-    {
-        StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-t"}, git_commit_id};
-        return run_cmd_trim(context, make_git_command(git_exe, locator, args)).map([](std::string&& output) {
-            return output == "commit";
-        });
-    }
-
     Optional<std::string> git_merge_base(
         DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView commit1, StringView commit2)
     {
@@ -554,5 +543,30 @@ namespace vcpkg
             return parse_git_diff_tree_lines(context, cmd.command_line(), *git_diff_tree_output);
         }
         return nullopt;
+    }
+
+    bool check_commit_exists(DiagnosticContext& context,
+                             const Path& git_exe,
+                             const Path& builtin_ports_dir,
+                             StringView git_commit_id)
+    {
+        // Resolve any commit-ish (for example, annotated tags) to a commit object.
+        const auto commitish = fmt::format("{}^{{commit}}", git_commit_id);
+        StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-e"}, commitish};
+        auto cmd =
+            make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir}, args);
+        auto maybe_output = cmd_execute_and_capture_output(context, cmd);
+        if (auto output = maybe_output.get())
+        {
+            if (output->exit_code == 0)
+            {
+                return true;
+            }
+
+            context.report_error(msgInvalidCommitId, msg::commit_sha = git_commit_id);
+            report_nonzero_exit_code_and_output(context, DiagKind::Note, cmd, *output);
+        }
+
+        return false;
     }
 }
