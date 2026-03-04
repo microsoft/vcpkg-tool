@@ -2137,13 +2137,50 @@ namespace vcpkg
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
-                                             const ExitCodeAndOutput& exit,
-                                             EchoInDebug echo_in_debug)
+                                             const ExitCodeAndOutput& exit)
     {
-        report_nonzero_exit_code_and_output(context, command, exit, echo_in_debug, View<std::string>{});
+        report_nonzero_exit_code_and_output(
+            context, DiagKind::Error, command, exit, RedirectedProcessLaunchSettings{}.echo_in_debug);
     }
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit)
+    {
+        report_nonzero_exit_code_and_output(
+            context, kind, command, exit, RedirectedProcessLaunchSettings{}.echo_in_debug);
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(
+            context, DiagKind::Error, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(context, kind, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets)
+    {
+        report_nonzero_exit_code_and_output(context, DiagKind::Error, command, exit, echo_in_debug, secrets);
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
                                              EchoInDebug echo_in_debug,
@@ -2161,7 +2198,7 @@ namespace vcpkg
             error_line.append_raw('\n').append_raw(exit.output);
         }
 
-        context.report(DiagnosticLine{DiagKind::Error, std::move(error_line)});
+        context.report(DiagnosticLine{kind, std::move(error_line)});
     }
 
     bool check_zero_exit_code(DiagnosticContext& context,

@@ -77,24 +77,6 @@ namespace
                               return cache_entry.second->source_control_file->to_version_spec();
                           });
     }
-
-    bool check_commit_exists(DiagnosticContext& context,
-                             const Path& git_exe,
-                             const Path& builtin_ports_dir,
-                             StringView git_commit_id)
-    {
-        if (!git_check_is_commit(context,
-                                 git_exe,
-                                 GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir},
-                                 git_commit_id)
-                 .value_or(false))
-        {
-            context.report_error(msgInvalidCommitId, msg::commit_sha = git_commit_id);
-            return false;
-        }
-
-        return true;
-    }
 } // unnamed namespace
 
 namespace vcpkg
