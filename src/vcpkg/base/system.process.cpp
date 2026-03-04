@@ -652,6 +652,9 @@ namespace vcpkg
         std::vector<std::string> env_prefix_string = {
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
             "CUDA_PATH",
+            // Enables Terrapin Retrieval Tool
+            "TRT_",
+            "X_TRT_",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
