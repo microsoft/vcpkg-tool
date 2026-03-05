@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vcpkg/base/optional.h>
+
 #include <map>
 #include <type_traits>
 #include <utility>
@@ -44,6 +46,17 @@ namespace vcpkg
             }
 
             return m_cache.emplace_hint(it, k, static_cast<F&&>(f)())->second;
+        }
+
+        template<class KeyIsh>
+        Value* get(const KeyIsh& k) const
+        {
+            auto iter = m_cache.find(k);
+            if (iter != m_cache.end())
+            {
+                return &iter->second;
+            }
+            return nullptr;
         }
 
     private:
