@@ -6,6 +6,7 @@ namespace vcpkg
     struct ConfigurationAndSource;
     struct RegistryConfig;
     struct ManifestConfiguration;
+    struct EditablePortsConfig;
 
     enum class ConfigurationSource
     {

@@ -7,6 +7,7 @@
 
 #include <vcpkg/configuration.h>
 #include <vcpkg/documentation.h>
+#include <vcpkg/registries.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace
@@ -335,6 +336,34 @@ namespace
     };
     DemandsDeserializer DemandsDeserializer::instance;
 
+    struct EditablePortsConfigDeserializer final : Json::IDeserializer<EditablePortsConfig>
+    {
+        LocalizedString type_name() const override { return msg::format(msgAConfigurationObject); }
+
+        View<StringLiteral> valid_fields() const noexcept override
+        {
+            static constexpr StringLiteral fields[] = {
+                JsonIdPath,
+                JsonIdPorts,
+            };
+            return fields;
+        }
+
+        Optional<EditablePortsConfig> visit_object(Json::Reader& r, const Json::Object& obj) const override
+        {
+            EditablePortsConfig ret;
+            r.optional_object_field(obj, JsonIdPath, ret.path, Json::UntypedStringDeserializer::instance);
+            // Use PackagePatternArrayDeserializer to support wildcards like "boost*", "stlab-*"
+            std::vector<PackagePatternDeclaration> declarations;
+            r.optional_object_field(obj, JsonIdPorts, declarations, PackagePatternArrayDeserializer::instance);
+            ret.ports = Util::fmap(declarations, [](auto&& decl) { return decl.pattern; });
+            return ret;
+        }
+
+        static const EditablePortsConfigDeserializer instance;
+    };
+    const EditablePortsConfigDeserializer EditablePortsConfigDeserializer::instance;
+
     struct ConfigurationDeserializer final : Json::IDeserializer<Configuration>
     {
         virtual LocalizedString type_name() const override { return msg::format(msgAConfigurationObject); }
@@ -535,6 +564,8 @@ namespace
         r.optional_object_field(obj, JsonIdOverlayPorts, ret.overlay_ports, OverlayPathArrayDeserializer::instance);
         r.optional_object_field(
             obj, JsonIdOverlayTriplets, ret.overlay_triplets, OverlayTripletsPathArrayDeserializer::instance);
+        r.optional_object_field_emplace(
+            obj, JsonIdEditablePorts, ret.editable_ports, EditablePortsConfigDeserializer::instance);
 
         RegistryConfig* default_registry = r.optional_object_field_emplace(
             obj, JsonIdDefaultRegistry, ret.default_reg, RegistryConfigDeserializer::instance);
@@ -753,6 +784,7 @@ namespace vcpkg
             JsonIdRegistries,
             JsonIdOverlayPorts,
             JsonIdOverlayTriplets,
+            JsonIdEditablePorts,
             JsonIdMessage,
             JsonIdWarning,
             JsonIdError,
@@ -1012,6 +1044,19 @@ namespace vcpkg
         std::vector<std::string> out;
         find_unknown_fields_impl(config.ce_metadata, out, "$");
         return out;
+    }
+
+    // EditablePortsConfig implementation
+    Path EditablePortsConfig::get_editable_ports_path(const Path& config_dir) const
+    {
+        return config_dir / (path.empty() ? "editable-ports" : path);
+    }
+
+    bool EditablePortsConfig::is_port_editable(StringView port_name) const
+    {
+        return std::any_of(ports.begin(), ports.end(), [&](const std::string& pattern) {
+            return package_pattern_match(port_name, pattern) != 0;
+        });
     }
 
     bool is_package_pattern(StringView sv)

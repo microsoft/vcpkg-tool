@@ -35,6 +35,9 @@
         "type": "string"
       }
     },
+    "editable-ports": {
+      "$ref": "vcpkg-schema-definitions.schema.json#/definitions/editable-ports-config"
+    },
     "requires": {
       "description": "Artifacts that are required for this package to function.",
       "$ref": "vcpkg-schema-definitions.schema.json#/definitions/artifact-references"
