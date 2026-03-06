@@ -1,4 +1,5 @@
-#if defined(_WIN32)
+#include <vcpkg/base/fwd/diagnostics.h>
+
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
@@ -32,6 +33,7 @@ namespace
         return fs.open_for_write(entry->second, VCPKG_LINE_INFO);
     }
 
+#if defined(_WIN32)
     struct MutantGuard
     {
         MutantGuard(StringView name)
@@ -59,6 +61,7 @@ namespace
     private:
         HANDLE h;
     };
+#endif // defined(_WIN32)
 
     struct BinaryPathDecodedInfo
     {
@@ -101,6 +104,7 @@ namespace
             , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
                                  m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
             , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+            , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
         {
         }
 
@@ -485,8 +489,13 @@ namespace
             source.make_preferred();
             auto target = target_binary_dir / target_binary_name;
             target.make_preferred();
+#if defined(_WIN32)
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
             const MutantGuard mutant(mutant_name);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            const auto lock_file_path = m_temp_dir / ("vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir));
+            auto guard = m_fs.take_exclusive_file_lock(stderr_diagnostic_context, lock_file_path);
+#endif // ^^^ !_WIN32
 
             std::error_code ec;
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
@@ -512,12 +521,19 @@ namespace
 
             if (m_tlog_file)
             {
+#if defined(_WIN32)
                 const auto as_utf16 = Strings::to_utf16(source);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    m_tlog_file.write(as_utf16.data(), sizeof(wchar_t), as_utf16.size()) ==
                                        as_utf16.size());
                 static constexpr wchar_t native_newline = L'\n';
                 Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.write(&native_newline, sizeof(wchar_t), 1) == 1);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+                const auto& native = source.native();
+                Checks::check_exit(VCPKG_LINE_INFO,
+                                   m_tlog_file.write(native.c_str(), 1, native.size()) == native.size());
+                Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.put('\n') == '\n');
+#endif // ^^^ !_WIN32
             }
 
             if (m_copied_files_log)
@@ -543,6 +559,7 @@ namespace
         bool m_azurekinectsdk_installed;
         bool m_magnum_installed;
         bool m_qt_installed;
+        Path m_temp_dir;
     };
 
     constexpr CommandSetting SETTINGS[] = {
@@ -651,4 +668,3 @@ namespace vcpkg
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
-#endif // ^^^ _WIN32
