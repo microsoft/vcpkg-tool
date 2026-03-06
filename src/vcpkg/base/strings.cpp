@@ -815,35 +815,43 @@ namespace vcpkg::Strings
 
     std::string shorten_text(StringView desc, const size_t length)
     {
-        Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
-        std::string simple_desc;
-
         // replace all sequences of whitespace with a single space, and trim leading/trailing whitespace
+        static constexpr size_t dot_length = 3;
+        Checks::check_exit(VCPKG_LINE_INFO, length >= dot_length);
+        std::string simple_desc;
+        simple_desc.reserve(length);
+
+        bool previous_whitespace = false;
         auto last = desc.end();
         auto first = std::find_if_not(desc.begin(), last, ParserBase::is_whitespace);
-        for (;;)
+        for (;first != last; ++first)
         {
-            auto next_ws = std::find_if(first, last, ParserBase::is_whitespace);
-            simple_desc.append(first, next_ws);
-            if (next_ws == last)
+            const auto ch = *first;
+            if (ParserBase::is_whitespace(ch))
             {
-                break;
+                previous_whitespace = true;
+                continue;
             }
 
-            ++next_ws;
-            first = std::find_if_not(next_ws, last, ParserBase::is_whitespace);
-            if (first == last)
+            if (previous_whitespace)
             {
-                break;
+                previous_whitespace = false;
+                if (simple_desc.size() == length)
+                {
+                    simple_desc.replace(length - dot_length, dot_length, dot_length, '.');
+                    return simple_desc;
+                }
+
+                simple_desc.push_back(' ');
             }
 
-            simple_desc.push_back(' ');
-        }
+            if (simple_desc.size() == length)
+            {
+                simple_desc.replace(length - dot_length, dot_length, dot_length, '.');
+                return simple_desc;
+            }
 
-        if (simple_desc.size() > length)
-        {
-            simple_desc.resize(length - 3);
-            simple_desc.append(3, '.');
+            simple_desc.push_back(ch);
         }
 
         return simple_desc;

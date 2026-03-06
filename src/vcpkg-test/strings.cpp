@@ -314,7 +314,15 @@ TEST_CASE ("shorten_text", "[strings]")
     REQUIRE(shorten_text("", 3) == "");
     REQUIRE(shorten_text("  hello\t\tworld  \n", 20) == "hello world");
     REQUIRE(shorten_text("hello world", 11) == "hello world");
+    REQUIRE(shorten_text(" hello world", 11) == "hello world");
+    REQUIRE(shorten_text("  hello  world", 11) == "hello world");
+    REQUIRE(shorten_text("hello world ", 11) == "hello world");
+    REQUIRE(shorten_text("hello world  ", 11) == "hello world");
     REQUIRE(shorten_text("hello   world", 10) == "hello w...");
     REQUIRE(shorten_text("abc", 3) == "abc");
     REQUIRE(shorten_text("abcd", 3) == "...");
+    REQUIRE(shorten_text("hello there  world  ", 16) == "hello there w...");
+    REQUIRE(shorten_text("hello there  world", 17) == "hello there world");
+    REQUIRE(shorten_text("hello there  world  ", 17) == "hello there world");
+    REQUIRE(shorten_text("hello there  world  ", 18) == "hello there world");
 }
