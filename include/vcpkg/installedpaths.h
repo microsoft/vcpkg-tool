@@ -52,10 +52,10 @@ namespace vcpkg
         Path vcpkg_dir_updates() const { return vcpkg_dir() / FileUpdates; }
         // database_load will read status and the updates to have information about what this installed tree currently
         // contains database_sync will also collapse all the update files into the status file, and delete the
-        // update files. This avoids the status database being corrupted if vcpkg is termianted while it is running
+        // update files. This avoids the status database being corrupted if vcpkg is terminated while it is running
         // (each update is written immediately after each port install and the results merged only at the end)
 
-        // /vcpkg/vcpkg.running.lock is a file system lock used to synchronize access to the installed tree
+        // /vcpkg/vcpkg-running.lock is a file system lock used to synchronize access to the installed tree
         Path vcpkg_running_lock() const { return vcpkg_dir() / FileVcpkgRunningLock; }
 
         // /<triplet> is the root for user facing contents associated with <triplet>

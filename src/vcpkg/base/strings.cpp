@@ -819,23 +819,31 @@ namespace vcpkg::Strings
         std::string simple_desc;
 
         // replace all sequences of whitespace with a single space, and trim leading/trailing whitespace
-        auto first = desc.begin();
         auto last = desc.end();
+        auto first = std::find_if_not(desc.begin(), last, ParserBase::is_whitespace);
         for (;;)
         {
             auto next_ws = std::find_if(first, last, ParserBase::is_whitespace);
             simple_desc.append(first, next_ws);
-            if (next_ws == last) break;
+            if (next_ws == last)
+            {
+                break;
+            }
 
-            simple_desc.push_back(' ');
             ++next_ws;
             first = std::find_if_not(next_ws, last, ParserBase::is_whitespace);
+            if (first == last)
+            {
+                break;
+            }
+
+            simple_desc.push_back(' ');
         }
 
         if (simple_desc.size() > length)
         {
             simple_desc.resize(length - 3);
-            simple_desc.append(3, ',');
+            simple_desc.append(3, '.');
         }
 
         return simple_desc;
