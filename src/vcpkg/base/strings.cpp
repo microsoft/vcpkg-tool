@@ -824,7 +824,7 @@ namespace vcpkg::Strings
         bool previous_whitespace = false;
         auto last = desc.end();
         auto first = std::find_if_not(desc.begin(), last, ParserBase::is_whitespace);
-        for (;first != last; ++first)
+        for (; first != last; ++first)
         {
             const auto ch = *first;
             if (ParserBase::is_whitespace(ch))
@@ -838,7 +838,7 @@ namespace vcpkg::Strings
                 previous_whitespace = false;
                 if (simple_desc.size() == length)
                 {
-                    simple_desc.replace(length - dot_length, dot_length, dot_length, '.');
+                    std::fill_n(simple_desc.end() - dot_length, simple_desc.end(), '.');
                     return simple_desc;
                 }
 
@@ -847,7 +847,7 @@ namespace vcpkg::Strings
 
             if (simple_desc.size() == length)
             {
-                simple_desc.replace(length - dot_length, dot_length, dot_length, '.');
+                std::fill_n(simple_desc.end() - dot_length, simple_desc.end(), '.');
                 return simple_desc;
             }
 
