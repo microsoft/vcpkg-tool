@@ -812,4 +812,32 @@ namespace vcpkg::Strings
         stream.on_end(CB{this});
         return std::move(this->lines);
     }
+
+    std::string shorten_text(StringView desc, const size_t length)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
+        std::string simple_desc;
+
+        // replace all sequences of whitespace with a single space, and trim leading/trailing whitespace
+        auto first = desc.begin();
+        auto last = desc.end();
+        for (;;)
+        {
+            auto next_ws = std::find_if(first, last, ParserBase::is_whitespace);
+            simple_desc.append(first, next_ws);
+            if (next_ws == last) break;
+
+            simple_desc.push_back(' ');
+            ++next_ws;
+            first = std::find_if_not(next_ws, last, ParserBase::is_whitespace);
+        }
+
+        if (simple_desc.size() > length)
+        {
+            simple_desc.resize(length - 3);
+            simple_desc.append(3, ',');
+        }
+
+        return simple_desc;
+    }
 }
