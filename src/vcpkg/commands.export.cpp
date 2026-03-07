@@ -10,12 +10,12 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -539,7 +539,9 @@ namespace vcpkg
                                  Triplet host_triplet)
     {
         (void)host_triplet;
-        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
+        InstalledDatabaseLock installed_lock{
+            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed(), installed_lock);
         const auto opts = handle_export_command_arguments(paths, args, default_triplet, status_db);
 
         // Load ports from ports dirs

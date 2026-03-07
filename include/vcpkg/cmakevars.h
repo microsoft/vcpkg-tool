@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/triplet.h>
@@ -39,5 +40,8 @@ namespace vcpkg::CMakeVars
         void load_tag_vars(const std::vector<InstallPlanAction>& install_actions, Triplet host_triplet) const;
     };
 
-    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);
+    // Ideally, buildtrees would have its own locks rather than reusing the installed database lock; this behavior
+    // attempts to match previous versions of vcpkg which used one lock on VCPKG_ROOT.
+    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths,
+                                                                      const InstalledDatabaseLock& /* witness */);
 }
