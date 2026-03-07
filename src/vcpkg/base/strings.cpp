@@ -838,7 +838,7 @@ namespace vcpkg::Strings
                 previous_whitespace = false;
                 if (simple_desc.size() == length)
                 {
-                    std::fill_n(simple_desc.end() - dot_length, simple_desc.end(), '.');
+                    std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
                     return simple_desc;
                 }
 
@@ -847,7 +847,7 @@ namespace vcpkg::Strings
 
             if (simple_desc.size() == length)
             {
-                std::fill_n(simple_desc.end() - dot_length, simple_desc.end(), '.');
+                std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
                 return simple_desc;
             }
 
