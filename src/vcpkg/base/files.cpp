@@ -4296,15 +4296,15 @@ namespace vcpkg
             }
         }
 
-        virtual Optional<std::unique_ptr<IExclusiveFileLock>> try_take_exclusive_file_lock(
-            DiagnosticContext& context, const Path& lockfile) const override
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(DiagnosticContext& context,
+                                                                                 const Path& lockfile) const override
         {
             std::error_code ec;
             auto result = std::make_unique<ExclusiveFileLock>(lockfile, ec);
             if (ec)
             {
                 context.report_error(format_filesystem_call_error(ec, "try_take_exclusive_file_lock", {lockfile}));
-                return nullopt;
+                return nullptr;
             }
 
             // waits, at most, a second and a half.
@@ -4315,7 +4315,7 @@ namespace vcpkg
                 auto attempt = maybe_attempt.get();
                 if (!attempt)
                 {
-                    return nullopt;
+                    return nullptr;
                 }
 
                 if (*attempt)
@@ -4605,8 +4605,8 @@ namespace vcpkg
             return nullptr;
         }
 
-        Optional<std::unique_ptr<IExclusiveFileLock>> try_take_exclusive_file_lock(DiagnosticContext& context,
-                                                                                   const Path&) const override
+        std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(DiagnosticContext& context,
+                                                                         const Path&) const override
         {
             context.report_system_error("try_take_exclusive_file_lock",
 #if defined(_WIN32)
@@ -4616,7 +4616,7 @@ namespace vcpkg
 #endif
             );
 
-            return nullopt;
+            return nullptr;
         }
 
         WriteFilePointer open_for_write(const Path&, Append, std::error_code& ec) const override

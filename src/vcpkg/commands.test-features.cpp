@@ -20,6 +20,7 @@
 #include <vcpkg/commands.test-features.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
@@ -27,7 +28,6 @@
 #include <vcpkg/registries.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -517,9 +517,11 @@ namespace vcpkg
             }
         }
 
+        InstalledDatabaseLock installed_lock{
+            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
 
         std::vector<SourceControlFile*> feature_test_ports;
@@ -601,7 +603,7 @@ namespace vcpkg
             BackcompatFeatures::Prohibit,
             KeepGoing::Yes,
         };
-        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
+        StatusParagraphs status_db = database_sync(fs, paths.installed(), installed_lock);
         SpecAbiInfoCache spec_abi_info_cache;
 
         // check what should be tested
@@ -870,6 +872,7 @@ namespace vcpkg
                                                       paths,
                                                       host_triplet,
                                                       build_options,
+                                                      installed_lock,
                                                       install_plan,
                                                       status_db,
                                                       binary_cache,

@@ -1357,7 +1357,10 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
+DECLARE_MESSAGE(FailedToTakeInstalledLock,
+                (),
+                "",
+                "failed to take lock, another vcpkg may be running against the same installed tree")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",

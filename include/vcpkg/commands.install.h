@@ -2,6 +2,7 @@
 
 #include <vcpkg/fwd/binaryparagraph.h>
 #include <vcpkg/fwd/commands.install.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/installedpaths.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
@@ -129,6 +130,7 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
+                                        const InstalledDatabaseLock& installed_lock,
                                         const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,

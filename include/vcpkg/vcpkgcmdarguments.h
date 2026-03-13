@@ -264,8 +264,6 @@ namespace vcpkg
 
         Optional<bool> ignore_lock_failures = nullopt;
 
-        bool do_not_take_lock = false;
-
         Optional<std::string> github_run_id;
         Optional<std::string> github_token;
         Optional<std::string> github_job;

@@ -538,6 +538,14 @@ namespace
 
 namespace vcpkg
 {
+    void InstalledPaths::create_directories(const Filesystem& fs) const
+    {
+        fs.create_directories(root(), VCPKG_LINE_INFO);
+        fs.create_directory(vcpkg_dir(), VCPKG_LINE_INFO);
+        fs.create_directory(vcpkg_dir_info(), VCPKG_LINE_INFO);
+        fs.create_directory(vcpkg_dir_updates(), VCPKG_LINE_INFO);
+    }
+
     Path InstalledPaths::listfile_path(const BinaryParagraph& pgh) const
     {
         return this->vcpkg_dir_info() / (pgh.fullstem() + ".list");
@@ -597,38 +605,6 @@ namespace vcpkg
             if (!m_manifest_dir.empty())
             {
                 Debug::print("Using manifest-root: ", m_manifest_dir, '\n');
-                if (!args.do_not_take_lock)
-                {
-                    const bool allow_errors = args.ignore_lock_failures.value_or(false);
-                    DiagnosticContext* lock_taking_context = &stderr_diagnostic_context;
-                    WarningDiagnosticContext wdc{stderr_diagnostic_context};
-                    if (allow_errors)
-                    {
-                        lock_taking_context = &wdc;
-                    }
-
-                    const auto vcpkg_root_file = root / ".vcpkg-root";
-                    if (args.wait_for_lock.value_or(false))
-                    {
-                        file_lock_handle = fs.take_exclusive_file_lock(*lock_taking_context, vcpkg_root_file);
-                    }
-                    else
-                    {
-                        auto maybe_file_lock_handle =
-                            fs.try_take_exclusive_file_lock(*lock_taking_context, vcpkg_root_file);
-                        if (auto got_handle = maybe_file_lock_handle.get())
-                        {
-                            file_lock_handle = std::move(*got_handle);
-                        }
-                    }
-
-                    if (!file_lock_handle && !allow_errors)
-                    {
-                        stderr_diagnostic_context.report_error(msgFailedToTakeFileSystemLock);
-                        Checks::exit_fail(VCPKG_LINE_INFO);
-                    }
-                }
-
                 m_manifest_doc = load_manifest(fs, m_manifest_dir);
             }
         }
@@ -647,8 +623,6 @@ namespace vcpkg
         std::vector<Path> triplets_dirs;
         const Path m_artifacts_dir;
 
-        std::unique_ptr<IExclusiveFileLock> file_lock_handle;
-
         Optional<ManifestAndPath> m_manifest_doc;
         ConfigurationAndSource m_config;
     };
@@ -660,10 +634,8 @@ namespace vcpkg
         , m_pimpl(std::make_unique<VcpkgPathsImpl>(filesystem, args, bundle, root, original_cwd))
         , scripts(m_pimpl->scripts)
         , downloads(m_pimpl->downloads)
-        , tools(m_pimpl->tools)
         , builtin_registry_versions(
               process_output_directory(filesystem, args.builtin_registry_versions_dir.get(), root / "versions"))
-        , prefab(root / "prefab")
         , buildsystems(scripts / "buildsystems")
         , buildsystems_msbuild_targets(buildsystems / "msbuild" / "vcpkg.targets")
         , buildsystems_msbuild_props(buildsystems / "msbuild" / "vcpkg.props")

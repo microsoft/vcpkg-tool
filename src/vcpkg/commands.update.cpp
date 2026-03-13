@@ -2,11 +2,11 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.update.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
@@ -66,7 +66,8 @@ namespace vcpkg
         msg::println(msgLocalPortfileVersion);
 
         auto& fs = paths.get_filesystem();
-        const StatusParagraphs status_db = database_load(fs, paths.installed());
+        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        const StatusParagraphs status_db = database_load(fs, paths.installed(), installed_lock);
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));

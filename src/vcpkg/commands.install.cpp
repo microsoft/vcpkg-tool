@@ -21,13 +21,13 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
@@ -356,7 +356,7 @@ namespace vcpkg
         source_paragraph.package = bcf_core_paragraph;
         source_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
-        write_update(fs, installed, source_paragraph);
+        database_write_update(fs, installed, source_paragraph);
         status_db.insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         std::vector<StatusParagraph> features_spghs;
@@ -366,7 +366,7 @@ namespace vcpkg
             feature_paragraph.package = feature;
             feature_paragraph.status = StatusLine{Want::INSTALL, InstallState::HALF_INSTALLED};
 
-            write_update(fs, installed, feature_paragraph);
+            database_write_update(fs, installed, feature_paragraph);
             status_db.insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
@@ -379,13 +379,13 @@ namespace vcpkg
                                          SymlinkHydrate::CopySymlinks);
 
         source_paragraph.status.state = InstallState::INSTALLED;
-        write_update(fs, installed, source_paragraph);
+        database_write_update(fs, installed, source_paragraph);
         status_db.insert(std::make_unique<StatusParagraph>(source_paragraph));
 
         for (auto&& feature_paragraph : features_spghs)
         {
             feature_paragraph.status.state = InstallState::INSTALLED;
-            write_update(fs, installed, feature_paragraph);
+            database_write_update(fs, installed, feature_paragraph);
             status_db.insert(std::make_unique<StatusParagraph>(feature_paragraph));
         }
 
@@ -610,6 +610,7 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
+                                        const InstalledDatabaseLock& installed_lock,
                                         const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
@@ -706,7 +707,7 @@ namespace vcpkg
                     paths,
                     result.build_result.error_logs,
                     result.build_result.stdoutlog.then([&](auto&) -> Optional<Path> {
-                        auto issue_body_path = paths.installed().root() / FileVcpkg / FileIssueBodyMD;
+                        auto issue_body_path = paths.installed().issue_body_path();
                         paths.get_filesystem().write_contents(
                             issue_body_path,
                             create_github_issue(args, paths, result, include_manifest_in_github_issue),
@@ -738,7 +739,7 @@ namespace vcpkg
             msg::println(msgElapsedForPackage, msg::spec = action.spec, msg::elapsed = result.timing);
         }
 
-        database_load_collapse(fs, paths.installed());
+        database_sync(fs, paths.installed(), installed_lock);
         summary.elapsed = timer.elapsed();
         return summary;
     }
@@ -1284,9 +1285,9 @@ namespace vcpkg
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
                                                       Util::Enum::to_enum<Editable>(is_editable)};
 
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
-
         if (manifest)
         {
             Optional<Path> pkgsconfig;
@@ -1418,6 +1419,7 @@ namespace vcpkg
                                               host_triplet,
                                               build_package_options,
                                               var_provider,
+                                              installed_lock,
                                               std::move(install_plan),
                                               dry_run ? DryRun::Yes : DryRun::No,
                                               print_cmake_usage ? PrintUsage::Yes : PrintUsage::No,
@@ -1435,7 +1437,7 @@ namespace vcpkg
 
         // create the plan
         msg::println(msgComputingInstallPlan);
-        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
+        StatusParagraphs status_db = database_sync(fs, paths.installed(), installed_lock);
 
         // Note: action_plan will hold raw pointers to SourceControlFileLocations from this map
         auto action_plan = create_feature_install_plan(
@@ -1502,6 +1504,7 @@ namespace vcpkg
                                                             paths,
                                                             host_triplet,
                                                             build_package_options,
+                                                            installed_lock,
                                                             action_plan,
                                                             status_db,
                                                             binary_cache,
