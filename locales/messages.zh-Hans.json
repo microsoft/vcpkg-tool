@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[健全性检查]无法分析序列化二进制段落。\n请在 https://github.com/microsoft/vcpkg 提出问题，附加以下输出: \n{error_msg}\n序列化二进制段落:",
   "FailedToStoreBackToMirror": "未能将 {path} 存储到 {url}。",
   "FailedToStoreBinaryCache": "无法存储二进制缓存 {path}",
-  "FailedToTakeFileSystemLock": "未能获取文件系统锁",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "一个或多个 {vendor} 凭据提供程序无法进行身份验证。有关如何提供凭据的更多详细信息，请参阅“{url}”。",
   "FeatureBaselineEntryAlreadySpecified": "“{feature}”已声明为“{value}”",
   "FeatureBaselineExpectedFeatures": "使用“{value}”时，必须指定功能列表。",

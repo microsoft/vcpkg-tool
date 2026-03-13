@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[Integritätsprüfung] Fehler beim Analysieren eines serialisierten binären Absatzes.\nÖffnen Sie ein Problem unter https://github.com/microsoft/vcpkg, und geben Sie folgende Ausgabe an:\n{error_msg}\nSerialisierter binärer Absatz:",
   "FailedToStoreBackToMirror": "Fehler beim Speichern von {path} in {url}.",
   "FailedToStoreBinaryCache": "Fehler beim Speichern des binären Caches {path}",
-  "FailedToTakeFileSystemLock": "Fehler beim Verarbeiten der Dateisystemsperre.",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "Mindestens ein {vendor}-Anmeldeinformationsanbieter konnte nicht authentifiziert werden. Weitere Informationen zum Bereitstellen von Anmeldeinformationen finden Sie unter \"{url}\".",
   "FeatureBaselineEntryAlreadySpecified": "„{feature}“ wurde bereits als „{value}“ deklariert.",
   "FeatureBaselineExpectedFeatures": "Bei Verwendung von \"{value}\" muss eine Liste der Features angegeben werden.",
