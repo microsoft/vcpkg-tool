@@ -4051,15 +4051,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ConstraintViolation" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found a constraint violation:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[發現強制違規:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[found continue code unit in start position]]></Val>
@@ -5833,15 +5824,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeFileSystemLock" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToTakeInstalledLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to take the filesystem lock]]></Val>
+          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same installed tree]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[無法進行檔案系統鎖定]]></Val>
+            <Val><![CDATA[鎖定失敗，可能有另一個 vcpkg 正在執行相同的已安裝目錄]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

@@ -4051,15 +4051,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ConstraintViolation" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Found a constraint violation:]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[제약 조건 위반 발견:]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ContinueCodeUnitInStart" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[found continue code unit in start position]]></Val>
@@ -5833,15 +5824,12 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeFileSystemLock" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToTakeInstalledLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Failed to take the filesystem lock]]></Val>
+          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same installed tree]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[파일 시스템 잠금을 가져오지 못함]]></Val>
+            <Val><![CDATA[잠금을 획득하지 못했습니다. 동일한 설치 트리에서 다른 vcpkg가 실행 중일 수 있습니다.]]></Val>
           </Tgt>
-          <Prev Cat="Text">
-            <Val><![CDATA[Failed to take the filesystem lock on {path}]]></Val>
-          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
