@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[kontrola správnosti] Nepovedlo se parsovat serializovaný binární odstavec.\nOtevřete prosím problém na https://github.com/microsoft/vcpkg s následujícím výstupem:\n{error_msg}\nSerializovaný binární odstavec:",
   "FailedToStoreBackToMirror": "Nepovedlo se uložit {path} na adresu {url}.",
   "FailedToStoreBinaryCache": "Nepovedlo se uložit binární mezipaměť {path}.",
-  "FailedToTakeFileSystemLock": "Nepovedlo se uzamknout systém souborů.",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "Ověření nejméně jednoho zprostředkovatele přihlašovacích údajů {vendor} se nepovedlo. Další podrobnosti o tom, jak zadat přihlašovací údaje, najdete adrese {url}.",
   "FeatureBaselineEntryAlreadySpecified": "Funkce {feature} je už deklarovaná jako {value}.",
   "FeatureBaselineExpectedFeatures": "Pokud se použije {value}, je nutné specifikovat seznam funkcí.",
