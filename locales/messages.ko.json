@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[정상 검사] 직렬화된 이진 단락을 구문 분석하지 못했습니다.\nhttps://github.com/microsoft/vcpkg에서 다음 출력과 함께 문제를 여세요.\n{error_msg}\n직렬화된 이진 단락:",
   "FailedToStoreBackToMirror": "{url}을(를) {path}에 저장하지 못했습니다.",
   "FailedToStoreBinaryCache": "이진 캐시 {path}을(를) 저장하지 못함",
-  "FailedToTakeFileSystemLock": "파일 시스템 잠금을 가져오지 못함",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "하나 이상의 {vendor} 자격 증명 공급자가 인증에 실패했습니다. 자격 증명을 제공하는 방법에 대한 자세한 내용은 '{url}'을(를) 참조하세요.",
   "FeatureBaselineEntryAlreadySpecified": "'{feature}'이(가) 이미 '{value}'(으)로 선언되었습니다.",
   "FeatureBaselineExpectedFeatures": "'{value}'을(를) 사용하는 경우 기능 목록을 지정해야 합니다.",
