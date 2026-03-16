@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[sanity check] Nie można przeanalizować serializowanego akapitu binarnego.\nZgłoś problem na stronie https://github.com/microsoft/vcpkg z następującymi danymi wyjściowymi:\n{error_msg}\nserializowany akapit binarny:",
   "FailedToStoreBackToMirror": "Nie można zapisać {path} na adres {url}.",
   "FailedToStoreBinaryCache": "Nie można zapisać binarnej pamięci podręcznej {path}",
-  "FailedToTakeFileSystemLock": "Nie można zablokować systemu plików",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "Uwierzytelnienie co najmniej jednego dostawcy poświadczeń {vendor} nie powiodło się. Aby uzyskać więcej informacji na temat sposobu dostarczania poświadczeń, zobacz „{url}”.",
   "FeatureBaselineEntryAlreadySpecified": "Funkcja „{feature}” została już zadeklarowana jako wartość „{value}”",
   "FeatureBaselineExpectedFeatures": "W przypadku korzystania z elementu „{value}” należy określić listę funkcji.",
