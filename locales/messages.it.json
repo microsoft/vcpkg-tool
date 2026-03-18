@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[controllo integrità] Non è stato possibile analizzare un paragrafo binario serializzato.\nAprire un problema in https://github.com/microsoft/vcpkg con l'output seguente:\n{error_msg}\nParagrafo binario serializzato:",
   "FailedToStoreBackToMirror": "Non è stato possibile archiviare {path} in {url}.",
   "FailedToStoreBinaryCache": "Non è stato possibile archiviare la cache binaria {path}",
-  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
+  "FailedToTakeInstalledLock": "non è stato possibile acquisire il blocco, un altro vcpkg potrebbe essere in esecuzione rispetto allo stesso albero installato",
   "FailedVendorAuthentication": "Impossibile autenticare uno o più provider di credenziali {vendor}. Per altri dettagli su come fornire le credenziali, vedere '{url}'.",
   "FeatureBaselineEntryAlreadySpecified": "'{feature}' è già stata dichiarata come '{value}'",
   "FeatureBaselineExpectedFeatures": "Quando si usa '{value}', è necessario specificare un elenco di funzionalità.",

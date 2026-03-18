@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[sağlamlık kontrolü] Seri hale getirilmiş ikili paragraf ayrıştırılamadı.\nLütfen https://github.com/microsoft/vcpkg adresine giderek aşağıdaki çıkışla bir sorun açın:\n{error_msg}\nSeri Hale Getirilmiş İkili Paragraf:",
   "FailedToStoreBackToMirror": "{path} yolu {url} adresine depolanamadı.",
   "FailedToStoreBinaryCache": "{path} ikili önbelleği depolanamadı",
-  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
+  "FailedToTakeInstalledLock": "kilit alınamadı; aynı kurulu ağaç üzerinde başka bir vcpkg çalışıyor olabilir",
   "FailedVendorAuthentication": "Bir veya daha fazla {vendor} kimlik bilgisi sağlayıcısı kimlik doğrulaması yapamadı. Kimlik bilgilerini sağlama hakkında daha fazla ayrıntı için bkz. '{url}'.",
   "FeatureBaselineEntryAlreadySpecified": "'{feature}' zaten '{value}' olarak bildirildi",
   "FeatureBaselineExpectedFeatures": "'{value}' kullanırken bir özellik listesi belirtilmelidir.",
