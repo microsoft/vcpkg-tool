@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[サニティ チェック] シリアル化されたバイナリ段落を解析できませんでした。\nhttps://github.com/microsoft/vcpkg でイシューを開き、次の出力を含めてください。\n{error_msg}\nシリアル化されたバイナリ段落:",
   "FailedToStoreBackToMirror": "{url} への {path} を保存できませんでした。",
   "FailedToStoreBinaryCache": "バイナリ キャッシュ {path} を格納できませんでした",
-  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
+  "FailedToTakeInstalledLock": "ロックを取得できませんでした。インストールされている同じツリーに対して別の vcpkg が実行されている可能性があります",
   "FailedVendorAuthentication": "1 つ以上の {vendor} 資格情報プロバイダーを認証できませんでした。資格情報を提供する方法の詳細については、'{url}' を参照してください。",
   "FeatureBaselineEntryAlreadySpecified": "'{feature}' は既に '{value}' として宣言されています",
   "FeatureBaselineExpectedFeatures": "'{value}' を使用する場合は、機能のリストを指定する必要があります。",

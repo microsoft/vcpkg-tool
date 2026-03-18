@@ -556,7 +556,7 @@
   "FailedToParseSerializedBinParagraph": "[проверка работоспособности] Не удалось проанализировать абзац сериализованного двоичного файла.\nОткройте проблему на странице https://github.com/microsoft/vcpkg со следующими выходными данными:\n{error_msg}\nАбзац сериализованного двоичного файла:",
   "FailedToStoreBackToMirror": "Не удалось сохранить путь {path} для URL-адреса {url}.",
   "FailedToStoreBinaryCache": "Сбой сохранения двоичного кэша {path}",
-  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
+  "FailedToTakeInstalledLock": "не удалось заблокировать, возможно, другой vcpkg запущен для того же установленного дерева",
   "FailedVendorAuthentication": "Одному или нескольким поставщикам учетных данных {vendor} не удалось пройти аутентификацию. См. «{url}» для получения дополнительной информации о том, как предоставить учетные данные.",
   "FeatureBaselineEntryAlreadySpecified": "\"{feature}\" уже объявлено как \"{value}\"",
   "FeatureBaselineExpectedFeatures": "При использовании \"{value}\" необходимо указать список функций.",
