@@ -1785,7 +1785,8 @@ namespace vcpkg
                                msg::spec = spec,
                                msg::build_result = to_string_locale_invariant(build_result.code));
 
-        if (build_result.code == BuildResult::CascadedDueToMissingDependencies || build_result.code == BuildResult::CascadedDueToUnsupportedDependency)
+        if (build_result.code == BuildResult::CascadedDueToMissingDependencies ||
+            build_result.code == BuildResult::CascadedDueToUnsupportedDependency)
         {
             res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
