@@ -104,7 +104,9 @@ namespace
             , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
                                  m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
             , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+#if !defined(_WIN32)
             , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
+#endif // ^^^ !_WIN32
         {
         }
 
