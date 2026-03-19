@@ -89,14 +89,18 @@ namespace
                            const Path& installed_bin_dir,
                            const Path& installed,
                            bool is_debug,
+#if defined(_WIN32)
                            WriteFilePointer&& tlog_file,
+#endif // ^^^ _WIN32
                            WriteFilePointer&& copied_files_log)
             : m_fs(fs)
             , m_deployment_dir(deployment_dir)
             , m_installed_bin_dir(installed_bin_dir)
             , m_installed(installed)
             , m_is_debug(is_debug)
+#if defined(_WIN32)
             , m_tlog_file(std::move(tlog_file))
+#endif // ^^^ _WIN32
             , m_copied_files_log(std::move(copied_files_log))
             , m_openni2_installed(m_fs.exists(m_installed / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
             , m_azurekinectsdk_installed(
@@ -521,22 +525,17 @@ namespace
                     format_filesystem_call_error(ec, "copy_file", {source, target, "CopyOptions::update_existing"}));
             }
 
+#if defined(_WIN32)
             if (m_tlog_file)
             {
-#if defined(_WIN32)
                 const auto as_utf16 = Strings::to_utf16(source);
                 Checks::check_exit(VCPKG_LINE_INFO,
                                    m_tlog_file.write(as_utf16.data(), sizeof(wchar_t), as_utf16.size()) ==
                                        as_utf16.size());
                 static constexpr wchar_t native_newline = L'\n';
                 Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.write(&native_newline, sizeof(wchar_t), 1) == 1);
-#else  // ^^^ _WIN32 / !_WIN32 vvv
-                const auto& native = source.native();
-                Checks::check_exit(VCPKG_LINE_INFO,
-                                   m_tlog_file.write(native.c_str(), 1, native.size()) == native.size());
-                Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.put('\n') == '\n');
-#endif // ^^^ !_WIN32
             }
+#endif // ^^^ _WIN32
 
             if (m_copied_files_log)
             {
@@ -554,7 +553,9 @@ namespace
         Path m_installed_bin_dir;
         Path m_installed;
         bool m_is_debug;
+#if defined(_WIN32)
         WriteFilePointer m_tlog_file;
+#endif // ^^^ _WIN32
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
         bool m_openni2_installed;
@@ -569,7 +570,9 @@ namespace
     constexpr CommandSetting SETTINGS[] = {
         {SwitchTargetBinary, msgCmdSettingTargetBin},
         {SwitchInstalledBinDir, msgCmdSettingInstalledDir},
+#if defined(_WIN32)
         {SwitchTLogFile, msgCmdSettingTLogFile},
+#endif // ^^^ _WIN32
         {SwitchCopiedFilesLog, msgCmdSettingCopiedFilesLog},
     };
 } // unnamed namespace
@@ -579,8 +582,13 @@ namespace vcpkg
     constexpr CommandMetadata CommandZApplocalMetadata{
         "z-applocal",
         msgCmdZApplocalSynopsis,
+#if defined(_WIN32)
         {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
          "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
+         "--copied-files-log=\"Path/to/copiedFilesLog.log\""},
+#endif // ^^^ !_WIN32
         Undocumented,
         AutocompletePriority::Internal,
         0,
@@ -666,7 +674,9 @@ namespace vcpkg
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
+#if defined(_WIN32)
                                       maybe_create_log(parsed.settings, SwitchTLogFile, fs),
+#endif // ^^^ _WIN32
                                       maybe_create_log(parsed.settings, SwitchCopiedFilesLog, fs));
         invocation.resolve_explicit(target_binary_path, imported_names);
         Checks::exit_success(VCPKG_LINE_INFO);
