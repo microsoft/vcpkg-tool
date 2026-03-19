@@ -731,6 +731,7 @@ namespace vcpkg
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
                 case BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::CascadedDueToUnsupportedDependency:
                 case BuildResult::Unsupported:
                 case BuildResult::CacheMissing: summary.failed = true; break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);

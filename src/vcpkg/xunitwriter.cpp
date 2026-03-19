@@ -28,6 +28,7 @@ namespace
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts: result_string = "Fail"; break;
             case BuildResult::CascadedDueToMissingDependencies:
+            case BuildResult::CascadedDueToUnsupportedDependency:
             case BuildResult::Excluded:
             case BuildResult::ExcludedByParent:
             case BuildResult::ExcludedByDryRun:

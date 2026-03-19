@@ -231,6 +231,13 @@ namespace vcpkg
                     return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
                 }
                 break;
+            case BuildResult::CascadedDueToUnsupportedDependency:
+                // This is not a regression for =fail ports — the port did not pass.
+                if (cidata.required_success.contains(spec))
+                {
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
+                }
+                break;
             case BuildResult::Unsupported:
                 if (cidata.expected_failures.contains(spec))
                 {

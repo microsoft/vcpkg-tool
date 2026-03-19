@@ -905,6 +905,7 @@ namespace vcpkg
                     handle_pass_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     break;
                 case BuildResult::CascadedDueToMissingDependencies:
+                case BuildResult::CascadedDueToUnsupportedDependency:
                     if (last_build_result.unmet_dependencies.empty())
                     {
                         Checks::unreachable(VCPKG_LINE_INFO);

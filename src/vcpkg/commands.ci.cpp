@@ -61,7 +61,8 @@ namespace
     {
         Baseline,
         Supports,
-        Cascade
+        Cascade,
+        CascadeUnsupported //  planner knows dep is unsupported at plan time
     };
 
     struct CiSpecsResult
@@ -216,6 +217,10 @@ namespace
                     state = &STATE_UNSUPPORTED;
                     known_result = BuildResult::Unsupported;
                     break;
+                case ExcludeReason::CascadeUnsupported:
+                    state = &STATE_CASCADE;
+                    known_result = BuildResult::CascadedDueToUnsupportedDependency;
+                    break;
                 case ExcludeReason::Cascade:
                     state = &STATE_CASCADE;
                     known_result = BuildResult::CascadedDueToMissingDependencies;
@@ -360,7 +365,7 @@ namespace
                 result.excluded.insert_or_assign(
                     std::move(full_package_spec.package_spec),
                     supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
-                        ? ExcludeReason::Cascade
+                        ? ExcludeReason::CascadeUnsupported
                         : ExcludeReason::Supports);
                 continue;
             }

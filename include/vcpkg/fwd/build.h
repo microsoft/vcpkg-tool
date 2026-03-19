@@ -9,6 +9,7 @@ namespace vcpkg
         PostBuildChecksFailed,
         FileConflicts,
         CascadedDueToMissingDependencies,
+        CascadedDueToUnsupportedDependency, // planner knows dep is unsupported at plan time
         Excluded,
         ExcludedByParent,
         ExcludedByDryRun,

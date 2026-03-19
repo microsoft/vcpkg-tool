@@ -364,4 +364,14 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
               "REGRESSION: fail:x64-uwp is marked as fail but one dependency is not supported for x64-uwp.");
         CHECK(test({"neither", Test::X64_UWP}) == "");
     }
+
+    SECTION ("CASCADED_DUE_TO_UNSUPPORTED_DEPENDENCY")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::CascadedDueToUnsupportedDependency, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"neither", Test::X64_UWP}) == "");
+    }
 }

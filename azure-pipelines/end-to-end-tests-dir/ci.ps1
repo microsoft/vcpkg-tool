@@ -24,8 +24,8 @@ SUMMARY FOR $Triplet
 "@
 # feature-not-sup's baseline fail entry should result in a regression because the port is not supported
 Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."
-# feature-not-sup's baseline fail entry should result in a regression because the port is cascade for this triplet
-Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."
+# dep-on-feature-not-sup is =fail and cascaded due to a statically-unsupported dependency; this is not a regression
+Throw-IfContains -Actual $ErrorOutput -Expected "dep-on-feature-not-sup:${Triplet}"
 
 # pass means pass
 Run-Vcpkg ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"

@@ -308,6 +308,7 @@ namespace vcpkg
         {
             case BuildResult::Succeeded: binary_cache.push_success(build_options.clean_packages, *action); return 0;
             case BuildResult::CascadedDueToMissingDependencies:
+            case BuildResult::CascadedDueToUnsupportedDependency:
             {
                 LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
                 for (const auto& p : result.unmet_dependencies)
@@ -1685,6 +1686,7 @@ namespace vcpkg
             case BuildResult::PostBuildChecksFailed: ++post_build_checks_failed; return;
             case BuildResult::FileConflicts: ++file_conflicts; return;
             case BuildResult::CascadedDueToMissingDependencies: ++cascaded_due_to_missing_dependencies; return;
+            case BuildResult::CascadedDueToUnsupportedDependency: ++cascaded_due_to_missing_dependencies; return;
             case BuildResult::Excluded: ++excluded; return;
             case BuildResult::ExcludedByParent: ++excluded_by_parent; return;
             case BuildResult::ExcludedByDryRun: ++excluded_by_dry_run; return;
@@ -1740,6 +1742,7 @@ namespace vcpkg
             case BuildResult::PostBuildChecksFailed: return "POST_BUILD_CHECKS_FAILED";
             case BuildResult::FileConflicts: return "FILE_CONFLICTS";
             case BuildResult::CascadedDueToMissingDependencies: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
+            case BuildResult::CascadedDueToUnsupportedDependency: return "CASCADED_DUE_TO_UNSUPPORTED_DEPENDENCY";
             case BuildResult::Excluded: return "EXCLUDED";
             case BuildResult::ExcludedByParent: return "EXCLUDED_BY_PARENT";
             case BuildResult::ExcludedByDryRun: return "EXCLUDED_BY_DRY_RUN";
@@ -1760,6 +1763,8 @@ namespace vcpkg
             case BuildResult::BuildFailed: return msg::format(msgBuildResultBuildFailed);
             case BuildResult::PostBuildChecksFailed: return msg::format(msgBuildResultPostBuildChecksFailed);
             case BuildResult::FileConflicts: return msg::format(msgBuildResultFileConflicts);
+            case BuildResult::CascadedDueToUnsupportedDependency:
+                return msg::format(msgBuildResultCascadeDueToMissingDependencies);
             case BuildResult::CascadedDueToMissingDependencies:
                 return msg::format(msgBuildResultCascadeDueToMissingDependencies);
             case BuildResult::Excluded: return msg::format(msgBuildResultExcluded);
@@ -1780,7 +1785,7 @@ namespace vcpkg
                                msg::spec = spec,
                                msg::build_result = to_string_locale_invariant(build_result.code));
 
-        if (build_result.code == BuildResult::CascadedDueToMissingDependencies)
+        if (build_result.code == BuildResult::CascadedDueToMissingDependencies || build_result.code == BuildResult::CascadedDueToUnsupportedDependency)
         {
             res.append_raw('\n').append_indent().append(msgBuildingPackageFailedDueToMissingDeps);
 
