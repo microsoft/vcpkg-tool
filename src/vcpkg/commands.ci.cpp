@@ -110,6 +110,16 @@ namespace
         return it == exclusions_map.triplets.end() ? nullptr : &it->exclusions;
     }
 
+    bool cascade_for_skipped(const std::vector<PackageSpec>& package_dependencies,
+                             const std::unordered_set<PackageSpec>& skipped_specs)
+    {
+        for (const auto& dep : package_dependencies)
+        {
+            if (Util::Sets::contains(skipped_specs, dep)) return true;
+        }
+        return false;
+    }
+
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
                                  const PortFileProvider& provider,
                                  const CMakeVars::CMakeVarProvider& var_provider,
@@ -133,7 +143,9 @@ namespace
                                                 const std::vector<CacheAvailability>& precheck_results,
                                                 const std::unordered_set<std::string>& known_failure_abis,
                                                 const std::unordered_set<std::string>& parent_hashes,
-                                                const ActionPlan& action_plan)
+                                                const ActionPlan& action_plan,
+                                                SkipFailures skip_failures,
+                                                const SortedVector<PackageSpec>& expected_failures)
     {
         static constexpr StringLiteral STATE_ABI_FAIL = "fail";
         static constexpr StringLiteral STATE_UNSUPPORTED = "unsupported";
@@ -150,6 +162,11 @@ namespace
             missing_specs.insert(spec.package_spec);
         }
 
+        // Track specs excluded by --skip-failures so that dependents cascade.
+        // The action plan is in topological order (dependencies first), so a single
+        // forward pass correctly propagates cascades through the dependency graph.
+        std::unordered_set<PackageSpec> skipped_specs;
+
         for (size_t action_idx = 0; action_idx < action_plan.install_actions.size(); ++action_idx)
         {
             const auto& action = action_plan.install_actions[action_idx];
@@ -157,7 +174,23 @@ namespace
             const std::string& public_abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
             const StringLiteral* state;
             BuildResult known_result;
-            if (Util::Sets::contains(known_failure_abis, public_abi))
+            if (skip_failures == SkipFailures::Yes && expected_failures.contains(action.spec))
+            {
+                // =fail ports participated in feature resolution but should not be built
+                // when --skip-failures is active.
+                state = &STATE_SKIP;
+                known_result = BuildResult::Excluded;
+                skipped_specs.insert(action.spec);
+            }
+            else if (skip_failures == SkipFailures::Yes &&
+                     cascade_for_skipped(action.package_dependencies, skipped_specs))
+            {
+                // A dependency was skipped (=fail with --skip-failures), so this port cascades.
+                state = &STATE_CASCADE;
+                known_result = BuildResult::CascadedDueToMissingDependencies;
+                skipped_specs.insert(action.spec);
+            }
+            else if (Util::Sets::contains(known_failure_abis, public_abi))
             {
                 state = &STATE_ABI_FAIL;
                 known_result = BuildResult::BuildFailed;
@@ -178,15 +211,24 @@ namespace
                 known_result = BuildResult::ExcludedByDryRun;
             }
 
-            ret.report_lines.insert_or_assign(action.spec,
-                                              fmt::format("{:>40}: {:>6}: {}", action.spec, *state, public_abi));
             ret.known.emplace(action.spec, known_result);
-            Json::Object obj;
-            obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
-            obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
-            obj.insert(JsonIdState, Json::Value::string(*state));
-            obj.insert(JsonIdAbi, public_abi);
-            ret.abis.push_back(std::move(obj));
+            if (Util::Sets::contains(skipped_specs, action.spec))
+            {
+                // Skipped/cascaded ports use the same format as excluded ports (no ABI)
+                // since they will not be built.
+                ret.report_lines.insert_or_assign(action.spec, fmt::format("{:>40}: {}", action.spec, *state));
+            }
+            else
+            {
+                ret.report_lines.insert_or_assign(action.spec,
+                                                  fmt::format("{:>40}: {:>6}: {}", action.spec, *state, public_abi));
+                Json::Object obj;
+                obj.insert(JsonIdName, Json::Value::string(action.spec.name()));
+                obj.insert(JsonIdTriplet, Json::Value::string(action.spec.triplet().canonical_name()));
+                obj.insert(JsonIdState, Json::Value::string(*state));
+                obj.insert(JsonIdAbi, public_abi);
+                ret.abis.push_back(std::move(obj));
+            }
         }
 
         if (!missing_specs.empty())
@@ -464,6 +506,8 @@ namespace vcpkg
         auto baseline_iter = settings.find(SwitchCIBaseline);
         const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
+        const auto skip_failures =
+            Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
         CiBaselineData baseline_data;
         if (baseline_iter == settings.end())
         {
@@ -474,14 +518,12 @@ namespace vcpkg
         }
         else
         {
-            auto skip_failures =
-                Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
             ci_baseline_file_name = &baseline_iter->second;
             const auto ci_baseline_file_contents = fs.read_contents(*ci_baseline_file_name, VCPKG_LINE_INFO);
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, *ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings();
-            baseline_data = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
+            baseline_data = parse_and_apply_ci_baseline(lines, exclusions_map);
         }
 
         std::unordered_set<std::string> known_failure_abis;
@@ -539,8 +581,13 @@ namespace vcpkg
         auto install_actions =
             Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
         const auto precheck_results = binary_cache.precheck(console_diagnostic_context, fs, install_actions);
-        const auto pre_build_status =
-            compute_pre_build_statuses(ci_specs, precheck_results, known_failure_abis, parent_hashes, action_plan);
+        const auto pre_build_status = compute_pre_build_statuses(ci_specs,
+                                                                 precheck_results,
+                                                                 known_failure_abis,
+                                                                 parent_hashes,
+                                                                 action_plan,
+                                                                 skip_failures,
+                                                                 baseline_data.expected_failures);
         {
             std::string msg;
             for (auto&& line : pre_build_status.report_lines)

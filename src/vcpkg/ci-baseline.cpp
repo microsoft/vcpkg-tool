@@ -138,9 +138,7 @@ namespace vcpkg
         return result;
     }
 
-    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               ExclusionsMap& exclusions_map,
-                                               SkipFailures skip_failures)
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map)
     {
         std::vector<PackageSpec> expected_failures;
         std::vector<PackageSpec> required_success;
@@ -164,10 +162,11 @@ namespace vcpkg
                 if (line.state == CiBaselineState::Fail)
                 {
                     expected_failures.emplace_back(line.port_name, line.triplet);
-                    if (skip_failures == SkipFailures::No)
-                    {
-                        continue;
-                    }
+                    // Always keep =fail ports in the plan for feature resolution,
+                    // even with --skip-failures. They are pruned before building
+                    // in compute_pre_build_statuses so PR and CI see the same
+                    // dependency graph.
+                    continue;
                 }
 
                 triplet_match->second.push_back(line.port_name);

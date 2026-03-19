@@ -54,9 +54,7 @@ namespace vcpkg
         SortedVector<PackageSpec> required_success;
     };
 
-    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               ExclusionsMap& exclusions_map,
-                                               SkipFailures skip_failures);
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines, ExclusionsMap& exclusions_map);
 
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,

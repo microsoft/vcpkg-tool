@@ -208,7 +208,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         ExclusionsMap exclusions;
         exclusions.insert(x64_uwp, {});   // example triplet
         exclusions.insert(x64_linux, {}); // example host triplet
-        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
+        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions);
         const SortedVector<PackageSpec> expected_expected_failures{
             PackageSpec{"aubio", x64_uwp},
             PackageSpec{"bde", x64_linux},
@@ -232,15 +232,14 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         exclusions.triplets[0].exclusions.clear();
         exclusions.triplets[1].exclusions.clear();
 
-        actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::Yes);
+        actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions);
         CHECK(actual.expected_failures == expected_expected_failures);
         CHECK(exclusions.triplets.size() == 2);
-        CHECK(exclusions.triplets[0].exclusions ==
-              SortedVector<std::string>{
-                  "aubio", "blitz", "blosc", "bond", "botan", "c-ares", "caf", "casclib", "catch-classic"});
+        // =fail ports are no longer added to exclusions — they stay in the plan
+        // for feature resolution and are pruned before building.
+        CHECK(exclusions.triplets[0].exclusions == SortedVector<std::string>{"catch-classic"});
         CHECK(exclusions.triplets[1].exclusions ==
-              SortedVector<std::string>{
-                  "bde", "buck-yeh-bux", "buck-yeh-bux-mariadb-client", "catch-classic", "bill-made-up-another-skip"});
+              SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
     }
 }
 
