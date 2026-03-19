@@ -1,0 +1,11 @@
+{
+  "name": "fail-port",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "shared-port",
+      "default-features": false,
+      "features": ["activated-feature"]
+    }
+  ]
+}

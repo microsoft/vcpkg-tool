@@ -162,6 +162,27 @@ if (-not ($Output -match 'maybe-cross-cascade:cross: cascade\n')) {
     throw 'did not identify maybe-cross-cascade as cascaded [cross build]'
 }
 
+# test that =fail ports with --skip-failures still participate in feature resolution
+# fail-port is =fail and requests shared-port[activated-feature], which depends on feature-dep.
+# With the fix, feature-dep should appear in the plan (proving =fail ports contribute to feature resolution).
+# Without the fix, fail-port would be excluded from the plan entirely, shared-port[activated-feature]
+# would not be activated, and feature-dep would not appear.
+Refresh-TestRoot
+$Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-fail-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-fail-features/baseline.txt"
+Throw-IfFailed
+# fail-port must be skipped (=fail with --skip-failures)
+if (-not ($Output -match 'fail-port:[^:]+: skip')) {
+    throw 'did not identify fail-port as skipped'
+}
+# feature-dep must be in the plan — this proves fail-port participated in feature resolution
+if (-not ($Output -match 'feature-dep:[^:]+:      \*:')) {
+    throw 'feature-dep not in plan; =fail port did not participate in feature resolution'
+}
+# normal-port must be in the plan (not cascaded)
+if (-not ($Output -match 'normal-port:[^:]+:      \*:')) {
+    throw 'normal-port should be in the plan'
+}
+
 # test that features included only by skipped ports are not included
 Refresh-TestRoot
 $xunitFile = Join-Path $TestingRoot 'xunit.xml'

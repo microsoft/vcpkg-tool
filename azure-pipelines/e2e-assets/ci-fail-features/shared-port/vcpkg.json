@@ -1,0 +1,10 @@
+{
+  "name": "shared-port",
+  "version": "1.0.0",
+  "features": {
+    "activated-feature": {
+      "description": "Feature activated by fail-port",
+      "dependencies": ["feature-dep"]
+    }
+  }
+}

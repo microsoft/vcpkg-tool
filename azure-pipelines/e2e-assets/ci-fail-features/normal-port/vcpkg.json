@@ -1,0 +1,5 @@
+{
+  "name": "normal-port",
+  "version": "1.0.0",
+  "dependencies": ["shared-port"]
+}

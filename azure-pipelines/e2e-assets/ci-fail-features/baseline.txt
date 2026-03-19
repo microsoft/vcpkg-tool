@@ -1,0 +1,8 @@
+# fail-port is =fail: with --skip-failures it should still participate
+# in feature resolution so that shared-port[activated-feature] is activated.
+fail-port:arm64-linux=fail
+fail-port:arm64-osx=fail
+fail-port:x64-linux=fail
+fail-port:x64-osx=fail
+fail-port:x64-windows=fail
+fail-port:x86-windows=fail
