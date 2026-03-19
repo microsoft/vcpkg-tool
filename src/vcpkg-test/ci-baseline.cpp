@@ -235,7 +235,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions);
         CHECK(actual.expected_failures == expected_expected_failures);
         CHECK(exclusions.triplets.size() == 2);
-        // =fail ports are no longer added to exclusions — they stay in the plan
+        // =fail ports are no longer added to exclusions - they stay in the plan
         // for feature resolution and are pruned before building.
         CHECK(exclusions.triplets[0].exclusions == SortedVector<std::string>{"catch-classic"});
         CHECK(exclusions.triplets[1].exclusions ==
