@@ -32,6 +32,9 @@ namespace
                                2L); // Follow redirects, change request method based on HTTP response code.
                                     // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        
+        //Fix for schannel missing certificate revocation list errors with proxy server.
+        vcpkg_curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
 
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
         vcpkg_curl_easy_setopt(
