@@ -62,9 +62,12 @@ TEST_CASE ("github_dependency_graph_snapshots_uri", "[downloads]")
             "https://api.github.com/repos/owner/repo/dependency-graph/snapshots");
 
     REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.com/"}, "owner/repo") ==
-            "https://github.com//api/v3/repos/owner/repo/dependency-graph/snapshots");
+            "https://api.github.com/repos/owner/repo/dependency-graph/snapshots");
 
     REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.example.com"}, "owner/repo") ==
+            "https://github.example.com/api/v3/repos/owner/repo/dependency-graph/snapshots");
+
+    REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://github.example.com/"}, "owner/repo") ==
             "https://github.example.com/api/v3/repos/owner/repo/dependency-graph/snapshots");
 
     REQUIRE(github_dependency_graph_snapshots_uri(Optional<std::string>{"https://user:pass@github.example.com:443"},

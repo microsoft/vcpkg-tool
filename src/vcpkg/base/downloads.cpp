@@ -330,19 +330,25 @@ namespace vcpkg
         constexpr StringLiteral api_github_com_url = "https://api.github.com";
         if (auto github_server_url = maybe_github_server_url.get())
         {
-            if (*github_server_url == github_com_url)
+            StringView normalized_server_url = *github_server_url;
+            if (!normalized_server_url.empty() && normalized_server_url[normalized_server_url.size() - 1] == '/')
             {
-                uri = api_github_com_url.data();
+                normalized_server_url = normalized_server_url.substr(0, normalized_server_url.size() - 1);
+            }
+
+            if (normalized_server_url == github_com_url)
+            {
+                uri.assign(api_github_com_url.data(), api_github_com_url.size());
             }
             else
             {
-                uri = *github_server_url;
+                uri.assign(normalized_server_url.data(), normalized_server_url.size());
                 uri.append("/api/v3");
             }
         }
         else
         {
-            uri = api_github_com_url.data();
+            uri.assign(api_github_com_url.data(), api_github_com_url.size());
         }
 
         fmt::format_to(
