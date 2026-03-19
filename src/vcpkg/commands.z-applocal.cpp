@@ -561,7 +561,9 @@ namespace
         bool m_azurekinectsdk_installed;
         bool m_magnum_installed;
         bool m_qt_installed;
+#if !defined(_WIN32)
         Path m_temp_dir;
+#endif // ^^^ !_WIN32
     };
 
     constexpr CommandSetting SETTINGS[] = {
