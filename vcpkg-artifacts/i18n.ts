@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 /**
  * Creates a reusable safe-eval sandbox to execute code in.
@@ -30,8 +31,7 @@ let currentLocale = require('./locales/messages.json');
 
 export function setLocale(newLocale: string | undefined) {
   if (newLocale) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    currentLocale = require(newLocale);
+    currentLocale = JSON.parse(readFileSync(newLocale, 'utf8'));
   }
 }
 
