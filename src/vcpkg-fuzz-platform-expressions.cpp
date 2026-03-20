@@ -6,7 +6,7 @@ using namespace vcpkg;
 
 namespace vcpkg::Checks
 {
-    void on_final_cleanup_and_exit() { __debugbreak(); }
+    void on_final_cleanup_and_exit() { }
 }
 
 extern "C" int _cdecl LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
