@@ -7,6 +7,9 @@ namespace vcpkg::Checks
     void on_final_cleanup_and_exit() { }
 }
 
+// avoid -Wmissing-prototypes
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     auto begin = reinterpret_cast<const char*>(data);

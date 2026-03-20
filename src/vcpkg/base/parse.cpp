@@ -189,9 +189,9 @@ namespace vcpkg
     ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
         : m_messages()
         , m_text(text)
+        , m_origin(check_origin(origin))
         , m_row(init_rowcol.row)
         , m_column(init_rowcol.column)
-        , m_origin(check_origin(origin))
         , m_it(form_utf_decoder())
         , m_start_of_line(m_it)
     {
