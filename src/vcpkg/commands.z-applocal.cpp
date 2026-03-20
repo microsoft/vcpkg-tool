@@ -1,4 +1,5 @@
-#if defined(_WIN32)
+#include <vcpkg/base/fwd/diagnostics.h>
+
 #include <vcpkg/base/cofffilereader.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
@@ -32,6 +33,7 @@ namespace
         return fs.open_for_write(entry->second, VCPKG_LINE_INFO);
     }
 
+#if defined(_WIN32)
     struct MutantGuard
     {
         MutantGuard(StringView name)
@@ -59,6 +61,7 @@ namespace
     private:
         HANDLE h;
     };
+#endif // defined(_WIN32)
 
     struct BinaryPathDecodedInfo
     {
@@ -86,14 +89,18 @@ namespace
                            const Path& installed_bin_dir,
                            const Path& installed,
                            bool is_debug,
+#if defined(_WIN32)
                            WriteFilePointer&& tlog_file,
+#endif // ^^^ _WIN32
                            WriteFilePointer&& copied_files_log)
             : m_fs(fs)
             , m_deployment_dir(deployment_dir)
             , m_installed_bin_dir(installed_bin_dir)
             , m_installed(installed)
             , m_is_debug(is_debug)
+#if defined(_WIN32)
             , m_tlog_file(std::move(tlog_file))
+#endif // ^^^ _WIN32
             , m_copied_files_log(std::move(copied_files_log))
             , m_openni2_installed(m_fs.exists(m_installed / "bin/OpenNI2/openni2deploy.ps1", VCPKG_LINE_INFO))
             , m_azurekinectsdk_installed(
@@ -101,6 +108,9 @@ namespace
             , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
                                  m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
             , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+#if !defined(_WIN32)
+            , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
+#endif // ^^^ !_WIN32
         {
         }
 
@@ -485,8 +495,13 @@ namespace
             source.make_preferred();
             auto target = target_binary_dir / target_binary_name;
             target.make_preferred();
+#if defined(_WIN32)
             const auto mutant_name = "vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir);
             const MutantGuard mutant(mutant_name);
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+            const auto lock_file_path = m_temp_dir / ("vcpkg-applocal-" + Hash::get_string_sha256(target_binary_dir));
+            auto guard = m_fs.take_exclusive_file_lock(stderr_diagnostic_context, lock_file_path);
+#endif // ^^^ !_WIN32
 
             std::error_code ec;
             const bool did_deploy = m_fs.copy_file(source, target, CopyOptions::update_existing, ec);
@@ -510,6 +525,7 @@ namespace
                     format_filesystem_call_error(ec, "copy_file", {source, target, "CopyOptions::update_existing"}));
             }
 
+#if defined(_WIN32)
             if (m_tlog_file)
             {
                 const auto as_utf16 = Strings::to_utf16(source);
@@ -519,6 +535,7 @@ namespace
                 static constexpr wchar_t native_newline = L'\n';
                 Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.write(&native_newline, sizeof(wchar_t), 1) == 1);
             }
+#endif // ^^^ _WIN32
 
             if (m_copied_files_log)
             {
@@ -536,19 +553,26 @@ namespace
         Path m_installed_bin_dir;
         Path m_installed;
         bool m_is_debug;
+#if defined(_WIN32)
         WriteFilePointer m_tlog_file;
+#endif // ^^^ _WIN32
         WriteFilePointer m_copied_files_log;
         std::unordered_set<std::string> m_searched;
         bool m_openni2_installed;
         bool m_azurekinectsdk_installed;
         bool m_magnum_installed;
         bool m_qt_installed;
+#if !defined(_WIN32)
+        Path m_temp_dir;
+#endif // ^^^ !_WIN32
     };
 
     constexpr CommandSetting SETTINGS[] = {
         {SwitchTargetBinary, msgCmdSettingTargetBin},
         {SwitchInstalledBinDir, msgCmdSettingInstalledDir},
+#if defined(_WIN32)
         {SwitchTLogFile, msgCmdSettingTLogFile},
+#endif // ^^^ _WIN32
         {SwitchCopiedFilesLog, msgCmdSettingCopiedFilesLog},
     };
 } // unnamed namespace
@@ -558,8 +582,13 @@ namespace vcpkg
     constexpr CommandMetadata CommandZApplocalMetadata{
         "z-applocal",
         msgCmdZApplocalSynopsis,
+#if defined(_WIN32)
         {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
          "--tlog-file=\"Path/to/tlog.tlog\" --copied-files-log=\"Path/to/copiedFilesLog.log\""},
+#else  // ^^^ _WIN32 / !_WIN32 vvv
+        {"vcpkg z-applocal --target-binary=\"Path/to/binary\" --installed-bin-dir=\"Path/to/installed/bin\" "
+         "--copied-files-log=\"Path/to/copiedFilesLog.log\""},
+#endif // ^^^ !_WIN32
         Undocumented,
         AutocompletePriority::Internal,
         0,
@@ -645,10 +674,11 @@ namespace vcpkg
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
+#if defined(_WIN32)
                                       maybe_create_log(parsed.settings, SwitchTLogFile, fs),
+#endif // ^^^ _WIN32
                                       maybe_create_log(parsed.settings, SwitchCopiedFilesLog, fs));
         invocation.resolve_explicit(target_binary_path, imported_names);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 } // namespace vcpkg
-#endif // ^^^ _WIN32
