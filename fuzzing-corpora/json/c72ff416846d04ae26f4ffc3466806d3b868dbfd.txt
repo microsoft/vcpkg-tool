@@ -1,0 +1,10 @@
+{
+  "name": "overlay",
+  "version": "0",
+  "dependencies": [
+    {
+      "name": "overlay-zlib",
+      "version>=": "99999"
+    }
+  ]
+}

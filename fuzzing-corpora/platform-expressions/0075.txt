@@ -1,0 +1,1 @@
+!(windows & arm32) & !uwp

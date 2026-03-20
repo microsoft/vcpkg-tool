@@ -1,0 +1,1 @@
+android | ios | linux | osx | qnx | (windows & !uwp & (arm64 | x64))

@@ -1,0 +1,9 @@
+{
+  "name": "not-sup-host-b",
+  "version": "1",
+  "supports": "x64 & !x64",
+  "dependencies": [{
+    "name": "base-port",
+    "host": true
+  }]
+}

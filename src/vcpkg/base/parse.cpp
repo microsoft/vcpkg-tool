@@ -38,7 +38,13 @@ namespace vcpkg
                            const Unicode::Utf8Decoder& cursor,
                            const Unicode::Utf8Decoder& start_of_line)
     {
-        auto line_end = Util::find_if(cursor, ParserBase::is_lineend);
+        auto line_end = cursor;
+        while (!line_end.is_eof() && !ParserBase::is_lineend(*line_end))
+        {
+            // ignore Unicode errors just finding the line end
+            (void)line_end.next();
+        }
+
         StringView line = StringView{
             start_of_line.pointer_to_current(),
             line_end.pointer_to_current(),
@@ -46,9 +52,13 @@ namespace vcpkg
 
         LocalizedString line_prefix = msg::format(msgFormattedParseMessageExpressionPrefix);
         size_t line_prefix_space = 1; // for the space after the prefix
-        for (char32_t ch : Unicode::Utf8Decoder(line_prefix))
+        Unicode::utf8_errc utf8_error;
+        Unicode::Utf8Decoder decode_line_prefix(line_prefix, utf8_error); // ignore errors since it's content we control
+        while (!decode_line_prefix.is_eof())
         {
+            char32_t ch = *decode_line_prefix;
             line_prefix_space += 1 + Unicode::is_double_width_code_point(ch);
+            (void)decode_line_prefix.next();
         }
 
         res.append_indent().append(line_prefix).append_raw(' ').append_raw(line).append_raw('\n');
@@ -56,7 +66,7 @@ namespace vcpkg
         std::string caret_string;
         caret_string.append(line_prefix_space, ' ');
         // note *cursor is excluded because it is where the ^ goes
-        for (auto it = start_of_line; it != cursor; ++it)
+        for (auto it = start_of_line; it != cursor;)
         {
             if (*it == '\t')
                 caret_string.push_back('\t');
@@ -64,6 +74,11 @@ namespace vcpkg
                 caret_string.append(2, ' ');
             else
                 caret_string.push_back(' ');
+
+            if (it.next() != Unicode::utf8_errc::NoError)
+            {
+                break;
+            }
         }
 
         caret_string.push_back('^');
@@ -156,13 +171,7 @@ namespace vcpkg
         return !any_errors();
     }
 
-    ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
-        : m_it(text.begin(), text.end())
-        , m_start_of_line(m_it)
-        , m_row(init_rowcol.row)
-        , m_column(init_rowcol.column)
-        , m_text(text)
-        , m_origin(origin)
+    static Optional<StringView>& check_origin(Optional<StringView>& origin)
     {
 #ifndef NDEBUG
         if (auto check_origin = origin.get())
@@ -173,6 +182,19 @@ namespace vcpkg
             }
         }
 #endif
+
+        return origin;
+    }
+
+    ParserBase::ParserBase(StringView text, Optional<StringView> origin, TextRowCol init_rowcol)
+        : m_messages()
+        , m_text(text)
+        , m_row(init_rowcol.row)
+        , m_column(init_rowcol.column)
+        , m_origin(check_origin(origin))
+        , m_it(form_utf_decoder())
+        , m_start_of_line(m_it)
+    {
     }
 
     StringView ParserBase::skip_whitespace() { return match_while(is_whitespace); }
@@ -181,7 +203,7 @@ namespace vcpkg
         return match_while([](char32_t ch) { return ch == ' ' || ch == '\t'; });
     }
 
-    void ParserBase::skip_to_eof() { m_it = m_it.end(); }
+    void ParserBase::skip_to_eof() { m_it.skip_to_eof(); }
     void ParserBase::skip_newline()
     {
         if (cur() == '\r') next();
@@ -217,7 +239,10 @@ namespace vcpkg
                 return false;
             }
 
-            ++encoded;
+            if (!try_increment(encoded))
+            {
+                return false;
+            }
         }
 
         // success
@@ -241,7 +266,10 @@ namespace vcpkg
                 return false;
             }
 
-            ++encoded;
+            if (!try_increment(encoded))
+            {
+                return false;
+            }
         }
 
         // whole keyword matched, now check for a word boundary:
@@ -262,7 +290,7 @@ namespace vcpkg
 
     char32_t ParserBase::next()
     {
-        if (m_it == m_it.end())
+        if (m_it.is_eof())
         {
             return Unicode::end_of_file;
         }
@@ -270,14 +298,18 @@ namespace vcpkg
         // See https://www.gnu.org/prep/standards/standards.html#Errors
         advance_rowcol(ch, m_row, m_column);
 
-        ++m_it;
+        if (!try_increment(m_it))
+        {
+            return Unicode::end_of_file;
+        }
+
         if (ch == '\n')
         {
             m_start_of_line = m_it;
         }
-        if (m_it != m_it.end() && Unicode::utf16_is_surrogate_code_point(*m_it))
+        if (!m_it.is_eof() && Unicode::utf16_is_surrogate_code_point(*m_it))
         {
-            m_it = m_it.end();
+            m_it.skip_to_eof();
         }
 
         return cur();
@@ -312,6 +344,18 @@ namespace vcpkg
         add_line(DiagKind::Note, std::move(message), loc);
     }
 
+    bool ParserBase::try_increment(Unicode::Utf8Decoder& encoded)
+    {
+        auto encoding_error = encoded.next();
+        if (encoding_error != Unicode::utf8_errc::NoError)
+        {
+            add_error(msg::format(msgUtf8ConversionFailed).append_raw(": ").append(Unicode::message(encoding_error)));
+            return false;
+        }
+
+        return true;
+    }
+
     void ParserBase::add_line(DiagKind kind, LocalizedString&& message, const SourceLoc& loc)
     {
         message.append_raw('\n');
@@ -324,5 +368,27 @@ namespace vcpkg
         {
             m_messages.add_line(DiagnosticLine{kind, std::move(message)});
         }
+    }
+
+    Unicode::Utf8Decoder ParserBase::form_utf_decoder()
+    {
+        Unicode::utf8_errc utf8_error;
+        auto res = Unicode::Utf8Decoder(m_text, utf8_error);
+        if (utf8_error != Unicode::utf8_errc::NoError)
+        {
+            // we can't use add_error because m_it and m_start_of_line aren't constructed yet
+            auto message = msg::format(msgUtf8ConversionFailed).append_raw(": ").append(Unicode::message(utf8_error));
+            if (auto origin = m_origin.get())
+            {
+                m_messages.add_line(
+                    DiagnosticLine{DiagKind::Error, *origin, TextRowCol{m_row, m_column}, std::move(message)});
+            }
+            else
+            {
+                m_messages.add_line(DiagnosticLine{DiagKind::Error, std::move(message)});
+            }
+        }
+
+        return res;
     }
 }

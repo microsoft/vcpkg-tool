@@ -1,0 +1,1 @@
+!android & !xbox & !(arm64 & windows)

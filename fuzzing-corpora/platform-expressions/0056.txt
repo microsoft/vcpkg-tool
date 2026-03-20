@@ -1,0 +1,1 @@
+!(uwp | arm | android | emscripten | osx | ios | xbox | freebsd | openbsd | wasm32)

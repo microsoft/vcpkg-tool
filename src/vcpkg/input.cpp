@@ -24,9 +24,22 @@ namespace vcpkg
 
     [[nodiscard]] ExpectedL<Unit> check_triplet(StringView name, const TripletDatabase& database)
     {
-        Unicode::Utf8Decoder start_of_line{name};
-        for (auto cursor = start_of_line; !cursor.is_eof(); ++cursor)
+        Unicode::utf8_errc utf8_error;
+        Unicode::Utf8Decoder start_of_line{name, utf8_error};
+        auto cursor = start_of_line;
+        while (!cursor.is_eof())
         {
+            if (utf8_error != Unicode::utf8_errc::NoError)
+            {
+                LocalizedString result = msg::format_error(msgInvalidTriplet, msg::triplet = name);
+                result.append_raw('\n');
+                result.append_raw(NotePrefix)
+                    .append(msg::format(msgUtf8ConversionFailed).append_raw(": ").append(Unicode::message(utf8_error)));
+                result.append_raw('\n');
+                append_help_topic_valid_triplet(result, database);
+                return result;
+            }
+
             if (!ParserBase::is_package_name_char(*cursor))
             {
                 auto result = msg::format_error(msgParseTripletNotEof).append_raw('\n');
@@ -35,6 +48,8 @@ namespace vcpkg
                 append_help_topic_valid_triplet(result, database);
                 return result;
             }
+
+            utf8_error = cursor.next();
         }
 
         if (!database.is_valid_triplet_canonical_name(name))
