@@ -9,7 +9,7 @@ namespace vcpkg::Checks
     void on_final_cleanup_and_exit() { }
 }
 
-extern "C" int _cdecl LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     auto begin = reinterpret_cast<const char*>(data);
     StringView text(begin, size);
