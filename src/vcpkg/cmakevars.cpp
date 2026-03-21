@@ -79,7 +79,8 @@ namespace vcpkg::CMakeVars
         };
     }
 
-    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const vcpkg::VcpkgPaths& paths)
+    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const vcpkg::VcpkgPaths& paths,
+                                                                      const InstalledDatabaseLock& /* witness */)
     {
         return std::make_unique<TripletCMakeVarProvider>(paths);
     }

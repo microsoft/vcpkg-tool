@@ -54,6 +54,17 @@ namespace vcpkg
         }
     };
 
+    constexpr char path_separator_char =
+#if defined(_WIN32)
+        ';'
+#else
+        ':'
+#endif
+        ;
+
+    inline constexpr char path_separator_buf[] = {path_separator_char, '\0'};
+    inline constexpr StringLiteral path_separator{path_separator_buf};
+
     bool is_symlink(FileType s);
     bool is_regular_file(FileType s);
     bool is_directory(FileType s);
@@ -353,8 +364,8 @@ namespace vcpkg
                                                                              const Path& lockfile) const = 0;
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual Optional<std::unique_ptr<IExclusiveFileLock>> try_take_exclusive_file_lock(
-            DiagnosticContext& context, const Path& lockfile) const = 0;
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(DiagnosticContext& context,
+                                                                                 const Path& lockfile) const = 0;
 
         virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) const = 0;
         WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li) const;

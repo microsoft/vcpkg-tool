@@ -93,11 +93,6 @@ namespace vcpkg
                           const Path& destination,
                           StringView treeish);
 
-    Optional<bool> git_check_is_commit(DiagnosticContext& context,
-                                       const Path& git_exe,
-                                       GitRepoLocator locator,
-                                       StringView git_commit_id);
-
     Optional<std::string> git_merge_base(DiagnosticContext& context,
                                          const Path& git_exe,
                                          GitRepoLocator locator,
@@ -112,4 +107,9 @@ namespace vcpkg
 
     Optional<std::vector<GitDiffTreeLine>> git_diff_tree(
         DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView tree1, StringView tree2);
+
+    bool check_commit_exists(DiagnosticContext& context,
+                             const Path& git_exe,
+                             const Path& builtin_ports_dir,
+                             StringView git_commit_id);
 }

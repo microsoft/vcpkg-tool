@@ -96,26 +96,31 @@ namespace
     constexpr struct
     {
         bool operator()(char c) const noexcept { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+        bool operator()(wchar_t c) const noexcept { return c == L' ' || c == L'\t' || c == L'\r' || c == L'\n'; }
     } is_space_char;
 
     constexpr struct
     {
         char operator()(char c) const noexcept { return (c < 'a' || c > 'z') ? c : c - 'a' + 'A'; }
+        wchar_t operator()(wchar_t c) const noexcept { return (c < L'a' || c > L'z') ? c : c - L'a' + L'A'; }
     } to_upper_char;
 
     constexpr struct
     {
         char operator()(char c) const noexcept { return (c < 'A' || c > 'Z') ? c : c - 'A' + 'a'; }
+        wchar_t operator()(wchar_t c) const noexcept { return (c < L'A' || c > L'Z') ? c : c - L'A' + L'a'; }
     } tolower_char;
 
     constexpr struct
     {
         bool operator()(char a, char b) const noexcept { return tolower_char(a) == tolower_char(b); }
+        bool operator()(wchar_t a, wchar_t b) const noexcept { return tolower_char(a) == tolower_char(b); }
     } icase_eq;
 
     constexpr struct
     {
         bool operator()(char a, char b) const noexcept { return tolower_char(a) < tolower_char(b); }
+        bool operator()(wchar_t a, wchar_t b) const noexcept { return tolower_char(a) < tolower_char(b); }
     } icase_less;
 
 }
@@ -172,22 +177,43 @@ void Strings::to_utf8(std::string& output, const wchar_t* w, size_t size_in_char
 std::string Strings::to_utf8(const std::wstring& ws) { return to_utf8(ws.data(), ws.size()); }
 #endif
 
-const char* Strings::case_insensitive_ascii_search(StringView s, StringView pattern) noexcept
+const char* Strings::case_insensitive_ascii_search_impl::operator()(StringView s, StringView pattern) const noexcept
 {
     return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
 }
 
-bool Strings::case_insensitive_ascii_contains(StringView s, StringView pattern) noexcept
+const wchar_t* Strings::case_insensitive_ascii_search_impl::operator()(WStringView s,
+                                                                       WStringView pattern) const noexcept
+{
+    return std::search(s.begin(), s.end(), pattern.begin(), pattern.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_contains_impl::operator()(StringView s, StringView pattern) const noexcept
 {
     return case_insensitive_ascii_search(s, pattern) != s.end();
 }
 
-bool Strings::case_insensitive_ascii_equals(StringView left, StringView right) noexcept
+bool Strings::case_insensitive_ascii_contains_impl::operator()(WStringView s, WStringView pattern) const noexcept
+{
+    return case_insensitive_ascii_search(s, pattern) != s.end();
+}
+
+bool Strings::case_insensitive_ascii_equals_impl::operator()(StringView left, StringView right) const noexcept
 {
     return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
 }
 
-bool Strings::case_insensitive_ascii_less(StringView left, StringView right) noexcept
+bool Strings::case_insensitive_ascii_equals_impl::operator()(WStringView left, WStringView right) const noexcept
+{
+    return std::equal(left.begin(), left.end(), right.begin(), right.end(), icase_eq);
+}
+
+bool Strings::case_insensitive_ascii_less_impl::operator()(StringView left, StringView right) const noexcept
+{
+    return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(), icase_less);
+}
+
+bool Strings::case_insensitive_ascii_less_impl::operator()(WStringView left, WStringView right) const noexcept
 {
     return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(), icase_less);
 }
@@ -516,6 +542,11 @@ const char* Strings::search(StringView haystack, StringView needle)
     return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end());
 }
 
+const wchar_t* Strings::search(WStringView haystack, WStringView needle)
+{
+    return std::search(haystack.begin(), haystack.end(), needle.begin(), needle.end());
+}
+
 size_t Strings::byte_edit_distance(StringView a, StringView b)
 {
     static constexpr size_t max_string_size = 100;
@@ -780,5 +811,49 @@ namespace vcpkg::Strings
     {
         stream.on_end(CB{this});
         return std::move(this->lines);
+    }
+
+    std::string shorten_text(StringView desc, const size_t length)
+    {
+        // replace all sequences of whitespace with a single space, and trim leading/trailing whitespace
+        static constexpr size_t dot_length = 3;
+        Checks::check_exit(VCPKG_LINE_INFO, length >= dot_length);
+        std::string simple_desc;
+        simple_desc.reserve(length);
+
+        bool previous_whitespace = false;
+        auto last = desc.end();
+        auto first = std::find_if_not(desc.begin(), last, ParserBase::is_whitespace);
+        for (; first != last; ++first)
+        {
+            const auto ch = *first;
+            if (ParserBase::is_whitespace(ch))
+            {
+                previous_whitespace = true;
+                continue;
+            }
+
+            if (previous_whitespace)
+            {
+                previous_whitespace = false;
+                if (simple_desc.size() == length)
+                {
+                    std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
+                    return simple_desc;
+                }
+
+                simple_desc.push_back(' ');
+            }
+
+            if (simple_desc.size() == length)
+            {
+                std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
+                return simple_desc;
+            }
+
+            simple_desc.push_back(ch);
+        }
+
+        return simple_desc;
     }
 }

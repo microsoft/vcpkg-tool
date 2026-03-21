@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
@@ -80,6 +81,7 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
+                         const InstalledDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder);
@@ -87,6 +89,7 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
+                                   const InstalledDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder);
@@ -183,7 +186,7 @@ namespace vcpkg
         const VcpkgPaths& m_paths;
     };
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
+    vcpkg::Command make_vcvars_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset);
 
     struct ExtendedBuildResult
     {

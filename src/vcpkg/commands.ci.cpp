@@ -15,13 +15,13 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
@@ -504,9 +504,11 @@ namespace vcpkg
             }
         }
 
+        InstalledDatabaseLock installed_lock{
+            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
 
         const ElapsedTimer timer;
@@ -566,7 +568,7 @@ namespace vcpkg
         }
         else
         {
-            StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
+            StatusParagraphs status_db = database_sync(fs, paths.installed(), installed_lock);
             auto already_installed = adjust_action_plan_to_status_db(action_plan, status_db);
             Util::erase_if(already_installed,
                            [&](const PackageSpec& spec) { return Util::Sets::contains(pre_build_status.known, spec); });
@@ -583,8 +585,15 @@ namespace vcpkg
             install_preclear_plan_packages(paths, action_plan);
             binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
 
-            auto summary = install_execute_plan(
-                args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, *build_logs_recorder);
+            auto summary = install_execute_plan(args,
+                                                paths,
+                                                host_triplet,
+                                                build_options,
+                                                installed_lock,
+                                                action_plan,
+                                                status_db,
+                                                binary_cache,
+                                                *build_logs_recorder);
             msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
 
             for (auto&& result : summary.install_results)

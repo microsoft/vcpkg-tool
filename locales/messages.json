@@ -811,7 +811,7 @@
   "_FailedToStoreBackToMirror.comment": "An example of {path} is /foo/bar. An example of {url} is https://github.com/microsoft/vcpkg.",
   "FailedToStoreBinaryCache": "Failed to store binary cache {path}",
   "_FailedToStoreBinaryCache.comment": "An example of {path} is /foo/bar.",
-  "FailedToTakeFileSystemLock": "Failed to take the filesystem lock",
+  "FailedToTakeInstalledLock": "failed to take lock, another vcpkg may be running against the same installed tree",
   "FailedVendorAuthentication": "One or more {vendor} credential providers failed to authenticate. See '{url}' for more details on how to provide credentials.",
   "_FailedVendorAuthentication.comment": "An example of {vendor} is Azure. An example of {url} is https://github.com/microsoft/vcpkg.",
   "FeatureBaselineEntryAlreadySpecified": "'{feature}' was already declared as '{value}'",

@@ -13,7 +13,6 @@
 #include <vcpkg/registries.h>
 #include <vcpkg/sourceparagraph.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -71,7 +70,7 @@ namespace
                                                               source_paragraph.name,
                                                               ver_size,
                                                               full_version,
-                                                              vcpkg::shorten_text(description, description_size)));
+                                                              Strings::shorten_text(description, description_size)));
         }
     }
 
@@ -97,7 +96,7 @@ namespace
                                                   fmt::format("{1:{0}} {2}\n",
                                                               s_name_and_ver_columns,
                                                               full_feature_name,
-                                                              vcpkg::shorten_text(description, desc_length)));
+                                                              Strings::shorten_text(description, desc_length)));
         }
     }
 

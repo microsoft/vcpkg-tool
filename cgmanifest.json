@@ -19,7 +19,7 @@
           "name": "fmt",
           "version": "11.2.0",
           "downloadUrl": "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz",
-          "hash": "46974efd36e613477351aa357c451cee434da797c2a505f9f86d73e394dcb35dc2dc0cda66abb98c023e8f24deac9d8e3ee6f9f6c0971cc4c00e37c34aa7f15f"
+          "hash": "sha1:bfa4fa35bb24f4ef239067173c373b211f2d8e84"
         }
       },
       "DevelopmentDependency": false,
@@ -32,7 +32,72 @@
           "name": "CMakeRC",
           "version": "2.0.1",
           "downloadUrl": "https://github.com/vector-of-bool/cmrc/archive/refs/tags/2.0.1.tar.gz",
-          "hash": "cb69ff4545065a1a89e3a966e931a58c3f07d468d88ecec8f00da9e6ce3768a41735a46fc71af56e0753926371d3ca5e7a3f2221211b4b1cf634df860c2c997f"
+          "hash": "sha1:0684b3ab79f4b0c5546c287103c48824bf296980"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "zstd",
+          "version": "1.5.7",
+          "downloadUrl": "https://github.com/facebook/zstd/archive/v1.5.7.tar.gz",
+          "hash": "sha1:06b861746bfd5f4351c26bbe59e7a35841fe8471"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "nghttp2",
+          "version": "1.68.0",
+          "downloadUrl": "https://github.com/nghttp2/nghttp2/archive/v1.68.0.tar.gz",
+          "hash": "sha1:ef55774c8811b7eb35aa2a45389eba9a05f5bef1"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "zlib",
+          "version": "1.3.1",
+          "downloadUrl": "https://github.com/madler/zlib/archive/v1.3.1.tar.gz",
+          "hash": "sha1:a7991aa4cf4911817f50b7d0ad4e50dcc9867041"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "brotli",
+          "version": "1.2.0",
+          "downloadUrl": "https://github.com/google/brotli/archive/v1.2.0.tar.gz",
+          "hash": "sha1:fb74102a641ecce8ebcb13d2a992975a9f165de5"
+        }
+      },
+      "DevelopmentDependency": false,
+      "DependencyRoots": []
+    },
+    {
+      "Component": {
+        "Type": "other",
+        "other": {
+          "name": "curl",
+          "version": "8.18.0",
+          "downloadUrl": "https://github.com/curl/curl/archive/curl-8_18_0.tar.gz",
+          "hash": "sha1:2db03c0bd94deed3338b746e656e105b159a49bb"
         }
       },
       "DevelopmentDependency": false,

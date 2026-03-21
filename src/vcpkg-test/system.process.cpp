@@ -159,3 +159,120 @@ TEST_CASE ("command try_append", "[system.process]")
         REQUIRE(cmd.command_line() == expected);
     }
 }
+
+TEST_CASE ("environment add_entry serializes as expected", "[system.process]")
+{
+    Environment env;
+    env.add_entry("FOO", "alpha");
+    env.add_entry("BAR", "value with spaces");
+
+#if defined(_WIN32)
+    // note that this is not one literal because embedded nulls would not compare correctly as the conversion to
+    // std::wstring would stop at the first null.
+    std::wstring expected;
+    expected.append(L"FOO=alpha");
+    expected.push_back(L'\0');
+    expected.append(L"BAR=value with spaces");
+    expected.push_back(L'\0');
+    REQUIRE(env.get() == expected);
+#else
+    REQUIRE(env.get() == "FOO=alpha BAR=\"value with spaces\" ");
+#endif
+}
+
+TEST_CASE ("environment remove_entry is case insensitive", "[system.process]")
+{
+    Environment env;
+    env.add_entry("First", "1");
+    env.add_entry("Second", "two words");
+    env.add_entry("Third", "3");
+
+    REQUIRE(env.remove_entry("sEcOnD").value_or_exit(VCPKG_LINE_INFO) == "two words");
+
+#if defined(_WIN32)
+    std::wstring expected;
+    expected.append(L"First=1");
+    expected.push_back(L'\0');
+    expected.append(L"Third=3");
+    expected.push_back(L'\0');
+    REQUIRE(env.get() == expected);
+#else
+    REQUIRE(env.get() == "First=1 Third=3 ");
+#endif
+}
+
+TEST_CASE ("environment remove_entry of missing key is no-op", "[system.process]")
+{
+    Environment env;
+    env.add_entry("One", "1");
+    env.add_entry("Two", "2");
+    const auto original = env.get();
+
+    REQUIRE(!env.remove_entry("DoesNotExist"));
+
+    REQUIRE(env.get() == original);
+}
+
+TEST_CASE ("environment remove_entry handles first and last entries", "[system.process]")
+{
+    Environment env;
+    env.add_entry("First", "one");
+    env.add_entry("Middle", "two words");
+    env.add_entry("Last", "three");
+
+    REQUIRE(env.remove_entry("FIRST").value_or_exit(VCPKG_LINE_INFO) == "one");
+#if defined(_WIN32)
+    std::wstring expected_after_first;
+    expected_after_first.append(L"Middle=two words");
+    expected_after_first.push_back(L'\0');
+    expected_after_first.append(L"Last=three");
+    expected_after_first.push_back(L'\0');
+    REQUIRE(env.get() == expected_after_first);
+#else
+    REQUIRE(env.get() == "Middle=\"two words\" Last=three ");
+#endif
+
+    REQUIRE(env.remove_entry("last").value_or_exit(VCPKG_LINE_INFO) == "three");
+#if defined(_WIN32)
+    std::wstring expected_after_last;
+    expected_after_last.append(L"Middle=two words");
+    expected_after_last.push_back(L'\0');
+    REQUIRE(env.get() == expected_after_last);
+#else
+    REQUIRE(env.get() == "Middle=\"two words\" ");
+#endif
+}
+
+TEST_CASE ("environment handles embedded quotes and slashes", "[system.process]")
+{
+    Environment env;
+    env.add_entry("KEEP", "plain");
+    env.add_entry("WEIRD", "C:/tool\\\"quoted\"/bin");
+    env.add_entry("TAIL", "done");
+
+#if defined(_WIN32)
+    std::wstring expected;
+    expected.append(L"KEEP=plain");
+    expected.push_back(L'\0');
+    expected.append(L"WEIRD=C:/tool\\\"quoted\"/bin");
+    expected.push_back(L'\0');
+    expected.append(L"TAIL=done");
+    expected.push_back(L'\0');
+    REQUIRE(env.get() == expected);
+#else
+    REQUIRE(env.get() == "KEEP=plain WEIRD=\"C:/tool\\\\\\\"quoted\\\"/bin\" TAIL=done ");
+#endif
+
+    REQUIRE(env.remove_entry("wEiRd").value_or_exit(VCPKG_LINE_INFO) == "C:/tool\\\"quoted\"/bin");
+
+#if defined(_WIN32)
+    std::wstring expected_without_weird;
+    expected_without_weird.append(L"KEEP=plain");
+    expected_without_weird.push_back(L'\0');
+    expected_without_weird.append(L"TAIL=done");
+    expected_without_weird.push_back(L'\0');
+    REQUIRE(env.get() == expected_without_weird);
+#else
+    REQUIRE(env.get() == "KEEP=plain TAIL=done ");
+#endif
+}

@@ -76,6 +76,70 @@ namespace vcpkg
     bool operator<=(StringView lhs, StringView rhs) noexcept;
     bool operator>=(StringView lhs, StringView rhs) noexcept;
 
+    struct WStringView
+    {
+        constexpr WStringView() = default;
+        WStringView(const std::wstring& s) noexcept; // Implicit by design
+        WStringView(const wchar_t* ptr) noexcept : m_ptr(ptr), m_size(wcslen(ptr)) { }
+        constexpr WStringView(const wchar_t* ptr, size_t size) noexcept : m_ptr(ptr), m_size(size) { }
+        constexpr WStringView(const wchar_t* b, const wchar_t* e) noexcept
+            : m_ptr(b), m_size(static_cast<size_t>(e - b))
+        {
+        }
+
+        constexpr const wchar_t* begin() const noexcept { return m_ptr; }
+        constexpr const wchar_t* end() const noexcept { return m_ptr + m_size; }
+
+        constexpr const wchar_t& front() const noexcept { return *m_ptr; }
+        constexpr const wchar_t& back() const noexcept { return m_ptr[m_size - 1]; }
+
+        std::reverse_iterator<const wchar_t*> rbegin() const noexcept { return std::make_reverse_iterator(end()); }
+        std::reverse_iterator<const wchar_t*> rend() const noexcept { return std::make_reverse_iterator(begin()); }
+
+        constexpr const wchar_t* data() const noexcept { return m_ptr; }
+        constexpr size_t size() const noexcept { return m_size; }
+        constexpr bool empty() const noexcept { return m_size == 0; }
+        bool ends_with(WStringView pattern) const noexcept;
+        bool starts_with(WStringView pattern) const noexcept;
+        bool contains(WStringView needle) const noexcept;
+        bool contains(wchar_t needle) const noexcept;
+
+        // intentionally not provided because this may not be null terminated
+        // constexpr const wchar_t* c_str() const
+
+        std::wstring to_string() const;
+        void to_string(std::wstring& out) const;
+        explicit operator std::wstring() const { return to_string(); }
+
+        constexpr WStringView substr(size_t pos, size_t count = std::numeric_limits<size_t>::max()) const noexcept
+        {
+            if (pos > m_size)
+            {
+                return WStringView();
+            }
+
+            if (count > m_size - pos)
+            {
+                return WStringView(m_ptr + pos, m_size - pos);
+            }
+
+            return WStringView(m_ptr + pos, count);
+        }
+
+        constexpr wchar_t operator[](size_t pos) const noexcept { return m_ptr[pos]; }
+        friend std::wstring operator+(std::wstring&& l, const WStringView& r);
+        friend bool operator==(WStringView lhs, WStringView rhs) noexcept;
+        friend bool operator!=(WStringView lhs, WStringView rhs) noexcept;
+        friend bool operator<(WStringView lhs, WStringView rhs) noexcept;
+        friend bool operator>(WStringView lhs, WStringView rhs) noexcept;
+        friend bool operator<=(WStringView lhs, WStringView rhs) noexcept;
+        friend bool operator>=(WStringView lhs, WStringView rhs) noexcept;
+
+    private:
+        const wchar_t* m_ptr = 0;
+        size_t m_size = 0;
+    };
+
     // A counted view of a null-terminated string
     struct ZStringView : StringView
     {

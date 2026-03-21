@@ -679,12 +679,12 @@ namespace vcpkg
                 args.asset_sources_template_env.emplace(as_sv.data(), as_sv.size());
             }
 
-            if (obj.get(JsonIdVcpkgDisableMetrics))
-            {
-                args.disable_metrics = true;
-            }
-
-            args.do_not_take_lock = true;
+            // Metrics are intended to capture one user intended call to vcpkg, and vcpkg-in-vcpkg
+            // cases like x-download should not count as multiple uses.
+            //
+            // This also avoids the poison value set below crashing on platforms that use
+            // z-upload-metrics causing z-upload-metrics to crash.
+            args.disable_metrics = true;
 
             // Setting the recursive data to 'poison' prevents more than one level of recursion because
             // Json::parse() will fail.
@@ -712,11 +712,6 @@ namespace vcpkg
             if (auto ast = maybe_ast.get())
             {
                 obj.insert(JsonIdVcpkgAssetSources, Json::Value::string(*ast));
-            }
-
-            if (args.disable_metrics)
-            {
-                obj.insert(JsonIdVcpkgDisableMetrics, Json::Value::boolean(true));
             }
 
             set_environment_variable(EnvironmentVariableXVcpkgRecursiveData,

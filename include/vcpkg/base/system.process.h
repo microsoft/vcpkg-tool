@@ -89,6 +89,7 @@ namespace vcpkg
         using string_t = std::string;
 #endif
         void add_entry(StringView key, StringView value);
+        Optional<std::string> remove_entry(StringView key);
         const string_t& get() const;
 
     private:
@@ -253,11 +254,30 @@ namespace vcpkg
     void replace_secrets(std::string& target, View<std::string> secrets);
 
     void report_nonzero_exit_code(DiagnosticContext& context, const Command& command, ExitCodeIntegral exit);
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit);
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
                                              EchoInDebug echo_in_debug);
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets);
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
                                              EchoInDebug echo_in_debug,

@@ -24,6 +24,7 @@
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -34,7 +35,6 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 #include <iterator>
@@ -176,13 +176,15 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
+                                   const InstalledDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder)
     {
         Checks::exit_with_code(
             VCPKG_LINE_INFO,
-            command_build_ex(args, paths, host_triplet, build_options, full_spec, provider, build_logs_recorder));
+            command_build_ex(
+                args, paths, host_triplet, build_options, installed_lock, full_spec, provider, build_logs_recorder));
     }
 
     constexpr CommandMetadata CommandBuildMetadata{
@@ -221,11 +223,13 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
+        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         Checks::exit_with_code(VCPKG_LINE_INFO,
                                command_build_ex(args,
                                                 paths,
                                                 host_triplet,
                                                 build_command_build_package_options,
+                                                installed_lock,
                                                 spec,
                                                 provider,
                                                 null_build_logs_recorder));
@@ -235,17 +239,18 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
+                         const InstalledDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder)
     {
         const PackageSpec& spec = full_spec.package_spec;
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
         var_provider.load_dep_info_vars({{spec}}, host_triplet);
 
         auto& fs = paths.get_filesystem();
-        StatusParagraphs status_db = database_load_collapse(fs, paths.installed());
+        StatusParagraphs status_db = database_sync(fs, paths.installed(), installed_lock);
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = create_feature_install_plan(
             provider,
@@ -474,7 +479,7 @@ namespace vcpkg
                                                 const PreBuildInfo& pre_build_info,
                                                 const Toolset& toolset)
     {
-        auto build_env_cmd = make_build_env_cmd(pre_build_info, toolset);
+        auto build_env_cmd = make_vcvars_env_cmd(pre_build_info, toolset);
         const auto& base_env = envs.get_lazy(pre_build_info.passthrough_env_vars, [&]() -> EnvMapEntry {
             std::unordered_map<std::string, std::string> env;
 
@@ -602,9 +607,13 @@ namespace vcpkg
             const Path& powershell_exe_path = paths.get_tool_path_required("powershell-core");
             auto clean_env = get_modified_clean_environment(base_env.env_map, powershell_exe_path.parent_path());
             if (build_env_cmd.empty())
+            {
                 return clean_env;
-            else
-                return cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            }
+
+            auto vcvars_env = cmd_execute_and_capture_environment(build_env_cmd, clean_env);
+            vcvars_env.remove_entry(EnvironmentVariableVcpkgRoot);
+            return vcvars_env;
         });
     }
 #else
@@ -690,7 +699,7 @@ namespace vcpkg
         }
     }
 
-    vcpkg::Command make_build_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset)
+    vcpkg::Command make_vcvars_env_cmd(const PreBuildInfo& pre_build_info, const Toolset& toolset)
     {
         if (!pre_build_info.using_vcvars()) return {};
 

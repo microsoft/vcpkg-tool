@@ -1391,8 +1391,7 @@ namespace
                     return CacheAvailability::available;
                 }
 
-                report_nonzero_exit_code_and_output(
-                    context, cmd, *code_and_output, RedirectedProcessLaunchSettings{}.echo_in_debug);
+                report_nonzero_exit_code_and_output(context, cmd, *code_and_output);
             }
 
             return nullopt;
@@ -1555,8 +1554,7 @@ namespace
                     return true;
                 }
 
-                report_nonzero_exit_code_and_output(
-                    context, cmd, *code_and_output, RedirectedProcessLaunchSettings{}.echo_in_debug);
+                report_nonzero_exit_code_and_output(context, cmd, *code_and_output);
                 // az command line error message: Before you can run Azure DevOps commands, you need to
                 // run the login command(az login if using AAD/MSA identity else az devops login if using PAT
                 // token) to setup credentials.

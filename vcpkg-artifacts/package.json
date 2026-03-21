@@ -30,7 +30,7 @@
     "@vercel/ncc": "^0.38.3",
     "eslint": "^9.31.0",
     "eslint-plugin-notice": "1.0.0",
-    "mocha": "11.7.1",
+    "mocha": "11.7.5",
     "source-map-support": "0.5.21",
     "translate-strings": "1.1.15",
     "tsx": "^4.20.3",
@@ -47,5 +47,9 @@
     "vscode-uri": "3.1.0",
     "xml-writer": "1.7.0",
     "yaml": "^2.8.0"
+  },
+  "overrides": {
+    "diff": "8.0.3",
+    "serialize-javascript": "7.0.4"
   }
 }

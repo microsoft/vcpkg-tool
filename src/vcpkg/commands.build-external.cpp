@@ -1,6 +1,7 @@
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -47,6 +48,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, overlays));
-        command_build_and_exit_ex(args, paths, host_triplet, build_options, spec, provider, null_build_logs_recorder);
+        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        command_build_and_exit_ex(
+            args, paths, host_triplet, build_options, installed_lock, spec, provider, null_build_logs_recorder);
     }
 }

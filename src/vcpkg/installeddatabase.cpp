@@ -2,11 +2,11 @@
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/vcpkglib.h>
 
 namespace vcpkg
 {
@@ -65,7 +65,43 @@ namespace vcpkg
         }
     }
 
-    StatusParagraphs database_load(const ReadOnlyFilesystem& fs, const InstalledPaths& installed)
+    InstalledDatabaseLock::InstalledDatabaseLock(const Filesystem& fs,
+                                                 const InstalledPaths& installed,
+                                                 const Optional<bool>& wait_for_lock,
+                                                 const Optional<bool>& ignore_lock_failures)
+    {
+        installed.create_directories(fs);
+        const bool allow_errors = ignore_lock_failures.value_or(false);
+        DiagnosticContext* lock_taking_context = &stderr_diagnostic_context;
+        WarningDiagnosticContext wdc{stderr_diagnostic_context};
+        if (allow_errors)
+        {
+            lock_taking_context = &wdc;
+        }
+
+        const auto lock_file = installed.vcpkg_running_lock();
+        if (wait_for_lock.value_or(false))
+        {
+            m_lock = fs.take_exclusive_file_lock(*lock_taking_context, lock_file);
+        }
+        else
+        {
+            m_lock = fs.try_take_exclusive_file_lock(*lock_taking_context, lock_file);
+        }
+
+        if (!m_lock && !allow_errors)
+        {
+            stderr_diagnostic_context.report(
+                DiagnosticLine{DiagKind::Error, lock_file, msg::format(msgFailedToTakeInstalledLock)});
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+    }
+
+    InstalledDatabaseLock::~InstalledDatabaseLock() = default;
+
+    StatusParagraphs database_load(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const InstalledDatabaseLock& /* witness */)
     {
         const auto maybe_status_file = installed.vcpkg_dir_status_file();
         if (!fs.exists(maybe_status_file, IgnoreErrors{}))
@@ -81,15 +117,10 @@ namespace vcpkg
         return current_status_db;
     }
 
-    StatusParagraphs database_load_collapse(const Filesystem& fs, const InstalledPaths& installed)
+    StatusParagraphs database_sync(const Filesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const InstalledDatabaseLock& /* witness */)
     {
-        const auto updates_dir = installed.vcpkg_dir_updates();
-
-        fs.create_directories(installed.root(), VCPKG_LINE_INFO);
-        fs.create_directory(installed.vcpkg_dir(), VCPKG_LINE_INFO);
-        fs.create_directory(installed.vcpkg_dir_info(), VCPKG_LINE_INFO);
-        fs.create_directory(updates_dir, VCPKG_LINE_INFO);
-
         const auto status_file = installed.vcpkg_dir_status_file();
         if (!fs.exists(status_file, IgnoreErrors{}))
         {
@@ -104,7 +135,7 @@ namespace vcpkg
         return current_status_db;
     }
 
-    void write_update(const Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p)
+    void database_write_update(const Filesystem& fs, const InstalledPaths& installed, const StatusParagraph& p)
     {
         static std::atomic<int> update_id = 0;
 
@@ -256,25 +287,5 @@ namespace vcpkg
                                                                                    const StatusParagraphs& status_db)
     {
         return get_installed_files_impl<true>(fs, installed, status_db);
-    }
-
-    std::string shorten_text(StringView desc, const size_t length)
-    {
-        Checks::check_exit(VCPKG_LINE_INFO, length >= 3);
-        std::string simple_desc;
-
-        auto first = desc.begin();
-        auto last = desc.end();
-        for (;;)
-        {
-            auto next_ws = std::find_if(first, last, ParserBase::is_whitespace);
-            simple_desc.append(first, next_ws);
-            if (next_ws == last) break;
-
-            simple_desc.push_back(' ');
-            first = std::find_if_not(next_ws + 1, last, ParserBase::is_whitespace);
-        }
-
-        return simple_desc.size() <= length ? simple_desc : simple_desc.substr(0, length - 3) + "...";
     }
 }

@@ -652,6 +652,9 @@ namespace vcpkg
         std::vector<std::string> env_prefix_string = {
             // Enables find_package(CUDA) and enable_language(CUDA) in CMake
             "CUDA_PATH",
+            // Enables Terrapin Retrieval Tool
+            "TRT_",
+            "X_TRT_",
         };
 
         const Optional<std::string> keep_vars = get_environment_variable(EnvironmentVariableVcpkgKeepEnvVars);
@@ -747,6 +750,105 @@ namespace vcpkg
         m_env_data.push_back('=');
         append_shell_escaped(m_env_data, value);
         m_env_data.push_back(' ');
+#endif
+    }
+
+    Optional<std::string> Environment::remove_entry(StringView key)
+    {
+#if defined(_WIN32)
+        const auto key_utf16 = Strings::to_utf16(key);
+        auto first = m_env_data.data();
+        const auto last = first + m_env_data.size();
+        while (first != last)
+        {
+            auto equal = std::find(first, last, L'=');
+            auto value_first = equal;
+            if (value_first != last)
+            {
+                ++value_first;
+            }
+            auto next = std::find(value_first, last, L'\0');
+            const size_t value_size = next - value_first;
+            if (next != last)
+            {
+                ++next;
+            }
+
+            if (Strings::case_insensitive_ascii_equals(WStringView(first, equal), key_utf16))
+            {
+                auto result = Strings::to_utf8(value_first, value_size);
+                m_env_data.erase(first - m_env_data.data(), next - first);
+                return result;
+            }
+
+            first = next;
+        }
+
+        return nullopt;
+#else
+        auto first = m_env_data.data();
+        const auto last = first + m_env_data.size();
+        while (first != last)
+        {
+            auto equal = std::find(first, last, '=');
+            auto value_start = equal;
+            if (value_start != last)
+            {
+                ++value_start;
+            }
+            auto next = value_start;
+            std::string value;
+            if (next != last)
+            {
+                // seek next to the end of the value (see append_shell_escaped)
+                if (*next == '"')
+                {
+                    ++next;
+                    while (next != last)
+                    {
+                        if (*next == '\\')
+                        {
+                            ++next;
+                            if (next != last)
+                            {
+                                value.push_back(*next);
+                                ++next;
+                            }
+                        }
+                        else if (*next == '"')
+                        {
+                            ++next;
+                            break;
+                        }
+                        else
+                        {
+                            value.push_back(*next);
+                            ++next;
+                        }
+                    }
+                }
+                else
+                {
+                    next = std::find(next, last, ' ');
+                    value.assign(value_start, next);
+                }
+
+                if (next != last)
+                {
+                    ++next; // skip over the terminal space added by add_entry
+                }
+            }
+
+            if (Strings::case_insensitive_ascii_equals(StringView(first, equal), key))
+            {
+                m_env_data.erase(first - m_env_data.data(), next - first);
+                return value;
+            }
+
+            first = next;
+        }
+
+        return nullopt;
 #endif
     }
 
@@ -2038,13 +2140,50 @@ namespace vcpkg
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
                                              const Command& command,
-                                             const ExitCodeAndOutput& exit,
-                                             EchoInDebug echo_in_debug)
+                                             const ExitCodeAndOutput& exit)
     {
-        report_nonzero_exit_code_and_output(context, command, exit, echo_in_debug, View<std::string>{});
+        report_nonzero_exit_code_and_output(
+            context, DiagKind::Error, command, exit, RedirectedProcessLaunchSettings{}.echo_in_debug);
     }
 
     void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit)
+    {
+        report_nonzero_exit_code_and_output(
+            context, kind, command, exit, RedirectedProcessLaunchSettings{}.echo_in_debug);
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(
+            context, DiagKind::Error, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug)
+    {
+        report_nonzero_exit_code_and_output(context, kind, command, exit, echo_in_debug, View<std::string>{});
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             const Command& command,
+                                             const ExitCodeAndOutput& exit,
+                                             EchoInDebug echo_in_debug,
+                                             View<std::string> secrets)
+    {
+        report_nonzero_exit_code_and_output(context, DiagKind::Error, command, exit, echo_in_debug, secrets);
+    }
+
+    void report_nonzero_exit_code_and_output(DiagnosticContext& context,
+                                             DiagKind kind,
                                              const Command& command,
                                              const ExitCodeAndOutput& exit,
                                              EchoInDebug echo_in_debug,
@@ -2062,7 +2201,7 @@ namespace vcpkg
             error_line.append_raw('\n').append_raw(exit.output);
         }
 
-        context.report(DiagnosticLine{DiagKind::Error, std::move(error_line)});
+        context.report(DiagnosticLine{kind, std::move(error_line)});
     }
 
     bool check_zero_exit_code(DiagnosticContext& context,
