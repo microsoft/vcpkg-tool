@@ -29,21 +29,21 @@ namespace vcpkg
         friend bool operator!=(const CiBaselineLine& lhs, const CiBaselineLine& rhs) { return !(lhs == rhs); }
     };
 
-    struct TripletExclusions
+    struct TripletSkips
     {
         Triplet triplet;
-        SortedVector<std::string> exclusions;
+        SortedVector<std::string> skips;
 
-        TripletExclusions(const Triplet& triplet);
-        TripletExclusions(const Triplet& triplet, SortedVector<std::string>&& exclusions);
+        TripletSkips(const Triplet& triplet);
+        TripletSkips(const Triplet& triplet, SortedVector<std::string>&& skips);
     };
 
-    struct ExclusionsMap
+    struct SkipsMap
     {
-        std::vector<TripletExclusions> triplets;
+        std::vector<TripletSkips> triplets;
 
-        void insert(Triplet triplet, SortedVector<std::string>&& exclusions);
-        bool is_excluded(const PackageSpec& spec) const;
+        void insert(Triplet triplet, SortedVector<std::string>&& skips);
+        bool is_skipped(const PackageSpec& spec) const;
     };
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
@@ -55,7 +55,7 @@ namespace vcpkg
     };
 
     CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               ExclusionsMap& exclusions_map,
+                                               SkipsMap& skips_map,
                                                SkipFailures skip_failures);
 
     LocalizedString format_ci_result(const PackageSpec& spec,

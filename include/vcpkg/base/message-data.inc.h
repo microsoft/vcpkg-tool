@@ -407,20 +407,20 @@ DECLARE_MESSAGE(BuildResultDownloaded,
                 "Printed after the name of an installed entity to indicate that it was successfully "
                 "downloaded but no build or install was requested.",
                 "DOWNLOADED")
-DECLARE_MESSAGE(BuildResultExcluded,
+DECLARE_MESSAGE(BuildResultSkipped,
                 (),
                 "Printed after the name of an installed entity to indicate that the user explicitly "
                 "requested it not be installed.",
-                "EXCLUDED")
-DECLARE_MESSAGE(BuildResultExcludedByDryRun,
+                "SKIPPED")
+DECLARE_MESSAGE(BuildResultSkippedByDryRun,
                 (),
                 "Printed after the name of an entity that would be installed, but is not due to --dry-run.",
-                "EXCLUDED_BY_DRY_RUN")
-DECLARE_MESSAGE(BuildResultExcludedByParent,
+                "SKIPPED_BY_DRY_RUN")
+DECLARE_MESSAGE(BuildResultSkippedByParentHashes,
                 (),
                 "Printed after the name of an installed entity to indicate that it isn't tested due to an ABI hash in "
                 "--parent-hashes.",
-                "EXCLUDED_BY_PARENT")
+                "SKIPPED_BY_PARENT_HASHES")
 DECLARE_MESSAGE(
     BuildResultFileConflicts,
     (),
@@ -525,9 +525,7 @@ DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
                 "Path to the ci.baseline.txt file. Used to skip ports and detect regressions.")
-DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied")
-DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet")
 DECLARE_MESSAGE(CISettingsOptKnownFailuresFrom, (), "", "Path to the file of known package build failures")
 DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes")
 DECLARE_MESSAGE(CISettingsOptParentHashes,

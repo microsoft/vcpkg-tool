@@ -19,7 +19,7 @@ if ($Output.Split("*").Length -ne 4) {
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_DRY_RUN: 3
+  SKIPPED_BY_DRY_RUN: 3
   UNSUPPORTED: 1
 "@
 # feature-not-sup's baseline fail entry should result in a regression because the port is not supported
@@ -87,7 +87,7 @@ Throw-IfNonContains -Actual $Output -Expected "base-port:${Triplet}: parent: "
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_PARENT: 3
+  SKIPPED_BY_PARENT_HASHES: 3
   UNSUPPORTED: 1
 "@
 
@@ -108,7 +108,7 @@ Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 4
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 2
+  SKIPPED: 2
 "@
 # prerequisite for next tests
 if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: skip\n')) {
@@ -134,11 +134,11 @@ if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
 if (-not ($Output -match 'maybe-skip:[^:]+: skip\n')) {
     throw 'did not identify maybe-skip as skipped'
 }
-# not cached and transitive dependency on maybe-skip which is excluded
+# not cached and transitive dependency on maybe-skip which is skipped
 if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: cascade\n')) {
     throw 'did not identify maybe-transitive-cascade as cascaded'
 }
-# cached, but direct dependency on maybe-skip which is excluded
+# cached, but direct dependency on maybe-skip which is skipped
 if (-not ($Output -match 'maybe-cross-cascade:[^:]+: cascade\n')) {
     throw 'did not identify maybe-cross-cascade as cascaded'
 }
@@ -180,7 +180,7 @@ Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 1
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 1
+  SKIPPED: 1
 "@
 
 $xunitContent = Get-Content $xunitFile -Raw
@@ -192,7 +192,7 @@ $expected = @"
         <traits>
           <trait name="owner" value="$Triplet"/>
         </traits>
-        <reason><!\[CDATA\[EXCLUDED\]\]></reason>
+        <reason><!\[CDATA\[SKIPPED\]\]></reason>
       </test>
     </collection>
   </assembly>

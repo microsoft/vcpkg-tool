@@ -723,9 +723,9 @@ namespace vcpkg
                 case BuildResult::Succeeded:
                 case BuildResult::Removed:
                 case BuildResult::Downloaded:
-                case BuildResult::Excluded:
-                case BuildResult::ExcludedByParent:
-                case BuildResult::ExcludedByDryRun:
+                case BuildResult::Skipped:
+                case BuildResult::SkippedByParentHashes:
+                case BuildResult::SkippedByDryRun:
                 case BuildResult::Cached: break;
                 case BuildResult::BuildFailed:
                 case BuildResult::PostBuildChecksFailed:

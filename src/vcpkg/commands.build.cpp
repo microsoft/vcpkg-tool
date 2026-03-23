@@ -333,9 +333,9 @@ namespace vcpkg
                 msg::print(create_user_troubleshooting_message(*action, args.detected_ci(), paths, {}, nullopt));
                 return 1;
             }
-            case BuildResult::Excluded:
-            case BuildResult::ExcludedByParent:
-            case BuildResult::ExcludedByDryRun:
+            case BuildResult::Skipped:
+            case BuildResult::SkippedByParentHashes:
+            case BuildResult::SkippedByDryRun:
             case BuildResult::Unsupported:
             case BuildResult::Cached:
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -1685,9 +1685,9 @@ namespace vcpkg
             case BuildResult::PostBuildChecksFailed: ++post_build_checks_failed; return;
             case BuildResult::FileConflicts: ++file_conflicts; return;
             case BuildResult::CascadedDueToMissingDependencies: ++cascaded_due_to_missing_dependencies; return;
-            case BuildResult::Excluded: ++excluded; return;
-            case BuildResult::ExcludedByParent: ++excluded_by_parent; return;
-            case BuildResult::ExcludedByDryRun: ++excluded_by_dry_run; return;
+            case BuildResult::Skipped: ++skipped; return;
+            case BuildResult::SkippedByParentHashes: ++skipped_by_parent_hashes; return;
+            case BuildResult::SkippedByDryRun: ++skipped_by_dry_run; return;
             case BuildResult::Unsupported: ++unsupported; return;
             case BuildResult::CacheMissing: ++cache_missing; return;
             case BuildResult::Cached: ++cached; return;
@@ -1720,9 +1720,9 @@ namespace vcpkg
         append_build_result_summary_line(msgBuildResultFileConflicts, file_conflicts, str);
         append_build_result_summary_line(
             msgBuildResultCascadeDueToMissingDependencies, cascaded_due_to_missing_dependencies, str);
-        append_build_result_summary_line(msgBuildResultExcluded, excluded, str);
-        append_build_result_summary_line(msgBuildResultExcludedByParent, excluded_by_parent, str);
-        append_build_result_summary_line(msgBuildResultExcludedByDryRun, excluded_by_dry_run, str);
+        append_build_result_summary_line(msgBuildResultSkipped, skipped, str);
+        append_build_result_summary_line(msgBuildResultSkippedByParentHashes, skipped_by_parent_hashes, str);
+        append_build_result_summary_line(msgBuildResultSkippedByDryRun, skipped_by_dry_run, str);
         append_build_result_summary_line(msgBuildResultUnsupported, unsupported, str);
         append_build_result_summary_line(msgBuildResultCacheMissing, cache_missing, str);
         append_build_result_summary_line(msgBuildResultCached, cached, str);
@@ -1740,9 +1740,9 @@ namespace vcpkg
             case BuildResult::PostBuildChecksFailed: return "POST_BUILD_CHECKS_FAILED";
             case BuildResult::FileConflicts: return "FILE_CONFLICTS";
             case BuildResult::CascadedDueToMissingDependencies: return "CASCADED_DUE_TO_MISSING_DEPENDENCIES";
-            case BuildResult::Excluded: return "EXCLUDED";
-            case BuildResult::ExcludedByParent: return "EXCLUDED_BY_PARENT";
-            case BuildResult::ExcludedByDryRun: return "EXCLUDED_BY_DRY_RUN";
+            case BuildResult::Skipped: return "SKIPPED";
+            case BuildResult::SkippedByParentHashes: return "SKIPPED_BY_PARENT_HASHES";
+            case BuildResult::SkippedByDryRun: return "SKIPPED_BY_DRY_RUN";
             case BuildResult::Unsupported: return "UNSUPPORTED";
             case BuildResult::CacheMissing: return "CACHE_MISSING";
             case BuildResult::Cached: return "CACHED";
@@ -1762,9 +1762,9 @@ namespace vcpkg
             case BuildResult::FileConflicts: return msg::format(msgBuildResultFileConflicts);
             case BuildResult::CascadedDueToMissingDependencies:
                 return msg::format(msgBuildResultCascadeDueToMissingDependencies);
-            case BuildResult::Excluded: return msg::format(msgBuildResultExcluded);
-            case BuildResult::ExcludedByParent: return msg::format(msgBuildResultExcludedByParent);
-            case BuildResult::ExcludedByDryRun: return msg::format(msgBuildResultExcludedByDryRun);
+            case BuildResult::Skipped: return msg::format(msgBuildResultSkipped);
+            case BuildResult::SkippedByParentHashes: return msg::format(msgBuildResultSkippedByParentHashes);
+            case BuildResult::SkippedByDryRun: return msg::format(msgBuildResultSkippedByDryRun);
             case BuildResult::Unsupported: return msg::format(msgBuildResultUnsupported);
             case BuildResult::CacheMissing: return msg::format(msgBuildResultCacheMissing);
             case BuildResult::Cached: return msg::format(msgBuildResultCached);
