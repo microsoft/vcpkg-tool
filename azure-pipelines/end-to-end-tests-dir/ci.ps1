@@ -144,7 +144,7 @@ Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host-feat
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 4
-  EXCLUDED: 2
+  SKIPPED: 2
   UNSUPPORTED: 5
   CACHED: 1
 "@
@@ -165,8 +165,8 @@ Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-host-feat
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR cross
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 2
-  EXCLUDED: 1
-  EXCLUDED_BY_DRY_RUN: 4
+  SKIPPED: 1
+  SKIPPED_BY_DRY_RUN: 4
   UNSUPPORTED: 5
 "@
 
