@@ -170,7 +170,8 @@
                 "linux"
             ],
             "cacheVariables": {
-                "VCPKG_FUZZER_INSTRUMENTATION": true
+                "VCPKG_FUZZER_INSTRUMENTATION": true,
+                "VCPKG_BUILD_FUZZING": true
             }
         },
         {
