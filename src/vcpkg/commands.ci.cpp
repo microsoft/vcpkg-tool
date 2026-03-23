@@ -68,21 +68,6 @@ namespace
         std::map<PackageSpec, SkipReason> skipped;
     };
 
-    bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
-                               const SourceControlFile& source_control_file,
-                               PackageSpec spec)
-    {
-        const auto& supports_expression = source_control_file.core_paragraph->supports_expression;
-        if (supports_expression.is_empty())
-        {
-            return true;
-        }
-
-        const auto* dep_vars = var_provider.get_dep_info_vars(spec);
-        Checks::check_exit(VCPKG_LINE_INFO, dep_vars != nullptr);
-        return supports_expression.evaluate(*dep_vars);
-    }
-
     bool cascade_for_triplet(const std::vector<InstallPlanAction>& install_actions,
                              const Triplet& target_triplet,
                              const SortedVector<std::string>* target_triplet_skips,
@@ -342,9 +327,12 @@ namespace
             {
                 result.skipped.insert_or_assign(
                     std::move(full_package_spec.package_spec),
-                    supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
-                        ? SkipReason::Cascade
-                        : SkipReason::Supports);
+                    Util::any_of(action_plan.unsupported_features,
+                                 [&](const std::pair<const FeatureSpec, PlatformExpression::Expr>& p) {
+                                     return p.first.spec().name() == full_package_spec.package_spec.name();
+                                 })
+                        ? SkipReason::Supports
+                        : SkipReason::Cascade);
                 continue;
             }
 
