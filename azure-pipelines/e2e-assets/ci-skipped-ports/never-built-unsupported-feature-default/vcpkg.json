@@ -1,0 +1,11 @@
+{
+  "name": "never-built-unsupported-feature-default",
+  "version": "1",
+  "default-features": ["always-unsupported"],
+  "features": {
+    "always-unsupported": {
+      "description": "This feature is always unsupported and should not be built.",
+      "supports": "native & !native"
+    }
+  }
+}
