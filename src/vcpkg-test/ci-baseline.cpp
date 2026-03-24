@@ -205,10 +205,10 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
 
     SECTION ("Applies Skips and Fails")
     {
-        ExclusionsMap exclusions;
-        exclusions.insert(x64_uwp, {});   // example triplet
-        exclusions.insert(x64_linux, {}); // example host triplet
-        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::No);
+        SkipsMap skips;
+        skips.insert(x64_uwp, {});   // example triplet
+        skips.insert(x64_linux, {}); // example host triplet
+        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::No);
         const SortedVector<PackageSpec> expected_expected_failures{
             PackageSpec{"aubio", x64_uwp},
             PackageSpec{"bde", x64_linux},
@@ -224,21 +224,20 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         };
 
         CHECK(actual.expected_failures == expected_expected_failures);
-        CHECK(exclusions.triplets.size() == 2);
-        CHECK(exclusions.triplets[0].exclusions == SortedVector<std::string>{"catch-classic"});
-        CHECK(exclusions.triplets[1].exclusions ==
-              SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
+        CHECK(skips.triplets.size() == 2);
+        CHECK(skips.triplets[0].skips == SortedVector<std::string>{"catch-classic"});
+        CHECK(skips.triplets[1].skips == SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
 
-        exclusions.triplets[0].exclusions.clear();
-        exclusions.triplets[1].exclusions.clear();
+        skips.triplets[0].skips.clear();
+        skips.triplets[1].skips.clear();
 
-        actual = parse_and_apply_ci_baseline(expected_from_example_input, exclusions, SkipFailures::Yes);
+        actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::Yes);
         CHECK(actual.expected_failures == expected_expected_failures);
-        CHECK(exclusions.triplets.size() == 2);
-        CHECK(exclusions.triplets[0].exclusions ==
+        CHECK(skips.triplets.size() == 2);
+        CHECK(skips.triplets[0].skips ==
               SortedVector<std::string>{
                   "aubio", "blitz", "blosc", "bond", "botan", "c-ares", "caf", "casclib", "catch-classic"});
-        CHECK(exclusions.triplets[1].exclusions ==
+        CHECK(skips.triplets[1].skips ==
               SortedVector<std::string>{
                   "bde", "buck-yeh-bux", "buck-yeh-bux-mariadb-client", "catch-classic", "bill-made-up-another-skip"});
     }

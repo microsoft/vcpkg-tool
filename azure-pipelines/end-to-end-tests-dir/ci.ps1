@@ -19,7 +19,7 @@ if ($Output.Split("*").Length -ne 4) {
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_DRY_RUN: 3
+  SKIPPED_BY_DRY_RUN: 3
   UNSUPPORTED: 1
 "@
 # feature-not-sup's baseline fail entry should result in a regression because the port is not supported
@@ -87,7 +87,7 @@ Throw-IfNonContains -Actual $Output -Expected "base-port:${Triplet}: parent: "
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_PARENT: 3
+  SKIPPED_BY_PARENT_HASHES: 3
   UNSUPPORTED: 1
 "@
 
@@ -117,7 +117,7 @@ Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 4
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 2
+  SKIPPED: 2
   UNSUPPORTED: 5
 "@
 # test with --skip-failures and cached artifacts
@@ -132,9 +132,9 @@ if ($Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.') {
 Throw-IfNonContains -Actual $Output -Expected "always-skip:$($Triplet): skip"
 Throw-IfNonContains -Actual $Output -Expected "always-cascade:$($Triplet): cascade"
 Throw-IfNonContains -Actual $Output -Expected "maybe-skip:$($Triplet): skip"
-# not cached and transitive dependency on maybe-skip which is excluded
+# not cached and transitive dependency on maybe-skip which is skipped
 Throw-IfNonContains -Actual $Output -Expected "maybe-transitive-cascade:$($Triplet): cascade"
-# cached, but direct dependency on maybe-skip which is excluded
+# cached, but direct dependency on maybe-skip which is skipped
 Throw-IfNonContains -Actual $Output -Expected "maybe-cross-cascade:$($Triplet): cascade"
 Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported:$($Triplet): unsupported"
 Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-feature:$($Triplet): unsupported"
@@ -144,7 +144,7 @@ Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host-feat
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 4
-  EXCLUDED: 2
+  SKIPPED: 2
   UNSUPPORTED: 5
   CACHED: 1
 "@
@@ -165,8 +165,8 @@ Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-host-feat
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR cross
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 2
-  EXCLUDED: 1
-  EXCLUDED_BY_DRY_RUN: 4
+  SKIPPED: 1
+  SKIPPED_BY_DRY_RUN: 4
   UNSUPPORTED: 5
 "@
 
@@ -187,7 +187,7 @@ Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 1
   CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 1
+  SKIPPED: 1
 "@
 
 $xunitContent = Get-Content $xunitFile -Raw
@@ -199,7 +199,7 @@ $expected = @"
         <traits>
           <trait name="owner" value="$Triplet"/>
         </traits>
-        <reason><!\[CDATA\[EXCLUDED\]\]></reason>
+        <reason><!\[CDATA\[SKIPPED\]\]></reason>
       </test>
     </collection>
   </assembly>

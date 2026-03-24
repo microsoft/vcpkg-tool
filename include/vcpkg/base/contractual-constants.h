@@ -214,7 +214,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchDryRun = "dry-run";
     inline constexpr StringLiteral SwitchEditable = "editable";
     inline constexpr StringLiteral SwitchEnforcePortChecks = "enforce-port-checks";
-    inline constexpr StringLiteral SwitchExclude = "exclude";
     inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
@@ -225,7 +224,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
-    inline constexpr StringLiteral SwitchHostExclude = "host-exclude";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
     inline constexpr StringLiteral SwitchIgnoreLockFailures = "ignore-lock-failures";
     inline constexpr StringLiteral SwitchInclude = "include";
