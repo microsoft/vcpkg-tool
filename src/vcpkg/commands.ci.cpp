@@ -275,6 +275,10 @@ namespace
                 case BuildResult::Cached:
                     // if it's already in the binary cache we don't want to attempt to restore it unless it's
                     // transitively depended upon
+                    if (Util::Sets::contains(to_keep, it->spec))
+                    {
+                        to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
+                    }
                     break;
                 case BuildResult::Succeeded:
                 case BuildResult::CascadedDueToMissingDependencies:

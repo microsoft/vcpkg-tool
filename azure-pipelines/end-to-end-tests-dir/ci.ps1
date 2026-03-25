@@ -375,3 +375,36 @@ SUMMARY FOR cross
   SKIPPED_BY_SKIP_FAILURES: 1
   UNSUPPORTED: 2
 "@
+
+# also ensure that transitive dependencies are kept in the plan even if a direct dependency is unnecessary
+Refresh-TestRoot
+Run-Vcpkg install transitive-3 --binarysource="clear;files,$ArchiveRoot,readwrite" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
+Throw-IfFailed
+Run-Vcpkg remove transitive-3 transitive-4 transitive-5 transitive-6 @directoryArgs
+Throw-IfFailed
+$Output = Run-VcpkgAndCaptureBoth ci --binarysource="clear;files,$ArchiveRoot" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
+Throw-IfFailed
+
+Throw-IfNonContains -Actual $Output -Expected "Installing 1/6 transitive-6:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-6:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 2/6 transitive-5:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-5:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 3/6 transitive-4:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-4:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 4/6 transitive-3:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-3:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 5/6 transitive-2:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building transitive-2:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 6/6 transitive-1:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building transitive-1:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "transitive-1:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-2:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-3:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-4:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-5:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-6:$($Triplet): SUCCEEDED:"
+
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $($Triplet)
+  SUCCEEDED: 6
+"@
