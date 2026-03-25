@@ -47,10 +47,6 @@
       "internalConsoleOptions": "neverOpen",
       "skipFiles": [
         "<node_internals>/**"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/vcpkg-artifacts/**/*.(m|c|)js",
-        "!**/node_modules/**"
       ]
     }
   ]
