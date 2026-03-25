@@ -1,0 +1,6 @@
+{
+  "name": "fail-but-unsupported",
+  "version": "1.0.0",
+  "description": "this port is marked fail but is unsupported",
+  "supports": "native & !native"
+}

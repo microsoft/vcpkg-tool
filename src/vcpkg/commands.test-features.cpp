@@ -940,6 +940,9 @@ namespace vcpkg
                 case BuildResult::Skipped:
                 case BuildResult::SkippedByParentHashes:
                 case BuildResult::SkippedByDryRun:
+                case BuildResult::SkippedBySkipFailures:
+                case BuildResult::CascadedDueToSupports:
+                case BuildResult::CascadedDueToBaseline:
                 case BuildResult::Cached:
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }

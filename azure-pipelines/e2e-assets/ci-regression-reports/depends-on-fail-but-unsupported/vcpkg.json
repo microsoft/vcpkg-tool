@@ -1,0 +1,8 @@
+{
+  "name": "depends-on-fail-but-unsupported",
+  "version": "1.0.0",
+  "description": "this port is marked fail but is unsupported",
+  "dependencies": [
+    "fail-but-unsupported"
+  ]
+}

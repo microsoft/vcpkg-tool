@@ -726,10 +726,13 @@ namespace vcpkg
                 case BuildResult::Skipped:
                 case BuildResult::SkippedByParentHashes:
                 case BuildResult::SkippedByDryRun:
+                case BuildResult::SkippedBySkipFailures:
                 case BuildResult::Cached: break;
                 case BuildResult::BuildFailed:
                 case BuildResult::PostBuildChecksFailed:
                 case BuildResult::FileConflicts:
+                case BuildResult::CascadedDueToSupports:
+                case BuildResult::CascadedDueToBaseline:
                 case BuildResult::CascadedDueToMissingDependencies:
                 case BuildResult::Unsupported:
                 case BuildResult::CacheMissing: summary.failed = true; break;

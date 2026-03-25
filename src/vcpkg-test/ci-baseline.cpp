@@ -208,7 +208,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         SkipsMap skips;
         skips.insert(x64_uwp, {});   // example triplet
         skips.insert(x64_linux, {}); // example host triplet
-        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::No);
+        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, skips);
         const SortedVector<PackageSpec> expected_expected_failures{
             PackageSpec{"aubio", x64_uwp},
             PackageSpec{"bde", x64_linux},
@@ -223,23 +223,10 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
             PackageSpec{"casclib", x64_uwp},
         };
 
-        CHECK(actual.expected_failures == expected_expected_failures);
+        CHECK(actual.expected_fail == expected_expected_failures);
         CHECK(skips.triplets.size() == 2);
         CHECK(skips.triplets[0].skips == SortedVector<std::string>{"catch-classic"});
         CHECK(skips.triplets[1].skips == SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
-
-        skips.triplets[0].skips.clear();
-        skips.triplets[1].skips.clear();
-
-        actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::Yes);
-        CHECK(actual.expected_failures == expected_expected_failures);
-        CHECK(skips.triplets.size() == 2);
-        CHECK(skips.triplets[0].skips ==
-              SortedVector<std::string>{
-                  "aubio", "blitz", "blosc", "bond", "botan", "c-ares", "caf", "casclib", "catch-classic"});
-        CHECK(skips.triplets[1].skips ==
-              SortedVector<std::string>{
-                  "bde", "buck-yeh-bux", "buck-yeh-bux-mariadb-client", "catch-classic", "bill-made-up-another-skip"});
     }
 }
 
@@ -319,10 +306,10 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
 TEST_CASE ("format_ci_result 1", "[ci-baseline]")
 {
     CiBaselineData cidata;
-    cidata.expected_failures = {
+    cidata.expected_fail = {
         PackageSpec{"fail", Test::X64_UWP},
     };
-    cidata.required_success = {
+    cidata.required_pass = {
         PackageSpec{"pass", Test::X64_UWP},
     };
     constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";

@@ -48,15 +48,14 @@ namespace vcpkg
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
+    // assertions from a ci-baseline file
     struct CiBaselineData
     {
-        SortedVector<PackageSpec> expected_failures;
-        SortedVector<PackageSpec> required_success;
+        SortedVector<PackageSpec> expected_fail;
+        SortedVector<PackageSpec> required_pass;
     };
 
-    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               SkipsMap& skips_map,
-                                               SkipFailures skip_failures);
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines, SkipsMap& skips_map);
 
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
