@@ -34,17 +34,22 @@
       ]
     },
     {
-      "name": "MochaTest",
+      "name": "vcpkg-artifacts mocha",
       "type": "node",
-      "request": "attach",
-      "port": 9229,
-      "continueOnAttach": true,
-      "autoAttachChildProcesses": false,
+      "request": "launch",
+      "cwd": "${workspaceFolder}/vcpkg-artifacts",
+      "program": "${workspaceFolder}/vcpkg-artifacts/node_modules/mocha/bin/mocha.js",
+      "args": [
+        "--import=tsx",
+        "--no-timeout"
+      ],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "outFiles": [
-        "${workspaceFolder}/ce/*/dist/**/*.js",
+        "${workspaceFolder}/vcpkg-artifacts/**/*.(m|c|)js",
         "!**/node_modules/**"
       ]
     }
