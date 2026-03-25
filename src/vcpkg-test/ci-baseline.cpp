@@ -343,7 +343,7 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
     SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false);
+            return format_ci_result(s, BuildResult::CascadedDueToSupports, cidata, &cifile, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) ==
