@@ -427,7 +427,9 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
 
     SECTION ("UNSUPPORTED")
     {
-        const auto test = [&](PackageSpec s) { return format_ci_result(s, BuildResult::Unsupported, cidata, &cifile, false); };
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::Unsupported, cidata, &cifile, false);
+        };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(unsupported_passmsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) == fmt::format(unsupported_failmsg, "fail:x64-uwp"));
         CHECK(test({"neither", Test::X64_UWP}) == "");
