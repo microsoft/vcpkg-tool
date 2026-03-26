@@ -46,7 +46,7 @@
     "strip-ansi": "7.1.0",
     "vscode-uri": "3.1.0",
     "xml-writer": "1.7.0",
-    "yaml": "^2.8.0"
+    "yaml": "^2.8.3"
   },
   "overrides": {
     "diff": "8.0.3",
