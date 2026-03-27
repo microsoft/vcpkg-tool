@@ -179,7 +179,7 @@
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
   "BuildResultRemoved": "已移除",
-  "BuildResultSkipped": "SKIPPED",
+  "BuildResultSkipped": "已略過",
   "BuildResultSkippedByDryRun": "SKIPPED_BY_DRY_RUN",
   "BuildResultSkippedByParentHashes": "SKIPPED_BY_PARENT_HASHES",
   "BuildResultSucceeded": "成功",
