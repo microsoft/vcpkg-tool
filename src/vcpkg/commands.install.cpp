@@ -1285,11 +1285,15 @@ namespace vcpkg
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
                                                       Util::Enum::to_enum<Editable>(is_editable)};
 
+        auto registry_set = paths.make_registry_set();
         InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
         if (manifest)
         {
+            ActionPlan install_plan;
+
+            /* vvv shared by install and depend-info vvv */
             Optional<Path> pkgsconfig;
             auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
             if (it_pkgsconfig != options.settings.end())
@@ -1313,7 +1317,6 @@ namespace vcpkg
 
             auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
             const auto& manifest_core = *manifest_scf->core_paragraph;
-            auto registry_set = paths.make_registry_set();
             manifest_scf
                 ->check_against_feature_flags(
                     manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
@@ -1397,16 +1400,17 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            auto install_plan = create_versioned_install_plan(*verprovider,
-                                                              *baseprovider,
-                                                              *oprovider,
-                                                              var_provider,
-                                                              dependencies,
-                                                              manifest_core.overrides,
-                                                              toplevel,
-                                                              packages_dir_assigner,
-                                                              create_options)
-                                    .value_or_exit(VCPKG_LINE_INFO);
+            install_plan = create_versioned_install_plan(*verprovider,
+                                                         *baseprovider,
+                                                         *oprovider,
+                                                         var_provider,
+                                                         dependencies,
+                                                         manifest_core.overrides,
+                                                         toplevel,
+                                                         packages_dir_assigner,
+                                                         create_options)
+                               .value_or_exit(VCPKG_LINE_INFO);
+            /* ^^^ shared by install and depend-info ^^^ */
 
             install_plan.print_unsupported_warnings();
 
@@ -1427,7 +1431,6 @@ namespace vcpkg
                                               true);
         }
 
-        auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
