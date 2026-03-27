@@ -1,0 +1,4 @@
+{
+  "name": "baseline-version-missing",
+  "version": "1.0"
+}

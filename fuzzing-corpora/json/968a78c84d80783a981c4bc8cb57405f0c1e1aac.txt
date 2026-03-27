@@ -1,0 +1,37 @@
+{
+	"$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+	"name": "absolute-paths",
+	"version": "1.0.0",
+	"features": {
+		"usage": {
+			"description": ""
+		},
+		"header": {
+			"description": ""
+		},
+		"header-comment": {
+			"description": ""
+		},
+		"python": {
+			"description": ""
+		},
+		"python-comment": {
+			"description": ""
+		},
+		"hash": {
+			"description": ""
+		},
+		"new-policy": {
+			"description": ""
+		},
+		"packages": {
+			"description": ""
+		},
+		"buildtrees": {
+			"description": ""
+		},
+		"native": {
+			"description": ""
+		}
+	}
+}

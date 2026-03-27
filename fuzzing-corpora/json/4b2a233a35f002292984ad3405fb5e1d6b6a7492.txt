@@ -1,0 +1,8 @@
+{
+  "name": "dep-on-feature-not-sup",
+  "version": "1",
+  "dependencies": [{
+    "name": "feature-not-sup",
+    "features": ["not-sup"]
+  }]
+}

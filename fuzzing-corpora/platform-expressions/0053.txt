@@ -1,0 +1,1 @@
+!(uwp | (windows & x86 & !static))

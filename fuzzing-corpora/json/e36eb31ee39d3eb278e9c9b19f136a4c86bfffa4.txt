@@ -1,0 +1,5 @@
+{
+	"name": "vcpkg-internal-e2e-test-port3",
+	"version-string": "1.0.0",
+	"dependencies": ["vcpkg-internal-e2e-test-port2"]
+}

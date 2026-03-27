@@ -1,0 +1,1 @@
+(windows & !uwp & (x86 | x64)) | osx | linux

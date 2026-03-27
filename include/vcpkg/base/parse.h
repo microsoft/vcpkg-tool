@@ -93,11 +93,11 @@ namespace vcpkg
 
         StringView text() const { return m_text; }
         Unicode::Utf8Decoder it() const { return m_it; }
-        char32_t cur() const { return m_it == m_it.end() ? Unicode::end_of_file : *m_it; }
+        char32_t cur() const { return m_it.is_eof() ? Unicode::end_of_file : *m_it; }
         SourceLoc cur_loc() const { return {m_it, m_start_of_line, m_row, m_column}; }
         TextRowCol cur_rowcol() const { return {m_row, m_column}; }
         char32_t next();
-        bool at_eof() const { return m_it == m_it.end(); }
+        bool at_eof() const { return m_it.is_eof(); }
 
         void add_error(LocalizedString&& message);
         void add_error(LocalizedString&& message, const SourceLoc& loc);
@@ -110,17 +110,20 @@ namespace vcpkg
         const ParseMessages& messages() const { return m_messages; }
         ParseMessages&& extract_messages() { return std::move(m_messages); }
 
+        bool try_increment(Unicode::Utf8Decoder& encoded);
+
     private:
         void add_line(DiagKind kind, LocalizedString&& message, const SourceLoc& loc);
 
-        Unicode::Utf8Decoder m_it;
-        Unicode::Utf8Decoder m_start_of_line;
-        int m_row;
-        int m_column;
+        Unicode::Utf8Decoder form_utf_decoder();
+
+        ParseMessages m_messages;
 
         StringView m_text;
         Optional<StringView> m_origin;
-
-        ParseMessages m_messages;
+        int m_row;
+        int m_column;
+        Unicode::Utf8Decoder m_it;
+        Unicode::Utf8Decoder m_start_of_line;
     };
 }

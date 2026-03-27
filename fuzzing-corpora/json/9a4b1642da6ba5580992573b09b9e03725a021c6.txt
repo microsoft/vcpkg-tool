@@ -1,0 +1,13 @@
+{
+  "$doc": "https://github.com/microsoft/vcpkg/blob/master/docs/maintainers/registries.md#filesystem-registries",
+  "default": {
+    "arrow": {
+      "baseline": "6.0.0.20210925",
+      "port-version": 4
+    },
+    "bloom-filter": {
+      "baseline": "0.2.0",
+      "port-version": 1
+    }
+  }
+}

@@ -2027,6 +2027,7 @@ DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
                 "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
+DECLARE_MESSAGE(JsonDepthLimitExceeded, (msg::count), "", "JSON depth limit of {count} exceeded")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")
 DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "value of [\"{json_field}\"] must be a string")
 DECLARE_MESSAGE(JsonFileMissingExtension,

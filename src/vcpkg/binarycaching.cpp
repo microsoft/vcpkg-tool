@@ -134,9 +134,10 @@ namespace
                     {
                         return add_error(msg::format(msgUnexpectedEOFAfterBacktick));
                     }
-                    else
+                    else if (!Unicode::utf8_append_code_point(segment, ch))
                     {
-                        Unicode::utf8_append_code_point(segment, ch);
+                        return add_error(msg::format(msgInvalidCodePoint)
+                                             .append_raw(fmt::format("({:x})", static_cast<uint32_t>(ch))));
                     }
 
                     next();

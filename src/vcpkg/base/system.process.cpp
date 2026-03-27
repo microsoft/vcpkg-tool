@@ -287,12 +287,16 @@ namespace vcpkg
         //  The filename of the executable, in parentheses.
         //  Strings longer than TASK_COMM_LEN (16) characters (including the terminating null byte) are silently
         //  truncated.  This is visible whether or not the executable is swapped out.
-        const auto start = p.it().pointer_to_current();
-        const auto end = p.it().end();
+        auto it = p.it();
+        const auto start = it.pointer_to_current();
         size_t len = 0, last_seen = 0;
-        for (auto it = p.it(); len < 17 && it != end; ++len, ++it)
+        for (; len < 17 && !it.is_eof(); ++len)
         {
             if (*it == ')') last_seen = len;
+            if (!p.try_increment(it))
+            {
+                return nullopt;
+            }
         }
         for (size_t i = 0; i < last_seen; ++i)
         {

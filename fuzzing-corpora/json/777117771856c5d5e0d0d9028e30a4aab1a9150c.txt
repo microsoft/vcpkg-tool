@@ -1,0 +1,7 @@
+{
+  "name": "maybe-transitive-cascade",
+  "version": "1.0.0",
+  "dependencies": [
+    "maybe-direct-cascade"
+  ]
+}

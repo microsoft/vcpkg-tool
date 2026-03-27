@@ -1,0 +1,1 @@
+linux | osx | (x64 & windows & !static & !uwp)

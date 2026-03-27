@@ -80,6 +80,17 @@
             ]
         },
         {
+            "name": "Win-x64-Fuzzing",
+            "inherits": [
+                "base",
+                "windows-x64",
+                "release"
+            ],
+            "cacheVariables": {
+                "VCPKG_FUZZER_INSTRUMENTATION": true
+            }
+        },
+        {
             "name": "Win-x64-Debug-WithArtifacts",
             "inherits": [
                 "Win-x64-Debug",
@@ -150,6 +161,17 @@
             ],
             "cacheVariables": {
                 "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
+            "name": "linux-fuzzing",
+            "inherits": [
+                "base",
+                "linux"
+            ],
+            "cacheVariables": {
+                "VCPKG_FUZZER_INSTRUMENTATION": true,
+                "VCPKG_BUILD_FUZZING": true
             }
         },
         {
