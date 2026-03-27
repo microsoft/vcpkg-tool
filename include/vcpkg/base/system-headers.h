@@ -11,6 +11,7 @@
 #endif
 
 #include <Shlobj.h>
+#include <shellapi.h>
 #include <windows.h>
 
 #else // ^^^^ Windows / Unix vvvv

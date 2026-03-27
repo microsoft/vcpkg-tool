@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>

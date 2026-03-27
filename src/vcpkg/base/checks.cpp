@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>

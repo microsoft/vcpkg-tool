@@ -30,6 +30,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <unordered_set>
+
 using namespace vcpkg;
 
 namespace

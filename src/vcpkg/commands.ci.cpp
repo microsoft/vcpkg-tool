@@ -25,7 +25,9 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
+#include <map>
 #include <random>
+#include <unordered_set>
 
 using namespace vcpkg;
 
