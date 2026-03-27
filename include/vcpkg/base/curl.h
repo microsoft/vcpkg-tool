@@ -6,6 +6,9 @@
 
 #include <vcpkg/commands.version.h>
 
+#include <string>
+#include <vector>
+
 VCPKG_MSVC_WARNING(push)
 // note: disable warning triggered by curl headers
 // ws2tcpip.h(968): warning C6101: Returning uninitialized memory '*Mtu':  A successful path through the function does

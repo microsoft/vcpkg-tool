@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>

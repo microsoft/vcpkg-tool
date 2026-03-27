@@ -16,7 +16,10 @@
 #include <vcpkg/base/system.proxy.h>
 #include <vcpkg/base/util.h>
 
+#include <array>
+#include <chrono>
 #include <set>
+#include <thread>
 
 using namespace vcpkg;
 

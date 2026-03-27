@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/parse.h>
 #include <vcpkg/base/fwd/span.h>
 
@@ -8,6 +7,7 @@
 #include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/unicode.h>
 

@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/fwd/diagnostics.h>
 
 #include <vcpkg/base/cofffilereader.h>
@@ -15,6 +17,7 @@
 #include <set>
 #include <string>
 #include <system_error>
+#include <unordered_set>
 
 using namespace vcpkg;
 

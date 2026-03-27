@@ -80,6 +80,13 @@
             ]
         },
         {
+            "name": "Win-x64-Debug-NoPch",
+            "inherits": "Win-x64-Debug",
+            "cacheVariables": {
+                "CMAKE_DISABLE_PRECOMPILE_HEADERS": true
+            }
+        },
+        {
             "name": "Win-x64-Debug-WithArtifacts",
             "inherits": [
                 "Win-x64-Debug",
