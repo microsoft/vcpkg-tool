@@ -179,7 +179,7 @@
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
   "BuildResultRemoved": "제거됨",
-  "BuildResultSkipped": "SKIPPED",
+  "BuildResultSkipped": "건너뜀",
   "BuildResultSkippedByDryRun": "SKIPPED_BY_DRY_RUN",
   "BuildResultSkippedByParentHashes": "SKIPPED_BY_PARENT_HASHES",
   "BuildResultSucceeded": "성공",
