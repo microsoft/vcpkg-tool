@@ -138,12 +138,10 @@ namespace vcpkg
         return result;
     }
 
-    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               SkipsMap& skips_map,
-                                               SkipFailures skip_failures)
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines, SkipsMap& skips_map)
     {
-        std::vector<PackageSpec> expected_failures;
-        std::vector<PackageSpec> required_success;
+        std::vector<PackageSpec> expected_fail;
+        std::vector<PackageSpec> required_pass;
         std::map<Triplet, std::vector<std::string>> added_skips;
         for (const auto& triplet_entry : skips_map.triplets)
         {
@@ -155,21 +153,13 @@ namespace vcpkg
             auto triplet_match = added_skips.find(line.triplet);
             if (triplet_match != added_skips.end())
             {
-                if (line.state == CiBaselineState::Pass)
+                switch (line.state)
                 {
-                    required_success.emplace_back(line.port_name, line.triplet);
-                    continue;
+                    case CiBaselineState::Pass: required_pass.emplace_back(line.port_name, line.triplet); break;
+                    case CiBaselineState::Fail: expected_fail.emplace_back(line.port_name, line.triplet); break;
+                    case CiBaselineState::Skip: triplet_match->second.push_back(line.port_name); break;
+                    default: Checks::unreachable(VCPKG_LINE_INFO);
                 }
-                if (line.state == CiBaselineState::Fail)
-                {
-                    expected_failures.emplace_back(line.port_name, line.triplet);
-                    if (skip_failures == SkipFailures::No)
-                    {
-                        continue;
-                    }
-                }
-
-                triplet_match->second.push_back(line.port_name);
             }
         }
 
@@ -180,37 +170,37 @@ namespace vcpkg
         }
 
         return CiBaselineData{
-            SortedVector<PackageSpec>(std::move(expected_failures)),
-            SortedVector<PackageSpec>(std::move(required_success)),
+            SortedVector<PackageSpec>(std::move(expected_fail)),
+            SortedVector<PackageSpec>(std::move(required_pass)),
         };
     }
 
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,
-                                     const CiBaselineData& cidata,
-                                     const std::string* cifile,
+                                     const CiBaselineData& ci_data,
+                                     const std::string* ci_file,
                                      bool allow_unexpected_passing)
     {
         switch (result)
         {
             case BuildResult::Succeeded:
             case BuildResult::Cached:
-                if (!allow_unexpected_passing && cidata.expected_failures.contains(spec))
+                if (!allow_unexpected_passing && ci_data.expected_fail.contains(spec))
                 {
-                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *cifile);
+                    return msg::format(msgCiBaselineUnexpectedPass, msg::spec = spec, msg::path = *ci_file);
                 }
                 break;
             case BuildResult::BuildFailed:
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts:
-                if (!cidata.expected_failures.contains(spec))
+                if (!ci_data.expected_fail.contains(spec))
                 {
-                    if (cifile)
+                    if (ci_file)
                     {
                         return msg::format(msgCiBaselineRegression,
                                            msg::spec = spec,
                                            msg::build_result = to_string_locale_invariant(result),
-                                           msg::path = *cifile);
+                                           msg::path = *ci_file);
                     }
 
                     return msg::format(msgCiBaselineRegressionNoPath,
@@ -218,25 +208,28 @@ namespace vcpkg
                                        msg::build_result = to_string_locale_invariant(result));
                 }
                 break;
-            case BuildResult::CascadedDueToMissingDependencies:
-                if (cidata.expected_failures.contains(spec))
+            case BuildResult::CascadedDueToSupports:
+                if (ci_data.expected_fail.contains(spec))
                 {
                     return msg::format(
                         msgCiBaselineUnexpectedFailCascade, msg::spec = spec, msg::triplet = spec.triplet());
                 }
 
-                if (cidata.required_success.contains(spec))
+                [[fallthrough]];
+            case BuildResult::CascadedDueToMissingDependencies:
+            case BuildResult::CascadedDueToBaseline:
+                if (ci_data.required_pass.contains(spec))
                 {
-                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *cifile);
+                    return msg::format(msgCiBaselineDisallowedCascade, msg::spec = spec, msg::path = *ci_file);
                 }
                 break;
             case BuildResult::Unsupported:
-                if (cidata.expected_failures.contains(spec))
+                if (ci_data.expected_fail.contains(spec))
                 {
                     return msg::format(msgCiBaselineUnexpectedFail, msg::spec = spec, msg::triplet = spec.triplet());
                 }
 
-                if (cidata.required_success.contains(spec))
+                if (ci_data.required_pass.contains(spec))
                 {
                     return msg::format(
                         msgCiBaselineUnexpectedPassUnsupported, msg::spec = spec, msg::triplet = spec.triplet());
@@ -244,7 +237,8 @@ namespace vcpkg
                 break;
             case BuildResult::Skipped:
             case BuildResult::SkippedByParentHashes:
-            case BuildResult::SkippedByDryRun: break;
+            case BuildResult::SkippedByDryRun:
+            case BuildResult::SkippedBySkipFailures: break;
             case BuildResult::CacheMissing:
             case BuildResult::Downloaded:
             case BuildResult::Removed:

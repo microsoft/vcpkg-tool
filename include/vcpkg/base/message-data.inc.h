@@ -402,6 +402,16 @@ DECLARE_MESSAGE(BuildResultCascadeDueToMissingDependencies,
                 "Printed after the name of an installed entity to indicate that it could not attempt "
                 "to be installed because one of its transitive dependencies failed to install.",
                 "CASCADED_DUE_TO_MISSING_DEPENDENCIES")
+DECLARE_MESSAGE(BuildResultCascadeDueToSupports,
+                (),
+                "Printed after the name of an installed entity to indicate that it could not attempt "
+                "to be installed because one of its transitive dependencies' supports clause fails",
+                "CASCADED_DUE_TO_SUPPORTS")
+DECLARE_MESSAGE(BuildResultCascadeDueToBaseline,
+                (),
+                "Printed after the name of an installed entity to indicate that it could not attempt "
+                "to be installed because one of its transitive dependencies is skipped in ci.baseline.txt.",
+                "CASCADED_DUE_TO_BASELINE")
 DECLARE_MESSAGE(BuildResultDownloaded,
                 (),
                 "Printed after the name of an installed entity to indicate that it was successfully "
@@ -416,6 +426,11 @@ DECLARE_MESSAGE(BuildResultSkippedByDryRun,
                 (),
                 "Printed after the name of an entity that would be installed, but is not due to --dry-run.",
                 "SKIPPED_BY_DRY_RUN")
+DECLARE_MESSAGE(BuildResultSkippedBySkipFailures,
+                (),
+                "Printed after the name of an entity that would be attempted to be installed, but is known to fail and "
+                "vcpkg ci is configured in --skip-failures mode",
+                "SKIPPED_BY_SKIP_FAILURES")
 DECLARE_MESSAGE(BuildResultSkippedByParentHashes,
                 (),
                 "Printed after the name of an installed entity to indicate that it isn't tested due to an ABI hash in "

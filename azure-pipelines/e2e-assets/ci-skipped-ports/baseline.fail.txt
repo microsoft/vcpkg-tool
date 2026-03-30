@@ -1,15 +1,13 @@
-# fail means skip with --skip-failures
-always-skip:cross=fail
-always-skip:arm64-linux=fail
-always-skip:arm64-osx=fail
-always-skip:x64-linux=fail
-always-skip:x64-windows=fail
-always-skip:x86-windows=fail
+always-skip:cross=skip
+always-skip:arm64-linux=skip
+always-skip:arm64-osx=skip
+always-skip:x64-linux=skip
+always-skip:x64-windows=skip
+always-skip:x86-windows=skip
 
-# fail means skip here, but cached artifacts may exist
 # not skipping maybe-skip for "cross" triplet
-maybe-skip:arm64-linux=fail
-maybe-skip:arm64-osx=fail
-maybe-skip:x64-linux=fail
-maybe-skip:x64-windows=fail
-maybe-skip:x86-windows=fail
+maybe-skip:arm64-linux=skip
+maybe-skip:arm64-osx=skip
+maybe-skip:x64-linux=skip
+maybe-skip:x64-windows=skip
+maybe-skip:x86-windows=skip
