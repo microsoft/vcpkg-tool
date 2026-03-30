@@ -9,6 +9,8 @@
 
 #include <stddef.h>
 
+#include <map>
+#include <string>
 #include <utility>
 #include <vector>
 

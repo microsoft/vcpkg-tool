@@ -12,6 +12,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 namespace vcpkg::Strings::details

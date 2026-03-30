@@ -17,9 +17,9 @@
         "Type": "other",
         "other": {
           "name": "fmt",
-          "version": "11.2.0",
-          "downloadUrl": "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz",
-          "hash": "sha1:bfa4fa35bb24f4ef239067173c373b211f2d8e84"
+          "version": "12.1.0",
+          "downloadUrl": "https://github.com/fmtlib/fmt/archive/refs/tags/12.1.0.tar.gz",
+          "hash": "sha1:dc7bc689e13d17dcae2dcb30ae6a47a7aeb1d3dd"
         }
       },
       "DevelopmentDependency": false,

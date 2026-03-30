@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
 
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/path.h>
 
