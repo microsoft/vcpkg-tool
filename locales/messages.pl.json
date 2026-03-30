@@ -179,7 +179,7 @@
   "BuildResultFileConflicts": "FILE_CONFLICTS",
   "BuildResultPostBuildChecksFailed": "POST_BUILD_CHECKS_FAILED",
   "BuildResultRemoved": "USUNIĘTO",
-  "BuildResultSkipped": "SKIPPED",
+  "BuildResultSkipped": "POMINIĘTE",
   "BuildResultSkippedByDryRun": "SKIPPED_BY_DRY_RUN",
   "BuildResultSkippedByParentHashes": "SKIPPED_BY_PARENT_HASHES",
   "BuildResultSucceeded": "POWODZENIE",
