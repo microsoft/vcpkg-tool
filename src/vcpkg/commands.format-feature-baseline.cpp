@@ -4,6 +4,8 @@
 #include <vcpkg/commands.format-feature-baselinet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <algorithm>
+
 using namespace vcpkg;
 
 namespace

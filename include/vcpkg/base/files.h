@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/span.h>
@@ -10,6 +9,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/file-contents.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
