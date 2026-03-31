@@ -30,6 +30,8 @@
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
+#include <unordered_set>
+
 using namespace vcpkg;
 
 namespace
@@ -937,9 +939,9 @@ namespace vcpkg
                     handle_fail_feature_test_result(diagnostics, spec, ci_feature_baseline_file_name, baseline);
                     break;
                 case BuildResult::Removed:
-                case BuildResult::Excluded:
-                case BuildResult::ExcludedByParent:
-                case BuildResult::ExcludedByDryRun:
+                case BuildResult::Skipped:
+                case BuildResult::SkippedByParentHashes:
+                case BuildResult::SkippedByDryRun:
                 case BuildResult::Cached:
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }

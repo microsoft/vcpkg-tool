@@ -25,15 +25,15 @@
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/xunitwriter.h>
 
+#include <map>
 #include <random>
+#include <unordered_set>
 
 using namespace vcpkg;
 
 namespace
 {
     constexpr CommandSetting CI_SETTINGS[] = {
-        {SwitchExclude, msgCISettingsOptExclude},
-        {SwitchHostExclude, msgCISettingsOptHostExclude},
         {SwitchXXUnit, msgCISettingsOptXUnit},
         {SwitchCIBaseline, msgCISettingsOptCIBase},
         {SwitchFailureLogs, msgCISettingsOptFailureLogs},
@@ -57,7 +57,7 @@ namespace
         Json::Array abis;
     };
 
-    enum class ExcludeReason
+    enum class SkipReason
     {
         Baseline,
         Supports,
@@ -67,46 +67,29 @@ namespace
     struct CiSpecsResult
     {
         std::vector<FullPackageSpec> requested;
-        std::map<PackageSpec, ExcludeReason> excluded;
+        std::map<PackageSpec, SkipReason> skipped;
     };
-
-    bool supported_for_triplet(const CMakeVars::CMakeVarProvider& var_provider,
-                               const SourceControlFile& source_control_file,
-                               PackageSpec spec)
-    {
-        const auto& supports_expression = source_control_file.core_paragraph->supports_expression;
-        if (supports_expression.is_empty())
-        {
-            return true;
-        }
-
-        const auto* dep_vars = var_provider.get_dep_info_vars(spec);
-        Checks::check_exit(VCPKG_LINE_INFO, dep_vars != nullptr);
-        return supports_expression.evaluate(*dep_vars);
-    }
 
     bool cascade_for_triplet(const std::vector<InstallPlanAction>& install_actions,
                              const Triplet& target_triplet,
-                             const SortedVector<std::string>* target_triplet_exclusions,
+                             const SortedVector<std::string>* target_triplet_skips,
                              const Triplet& host_triplet,
-                             const SortedVector<std::string>* host_triplet_exclusions)
+                             const SortedVector<std::string>* host_triplet_skips)
     {
         return std::any_of(install_actions.begin(), install_actions.end(), [&](const InstallPlanAction& action) {
-            if (target_triplet_exclusions && action.spec.triplet() == target_triplet)
-                return target_triplet_exclusions->contains(action.spec.name());
-            if (host_triplet_exclusions && action.spec.triplet() == host_triplet)
-                return host_triplet_exclusions->contains(action.spec.name());
+            if (target_triplet_skips && action.spec.triplet() == target_triplet)
+                return target_triplet_skips->contains(action.spec.name());
+            if (host_triplet_skips && action.spec.triplet() == host_triplet)
+                return host_triplet_skips->contains(action.spec.name());
             return false;
         });
     }
 
-    const SortedVector<std::string>* find_triplet_exclusions(const ExclusionsMap& exclusions_map,
-                                                             const Triplet& triplet)
+    const SortedVector<std::string>* find_triplet_skips(const SkipsMap& skips_map, const Triplet& triplet)
     {
-        auto it = Util::find_if(exclusions_map.triplets, [&triplet](const TripletExclusions& exclusions) {
-            return exclusions.triplet == triplet;
-        });
-        return it == exclusions_map.triplets.end() ? nullptr : &it->exclusions;
+        auto it = Util::find_if(skips_map.triplets,
+                                [&triplet](const TripletSkips& skips) { return skips.triplet == triplet; });
+        return it == skips_map.triplets.end() ? nullptr : &it->skips;
     }
 
     ActionPlan compute_full_plan(const VcpkgPaths& paths,
@@ -169,12 +152,12 @@ namespace
             else if (Util::Sets::contains(parent_hashes, public_abi))
             {
                 state = &STATE_PARENT;
-                known_result = BuildResult::ExcludedByParent;
+                known_result = BuildResult::SkippedByParentHashes;
             }
             else
             {
                 state = &STATE_UNKNOWN;
-                known_result = BuildResult::ExcludedByDryRun;
+                known_result = BuildResult::SkippedByDryRun;
             }
 
             ret.report_lines.insert_or_assign(action.spec,
@@ -200,31 +183,31 @@ namespace
             console_diagnostic_context.report(DiagnosticLine{DiagKind::Warning, std::move(warning_text)});
         }
 
-        for (const auto& exclusion : ci_specs.excluded)
+        for (const auto& skip : ci_specs.skipped)
         {
             const StringLiteral* state;
             BuildResult known_result;
-            switch (exclusion.second)
+            switch (skip.second)
             {
-                // it probably makes sense to distinguish between "--exclude", "=skip" and "=fail but --skip-failures"
+                // it probably makes sense to distinguish between "=skip" and "=fail but --skip-failures"
                 // but we don't preserve that information right now, so all these cases report as "skip"
-                case ExcludeReason::Baseline:
+                case SkipReason::Baseline:
                     state = &STATE_SKIP;
-                    known_result = BuildResult::Excluded;
+                    known_result = BuildResult::Skipped;
                     break;
-                case ExcludeReason::Supports:
+                case SkipReason::Supports:
                     state = &STATE_UNSUPPORTED;
                     known_result = BuildResult::Unsupported;
                     break;
-                case ExcludeReason::Cascade:
+                case SkipReason::Cascade:
                     state = &STATE_CASCADE;
                     known_result = BuildResult::CascadedDueToMissingDependencies;
                     break;
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            ret.report_lines.insert_or_assign(exclusion.first, fmt::format("{:>40}: {}", exclusion.first, *state));
-            ret.known.insert_or_assign(exclusion.first, known_result);
+            ret.report_lines.insert_or_assign(skip.first, fmt::format("{:>40}: {}", skip.first, *state));
+            ret.known.insert_or_assign(skip.first, known_result);
         }
 
         return ret;
@@ -242,16 +225,16 @@ namespace
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
 
-            if (it_known->second != BuildResult::ExcludedByParent)
+            if (it_known->second != BuildResult::SkippedByParentHashes)
             {
                 it->request_type = RequestType::USER_REQUESTED;
-                if (it_known->second == BuildResult::ExcludedByDryRun)
+                if (it_known->second == BuildResult::SkippedByDryRun)
                 {
                     to_keep.insert(it->spec);
                 }
             }
 
-            if (Util::Sets::contains(to_keep, it->spec) && it_known->second != BuildResult::Excluded &&
+            if (Util::Sets::contains(to_keep, it->spec) && it_known->second != BuildResult::Skipped &&
                 it_known->second != BuildResult::Unsupported)
             {
                 to_keep.insert(it->package_dependencies.begin(), it->package_dependencies.end());
@@ -261,18 +244,6 @@ namespace
         Util::erase_remove_if(action_plan.install_actions, [&to_keep](const InstallPlanAction& action) {
             return !Util::Sets::contains(to_keep, action.spec);
         });
-    }
-
-    void parse_exclusions(const std::map<StringLiteral, std::string, std::less<>>& settings,
-                          StringLiteral opt,
-                          Triplet triplet,
-                          ExclusionsMap& exclusions_map)
-    {
-        auto it_exclusions = settings.find(opt);
-        exclusions_map.insert(triplet,
-                              it_exclusions == settings.end()
-                                  ? SortedVector<std::string>{}
-                                  : SortedVector<std::string>(Strings::split(it_exclusions->second, ',')));
     }
 
     bool print_regressions(const std::map<PackageSpec, CiResult>& ci_results,
@@ -318,7 +289,7 @@ namespace
         return ret;
     }
 
-    CiSpecsResult calculate_ci_specs(const ExclusionsMap& exclusions_map,
+    CiSpecsResult calculate_ci_specs(const SkipsMap& skip_map,
                                      const Triplet& target_triplet,
                                      const Triplet& host_triplet,
                                      PortFileProvider& provider,
@@ -330,10 +301,9 @@ namespace
         // it is too late as we have already calculated an action plan with feature dependencies from
         // the skipped ports.
         CiSpecsResult result;
-        const SortedVector<std::string>* const target_triplet_exclusions =
-            find_triplet_exclusions(exclusions_map, target_triplet);
-        const SortedVector<std::string>* const host_triplet_exclusions =
-            (host_triplet == target_triplet) ? nullptr : find_triplet_exclusions(exclusions_map, host_triplet);
+        const SortedVector<std::string>* const target_triplet_skips = find_triplet_skips(skip_map, target_triplet);
+        const SortedVector<std::string>* const host_triplet_skips =
+            (host_triplet == target_triplet) ? nullptr : find_triplet_skips(skip_map, host_triplet);
         auto all_control_files = provider.load_all_control_files();
 
         // populate `var_provider` to evaluate supports expressions for all ports:
@@ -346,9 +316,9 @@ namespace
             auto full_package_spec =
                 FullPackageSpec{PackageSpec{scfl->to_name(), target_triplet},
                                 InternalFeatureSet{FeatureNameCore.to_string(), FeatureNameDefault.to_string()}};
-            if (target_triplet_exclusions && target_triplet_exclusions->contains(scfl->to_name()))
+            if (target_triplet_skips && target_triplet_skips->contains(scfl->to_name()))
             {
-                result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Baseline);
+                result.skipped.insert_or_assign(std::move(full_package_spec.package_spec), SkipReason::Baseline);
                 continue;
             }
 
@@ -357,21 +327,24 @@ namespace
                 provider, var_provider, {&full_package_spec, 1}, {}, this_packages_dir_not_used, serialize_options);
             if (!action_plan.unsupported_features.empty())
             {
-                result.excluded.insert_or_assign(
+                result.skipped.insert_or_assign(
                     std::move(full_package_spec.package_spec),
-                    supported_for_triplet(var_provider, *scfl->source_control_file, full_package_spec.package_spec)
-                        ? ExcludeReason::Cascade
-                        : ExcludeReason::Supports);
+                    Util::any_of(action_plan.unsupported_features,
+                                 [&](const std::pair<const FeatureSpec, PlatformExpression::Expr>& p) {
+                                     return p.first.spec().name() == full_package_spec.package_spec.name();
+                                 })
+                        ? SkipReason::Supports
+                        : SkipReason::Cascade);
                 continue;
             }
 
             if (cascade_for_triplet(action_plan.install_actions,
                                     target_triplet,
-                                    target_triplet_exclusions,
+                                    target_triplet_skips,
                                     host_triplet,
-                                    host_triplet_exclusions))
+                                    host_triplet_skips))
             {
-                result.excluded.insert_or_assign(std::move(full_package_spec.package_spec), ExcludeReason::Cascade);
+                result.skipped.insert_or_assign(std::move(full_package_spec.package_spec), SkipReason::Cascade);
                 continue;
             }
 
@@ -453,9 +426,13 @@ namespace vcpkg
             KeepGoing::Yes,
         };
 
-        ExclusionsMap exclusions_map;
-        parse_exclusions(settings, SwitchExclude, target_triplet, exclusions_map);
-        parse_exclusions(settings, SwitchHostExclude, host_triplet, exclusions_map);
+        SkipsMap skips_map;
+        skips_map.insert(target_triplet, {});
+        if (host_triplet != target_triplet)
+        {
+            skips_map.insert(host_triplet, {});
+        }
+
         auto baseline_iter = settings.find(SwitchCIBaseline);
         const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
@@ -476,7 +453,7 @@ namespace vcpkg
             ParseMessages ci_parse_messages;
             const auto lines = parse_ci_baseline(ci_baseline_file_contents, *ci_baseline_file_name, ci_parse_messages);
             ci_parse_messages.exit_if_errors_or_warnings();
-            baseline_data = parse_and_apply_ci_baseline(lines, exclusions_map, skip_failures);
+            baseline_data = parse_and_apply_ci_baseline(lines, skips_map, skip_failures);
         }
 
         std::unordered_set<std::string> known_failure_abis;
@@ -521,7 +498,7 @@ namespace vcpkg
         CreateInstallPlanOptions create_install_plan_options(
             randomizer.get(), host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No);
         auto ci_specs = calculate_ci_specs(
-            exclusions_map, target_triplet, host_triplet, provider, var_provider, create_install_plan_options);
+            skips_map, target_triplet, host_triplet, provider, var_provider, create_install_plan_options);
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
         auto action_plan = compute_full_plan(

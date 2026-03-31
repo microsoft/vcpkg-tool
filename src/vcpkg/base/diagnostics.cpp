@@ -5,8 +5,6 @@
 
 #include <system_error>
 
-#include <fmt/compile.h>
-
 using namespace vcpkg;
 
 namespace

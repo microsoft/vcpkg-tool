@@ -5,7 +5,14 @@ else()
 endif()
 
 option(VCPKG_LIBCURL_DLSYM "Use dlsym to dynamically load libcurl at runtime instead of using the system libcurl" "${VCPKG_LIBCURL_DLSYM_DEFAULT}")
-option(VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS "Use more recent libcurl headers when using DLSYM than 7.29.0" OFF)
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "[Aa][Mm][Dd]64|[Xx]86[_-]64")
+    set(VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS_DEFAULT "OFF")
+else()
+    set(VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS_DEFAULT "ON")
+endif()
+
+option(VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS "Use more recent libcurl headers when using DLSYM than 7.29.0" "${VCPKG_LIBCURL_DLSYM_UPDATED_HEADERS_DEFAULT}")
 
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)

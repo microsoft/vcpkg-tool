@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/chrono.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/curl.h>
@@ -582,7 +584,7 @@ namespace vcpkg
 
     bool curl_upload_metrics(const std::string& payload)
     {
-        if (payload.length() > static_cast<size_t>(std::numeric_limits<long>::max()))
+        if (payload.length() > static_cast<size_t>((std::numeric_limits<long>::max)()))
         {
             Debug::println("Metrics payload too large to upload");
             return false;
