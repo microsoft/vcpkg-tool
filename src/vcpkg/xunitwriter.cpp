@@ -31,6 +31,9 @@ namespace
             case BuildResult::Skipped:
             case BuildResult::SkippedByParentHashes:
             case BuildResult::SkippedByDryRun:
+            case BuildResult::SkippedBySkipFailures:
+            case BuildResult::CascadedDueToSupports:
+            case BuildResult::CascadedDueToBaseline:
             case BuildResult::Unsupported:
             case BuildResult::Cached: result_string = "Skip"; break;
             case BuildResult::CacheMissing:

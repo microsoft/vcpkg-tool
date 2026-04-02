@@ -118,9 +118,12 @@ namespace vcpkg
         int post_build_checks_failed = 0;
         int file_conflicts = 0;
         int cascaded_due_to_missing_dependencies = 0;
+        int cascaded_due_to_supports = 0;
+        int cascaded_due_to_baseline = 0;
         int skipped = 0;
         int skipped_by_parent_hashes = 0;
         int skipped_by_dry_run = 0;
+        int skipped_by_skip_failures = 0;
         int unsupported = 0;
         int cache_missing = 0;
         int cached = 0;

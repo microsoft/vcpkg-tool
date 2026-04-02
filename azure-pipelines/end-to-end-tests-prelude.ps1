@@ -135,7 +135,7 @@ function Run-VcpkgImplAndCaptureOutput {
     Write-Host -ForegroundColor red $Script:CurrentTest
     $result = (& "$ThisVcpkg" @testArgs) | Out-String
     Write-Host -ForegroundColor Gray $result
-    $result.Replace("`r`n", "`n")
+    return $result.Replace("`r`n", "`n")
 }
 
 function Run-VcpkgShellAndCaptureOutput {
@@ -169,6 +169,19 @@ function Run-VcpkgAndCaptureStdErr {
     if ($null -eq $result) {
         $result = [string]::Empty
     }
+    return $result.Replace("`r`n", "`n")
+}
+
+function Run-VcpkgAndCaptureBoth {
+    Param(
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+
+    $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
+    Write-Host -ForegroundColor red $Script:CurrentTest
+    $result = (& "$VcpkgExe" @testArgs 2>&1) | Out-String
+    Write-Host -ForegroundColor Gray $result
     return $result.Replace("`r`n", "`n")
 }
 

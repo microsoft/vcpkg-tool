@@ -208,7 +208,7 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
         SkipsMap skips;
         skips.insert(x64_uwp, {});   // example triplet
         skips.insert(x64_linux, {}); // example host triplet
-        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::No);
+        auto actual = parse_and_apply_ci_baseline(expected_from_example_input, skips);
         const SortedVector<PackageSpec> expected_expected_failures{
             PackageSpec{"aubio", x64_uwp},
             PackageSpec{"bde", x64_linux},
@@ -223,23 +223,10 @@ bill-made-up-another-skip:x64-linux=skip)"; // note no trailing newline
             PackageSpec{"casclib", x64_uwp},
         };
 
-        CHECK(actual.expected_failures == expected_expected_failures);
+        CHECK(actual.expected_fail == expected_expected_failures);
         CHECK(skips.triplets.size() == 2);
         CHECK(skips.triplets[0].skips == SortedVector<std::string>{"catch-classic"});
         CHECK(skips.triplets[1].skips == SortedVector<std::string>{"catch-classic", "bill-made-up-another-skip"});
-
-        skips.triplets[0].skips.clear();
-        skips.triplets[1].skips.clear();
-
-        actual = parse_and_apply_ci_baseline(expected_from_example_input, skips, SkipFailures::Yes);
-        CHECK(actual.expected_failures == expected_expected_failures);
-        CHECK(skips.triplets.size() == 2);
-        CHECK(skips.triplets[0].skips ==
-              SortedVector<std::string>{
-                  "aubio", "blitz", "blosc", "bond", "botan", "c-ares", "caf", "casclib", "catch-classic"});
-        CHECK(skips.triplets[1].skips ==
-              SortedVector<std::string>{
-                  "bde", "buck-yeh-bux", "buck-yeh-bux-mariadb-client", "catch-classic", "bill-made-up-another-skip"});
     }
 }
 
@@ -319,20 +306,41 @@ TEST_CASE ("Parse Errors", "[ci-baseline]")
 TEST_CASE ("format_ci_result 1", "[ci-baseline]")
 {
     CiBaselineData cidata;
-    cidata.expected_failures = {
+    cidata.expected_fail = {
         PackageSpec{"fail", Test::X64_UWP},
     };
-    cidata.required_success = {
+    cidata.required_pass = {
         PackageSpec{"pass", Test::X64_UWP},
     };
     constexpr const char failmsg[] = "REGRESSION: {0} failed with BUILD_FAILED. If expected, add {0}=fail to cifile.";
+    constexpr const char postbuildmsg[] =
+        "REGRESSION: {0} failed with POST_BUILD_CHECKS_FAILED. If expected, add {0}=fail to cifile.";
+    constexpr const char fileconflictsmsg[] =
+        "REGRESSION: {0} failed with FILE_CONFLICTS. If expected, add {0}=fail to cifile.";
+    constexpr const char regression_no_path_msg[] = "REGRESSION: {0} failed with {1}.";
     constexpr const char cascademsg[] = "REGRESSION: {0} cascaded, but it is required to pass. (cifile).";
     constexpr const char passmsg[] = "PASSING, REMOVE FROM FAIL LIST: {0} (cifile).";
+    constexpr const char unsupported_failmsg[] = "REGRESSION: {0} is marked as fail but not supported for x64-uwp.";
+    constexpr const char unsupported_passmsg[] = "REGRESSION: {0} is marked as pass but not supported for x64-uwp.";
     std::string cifile = "cifile";
     SECTION ("SUCCEEDED")
     {
         const auto test = [&](PackageSpec s, bool allow_unexpected_passing) {
             return format_ci_result(s, BuildResult::Succeeded, cidata, &cifile, allow_unexpected_passing);
+        };
+        CHECK(test({"pass", Test::X64_UWP}, true) == "");
+        CHECK(test({"pass", Test::X64_UWP}, false) == "");
+        CHECK(test({"fail", Test::X64_UWP}, true) == "");
+        CHECK(test({"fail", Test::X64_UWP}, false) == fmt::format(passmsg, "fail:x64-uwp"));
+        CHECK(test({"fail", Test::ARM_UWP}, false) == "");
+        CHECK(test({"neither", Test::X64_UWP}, true) == "");
+        CHECK(test({"neither", Test::X64_UWP}, false) == "");
+    }
+
+    SECTION ("CACHED")
+    {
+        const auto test = [&](PackageSpec s, bool allow_unexpected_passing) {
+            return format_ci_result(s, BuildResult::Cached, cidata, &cifile, allow_unexpected_passing);
         };
         CHECK(test({"pass", Test::X64_UWP}, true) == "");
         CHECK(test({"pass", Test::X64_UWP}, false) == "");
@@ -353,14 +361,91 @@ TEST_CASE ("format_ci_result 1", "[ci-baseline]")
         CHECK(test({"neither", Test::X64_UWP}) == fmt::format(failmsg, "neither:x64-uwp"));
     }
 
-    SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
+    SECTION ("POST_BUILD_CHECKS_FAILED")
     {
         const auto test = [&](PackageSpec s) {
-            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false);
+            return format_ci_result(s, BuildResult::PostBuildChecksFailed, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(postbuildmsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"neither", Test::X64_UWP}) == fmt::format(postbuildmsg, "neither:x64-uwp"));
+    }
+
+    SECTION ("FILE_CONFLICTS")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::FileConflicts, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(fileconflictsmsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"neither", Test::X64_UWP}) == fmt::format(fileconflictsmsg, "neither:x64-uwp"));
+    }
+
+    SECTION ("BUILD_FAILED WITHOUT CI FILE")
+    {
+        const auto test = [&](PackageSpec s, BuildResult result) {
+            return format_ci_result(s, result, cidata, nullptr, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}, BuildResult::BuildFailed) ==
+              fmt::format(regression_no_path_msg, "pass:x64-uwp", "BUILD_FAILED"));
+        CHECK(test({"pass", Test::X64_UWP}, BuildResult::PostBuildChecksFailed) ==
+              fmt::format(regression_no_path_msg, "pass:x64-uwp", "POST_BUILD_CHECKS_FAILED"));
+        CHECK(test({"pass", Test::X64_UWP}, BuildResult::FileConflicts) ==
+              fmt::format(regression_no_path_msg, "pass:x64-uwp", "FILE_CONFLICTS"));
+    }
+
+    SECTION ("CASCADED_DUE_TO_SUPPORTS")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::CascadedDueToSupports, cidata, &cifile, false);
         };
         CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
         CHECK(test({"fail", Test::X64_UWP}) ==
               "REGRESSION: fail:x64-uwp is marked as fail but one dependency is not supported for x64-uwp.");
         CHECK(test({"neither", Test::X64_UWP}) == "");
     }
+
+    SECTION ("CASCADED_DUE_TO_MISSING_DEPENDENCIES")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::CascadedDueToMissingDependencies, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"neither", Test::X64_UWP}) == "");
+    }
+
+    SECTION ("CASCADED_DUE_TO_BASELINE")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::CascadedDueToBaseline, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(cascademsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == "");
+        CHECK(test({"neither", Test::X64_UWP}) == "");
+    }
+
+    SECTION ("UNSUPPORTED")
+    {
+        const auto test = [&](PackageSpec s) {
+            return format_ci_result(s, BuildResult::Unsupported, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}) == fmt::format(unsupported_passmsg, "pass:x64-uwp"));
+        CHECK(test({"fail", Test::X64_UWP}) == fmt::format(unsupported_failmsg, "fail:x64-uwp"));
+        CHECK(test({"neither", Test::X64_UWP}) == "");
+    }
+
+    SECTION ("SKIPPED")
+    {
+        const auto test = [&](PackageSpec s, BuildResult result) {
+            return format_ci_result(s, result, cidata, &cifile, false);
+        };
+        CHECK(test({"pass", Test::X64_UWP}, BuildResult::Skipped) == "");
+        CHECK(test({"fail", Test::X64_UWP}, BuildResult::SkippedByParentHashes) == "");
+        CHECK(test({"neither", Test::X64_UWP}, BuildResult::SkippedByDryRun) == "");
+        CHECK(test({"pass", Test::X64_UWP}, BuildResult::SkippedBySkipFailures) == "");
+    }
+
+    // CacheMissing, Downloaded, and Removed are semantically invalid here; format_ci_result only accepts CI result
+    // states that participate in baseline evaluation, and these values intentionally hit unreachable.
 }
