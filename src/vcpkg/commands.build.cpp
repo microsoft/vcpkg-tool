@@ -1038,6 +1038,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/ios.cmake";
         }
+        else if (cmake_system_name == "OHOS")
+        {
+            return m_paths.scripts / "toolchains/ohos.cmake";
+        }
         else
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
