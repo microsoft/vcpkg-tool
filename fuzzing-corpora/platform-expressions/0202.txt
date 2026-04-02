@@ -1,0 +1,1 @@
+!uwp & !(windows & arm) & !wasm32

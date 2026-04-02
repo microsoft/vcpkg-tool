@@ -1,0 +1,4 @@
+{
+  "name": "vcpkg-policy-empty-package",
+  "version": "1"
+}

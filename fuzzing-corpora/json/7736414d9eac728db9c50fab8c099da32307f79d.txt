@@ -1,0 +1,15 @@
+{
+    "name": "vcpkg-cmake-config-many-targets",
+    "version": "0",
+    "description": "A hello world port that makes enough cmake targets that they get omitted",
+    "dependencies": [
+        {
+          "name": "vcpkg-cmake",
+          "host": true
+        },
+        {
+          "name": "vcpkg-cmake-config",
+          "host": true
+        }
+    ]
+}

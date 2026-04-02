@@ -1,0 +1,1 @@
+(static & staticcrt) | (!static & staticcrt) | (!static & !staticcrt)

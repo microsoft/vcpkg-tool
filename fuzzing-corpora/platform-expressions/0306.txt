@@ -1,0 +1,1 @@
+(windows & !uwp) | android | linux | freebsd | openbsd

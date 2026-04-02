@@ -1,0 +1,1 @@
+!(static & windows) & !uwp & !(arm64 & windows)

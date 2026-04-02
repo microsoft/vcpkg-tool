@@ -19,7 +19,8 @@ option(VCPKG_DEVELOPMENT_WARNINGS "Option for turning on all warnings" ON)
 option(VCPKG_MSVC_ANALYZE "Option for turning on /analyze" ON)
 option(VCPKG_WARNINGS_AS_ERRORS "Set warnings to be errors" OFF)
 option(VCPKG_BUILD_TLS12_DOWNLOADER "Enable building the tls12-downloader" OFF)
-option(VCPKG_BUILD_FUZZING "Option for enabling vcpkg-fuzz support" OFF)
+option(VCPKG_BUILD_FUZZING "Build vcpkg fuzz tests" OFF)
+option(VCPKG_FUZZER_INSTRUMENTATION "Build vcpkg with fuzzing instrumentation. Not generally useful without VCPKG_BUILD_FUZZING turned on" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
 option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and npm." OFF)
@@ -96,6 +97,40 @@ endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
+
+set(VCPKG_FUZZER_INSTRUMENTATION_COMPILE_OPTIONS
+    -fsanitize=address
+    -fsanitize-coverage=inline-8bit-counters
+    -fsanitize-coverage=edge
+    -fsanitize-coverage=trace-cmp
+    -fsanitize-coverage=trace-div
+)
+
+add_library(vcpkg-fuzzer-instrumentation INTERFACE)
+if(VCPKG_FUZZER_INSTRUMENTATION)
+    target_compile_options(vcpkg-fuzzer-instrumentation INTERFACE
+        ${VCPKG_FUZZER_INSTRUMENTATION_COMPILE_OPTIONS}
+    )
+    if(WIN32)
+        target_link_options(vcpkg-fuzzer-instrumentation INTERFACE
+            "$<$<CONFIG:Debug>:sancovd.lib>"
+            "$<$<NOT:$<CONFIG:Debug>>:sancov.lib>"
+        )
+
+        if(MSVC_CXX_ARCHITECTURE_ID STREQUAL "x64")
+            set(VCPKG_ASAN_RUNTIME_ARCH "x86_64")
+        elseif(MSVC_CXX_ARCHITECTURE_ID STREQUAL "ARM64")
+            set(VCPKG_ASAN_RUNTIME_ARCH "aarch64")
+        elseif(MSVC_CXX_ARCHITECTURE_ID STREQUAL "x86")
+            set(VCPKG_ASAN_RUNTIME_ARCH "i386")
+        else()
+            message(FATAL_ERROR "Unsupported MSVC architecture for ASan runtime copy: ${MSVC_CXX_ARCHITECTURE_ID}")
+        endif()
+
+        get_filename_component(VCPKG_ASAN_RUNTIME_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    endif()
+endif()
+
 if(MSVC)
     # either MSVC, or clang-cl
     string(APPEND CMAKE_C_FLAGS " -FC -permissive- -utf-8 /guard:cf")
@@ -182,7 +217,9 @@ set(VCPKG_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.cpp")
 file(GLOB VCPKG_TEST_SOURCES CONFIGURE_DEPENDS "src/vcpkg-test/*.cpp")
 file(GLOB VCPKG_TEST_INCLUDES CONFIGURE_DEPENDS "include/vcpkg-test/*.h")
 
-set(VCPKG_FUZZ_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz/main.cpp")
+set(VCPKG_FUZZ_UTF8_DECODER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz-utf8-decoder.cpp")
+set(VCPKG_FUZZ_JSON_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz-json.cpp")
+set(VCPKG_FUZZ_PLATFORM_EXPRESSIONS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-fuzz-platform-expressions.cpp")
 set(TLS12_DOWNLOAD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/tls12-download.c")
 set(CLOSES_EXIT_MINUS_ONE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-exit-minus-one.c")
 set(CLOSES_STDIN_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/closes-stdin.c")
@@ -196,6 +233,9 @@ set(TEST_SCRIPT_ASSET_CACHE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/test-script
 # ====================
 
 find_package(fmt REQUIRED)
+if(VCPKG_FUZZER_INSTRUMENTATION)
+    target_compile_options(fmt PRIVATE ${VCPKG_FUZZER_INSTRUMENTATION_COMPILE_OPTIONS})
+endif()
 find_package(CMakeRC REQUIRED)
 find_package(LibCURL REQUIRED)
 
@@ -203,6 +243,9 @@ find_package(LibCURL REQUIRED)
 
 file(GLOB LOCALE_RESOURCES CMAKE_CONFIGURE_DEPENDS "locales/*.json")
 cmrc_add_resource_library(locale-resources ALIAS cmakerc::locales NAMESPACE cmakerc ${LOCALE_RESOURCES})
+if(VCPKG_FUZZER_INSTRUMENTATION)
+    target_compile_options(locale-resources PRIVATE ${VCPKG_FUZZER_INSTRUMENTATION_COMPILE_OPTIONS})
+endif()
 
 if(NOT MSVC)
     if(VCPKG_COMPILER STREQUAL "gcc")
@@ -391,6 +434,9 @@ target_link_libraries(vcpkglib
     PRIVATE
         ${CPP_ATOMIC_LIBRARY}
 )
+if(VCPKG_FUZZER_INSTRUMENTATION)
+    target_link_libraries(vcpkglib PUBLIC vcpkg-fuzzer-instrumentation)
+endif()
 
 if(CMAKE_VERSION GREATER_EQUAL "3.16")
     target_precompile_headers(vcpkglib PRIVATE "include/pch.h")
@@ -494,13 +540,52 @@ if (BUILD_TESTING)
     endif()
 endif()
 
-# === Target: vcpkg-fuzz ===
-if(VCPKG_BUILD_FUZZING)
-    add_executable(vcpkg-fuzz ${VCPKG_FUZZ_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
-    target_link_libraries(vcpkg-fuzz PRIVATE vcpkglib)
-    set_property(TARGET vcpkg-fuzz PROPERTY PDB_NAME "vcpkg-fuzz${VCPKG_PDB_SUFFIX}")
+# === Target: vcpkg-fuzz-utf8-decoder ===
+add_library(vcpkg-fuzzer-settings INTERFACE)
+if(VCPKG_FUZZER_INSTRUMENTATION AND WIN32)
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${VCPKG_ASAN_RUNTIME_DIR}/clang_rt.asan_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+        COMMENT "Copying ASan release runtime to output"
+        VERBATIM
+    )
+
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dbg_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+            "${VCPKG_ASAN_RUNTIME_DIR}/clang_rt.asan_dbg_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dbg_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+        COMMENT "Copying ASan debug runtime to output"
+        VERBATIM
+    )
+
+    add_custom_target(vcpkg-copy-asan-runtime ALL DEPENDS
+        "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/clang_rt.asan_dbg_dynamic-${VCPKG_ASAN_RUNTIME_ARCH}.dll"
+    )
+    add_dependencies(vcpkg-fuzzer-settings vcpkg-copy-asan-runtime)
+    target_compile_options(vcpkg-fuzzer-settings INTERFACE -fsanitize=fuzzer -fsanitize-coverage=inline-8bit-counters -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize-coverage=trace-div)
 endif()
 
+function(vcpkg_add_fuzzer target)
+    if (VCPKG_FUZZER_INSTRUMENTATION)
+        add_executable(${target} ${ARGN} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+    else()
+        # we can't actually fuzz test without instrumentation but we can build the .cpps to make sure
+        # they compile
+        add_library(${target} ${ARGN} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
+    endif()
+    set_property(TARGET ${target} PROPERTY PDB_NAME "${target}${VCPKG_PDB_SUFFIX}")
+    target_link_libraries(${target} PRIVATE vcpkglib vcpkg-fuzzer-settings)
+endfunction()
+
+if(VCPKG_BUILD_FUZZING)
+    vcpkg_add_fuzzer(vcpkg-fuzz-utf8-decoder ${VCPKG_FUZZ_UTF8_DECODER_SOURCES})
+    vcpkg_add_fuzzer(vcpkg-fuzz-json ${VCPKG_FUZZ_JSON_SOURCES})
+    vcpkg_add_fuzzer(vcpkg-fuzz-platform-expressions ${VCPKG_FUZZ_PLATFORM_EXPRESSIONS_SOURCES})
+endif()
 
 # === Target: tls12-download ===
 
@@ -568,9 +653,17 @@ if(CLANG_FORMAT)
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_TEST_SOURCES}
         COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_TEST_INCLUDES}
 
-        COMMAND "${CLANG_FORMAT}" -i -verbose ${VCPKG_FUZZ_SOURCES} ${TLS12_DOWNLOAD_SOURCES}
-            ${CLOSES_STDIN_SOURCES} ${CLOSES_STDOUT_SOURCES} ${READS_STDIN_SOURCES} ${CLOSES_EXIT_MINUS_ONE_SOURCES}
-            ${TEST_EDITOR_SOURCES} ${TEST_SCRIPT_ASSET_CACHE_SOURCES}
+        COMMAND "${CLANG_FORMAT}" -i -verbose
+            ${VCPKG_FUZZ_UTF8_DECODER_SOURCES}
+            ${VCPKG_FUZZ_JSON_SOURCES}
+            ${VCPKG_FUZZ_PLATFORM_EXPRESSIONS_SOURCES}
+            ${TLS12_DOWNLOAD_SOURCES}
+            ${CLOSES_STDIN_SOURCES}
+            ${CLOSES_STDOUT_SOURCES}
+            ${READS_STDIN_SOURCES}
+            ${CLOSES_EXIT_MINUS_ONE_SOURCES}
+            ${TEST_EDITOR_SOURCES}
+            ${TEST_SCRIPT_ASSET_CACHE_SOURCES}
     )
 endif()
 
