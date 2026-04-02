@@ -416,7 +416,7 @@ namespace vcpkg
             .string_arg("-y")
             .string_arg("-r")
             .string_arg(destination)
-            .string_arg("*")
+            .raw_arg("*")
             .string_arg("--exclude")
             .string_arg(FileDotDsStore);
         auto output = cmd_execute_and_capture_output(context, zip_command, settings);

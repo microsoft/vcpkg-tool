@@ -165,9 +165,13 @@ namespace vcpkg
 {
     void append_shell_escaped(std::string& target, StringView content)
     {
-        if (Strings::find_first_of(content, " \t\n\r\"\\`$,;&^|'()") != content.end())
+        if (content.empty() || Strings::find_first_of(content,
+                                                      " \t\n\r\"\\`$,;&^|'()"
+#if !defined(_WIN32)
+                                                      "*?[#"
+#endif // ^^^ !_WIN32
+                                                      ) != content.end())
         {
-            // TODO: improve this to properly handle all escaping
 #if _WIN32
             // On Windows, `\`s before a double-quote must be doubled. Inner double-quotes must be escaped.
             target.push_back('"');
@@ -194,7 +198,8 @@ namespace vcpkg
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
             // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
-            // shell.
+            // shell. Characters like '*', '?', '[', and '#' are handled by deciding to quote the whole argument;
+            // once inside double quotes, they no longer need per-character escaping before invoking /bin/sh.
             target.push_back('"');
             for (auto ch : content)
             {
