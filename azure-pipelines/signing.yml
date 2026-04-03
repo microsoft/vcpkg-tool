@@ -45,7 +45,7 @@ extends:
           - name: VCPKG_INITIAL_BASE_VERSION
             value: ${{parameters.VcpkgBaseVersionOverride}}
         pool:
-          name: 'VSEngSS-MicroBuild2022-1ES'
+          name: 'VSEng-MicroBuildVSStable'
         templateContext:
           sdl:
             codeql:
@@ -313,7 +313,7 @@ extends:
         - muslc_build
         - glibc_arm64_build
         pool:
-          name: 'VSEngSS-MicroBuild2022-1ES'
+          name: 'VSEng-MicroBuildVSStable'
         variables:
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
           VCPKG_FULL_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_FULL_VERSION'] ]
@@ -380,7 +380,7 @@ extends:
           inputs:
             failOnStderr: true
             script: |
-              call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
+              call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 -host_arch=amd64
               cmake.exe --version
               set X_VCPKG_ASSET_SOURCES=x-script,$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\trt\TerrapinRetrievalTool.exe -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u Environment -p {url} -s {sha512} -d {dst};x-block-origin
               cmake.exe -G Ninja -DCMAKE_TOOLCHAIN_FILE="$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\tools\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\amd64" 2>&1
@@ -390,7 +390,7 @@ extends:
           inputs:
             failOnStderr: true
             script: |
-              call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
+              call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=arm64 -host_arch=amd64
               cmake.exe --version
               set X_VCPKG_ASSET_SOURCES=x-script,$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\trt\TerrapinRetrievalTool.exe -b https://vcpkg.storage.devpackages.microsoft.io/artifacts/ -a true -u Environment -p {url} -s {sha512} -d {dst};x-block-origin
               cmake.exe -G Ninja -DCMAKE_TOOLCHAIN_FILE="$(Build.BinariesDirectory)\Microsoft.Build.Vcpkg\tools\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=arm64-windows-static-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_BUILD_TLS12_DOWNLOADER=ON -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DVCPKG_PDB_SUFFIX="-arm64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$(VCPKG_BASE_VERSION)" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$(VCPKG_STANDALONE_BUNDLE_SHA)" "-DVCPKG_ARTIFACTS_SHA=$(VCPKG_ARTIFACTS_SHA)" -B "$(Build.BinariesDirectory)\arm64" 2>&1
@@ -539,7 +539,7 @@ extends:
         - arch_independent
         - windows_and_sign
         pool:
-          name: 'VSEngSS-MicroBuild2022-1ES'
+          name: 'VSEng-MicroBuildVSStable'
         variables:
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
         templateContext:
