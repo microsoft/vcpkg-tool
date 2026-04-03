@@ -476,6 +476,8 @@ namespace vcpkg
         const auto unsupported_port_action = UnsupportedPortAction::Warn;
 
         ActionPlan action_plan;
+        // this needs to be kept alive because the ActionPlan has pointers into it
+        std::unique_ptr<IOverlayProvider> oprovider;
         if (manifest)
         {
             const CreateInstallPlanOptions create_options{
@@ -500,7 +502,7 @@ namespace vcpkg
                 extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
             }
 
-            auto oprovider =
+            oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
             action_plan = create_versioned_install_plan(*verprovider,
                                                         *baseprovider,
