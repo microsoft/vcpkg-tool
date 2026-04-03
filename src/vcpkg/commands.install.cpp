@@ -90,6 +90,30 @@ namespace
 
 namespace vcpkg
 {
+    std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
+                                                                  const VcpkgPaths& paths,
+                                                                  bool is_default_builtin_registry)
+    {
+        auto maybe_manifest_scf =
+            SourceControlFile::parse_project_manifest_object(manifest.path, manifest.manifest, out_sink);
+        if (!maybe_manifest_scf)
+        {
+            msg::println(Color::error,
+                         std::move(maybe_manifest_scf)
+                             .error()
+                             .append_raw('\n')
+                             .append_raw(NotePrefix)
+                             .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
+                             .append_raw('\n'));
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
+        manifest_scf->check_against_feature_flags(manifest.path, paths.get_feature_flags(), is_default_builtin_registry)
+            .value_or_exit(VCPKG_LINE_INFO);
+        return manifest_scf;
+    }
+
     std::vector<std::string> get_manifest_features(const ParsedArguments& options,
                                                    const SourceParagraph& manifest_core,
                                                    const CMakeVars::CMakeVarProvider& var_provider,
@@ -1371,27 +1395,9 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
         if (manifest)
         {
-            auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
-            if (!maybe_manifest_scf)
-            {
-                msg::println(Color::error,
-                             std::move(maybe_manifest_scf)
-                                 .error()
-                                 .append_raw('\n')
-                                 .append_raw(NotePrefix)
-                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
-                                 .append_raw('\n'));
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
+            auto manifest_scf =
+                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
             const auto& manifest_core = *manifest_scf->core_paragraph;
-            manifest_scf
-                ->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
-                .value_or_exit(VCPKG_LINE_INFO);
-
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
 

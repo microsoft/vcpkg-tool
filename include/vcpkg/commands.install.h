@@ -17,6 +17,7 @@
 #include <vcpkg/packagespec.h>
 
 #include <chrono>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -82,6 +83,10 @@ namespace vcpkg
         void print_failed() const;
         void print_complete_message() const;
     };
+
+    std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
+                                                                  const VcpkgPaths& paths,
+                                                                  bool is_default_builtin_registry);
 
     std::vector<std::string> get_manifest_features(const ParsedArguments& options,
                                                    const SourceParagraph& manifest_core,
