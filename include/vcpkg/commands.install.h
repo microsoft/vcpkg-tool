@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vcpkg/fwd/binaryparagraph.h>
+#include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/installedpaths.h>
@@ -81,6 +82,12 @@ namespace vcpkg
         void print_failed() const;
         void print_complete_message() const;
     };
+
+    std::vector<std::string> get_manifest_features(const ParsedArguments& options,
+                                                   const SourceParagraph& manifest_core,
+                                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                                   const PackageSpec& toplevel,
+                                                   Triplet host_triplet);
 
     std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
                                                       const std::vector<std::string>& features);

@@ -90,6 +90,51 @@ namespace
 
 namespace vcpkg
 {
+    std::vector<std::string> get_manifest_features(const ParsedArguments& options,
+                                                   const SourceParagraph& manifest_core,
+                                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                                   const PackageSpec& toplevel,
+                                                   Triplet host_triplet)
+    {
+        std::vector<std::string> features;
+        auto manifest_feature_it = options.multisettings.find(SwitchXFeature);
+        if (manifest_feature_it != options.multisettings.end())
+        {
+            features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
+        }
+        if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+        {
+            features.emplace_back(FeatureNameCore);
+        }
+
+        auto core_it = std::remove(features.begin(), features.end(), FeatureNameCore);
+        if (core_it == features.end())
+        {
+            if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
+            {
+                const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
+                for (const auto& f : manifest_core.default_features)
+                {
+                    if (f.platform.evaluate(vars)) features.push_back(f.name);
+                }
+            }
+            else
+            {
+                for (const auto& f : manifest_core.default_features)
+                {
+                    features.push_back(f.name);
+                }
+            }
+        }
+        else
+        {
+            features.erase(core_it, features.end());
+        }
+
+        Util::sort_unique_erase(features);
+        return features;
+    }
+
     std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
                                                       const std::vector<std::string>& features)
     {
@@ -1347,39 +1392,8 @@ namespace vcpkg
                     manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
                 .value_or_exit(VCPKG_LINE_INFO);
 
-            std::vector<std::string> features;
-            auto manifest_feature_it = options.multisettings.find(SwitchXFeature);
-            if (manifest_feature_it != options.multisettings.end())
-            {
-                features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
-            }
-            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
-            {
-                features.emplace_back(FeatureNameCore);
-            }
             PackageSpec toplevel{manifest_core.name, default_triplet};
-            auto core_it = std::remove(features.begin(), features.end(), FeatureNameCore);
-            if (core_it == features.end())
-            {
-                if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
-                {
-                    const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
-                    for (const auto& f : manifest_core.default_features)
-                    {
-                        if (f.platform.evaluate(vars)) features.push_back(f.name);
-                    }
-                }
-                else
-                {
-                    for (const auto& f : manifest_core.default_features)
-                        features.push_back(f.name);
-                }
-            }
-            else
-            {
-                features.erase(core_it, features.end());
-            }
-            Util::sort_unique_erase(features);
+            auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
 
             auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
