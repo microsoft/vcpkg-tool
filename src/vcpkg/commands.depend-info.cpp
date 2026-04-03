@@ -481,14 +481,6 @@ namespace vcpkg
             const CreateInstallPlanOptions create_options{
                 nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
 
-            /* vvv shared by install and depend-info vvv */
-            Optional<Path> pkgsconfig;
-            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
-            if (it_pkgsconfig != options.settings.end())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
-                pkgsconfig = Path(it_pkgsconfig->second);
-            }
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
@@ -569,7 +561,6 @@ namespace vcpkg
                                                         packages_dir_assigner,
                                                         create_options)
                               .value_or_exit(VCPKG_LINE_INFO);
-            /* ^^^ shared by install and depend-info ^^^ */
         }
         else
         {

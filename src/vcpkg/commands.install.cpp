@@ -1326,16 +1326,6 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
         if (manifest)
         {
-            ActionPlan install_plan;
-
-            /* vvv shared by install and depend-info vvv */
-            Optional<Path> pkgsconfig;
-            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
-            if (it_pkgsconfig != options.settings.end())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
-                pkgsconfig = Path(it_pkgsconfig->second);
-            }
             auto maybe_manifest_scf =
                 SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
             if (!maybe_manifest_scf)
@@ -1393,8 +1383,6 @@ namespace vcpkg
 
             auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
-            track_manifest_metrics(dependencies, manifest_core);
-
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
             auto verprovider = make_versioned_portfile_provider(*registry_set);
@@ -1408,24 +1396,30 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            install_plan = create_versioned_install_plan(*verprovider,
-                                                         *baseprovider,
-                                                         *oprovider,
-                                                         var_provider,
-                                                         dependencies,
-                                                         manifest_core.overrides,
-                                                         toplevel,
-                                                         packages_dir_assigner,
-                                                         create_options)
-                               .value_or_exit(VCPKG_LINE_INFO);
-            /* ^^^ shared by install and depend-info ^^^ */
-
-            install_plan.print_unsupported_warnings();
+            ActionPlan install_plan = create_versioned_install_plan(*verprovider,
+                                                                    *baseprovider,
+                                                                    *oprovider,
+                                                                    var_provider,
+                                                                    dependencies,
+                                                                    manifest_core.overrides,
+                                                                    toplevel,
+                                                                    packages_dir_assigner,
+                                                                    create_options)
+                                          .value_or_exit(VCPKG_LINE_INFO);
 
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
+            install_plan.print_unsupported_warnings();
+            Optional<Path> pkgsconfig;
+            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
+            if (it_pkgsconfig != options.settings.end())
+            {
+                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
+                pkgsconfig = Path(it_pkgsconfig->second);
+            }
+            track_manifest_metrics(dependencies, manifest_core);
             command_set_installed_and_exit_ex(args,
                                               paths,
                                               host_triplet,
