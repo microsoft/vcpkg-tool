@@ -6,6 +6,7 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.depend-info.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
@@ -543,24 +544,7 @@ namespace vcpkg
             }
             Util::sort_unique_erase(features);
 
-            auto dependencies = manifest_core.dependencies;
-            for (const auto& feature : features)
-            {
-                auto it = Util::find_if(
-                    manifest_scf->feature_paragraphs,
-                    [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
-
-                if (it == manifest_scf->feature_paragraphs.end())
-                {
-                    msg::println_warning(
-                        msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_core.name);
-                }
-                else
-                {
-                    dependencies.insert(
-                        dependencies.end(), it->get()->dependencies.begin(), it->get()->dependencies.end());
-                }
-            }
+            auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();

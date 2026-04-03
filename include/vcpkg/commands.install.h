@@ -4,6 +4,7 @@
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -80,6 +81,9 @@ namespace vcpkg
         void print_failed() const;
         void print_complete_message() const;
     };
+
+    std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
+                                                      const std::vector<std::string>& features);
 
     // First, writes triplet_canonical_name / (including the trailing slash) to listfile. Then:
     // For each directory in source_dir / proximate_files

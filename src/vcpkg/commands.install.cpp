@@ -90,6 +90,26 @@ namespace
 
 namespace vcpkg
 {
+    std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
+                                                      const std::vector<std::string>& features)
+    {
+        auto dependencies = manifest_scf.core_paragraph->dependencies;
+        for (const auto& feature : features)
+        {
+            if (const auto* feature_dependencies = manifest_scf.find_dependencies_for_feature(feature))
+            {
+                dependencies.insert(dependencies.end(), feature_dependencies->begin(), feature_dependencies->end());
+            }
+            else
+            {
+                msg::println_warning(
+                    msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_scf.to_name());
+            }
+        }
+
+        return dependencies;
+    }
+
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<std::string>& proximate_files,
@@ -1371,24 +1391,7 @@ namespace vcpkg
             }
             Util::sort_unique_erase(features);
 
-            auto dependencies = manifest_core.dependencies;
-            for (const auto& feature : features)
-            {
-                auto it = Util::find_if(
-                    manifest_scf->feature_paragraphs,
-                    [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
-
-                if (it == manifest_scf->feature_paragraphs.end())
-                {
-                    msg::println_warning(
-                        msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_core.name);
-                }
-                else
-                {
-                    dependencies.insert(
-                        dependencies.end(), it->get()->dependencies.begin(), it->get()->dependencies.end());
-                }
-            }
+            auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
             track_manifest_metrics(dependencies, manifest_core);
 
