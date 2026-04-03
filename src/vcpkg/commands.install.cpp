@@ -71,6 +71,21 @@ namespace
 
     static constexpr StringLiteral SYMLINK_STATUS = "symlink_status";
     static constexpr StringLiteral STATUS = "status";
+
+    void track_manifest_metrics(const std::vector<Dependency>& deps, const SourceParagraph& core)
+    {
+        if (std::any_of(deps.begin(), deps.end(), [](const Dependency& dep) {
+                return dep.constraint.type != VersionConstraintKind::None;
+            }))
+        {
+            get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
+        }
+
+        if (!core.overrides.empty())
+        {
+            get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
+        }
+    }
 }
 
 namespace vcpkg
@@ -1375,17 +1390,7 @@ namespace vcpkg
                 }
             }
 
-            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != VersionConstraintKind::None;
-                }))
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
-            }
-
-            if (!manifest_core.overrides.empty())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
-            }
+            track_manifest_metrics(dependencies, manifest_core);
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();

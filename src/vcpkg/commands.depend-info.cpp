@@ -562,18 +562,6 @@ namespace vcpkg
                 }
             }
 
-            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != VersionConstraintKind::None;
-                }))
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
-            }
-
-            if (!manifest_core.overrides.empty())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
-            }
-
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
             auto verprovider = make_versioned_portfile_provider(*registry_set);
