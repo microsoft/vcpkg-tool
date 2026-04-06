@@ -6,9 +6,12 @@
 
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.depend-info.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/dependencies.h>
+#include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
+#include <vcpkg/metrics.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -80,6 +83,7 @@ namespace
     constexpr CommandSwitch DEPEND_SWITCHES[] = {
         {SwitchDot, {}},
         {SwitchDgml, {}},
+        {SwitchXNoDefaultFeatures, msgHelpTxtOptManifestNoDefault},
         {SwitchShowDepth, msgCmdDependInfoOptDepth},
     };
 
@@ -87,6 +91,10 @@ namespace
         {SwitchMaxRecurse, msgCmdDependInfoOptMaxRecurse},
         {SwitchSort, msgCmdDependInfoOptSort},
         {SwitchFormat, msgCmdDependInfoFormatHelp},
+    };
+
+    static constexpr CommandMultiSetting DEPEND_MULTISETTINGS[] = {
+        {SwitchXFeature, msgHelpTxtOptManifestFeature},
     };
 
     void assign_depth_to_dependencies(const std::vector<PackageDependInfo>& packages,
@@ -247,6 +255,8 @@ namespace vcpkg
         return s;
     }
 
+    // These command metadata must share "critical" values (switches, number of arguments).
+    // They exist only to provide better example strings.
     constexpr CommandMetadata CommandDependInfoMetadata{
         "depend-info",
         msgHelpDependInfoCommand,
@@ -255,7 +265,19 @@ namespace vcpkg
         AutocompletePriority::Public,
         1,
         SIZE_MAX,
-        {DEPEND_SWITCHES, DEPEND_SETTINGS},
+        {DEPEND_SWITCHES, DEPEND_SETTINGS, DEPEND_MULTISETTINGS},
+        nullptr,
+    };
+
+    constexpr CommandMetadata CommandDependInfoMetadataManifest{
+        "depend-info",
+        msgHelpDependInfoCommand,
+        {msgCmdDependInfoExample1, "vcpkg depend-info"},
+        "https://learn.microsoft.com/vcpkg/commands/depend-info",
+        AutocompletePriority::Public,
+        0,
+        SIZE_MAX,
+        {DEPEND_SWITCHES, DEPEND_SETTINGS, DEPEND_MULTISETTINGS},
         nullptr,
     };
 
@@ -398,13 +420,51 @@ namespace vcpkg
                                       Triplet host_triplet)
     {
         msg::default_output_stream = OutputStream::StdErr;
-        const ParsedArguments options = args.parse_arguments(CommandDependInfoMetadata);
+        const auto* manifest = paths.get_manifest();
+        const ParsedArguments options =
+            args.parse_arguments(manifest ? CommandDependInfoMetadataManifest : CommandDependInfoMetadata);
         const auto strategy = determine_depend_info_mode(options).value_or_exit(VCPKG_LINE_INFO);
 
-        const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
-            return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
-                .value_or_exit(VCPKG_LINE_INFO);
-        });
+        if (manifest)
+        {
+            bool failure = false;
+            if (!options.command_arguments.empty())
+            {
+                msg::println_error(msgErrorIndividualPackagesUnsupported);
+                msg::println(Color::error, msgSeeURL, msg::url = docs::manifests_url);
+                failure = true;
+            }
+            if (failure)
+            {
+                msg::println(msgUsingManifestAt, msg::path = manifest->path);
+                msg::print(usage_for_command(CommandDependInfoMetadataManifest));
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
+        else
+        {
+            bool failure = false;
+            if (options.command_arguments.empty())
+            {
+                msg::println_error(msgErrorRequirePackagesList);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
+                failure = true;
+            }
+            if (Util::Sets::contains(options.multisettings, SwitchXFeature))
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXFeature);
+                failure = true;
+            }
+            if (failure)
+            {
+                msg::write_unlocalized_text_to_stderr(Color::none, usage_for_command(CommandDependInfoMetadata));
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+        }
 
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
@@ -412,18 +472,68 @@ namespace vcpkg
         InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
-
-        // By passing an empty status_db, we should get a plan containing all dependencies.
-        // All actions in the plan should be install actions, as there's no installed packages to remove.
-        StatusParagraphs status_db;
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
-        auto action_plan = create_feature_install_plan(
-            provider,
-            var_provider,
-            specs,
-            status_db,
-            packages_dir_assigner,
-            {nullptr, host_triplet, UnsupportedPortAction::Warn, UseHeadVersion::No, Editable::No});
+        const auto unsupported_port_action = UnsupportedPortAction::Warn;
+
+        ActionPlan action_plan;
+        // this needs to be kept alive because the ActionPlan has pointers into it
+        std::unique_ptr<IOverlayProvider> oprovider;
+        if (manifest)
+        {
+            const CreateInstallPlanOptions create_options{
+                nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
+
+            auto manifest_scf =
+                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
+            const auto& manifest_core = *manifest_scf->core_paragraph;
+            PackageSpec toplevel{manifest_core.name, default_triplet};
+            auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
+
+            auto dependencies = get_manifest_dependencies(*manifest_scf, features);
+
+            const bool add_builtin_ports_directory_as_overlay =
+                registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+            auto verprovider = make_versioned_portfile_provider(*registry_set);
+            auto baseprovider = make_baseline_provider(*registry_set);
+
+            auto extended_overlay_port_directories = paths.overlay_ports;
+            if (add_builtin_ports_directory_as_overlay)
+            {
+                extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
+            }
+
+            oprovider =
+                make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
+            action_plan = create_versioned_install_plan(*verprovider,
+                                                        *baseprovider,
+                                                        *oprovider,
+                                                        var_provider,
+                                                        dependencies,
+                                                        manifest_core.overrides,
+                                                        toplevel,
+                                                        packages_dir_assigner,
+                                                        create_options)
+                              .value_or_exit(VCPKG_LINE_INFO);
+        }
+        else
+        {
+            const std::vector<FullPackageSpec> specs =
+                Util::fmap(options.command_arguments, [&](const std::string& arg) {
+                    return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
+                        .value_or_exit(VCPKG_LINE_INFO);
+                });
+
+            // By passing an empty status_db, we should get a plan containing all dependencies.
+            // All actions in the plan should be install actions, as there's no installed packages to remove.
+            StatusParagraphs status_db;
+            action_plan = create_feature_install_plan(
+                provider,
+                var_provider,
+                specs,
+                status_db,
+                packages_dir_assigner,
+                {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
+        }
         action_plan.print_unsupported_warnings();
 
         if (!action_plan.already_installed.empty() || !action_plan.remove_actions.empty())

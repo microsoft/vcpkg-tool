@@ -71,10 +71,114 @@ namespace
 
     static constexpr StringLiteral SYMLINK_STATUS = "symlink_status";
     static constexpr StringLiteral STATUS = "status";
+
+    void track_manifest_metrics(const std::vector<Dependency>& deps, const SourceParagraph& core)
+    {
+        if (std::any_of(deps.begin(), deps.end(), [](const Dependency& dep) {
+                return dep.constraint.type != VersionConstraintKind::None;
+            }))
+        {
+            get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
+        }
+
+        if (!core.overrides.empty())
+        {
+            get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
+        }
+    }
 }
 
 namespace vcpkg
 {
+    std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
+                                                                  const VcpkgPaths& paths,
+                                                                  bool is_default_builtin_registry)
+    {
+        auto maybe_manifest_scf =
+            SourceControlFile::parse_project_manifest_object(manifest.path, manifest.manifest, out_sink);
+        if (!maybe_manifest_scf)
+        {
+            msg::println(Color::error,
+                         std::move(maybe_manifest_scf)
+                             .error()
+                             .append_raw('\n')
+                             .append_raw(NotePrefix)
+                             .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
+                             .append_raw('\n'));
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
+        manifest_scf->check_against_feature_flags(manifest.path, paths.get_feature_flags(), is_default_builtin_registry)
+            .value_or_exit(VCPKG_LINE_INFO);
+        return manifest_scf;
+    }
+
+    std::vector<std::string> get_manifest_features(const ParsedArguments& options,
+                                                   const SourceParagraph& manifest_core,
+                                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                                   const PackageSpec& toplevel,
+                                                   Triplet host_triplet)
+    {
+        std::vector<std::string> features;
+        auto manifest_feature_it = options.multisettings.find(SwitchXFeature);
+        if (manifest_feature_it != options.multisettings.end())
+        {
+            features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
+        }
+        if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+        {
+            features.emplace_back(FeatureNameCore);
+        }
+
+        auto core_it = std::remove(features.begin(), features.end(), FeatureNameCore);
+        if (core_it == features.end())
+        {
+            if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
+            {
+                const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
+                for (const auto& f : manifest_core.default_features)
+                {
+                    if (f.platform.evaluate(vars)) features.push_back(f.name);
+                }
+            }
+            else
+            {
+                for (const auto& f : manifest_core.default_features)
+                {
+                    features.push_back(f.name);
+                }
+            }
+        }
+        else
+        {
+            features.erase(core_it, features.end());
+        }
+
+        Util::sort_unique_erase(features);
+        return features;
+    }
+
+    std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
+                                                      const std::vector<std::string>& features)
+    {
+        auto dependencies = manifest_scf.core_paragraph->dependencies;
+        for (const auto& feature : features)
+        {
+            if (const auto* feature_dependencies = manifest_scf.find_dependencies_for_feature(feature))
+            {
+                dependencies.insert(dependencies.end(), feature_dependencies->begin(), feature_dependencies->end());
+            }
+            else
+            {
+                msg::println_warning(
+                    msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_scf.to_name());
+            }
+        }
+
+        return dependencies;
+    }
+
     void install_files_and_write_listfile(const Filesystem& fs,
                                           const Path& source_dir,
                                           const std::vector<std::string>& proximate_files,
@@ -1288,104 +1392,19 @@ namespace vcpkg
                                                       Util::Enum::to_enum<UseHeadVersion>(use_head_version),
                                                       Util::Enum::to_enum<Editable>(is_editable)};
 
+        auto registry_set = paths.make_registry_set();
         InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
         if (manifest)
         {
-            Optional<Path> pkgsconfig;
-            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
-            if (it_pkgsconfig != options.settings.end())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
-                pkgsconfig = Path(it_pkgsconfig->second);
-            }
-            auto maybe_manifest_scf =
-                SourceControlFile::parse_project_manifest_object(manifest->path, manifest->manifest, out_sink);
-            if (!maybe_manifest_scf)
-            {
-                msg::println(Color::error,
-                             std::move(maybe_manifest_scf)
-                                 .error()
-                                 .append_raw('\n')
-                                 .append_raw(NotePrefix)
-                                 .append(msgExtendedDocumentationAtUrl, msg::url = docs::manifests_url)
-                                 .append_raw('\n'));
-                Checks::exit_fail(VCPKG_LINE_INFO);
-            }
-
-            auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
+            auto manifest_scf =
+                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
             const auto& manifest_core = *manifest_scf->core_paragraph;
-            auto registry_set = paths.make_registry_set();
-            manifest_scf
-                ->check_against_feature_flags(
-                    manifest->path, paths.get_feature_flags(), registry_set->is_default_builtin_registry())
-                .value_or_exit(VCPKG_LINE_INFO);
-
-            std::vector<std::string> features;
-            auto manifest_feature_it = options.multisettings.find(SwitchXFeature);
-            if (manifest_feature_it != options.multisettings.end())
-            {
-                features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
-            }
-            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
-            {
-                features.emplace_back(FeatureNameCore);
-            }
             PackageSpec toplevel{manifest_core.name, default_triplet};
-            auto core_it = std::remove(features.begin(), features.end(), FeatureNameCore);
-            if (core_it == features.end())
-            {
-                if (Util::any_of(manifest_core.default_features, [](const auto& f) { return !f.platform.is_empty(); }))
-                {
-                    const auto& vars = var_provider.get_or_load_dep_info_vars(toplevel, host_triplet);
-                    for (const auto& f : manifest_core.default_features)
-                    {
-                        if (f.platform.evaluate(vars)) features.push_back(f.name);
-                    }
-                }
-                else
-                {
-                    for (const auto& f : manifest_core.default_features)
-                        features.push_back(f.name);
-                }
-            }
-            else
-            {
-                features.erase(core_it, features.end());
-            }
-            Util::sort_unique_erase(features);
+            auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
 
-            auto dependencies = manifest_core.dependencies;
-            for (const auto& feature : features)
-            {
-                auto it = Util::find_if(
-                    manifest_scf->feature_paragraphs,
-                    [&feature](const std::unique_ptr<FeatureParagraph>& fpgh) { return fpgh->name == feature; });
-
-                if (it == manifest_scf->feature_paragraphs.end())
-                {
-                    msg::println_warning(
-                        msgUnsupportedFeature, msg::feature = feature, msg::package_name = manifest_core.name);
-                }
-                else
-                {
-                    dependencies.insert(
-                        dependencies.end(), it->get()->dependencies.begin(), it->get()->dependencies.end());
-                }
-            }
-
-            if (std::any_of(dependencies.begin(), dependencies.end(), [](const Dependency& dep) {
-                    return dep.constraint.type != VersionConstraintKind::None;
-                }))
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestVersionConstraint);
-            }
-
-            if (!manifest_core.overrides.empty())
-            {
-                get_global_metrics_collector().track_define(DefineMetric::ManifestOverrides);
-            }
+            auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
@@ -1400,23 +1419,30 @@ namespace vcpkg
 
             auto oprovider =
                 make_manifest_provider(fs, extended_overlay_port_directories, manifest->path, std::move(manifest_scf));
-            auto install_plan = create_versioned_install_plan(*verprovider,
-                                                              *baseprovider,
-                                                              *oprovider,
-                                                              var_provider,
-                                                              dependencies,
-                                                              manifest_core.overrides,
-                                                              toplevel,
-                                                              packages_dir_assigner,
-                                                              create_options)
-                                    .value_or_exit(VCPKG_LINE_INFO);
-
-            install_plan.print_unsupported_warnings();
+            ActionPlan install_plan = create_versioned_install_plan(*verprovider,
+                                                                    *baseprovider,
+                                                                    *oprovider,
+                                                                    var_provider,
+                                                                    dependencies,
+                                                                    manifest_core.overrides,
+                                                                    toplevel,
+                                                                    packages_dir_assigner,
+                                                                    create_options)
+                                          .value_or_exit(VCPKG_LINE_INFO);
 
             // If the manifest refers to itself, it will be added to the install plan.
             Util::erase_remove_if(install_plan.install_actions,
                                   [&toplevel](auto&& action) { return action.spec == toplevel; });
 
+            install_plan.print_unsupported_warnings();
+            Optional<Path> pkgsconfig;
+            auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
+            if (it_pkgsconfig != options.settings.end())
+            {
+                get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
+                pkgsconfig = Path(it_pkgsconfig->second);
+            }
+            track_manifest_metrics(dependencies, manifest_core);
             command_set_installed_and_exit_ex(args,
                                               paths,
                                               host_triplet,
@@ -1430,7 +1456,6 @@ namespace vcpkg
                                               true);
         }
 
-        auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
 
         const std::vector<FullPackageSpec> specs = Util::fmap(options.command_arguments, [&](const std::string& arg) {
