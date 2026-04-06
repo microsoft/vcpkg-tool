@@ -1804,11 +1804,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BuildResultCascadeDueToBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[CASCADED_DUE_TO_BASELINE]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CASCADED_DUE_TO_BASELINE]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BuildResultCascadeDueToMissingDependencies" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[CASCADED_DUE_TO_MISSING_DEPENDENCIES]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[CASCADED_DUE_TO_MISSING_DEPENDENCIES]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultCascadeDueToSupports" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[CASCADED_DUE_TO_SUPPORTS]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[CASCADED_DUE_TO_SUPPORTS]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1872,6 +1890,15 @@
           <Val><![CDATA[SKIPPED_BY_PARENT_HASHES]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[SKIPPED_BY_PARENT_HASHES]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BuildResultSkippedBySkipFailures" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[SKIPPED_BY_SKIP_FAILURES]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[SKIPPED_BY_SKIP_FAILURES]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7917,6 +7944,15 @@
           <Val><![CDATA[path was not a regular file: {path}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[パスが通常のファイルではありませんでした: {path}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";JsonDepthLimitExceeded" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[JSON depth limit of {count} exceeded]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[JSON の深さの制限 {count} を超えました]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
