@@ -31,6 +31,10 @@ if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "A
     # This one is guarded by an assert
     # fmt\os.h(377): warning C6326: Potential comparison of a constant with another constant.
     string(APPEND CMAKE_CXX_FLAGS " /wd6326")
+    # fmt\format-inl.h(307): warning C6385: Reading invalid data from 'pow10_significands'.
+    # This reproduced in the Windows signing configuration under Release + /analyze; test in
+    # release mode before removing this suppression in the future.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6385")
 endif()
 
 include(FetchContent)
