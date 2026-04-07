@@ -132,6 +132,8 @@ namespace vcpkg
         virtual void statusln(const MessageLine& message) = 0;
         virtual void statusln(MessageLine&& message) = 0;
 
+        void statusln_note(StringView origin, const msg::MessageT<>& msg);
+
     protected:
         ~DiagnosticContext() = default;
     };

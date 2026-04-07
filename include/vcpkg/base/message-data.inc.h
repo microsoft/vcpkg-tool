@@ -1370,10 +1370,10 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeInstalledLock,
+DECLARE_MESSAGE(FailedToTakeLock,
                 (),
                 "",
-                "failed to take lock, another vcpkg may be running against the same installed tree")
+                "failed to take lock, another vcpkg may be running against the same directory")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
@@ -3372,7 +3372,7 @@ DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instan
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
-DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (), "", "waiting to take filesystem lock...")
 DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                 (msg::count),
                 "",

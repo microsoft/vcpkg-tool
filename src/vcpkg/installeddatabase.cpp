@@ -92,7 +92,7 @@ namespace vcpkg
         if (!m_lock && !allow_errors)
         {
             stderr_diagnostic_context.report(
-                DiagnosticLine{DiagKind::Error, lock_file, msg::format(msgFailedToTakeInstalledLock)});
+                DiagnosticLine{DiagKind::Error, lock_file, msg::format(msgFailedToTakeLock)});
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
     }

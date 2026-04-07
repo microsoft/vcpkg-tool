@@ -188,6 +188,18 @@ namespace vcpkg
         }
     }
     void MessageLine::print(StringView text) { print(Color::none, text); }
+    void MessageLine::print(Color color, std::string&& text)
+    {
+        if (!segments.empty() && segments.back().color == color)
+        {
+            segments.back().text.append(text.data(), text.size());
+        }
+        else
+        {
+            segments.push_back({color, std::move(text)});
+        }
+    }
+    void MessageLine::print(std::string&& text) { print(Color::none, std::move(text)); }
     const std::vector<MessageLineSegment>& MessageLine::get_segments() const noexcept { return segments; }
 
     std::string MessageLine::to_string() const { return adapt_to_string(*this); }

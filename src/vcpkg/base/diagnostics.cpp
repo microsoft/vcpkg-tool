@@ -98,6 +98,16 @@ namespace vcpkg
                      msg::error_msg = std::system_category().message(error_value));
     }
 
+    void DiagnosticContext::statusln_note(StringView origin, const msg::MessageT<>& msg)
+    {
+        MessageLine line;
+        line.print(origin);
+        line.print(ColonSpace);
+        line.print(NotePrefix);
+        line.print(msg::format(msg));
+        statusln(std::move(line));
+    }
+
     void DiagnosticLine::print_to(MessageSink& sink) const { sink.println(to_message_line()); }
     std::string DiagnosticLine::to_string() const
     {
