@@ -103,6 +103,12 @@ namespace vcpkg
             *lock_taking_context, m_locks, fs, installed.vcpkg_running_lock(), really_wait_for_lock, allow_errors);
         for (auto&& lock_file : extra_lock_files)
         {
+            auto parent = lock_file.parent_path();
+            if (!parent.empty())
+            {
+                fs.create_directories(parent, IgnoreErrors{});
+            }
+
             take_lock(*lock_taking_context, m_locks, fs, lock_file, really_wait_for_lock, allow_errors);
         }
     }
@@ -125,7 +131,11 @@ namespace vcpkg
                                                              const Path& packages,
                                                              const Optional<bool>& wait_for_lock,
                                                              const Optional<bool>& ignore_lock_failures)
-        : InstalledDatabaseLock(fs, installed, {buildtrees, packages}, wait_for_lock, ignore_lock_failures)
+        : InstalledDatabaseLock(fs,
+                                installed,
+                                {vcpkg_running_lock(buildtrees), vcpkg_running_lock(packages)},
+                                wait_for_lock,
+                                ignore_lock_failures)
     {
     }
 
