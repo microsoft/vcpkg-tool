@@ -18,7 +18,7 @@ namespace vcpkg
     // by competing vcpkg instances.
     struct InstalledDatabaseLockImpl
     {
-        // Do not use directly, use InstalledDatabaseLock or InstalledDatabaseLock instead.
+        // Do not use directly, use InstalledDatabaseLock or InstallAndBuildDatabaseLock instead.
         InstalledDatabaseLockImpl(const Filesystem& fs,
                                   const InstalledPaths& installed,
                                   const std::vector<Path>& extra_lock_files,
