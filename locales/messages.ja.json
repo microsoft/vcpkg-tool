@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "変数VCPKG_HASH_ADDITIONAL_FILESに無効なファイル パスが含まれています: '{path}'。値は、存在するファイルへの絶対パスである必要があります。",
   "InvalidValuePostPortfileIncludes": "変数 VCPKG_POST_PORTFILE_INCLUDES に無効なファイル パスが含まれています: '{path}'。値は、存在する CMake ファイルへの絶対パスである必要があります。",
   "IrregularFile": "パスが通常のファイルではありませんでした: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "JSON の深さの制限 {count} を超えました",
   "JsonFieldNotObject": "[\"{json_field}\"] の値はオブジェクトである必要があります",
   "JsonFieldNotString": "[\"{json_field}\"] の値は文字列である必要があります",
   "JsonFileMissingExtension": "JSON ファイル {path} には .json (すべて小文字) 拡張子が必要です",

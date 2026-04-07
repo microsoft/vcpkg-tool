@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "变量 VCPKG_HASH_ADDITIONAL_FILES 包含无效的文件路径:“{path}”。该值必须是已存在文件的绝对路径。",
   "InvalidValuePostPortfileIncludes": "变量 VCPKG_POST_PORTFILE_INCLUDES 包含无效的文件路径: '{path}'。此值必须是指向现有 cmake 文件的绝对路径。",
   "IrregularFile": "路径不是常规文件: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "超出了 JSON 深度限制 {count}",
   "JsonFieldNotObject": "[\"{json_field}\"] 的值必须是对象",
   "JsonFieldNotString": "[\"{json_field}\"] 的值必须是字符串",
   "JsonFileMissingExtension": "JSON 文件 {path} 必须具有 .json (全小写)扩展名",

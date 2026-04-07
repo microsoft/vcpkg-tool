@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "La variable VCPKG_HASH_ADDITIONAL_FILES contiene una ruta de acceso de archivo no válida: \"{path}\". El valor debe ser una ruta de acceso absoluta a un archivo existente.",
   "InvalidValuePostPortfileIncludes": "La variable VCPKG_POST_PORTFILE_INCLUDES contiene una ruta de acceso de archivo no válida: '{path}'. El valor debe ser una ruta de acceso absoluta a un archivo cmake existente.",
   "IrregularFile": "la ruta de acceso no era un archivo normal: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "Se superó el límite de profundidad JSON de {count}",
   "JsonFieldNotObject": "el valor de [\"{json_field}\"] debe ser un objeto",
   "JsonFieldNotString": "el valor de [\"{json_field}\"] debe ser una cadena",
   "JsonFileMissingExtension": "el archivo JSON {path} debe tener una extensión .json (todo en minúsculas)",

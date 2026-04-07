@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "Proměnná VCPKG_HASH_ADDITIONAL_FILES obsahuje neplatnou cestu k souboru: {path}. Hodnota musí být absolutní cesta k existujícímu souboru.",
   "InvalidValuePostPortfileIncludes": "Proměnná VCPKG_POST_PORTFILE_INCLUDES obsahuje neplatnou cestu k souboru: {path}. Hodnota musí být absolutní cesta k existujícímu souboru cmake.",
   "IrregularFile": "cesta nebyla běžným souborem: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "Byl překročen limit hloubky JSON {count}.",
   "JsonFieldNotObject": "Hodnota [\"{json_field}\"] musí být objekt",
   "JsonFieldNotString": "Hodnota [\"{json_field}\"] musí být řetězec.",
   "JsonFileMissingExtension": "Soubor JSON {path} musí mít příponu .json (všechna malá písmena).",
