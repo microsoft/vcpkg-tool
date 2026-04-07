@@ -192,8 +192,12 @@ namespace vcpkg
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
-        InstalledDatabaseLock installed_lock{
-            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
         StatusParagraphs status_db = database_sync(paths.get_filesystem(), paths.installed(), installed_lock);
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, SwitchOutdated))
