@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "변수 VCPKG_HASH_ADDITIONAL_FILES는 잘못된 파일 경로 '{path}'을(를) 포함합니다. 값은 기존 파일의 절대 경로여야 합니다.",
   "InvalidValuePostPortfileIncludes": "변수 VCPKG_POST_PORTFILE_INCLUDES는 잘못된 파일 경로 '{path}'을(를) 포함합니다. 값은 기존 cmake 파일의 절대 경로여야 합니다.",
   "IrregularFile": "경로가 일반 파일이 아닙니다. {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "JSON 깊이 제한 {count}을(를) 초과했습니다.",
   "JsonFieldNotObject": "[\"{json_field}\"] 값은 개체여야 합니다.",
   "JsonFieldNotString": "[\"{json_field}\"] 값은 문자열이어야 합니다.",
   "JsonFileMissingExtension": "JSON 파일 {path}의 확장명은 .json(모두 소문자)이어야 합니다.",

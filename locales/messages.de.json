@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "Die Variable VCPKG_HASH_ADDITIONAL_FILES enthält einen ungültigen Dateipfad: \"{path}\". Der Wert muss ein absoluter Pfad zu einer vorhandenen Datei sein.",
   "InvalidValuePostPortfileIncludes": "Die variable VCPKG_POST_PORTFILE_INCLUDES enthält einen ungültigen Dateipfad: \"{path}\". Der Wert muss ein absoluter Pfad zu einer vorhandenen Cmakedatei sein.",
   "IrregularFile": "Der Pfad war keine reguläre Datei: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "JSON-Tiefenlimit von {count} überschritten",
   "JsonFieldNotObject": "Der Wert von [\"{json_field}\"] muss ein Objekt sein.",
   "JsonFieldNotString": "Der Wert von [\"{json_field}\"] muss eine Zeichenfolge sein.",
   "JsonFileMissingExtension": "Die JSON-Datei \"{path}\" muss die Erweiterung .json (nur Kleinbuchstaben) aufweisen.",
