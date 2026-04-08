@@ -4275,6 +4275,7 @@ namespace vcpkg
                 return result;
             }
 
+            bool printed = false;
             for (;;)
             {
                 auto maybe_attempt = result->lock_attempt(context);
@@ -4284,8 +4285,11 @@ namespace vcpkg
                     {
                         return result;
                     }
-
-                    context.statusln(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                    if (!printed)
+                    {
+                        context.statusln(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                        printed = true;
+                    }
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
                 else
