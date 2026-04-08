@@ -519,8 +519,12 @@ namespace vcpkg
             }
         }
 
-        InstalledDatabaseLock installed_lock{
-            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);

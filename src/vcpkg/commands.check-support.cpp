@@ -130,7 +130,9 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        // we need buildtrees and packages controlled because we check compiler
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
 
         // for each spec in the user-requested specs, check all dependencies

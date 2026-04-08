@@ -4285,7 +4285,7 @@ namespace vcpkg
                         return result;
                     }
 
-                    context.statusln(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                    context.statusln_note(lockfile, msgWaitingToTakeFilesystemLock);
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
                 else
@@ -4336,7 +4336,7 @@ namespace vcpkg
                     return result;
                 }
 
-                context.statusln(msg::format(msgWaitingToTakeFilesystemLock, msg::path = lockfile));
+                context.statusln_note(lockfile, msgWaitingToTakeFilesystemLock);
                 std::this_thread::sleep_for(wait);
                 wait *= 2;
             }
