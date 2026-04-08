@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "Переменная VCPKG_HASH_ADDITIONAL_FILES содержит недопустимый путь к файлу: \"{path}\". Значение должно быть абсолютным путем к существующему файлу.",
   "InvalidValuePostPortfileIncludes": "Переменная VCPKG_POST_PORTFILE_INCLUDES содержит недопустимый путь к файлу: \"{path}\". Значение должно быть абсолютным путем к существующему файлу cmake.",
   "IrregularFile": "путь не является обычным файлом: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "Превышен предел глубины JSON, {count}",
   "JsonFieldNotObject": "значение [\"{json_field}\"] должно быть объектом",
   "JsonFieldNotString": "значение [\"{json_field}\"] должно быть строкой",
   "JsonFileMissingExtension": "файл JSON {path} должен иметь расширение .json (все строчные буквы)",

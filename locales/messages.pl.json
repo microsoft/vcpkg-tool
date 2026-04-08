@@ -759,7 +759,7 @@
   "InvalidValueHashAdditionalFiles": "Zmienna VCPKG_HASH_ADDITIONAL_FILES zawiera nieprawidłową ścieżkę pliku: „{path}”. Wartość musi być ścieżką bezwzględną do istniejącego pliku.",
   "InvalidValuePostPortfileIncludes": "Zmienna VCPKG_POST_PORTFILE_INCLUDES zawiera nieprawidłową ścieżkę pliku: „{path}”. Wartość musi być ścieżką bezwzględną do istniejącego pliku CMake.",
   "IrregularFile": "ścieżka nie była zwykłym plikiem: {path}",
-  "JsonDepthLimitExceeded": "JSON depth limit of {count} exceeded",
+  "JsonDepthLimitExceeded": "Przekroczono limit głębokości JSON {count}",
   "JsonFieldNotObject": "wartość [\"{json_field}\"] musi być obiektem",
   "JsonFieldNotString": "wartość [\"{json_field}\"] musi być ciągiem",
   "JsonFileMissingExtension": "plik JSON {path} musi mieć rozszerzenie json (wszystkie małe litery)",
