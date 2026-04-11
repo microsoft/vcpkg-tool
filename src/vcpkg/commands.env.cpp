@@ -96,9 +96,9 @@ namespace vcpkg
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        Optional<InstalledDatabaseLock> installed_lock_storage;
-        auto& installed_lock =
-            installed_lock_storage.emplace(fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures);
+        Optional<InstallAndBuildDatabaseLock> installed_lock_storage;
+        auto& installed_lock = installed_lock_storage.emplace(
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures);
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
 

@@ -176,7 +176,7 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
-                                   const InstalledDatabaseLock& installed_lock,
+                                   const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder)
@@ -223,7 +223,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         Checks::exit_with_code(VCPKG_LINE_INFO,
                                command_build_ex(args,
                                                 paths,
@@ -239,7 +240,7 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
-                         const InstalledDatabaseLock& installed_lock,
+                         const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder)

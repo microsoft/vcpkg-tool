@@ -39,7 +39,7 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
-                                           const InstalledDatabaseLock& installed_lock,
+                                           const InstallAndBuildDatabaseLock& installed_lock,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
                                            PrintUsage print_usage,

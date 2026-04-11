@@ -81,7 +81,7 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
-                         const InstalledDatabaseLock& installed_lock,
+                         const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder);
@@ -89,7 +89,7 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
-                                   const InstalledDatabaseLock& installed_lock,
+                                   const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder);

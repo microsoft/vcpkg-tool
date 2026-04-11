@@ -43,5 +43,5 @@ namespace vcpkg::CMakeVars
     // Ideally, buildtrees would have its own locks rather than reusing the installed database lock; this behavior
     // attempts to match previous versions of vcpkg which used one lock on VCPKG_ROOT.
     std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths,
-                                                                      const InstalledDatabaseLock& /* witness */);
+                                                                      const InstallAndBuildDatabaseLock& /* witness */);
 }

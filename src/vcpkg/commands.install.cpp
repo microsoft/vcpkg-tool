@@ -714,7 +714,7 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
-                                        const InstalledDatabaseLock& installed_lock,
+                                        const InstallAndBuildDatabaseLock& installed_lock,
                                         const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
@@ -1393,7 +1393,8 @@ namespace vcpkg
                                                       Util::Enum::to_enum<Editable>(is_editable)};
 
         auto registry_set = paths.make_registry_set();
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
         if (manifest)
