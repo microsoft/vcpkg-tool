@@ -5833,11 +5833,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeInstalledLock" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToTakeLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same installed tree]]></Val>
+          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same directory]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[鎖定失敗，可能有另一個 vcpkg 正在執行相同的已安裝目錄]]></Val>
+            <Val><![CDATA[無法取得鎖定，可能有另一個 vcpkg 正在對相同目錄執行]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12310,12 +12310,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Val><![CDATA[waiting to take filesystem lock...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[正在等候 {path} 上的檔案系統鎖定...]]></Val>
+            <Val><![CDATA[正在等候取得檔案系統鎖定...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>

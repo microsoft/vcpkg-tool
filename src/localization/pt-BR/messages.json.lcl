@@ -5833,11 +5833,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeInstalledLock" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToTakeLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same installed tree]]></Val>
+          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same directory]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[falha ao obter o bloqueio, outro vcpkg pode estar em execução na mesma árvore instalada]]></Val>
+            <Val><![CDATA[falha ao bloquear, outro vcpkg pode estar em execução no mesmo diretório]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12307,12 +12307,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Val><![CDATA[waiting to take filesystem lock...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[esperando para ativar o bloqueio do sistema de arquivos {path}...]]></Val>
+            <Val><![CDATA[aguardando para fazer o bloqueio do sistema de arquivos...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
