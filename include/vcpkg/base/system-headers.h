@@ -11,6 +11,7 @@
 #endif
 
 #include <intrin.h>
+
 #include <Shlobj.h>
 #include <shellapi.h>
 #include <windows.h>

@@ -140,7 +140,6 @@
   "AnOverlayTripletsPath": "a triplet path",
   "AnOverride": "an override",
   "AnSpdxLicenseExpression": "an SPDX license expression",
-  "AnotherInstallationInProgress": "Another installation is in progress on the machine, sleeping 6s before retrying.",
   "AppliedUserIntegration": "Applied user-wide integration for this vcpkg root.",
   "ApplocalProcessing": "deploying dependencies",
   "ArchiveHere": "the archive is here",
