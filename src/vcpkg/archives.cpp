@@ -91,65 +91,6 @@ namespace
         return postprocess_extract_archive(context, std::move(maybe_exit_and_output), *nuget_exe, archive);
     }
 
-    bool win32_extract_msi(DiagnosticContext& context, const Path& archive, const Path& to_path)
-    {
-        // msiexec is a WIN32/GUI application, not a console application and so needs special attention to wait
-        // until it finishes (wrap in cmd /c).
-        auto cmd = Command{"cmd"}
-                       .string_arg("/c")
-                       .string_arg("msiexec")
-                       // "/a" is administrative mode, which unpacks without modifying the system
-                       .string_arg("/a")
-                       .string_arg(archive)
-                       .string_arg("/qn")
-                       // msiexec requires quotes to be after "TARGETDIR=":
-                       //      TARGETDIR="C:\full\path\to\dest"
-                       .raw_arg(Strings::concat("TARGETDIR=", Command{to_path}.extract()));
-
-        RedirectedProcessLaunchSettings settings;
-        settings.encoding = Encoding::Utf16;
-
-        // MSI installation sometimes requires a global lock and fails if another installation is concurrent. Loop
-        // to enable retries.
-
-        AttemptDiagnosticContext adc{context};
-        for (unsigned int i = 0;; ++i)
-        {
-            auto maybe_code_and_output = cmd_execute_and_capture_output(adc, cmd, settings);
-            if (auto code_and_output = maybe_code_and_output.get())
-            {
-                if (code_and_output->exit_code == 0)
-                {
-                    // Success
-                    adc.handle();
-                    return true;
-                }
-
-                if (i < 19 && code_and_output->exit_code == 1618)
-                {
-                    // ERROR_INSTALL_ALREADY_RUNNING
-                    adc.statusln(msg::format(msgAnotherInstallationInProgress));
-                    std::this_thread::sleep_for(std::chrono::seconds(6));
-                    continue;
-                }
-
-                auto error_text =
-                    msg::format(msgArchiverFailedToExtractExitCode, msg::exit_code = code_and_output->exit_code);
-                error_text.append_raw('\n');
-                error_text.append_raw(std::move(code_and_output->output));
-                adc.report(DiagnosticLine{DiagKind::Error, "msiexec", std::move(error_text)});
-                adc.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgArchiveHere)});
-            }
-            else
-            {
-                adc.report(DiagnosticLine{DiagKind::Note, archive, msg::format(msgWhileExtractingThisArchive)});
-            }
-
-            adc.commit();
-            return false;
-        }
-    }
-
     bool win32_extract_with_seven_zip(DiagnosticContext& context,
                                       const Path& seven_zip,
                                       const Path& archive,
@@ -180,10 +121,6 @@ namespace vcpkg
         if (Strings::case_insensitive_ascii_equals(ext, ".nupkg"))
         {
             return ExtractionType::Nupkg;
-        }
-        else if (Strings::case_insensitive_ascii_equals(ext, ".msi"))
-        {
-            return ExtractionType::Msi;
         }
         else if (Strings::case_insensitive_ascii_equals(ext, ".7z"))
         {
@@ -229,7 +166,6 @@ namespace vcpkg
         {
             case ExtractionType::Unknown: break; // try cmake for unkown extensions, i.e., vsix => zip, below
             case ExtractionType::Nupkg: return win32_extract_nupkg(context, fs, tools, archive, to_path);
-            case ExtractionType::Msi: return win32_extract_msi(context, archive, to_path); break;
             case ExtractionType::SevenZip:
                 if (const auto* tool = tools.get_tool_path(context, fs, Tools::SEVEN_ZIP_R))
                 {
