@@ -72,10 +72,30 @@
             }
         },
         {
+            "name": "windows-arm64",
+            "hidden": true,
+            "inherits": "windows",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+            }
+        },
+        {
             "name": "Win-x64-Debug",
             "inherits": [
                 "base",
                 "windows-x64",
+                "debug"
+            ]
+        },
+        {
+            "name": "Win-arm64-Debug",
+            "inherits": [
+                "base",
+                "windows-arm64",
                 "debug"
             ]
         },
@@ -101,6 +121,13 @@
             "name": "Win-x64-Debug-WithArtifacts",
             "inherits": [
                 "Win-x64-Debug",
+                "artifacts"
+            ]
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "inherits": [
+                "Win-arm64-Debug",
                 "artifacts"
             ]
         },
@@ -287,6 +314,10 @@
         {
             "name": "Win-x64-Debug-WithArtifacts",
             "configurePreset": "Win-x64-Debug-WithArtifacts"
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "configurePreset": "Win-arm64-Debug-WithArtifacts"
         }
     ],
     "testPresets": [
@@ -313,6 +344,14 @@
         {
             "name": "macos-ci",
             "configurePreset": "macos-ci"
+        },
+        {
+            "name": "Win-x64-Debug-WithArtifacts",
+            "configurePreset": "Win-x64-Debug-WithArtifacts"
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "configurePreset": "Win-arm64-Debug-WithArtifacts"
         }
     ]
 }
