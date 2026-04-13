@@ -5833,11 +5833,11 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";FailedToTakeInstalledLock" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";FailedToTakeLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same installed tree]]></Val>
+          <Val><![CDATA[failed to take lock, another vcpkg may be running against the same directory]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[kilit alınamadı; aynı kurulu ağaç üzerinde başka bir vcpkg çalışıyor olabilir]]></Val>
+            <Val><![CDATA[kilit alınamadı; aynı dizin üzerinde başka bir vcpkg çalışıyor olabilir]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -12310,12 +12310,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";WaitingToTakeFilesystemLock" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          <Val><![CDATA[waiting to take filesystem lock...]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{path} yolunda dosya sistemi kilidi almak için bekleniyor...]]></Val>
+            <Val><![CDATA[dosya sistemi kilidi bekleniyor...]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[waiting to take filesystem lock on {path}...]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
