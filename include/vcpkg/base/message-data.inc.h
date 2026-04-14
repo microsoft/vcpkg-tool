@@ -162,10 +162,6 @@ DECLARE_MESSAGE(AnOverlayPath, (), "", "an overlay path")
 DECLARE_MESSAGE(AnOverlayTripletsPath, (), "", "a triplet path")
 DECLARE_MESSAGE(AnOverride, (), "", "an override")
 DECLARE_MESSAGE(ANonNegativeInteger, (), "", "a nonnegative integer")
-DECLARE_MESSAGE(AnotherInstallationInProgress,
-                (),
-                "",
-                "Another installation is in progress on the machine, sleeping 6s before retrying.")
 DECLARE_MESSAGE(AnSpdxLicenseExpression, (), "", "an SPDX license expression")
 DECLARE_MESSAGE(APackageName, (), "", "a package name")
 DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern")
