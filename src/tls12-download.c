@@ -122,7 +122,9 @@ static void write_hex(const HANDLE std_out, DWORD number)
     write_message(std_out, buffer);
 }
 
-static void __declspec(noreturn) abort_api_failure_with_last_error(const HANDLE std_out, const wchar_t* api_name, DWORD last_error)
+static void __declspec(noreturn) abort_api_failure_with_last_error(const HANDLE std_out,
+                                                                   const wchar_t* api_name,
+                                                                   DWORD last_error)
 {
     write_message(std_out, L"While calling Windows API function ");
     write_message(std_out, api_name);
@@ -215,7 +217,8 @@ int __stdcall entry()
     DWORD access_type;
     const wchar_t* proxy_setting;
     SetLastError(ERROR_SUCCESS);
-    DWORD get_result = GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t));
+    DWORD get_result =
+        GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t));
     DWORD last_error = GetLastError();
     if (get_result)
     {
@@ -246,7 +249,7 @@ int __stdcall entry()
         write_message(std_out, no_proxy_env);
         write_message(std_out, L")");
     }
-    else if (last_error == ERROR_ENVVAR_NOT_FOUND || (last_error == ERROR_SUCCESS))
+    else if (last_error == ERROR_ENVVAR_NOT_FOUND || last_error == ERROR_SUCCESS)
     {
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
