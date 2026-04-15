@@ -133,10 +133,13 @@ TEST_CASE ("environment_variable_roundtrip", "[system]")
     CHECK(!get_environment_variable(test_variable_name).has_value());
     environment_variable_resetter reset_varname{test_variable_name};
     CHECK(!get_environment_variable(test_variable_name).has_value());
+    check_environment_variable_roundtrip("a value that is not nullopt");
+    CHECK(get_environment_variable(test_variable_name).has_value());
+    check_environment_variable_roundtrip("");
+    CHECK(get_environment_variable(test_variable_name).has_value());
     set_environment_variable(test_variable_name, nullopt);
     CHECK(!get_environment_variable(test_variable_name).has_value());
 
-    check_environment_variable_roundtrip("");
     check_environment_variable_roundtrip("x");
 
     const auto wstring_default_capacity = std::wstring{}.capacity();
