@@ -122,9 +122,10 @@ static void write_hex(const HANDLE std_out, DWORD number)
     write_message(std_out, buffer);
 }
 
-static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const wchar_t* api_name)
+static void __declspec(noreturn) abort_api_failure_with_last_error(const HANDLE std_out,
+                                                                   const wchar_t* api_name,
+                                                                   DWORD last_error)
 {
-    DWORD last_error = GetLastError();
     write_message(std_out, L"While calling Windows API function ");
     write_message(std_out, api_name);
     write_message(std_out, L" got error ");
@@ -153,6 +154,10 @@ static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const w
     write_message(std_out, L"\r\n");
     FlushFileBuffers(std_out);
     win32_abort();
+}
+static void __declspec(noreturn) abort_api_failure(const HANDLE std_out, const wchar_t* api_name)
+{
+    abort_api_failure_with_last_error(std_out, api_name, GetLastError());
 }
 
 static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, BOOLEAN setting)
@@ -211,7 +216,11 @@ int __stdcall entry()
 
     DWORD access_type;
     const wchar_t* proxy_setting;
-    if (GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t)))
+    SetLastError(ERROR_SUCCESS);
+    DWORD get_result =
+        GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t));
+    DWORD last_error = GetLastError();
+    if (get_result)
     {
         access_type = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
         proxy_setting = https_proxy_env;
@@ -219,31 +228,34 @@ int __stdcall entry()
         write_message(std_out, proxy_setting);
         write_message(std_out, L")");
     }
-    else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
+    else if (last_error == ERROR_ENVVAR_NOT_FOUND || last_error == ERROR_SUCCESS)
     {
         access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
         proxy_setting = WINHTTP_NO_PROXY_NAME;
     }
     else
     {
-        abort_api_failure(std_out, L"GetEnvironmentVariableW");
+        abort_api_failure_with_last_error(std_out, L"GetEnvironmentVariableW", last_error);
     }
 
     const wchar_t* proxy_bypass_setting;
-    if (GetEnvironmentVariableW(L"NO_PROXY", no_proxy_env, sizeof(no_proxy_env) / sizeof(wchar_t)))
+    SetLastError(ERROR_SUCCESS);
+    get_result = GetEnvironmentVariableW(L"NO_PROXY", no_proxy_env, sizeof(no_proxy_env) / sizeof(wchar_t));
+    last_error = GetLastError();
+    if (get_result)
     {
         proxy_bypass_setting = no_proxy_env;
         write_message(std_out, L" (using proxy bypass: ");
         write_message(std_out, no_proxy_env);
         write_message(std_out, L")");
     }
-    else if (GetLastError() == ERROR_ENVVAR_NOT_FOUND)
+    else if (last_error == ERROR_ENVVAR_NOT_FOUND || last_error == ERROR_SUCCESS)
     {
         proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
     }
     else
     {
-        abort_api_failure(std_out, L"GetEnvironmentVariableW");
+        abort_api_failure_with_last_error(std_out, L"GetEnvironmentVariableW", last_error);
     }
 
     const HANDLE out_file = CreateFileW(out_file_path,                             // lpFileName
