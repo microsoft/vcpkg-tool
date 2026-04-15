@@ -652,7 +652,7 @@ namespace vcpkg
             get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
 #else
         static const ExpectedL<Path> result =
-            Path(get_nonempty_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+            Path(get_environment_variable_nonempty("HOME").value_or("/var")) / ".vcpkg";
 #endif
         return result;
     }
