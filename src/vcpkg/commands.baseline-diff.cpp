@@ -38,21 +38,22 @@ namespace
         {SwitchXFeature, msgHelpTxtOptManifestFeature},
     };
 
-    bool print_lines(LocalizedString&& header, std::vector<std::string>&& lines)
+    bool print_lines(const msg::MessageT<>& header, std::vector<std::string>&& lines)
     {
-        if (!lines.empty())
+        if (lines.empty())
         {
-            Util::sort_unique_erase(lines);
-            msg::println(header.append_raw(':'));
-            for (const auto& line : lines)
-            {
-                msg::write_unlocalized_text(Color::none, line);
-                msg::write_unlocalized_text(Color::none, "\n");
-            }
-            msg::write_unlocalized_text(Color::none, "\n");
-            return true;
+            return false;
         }
-        return false;
+
+        Util::sort_unique_erase(lines);
+        msg::print(msg::format(header).append_raw(":\n"));
+        for (const auto& line : lines)
+        {
+            msg::write_unlocalized_text(Color::none, line);
+            msg::write_unlocalized_text(Color::none, "\n");
+        }
+        msg::write_unlocalized_text(Color::none, "\n");
+        return true;
     }
 
     void check_for_valid_sha(StringView sha)
@@ -171,8 +172,8 @@ namespace vcpkg
             }
         }
         bool any_changes = false;
-        any_changes |= print_lines(msg::format(msgDirectDependencies), std::move(user_requested));
-        any_changes |= print_lines(msg::format(msgTransitiveDependencies), std::move(transitive));
+        any_changes |= print_lines(msgDirectDependencies, std::move(user_requested));
+        any_changes |= print_lines(msgTransitiveDependencies, std::move(transitive));
         if (!any_changes)
         {
             msg::println(msgBaselineDiffNoChange);
