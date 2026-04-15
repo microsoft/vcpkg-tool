@@ -31,7 +31,7 @@ namespace
     };
 }
 
-TEST_CASE ("to_cpu_architecture", "system")
+TEST_CASE ("to_cpu_architecture", "[system]")
 {
     struct test_case
     {

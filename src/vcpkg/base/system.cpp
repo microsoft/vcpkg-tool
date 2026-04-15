@@ -770,10 +770,16 @@ namespace vcpkg
 
     const Optional<Path>& get_program_files_32_bit()
     {
-        static const auto PROGRAMFILES_x86 =
-            get_environment_variable_nonempty(EnvironmentVariableProgramFilesX86).map([](std::string&& pf) {
-                return Path(std::move(pf));
-            });
+        static const auto PROGRAMFILES_x86 = []() -> Optional<Path> {
+            auto maybe_value = get_environment_variable_nonempty(EnvironmentVariableProgramFilesX86);
+            const auto pvalue = maybe_value.get();
+            if (pvalue)
+            {
+                return Path(std::move(*pvalue));
+            }
+
+            return get_program_files();
+        }();
         return PROGRAMFILES_x86;
     }
 
