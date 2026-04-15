@@ -337,6 +337,10 @@ DECLARE_MESSAGE(BaselineConflict,
                 "",
                 "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
                 "baseline.\nPlease remove one of these conflicting settings.")
+DECLARE_MESSAGE(BaselineDiffNoChange,
+                (),
+                "commit is a git commit here",
+                "No package that would have been installed was updated between the two commits")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
@@ -595,6 +599,11 @@ DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree o
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(CmdBaselineDiffSynopsis,
+                (),
+                "",
+                "Computes the set of packages installed for different baselines and compares the versions that "
+                "would be installed")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
@@ -1062,6 +1071,7 @@ DECLARE_MESSAGE(DependencyWillFail,
                 "'cascade' is a keyword and should not be translated",
                 "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
+DECLARE_MESSAGE(DirectDependencies, (), "", "Direct dependencies")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
                 (),
                 "",
@@ -2176,6 +2186,7 @@ DECLARE_MESSAGE(MissingDependency,
                 (msg::spec, msg::package_name),
                 "",
                 "Package {spec} is installed, but dependency {package_name} is not.")
+DECLARE_MESSAGE(MissingManifestFile, (), "", "Could not find manifest file (vcpkg.json file)")
 DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}")
 DECLARE_MESSAGE(MissingOrInvalidIdentifer, (), "", "missing or invalid identifier")
 DECLARE_MESSAGE(MissingPortSuggestPullRequest,
@@ -2866,6 +2877,7 @@ DECLARE_MESSAGE(ToUpdatePackages,
                 "To update these packages and all dependencies, run\n{command_name} upgrade'")
 DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array")
 DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object")
+DECLARE_MESSAGE(TransitiveDependencies, (), "", "Transitive dependencies")
 DECLARE_MESSAGE(TripletLabel, (), "", "Triplet:")
 DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found")
 DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
