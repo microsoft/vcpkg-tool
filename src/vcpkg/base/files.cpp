@@ -334,8 +334,8 @@ namespace
 
     std::vector<Path> calculate_path_bases()
     {
-        auto path_base_strings =
-            Strings::split_paths(get_environment_variable(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO));
+        auto path_base_strings = Strings::split_paths(
+            get_environment_variable_nonempty(EnvironmentVariablePath).value_or_exit(VCPKG_LINE_INFO));
         return std::vector<Path>{std::make_move_iterator(path_base_strings.begin()),
                                  std::make_move_iterator(path_base_strings.end())};
     }
@@ -3653,7 +3653,7 @@ namespace vcpkg
             Path temp_folder_path = Path(Strings::to_utf8(temp_folder, length_without_null)) / "vcpkg";
 #else  // ^^^ _WIN32 // !_WIN32 vvv
             const Path temp_folder_path =
-                Path(get_environment_variable("TMPDIR").value_or(std::string("/tmp"))) / "vcpkg";
+                Path(get_nonempty_environment_variable("TMPDIR").value_or(std::string("/tmp"))) / "vcpkg";
 #endif // ^^^ !_WIN32
 
             this->create_directories(temp_folder_path, ec);

@@ -648,9 +648,9 @@ namespace vcpkg
         s_reentrancy_guard = true;
 
         auto maybe_vcpkg_recursive_data = get_environment_variable(EnvironmentVariableXVcpkgRecursiveData);
-        if (auto vcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
+        if (const auto pvcpkg_recursive_data = maybe_vcpkg_recursive_data.get())
         {
-            auto rec_doc = Json::parse(*vcpkg_recursive_data, EnvironmentVariableXVcpkgRecursiveData)
+            auto rec_doc = Json::parse(*pvcpkg_recursive_data, EnvironmentVariableXVcpkgRecursiveData)
                                .value_or_exit(VCPKG_LINE_INFO)
                                .value;
             const auto& obj = rec_doc.object(VCPKG_LINE_INFO);
