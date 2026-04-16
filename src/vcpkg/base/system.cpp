@@ -608,9 +608,9 @@ namespace vcpkg
                 return Path(std::move(*phome));
             }
 
-            return get_home_dir().map([](Path&& home) -> Path&& {
+            return get_home_dir().map([](Path home) -> Path {
                 home /= ".cache";
-                return std::move(home);
+                return home;
             });
         }();
         return s_home;
