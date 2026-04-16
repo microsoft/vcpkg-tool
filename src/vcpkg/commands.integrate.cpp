@@ -451,7 +451,7 @@ namespace vcpkg
         Checks::msg_exit_with_error(
             VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate bash");
 #else // ^^^ _WIN32 // !_WIN32 vvv
-        const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+        const auto home_path = get_environment_variable_nonempty("HOME").value_or_exit(VCPKG_LINE_INFO);
 #if defined(__APPLE__)
         const auto bashrc_path = Path{home_path} / ".bash_profile";
 #else
@@ -488,7 +488,7 @@ namespace vcpkg
         Checks::msg_exit_with_error(
             VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate zsh");
 #else  // ^^^ _WIN32 // !_WIN32 vvv
-        const auto home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+        const auto home_path = get_environment_variable_nonempty("HOME").value_or_exit(VCPKG_LINE_INFO);
         const auto zshrc_path = Path{home_path} / ".zshrc";
 
         auto& fs = paths.get_filesystem();
@@ -532,14 +532,15 @@ namespace vcpkg
             VCPKG_LINE_INFO, msgIntegrateNonWindowsOnly, msg::command_line = "vcpkg integrate x-fish");
 #else  // ^^^ _WIN32 // !_WIN32 vvv
         Path fish_completions_path;
-        const auto config_path = get_environment_variable("XDG_CONFIG_HOME");
-        if (config_path.has_value())
+        const auto maybe_config_path = get_environment_variable("XDG_CONFIG_HOME");
+        const auto pconfig_path = maybe_config_path.get();
+        if (pconfig_path && !pconfig_path->empty())
         {
-            fish_completions_path = config_path.value_or_exit(VCPKG_LINE_INFO);
+            fish_completions_path = std::move(*pconfig_path);
         }
         else
         {
-            Path home_path = get_environment_variable("HOME").value_or_exit(VCPKG_LINE_INFO);
+            Path home_path = get_environment_variable_nonempty("HOME").value_or_exit(VCPKG_LINE_INFO);
             fish_completions_path = std::move(home_path) / ".config";
         }
 

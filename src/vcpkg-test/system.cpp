@@ -31,7 +31,7 @@ namespace
     };
 }
 
-TEST_CASE ("[to_cpu_architecture]", "system")
+TEST_CASE ("to_cpu_architecture", "[system]")
 {
     struct test_case
     {
@@ -111,6 +111,43 @@ TEST_CASE ("guess_visual_studio_prompt", "[system]")
     CHECK(guess_visual_studio_prompt_target_architecture().value_or_exit(VCPKG_LINE_INFO) == CPUArchitecture::X86);
     set_environment_variable("Platform", "x64");
     CHECK(guess_visual_studio_prompt_target_architecture().value_or_exit(VCPKG_LINE_INFO) == CPUArchitecture::X64);
+}
+
+static constexpr StringLiteral test_variable_name = "VCPKG_TEST_SET_GET_ENV_VARIABLE";
+static void check_environment_variable_roundtrip(const std::string& expected)
+{
+    set_environment_variable(test_variable_name, expected.c_str());
+    auto maybe_actual = get_environment_variable(test_variable_name);
+    if (auto actual = maybe_actual.get())
+    {
+        CHECK(*actual == expected);
+    }
+    else
+    {
+        FAIL("no set variable");
+    }
+}
+
+TEST_CASE ("environment_variable_roundtrip", "[system]")
+{
+    CHECK(!get_environment_variable(test_variable_name).has_value());
+    environment_variable_resetter reset_varname{test_variable_name};
+    CHECK(!get_environment_variable(test_variable_name).has_value());
+    check_environment_variable_roundtrip("a value that is not nullopt");
+    CHECK(get_environment_variable(test_variable_name).has_value());
+    check_environment_variable_roundtrip("");
+    CHECK(get_environment_variable(test_variable_name).has_value());
+    set_environment_variable(test_variable_name, nullopt);
+    CHECK(!get_environment_variable(test_variable_name).has_value());
+
+    check_environment_variable_roundtrip("x");
+
+    const auto wstring_default_capacity = std::wstring{}.capacity();
+    REQUIRE(wstring_default_capacity > 0);
+
+    check_environment_variable_roundtrip(std::string(wstring_default_capacity - 1, 'a'));
+    check_environment_variable_roundtrip(std::string(wstring_default_capacity, 'b'));
+    check_environment_variable_roundtrip(std::string(wstring_default_capacity + 1, 'c'));
 }
 
 TEST_CASE ("cmdlinebuilder", "[system]")
