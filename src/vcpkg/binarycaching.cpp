@@ -724,7 +724,7 @@ namespace
                 .string_arg("-PreRelease")
                 .string_arg("-PackageSaveMode")
                 .string_arg("nupkg");
-            if (!m_use_nuget_cache) cmd.string_arg("-DirectDownload").string_arg("-NoCache");
+            if (!m_use_nuget_cache) cmd.string_arg("-DirectDownload").string_arg("-NoHttpCache");
             cmd.string_arg(src.option).string_arg(src.value);
             return cmd;
         }
