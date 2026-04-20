@@ -290,19 +290,7 @@ namespace vcpkg
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
-        std::string uri;
-        if (auto github_server_url = maybe_github_server_url.get())
-        {
-            uri = *github_server_url;
-            uri.append("/api/v3");
-        }
-        else
-        {
-            uri = "https://api.github.com";
-        }
-
-        fmt::format_to(
-            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
+        const auto uri = github_dependency_graph_snapshots_uri(maybe_github_server_url, github_repository);
 
         CurlEasyHandle handle;
         CURL* curl = handle.get();
@@ -335,6 +323,40 @@ namespace vcpkg
         }
 
         return response_code >= 200 && response_code < 300;
+    }
+
+    std::string github_dependency_graph_snapshots_uri(const Optional<std::string>& maybe_github_server_url,
+                                                      StringView github_repository)
+    {
+        std::string uri;
+        constexpr StringLiteral github_com_url = "https://github.com";
+        constexpr StringLiteral api_github_com_url = "https://api.github.com";
+        if (auto github_server_url = maybe_github_server_url.get())
+        {
+            StringView normalized_server_url = *github_server_url;
+            if (!normalized_server_url.empty() && normalized_server_url[normalized_server_url.size() - 1] == '/')
+            {
+                normalized_server_url = normalized_server_url.substr(0, normalized_server_url.size() - 1);
+            }
+
+            if (normalized_server_url == github_com_url)
+            {
+                uri.assign(api_github_com_url.data(), api_github_com_url.size());
+            }
+            else
+            {
+                uri.assign(normalized_server_url.data(), normalized_server_url.size());
+                uri.append("/api/v3");
+            }
+        }
+        else
+        {
+            uri.assign(api_github_com_url.data(), api_github_com_url.size());
+        }
+
+        fmt::format_to(
+            std::back_inserter(uri), "/repos/{}/dependency-graph/snapshots", url_encode_spaces(github_repository));
+        return uri;
     }
 
     static size_t read_file_callback(char* buffer, size_t size, size_t nitems, void* param)
