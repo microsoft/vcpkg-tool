@@ -516,7 +516,7 @@ namespace
             {
                 msg::println(msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
             }
-            else if (ec == std::errc::no_such_file_or_directory)
+            else if (is_not_found_errc(ec))
             {
                 Debug::println("Attempted to deploy ", source, ", but it didn't exist");
                 return false;
@@ -632,7 +632,7 @@ namespace vcpkg
         if (ec)
         {
             auto io_error = ec.message();
-            if (ec == std::errc::no_such_file_or_directory)
+            if (is_not_found_errc(ec))
             {
                 msg::print(Color::warning,
                            LocalizedString::from_raw(target_binary_path)

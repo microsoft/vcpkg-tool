@@ -1051,9 +1051,19 @@ namespace
                                                const Path& baseline_path,
                                                StringView baseline)
     {
-        return fs.try_read_contents(baseline_path).then([&](FileContents&& fc) {
-            return parse_baseline_versions(fc.content, baseline, fc.origin);
-        });
+        std::error_code ec;
+        auto contents = fs.read_contents(baseline_path, ec);
+        if (ec)
+        {
+            if (is_not_found_errc(ec))
+            {
+                return Baseline{};
+            }
+
+            return format_filesystem_call_error(ec, "read_contents", {baseline_path});
+        }
+
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 
@@ -1299,7 +1309,7 @@ namespace
         auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            if (ec == std::errc::no_such_file_or_directory)
+            if (is_not_found_errc(ec))
             {
                 return nullopt;
             }
@@ -1335,7 +1345,7 @@ namespace
         auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            if (ec == std::errc::no_such_file_or_directory)
+            if (is_not_found_errc(ec))
             {
                 return nullopt;
             }

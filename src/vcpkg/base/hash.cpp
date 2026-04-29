@@ -563,7 +563,7 @@ namespace vcpkg::Hash
         auto file = fs.open_for_read(path, ec);
         if (ec)
         {
-            if (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory)
+            if (is_not_found_errc(ec))
             {
                 result.prognosis = HashPrognosis::FileNotFound;
                 return result;

@@ -66,8 +66,6 @@
   "AddVersionArtifactsOnly": "--version is artifacts only and can't be used with vcpkg add port",
   "_AddVersionArtifactsOnly.comment": "'--version', and 'vcpkg add port' are command lines that must not be localized",
   "AddVersionCommitChangesReminder": "Did you remember to commit your changes?",
-  "AddVersionFileNotFound": "couldn't find required file {path}",
-  "_AddVersionFileNotFound.comment": "An example of {path} is /foo/bar.",
   "AddVersionFormatPortSuggestion": "Run `{command_line}` to format the file",
   "_AddVersionFormatPortSuggestion.comment": "An example of {command_line} is vcpkg install zlib.",
   "AddVersionIgnoringOptionAll": "ignoring --{option} since a port name argument was provided",
