@@ -419,11 +419,6 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         const auto& builtin_ports_directory = paths.builtin_ports_directory();
         auto baseline_path = paths.builtin_registry_versions / "baseline.json";
-        if (!fs.exists(baseline_path, IgnoreErrors{}))
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionFileNotFound, msg::path = baseline_path);
-        }
-
         if (parsed_args.command_arguments.empty())
         {
             Checks::msg_check_exit(
@@ -472,7 +467,11 @@ namespace vcpkg
             swap(selected_git_trees, port_git_trees);
         }
 
-        auto baseline_map = vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
+        std::map<std::string, Version, std::less<>> baseline_map;
+        if (!add_all)
+        {
+            baseline_map = vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
+        }
 
         // Find ports with uncommitted changes
         for (auto&& port_git_tree_entry : port_git_trees)

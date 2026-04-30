@@ -325,8 +325,7 @@ namespace
 
     void translate_not_found_to_success(std::error_code& ec)
     {
-        if (ec && (ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory ||
-                   ec == std::errc::too_many_symbolic_link_levels))
+        if (ec && is_not_found_errc(ec))
         {
             ec.clear();
         }
@@ -935,6 +934,12 @@ namespace
 
 namespace vcpkg
 {
+    bool is_not_found_errc(const std::error_code& ec) noexcept
+    {
+        return ec == std::errc::no_such_file_or_directory || ec == std::errc::not_a_directory ||
+               ec == std::errc::too_many_symbolic_link_levels;
+    }
+
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args)
@@ -2794,8 +2799,7 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
-                        ec != std::make_error_condition(std::errc::not_a_directory))
+                    if (ec && !is_not_found_errc(ec))
                     {
                         ret.clear();
                         break;
@@ -2871,8 +2875,7 @@ namespace vcpkg
                         ret.push_back(from_stdfs_path(b->path()));
                     }
 
-                    if (ec && ec != std::make_error_condition(std::errc::no_such_file_or_directory) &&
-                        ec != std::make_error_condition(std::errc::not_a_directory))
+                    if (ec && !is_not_found_errc(ec))
                     {
                         ret.clear();
                         break;
