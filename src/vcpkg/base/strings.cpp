@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/api-stable-format.h>
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
@@ -811,5 +813,49 @@ namespace vcpkg::Strings
     {
         stream.on_end(CB{this});
         return std::move(this->lines);
+    }
+
+    std::string shorten_text(StringView desc, const size_t length)
+    {
+        // replace all sequences of whitespace with a single space, and trim leading/trailing whitespace
+        static constexpr size_t dot_length = 3;
+        Checks::check_exit(VCPKG_LINE_INFO, length >= dot_length);
+        std::string simple_desc;
+        simple_desc.reserve(length);
+
+        bool previous_whitespace = false;
+        auto last = desc.end();
+        auto first = std::find_if_not(desc.begin(), last, ParserBase::is_whitespace);
+        for (; first != last; ++first)
+        {
+            const auto ch = *first;
+            if (ParserBase::is_whitespace(ch))
+            {
+                previous_whitespace = true;
+                continue;
+            }
+
+            if (previous_whitespace)
+            {
+                previous_whitespace = false;
+                if (simple_desc.size() == length)
+                {
+                    std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
+                    return simple_desc;
+                }
+
+                simple_desc.push_back(' ');
+            }
+
+            if (simple_desc.size() == length)
+            {
+                std::fill_n(simple_desc.end() - dot_length, dot_length, '.');
+                return simple_desc;
+            }
+
+            simple_desc.push_back(ch);
+        }
+
+        return simple_desc;
     }
 }

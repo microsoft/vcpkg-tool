@@ -7,10 +7,10 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/statusparagraphs.h>
-#include <vcpkg/vcpkglib.h>
 
 #include <unordered_map>
 #include <unordered_set>

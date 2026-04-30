@@ -1,0 +1,1 @@
+!ios & !android & !uwp & !x86 & !arm32 & !static

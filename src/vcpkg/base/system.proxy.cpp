@@ -1,5 +1,11 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/system.proxy.h>
+
+#if defined(_WIN32)
+#include <winhttp.h>
+#endif
 
 vcpkg::Optional<vcpkg::IEProxySetting> vcpkg::get_windows_ie_proxy_server()
 {

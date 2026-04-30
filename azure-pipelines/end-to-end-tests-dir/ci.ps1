@@ -1,9 +1,7 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 # test skipped ports
-$Output = Run-VcpkgAndCaptureOutput ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
-Throw-IfNotFailed
-$ErrorOutput = Run-VcpkgAndCaptureStdErr ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
+$Output = Run-VcpkgAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
 Throw-IfNotFailed
 # dep-on-feature-not-sup must cascade because it depends on a features that is not supported
 Throw-IfNonContains -Actual $Output -Expected "dep-on-feature-not-sup:${Triplet}: cascade"
@@ -18,24 +16,22 @@ if ($Output.Split("*").Length -ne 4) {
 }
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
-  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_DRY_RUN: 3
+  CASCADED_DUE_TO_SUPPORTS: 1
+  SKIPPED_BY_DRY_RUN: 3
   UNSUPPORTED: 1
 "@
 # feature-not-sup's baseline fail entry should result in a regression because the port is not supported
-Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."
+Throw-IfNonContains -Actual $Output -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as fail but not supported for ${Triplet}."
 # feature-not-sup's baseline fail entry should result in a regression because the port is cascade for this triplet
-Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."
+Throw-IfNonContains -Actual $Output -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."
 
 # pass means pass
-Run-Vcpkg ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
-Throw-IfNotFailed
-$ErrorOutput = Run-VcpkgAndCaptureStdErr ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.pass.baseline.txt"
+$Output = Run-VcpkgAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.pass.baseline.txt"
 Throw-IfNotFailed
 # feature-not-sup's baseline pass entry should result in a regression because the port is not supported
-Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as pass but not supported for ${Triplet}."
+Throw-IfNonContains -Actual $Output -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as pass but not supported for ${Triplet}."
 # feature-not-sup's baseline pass entry should result in a regression because the port is cascade for this triplet
-Throw-IfNonContains -Actual $ErrorOutput -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} cascaded, but it is required to pass. ("
+Throw-IfNonContains -Actual $Output -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} cascaded, but it is required to pass. ("
 
 # any invalid manifest must raise an error
 Remove-Problem-Matchers
@@ -86,81 +82,89 @@ Throw-IfFailed
 Throw-IfNonContains -Actual $Output -Expected "base-port:${Triplet}: parent: "
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
-  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED_BY_PARENT: 3
+  CASCADED_DUE_TO_SUPPORTS: 1
+  SKIPPED_BY_PARENT_HASHES: 3
   UNSUPPORTED: 1
 "@
 
-# test that skipped ports aren't "put back" by downstream dependencies that aren't skipped
+# test that skipped ports aren't "put back" by downstream dependencies that aren't skipped,
+# and that self-unsupported cases are listed as unsupported
 Refresh-TestRoot
 $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource="clear;files,$ArchiveRoot,readwrite" --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.skip.txt"
 Throw-IfFailed
-if (-not ($Output -match 'always-built:[^:]+:      \*:' -and $Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.')) {
+Throw-IfNonContains -Actual $Output -Expected "always-built:$($Triplet):      *:"
+if (-not ($Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.')) {
     throw 'did not attempt to build always-built'
 }
-if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
-    throw 'did not identify always-skip as skipped'
-}
-if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
-    throw 'did not identify always-cascade as cascaded'
+Throw-IfNonContains -Actual $Output -Expected "always-skip:$($Triplet): skip"
+Throw-IfNonContains -Actual $Output -Expected "always-cascade:$($Triplet): cascade"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-feature:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-feature-default:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host-feature:$($Triplet): unsupported"
+# prerequisite for next tests
+Throw-IfNonContains -Actual $Output -Expected "maybe-transitive-cascade:$($Triplet): skip"
+Throw-IfNonContains -Actual $Output -Expected "maybe-cross-cascade:$($Triplet):      *:"
+if (-not ($Output -match 'Building maybe-cross-cascade:[^@]+@1\.0\.0\.\.\.')) {
+    throw 'did not attempt to build maybe-cross-cascade'
 }
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 4
-  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 2
+  CASCADED_DUE_TO_BASELINE: 1
+  SKIPPED: 2
+  UNSUPPORTED: 5
 "@
-# prerequisite for next tests
-if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: skip\n')) {
-    throw 'did not identify maybe-transitive-cascade as skip'
-}
-if (-not ($Output -match 'maybe-cross-cascade:[^:]+:      \*:' -and $Output -match 'Building maybe-cross-cascade:[^@]+@1\.0\.0\.\.\.')) {
-    throw 'did not attempt to build maybe-cross-cascade'
-}
 # test with --skip-failures and cached artifacts
 Remove-Item -Recurse -Force $installRoot -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $installRoot -Force | Out-Null
 $Output = Run-VcpkgAndCaptureOutput ci --skip-failures @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource="clear;files,$ArchiveRoot" --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
 Throw-IfFailed
-if (-not ($Output -match 'always-built:[^:]+: cached:') -or $Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.') {
+Throw-IfNonContains -Actual $Output -Expected "always-built:$($Triplet): cached:"
+if ($Output -match 'Building always-built:[^@]+@1\.0\.0\.\.\.') {
     throw 'did not reuse the cached artifact for always-built'
 }
-if (-not ($Output -match 'always-skip:[^:]+: skip\n')) {
-    throw 'did not identify always-skip as skipped'
-}
-if (-not ($Output -match 'always-cascade:[^:]+: cascade\n')) {
-    throw 'did not identify always-cascade as cascaded'
-}
-if (-not ($Output -match 'maybe-skip:[^:]+: skip\n')) {
-    throw 'did not identify maybe-skip as skipped'
-}
-# not cached and transitive dependency on maybe-skip which is excluded
-if (-not ($Output -match 'maybe-transitive-cascade:[^:]+: cascade\n')) {
-    throw 'did not identify maybe-transitive-cascade as cascaded'
-}
-# cached, but direct dependency on maybe-skip which is excluded
-if (-not ($Output -match 'maybe-cross-cascade:[^:]+: cascade\n')) {
-    throw 'did not identify maybe-cross-cascade as cascaded'
-}
+Throw-IfNonContains -Actual $Output -Expected "always-skip:$($Triplet): skip"
+Throw-IfNonContains -Actual $Output -Expected "always-cascade:$($Triplet): cascade"
+Throw-IfNonContains -Actual $Output -Expected "maybe-skip:$($Triplet): skip"
+# not cached and transitive dependency on maybe-skip which is skipped
+Throw-IfNonContains -Actual $Output -Expected "maybe-transitive-cascade:$($Triplet): cascade"
+# cached, but direct dependency on maybe-skip which is skipped
+Throw-IfNonContains -Actual $Output -Expected "maybe-cross-cascade:$($Triplet): cascade"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-feature:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-feature-default:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected "never-built-unsupported-host-feature:$($Triplet): unsupported"
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $Triplet
+  CASCADED_DUE_TO_BASELINE: 4
+  SKIPPED: 2
+  UNSUPPORTED: 5
+  CACHED: 1
+"@
 # test cross build; skipping always-skip and host maybe-skip
 Copy-Item $tripletFile "$TestingRoot/cross.cmake"
 $Output = Run-VcpkgAndCaptureOutput ci --dry-run --skip-failures --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-ports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-ports/baseline.fail.txt"
 Throw-IfFailed
-if (-not ($Output -match 'always-built:cross:      \*:')) {
-    throw 'did not attempt to build always-built [cross build]'
-}
-if (-not ($Output -match 'always-cascade:cross: cascade\n')) {
-    throw 'did not identify always-cascade as cascaded [cross build]'
-}
-if (-not ($Output -match 'maybe-skip:cross:      \*:')) {
-    throw 'did not attempt to build maybe-skip [cross build]'
-}
-if (-not ($Output -match 'maybe-transitive-cascade:cross:      \*:')) {
-    throw 'did not attempt to build maybe-transitive-cascade [cross build]'
-}
-if (-not ($Output -match 'maybe-cross-cascade:cross: cascade\n')) {
-    throw 'did not identify maybe-cross-cascade as cascaded [cross build]'
-}
+Throw-IfNonContains -Actual $Output -Expected 'always-built:cross:      *:'
+Throw-IfNonContains -Actual $Output -Expected 'always-cascade:cross: cascade'
+Throw-IfNonContains -Actual $Output -Expected 'maybe-skip:cross:      *:'
+Throw-IfNonContains -Actual $Output -Expected 'maybe-transitive-cascade:cross:      *:'
+Throw-IfNonContains -Actual $Output -Expected 'maybe-cross-cascade:cross: cascade'
+Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported:cross: unsupported'
+Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-feature:cross: unsupported'
+Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-feature-default:cross: unsupported'
+Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-host:cross: unsupported'
+Throw-IfNonContains -Actual $Output -Expected 'never-built-unsupported-host-feature:cross: unsupported'
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  CASCADED_DUE_TO_BASELINE: 2
+  SKIPPED: 1
+  SKIPPED_BY_DRY_RUN: 4
+  UNSUPPORTED: 5
+"@
 
 # test that features included only by skipped ports are not included
 Refresh-TestRoot
@@ -170,17 +174,16 @@ Remove-Problem-Matchers
 $Output = Run-VcpkgAndCaptureOutput ci @commonArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skipped-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skipped-features/baseline.txt" --x-xunit-all --x-xunit="$xunitFile"
 Restore-Problem-Matchers
 Throw-IfFailed
-if (-not ($Output -match 'skipped-features:[^:]+:      \*:' -and $Output -match 'Building skipped-features:[^@]+@1\.0\.0\.\.\.')) {
+Throw-IfNonContains -Actual $Output -Expected "skipped-features:$($Triplet):      *:"
+if (-not ($Output -match 'Building skipped-features:[^@]+@1\.0\.0\.\.\.')) {
     throw 'did not attempt to build skipped-features'
-}
-if ($Output -match 'Building skipped-depends') {
-    throw 'should not attempt to build skipped-depends because it is skipped'
-}
+} 
+Throw-IfContains -Actual $Output -Expected 'Building skipped-depends'
 Throw-IfNonContains -Actual $Output -Expected @"
 SUMMARY FOR $Triplet
   SUCCEEDED: 1
-  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 1
-  EXCLUDED: 1
+  CASCADED_DUE_TO_BASELINE: 1
+  SKIPPED: 1
 "@
 
 $xunitContent = Get-Content $xunitFile -Raw
@@ -192,7 +195,7 @@ $expected = @"
         <traits>
           <trait name="owner" value="$Triplet"/>
         </traits>
-        <reason><!\[CDATA\[EXCLUDED\]\]></reason>
+        <reason><!\[CDATA\[SKIPPED\]\]></reason>
       </test>
     </collection>
   </assembly>
@@ -213,7 +216,7 @@ $expected = @"
         <traits>
           <trait name="owner" value="$Triplet"/>
         </traits>
-        <reason><!\[CDATA\[CASCADED_DUE_TO_MISSING_DEPENDENCIES\]\]></reason>
+        <reason><!\[CDATA\[CASCADED_DUE_TO_BASELINE\]\]></reason>
       </test>
     </collection>
   </assembly>
@@ -225,3 +228,183 @@ if (-not ($xunitContent -match $expected)) {
     Write-Diff -Actual $xunitContent -Expected $expected
     throw 'xUnit output did not match expected output'
 }
+
+# test that dependencies of failure baselines still contribute features under --skip-failures
+Refresh-TestRoot
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+Remove-Problem-Matchers
+$Output = Run-VcpkgAndCaptureOutput ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skip-failures-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skip-failures-features/baseline.txt"
+Restore-Problem-Matchers
+Throw-IfFailed
+# note that depended-on-by-skip is not included but depended-on-by-fail is
+Throw-IfNonContains -Actual $Output -Expected 'Building shared-dependency[core,default-feature,depended-on-by-fail,depended-on-by-normal]:cross@1.0.0...'
+Throw-IfNonContains -Actual $Output -Expected 'Building host-dependency:cross@1.0.0...'
+Throw-IfNonContains -Actual $Output -Expected "Building fail-port:cross@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building host-dependency:$Triplet@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building skip-port"
+Throw-IfContains -Actual $Output -Expected "Building skip-port-host"
+Throw-IfContains -Actual $Output -Expected "fail-port:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "normal-port:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "shared-dependency:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "skip-port:$($Triplet):"
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  SUCCEEDED: 3
+  BUILD_FAILED: 1
+  SKIPPED: 2
+"@
+
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $Triplet
+  SUCCEEDED: 1
+"@
+
+Refresh-TestRoot
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+Remove-Problem-Matchers
+$Output = Run-VcpkgAndCaptureOutput ci --skip-failures --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-skip-failures-features" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-skip-failures-features/baseline.txt"
+Restore-Problem-Matchers
+Throw-IfFailed
+Throw-IfNonContains -Actual $Output -Expected 'Building shared-dependency[core,default-feature,depended-on-by-fail,depended-on-by-normal]:cross@1.0.0...'
+Throw-IfNonContains -Actual $Output -Expected 'Building host-dependency:cross@1.0.0...'
+Throw-IfContains -Actual $Output -Expected "Building fail-port:cross@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building host-dependency:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building skip-port"
+Throw-IfContains -Actual $Output -Expected "Building skip-port-host"
+Throw-IfContains -Actual $Output -Expected "fail-port:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "normal-port:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "shared-dependency:$($Triplet):"
+Throw-IfContains -Actual $Output -Expected "skip-port:$($Triplet):"
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  SUCCEEDED: 3
+  SKIPPED: 2
+  SKIPPED_BY_SKIP_FAILURES: 1
+"@
+
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $Triplet
+  SUCCEEDED: 1
+"@
+
+# test every "REGRESSION: " outcome
+Refresh-TestRoot
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+Remove-Problem-Matchers
+$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt"
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: dynamic-cascade-required-to-pass:cross cascaded, but it is required to pass.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail:cross failed with BUILD_FAILED. If expected, add fail:cross=fail to '
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail-but-unsupported:cross is marked as fail but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-fails:cross failed with BUILD_FAILED. If expected, add pass-but-fails:cross=fail to '
+Throw-IfNonContains -Actual $Output -Expected 'PASSING, REMOVE FROM FAIL LIST: pass-but-marked-fail:cross ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-unsupported:cross is marked as pass but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'skip:cross: skip'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-fail-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-skipped-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-unsupported-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  SUCCEEDED: 1
+  BUILD_FAILED: 3
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 2
+  CASCADED_DUE_TO_SUPPORTS: 2
+  CASCADED_DUE_TO_BASELINE: 1
+  SKIPPED: 1
+  UNSUPPORTED: 2
+"@
+
+# ... and with --allow-unexpected-passing
+Refresh-TestRoot
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+Remove-Problem-Matchers
+$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --allow-unexpected-passing
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: dynamic-cascade-required-to-pass:cross cascaded, but it is required to pass.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail:cross failed with BUILD_FAILED. If expected, add fail:cross=fail to '
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail-but-unsupported:cross is marked as fail but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-fails:cross failed with BUILD_FAILED. If expected, add pass-but-fails:cross=fail to '
+Throw-IfContains -Actual $Output -Expected 'PASSING, REMOVE FROM FAIL LIST' # : pass-but-marked-fail:cross (
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-unsupported:cross is marked as pass but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'skip:cross: skip'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-fail-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-skipped-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-unsupported-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+# note that --skip-failures means we did build pass-but-marked-fail but we didn't report it as a regression (it is SUCCEEDED)
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  SUCCEEDED: 1
+  BUILD_FAILED: 3
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 2
+  CASCADED_DUE_TO_SUPPORTS: 2
+  CASCADED_DUE_TO_BASELINE: 1
+  SKIPPED: 1
+  UNSUPPORTED: 2
+"@
+
+# ... and with --skip-failures
+Refresh-TestRoot
+Copy-Item $tripletFile "$TestingRoot/cross.cmake"
+Remove-Problem-Matchers
+$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --skip-failures
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: dynamic-cascade-required-to-pass:cross cascaded, but it is required to pass.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail:cross failed with BUILD_FAILED. If expected, add fail:cross=fail to '
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: fail-but-unsupported:cross is marked as fail but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-fails:cross failed with BUILD_FAILED. If expected, add pass-but-fails:cross=fail to '
+Throw-IfContains -Actual $Output -Expected 'PASSING, REMOVE FROM FAIL LIST' # : pass-but-marked-fail:cross (
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: pass-but-unsupported:cross is marked as pass but not supported for cross.'
+Throw-IfNonContains -Actual $Output -Expected 'skip:cross: skip'
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-fail-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-skipped-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: static-unsupported-cascade-required-to-pass:cross cascaded, but it is required to pass. ('
+# note that --skip-failures means we didn't even try to build pass-but-marked-fail, it was SKIPPED_BY_SKIP_FAILURES
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR cross
+  BUILD_FAILED: 3
+  CASCADED_DUE_TO_MISSING_DEPENDENCIES: 2
+  CASCADED_DUE_TO_SUPPORTS: 2
+  CASCADED_DUE_TO_BASELINE: 1
+  SKIPPED: 1
+  SKIPPED_BY_SKIP_FAILURES: 1
+  UNSUPPORTED: 2
+"@
+
+# also ensure that transitive dependencies are kept in the plan even if a direct dependency is unnecessary
+Refresh-TestRoot
+Run-Vcpkg install transitive-3 --binarysource="clear;files,$ArchiveRoot,readwrite" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
+Throw-IfFailed
+Run-Vcpkg remove transitive-3 transitive-4 transitive-5 transitive-6 @directoryArgs
+Throw-IfFailed
+$Output = Run-VcpkgAndCaptureBoth ci --binarysource="clear;files,$ArchiveRoot" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
+Throw-IfFailed
+
+Throw-IfNonContains -Actual $Output -Expected "Installing 1/6 transitive-6:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-6:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 2/6 transitive-5:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-5:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 3/6 transitive-4:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-4:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 4/6 transitive-3:$($Triplet)@1.0.0..."
+Throw-IfContains -Actual $Output -Expected "Building transitive-3:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 5/6 transitive-2:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building transitive-2:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Installing 6/6 transitive-1:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building transitive-1:$($Triplet)@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "transitive-1:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-2:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-3:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-4:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-5:$($Triplet): SUCCEEDED:"
+Throw-IfNonContains -Actual $Output -Expected "transitive-6:$($Triplet): SUCCEEDED:"
+
+Throw-IfNonContains -Actual $Output -Expected @"
+SUMMARY FOR $($Triplet)
+  SUCCEEDED: 6
+"@

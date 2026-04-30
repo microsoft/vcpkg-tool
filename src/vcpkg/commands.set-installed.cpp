@@ -8,12 +8,12 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -185,6 +185,7 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
+                                           const InstallAndBuildDatabaseLock& installed_lock,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
                                            PrintUsage print_usage,
@@ -232,7 +233,7 @@ namespace vcpkg
         }
 
         // currently (or once) installed specifications
-        auto status_db = database_load_collapse(fs, paths.installed());
+        auto status_db = database_sync(fs, paths.installed(), installed_lock);
         adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan);
@@ -269,6 +270,7 @@ namespace vcpkg
                                                   paths,
                                                   host_triplet,
                                                   build_options,
+                                                  installed_lock,
                                                   action_plan,
                                                   status_db,
                                                   binary_cache,
@@ -309,9 +311,7 @@ namespace vcpkg
             // See docs/manifest-info.schema.json
             Json::Object manifest_info;
             manifest_info.insert("manifest-path", Json::Value::string(manifest->path));
-            const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
-            const auto json_contents = Json::stringify(manifest_info);
-            fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
+            fs.write_contents(installed_paths->manifest_info_path(), Json::stringify(manifest_info), VCPKG_LINE_INFO);
         }
 
         binary_cache.wait_for_async_complete_and_join();
@@ -358,7 +358,14 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
+
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
+        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
 
         Optional<Path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
@@ -380,13 +387,13 @@ namespace vcpkg
             {},
             packages_dir_assigner,
             {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
-
         command_set_installed_and_exit_ex(
             args,
             paths,
             host_triplet,
             build_options,
             *cmake_vars,
+            installed_lock,
             std::move(action_plan),
             Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
             Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,

@@ -1,0 +1,4 @@
+{
+  "name": "vcpkg-touch",
+  "version": "1.0.0"
+}

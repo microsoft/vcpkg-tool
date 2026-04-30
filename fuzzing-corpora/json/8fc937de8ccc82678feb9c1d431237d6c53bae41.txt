@@ -1,0 +1,4 @@
+{
+  "name": "version-missing",
+  "version": "1.0"
+}

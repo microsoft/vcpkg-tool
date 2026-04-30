@@ -1,0 +1,4 @@
+{
+  "name": "vcpkg-test-x-script-prerequisites",
+  "version": "1.0.0"
+}

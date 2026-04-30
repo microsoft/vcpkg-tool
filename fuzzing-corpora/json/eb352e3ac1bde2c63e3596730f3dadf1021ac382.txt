@@ -1,0 +1,12 @@
+{
+  "name": "vcpkg-msvc-2013",
+  "version": "1",
+  "features": {
+    "policy": {
+      "description": "Set VCPKG_POLICY_ALLOW_OBSOLETE_MSVCRT"
+    },
+    "release-only": {
+      "description": "Only install the release DLL"
+    }
+  }
+}

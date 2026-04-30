@@ -7,6 +7,7 @@
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 
@@ -80,6 +81,7 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
+                         const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder);
@@ -87,6 +89,7 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
+                                   const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder);
@@ -115,9 +118,12 @@ namespace vcpkg
         int post_build_checks_failed = 0;
         int file_conflicts = 0;
         int cascaded_due_to_missing_dependencies = 0;
-        int excluded = 0;
-        int excluded_by_parent = 0;
-        int excluded_by_dry_run = 0;
+        int cascaded_due_to_supports = 0;
+        int cascaded_due_to_baseline = 0;
+        int skipped = 0;
+        int skipped_by_parent_hashes = 0;
+        int skipped_by_dry_run = 0;
+        int skipped_by_skip_failures = 0;
         int unsupported = 0;
         int cache_missing = 0;
         int cached = 0;

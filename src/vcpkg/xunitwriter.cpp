@@ -28,9 +28,12 @@ namespace
             case BuildResult::PostBuildChecksFailed:
             case BuildResult::FileConflicts: result_string = "Fail"; break;
             case BuildResult::CascadedDueToMissingDependencies:
-            case BuildResult::Excluded:
-            case BuildResult::ExcludedByParent:
-            case BuildResult::ExcludedByDryRun:
+            case BuildResult::Skipped:
+            case BuildResult::SkippedByParentHashes:
+            case BuildResult::SkippedByDryRun:
+            case BuildResult::SkippedBySkipFailures:
+            case BuildResult::CascadedDueToSupports:
+            case BuildResult::CascadedDueToBaseline:
             case BuildResult::Unsupported:
             case BuildResult::Cached: result_string = "Skip"; break;
             case BuildResult::CacheMissing:

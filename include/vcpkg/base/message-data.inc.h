@@ -162,10 +162,6 @@ DECLARE_MESSAGE(AnOverlayPath, (), "", "an overlay path")
 DECLARE_MESSAGE(AnOverlayTripletsPath, (), "", "a triplet path")
 DECLARE_MESSAGE(AnOverride, (), "", "an override")
 DECLARE_MESSAGE(ANonNegativeInteger, (), "", "a nonnegative integer")
-DECLARE_MESSAGE(AnotherInstallationInProgress,
-                (),
-                "",
-                "Another installation is in progress on the machine, sleeping 6s before retrying.")
 DECLARE_MESSAGE(AnSpdxLicenseExpression, (), "", "an SPDX license expression")
 DECLARE_MESSAGE(APackageName, (), "", "a package name")
 DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern")
@@ -402,25 +398,40 @@ DECLARE_MESSAGE(BuildResultCascadeDueToMissingDependencies,
                 "Printed after the name of an installed entity to indicate that it could not attempt "
                 "to be installed because one of its transitive dependencies failed to install.",
                 "CASCADED_DUE_TO_MISSING_DEPENDENCIES")
+DECLARE_MESSAGE(BuildResultCascadeDueToSupports,
+                (),
+                "Printed after the name of an installed entity to indicate that it could not attempt "
+                "to be installed because one of its transitive dependencies' supports clause fails",
+                "CASCADED_DUE_TO_SUPPORTS")
+DECLARE_MESSAGE(BuildResultCascadeDueToBaseline,
+                (),
+                "Printed after the name of an installed entity to indicate that it could not attempt "
+                "to be installed because one of its transitive dependencies is skipped in ci.baseline.txt.",
+                "CASCADED_DUE_TO_BASELINE")
 DECLARE_MESSAGE(BuildResultDownloaded,
                 (),
                 "Printed after the name of an installed entity to indicate that it was successfully "
                 "downloaded but no build or install was requested.",
                 "DOWNLOADED")
-DECLARE_MESSAGE(BuildResultExcluded,
+DECLARE_MESSAGE(BuildResultSkipped,
                 (),
                 "Printed after the name of an installed entity to indicate that the user explicitly "
                 "requested it not be installed.",
-                "EXCLUDED")
-DECLARE_MESSAGE(BuildResultExcludedByDryRun,
+                "SKIPPED")
+DECLARE_MESSAGE(BuildResultSkippedByDryRun,
                 (),
                 "Printed after the name of an entity that would be installed, but is not due to --dry-run.",
-                "EXCLUDED_BY_DRY_RUN")
-DECLARE_MESSAGE(BuildResultExcludedByParent,
+                "SKIPPED_BY_DRY_RUN")
+DECLARE_MESSAGE(BuildResultSkippedBySkipFailures,
+                (),
+                "Printed after the name of an entity that would be attempted to be installed, but is known to fail and "
+                "vcpkg ci is configured in --skip-failures mode",
+                "SKIPPED_BY_SKIP_FAILURES")
+DECLARE_MESSAGE(BuildResultSkippedByParentHashes,
                 (),
                 "Printed after the name of an installed entity to indicate that it isn't tested due to an ABI hash in "
                 "--parent-hashes.",
-                "EXCLUDED_BY_PARENT")
+                "SKIPPED_BY_PARENT_HASHES")
 DECLARE_MESSAGE(
     BuildResultFileConflicts,
     (),
@@ -525,9 +536,7 @@ DECLARE_MESSAGE(CISettingsOptCIBase,
                 (),
                 "",
                 "Path to the ci.baseline.txt file. Used to skip ports and detect regressions.")
-DECLARE_MESSAGE(CISettingsOptExclude, (), "", "Comma separated list of ports to skip")
 DECLARE_MESSAGE(CISettingsOptFailureLogs, (), "", "Directory to which failure logs will be copied")
-DECLARE_MESSAGE(CISettingsOptHostExclude, (), "", "Comma separated list of ports to skip for the host triplet")
 DECLARE_MESSAGE(CISettingsOptKnownFailuresFrom, (), "", "Path to the file of known package build failures")
 DECLARE_MESSAGE(CISettingsOptOutputHashes, (), "", "File to output all determined package hashes")
 DECLARE_MESSAGE(CISettingsOptParentHashes,
@@ -1357,7 +1366,10 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeFileSystemLock, (), "", "Failed to take the filesystem lock")
+DECLARE_MESSAGE(FailedToTakeLock,
+                (),
+                "",
+                "failed to take lock, another vcpkg may be running against the same directory")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
@@ -2026,6 +2038,7 @@ DECLARE_MESSAGE(InvalidValuePostPortfileIncludes,
                 "Variable VCPKG_POST_PORTFILE_INCLUDES contains invalid file path: '{path}'. The value must be "
                 "an absolute path to an existent cmake file.")
 DECLARE_MESSAGE(IrregularFile, (msg::path), "", "path was not a regular file: {path}")
+DECLARE_MESSAGE(JsonDepthLimitExceeded, (msg::count), "", "JSON depth limit of {count} exceeded")
 DECLARE_MESSAGE(JsonFieldNotObject, (msg::json_field), "", "value of [\"{json_field}\"] must be an object")
 DECLARE_MESSAGE(JsonFieldNotString, (msg::json_field), "", "value of [\"{json_field}\"] must be a string")
 DECLARE_MESSAGE(JsonFileMissingExtension,
@@ -3355,7 +3368,7 @@ DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instan
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
-DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (), "", "waiting to take filesystem lock...")
 DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                 (msg::count),
                 "",

@@ -1,0 +1,19 @@
+{
+  "name": "never-built-unsupported-feature",
+  "version": "1",
+  "dependencies": [
+    {
+      "name": "never-built-unsupported-feature",
+      "default-features": false,
+      "features": [
+        "always-unsupported"
+      ]
+    }
+  ],
+  "features": {
+    "always-unsupported": {
+      "description": "This feature is always unsupported and should not be built.",
+      "supports": "native & !native"
+    }
+  }
+}

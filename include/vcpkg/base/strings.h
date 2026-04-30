@@ -12,6 +12,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 namespace vcpkg::Strings::details
@@ -344,4 +345,6 @@ namespace vcpkg::Strings
         LinesStream stream;
         std::vector<std::string> lines;
     };
+
+    std::string shorten_text(StringView desc, const size_t length);
 }

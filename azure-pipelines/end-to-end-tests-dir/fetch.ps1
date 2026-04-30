@@ -19,15 +19,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     @'
 {
     "schema-version": 1,
-    "tools": [{
-        "name": "7zip_msi",
-        "os": "windows",
-        "version": "19.00",
-        "executable": "Files\\7-Zip\\7z.exe",
-        "url": "https://www.7-zip.org/a/7z1900-x64.msi",
-        "sha512": "7837a8677a01eed9c3309923f7084bc864063ba214ee169882c5b04a7a8b198ed052c15e981860d9d7952c98f459a4fab87a72fd78e7d0303004dcb86f4324c8",
-        "archive": "7z1900-x64.msi"
-    },
+    "tools": [
     {
         "name": "ninja-testing",
         "os": "windows",
@@ -90,10 +82,6 @@ if (-not $IsMacOS -and -not $IsLinux) {
     }
 
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
-    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip_msi", "--vcpkg-root=$TestingRoot"))
-    Throw-IfFailed
-    Require-FileExists "$env:VCPKG_DOWNLOADS/tools/7zip_msi-19.00-windows/Files/7-Zip/7z.exe"
-
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileExists "$env:VCPKG_DOWNLOADS/tools/ninja-testing-1.10.2-windows/ninja.exe"

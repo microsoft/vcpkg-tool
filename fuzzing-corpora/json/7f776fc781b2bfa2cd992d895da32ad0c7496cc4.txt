@@ -1,0 +1,4 @@
+{
+  "name": "executable-bit",
+  "version": "1.0"
+}

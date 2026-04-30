@@ -29,34 +29,33 @@ namespace vcpkg
         friend bool operator!=(const CiBaselineLine& lhs, const CiBaselineLine& rhs) { return !(lhs == rhs); }
     };
 
-    struct TripletExclusions
+    struct TripletSkips
     {
         Triplet triplet;
-        SortedVector<std::string> exclusions;
+        SortedVector<std::string> skips;
 
-        TripletExclusions(const Triplet& triplet);
-        TripletExclusions(const Triplet& triplet, SortedVector<std::string>&& exclusions);
+        TripletSkips(const Triplet& triplet);
+        TripletSkips(const Triplet& triplet, SortedVector<std::string>&& skips);
     };
 
-    struct ExclusionsMap
+    struct SkipsMap
     {
-        std::vector<TripletExclusions> triplets;
+        std::vector<TripletSkips> triplets;
 
-        void insert(Triplet triplet, SortedVector<std::string>&& exclusions);
-        bool is_excluded(const PackageSpec& spec) const;
+        void insert(Triplet triplet, SortedVector<std::string>&& skips);
+        bool is_skipped(const PackageSpec& spec) const;
     };
 
     std::vector<CiBaselineLine> parse_ci_baseline(StringView text, StringView origin, ParseMessages& messages);
 
+    // assertions from a ci-baseline file
     struct CiBaselineData
     {
-        SortedVector<PackageSpec> expected_failures;
-        SortedVector<PackageSpec> required_success;
+        SortedVector<PackageSpec> expected_fail;
+        SortedVector<PackageSpec> required_pass;
     };
 
-    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines,
-                                               ExclusionsMap& exclusions_map,
-                                               SkipFailures skip_failures);
+    CiBaselineData parse_and_apply_ci_baseline(View<CiBaselineLine> lines, SkipsMap& skips_map);
 
     LocalizedString format_ci_result(const PackageSpec& spec,
                                      BuildResult result,

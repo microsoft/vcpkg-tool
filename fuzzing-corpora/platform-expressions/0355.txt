@@ -1,0 +1,1 @@
+freebsd | linux | osx | (windows & x64 & !mingw & !uwp & !(static & staticcrt))

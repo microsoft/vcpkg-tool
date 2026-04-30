@@ -1,7 +1,6 @@
 #pragma once
 
-#include <vcpkg/base/fwd/fmt.h>
-
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/optional.h>
 #include <vcpkg/base/stringview.h>
 

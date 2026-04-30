@@ -1,29 +1,9 @@
 {
-  "typescript.tsdk": "ce/ce/common/temp/node_modules/typescript/lib",
-  "mochaExplorer.files": "./ce/test/**/*.js",
-  "mochaExplorer.ignore": [
-    "./ce/test/**/*.d.ts",
-    "**/node_modules/**",
-    "./ce/ce/**",
-    "./ce/common/**/*.ts",
-    "./ce/common/**/*.js"
-  ],
-  "mochaExplorer.cwd": "./ce/test",
-  "mochaExplorer.mochaPath": "./ce/test/node_modules/mocha",
-  "mochaExplorer.timeout": 500000,
-  "mochaExplorer.require": [
-    "source-map-support/register",
-  ],
-  "mochaExplorer.monkeyPatch": true,
-  "mochaExplorer.debuggerConfig": "MochaTest",
+  "js/ts.tsdk.path": "./vcpkg-artifacts/node_modules/typescript/lib",
   "eslint.workingDirectories": [
     {
       "changeProcessCWD": true,
-      "directory": "./ce/ce",
-    },
-    {
-      "changeProcessCWD": true,
-      "directory": "./ce/test",
+      "directory": "./vcpkg-artifacts",
     }
   ],
   "editor.codeActionsOnSave": {
@@ -100,5 +80,20 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "__bit_reference": "cpp"
-  }
+  },
+  "C_Cpp.default.compileCommands": [
+      "${workspaceFolder}/out/build/Win-x64-Debug/compile_commands.json",
+      "${workspaceFolder}/out/build/Win-x64-Debug-WithArtifacts/compile_commands.json",
+      "${workspaceFolder}/out/build/Win-x64-Debug-NoAnalyze/compile_commands.json",
+      "${workspaceFolder}/out/build/Win-x64-Debug-Official/compile_commands.json",
+      "${workspaceFolder}/out/build/Win-x64-Release/compile_commands.json",
+      "${workspaceFolder}/out/build/Win-x64-Release-Official/compile_commands.json",
+      "${workspaceFolder}/out/build/windows-ci/compile_commands.json",
+      "${workspaceFolder}/out/build/linux-with-artifacts/compile_commands.json",
+      "${workspaceFolder}/out/build/linux-debug/compile_commands.json",
+      "${workspaceFolder}/out/build/linux-ci/compile_commands.json",
+      "${workspaceFolder}/out/build/linux-codespaces/compile_commands.json",
+      "${workspaceFolder}/out/build/macos/compile_commands.json",
+      "${workspaceFolder}/out/build/macos-ci/compile_commands.json"
+  ]
 }

@@ -1,0 +1,8 @@
+{
+  "name": "static-fail-cascade-required-to-pass",
+  "version": "1.0.0",
+  "description": "this port depends on a port (correctly) expected to fail, so it cascades statically",
+  "dependencies": [
+    "fail-expected"
+  ]
+}

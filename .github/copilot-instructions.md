@@ -13,6 +13,12 @@
   - Tags follow the source filename convention (for example `[arguments]`).
 - Run one e2e suite: `pwsh azure-pipelines/end-to-end-tests.ps1 -Filter "<suite-file-name-without-.ps1>"`
 
+### Local Linux e2e notes
+- `vcpkg-tool` is a tool-only repo; local Linux e2e runs need a separate full `microsoft/vcpkg` checkout as `VCPKG_ROOT` for built-in triplets, scripts, and registry history.
+- In this dev container environment, `/vcpkg` is likely to already contain that full `microsoft/vcpkg` clone and should be preferred if present.
+- Linux e2e runs may also need the PowerShell `Pester` module and `mono-complete` for NuGet export scenarios.
+- Some registry tests require full git history in the `VCPKG_ROOT` checkout; shallow clones can fail baseline lookups.
+
 ### Formatting / checks
 - C++ format check path used in PR workflow: `pwsh .\azure-pipelines\Format-CxxCode.ps1`
 - Regenerate message map: `cmake --build --preset windows-ci --target generate-message-map -- -k0`

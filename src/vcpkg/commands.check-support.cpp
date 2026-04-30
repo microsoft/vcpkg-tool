@@ -7,6 +7,7 @@
 #include <vcpkg/commands.check-support.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/packagespec.h>
 #include <vcpkg/platform-expression.h>
 #include <vcpkg/portfileprovider.h>
@@ -129,7 +130,10 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
+        // we need buildtrees and packages controlled because we check compiler
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
+        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
 
         // for each spec in the user-requested specs, check all dependencies
         CreateInstallPlanOptions create_options{

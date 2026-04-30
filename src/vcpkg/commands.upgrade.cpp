@@ -9,11 +9,11 @@
 #include <vcpkg/commands.upgrade.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -73,13 +73,19 @@ namespace vcpkg
 
         const CreateUpgradePlanOptions create_upgrade_plan_options{nullptr, host_triplet, unsupported_port_action};
 
-        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
+        StatusParagraphs status_db = database_sync(paths.get_filesystem(), paths.installed(), installed_lock);
 
         // Load ports from ports dirs
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
 
         PackagesDirAssigner packages_dir_assigner{paths.packages()};
@@ -211,8 +217,15 @@ namespace vcpkg
 
         compute_all_abis(paths, action_plan, var_provider, status_db);
         binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
-        const InstallSummary summary = install_execute_plan(
-            args, paths, host_triplet, build_options, action_plan, status_db, binary_cache, null_build_logs_recorder);
+        const InstallSummary summary = install_execute_plan(args,
+                                                            paths,
+                                                            host_triplet,
+                                                            build_options,
+                                                            installed_lock,
+                                                            action_plan,
+                                                            status_db,
+                                                            binary_cache,
+                                                            null_build_logs_recorder);
         msg::println(msgTotalInstallTime, msg::elapsed = summary.elapsed);
         if (keep_going == KeepGoing::Yes)
         {

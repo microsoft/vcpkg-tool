@@ -43,7 +43,6 @@ $b = @{
     packages = Join-Path $VcpkgRoot "packages"
     installed = Join-Path $VcpkgRoot "installed"
     'versions-output' = Join-Path $VcpkgRoot "buildtrees" "versioning_" "versions"
-    tools = Join-Path $VcpkgRoot "downloads" "tools"
     'vcpkg-root' = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
@@ -68,7 +67,6 @@ $b = @{
     packages = $null
     installed = $null
     'versions-output' = $null
-    tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
     'vcpkg-root' = $VcpkgRoot
 }
 foreach ($k in $b.keys) {
@@ -98,7 +96,6 @@ $b = @{
     packages = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "pkgs"
     installed = Join-Path $manifestdir "vcpkg_installed"
     'versions-output' = Join-Path $manifestdir "vcpkg_installed" "vcpkg" "blds" "versioning_" "versions"
-    tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
     'vcpkg-root' = $VcpkgRoot
     'manifest-mode-enabled' = $True
 }
@@ -138,7 +135,6 @@ $b = @{
     packages = $packagesRoot
     installed = $installRoot
     'versions-output' = Join-Path $buildtreesRoot "versioning_" "versions"
-    tools = Join-Path $cache_home "vcpkg" "downloads" "tools"
     'vcpkg-root' = $VcpkgRoot
     'manifest-mode-enabled' = $True
 }

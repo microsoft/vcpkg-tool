@@ -4,18 +4,13 @@ namespace vcpkg
 {
     struct CiBaseline;
     struct CiBaselineLine;
-    struct TripletExclusions;
-    struct ExclusionsMap;
+    struct TripletSkips;
+    struct SkipsMap;
 
     enum class CiBaselineState
     {
         Skip,
         Fail,
         Pass,
-    };
-    enum class SkipFailures : bool
-    {
-        No,
-        Yes,
     };
 }

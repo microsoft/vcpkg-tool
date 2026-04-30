@@ -6,6 +6,7 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/commands.env.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
@@ -95,7 +96,10 @@ namespace vcpkg
 
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths);
+        Optional<InstallAndBuildDatabaseLock> installed_lock_storage;
+        auto& installed_lock = installed_lock_storage.emplace(
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures);
+        auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
 
         var_provider.load_generic_triplet_vars(triplet);
@@ -151,6 +155,7 @@ namespace vcpkg
             cmd.string_arg("/c").raw_arg(options.command_arguments[0]);
         }
 
+        installed_lock_storage.clear(); // release the lock before launching the subprocess
         enter_interactive_subprocess();
         auto rc = cmd_execute(cmd, settings);
         exit_interactive_subprocess();

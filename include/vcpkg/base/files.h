@@ -2,7 +2,6 @@
 
 #include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/files.h>
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/message_sinks.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/span.h>
@@ -10,6 +9,7 @@
 #include <vcpkg/base/checks.h>
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/file-contents.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
@@ -364,8 +364,8 @@ namespace vcpkg
                                                                              const Path& lockfile) const = 0;
 
         // waits, at most, 1.5 seconds, for the file lock
-        virtual Optional<std::unique_ptr<IExclusiveFileLock>> try_take_exclusive_file_lock(
-            DiagnosticContext& context, const Path& lockfile) const = 0;
+        virtual std::unique_ptr<IExclusiveFileLock> try_take_exclusive_file_lock(DiagnosticContext& context,
+                                                                                 const Path& lockfile) const = 0;
 
         virtual WriteFilePointer open_for_write(const Path& file_path, Append append, std::error_code& ec) const = 0;
         WriteFilePointer open_for_write(const Path& file_path, Append append, LineInfo li) const;

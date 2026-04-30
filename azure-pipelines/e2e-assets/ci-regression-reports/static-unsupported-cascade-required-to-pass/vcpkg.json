@@ -1,0 +1,8 @@
+{
+  "name": "static-unsupported-cascade-required-to-pass",
+  "version": "1.0.0",
+  "description": "this port depends on a port statically known to be unsupported so it cascades but is marked as needing to pass",
+  "dependencies": [
+    "fail-but-unsupported"
+  ]
+}

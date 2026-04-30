@@ -1,0 +1,8 @@
+{
+  "name": "transitive-5",
+  "version": "1.0.0",
+  "description": "transitive-5",
+  "dependencies": [
+    "transitive-6"
+  ]
+}

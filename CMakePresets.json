@@ -72,6 +72,18 @@
             }
         },
         {
+            "name": "windows-arm64",
+            "hidden": true,
+            "inherits": "windows",
+            "architecture": {
+                "value": "arm64",
+                "strategy": "external"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "arm64-windows-static"
+            }
+        },
+        {
             "name": "Win-x64-Debug",
             "inherits": [
                 "base",
@@ -80,9 +92,42 @@
             ]
         },
         {
+            "name": "Win-arm64-Debug",
+            "inherits": [
+                "base",
+                "windows-arm64",
+                "debug"
+            ]
+        },
+        {
+            "name": "Win-x64-Debug-NoPch",
+            "inherits": "Win-x64-Debug",
+            "cacheVariables": {
+                "CMAKE_DISABLE_PRECOMPILE_HEADERS": true
+            }
+        },
+        {
+            "name": "Win-x64-Fuzzing",
+            "inherits": [
+                "base",
+                "windows-x64",
+                "release"
+            ],
+            "cacheVariables": {
+                "VCPKG_FUZZER_INSTRUMENTATION": true
+            }
+        },
+        {
             "name": "Win-x64-Debug-WithArtifacts",
             "inherits": [
                 "Win-x64-Debug",
+                "artifacts"
+            ]
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "inherits": [
+                "Win-arm64-Debug",
                 "artifacts"
             ]
         },
@@ -150,6 +195,17 @@
             ],
             "cacheVariables": {
                 "VCPKG_WARNINGS_AS_ERRORS": true
+            }
+        },
+        {
+            "name": "linux-fuzzing",
+            "inherits": [
+                "base",
+                "linux"
+            ],
+            "cacheVariables": {
+                "VCPKG_FUZZER_INSTRUMENTATION": true,
+                "VCPKG_BUILD_FUZZING": true
             }
         },
         {
@@ -258,6 +314,10 @@
         {
             "name": "Win-x64-Debug-WithArtifacts",
             "configurePreset": "Win-x64-Debug-WithArtifacts"
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "configurePreset": "Win-arm64-Debug-WithArtifacts"
         }
     ],
     "testPresets": [
@@ -284,6 +344,14 @@
         {
             "name": "macos-ci",
             "configurePreset": "macos-ci"
+        },
+        {
+            "name": "Win-x64-Debug-WithArtifacts",
+            "configurePreset": "Win-x64-Debug-WithArtifacts"
+        },
+        {
+            "name": "Win-arm64-Debug-WithArtifacts",
+            "configurePreset": "Win-arm64-Debug-WithArtifacts"
         }
     ]
 }

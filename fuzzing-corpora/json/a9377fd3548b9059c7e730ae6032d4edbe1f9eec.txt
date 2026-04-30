@@ -1,0 +1,58 @@
+{
+  "name": "vcpkg-policy-misplaced-pkgconfig",
+  "version": "1",
+  "features": {
+    "install-arch-agnostic-bad-misplaced": {
+      "description": "Install arch-agnostic bad pc files to an illegal place"
+    },
+    "install-arch-agnostic-empty-libs-bad-misplaced": {
+      "description": "Install arch-agnostic bad pc files with empty libs directive to an illegal place"
+    },
+    "install-arch-agnostic-empty-libs-good": {
+      "description": "Install arch-agnostic good pc files with empty libs directive"
+    },
+    "install-arch-agnostic-empty-libs-good-share": {
+      "description": "Install arch-agnostic good pc files with empty libs directive to share"
+    },
+    "install-arch-agnostic-good": {
+      "description": "Install arch-agnostic good pc files"
+    },
+    "install-arch-agnostic-good-share": {
+      "description": "Install arch-agnostic good pc files to share"
+    },
+    "install-arch-dependent-bad-misplaced": {
+      "description": "Install arch-dependent bad pc files to an illegal place",
+      "dependencies": [
+        {
+          "name": "vcpkg-policy-misplaced-pkgconfig",
+          "features": [
+            "install-arch-dependent-bad-misplaced-release-only"
+          ]
+        }
+      ]
+    },
+    "install-arch-dependent-bad-misplaced-release-only": {
+      "description": "Install arch-dependent bad pc files to an illegal place"
+    },
+    "install-arch-dependent-bad-share": {
+      "description": "Install arch-dependent bad pc files to share"
+    },
+    "install-arch-dependent-good": {
+      "description": "Install arch-dependent good pc files",
+      "dependencies": [
+        {
+          "name": "vcpkg-policy-misplaced-pkgconfig",
+          "features": [
+            "install-arch-dependent-good-release-only"
+          ]
+        }
+      ]
+    },
+    "install-arch-dependent-good-release-only": {
+      "description": "Install arch-dependent good pc files"
+    },
+    "policy": {
+      "description": "Turn on VCPKG_POLICY_SKIP_PKGCONFIG_CHECK"
+    }
+  }
+}
