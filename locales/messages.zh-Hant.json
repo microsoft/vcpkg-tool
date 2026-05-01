@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "已將版本 {version} 新增到 {path}",
   "AddVersionArtifactsOnly": "--version 只是成品，無法與 vcpkg add port 一起使用",
   "AddVersionCommitChangesReminder": "您是否記得要提交變更?",
-  "AddVersionFileNotFound": "找不到必要的檔案 {path}",
   "AddVersionFormatPortSuggestion": "執行 `{command_line}` 以格式化檔案",
   "AddVersionIgnoringOptionAll": "正在忽略 --{option}，因為已提供連接埠名稱引數",
   "AddVersionInstructions": "您可以執行下列命令以自動新增 {package_name} 的目前版本：",

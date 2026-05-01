@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "バージョン {version} を {path} に追加しました",
   "AddVersionArtifactsOnly": "--version は成果物のみであり、vcpkg 追加ポートでは使用できません",
   "AddVersionCommitChangesReminder": "変更をコミットしたことを覚えていますか?",
-  "AddVersionFileNotFound": "必要なファイル {path} が見つかりませんでした",
   "AddVersionFormatPortSuggestion": "'{command_line}' を実行してファイルをフォーマットします",
   "AddVersionIgnoringOptionAll": "ポート名引数が指定されたため、--{option} を無視しています",
   "AddVersionInstructions": "次のコマンドを実行して、{package_name} の現在のバージョンを自動的に追加できます。",
