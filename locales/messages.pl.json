@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "dodano wersję {version} do ścieżki {path}",
   "AddVersionArtifactsOnly": "Parametr --version jest tylko dla artefaktów i nie można go używać z portem dodawania vcpkg",
   "AddVersionCommitChangesReminder": "Czy pamiętasz o zatwierdzeniu zmian?",
-  "AddVersionFileNotFound": "nie można odnaleźć wymaganej ścieżki pliku {path}",
   "AddVersionFormatPortSuggestion": "Uruchom polecenie „{command_line}”, aby sformatować plik",
   "AddVersionIgnoringOptionAll": "ignorowanie parametru --{option}, ponieważ podano argument nazwy portu",
   "AddVersionInstructions": "możesz uruchomić następujące polecenia, aby automatycznie dodać bieżącą wersję pakietu {package_name}:",
