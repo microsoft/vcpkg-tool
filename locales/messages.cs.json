@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "přidal(a) verzi {version} do cesty {path}.",
   "AddVersionArtifactsOnly": "--version je jenom artefakty a nedá se použít s portem vcpkg add.",
   "AddVersionCommitChangesReminder": "Nezapomněli jste potvrdit změny?",
-  "AddVersionFileNotFound": "Nepovedlo se najít požadovaný soubor {path}.",
   "AddVersionFormatPortSuggestion": "Spuštěním {command_line} naformátujte soubor.",
   "AddVersionIgnoringOptionAll": "Parametr --{option} se ignoruje, protože se zadal argument názvu portu.",
   "AddVersionInstructions": "spuštěním následujících příkazů můžete automaticky přidat aktuální verzi {package_name}:",
