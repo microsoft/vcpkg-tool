@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "se ha agregado la versión {version} a {path}",
   "AddVersionArtifactsOnly": "--La versión es solo artefactos y no se puede usar con vcpkg add port",
   "AddVersionCommitChangesReminder": "¿Se acordó de confirmar los cambios?",
-  "AddVersionFileNotFound": "no se pudo encontrar la ruta {path} de archivo que se necesita",
   "AddVersionFormatPortSuggestion": "Ejecute \"{command_line}\" para dar formato al archivo.",
   "AddVersionIgnoringOptionAll": "omitiendo --{option} desde que se proporcionó un argumento de nombre de puerto",
   "AddVersionInstructions": "puede ejecutar los siguientes comandos para agregar automáticamente la versión actual de {package_name}:",

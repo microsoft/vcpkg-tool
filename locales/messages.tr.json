@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "{version} sürümü {path} yoluna eklendi",
   "AddVersionArtifactsOnly": "--version yalnızca yapıtlar içindir ve vcpkg ekleme bağlantı noktasıyla kullanılamaz",
   "AddVersionCommitChangesReminder": "Değişikliklerinizi işlediniz mi?",
-  "AddVersionFileNotFound": "gerekli {path} dosyası bulunamadı",
   "AddVersionFormatPortSuggestion": "Dosyayı biçimlendirmek için '{command_line}' komutunu çalıştırın",
   "AddVersionIgnoringOptionAll": "bağlantı noktası adı bağımsız değişkeni sağlandığı için --{option} yok sayılıyor",
   "AddVersionInstructions": "{package_name}'in geçerli sürümünü otomatik olarak eklemek için aşağıdaki komutları çalıştırabilirsiniz:",
