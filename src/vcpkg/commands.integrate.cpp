@@ -1,5 +1,3 @@
-#include <vcpkg/base/system-headers.h>
-
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
@@ -19,34 +17,6 @@
 
 namespace vcpkg
 {
-    Optional<int> find_targets_file_version(StringView contents)
-    {
-        constexpr static StringLiteral VERSION_START = "<!-- version ";
-        constexpr static StringLiteral VERSION_END = " -->";
-
-        auto first = contents.begin();
-        const auto last = contents.end();
-        for (;;)
-        {
-            first = Util::search_and_skip(first, last, VERSION_START);
-            if (first == last)
-            {
-                break;
-            }
-            auto version_end = Util::search(first, last, VERSION_END);
-            if (version_end == last)
-            {
-                break;
-            }
-            auto ver = Strings::strto<int>({first, version_end});
-            if (ver.has_value() && *ver.get() >= 0)
-            {
-                return ver;
-            }
-        }
-        return nullopt;
-    }
-
     std::vector<std::string> get_bash_source_completion_lines(StringView contents)
     {
         std::vector<std::string> matches;
@@ -125,17 +95,6 @@ namespace vcpkg
                            target_path);
     }
 
-    static constexpr StringLiteral SystemTargetsShortcut = R"###(
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- version 1 -->
-  <PropertyGroup>
-    <VCLibPackagePath Condition="'$(VCLibPackagePath)' == ''">$(LOCALAPPDATA)\vcpkg\vcpkg.user</VCLibPackagePath>
-  </PropertyGroup>
-  <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).props')" Project="$(VCLibPackagePath).props" />
-  <Import Condition="'$(VCLibPackagePath)' != '' and Exists('$(VCLibPackagePath).targets')" Project="$(VCLibPackagePath).targets" />
-</Project>
-)###";
-
     static std::string create_nuget_targets_file_contents(const Path& msbuild_vcpkg_targets_file)
     {
         return fmt::format(R"###(
@@ -204,102 +163,6 @@ namespace vcpkg
     }
 #endif // ^^^ _WIN32
 
-#if defined(_WIN32)
-    enum class ElevationPromptChoice
-    {
-        YES,
-        NO
-    };
-
-    static ElevationPromptChoice elevated_cmd_execute(const std::string& param)
-    {
-        SHELLEXECUTEINFOW sh_ex_info{};
-        sh_ex_info.cbSize = sizeof(sh_ex_info);
-        sh_ex_info.fMask = SEE_MASK_NOCLOSEPROCESS;
-        sh_ex_info.hwnd = nullptr;
-        sh_ex_info.lpVerb = L"runas";
-        sh_ex_info.lpFile = L"cmd"; // Application to start
-
-        auto wparam = Strings::to_utf16(param);
-        sh_ex_info.lpParameters = wparam.c_str(); // Additional parameters
-        sh_ex_info.lpDirectory = nullptr;
-        sh_ex_info.nShow = SW_HIDE;
-        sh_ex_info.hInstApp = nullptr;
-
-        if (!ShellExecuteExW(&sh_ex_info))
-        {
-            return ElevationPromptChoice::NO;
-        }
-        if (sh_ex_info.hProcess == nullptr)
-        {
-            return ElevationPromptChoice::NO;
-        }
-        WaitForSingleObject(sh_ex_info.hProcess, INFINITE);
-        CloseHandle(sh_ex_info.hProcess);
-        return ElevationPromptChoice::YES;
-    }
-#endif // ^^^ _WIN32
-
-#if defined(_WIN32)
-    static bool integrate_install_msbuild14(const Filesystem& fs)
-    {
-        Path OLD_SYSTEM_TARGET_FILES[] = {
-            get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
-                "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.nuget.targets",
-            get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
-                "MSBuild/14.0/Microsoft.Common.Targets/ImportBefore/vcpkg.system.targets"};
-
-        Path SYSTEM_WIDE_TARGETS_FILE = get_program_files_32_bit().value_or_exit(VCPKG_LINE_INFO) /
-                                        "MSBuild/Microsoft.Cpp/v4.0/V140/ImportBefore/Default/vcpkg.system.props";
-
-        // TODO: This block of code should eventually be removed
-        for (auto&& old_system_wide_targets_file : OLD_SYSTEM_TARGET_FILES)
-        {
-            if (fs.exists(old_system_wide_targets_file, IgnoreErrors{}))
-            {
-                const std::string param = fmt::format(R"(/d /c "DEL "{}" /Q > nul")", old_system_wide_targets_file);
-                const ElevationPromptChoice user_choice = elevated_cmd_execute(param);
-                switch (user_choice)
-                {
-                    case ElevationPromptChoice::YES: break;
-                    case ElevationPromptChoice::NO: msg::println_warning(msgPreviousIntegrationFileRemains); break;
-                    default: Checks::unreachable(VCPKG_LINE_INFO);
-                }
-            }
-        }
-
-        std::error_code ec;
-        std::string system_wide_file_contents = fs.read_contents(SYSTEM_WIDE_TARGETS_FILE, ec);
-        if (!ec)
-        {
-            auto opt = find_targets_file_version(system_wide_file_contents);
-            if (opt.value_or(0) >= 1)
-            {
-                return true;
-            }
-        }
-
-        const auto tmp_dir = fs.create_or_get_temp_directory(VCPKG_LINE_INFO);
-        const auto sys_src_path = tmp_dir / "vcpkg.system.targets";
-        fs.write_contents(sys_src_path, SystemTargetsShortcut, VCPKG_LINE_INFO);
-
-        const std::string param = fmt::format(R"(/d /c "mkdir "{}" & copy "{}" "{}" /Y > nul")",
-                                              SYSTEM_WIDE_TARGETS_FILE.parent_path(),
-                                              sys_src_path,
-                                              SYSTEM_WIDE_TARGETS_FILE);
-        elevated_cmd_execute(param);
-        fs.remove_all(tmp_dir, VCPKG_LINE_INFO);
-
-        if (!fs.exists(SYSTEM_WIDE_TARGETS_FILE, IgnoreErrors{}))
-        {
-            msg::println_warning(msg::format(msgSystemTargetsInstallFailed, msg::path = SYSTEM_WIDE_TARGETS_FILE));
-            return false;
-        }
-
-        return true;
-    }
-#endif // ^^^ _WIN32
-
     static void integrate_install(const VcpkgPaths& paths)
     {
         auto& fs = paths.get_filesystem();
@@ -318,13 +181,6 @@ namespace vcpkg
         fs.write_contents(user_configuration_home / FileVcpkgUserTargets,
                           create_appdata_shortcut(paths.buildsystems_msbuild_targets),
                           VCPKG_LINE_INFO);
-
-        if (!integrate_install_msbuild14(fs))
-        {
-            message.append_raw("\n\n").append(msgAutomaticLinkingForVS2017AndLater);
-            msg::println(message);
-            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgIntegrationFailedVS2015);
-        }
 
         message.append_raw("\n\n").append(msgAutomaticLinkingForMSBuildProjects);
 #endif // ^^^ _WIN32

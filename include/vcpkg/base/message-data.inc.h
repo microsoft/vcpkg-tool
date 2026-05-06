@@ -302,11 +302,6 @@ DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 "",
                 "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
                 "automatically. Installing new libraries will make them instantly available.")
-DECLARE_MESSAGE(AutomaticLinkingForVS2017AndLater,
-                (),
-                "",
-                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
-                "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutoSettingEnvVar,
                 (msg::env_var, msg::url),
                 "An example of env_var is \"HTTP(S)_PROXY\""
@@ -1851,7 +1846,7 @@ DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Makes installed packages ava
 DECLARE_MESSAGE(IntegrateInstallHelpWindows,
                 (),
                 "",
-                "Makes installed packages available user-wide. Requires admin privileges on first use")
+                "Makes installed packages available to MSBuild C++ projects for the current user")
 DECLARE_MESSAGE(IntegrateNonWindowsOnly,
                 (msg::command_line),
                 "",
@@ -1870,7 +1865,6 @@ DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
                 "Enable zsh tab-completion. Non-Windows only")
-DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",
@@ -2680,7 +2674,6 @@ DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Ver
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
 DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
-DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
@@ -2837,7 +2830,6 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
-DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}")
 DECLARE_MESSAGE(
     ToolHashMismatch,
     (msg::tool_name, msg::expected, msg::actual),
