@@ -1870,6 +1870,44 @@ TEST_CASE ("version install qualified default suppression", "[versionplan]")
     check_name_and_version(install_plan.install_actions[1], "b", {"1", 0});
 }
 
+TEST_CASE ("version host dependency respects explicit no-defaults", "[versionplan]")
+{
+    MockVersionedPortfileProvider vp;
+
+    auto& a_scf = vp.emplace("a", {"1", 0}, VersionScheme::Relaxed).source_control_file;
+    a_scf->core_paragraph->default_features.push_back({"x"});
+    a_scf->feature_paragraphs.push_back(make_fpgh("x"));
+
+    Dependency host_self{"a"};
+    host_self.host = true;
+    host_self.default_features = false;
+    a_scf->core_paragraph->dependencies.push_back(std::move(host_self));
+
+    MockCMakeVarProvider var_provider;
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+
+    auto install_plan = create_versioned_install_plan(vp, bp, var_provider, {CoreDependency{"a"}}, {}, toplevel_spec())
+                            .value_or_exit(VCPKG_LINE_INFO);
+
+    REQUIRE(install_plan.size() == 2);
+
+    auto host_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.triplet() == Test::ARM_UWP;
+    });
+    REQUIRE(host_it != install_plan.install_actions.end());
+    check_name_and_version(*host_it, "a", {"1", 0});
+    REQUIRE(host_it->default_features.empty());
+
+    auto target_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.triplet() == toplevel_spec().triplet();
+    });
+    REQUIRE(target_it != install_plan.install_actions.end());
+    check_name_and_version(*target_it, "a", {"1", 0});
+    REQUIRE(target_it->default_features.empty());
+}
+
 TEST_CASE ("version install qualified transitive", "[versionplan]")
 {
     MockVersionedPortfileProvider vp;

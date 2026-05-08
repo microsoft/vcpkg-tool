@@ -93,7 +93,8 @@ namespace vcpkg
             void add_feature(const std::string& feature,
                              const CMakeVars::CMakeVarProvider& var_provider,
                              std::vector<FeatureSpec>& out_new_dependencies,
-                             Triplet host_triplet)
+                             Triplet host_triplet,
+                             std::unordered_set<PackageSpec>& explicit_no_default_host_deps)
             {
                 const auto& scfl = get_scfl_or_exit();
 
@@ -193,6 +194,10 @@ namespace vcpkg
                                 }
                             }
                             auto fullspec = dep.to_full_spec(features, m_spec.triplet(), host_triplet);
+                            if (dep.host && !dep.default_features)
+                            {
+                                explicit_no_default_host_deps.insert(fullspec.package_spec);
+                            }
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -216,6 +221,10 @@ namespace vcpkg
                                 dep.to_full_spec(Util::fmap(dep.features, [](const auto& f) { return f.name; }),
                                                  m_spec.triplet(),
                                                  host_triplet);
+                            if (dep.host && !dep.default_features)
+                            {
+                                explicit_no_default_host_deps.insert(fullspec.package_spec);
+                            }
                             fullspec.expand_fspecs_to(dep_list);
                             if (auto opt = dep.constraint.try_get_minimum_version())
                             {
@@ -243,7 +252,8 @@ namespace vcpkg
                 Util::Vectors::append(out_new_dependencies, std::move(dep_list));
             }
 
-            void create_install_info(std::vector<FeatureSpec>& out_reinstall_requirements)
+            void create_install_info(std::vector<FeatureSpec>& out_reinstall_requirements,
+                                     bool suppress_implicit_default_features = false)
             {
                 bool defaults_requested = false;
                 if (const ClusterInstalled* inst = m_installed.get())
@@ -265,7 +275,7 @@ namespace vcpkg
                 {
                     out_reinstall_requirements.emplace_back(m_spec, FeatureNameDefault);
                 }
-                else if (request_type != RequestType::USER_REQUESTED)
+                else if (!suppress_implicit_default_features && request_type != RequestType::USER_REQUESTED)
                 {
                     out_reinstall_requirements.emplace_back(m_spec, FeatureNameDefault);
                     m_install_info.get()->reduced_defaults = true;
@@ -348,7 +358,8 @@ namespace vcpkg
                                  Editable editable_if_user_requested) const;
 
             void mark_for_reinstall(const PackageSpec& spec,
-                                    std::vector<FeatureSpec>& out_reinstall_requirements) const;
+                                    std::vector<FeatureSpec>& out_reinstall_requirements,
+                                    const std::unordered_set<PackageSpec>& explicit_no_default_host_deps) const;
             const CMakeVars::CMakeVarProvider& m_var_provider;
 
             std::unique_ptr<ClusterGraph> m_graph;
@@ -750,7 +761,8 @@ namespace vcpkg
     }
 
     void PackageGraph::mark_for_reinstall(const PackageSpec& first_remove_spec,
-                                          std::vector<FeatureSpec>& out_reinstall_requirements) const
+                                          std::vector<FeatureSpec>& out_reinstall_requirements,
+                                          const std::unordered_set<PackageSpec>& explicit_no_default_host_deps) const
     {
         std::set<PackageSpec> removed;
         std::vector<PackageSpec> to_remove{first_remove_spec};
@@ -767,7 +779,9 @@ namespace vcpkg
 
             if (!clust.m_install_info)
             {
-                clust.create_install_info(out_reinstall_requirements);
+                const bool suppress_implicit_defaults =
+                    Util::Sets::contains(explicit_no_default_host_deps, remove_spec);
+                clust.create_install_info(out_reinstall_requirements, suppress_implicit_defaults);
             }
 
             to_remove.insert(to_remove.end(), info.remove_edges.begin(), info.remove_edges.end());
@@ -783,6 +797,7 @@ namespace vcpkg
         std::vector<FeatureSpec> next_dependencies{specs.begin(), specs.end()};
 
         // Keep running while there is any chance of finding more dependencies
+        std::unordered_set<PackageSpec> explicit_no_default_host_deps;
         while (!next_dependencies.empty())
         {
             // Keep running until the only dependencies left are qualified
@@ -875,14 +890,24 @@ namespace vcpkg
 
                 if (clust.m_install_info.has_value())
                 {
-                    clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                    clust.add_feature(spec.feature(),
+                                      m_var_provider,
+                                      next_dependencies,
+                                      m_graph->m_host_triplet,
+                                      explicit_no_default_host_deps);
                 }
                 else
                 {
                     if (!clust.m_installed.has_value())
                     {
-                        clust.create_install_info(next_dependencies);
-                        clust.add_feature(spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                        const bool suppress_implicit_defaults =
+                            Util::Sets::contains(explicit_no_default_host_deps, spec.spec());
+                        clust.create_install_info(next_dependencies, suppress_implicit_defaults);
+                        clust.add_feature(spec.feature(),
+                                          m_var_provider,
+                                          next_dependencies,
+                                          m_graph->m_host_triplet,
+                                          explicit_no_default_host_deps);
                     }
                     else
                     {
@@ -893,7 +918,7 @@ namespace vcpkg
                                 clust.m_installed.get()->defaults_requested = true;
                                 if (!clust.has_defaults_installed())
                                 {
-                                    mark_for_reinstall(spec.spec(), next_dependencies);
+                                    mark_for_reinstall(spec.spec(), next_dependencies, explicit_no_default_host_deps);
                                 }
                             }
                         }
@@ -902,9 +927,12 @@ namespace vcpkg
                             // If install_info is not present and it is already installed, we have never added a feature
                             // which hasn't already been installed to this cluster. In this case, we need to reinstall
                             // the port if the feature isn't already present.
-                            mark_for_reinstall(spec.spec(), next_dependencies);
-                            clust.add_feature(
-                                spec.feature(), m_var_provider, next_dependencies, m_graph->m_host_triplet);
+                            mark_for_reinstall(spec.spec(), next_dependencies, explicit_no_default_host_deps);
+                            clust.add_feature(spec.feature(),
+                                              m_var_provider,
+                                              next_dependencies,
+                                              m_graph->m_host_triplet,
+                                              explicit_no_default_host_deps);
                         }
                     }
                 }
@@ -936,7 +964,7 @@ namespace vcpkg
         std::vector<FeatureSpec> reinstall_reqs;
 
         for (const PackageSpec& spec : specs)
-            mark_for_reinstall(spec, reinstall_reqs);
+            mark_for_reinstall(spec, reinstall_reqs, {});
 
         Util::sort_unique_erase(reinstall_reqs);
 
@@ -1428,7 +1456,7 @@ namespace vcpkg
 
             // Add an initial requirement for a package.
             // Returns a reference to the node to place additional constraints
-            PackageNode* require_package(const PackageSpec& spec, const std::string& origin);
+            PackageNode* require_package(const PackageSpec& spec, const std::string& origin, bool implicit_defaults);
 
             void require_scfl(PackageNode& ref, const SourceControlFileAndLocation* scfl, const std::string& origin);
 
@@ -1495,7 +1523,8 @@ namespace vcpkg
                 if (!dep.platform.is_empty() && !dep.platform.evaluate(batch_load_vars(frame))) continue;
 
                 PackageSpec dep_spec(dep.name, dep.host ? m_host_triplet : frame.spec.triplet());
-                auto node = require_package(dep_spec, frame.spec.name());
+                auto node =
+                    require_package(dep_spec, frame.spec.name(), !dep.host && frame.spec.name() != m_toplevel.name());
                 if (node)
                 {
                     // If the node is overlayed or overridden, don't apply version constraints
@@ -1626,7 +1655,8 @@ namespace vcpkg
         }
 
         VersionedPackageGraph::PackageNode* VersionedPackageGraph::require_package(const PackageSpec& spec,
-                                                                                   const std::string& origin)
+                                                                                   const std::string& origin,
+                                                                                   bool implicit_defaults)
         {
             auto it = m_graph.find(spec);
             if (it != m_graph.end())
@@ -1682,9 +1712,9 @@ namespace vcpkg
                 }
             }
 
-            // Implicit defaults are disabled if spec is requested from top-level spec.
-            // Note that if top-level doesn't also mark that reference as `[core]`, defaults will be re-engaged.
-            it->second.default_features = origin != m_toplevel.name();
+            // For versioned installs, transitive target dependencies start with implicit defaults enabled.
+            // Host dependencies are handled strictly via each incoming edge's `default-features` flag.
+            it->second.default_features = implicit_defaults;
             it->second.requested_features.insert(FeatureNameCore.to_string());
 
             require_scfl(*it, it->second.scfl, origin);
@@ -1904,11 +1934,15 @@ namespace vcpkg
                     auto maybe_vars = m_var_provider.get_or_load_dep_info_vars(p.first->first, m_host_triplet);
 
                     std::vector<std::string> default_features;
-                    for (const auto& feature : node->second.scfl->source_control_file->core_paragraph->default_features)
+                    if (node->second.default_features)
                     {
-                        if (feature.platform.evaluate(maybe_vars))
+                        for (const auto& feature :
+                             node->second.scfl->source_control_file->core_paragraph->default_features)
                         {
-                            default_features.push_back(feature.name);
+                            if (feature.platform.evaluate(maybe_vars))
+                            {
+                                default_features.push_back(feature.name);
+                            }
                         }
                     }
                     std::vector<DepSpec> deps;
