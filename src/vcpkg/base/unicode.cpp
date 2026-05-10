@@ -3,45 +3,42 @@
 
 namespace vcpkg::Unicode
 {
-    int utf8_encode_code_point(char (&array)[4], char32_t code_point) noexcept
+    bool utf8_append_big_code_point(std::string& str, char32_t code_point)
     {
-        if (code_point < 0x80)
+        if (code_point < 0x80u)
         {
-            array[0] = static_cast<char>(code_point);
-            return 1;
+            Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        if (code_point < 0x800)
+        if (code_point < 0x800u)
         {
-            array[0] = static_cast<unsigned char>(0b1100'0000u | (code_point >> 6));
-            array[1] = static_cast<unsigned char>(0b1000'0000u | (code_point & 0b0011'1111u));
-            return 2;
+            str.push_back(static_cast<unsigned char>(0b1100'0000u | (code_point >> 6)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u | (code_point & 0b0011'1111u)));
+            return true;
         }
 
-        if (code_point < 0x10000)
-        {
-            // clang-format off
-            array[0] = static_cast<unsigned char>(0b1110'0000u | (code_point  >> 12));
-            array[1] = static_cast<unsigned char>(0b1000'0000u | ((code_point >> 6) & 0b0011'1111u));
-            array[2] = static_cast<unsigned char>(0b1000'0000u | (code_point        & 0b0011'1111u));
-            // clang-format on
-            return 3;
-        }
-
-        if (code_point < 0x110000)
+        if (code_point < 0x10000u)
         {
             // clang-format off
-            array[0] = static_cast<unsigned char>(0b1111'0000u |  (code_point >> 18));
-            array[1] = static_cast<unsigned char>(0b1000'0000u | ((code_point >> 12) & 0b0011'1111u));
-            array[2] = static_cast<unsigned char>(0b1000'0000u | ((code_point >> 6)  & 0b0011'1111u));
-            array[3] = static_cast<unsigned char>(0b1000'0000u |  (code_point        & 0b0011'1111u));
+            str.push_back(static_cast<unsigned char>(0b1110'0000u |  (code_point  >> 12)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u | ((code_point >> 6) & 0b0011'1111u)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u |  (code_point        & 0b0011'1111u)));
             // clang-format on
-            return 4;
+            return true;
         }
 
-        vcpkg::Checks::msg_exit_with_message(
-            VCPKG_LINE_INFO,
-            msg::format(msgInvalidCodePoint).append_raw(fmt::format("({:x})", static_cast<uint32_t>(code_point))));
+        if (code_point < 0x110000u)
+        {
+            // clang-format off
+            str.push_back(static_cast<unsigned char>(0b1111'0000u |  (code_point >> 18)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u | ((code_point >> 12) & 0b0011'1111u)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u | ((code_point >> 6)  & 0b0011'1111u)));
+            str.push_back(static_cast<unsigned char>(0b1000'0000u |  (code_point        & 0b0011'1111u)));
+            // clang-format on
+            return true;
+        }
+
+        return false;
     }
 
     static utf8_errc check_trailing(unsigned char code_unit) noexcept
@@ -197,7 +194,7 @@ namespace vcpkg::Unicode
         return res;
     }
 
-    static LocalizedString message(utf8_errc condition)
+    LocalizedString message(utf8_errc condition)
     {
         switch (condition)
         {
@@ -249,25 +246,5 @@ namespace vcpkg::Unicode
         current_ = code_point;
         pointer_to_current_ = old_next;
         return utf8_errc::NoError;
-    }
-
-    Utf8Decoder& Utf8Decoder::operator++() noexcept
-    {
-        const auto err = next();
-        if (err != utf8_errc::NoError)
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
-                                        msg::format(msgUtf8ConversionFailed).append_raw(": ").append(message(err)));
-        }
-
-        return *this;
-    }
-
-    Utf8Decoder& Utf8Decoder::operator=(sentinel) noexcept
-    {
-        current_ = end_of_file;
-        pointer_to_current_ = last_;
-        next_ = last_;
-        return *this;
     }
 }

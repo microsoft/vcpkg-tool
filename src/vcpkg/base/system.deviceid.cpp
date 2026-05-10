@@ -1,3 +1,5 @@
+#include <vcpkg/base/system-headers.h>
+
 #include <vcpkg/base/expected.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/parse.h>

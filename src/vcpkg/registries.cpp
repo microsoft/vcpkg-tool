@@ -862,10 +862,7 @@ namespace
                          [&](const GitVersionDbEntry& entry) noexcept { return entry.version.version == version; });
         if (it == port_version_entries.end())
         {
-            return format_version_git_entry_missing(port_name, version, port_version_entries)
-                .append_raw('\n')
-                .append_raw(NotePrefix)
-                .append(msgChecksUpdateVcpkg);
+            return format_version_git_entry_missing(port_name, version, port_version_entries);
         }
 
         return m_paths.versions_dot_git_dir()
@@ -1054,9 +1051,19 @@ namespace
                                                const Path& baseline_path,
                                                StringView baseline)
     {
-        return fs.try_read_contents(baseline_path).then([&](FileContents&& fc) {
-            return parse_baseline_versions(fc.content, baseline, fc.origin);
-        });
+        std::error_code ec;
+        auto contents = fs.read_contents(baseline_path, ec);
+        if (ec)
+        {
+            if (is_not_found_errc(ec))
+            {
+                return Baseline{};
+            }
+
+            return format_filesystem_call_error(ec, "read_contents", {baseline_path});
+        }
+
+        return parse_baseline_versions(contents, baseline, baseline_path);
     }
 }
 
@@ -1302,7 +1309,7 @@ namespace
         auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            if (ec == std::errc::no_such_file_or_directory)
+            if (is_not_found_errc(ec))
             {
                 return nullopt;
             }
@@ -1338,7 +1345,7 @@ namespace
         auto contents = fs.read_contents(versions_file_path, ec);
         if (ec)
         {
-            if (ec == std::errc::no_such_file_or_directory)
+            if (is_not_found_errc(ec))
             {
                 return nullopt;
             }

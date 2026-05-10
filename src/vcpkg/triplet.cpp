@@ -6,6 +6,8 @@
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
+#include <unordered_set>
+
 namespace vcpkg
 {
     struct TripletInstance

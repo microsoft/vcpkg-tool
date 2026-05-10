@@ -22,11 +22,11 @@ if (-Not $zipFilesExist)
     throw "No zip files found in $outputDir"
 }
 
-# Check existence of nuget file(s)
-$nugetFilesExist = Test-Path "$outputDir/*.nupkg"
-if (-Not $nugetFilesExist)
+# Check existence of NuGet file(s)
+$nuGetFilesExist = Test-Path "$outputDir/*.nupkg"
+if (-Not $nuGetFilesExist)
 {
-	throw "No nuget files found in $outputDir"
+	throw "No NuGet files found in $outputDir"
 }
 
 # Check existence of 7zip file(s)

@@ -6,7 +6,6 @@ TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
 {
     using namespace vcpkg;
     REQUIRE(guess_extraction_type(Path("path/to/archive.nupkg")) == ExtractionType::Nupkg);
-    REQUIRE(guess_extraction_type(Path("/path/to/archive.msi")) == ExtractionType::Msi);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.zip")) == ExtractionType::Zip);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.7z")) == ExtractionType::SevenZip);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.gz")) == ExtractionType::Tar);

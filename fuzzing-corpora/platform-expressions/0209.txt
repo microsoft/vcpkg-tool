@@ -1,0 +1,1 @@
+!uwp & !arm & !static & !android & !freebsd & !openbsd & !netbsd

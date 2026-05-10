@@ -1,0 +1,1 @@
+!osx & !uwp & !arm & !(windows & staticcrt) & !android

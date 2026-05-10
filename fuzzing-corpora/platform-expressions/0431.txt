@@ -1,0 +1,1 @@
+windows & !uwp & !xbox & (x64 | arm64 | arm64ec)

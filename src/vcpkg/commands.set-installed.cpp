@@ -8,12 +8,12 @@
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -83,13 +83,8 @@ namespace vcpkg
             std::unordered_map<std::string, std::string> map;
             for (auto&& action : action_plan.install_actions)
             {
-                const auto scfl = action.source_control_file_and_location.get();
-                if (!scfl)
-                {
-                    return nullopt;
-                }
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, scfl->source_control_file->to_version()));
+                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
             }
 
             Json::Object manifest;
@@ -172,9 +167,10 @@ namespace vcpkg
             if (Util::Sets::contains(specs_installed, ipa.spec))
             {
                 // convert the 'to install' entry to an already installed entry
-                ipa.installed_package = status_db.get_installed_package_view(ipa.spec);
-                ipa.plan_type = InstallPlanType::ALREADY_INSTALLED;
-                action_plan.already_installed.push_back(std::move(ipa));
+                action_plan.already_installed.emplace_back(
+                    status_db.get_installed_package_view(ipa.spec).value_or_exit(VCPKG_LINE_INFO),
+                    ipa.request_type,
+                    ipa.use_head_version);
                 return true;
             }
 
@@ -189,6 +185,7 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
+                                           const InstallAndBuildDatabaseLock& installed_lock,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
                                            PrintUsage print_usage,
@@ -197,7 +194,7 @@ namespace vcpkg
     {
         auto& fs = paths.get_filesystem();
 
-        cmake_vars.load_tag_vars(action_plan, host_triplet);
+        cmake_vars.load_tag_vars(action_plan.install_actions, host_triplet);
         compute_all_abis(paths, action_plan, cmake_vars, StatusParagraphs{});
 
         std::vector<PackageSpec> user_requested_specs;
@@ -236,7 +233,7 @@ namespace vcpkg
         }
 
         // currently (or once) installed specifications
-        auto status_db = database_load_collapse(fs, paths.installed());
+        auto status_db = database_sync(fs, paths.installed(), installed_lock);
         adjust_action_plan_to_status_db(action_plan, status_db);
 
         print_plan(action_plan);
@@ -262,17 +259,18 @@ namespace vcpkg
         BinaryCache binary_cache(fs);
         if (build_options.only_downloads == OnlyDownloads::No)
         {
-            if (!binary_cache.install_providers(args, paths, out_sink))
+            if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
             {
                 Checks::exit_fail(VCPKG_LINE_INFO);
             }
         }
 
-        binary_cache.fetch(action_plan.install_actions);
+        binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
         const auto summary = install_execute_plan(args,
                                                   paths,
                                                   host_triplet,
                                                   build_options,
+                                                  installed_lock,
                                                   action_plan,
                                                   status_db,
                                                   binary_cache,
@@ -306,16 +304,14 @@ namespace vcpkg
             }
         }
 
-        const auto manifest = paths.get_manifest().get();
+        const auto* manifest = paths.get_manifest();
         const auto installed_paths = paths.maybe_installed().get();
         if (manifest && installed_paths)
         {
             // See docs/manifest-info.schema.json
             Json::Object manifest_info;
             manifest_info.insert("manifest-path", Json::Value::string(manifest->path));
-            const auto json_file_path = installed_paths->vcpkg_dir() / FileManifestInfo;
-            const auto json_contents = Json::stringify(manifest_info);
-            fs.write_contents(json_file_path, json_contents, VCPKG_LINE_INFO);
+            fs.write_contents(installed_paths->manifest_info_path(), Json::stringify(manifest_info), VCPKG_LINE_INFO);
         }
 
         binary_cache.wait_for_async_complete_and_join();
@@ -362,13 +358,20 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths);
+
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
+        auto cmake_vars = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
 
         Optional<Path> pkgsconfig;
         auto it_pkgsconfig = options.settings.find(SwitchXWriteNuGetPackagesConfig);
         if (it_pkgsconfig != options.settings.end())
         {
-            get_global_metrics_collector().track_define(DefineMetric::X_WriteNugetPackagesConfig);
+            get_global_metrics_collector().track_define(DefineMetric::X_WriteNuGetPackagesConfig);
             pkgsconfig = it_pkgsconfig->second;
         }
 
@@ -384,13 +387,13 @@ namespace vcpkg
             {},
             packages_dir_assigner,
             {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
-
         command_set_installed_and_exit_ex(
             args,
             paths,
             host_triplet,
             build_options,
             *cmake_vars,
+            installed_lock,
             std::move(action_plan),
             Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
             Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,

@@ -13,6 +13,23 @@
 
 namespace vcpkg
 {
+    struct CiBuiltResult
+    {
+        std::string package_abi;
+        InternalFeatureSet feature_list;
+        std::chrono::system_clock::time_point start_time;
+        ElapsedTime timing;
+    };
+
+    struct CiResult
+    {
+        BuildResult code;
+        Optional<CiBuiltResult> build;
+
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
+    };
+
     struct XunitTest;
 
     // https://xunit.net/docs/format-xml-v2
@@ -22,12 +39,7 @@ namespace vcpkg
         // Out of line con/destructor avoids exposing XunitTest
         XunitWriter();
         ~XunitWriter();
-        void add_test_results(const PackageSpec& spec,
-                              BuildResult build_result,
-                              const ElapsedTime& elapsed_time,
-                              const std::chrono::system_clock::time_point& start_time,
-                              const std::string& abi_tag,
-                              const std::vector<std::string>& features);
+        void add_test_results(const PackageSpec& spec, const CiResult& result);
 
         std::string build_xml(Triplet controlling_triplet) const;
 

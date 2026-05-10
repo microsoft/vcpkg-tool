@@ -128,7 +128,6 @@ static void check_name_and_features(const InstallPlanAction& ipa,
                                     std::initializer_list<StringLiteral> features)
 {
     CHECK(ipa.spec.name() == name);
-    CHECK(ipa.source_control_file_and_location.has_value());
     {
         INFO("ipa.feature_list = [" << Strings::join(", ", ipa.feature_list) << "]");
         INFO("features = [" << Strings::join(", ", features) << "]");
@@ -148,10 +147,7 @@ static void check_name_and_version(const InstallPlanAction& ipa,
                                    std::initializer_list<StringLiteral> features = {})
 {
     check_name_and_features(ipa, name, features);
-    if (auto scfl = ipa.source_control_file_and_location.get())
-    {
-        CHECK(scfl->source_control_file->core_paragraph->version == v);
-    }
+    CHECK(ipa.version == v);
 }
 
 static void check_semver_version(const ExpectedL<DotVersion>& maybe_version,
@@ -202,15 +198,15 @@ struct MockOverlayProvider : IOverlayProvider
     MockOverlayProvider(const MockOverlayProvider&) = delete;
     MockOverlayProvider& operator=(const MockOverlayProvider&) = delete;
 
-    virtual Optional<const SourceControlFileAndLocation&> get_control_file(StringView name) const override
+    virtual const SourceControlFileAndLocation* get_control_file(StringView name) const override
     {
         auto it = mappings.find(name);
         if (it == mappings.end())
         {
-            return nullopt;
+            return nullptr;
         }
 
-        return it->second;
+        return &it->second;
     }
 
     SourceControlFileAndLocation& emplace(const std::string& name,
@@ -1731,6 +1727,64 @@ TEST_CASE ("version install transitive default features", "[versionplan]")
     check_name_and_version(install_plan.install_actions[1], "c", {"1", 0});
 }
 
+// This intentionally mirrors the 'deps-in-toplevel' test in e2e manifest
+// tests. In the e2e test, the input is processed by commnands.install.cpp.
+// create_versioned_install_plan() does not receive the requested features
+// literally, but only the direct dependencies of the original request.
+TEST_CASE ("manifest mode input from commands.ci.cpp", "[versionplan]")
+{
+    const std::string name = "deps-in-toplevel";
+
+    // top-level manifests are provided as overlay
+    MockOverlayProvider oprovider;
+
+    auto f_corelib = make_fpgh("corelib");
+    auto f_math = make_fpgh("math");
+    f_math->dependencies = {Dependency{name, {{"corelib"}}}};
+    auto f_tests = make_fpgh("tests");
+    f_tests->dependencies = {Dependency{name, {{"corelib"}, {"maths"}}}};
+    auto scf = oprovider.emplace(name, {"3", 14}).source_control_file.get();
+    scf->core_paragraph->default_features = {{"corelib"}, {"math"}, {"tests"}};
+    scf->core_paragraph->dependencies = {CoreDependency{name, {{"w"}}}};
+    scf->feature_paragraphs.push_back(std::move(f_corelib));
+    scf->feature_paragraphs.push_back(std::move(f_math));
+    scf->feature_paragraphs.push_back(std::move(f_tests));
+
+    MockVersionedPortfileProvider vp;
+    MockCMakeVarProvider var_provider;
+    MockBaselineProvider bp;
+
+    auto toplevel = PackageSpec{name, toplevel_spec().triplet()};
+
+    SECTION ("default features -> request dependencies of math,tests")
+    {
+        auto install_plan =
+            create_versioned_install_plan(vp,
+                                          bp,
+                                          oprovider,
+                                          var_provider,
+                                          {Dependency{name, {{"corelib"}}}, Dependency{name, {{"corelib"}, {"math"}}}},
+                                          {},
+                                          toplevel)
+                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(
+            install_plan.install_actions[0], "deps-in-toplevel", {"3", 14}, {"corelib", "math", "tests"});
+    }
+
+    SECTION ("core,math -> request dependencies of math")
+    {
+        auto install_plan = create_versioned_install_plan(
+                                vp, bp, oprovider, var_provider, {Dependency{name, {{"corelib"}}}}, {}, toplevel)
+                                .value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(install_plan.size() == 1);
+        check_name_and_version(
+            install_plan.install_actions[0], "deps-in-toplevel", {"3", 14}, {"corelib", "math", "tests"});
+    }
+}
+
 static PlatformExpression::Expr parse_platform(StringView l)
 {
     return PlatformExpression::parse_platform_expression(l, PlatformExpression::MultipleBinaryOperators::Deny)
@@ -2424,21 +2478,19 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                                 {});
     InstallPlanAction install_c(
         {"c", Test::X64_OSX}, scfl_c, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    InstallPlanAction install_f(
-        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
-    install_f.plan_type = InstallPlanType::EXCLUDED;
 
-    InstallPlanAction already_installed_d(
+    AlreadyInstalledPlanAction already_installed_d(
         status_db.get_installed_package_view({"d", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::AUTO_SELECTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
     REQUIRE(already_installed_d.display_name() == "d:x86-windows@1");
-    InstallPlanAction already_installed_e(
+    AlreadyInstalledPlanAction already_installed_e(
         status_db.get_installed_package_view({"e", Test::X86_WINDOWS}).value_or_exit(VCPKG_LINE_INFO),
         RequestType::USER_REQUESTED,
-        UseHeadVersion::No,
-        Editable::No);
+        UseHeadVersion::No);
+
+    InstallPlanAction install_f(
+        {"f", Test::X64_OSX}, scfl_f, pr, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
 
     ActionPlan plan;
     {
@@ -2505,8 +2557,6 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
 
     plan.install_actions.push_back(std::move(install_f));
     REQUIRE_LINES(format_plan(plan).all_text(),
-                  "The following packages are excluded:\n"
-                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
                   "The following packages are already installed:\n"
                   "  * d:x86-windows@1\n"
                   "    e:x86-windows@1\n"
@@ -2514,6 +2564,8 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "  * a:x64-osx@1\n"
                   "  * b[1]:x64-osx@1\n"
                   "    c:x64-osx@1 -- c\n"
+                  "The following packages will be built and installed:\n"
+                  "    f:x64-osx@1 -- git+https://github.com/microsoft/vcpkg:f54a99d43e600ceea175205850560f6dd37ea6cf\n"
                   "Additional packages (*) will be modified to complete this operation.\n");
 }
 

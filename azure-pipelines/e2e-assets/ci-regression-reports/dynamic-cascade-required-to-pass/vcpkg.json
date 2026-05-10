@@ -1,0 +1,8 @@
+{
+  "name": "dynamic-cascade-required-to-pass",
+  "version": "1.0.0",
+  "description": "this port fails",
+  "dependencies": [
+    "fail"
+  ]
+}

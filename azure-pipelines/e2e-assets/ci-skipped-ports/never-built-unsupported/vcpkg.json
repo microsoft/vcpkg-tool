@@ -1,0 +1,5 @@
+{
+  "name": "never-built-unsupported",
+  "version": "1",
+  "supports": "native & !native"
+}

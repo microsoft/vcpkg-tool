@@ -1,0 +1,18 @@
+{
+  "name": "vcpkg-depends-on-fail-core",
+  "version": "0",
+  "dependencies": [
+    {
+      "name": "vcpkg-fail-if-depended-upon",
+      "default-features": false,
+      "features": [
+        "a"
+      ]
+    }
+  ],
+  "features": {
+    "x": {
+      "description": "feature x"
+    }
+  }
+}

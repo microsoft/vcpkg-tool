@@ -2,11 +2,11 @@
 
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.license-report.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/spdx.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -32,8 +32,9 @@ namespace vcpkg
 
         auto&& fs = paths.get_filesystem();
         auto&& installed_paths = paths.installed();
+        InstalledDatabaseLock installed_lock{fs, installed_paths, args.wait_for_lock, args.ignore_lock_failures};
         LicenseReport report;
-        auto status_paragraphs = database_load(fs, installed_paths);
+        auto status_paragraphs = database_load(fs, installed_paths, installed_lock);
         auto installed_ipvs = get_installed_ports(status_paragraphs);
         if (installed_ipvs.empty())
         {

@@ -1,0 +1,27 @@
+{
+  "name": "vcpkg-depends-on-fail",
+  "version": "0",
+  "dependencies": [
+    {
+      "name": "vcpkg-fail-if-depended-upon",
+      "default-features": false,
+      "features": [
+        "a"
+      ]
+    }
+  ],
+  "features": {
+    "x": {
+      "description": "feature x",
+      "dependencies": [
+        {
+          "name": "vcpkg-fail-if-depended-upon",
+          "default-features": false,
+          "features": [
+            "b"
+          ]
+        }
+      ]
+    }
+  }
+}

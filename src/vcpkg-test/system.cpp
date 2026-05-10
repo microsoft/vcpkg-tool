@@ -134,37 +134,13 @@ TEST_CASE ("cmdlinebuilder", "[system]")
 #endif
 }
 
-TEST_CASE ("cmd_execute_and_capture_output_parallel", "[system]")
-{
-    std::vector<Command> vec;
-    for (size_t i = 0; i < 50; ++i)
-    {
-#if defined(_WIN32)
-        vec.push_back(Command("cmd.exe").string_arg("/d").string_arg("/c").string_arg(fmt::format("echo {}", i)));
-#else
-        vec.push_back(Command("echo").string_arg(std::string(i, 'a')));
-#endif
-    }
-
-    auto res = cmd_execute_and_capture_output_parallel(vec);
-
-    for (size_t i = 0; i != res.size(); ++i)
-    {
-        auto out = res[i].get();
-        REQUIRE(out != nullptr);
-        REQUIRE(out->exit_code == 0);
-
-#if defined(_WIN32)
-        REQUIRE(out->output == (fmt::format("{}\r\n", i)));
-#else
-        REQUIRE(out->output == (std::string(i, 'a') + "\n"));
-#endif
-    }
-}
-
 TEST_CASE ("append_shell_escaped", "[system]")
 {
     Command cmd;
+
+    cmd.clear();
+    cmd.string_arg("");
+    REQUIRE(cmd.command_line() == "\"\"");
 
     cmd.clear();
     cmd.string_arg("shell_escaped_chars1");
@@ -190,16 +166,28 @@ TEST_CASE ("append_shell_escaped", "[system]")
     cmd.string_arg("shell_escaped_chars3");
     cmd.string_arg("`");
     cmd.string_arg("$");
+    cmd.string_arg("*");
+    cmd.string_arg("?");
+    cmd.string_arg("[");
+    cmd.string_arg("#");
 #if defined(_WIN32)
-    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"`\" \"$\"");
+    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"`\" \"$\" * ? [ #");
 #else
-    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"\\`\" \"\\$\"");
+    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"\\`\" \"\\$\" \"*\" \"?\" \"[\" \"#\"");
 #endif
 
-#if 0
-    // TODO: add checks for tab/newline/carriage-return chars in commands
+    cmd.clear();
+    cmd.string_arg("shell_escaped_chars4");
     cmd.string_arg("\t");
     cmd.string_arg("\n");
     cmd.string_arg("\r");
-#endif
+
+    std::string expected = "shell_escaped_chars4 \"";
+    expected.push_back('\t');
+    expected.append("\" \"");
+    expected.push_back('\n');
+    expected.append("\" \"");
+    expected.push_back('\r');
+    expected.push_back('"');
+    REQUIRE(cmd.command_line() == expected);
 }

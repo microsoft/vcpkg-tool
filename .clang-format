@@ -54,25 +54,27 @@ BraceWrapping:
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^(<vcpkg/base/system-headers\.h>|"pch\.h")$'
-    Priority: -1
+    Priority: 1
   - Regex: '^<catch2/catch\.hpp>$'
-    Priority: 1
-  - Regex: '^<vcpkg-test/util\.h>$'
-    Priority: 1
-  - Regex: '^<vcpkg/base/fwd/.*\.h>$'
     Priority: 2
-  - Regex: '^<vcpkg/fwd/.*\.h>$'
+  - Regex: '^<vcpkg-test/util\.h>$'
+    Priority: 2
+  - Regex: '^<intrin.h>$' # to workaround conflicts with windows.h on arm64
+    Priority: 2
+  - Regex: '^<vcpkg/base/fwd/.*\.h>$'
     Priority: 3
-  - Regex: '^<vcpkg/base/.*\.h>$'
+  - Regex: '^<vcpkg/fwd/.*\.h>$'
     Priority: 4
-  - Regex: '^<vcpkg/.*\.h>$'
+  - Regex: '^<vcpkg/base/.*\.h>$'
     Priority: 5
-  - Regex: '^(<Softpub\.h>)$'
-    Priority: 8
-  - Regex: '^<[a-z0-9_]*\.h>$'
+  - Regex: '^<vcpkg/.*\.h>$'
     Priority: 6
-  - Regex: '^<[a-z0-9_]*>$' # C++ standard library
+  - Regex: '^(<Softpub\.h>)$'
+    Priority: 9
+  - Regex: '^<[a-z0-9_]*\.h>$'
     Priority: 7
+  - Regex: '^<[a-z0-9_]*>$' # C++ standard library
+    Priority: 8
 
 ---
 

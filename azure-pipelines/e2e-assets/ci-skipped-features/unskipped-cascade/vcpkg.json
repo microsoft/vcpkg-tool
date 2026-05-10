@@ -1,0 +1,7 @@
+{
+  "name": "unskipped-cascade",
+  "version": "1.0.0",
+  "dependencies": [
+    "skipped-depends"
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "$comment": "This comment changes the correct git-tree without changing the version",
+  "name": "mismatch-git-tree",
+  "version": "1.0"
+}

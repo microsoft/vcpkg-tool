@@ -1,0 +1,1 @@
+!osx & !ios & (uwp | (arm & windows) | (static & windows & !mingw))

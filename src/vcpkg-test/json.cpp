@@ -202,6 +202,47 @@ TEST_CASE ("JSON parse arrays", "[json]")
     REQUIRE(val.array(VCPKG_LINE_INFO)[2].array(VCPKG_LINE_INFO)[0].is_null());
 }
 
+static const std::string make_nested_arrays(size_t depth)
+{
+    std::string result(depth, '[');
+    result.push_back('0');
+    result.append(depth, ']');
+    return result;
+}
+
+TEST_CASE ("JSON parse recursion depth limit array", "[json]")
+{
+    auto res = Json::parse(make_nested_arrays(200), "test");
+    REQUIRE(res);
+
+    res = Json::parse(make_nested_arrays(201), "test");
+    REQUIRE(!res);
+    REQUIRE_THAT(res.error().data(), Catch::Contains("JSON depth limit of 200 exceeded"));
+}
+
+static const std::string make_nested_objects(size_t depth)
+{
+    std::string result;
+    for (size_t idx = 0; idx < depth; ++idx)
+    {
+        result.append("{\"key\":");
+    }
+
+    result.append("\"value\"");
+    result.append(depth, '}');
+    return result;
+}
+
+TEST_CASE ("JSON parse recursion depth limit object", "[json]")
+{
+    auto res = Json::parse(make_nested_objects(200), "test");
+    REQUIRE(res);
+
+    res = Json::parse(make_nested_objects(201), "test");
+    REQUIRE(!res);
+    REQUIRE_THAT(res.error().data(), Catch::Contains("JSON depth limit of 200 exceeded"));
+}
+
 TEST_CASE ("JSON parse objects", "[json]")
 {
     auto res = Json::parse("{}", "test");

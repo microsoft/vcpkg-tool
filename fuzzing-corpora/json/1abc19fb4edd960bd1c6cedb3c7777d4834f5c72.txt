@@ -1,0 +1,13 @@
+{
+  "name": "skipped-depends",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "skipped-features",
+      "default-features": false,
+      "features": [
+        "fail-if-included"
+      ]
+    }
+  ]
+}

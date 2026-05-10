@@ -1,0 +1,12 @@
+{
+  "name": "normal-port",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "shared-dependency",
+      "features": [
+        "depended-on-by-normal"
+      ]
+    }
+  ]
+}

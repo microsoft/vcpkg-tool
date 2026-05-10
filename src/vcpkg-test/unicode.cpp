@@ -39,7 +39,9 @@ TEST_CASE ("Utf8Decoder valid", "[unicode]")
     }
 
     auto input_end = input + strlen(input);
-    Utf8Decoder decode(input);
+    utf8_errc utf8_error;
+    Utf8Decoder decode(input, utf8_error);
+    REQUIRE(utf8_error == utf8_errc::NoError);
     // strlen for char32_t:
     size_t expected_size = 0;
     for (auto* e = expected; *e; ++e)
@@ -47,11 +49,16 @@ TEST_CASE ("Utf8Decoder valid", "[unicode]")
         ++expected_size;
     }
 
-    auto decode_at_end = std::next(decode, expected_size);
+    auto decode_at_end = decode;
     for (size_t idx = 0; idx < expected_size; ++idx)
     {
-        REQUIRE(decode != decode.end());  // compare sentinel
-        REQUIRE(decode != decode_at_end); // compare iterator
+        REQUIRE(!decode_at_end.is_eof());
+        REQUIRE(decode_at_end.next() == utf8_errc::NoError);
+    }
+
+    for (size_t idx = 0; idx < expected_size; ++idx)
+    {
+        REQUIRE(static_cast<bool>(decode != decode_at_end)); // compare iterator
         REQUIRE(*decode == expected[idx]);
         REQUIRE(!decode.is_eof());
         char32_t decoded;
@@ -59,14 +66,13 @@ TEST_CASE ("Utf8Decoder valid", "[unicode]")
         const auto original_pointer_to_current = pointer_to_current;
         REQUIRE(utf8_decode_code_point(pointer_to_current, input_end, decoded) == utf8_errc::NoError);
         REQUIRE(decoded == expected[idx]);
-        char encoded[4];
-        auto encoded_size = utf8_encode_code_point(encoded, decoded);
-        REQUIRE(std::equal(encoded, encoded + encoded_size, original_pointer_to_current));
-        ++decode;
+        std::string encoded;
+        REQUIRE(utf8_append_code_point(encoded, decoded));
+        REQUIRE(std::equal(encoded.begin(), encoded.end(), original_pointer_to_current));
+        REQUIRE(decode.next() == utf8_errc::NoError);
     }
 
-    REQUIRE(decode == decode.end());
-    REQUIRE(decode == decode_at_end);
+    REQUIRE(static_cast<bool>(decode == decode_at_end));
 }
 
 TEST_CASE ("Utf8Decoder first decode empty", "[unicode]")
@@ -75,8 +81,7 @@ TEST_CASE ("Utf8Decoder first decode empty", "[unicode]")
     Utf8Decoder uut("", err);
     REQUIRE(err == utf8_errc::NoError);
     REQUIRE(uut.is_eof());
-    REQUIRE(uut == uut.end());
-    REQUIRE(uut == uut);
+    REQUIRE(static_cast<bool>(uut == uut));
 }
 
 TEST_CASE ("Utf8Decoder invalid", "[unicode]")
@@ -109,7 +114,9 @@ TEST_CASE ("Utf8Decoder invalid", "[unicode]")
 TEST_CASE ("Utf8Decoder empty current", "[unicode]")
 {
     char storage[] = "";
-    Utf8Decoder uut(storage);
+    utf8_errc err;
+    Utf8Decoder uut(storage, err);
+    REQUIRE(err == utf8_errc::NoError);
     REQUIRE(uut.pointer_to_current() == storage);
     REQUIRE(uut.is_eof());
 }

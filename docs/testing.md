@@ -9,6 +9,7 @@ the line when someone complains!
 
 Before running the tests you must have installed the `Pester` module.
 This can be done by running `Install-Module -Name Pester -MinimumVersion 5.6.1 -MaximumVersion 5.99 -Force` in a PowerShell session.  
+On Linux, some e2e suites also require `mono-complete` for NuGet export scenarios.  
 To run the e2e test run the following command:  
 `pwsh azure-pipelines/end-to-end-tests.ps1`  
 **Parameters**:  
@@ -22,7 +23,20 @@ To run the e2e test run the following command:
 
 You will need to set the environment variable `VCPKG_ROOT` to the location
 of a copy of the [main vcpkg repo](https://github.com/microsoft/vcpkg) on your
-machine, in order to run the tests. 
+machine, in order to run the tests. This repository is tool-only, so local e2e
+runs need a separate `microsoft/vcpkg` checkout to provide built-in triplets,
+scripts, and registry history. In this dev container environment, `/vcpkg` is
+likely to already contain a full `microsoft/vcpkg` clone suitable for this
+purpose.
+
+If you are using a temporary Docker container or other ephemeral environment,
+do not rely on local session notes or container-local memory persisting across
+restarts; keep any setup notes you need in the repository or recreate the test
+setup when the container is replaced.
+
+Some registry tests require full git history in that `microsoft/vcpkg`
+checkout. A shallow clone may fail baseline lookups; fetch additional history
+if needed.
 
 Failure to do so will result in this error, when some of the tests are run:
 

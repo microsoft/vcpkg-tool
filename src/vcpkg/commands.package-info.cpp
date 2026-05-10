@@ -6,11 +6,11 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.package-info.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -44,7 +44,7 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
         if (!Util::Vectors::contains(options.switches, SwitchXJson))
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
         const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);
@@ -61,7 +61,9 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         if (installed)
         {
-            const StatusParagraphs status_paragraphs = database_load(fs, paths.installed());
+            InstalledDatabaseLock installed_lock{
+                paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+            const StatusParagraphs status_paragraphs = database_load(fs, paths.installed(), installed_lock);
             std::set<PackageSpec> specs_written;
             std::vector<PackageSpec> specs_to_write;
             for (auto&& arg : options.command_arguments)

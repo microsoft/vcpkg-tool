@@ -1,0 +1,1 @@
+(osx & x64) | (windows & (x64 | x86)) | (linux & (x64 | x86))

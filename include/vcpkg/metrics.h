@@ -24,7 +24,7 @@ namespace vcpkg
         BinaryCachingFiles,
         BinaryCachingGcs,
         BinaryCachingHttp,
-        BinaryCachingNuget,
+        BinaryCachingNuGet,
         BinaryCachingSource,
         BinaryCachingUpkg,
         ErrorVersioningDisabled,
@@ -37,11 +37,11 @@ namespace vcpkg
         RegistriesErrorNoVersionsAtCommit,
         VcpkgBinarySources,
         VcpkgDefaultBinaryCache,
-        VcpkgNugetRepository,
+        VcpkgNuGetRepository,
         VersioningErrorBaseline,
         VersioningErrorVersion, // no longer used
         X_VcpkgRegistriesCache,
-        X_WriteNugetPackagesConfig,
+        X_WriteNuGetPackagesConfig,
         COUNT // always keep COUNT last
     };
 
@@ -198,7 +198,6 @@ namespace vcpkg
     extern std::atomic<bool> g_should_send_metrics;
 
     void flush_global_metrics(const Filesystem&);
-#if defined(_WIN32)
-    void winhttp_upload_metrics(StringView payload);
-#endif // ^^^ _WIN32
+    bool curl_upload_metrics(const std::string& payload);
+    bool parse_metrics_response(StringView response_body);
 }

@@ -92,7 +92,7 @@ namespace vcpkg
     BinaryParagraph::BinaryParagraph(const SourceParagraph& spgh,
                                      const std::vector<std::string>& default_features,
                                      Triplet triplet,
-                                     const std::string& abi_tag,
+                                     StringView abi_tag,
                                      std::vector<PackageSpec> deps)
         : spec(spgh.name, triplet)
         , version(spgh.version)
@@ -101,7 +101,7 @@ namespace vcpkg
         , feature()
         , default_features(default_features)
         , dependencies(std::move(deps))
-        , abi(abi_tag)
+        , abi(abi_tag.data(), abi_tag.size())
     {
         canonicalize();
     }
@@ -248,7 +248,7 @@ namespace vcpkg
             Paragraphs::parse_single_paragraph(StringView{out_str}.substr(initial_end), sanity_parse_origin);
         if (!parsed_paragraph)
         {
-            Checks::msg_exit_maybe_upgrade(
+            Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgFailedToParseSerializedBinParagraph, msg::error_msg = parsed_paragraph.error())
                     .append_raw('\n')
@@ -258,12 +258,12 @@ namespace vcpkg
         auto binary_paragraph = BinaryParagraph(sanity_parse_origin, std::move(*parsed_paragraph.get()));
         if (binary_paragraph != pgh)
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO,
-                                           msg::format(msgMismatchedBinParagraphs)
-                                               .append(msgOriginalBinParagraphHeader)
-                                               .append_raw(format_binary_paragraph(pgh))
-                                               .append(msgSerializedBinParagraphHeader)
-                                               .append_raw(format_binary_paragraph(binary_paragraph)));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          msg::format(msgMismatchedBinParagraphs)
+                                              .append(msgOriginalBinParagraphHeader)
+                                              .append_raw(format_binary_paragraph(pgh))
+                                              .append(msgSerializedBinParagraphHeader)
+                                              .append_raw(format_binary_paragraph(binary_paragraph)));
         }
     }
 

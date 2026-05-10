@@ -53,8 +53,7 @@ namespace vcpkg
             std::vector<std::string> ecmascript_args;
             ecmascript_args.emplace_back("add");
             ecmascript_args.emplace_back(artifact_name);
-            auto maybe_version = Util::lookup_value(parsed.settings, SwitchVersion);
-            if (auto version = maybe_version.get())
+            if (const auto* version = Util::lookup_value(parsed.settings, SwitchVersion))
             {
                 ecmascript_args.emplace_back("--version");
                 ecmascript_args.emplace_back(*version);
@@ -65,7 +64,7 @@ namespace vcpkg
 
         if (selector == "port")
         {
-            auto manifest = paths.get_manifest().get();
+            const auto* manifest = paths.get_manifest();
             if (!manifest)
             {
                 Checks::msg_exit_with_message(

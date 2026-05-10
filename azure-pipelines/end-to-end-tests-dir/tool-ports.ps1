@@ -4,17 +4,17 @@ $commonArgs += @("--x-binarysource=clear", "--overlay-ports=$PSScriptRoot/../e2e
 
 $hostTriplet = "$Triplet"
 $env:VCPKG_DEFAULT_HOST_TRIPLET = "$hostTriplet"
-if ($IsMacOS)
-{
-    $targetTriplet = "x64-osx-e2e"
-}
-elseif ($ISLinux)
-{
-    $targetTriplet = "x64-linux-e2e"
-}
-else
-{
-    $targetTriplet = "x64-windows-e2e"
+
+if ($IsLinux) {
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $targetTriplet = 'arm64-linux-e2e'
+    } else {
+        $targetTriplet = 'x64-linux-e2e'
+    }
+} elseif ($IsMacOS) {
+    $targetTriplet = 'arm64-osx-e2e'
+} else {
+    $targetTriplet = 'x64-windows-e2e'
 }
 
 $env:VCPKG_FEATURE_FLAGS="-compilertracking"

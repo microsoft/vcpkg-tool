@@ -1,0 +1,7 @@
+{
+  "name": "bloom-filter",
+  "version": "0.2.0",
+  "port-version": 1,
+  "description": "bloom filter",
+  "dependencies": ["arrow"]
+}

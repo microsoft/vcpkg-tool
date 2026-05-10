@@ -1,0 +1,12 @@
+{
+  "name": "test-exe",
+  "version": "1.0.0",
+  "features": {
+    "release-only": {
+      "description": "Only install release binaries"
+    },
+    "policy-allow-exes-in-bin": {
+      "description": "Turn on VCPKG_POLICY_ALLOW_EXES_IN_BIN"
+    }
+  }
+}

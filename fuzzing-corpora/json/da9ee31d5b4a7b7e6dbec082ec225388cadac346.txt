@@ -1,0 +1,10 @@
+{
+  "name": "vcpkg-uses-touch-missing-dependency",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "vcpkg-touch-missing-dependency",
+      "host": true
+    }
+  ]
+}

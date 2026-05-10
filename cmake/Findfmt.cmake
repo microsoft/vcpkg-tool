@@ -9,7 +9,7 @@ if("$CACHE{VCPKG_FMT_URL}" MATCHES "^https://github.com/fmtlib/fmt/archive/refs/
     unset(VCPKG_FMT_URL CACHE) # Fix upgrade
 endif()
 if(NOT VCPKG_FMT_URL)
-    set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/11.2.0.tar.gz")
+    set(VCPKG_FMT_URL "https://github.com/fmtlib/fmt/archive/refs/tags/12.1.0.tar.gz")
 endif()
 
 if(POLICY CMP0135)
@@ -20,16 +20,20 @@ set(OLD_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(SKIP_WARNINGS OFF)
 if(MSVC AND VCPKG_DEVELOPMENT_WARNINGS AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "AppleClang") AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "[Cc]lang"))
     set(SKIP_WARNINGS ON)
+    # fmt\base.h(930): warning C4834: discarding return value of function with [[nodiscard]] attribute
+    string(APPEND CMAKE_CXX_FLAGS " /wd4834")
+    # fmt\base.h(930): warning C6031: Return value ignored: 'std::isalpha'.
+    string(APPEND CMAKE_CXX_FLAGS " /wd6031")
     # base.h(1711) : warning C6294: Ill-defined for-loop.  Loop body not executed.
     string(APPEND CMAKE_CXX_FLAGS " /wd6294")
-    # fmt\base.h(451): warning C6239: (<non-zero constant> && <expression>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) operator? If not, consider removing the redundant '<non-zero constant>' and the `&&` operator.
-    string(APPEND CMAKE_CXX_FLAGS " /wd6239")
     # fmt\format.h(1058) : warning C6240: (<expression> && <non-zero constant>) always evaluates to the result of <expression>:  Did you intend to use the bitwise-and (`&`) 
     string(APPEND CMAKE_CXX_FLAGS " /wd6240")
     # This one is guarded by an assert
     # fmt\os.h(377): warning C6326: Potential comparison of a constant with another constant.
     string(APPEND CMAKE_CXX_FLAGS " /wd6326")
-    # fmt\format-inl.h(294): warning C6385: Reading invalid data from 'pow10_significands'.: Lines: 265, 267, 294
+    # fmt\format-inl.h(307): warning C6385: Reading invalid data from 'pow10_significands'.
+    # This reproduced in the Windows signing configuration under Release + /analyze; test in
+    # release mode before removing this suppression in the future.
     string(APPEND CMAKE_CXX_FLAGS " /wd6385")
 endif()
 
@@ -37,7 +41,7 @@ include(FetchContent)
 FetchContent_Declare(
     fmt
     URL "${VCPKG_FMT_URL}"
-    URL_HASH "SHA512=46974efd36e613477351aa357c451cee434da797c2a505f9f86d73e394dcb35dc2dc0cda66abb98c023e8f24deac9d8e3ee6f9f6c0971cc4c00e37c34aa7f15f"
+    URL_HASH "SHA512=f0da82c545b01692e9fd30fdfb613dbb8dd9716983dcd0ff19ac2a8d36f74beb5540ef38072fdecc1e34191b3682a8542ecbf3a61ef287dbba0a2679d4e023f2"
 )
 
 if(NOT fmt_FIND_REQUIRED)

@@ -546,12 +546,20 @@ namespace vcpkg::Json
     // auto parse() {
     namespace
     {
+        struct DepthGuard
+        {
+            DepthGuard(size_t& depth) : depth(depth) { ++depth; }
+            ~DepthGuard() { --depth; }
+
+        private:
+            size_t& depth;
+        };
+
         struct Parser : private ParserBase
         {
-            Parser(StringView text, StringView origin, TextRowCol init_rowcol)
-                : ParserBase(text, origin, init_rowcol), style_()
-            {
-            }
+            static constexpr size_t max_depth = 200;
+
+            using ParserBase::ParserBase;
 
             char32_t next() noexcept
             {
@@ -1034,6 +1042,13 @@ namespace vcpkg::Json
                     return Value();
                 }
 
+                if (depth_ == max_depth + 1)
+                {
+                    add_error(msg::format(msgJsonDepthLimitExceeded, msg::count = max_depth));
+                    return Value();
+                }
+
+                DepthGuard depth_guard(depth_);
                 switch (current)
                 {
                     case '{': return parse_object();
@@ -1086,10 +1101,36 @@ namespace vcpkg::Json
                 return ParsedJson{std::move(val), parser.style()};
             }
 
+            static Optional<ParsedJson> parse(DiagnosticContext& context, StringView json, StringView origin)
+            {
+                StatsTimer t(g_json_parsing_stats);
+
+                json.remove_bom();
+
+                auto parser = Parser(json, origin, {1, 1});
+
+                auto val = parser.parse_value();
+
+                parser.skip_whitespace();
+                if (!parser.at_eof())
+                {
+                    parser.add_error(msg::format(msgUnexpectedEOFExpectedChar));
+                }
+
+                if (parser.messages().any_errors())
+                {
+                    std::move(parser).messages().report(context);
+                    return nullopt;
+                }
+
+                return ParsedJson{std::move(val), parser.style()};
+            }
+
             JsonStyle style() const noexcept { return style_; }
 
         private:
-            JsonStyle style_;
+            JsonStyle style_{};
+            size_t depth_ = 0;
         };
     }
 
@@ -1194,19 +1235,12 @@ namespace vcpkg::Json
         return parse(res, json_file);
     }
 
-    ParsedJson parse_file(vcpkg::LineInfo li, const ReadOnlyFilesystem& fs, const Path& json_file)
-    {
-        std::error_code ec;
-        auto disk_contents = fs.read_contents(json_file, ec);
-        if (ec)
-        {
-            Checks::msg_exit_with_error(li, format_filesystem_call_error(ec, "read_contents", {json_file}));
-        }
-
-        return parse(disk_contents, json_file).value_or_exit(VCPKG_LINE_INFO);
-    }
-
     ExpectedL<ParsedJson> parse(StringView json, StringView origin) { return Parser::parse(json, origin); }
+
+    Optional<ParsedJson> parse(DiagnosticContext& context, StringView text, StringView origin)
+    {
+        return Parser::parse(context, text, origin);
+    }
 
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin)
     {
@@ -1217,7 +1251,22 @@ namespace vcpkg::Json
                 return std::move(*as_object);
             }
 
-            return msg::format(msgJsonErrorMustBeAnObject, msg::path = origin);
+            return LocalizedString::from_raw(
+                DiagnosticLine{DiagKind::Error, origin, msg::format(msgExpectedAnObject)}.to_string());
+        });
+    }
+
+    Optional<Json::Object> parse_object(DiagnosticContext& context, StringView text, StringView origin)
+    {
+        return parse(context, text, origin).then([&](ParsedJson&& mabeValueIsh) -> Optional<Json::Object> {
+            auto& asValue = mabeValueIsh.value;
+            if (auto as_object = asValue.maybe_object())
+            {
+                return std::move(*as_object);
+            }
+
+            context.report(DiagnosticLine{DiagKind::Error, origin, msg::format(msgExpectedAnObject)});
+            return nullopt;
         });
     }
     // } auto parse()
@@ -1277,36 +1326,58 @@ namespace vcpkg::Json
 
                 // 2. For each code point C in ! UTF16DecodeString(value), do
                 // (note that we use utf8 instead of utf16)
-                for (auto code_point : Unicode::Utf8Decoder(sv.begin(), sv.end()))
+                if (!sv.empty())
                 {
-                    // a. If C is listed in the "Code Point" column of Table 66, then
-                    const auto match = std::find_if(begin(escape_sequences),
-                                                    end(escape_sequences),
-                                                    [code_point](const std::pair<char32_t, const char*>& attempt) {
-                                                        return attempt.first == code_point;
-                                                    });
-                    // i. Set product to the string-concatenation of product and the escape sequence for C as
-                    // specified in the "Escape Sequence" column of the corresponding row.
-                    if (match != end(escape_sequences))
+                    Unicode::utf8_errc utf8_error;
+                    Unicode::Utf8Decoder decoder(sv.begin(), sv.end(), utf8_error);
+                    for (;;)
                     {
-                        buffer.append(match->second);
-                        continue;
-                    }
+                        if (utf8_error != Unicode::utf8_errc::NoError)
+                        {
+                            Checks::msg_exit_with_error(VCPKG_LINE_INFO,
+                                                        msg::format(msgUtf8ConversionFailed)
+                                                            .append_raw(": ")
+                                                            .append(Unicode::message(utf8_error)));
+                        }
 
-                    // b. Else if C has a numeric value less than 0x0020 (SPACE), or if C has the same numeric value as
-                    // a leading surrogate or trailing surrogate, then
-                    if (code_point < 0x0020 || Unicode::utf16_is_surrogate_code_point(code_point))
-                    {
-                        // i. Let unit be the code unit whose numeric value is that of C.
-                        // ii. Set product to the string-concatenation of product and UnicodeEscape(unit).
-                        append_unicode_escape(static_cast<char16_t>(code_point));
-                        break;
-                    }
+                        if (decoder.is_eof())
+                        {
+                            break;
+                        }
 
-                    // c. Else,
-                    // i. Set product to the string-concatenation of product and the UTF16Encoding of C.
-                    // (again, we use utf-8 here instead)
-                    Unicode::utf8_append_code_point(buffer, code_point);
+                        const auto code_point = *decoder;
+
+                        // a. If C is listed in the "Code Point" column of Table 66, then
+                        const auto match = std::find_if(begin(escape_sequences),
+                                                        end(escape_sequences),
+                                                        [code_point](const std::pair<char32_t, const char*>& attempt) {
+                                                            return attempt.first == code_point;
+                                                        });
+                        // i. Set product to the string-concatenation of product and the escape sequence for C as
+                        // specified in the "Escape Sequence" column of the corresponding row.
+                        if (match != end(escape_sequences))
+                        {
+                            buffer.append(match->second);
+                        }
+                        else
+                        {
+                            // b. Else if C has a numeric value less than 0x0020 (SPACE), or if C has the same numeric
+                            // value as a leading surrogate or trailing surrogate, then
+                            if (code_point < 0x0020 || Unicode::utf16_is_surrogate_code_point(code_point))
+                            {
+                                // i. Let unit be the code unit whose numeric value is that of C.
+                                // ii. Set product to the string-concatenation of product and UnicodeEscape(unit).
+                                append_unicode_escape(static_cast<char16_t>(code_point));
+                                break;
+                            }
+
+                            // c. Else,
+                            // i. Set product to the string-concatenation of product and the UTF16Encoding of C.
+                            // (again, we use utf-8 here instead)
+                            Unicode::utf8_append_code_point(buffer, code_point);
+                        }
+                        utf8_error = decoder.next();
+                    }
                 }
 
                 // 3. Set product to the string-concatenation of product and the code unit 0x0022 (QUOTATION MARK).

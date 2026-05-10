@@ -1,0 +1,24 @@
+{
+  "name": "shared-dependency",
+  "version": "1.0.0",
+  "default-features": [
+    "default-feature"
+  ],
+  "features": {
+    "default-feature": {
+      "description": "Default feature that keeps the target dependency in the plan.",
+      "dependencies": [
+        "host-dependency"
+      ]
+    },
+    "depended-on-by-fail": {
+      "description": "Selected by fail-port."
+    },
+    "depended-on-by-normal": {
+      "description": "Selected by normal-port."
+    },
+    "depended-on-by-skip": {
+      "description": "Selected only by skipped ports."
+    }
+  }
+}

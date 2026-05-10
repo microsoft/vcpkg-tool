@@ -1,0 +1,1 @@
+windows & !(static & windows) & !uwp & !xbox

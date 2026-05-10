@@ -1,0 +1,7 @@
+{
+  "name": "always-skip",
+  "version": "1.0.0",
+  "dependencies": [
+    "always-built"
+  ]
+}

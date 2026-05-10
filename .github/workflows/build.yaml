@@ -12,13 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: windows-2022
+          - os: windows-2025
             preset: windows-ci
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             preset: linux-ci
           - os: ubuntu-24.04-arm
             preset: linux-arm64-ci
-          - os: macos-14
+          - os: macos-26
             preset: macos-ci
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
@@ -32,8 +32,8 @@ jobs:
       - name: Enable Problem Matchers
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'
-        if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
-        uses: github/codeql-action/init@v3
+        if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript, c-cpp
       - name: Configure and Build
@@ -54,8 +54,8 @@ jobs:
           IF %ERRORLEVEL% NEQ 0 exit /B %ERRORLEVEL%
           cmake --build --preset ${{ matrix.preset }} -- -k0
       - name: '[CI Only] Perform CodeQL Analysis'
-        if: inputs.codeql && matrix.preset != 'linux-arm64-ci'
-        uses: github/codeql-action/analyze@v3
+        if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
+        uses: github/codeql-action/analyze@v4
       - name: Run vcpkg and vcpkg-artifacts unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
@@ -70,11 +70,15 @@ jobs:
           path: ${{ github.workspace }}/vcpkg-root
           repository: microsoft/vcpkg
           ref: ${{ steps.vcpkg_sha.outputs.VCPKG_SHA }}
-      - name: Install Mono (for NuGet export)
-        if: matrix.preset == 'linux-arm64-ci'
+      - name: Install Mono (Linux) (for NuGet export)
+        if: matrix.preset == 'linux-ci' || matrix.preset == 'linux-arm64-ci'
         run: |
           sudo apt update
           sudo apt install -y mono-complete
+      - name: Install Mono (macOS) (for NuGet export)
+        if: matrix.preset == 'macos-ci'
+        run: |
+          arch -arm64 brew install mono
       - name: Run vcpkg end-to-end tests
         shell: pwsh
         run: |

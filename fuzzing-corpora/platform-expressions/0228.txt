@@ -1,0 +1,1 @@
+!uwp & !xbox & !((arm | x86) & windows) & !osx

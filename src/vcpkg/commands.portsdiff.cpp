@@ -77,24 +77,6 @@ namespace
                               return cache_entry.second->source_control_file->to_version_spec();
                           });
     }
-
-    bool check_commit_exists(DiagnosticContext& context,
-                             const Path& git_exe,
-                             const Path& builtin_ports_dir,
-                             StringView git_commit_id)
-    {
-        if (!git_check_is_commit(context,
-                                 git_exe,
-                                 GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir},
-                                 git_commit_id)
-                 .value_or(false))
-        {
-            context.report_error(msgInvalidCommitId, msg::commit_sha = git_commit_id);
-            return false;
-        }
-
-        return true;
-    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -104,15 +86,20 @@ namespace vcpkg
                                        StringView git_commit_id_for_previous_snapshot,
                                        StringView git_commit_id_for_current_snapshot)
     {
-        const auto& git_exe = paths.get_tool_exe(Tools::GIT, out_sink);
-        if (!check_commit_exists(context, git_exe, paths.root, git_commit_id_for_previous_snapshot) ||
-            !check_commit_exists(context, git_exe, paths.root, git_commit_id_for_current_snapshot))
+        const auto* git_exe = paths.get_tool_path(context, Tools::GIT);
+        if (!git_exe)
+        {
+            return nullopt;
+        }
+
+        if (!check_commit_exists(context, *git_exe, paths.root, git_commit_id_for_previous_snapshot) ||
+            !check_commit_exists(context, *git_exe, paths.root, git_commit_id_for_current_snapshot))
         {
             return nullopt;
         }
 
         const auto maybe_previous =
-            read_ports_from_commit(context, paths, git_exe, "previous", git_commit_id_for_previous_snapshot);
+            read_ports_from_commit(context, paths, *git_exe, "previous", git_commit_id_for_previous_snapshot);
         const auto previous = maybe_previous.get();
         if (!previous)
         {
@@ -120,7 +107,7 @@ namespace vcpkg
         }
 
         const auto maybe_current =
-            read_ports_from_commit(context, paths, git_exe, "current", git_commit_id_for_current_snapshot);
+            read_ports_from_commit(context, paths, *git_exe, "current", git_commit_id_for_current_snapshot);
         const auto current = maybe_current.get();
         if (!current)
         {

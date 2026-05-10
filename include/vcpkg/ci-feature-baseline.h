@@ -1,8 +1,8 @@
 #pragma once
-#include <vcpkg/base/fwd/fmt.h>
-
 #include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/triplet.h>
+
+#include <vcpkg/base/fmt.h>
 
 #include <vcpkg/packagespec.h>
 

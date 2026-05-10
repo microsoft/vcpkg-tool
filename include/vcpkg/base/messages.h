@@ -75,7 +75,8 @@ namespace vcpkg
     {
         LocalizedString() = default;
         operator StringView() const noexcept;
-        const std::string& data() const noexcept;
+        const std::string& data() const& noexcept;
+        std::string&& data() && noexcept;
         const std::string& to_string() const noexcept;
         std::string extract_data();
 
@@ -149,9 +150,7 @@ namespace vcpkg
     inline constexpr StringLiteral MessagePrefix = "message: ";
     LocalizedString message_prefix();
     inline constexpr StringLiteral InfoPrefix = "info: ";
-    LocalizedString info_prefix();
     inline constexpr StringLiteral NotePrefix = "note: ";
-    LocalizedString note_prefix();
     inline constexpr StringLiteral WarningPrefix = "warning: ";
     LocalizedString warning_prefix();
 }

@@ -1,0 +1,1 @@
+((windows & !uwp & !arm & !arm64 & !xbox) | linux | osx) & static

@@ -1,0 +1,18 @@
+{
+  "name": "vcpkg-policy-misplaced-cmake-files",
+  "version": "1",
+  "features": {
+    "do-install-cmake": {
+      "description": "Put CMake files in cmake and debug/cmake"
+    },
+    "do-install-lib": {
+      "description": "Put CMake files in lib and debug/lib"
+    },
+    "policy-skip-misplaced-cmake-files-check": {
+      "description": "Turn on VCPKG_POLICY_SKIP_MISPLACED_CMAKE_FILES_CHECK"
+    },
+    "policy-skip-lib-cmake-merge-check": {
+      "description": "Turn on VCPKG_POLICY_SKIP_LIB_CMAKE_MERGE_CHECK"
+    }
+  }
+}

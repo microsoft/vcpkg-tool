@@ -1,0 +1,17 @@
+{
+  "name": "skip-port",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "shared-dependency",
+      "default-features": false,
+      "features": [
+        "depended-on-by-skip"
+      ]
+    },
+    {
+      "name": "skip-port-host",
+      "host": true
+    }
+  ]
+}

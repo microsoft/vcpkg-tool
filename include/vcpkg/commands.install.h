@@ -1,8 +1,11 @@
 #pragma once
 
 #include <vcpkg/fwd/binaryparagraph.h>
+#include <vcpkg/fwd/cmakevars.h>
 #include <vcpkg/fwd/commands.install.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/installedpaths.h>
+#include <vcpkg/fwd/sourceparagraph.h>
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
 #include <vcpkg/fwd/vcpkgpaths.h>
 
@@ -14,6 +17,7 @@
 #include <vcpkg/packagespec.h>
 
 #include <chrono>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -22,27 +26,41 @@ namespace vcpkg
 {
     struct SpecSummary
     {
-        explicit SpecSummary(const InstallPlanAction& action);
-        explicit SpecSummary(const RemovePlanAction& action);
+        explicit SpecSummary(ExtendedBuildResult&& build_result,
+                             ElapsedTime timing,
+                             std::chrono::system_clock::time_point start_time);
 
-        const BinaryParagraph* get_binary_paragraph() const;
-        const PackageSpec& get_spec() const { return m_spec; }
-        Optional<const std::string&> get_abi() const
-        {
-            return m_install_action ? m_install_action->package_abi() : nullopt;
-        }
-        bool is_user_requested_install() const;
-        Optional<ExtendedBuildResult> build_result;
+        ExtendedBuildResult build_result;
         vcpkg::ElapsedTime timing;
         std::chrono::system_clock::time_point start_time;
-        Optional<const InstallPlanAction&> get_install_plan_action() const
-        {
-            return m_install_action ? Optional<const InstallPlanAction&>(*m_install_action) : nullopt;
-        }
+
+        std::string to_string() const;
+        void to_string(std::string& out_str) const;
+    };
+
+    struct InstallSpecSummary : SpecSummary
+    {
+        explicit InstallSpecSummary(ExtendedBuildResult&& build_result,
+                                    const InternalFeatureSet& feature_list,
+                                    const Version& version,
+                                    RequestType request_type,
+                                    ElapsedTime timing,
+                                    std::chrono::system_clock::time_point start_time,
+                                    StringView package_abi,
+                                    const CompilerInfo* maybe_compiler_info);
+
+        const std::string& package_abi() const noexcept { return m_package_abi; }
+        const InternalFeatureSet& feature_list() const noexcept { return m_feature_list; }
+        const Version& version() const noexcept { return m_version; }
+        bool is_user_requested_install() const noexcept { return m_request_type == RequestType::USER_REQUESTED; }
+        const CompilerInfo* maybe_compiler_info() const noexcept { return m_compiler_info; }
 
     private:
-        const InstallPlanAction* m_install_action;
-        PackageSpec m_spec;
+        std::string m_package_abi;
+        InternalFeatureSet m_feature_list;
+        Version m_version;
+        RequestType m_request_type;
+        const CompilerInfo* m_compiler_info;
     };
 
     struct LicenseReport
@@ -54,7 +72,9 @@ namespace vcpkg
 
     struct InstallSummary
     {
-        std::vector<SpecSummary> results;
+        std::vector<SpecSummary> removed_results;
+        std::vector<InstallSpecSummary> already_installed_results;
+        std::vector<InstallSpecSummary> install_results;
         ElapsedTime elapsed;
         LicenseReport license_report;
         bool failed = false;
@@ -63,6 +83,19 @@ namespace vcpkg
         void print_failed() const;
         void print_complete_message() const;
     };
+
+    std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
+                                                                  const VcpkgPaths& paths,
+                                                                  bool is_default_builtin_registry);
+
+    std::vector<std::string> get_manifest_features(const ParsedArguments& options,
+                                                   const SourceParagraph& manifest_core,
+                                                   const CMakeVars::CMakeVarProvider& var_provider,
+                                                   const PackageSpec& toplevel,
+                                                   Triplet host_triplet);
+
+    std::vector<Dependency> get_manifest_dependencies(const SourceControlFile& manifest_scf,
+                                                      const std::vector<std::string>& features);
 
     // First, writes triplet_canonical_name / (including the trailing slash) to listfile. Then:
     // For each directory in source_dir / proximate_files
@@ -113,6 +146,7 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
+                                        const InstallAndBuildDatabaseLock& installed_lock,
                                         const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,

@@ -16,7 +16,6 @@ import { DeactivateCommand } from './cli/commands/deactivate';
 import { DeleteCommand } from './cli/commands/delete';
 import { FindCommand } from './cli/commands/find';
 import { GenerateMSBuildPropsCommand } from './cli/commands/generate-msbuild-props';
-import { ListCommand } from './cli/commands/list';
 import { RegenerateCommand } from './cli/commands/regenerate-index';
 import { RemoveCommand } from './cli/commands/remove';
 import { UpdateCommand } from './cli/commands/update';
@@ -50,7 +49,6 @@ async function main() {
   await session.init();
 
   commandline.addCommand(new FindCommand(commandline));
-  commandline.addCommand(new ListCommand(commandline));
 
   commandline.addCommand(new AddCommand(commandline));
   commandline.addCommand(new AcquireProjectCommand(commandline));

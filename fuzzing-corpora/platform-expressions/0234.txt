@@ -1,0 +1,1 @@
+!uwp & (windows | linux | android | osx) & (arm | x86 | x64)

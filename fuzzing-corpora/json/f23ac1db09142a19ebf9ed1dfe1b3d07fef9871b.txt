@@ -1,0 +1,9 @@
+{
+  "name": "vcpkg-policy-misplaced-regular-files",
+  "version": "1",
+  "features": {
+    "policy": {
+      "description": "Turn on VCPKG_POLICY_SKIP_MISPLACED_REGULAR_FILES_CHECK"
+    }
+  }
+}

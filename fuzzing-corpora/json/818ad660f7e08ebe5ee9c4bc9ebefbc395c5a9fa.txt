@@ -1,0 +1,24 @@
+{
+  "name": "vcpkg-policy-absolute-paths",
+  "version": "1",
+  "features": {
+    "build-dir": {
+      "description": "write CURRENT_BUILDTREES_DIR into the file"
+    },
+    "downloads": {
+      "description": "write DOWNLOADS into the file"
+    },
+    "installed-root": {
+      "description": "write CURRENT_INSTALLED_DIR into the file"
+    },
+    "package-dir": {
+      "description": "write CURRENT_PACKAGES_DIR into the file"
+    },
+    "pkgconfig": {
+      "description": "also add a pkgconfig file"
+    },
+    "policy": {
+      "description": "turn on VCPKG_POLICY_SKIP_ABSOLUTE_PATHS_CHECK"
+    }
+  }
+}

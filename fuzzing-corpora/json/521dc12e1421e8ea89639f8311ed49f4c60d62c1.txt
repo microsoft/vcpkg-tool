@@ -1,0 +1,9 @@
+{
+  "name": "skipped-features",
+  "version": "1.0.0",
+  "features": {
+    "fail-if-included": {
+      "description": "This feature should cause a failure if it is included in the build."
+    }
+  }
+}

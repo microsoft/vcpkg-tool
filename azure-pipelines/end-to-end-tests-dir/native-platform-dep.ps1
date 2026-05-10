@@ -1,9 +1,13 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
 if ($IsLinux) {
-    $host_triplet = 'x64-linux-e2e'
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $host_triplet = 'arm64-linux-e2e'
+    } else {
+        $host_triplet = 'x64-linux-e2e'
+    }
 } elseif ($IsMacOS) {
-    $host_triplet = 'x64-osx-e2e'
+    $host_triplet = 'arm64-osx-e2e'
 } elseif ($IsWindows) {
     $host_triplet = 'x64-windows-e2e'
 } else {

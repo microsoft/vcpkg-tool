@@ -1,0 +1,12 @@
+depends-on-fail-but-unsupported:cross=fail
+dynamic-cascade-required-to-pass:cross=pass
+fail-but-unsupported:cross=fail
+fail-expected:cross=fail
+pass-but-fails:cross=pass
+pass-but-marked-fail:cross=fail
+pass-but-unsupported:cross=pass
+skip:cross=skip
+pass-but-depends-on-skipped:cross=pass
+static-fail-cascade-required-to-pass:cross=pass
+static-skipped-cascade-required-to-pass:cross=pass
+static-unsupported-cascade-required-to-pass:cross=pass

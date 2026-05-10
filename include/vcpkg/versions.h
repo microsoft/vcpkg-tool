@@ -1,12 +1,12 @@
 #pragma once
 
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
 #include <vcpkg/fwd/versions.h>
 
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/optional.h>
 
 namespace vcpkg

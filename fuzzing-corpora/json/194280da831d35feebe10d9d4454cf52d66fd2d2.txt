@@ -1,0 +1,10 @@
+{
+  "name": "override-not-in-versions-database",
+  "version": "1.0",
+  "overrides": [
+    {
+      "name": "no-versions",
+      "version": "1.0"
+    }
+  ]
+}

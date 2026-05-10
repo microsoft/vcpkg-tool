@@ -15,23 +15,9 @@ namespace vcpkg
         AUTO_SELECTED
     };
 
-    enum class InstallPlanType
-    {
-        UNKNOWN,
-        BUILD_AND_INSTALL,
-        ALREADY_INSTALLED,
-        EXCLUDED
-    };
-
-    enum class ExportPlanType
-    {
-        UNKNOWN,
-        NOT_BUILT,
-        ALREADY_BUILT
-    };
-
     struct BasicAction;
-    struct PackageAction;
+    struct BasicInstallPlanAction;
+    struct AlreadyInstalledPlanAction;
     struct InstallPlanAction;
     struct NotInstalledAction;
     struct RemovePlanAction;

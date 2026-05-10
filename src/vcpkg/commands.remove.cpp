@@ -1,25 +1,29 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/input.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 namespace vcpkg
 {
-    void remove_package(const Filesystem& fs,
-                        const InstalledPaths& installed,
-                        const PackageSpec& spec,
-                        StatusParagraphs& status_db)
+    SpecSummary remove_package(const Filesystem& fs,
+                               const InstalledPaths& installed,
+                               const PackageSpec& spec,
+                               StatusParagraphs& status_db)
     {
+        const ElapsedTimer remove_timer;
+        const auto start_time = std::chrono::system_clock::now();
+
         auto maybe_ipv = status_db.get_installed_package_view(spec);
 
         Checks::msg_check_exit(VCPKG_LINE_INFO, maybe_ipv.has_value(), msgPackageAlreadyRemoved, msg::spec = spec);
@@ -31,7 +35,7 @@ namespace vcpkg
         for (auto&& spgh : spghs)
         {
             spgh.status = {Want::PURGE, InstallState::HALF_INSTALLED};
-            write_update(fs, installed, spgh);
+            database_write_update(fs, installed, spgh);
         }
 
         auto maybe_lines = fs.read_lines(installed.listfile_path(ipv.core->package));
@@ -97,9 +101,11 @@ namespace vcpkg
         for (auto&& spgh : spghs)
         {
             spgh.status.state = InstallState::NOT_INSTALLED;
-            write_update(fs, installed, spgh);
+            database_write_update(fs, installed, spgh);
             status_db.insert(std::make_unique<StatusParagraph>(std::move(spgh)));
         }
+
+        return SpecSummary{ExtendedBuildResult{spec, BuildResult::Removed}, remove_timer.elapsed(), start_time};
     }
 } // namespace vcpkg
 
@@ -152,7 +158,8 @@ namespace
 
     std::vector<std::string> valid_arguments(const VcpkgPaths& paths)
     {
-        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
+        InstalledDatabaseLock installed_lock{paths.get_filesystem(), paths.installed(), false, true};
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed(), installed_lock);
         auto installed_packages = get_installed_ports(status_db);
 
         return Util::fmap(installed_packages, [](auto&& pgh) -> std::string { return pgh.spec().to_string(); });
@@ -181,11 +188,17 @@ namespace vcpkg
         (void)host_triplet;
         if (paths.manifest_mode_enabled())
         {
-            Checks::msg_exit_maybe_upgrade(VCPKG_LINE_INFO, msgRemoveDependencies);
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgRemoveDependencies);
         }
         const ParsedArguments options = args.parse_arguments(CommandRemoveMetadata);
 
-        StatusParagraphs status_db = database_load_collapse(paths.get_filesystem(), paths.installed());
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
+        StatusParagraphs status_db = database_sync(paths.get_filesystem(), paths.installed(), installed_lock);
         std::vector<PackageSpec> specs;
         if (Util::Sets::contains(options.switches, SwitchOutdated))
         {
@@ -304,7 +317,7 @@ namespace vcpkg
         }
 
         purge_packages_dirs(paths, all_spec_dirs);
-        database_load_collapse(fs, paths.installed());
+        database_sync(fs, paths.installed(), installed_lock);
         Checks::exit_success(VCPKG_LINE_INFO);
     }
 }

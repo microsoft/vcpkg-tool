@@ -1,0 +1,1 @@
+!((arm | x86) & windows) & !android

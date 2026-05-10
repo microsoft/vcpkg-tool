@@ -1,0 +1,4 @@
+{
+  "$comment": "'config-overlays/a' in . should get loaded first, so we should never consider 'builtin-malformed/a'",
+  "overlay-ports": [ "config-overlays" ]
+}

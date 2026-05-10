@@ -4,9 +4,9 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.list.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -73,9 +73,9 @@ namespace
             }
             msg::write_unlocalized_text_to_stdout(Color::none,
                                                   fmt::format("{:<50}{:<20}{:<}\n",
-                                                              vcpkg::shorten_text(pgh.package.display_name(), 50),
-                                                              vcpkg::shorten_text(full_version, 16),
-                                                              vcpkg::shorten_text(description, 51)));
+                                                              Strings::shorten_text(pgh.package.display_name(), 50),
+                                                              Strings::shorten_text(full_version, 16),
+                                                              Strings::shorten_text(description, 51)));
         }
     }
 
@@ -104,7 +104,10 @@ namespace vcpkg
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandListMetadata);
 
-        const StatusParagraphs status_paragraphs = database_load(paths.get_filesystem(), paths.installed());
+        InstalledDatabaseLock installed_lock{
+            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        const StatusParagraphs status_paragraphs =
+            database_load(paths.get_filesystem(), paths.installed(), installed_lock);
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
         const auto output_json = Util::Sets::contains(options.switches, SwitchXJson);

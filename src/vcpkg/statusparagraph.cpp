@@ -83,7 +83,7 @@ namespace vcpkg
     StatusParagraph::StatusParagraph(StringView origin, Paragraph&& fields)
     {
         auto status_it = fields.find(ParagraphIdStatus);
-        Checks::msg_check_maybe_upgrade(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
+        Checks::msg_check_exit(VCPKG_LINE_INFO, status_it != fields.end(), msgExpectedStatusField);
         auto status_field = std::move(status_it->second);
         fields.erase(status_it);
         this->package = BinaryParagraph(origin, std::move(fields));
@@ -112,20 +112,6 @@ namespace vcpkg
             case Want::PURGE: return StatusPurge;
             default: Checks::unreachable(VCPKG_LINE_INFO);
         }
-    }
-
-    std::map<std::string, std::vector<FeatureSpec>> InstalledPackageView::feature_dependencies() const
-    {
-        auto extract_deps = [](const PackageSpec& spec) { return FeatureSpec{spec, FeatureNameCore}; };
-
-        std::map<std::string, std::vector<FeatureSpec>> deps;
-        deps.emplace(FeatureNameCore, Util::fmap(core->package.dependencies, extract_deps));
-        for (const StatusParagraph* feature : features)
-        {
-            deps.emplace(feature->package.feature, Util::fmap(feature->package.dependencies, extract_deps));
-        }
-
-        return deps;
     }
 
     InternalFeatureSet InstalledPackageView::feature_list() const

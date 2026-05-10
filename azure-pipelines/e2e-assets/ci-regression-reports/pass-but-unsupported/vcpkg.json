@@ -1,0 +1,6 @@
+{
+  "name": "pass-but-unsupported",
+  "version": "1.0.0",
+  "description": "this port is marked pass but is unsupported",
+  "supports": "native & !native"
+}

@@ -26,23 +26,38 @@ namespace vcpkg
         PackageSpec spec;
     };
 
-    struct PackageAction : BasicAction
+    struct BasicInstallPlanAction : BasicAction
     {
-        std::vector<PackageSpec> package_dependencies;
+        Version version;
         InternalFeatureSet feature_list;
+        RequestType request_type;
+        std::string display_name() const;
     };
 
-    struct InstallPlanAction : PackageAction
+    struct AlreadyInstalledPlanAction : BasicInstallPlanAction
+    {
+        AlreadyInstalledPlanAction(const AlreadyInstalledPlanAction&) = delete;
+        AlreadyInstalledPlanAction(AlreadyInstalledPlanAction&&) = default;
+        AlreadyInstalledPlanAction& operator=(const AlreadyInstalledPlanAction&) = delete;
+        AlreadyInstalledPlanAction& operator=(AlreadyInstalledPlanAction&&) = default;
+
+        AlreadyInstalledPlanAction(InstalledPackageView&& spghs,
+                                   RequestType request_type,
+                                   UseHeadVersion use_head_version);
+
+        const std::string& package_abi() const;
+
+        InstalledPackageView installed_package;
+
+        UseHeadVersion use_head_version;
+    };
+
+    struct InstallPlanAction : BasicInstallPlanAction
     {
         InstallPlanAction(const InstallPlanAction&) = delete;
         InstallPlanAction(InstallPlanAction&&) = default;
         InstallPlanAction& operator=(const InstallPlanAction&) = delete;
         InstallPlanAction& operator=(InstallPlanAction&&) = default;
-
-        InstallPlanAction(InstalledPackageView&& spghs,
-                          RequestType request_type,
-                          UseHeadVersion use_head_version,
-                          Editable editable);
 
         InstallPlanAction(const PackageSpec& spec,
                           const SourceControlFileAndLocation& scfl,
@@ -51,31 +66,35 @@ namespace vcpkg
                           UseHeadVersion use_head_version,
                           Editable editable,
                           std::map<std::string, std::vector<FeatureSpec>>&& dependencies,
-                          std::vector<LocalizedString>&& build_failure_messages,
-                          std::vector<std::string> default_features);
+                          std::vector<DiagnosticLine>&& dependency_diagnostics,
+                          const std::vector<std::string>& default_features);
 
-        const std::string& public_abi() const;
-        bool has_package_abi() const;
-        Optional<const std::string&> package_abi() const;
+        const std::string* package_abi() const;
+        const std::string& package_abi_or_exit(LineInfo li) const;
+        ZStringView package_abi_or_empty() const;
         const PreBuildInfo& pre_build_info(LineInfo li) const;
-        Version version() const;
-        std::string display_name() const;
 
-        Optional<const SourceControlFileAndLocation&> source_control_file_and_location;
-        Optional<InstalledPackageView> installed_package;
-        Optional<std::vector<std::string>> default_features;
+        std::vector<PackageSpec> package_dependencies;
 
-        InstallPlanType plan_type;
-        RequestType request_type;
+    private:
+        const SourceControlFileAndLocation* m_source_control_file_and_location;
+
+    public:
+        const SourceControlFileAndLocation& source_control_file_and_location() const noexcept
+        {
+            return *m_source_control_file_and_location;
+        }
+
+        std::vector<std::string> default_features;
+
         UseHeadVersion use_head_version;
         Editable editable;
 
         std::map<std::string, std::vector<FeatureSpec>> feature_dependencies;
-        std::vector<LocalizedString> build_failure_messages;
+        std::vector<DiagnosticLine> dependency_diagnostics;
 
-        // only valid with source_control_file_and_location
         Optional<AbiInfo> abi_info;
-        Optional<Path> package_dir;
+        Path package_dir;
     };
 
     struct NotInstalledAction : BasicAction
@@ -103,7 +122,7 @@ namespace vcpkg
         void print_unsupported_warnings();
 
         std::vector<RemovePlanAction> remove_actions;
-        std::vector<InstallPlanAction> already_installed;
+        std::vector<AlreadyInstalledPlanAction> already_installed;
         std::vector<InstallPlanAction> install_actions;
         std::map<FeatureSpec, PlatformExpression::Expr> unsupported_features;
     };
@@ -119,10 +138,9 @@ namespace vcpkg
 
         ExportPlanAction(const PackageSpec& spec, RequestType request_type);
 
-        ExportPlanType plan_type;
         RequestType request_type;
 
-        Optional<const BinaryParagraph&> core_paragraph() const;
+        const BinaryParagraph* core_paragraph() const;
         std::vector<PackageSpec> dependencies() const;
 
     private:

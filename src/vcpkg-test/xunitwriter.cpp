@@ -7,14 +7,13 @@ using namespace vcpkg;
 TEST_CASE ("Simple XunitWriter", "[xunitwriter]")
 {
     XunitWriter x;
-    time_t time = {0};
     Triplet t = Triplet::from_canonical_name("triplet");
     PackageSpec spec("name", t);
-    x.add_test_results(spec, BuildResult::BuildFailed, {}, std::chrono::system_clock::from_time_t(time), "", {});
+    x.add_test_results(spec, CiResult{BuildResult::BuildFailed, nullopt});
     CHECK(x.build_xml(t) == R"(<?xml version="1.0" encoding="utf-8"?><assemblies>
   <assembly name="name" run-date="1970-01-01" run-time="00:00:00" time="0">
     <collection name="triplet" time="0">
-      <test name="name:triplet" method="name[]:triplet" time="0" result="Fail">
+      <test name="name:triplet" method="name:triplet" time="0" result="Fail">
         <traits>
           <trait name="owner" value="triplet"/>
         </traits>
@@ -29,28 +28,37 @@ TEST_CASE ("Simple XunitWriter", "[xunitwriter]")
 TEST_CASE ("XunitWriter Two", "[xunitwriter]")
 {
     XunitWriter x;
-    time_t time = {0};
+    time_t january_first = {0};
+    time_t january_second = {86400};
+    auto january_first_st = std::chrono::system_clock::from_time_t(january_first);
+    auto january_second_st = std::chrono::system_clock::from_time_t(january_second);
     Triplet t = Triplet::from_canonical_name("triplet");
     Triplet t2 = Triplet::from_canonical_name("triplet2");
     Triplet t3 = Triplet::from_canonical_name("triplet3");
     PackageSpec spec("name", t);
     PackageSpec spec2("name", t2);
     PackageSpec spec3("other", t2);
-    x.add_test_results(spec, BuildResult::Succeeded, {}, std::chrono::system_clock::from_time_t(time), "abihash", {});
     x.add_test_results(
-        spec2, BuildResult::PostBuildChecksFailed, {}, std::chrono::system_clock::from_time_t(time), "", {});
+        spec,
+        CiResult{BuildResult::Succeeded,
+                 CiBuiltResult{"abihash", InternalFeatureSet{"a", "b", "core"}, january_first_st, ElapsedTime{}}});
+    x.add_test_results(spec2, CiResult{BuildResult::PostBuildChecksFailed, nullopt});
     x.add_test_results(
-        spec3, BuildResult::Succeeded, {}, std::chrono::system_clock::from_time_t(time), "", {"core", "feature"});
+        spec3,
+        CiResult{
+            BuildResult::Succeeded,
+            CiBuiltResult{"otherabihash", InternalFeatureSet{"core", "feature"}, january_second_st, ElapsedTime{}}});
     CHECK(x.build_xml(t3) == R"(<?xml version="1.0" encoding="utf-8"?><assemblies>
   <assembly name="name" run-date="1970-01-01" run-time="00:00:00" time="0">
     <collection name="triplet3" time="0">
-      <test name="name:triplet" method="name[]:triplet" time="0" result="Pass">
+      <test name="name:triplet" method="name[a,b,core]:triplet" time="0" result="Pass">
         <traits>
           <trait name="abi_tag" value="abihash"/>
+          <trait name="features" value="a,b,core"/>
           <trait name="owner" value="triplet"/>
         </traits>
       </test>
-      <test name="name:triplet2" method="name[]:triplet2" time="0" result="Fail">
+      <test name="name:triplet2" method="name:triplet2" time="0" result="Fail">
         <traits>
           <trait name="owner" value="triplet2"/>
         </traits>
@@ -58,11 +66,12 @@ TEST_CASE ("XunitWriter Two", "[xunitwriter]")
       </test>
     </collection>
   </assembly>
-  <assembly name="other" run-date="1970-01-01" run-time="00:00:00" time="0">
+  <assembly name="other" run-date="1970-01-02" run-time="00:00:00" time="0">
     <collection name="triplet3" time="0">
       <test name="other:triplet2" method="other[core,feature]:triplet2" time="0" result="Pass">
         <traits>
-          <trait name="features" value="core, feature"/>
+          <trait name="abi_tag" value="otherabihash"/>
+          <trait name="features" value="core,feature"/>
           <trait name="owner" value="triplet2"/>
         </traits>
       </test>

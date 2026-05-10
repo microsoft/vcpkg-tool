@@ -1,0 +1,9 @@
+{
+  "versions": [
+    {
+      "version": "6.0.0.20210925",
+      "port-version": 4,
+      "path": "$/ports/arrow"
+    }
+  ]
+}

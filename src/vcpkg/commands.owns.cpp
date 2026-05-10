@@ -1,9 +1,9 @@
 #include <vcpkg/base/files.h>
 
 #include <vcpkg/commands.owns.h>
+#include <vcpkg/installeddatabase.h>
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
-#include <vcpkg/vcpkglib.h>
 #include <vcpkg/vcpkgpaths.h>
 
 using namespace vcpkg;
@@ -48,7 +48,9 @@ namespace vcpkg
     void command_owns_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const auto parsed = args.parse_arguments(CommandOwnsMetadata);
-        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed());
+        InstalledDatabaseLock installed_lock{
+            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        const StatusParagraphs status_db = database_load(paths.get_filesystem(), paths.installed(), installed_lock);
         search_file(paths.get_filesystem(), paths.installed(), parsed.command_arguments[0], status_db);
         Checks::exit_success(VCPKG_LINE_INFO);
     }

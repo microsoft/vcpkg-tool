@@ -56,7 +56,7 @@ namespace
 
         if (!reparse_matches)
         {
-            Checks::msg_exit_maybe_upgrade(
+            Checks::msg_exit_with_message(
                 VCPKG_LINE_INFO,
                 msg::format(msgMismatchedManifestAfterReserialize)
                     .append_raw(fmt::format("\n=== Original File ===\n{}\n=== Serialized File ===\n{}\n",

@@ -1,0 +1,5 @@
+{
+  "name": "pass-but-marked-fail",
+  "version": "1.0.0",
+  "description": "this port passes but is marked to fail"
+}

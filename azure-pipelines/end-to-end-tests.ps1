@@ -47,11 +47,15 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
 Import-Module Pester -Force -MinimumVersion '5.6.1' -MaximumVersion '5.99'
 
 if ($IsLinux) {
-    $Triplet = 'x64-linux'
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $Triplet = 'arm64-linux'
+    } else {
+        $Triplet = 'x64-linux'
+    }
 } elseif ($IsMacOS) {
-    $Triplet = 'x64-osx'
+    $Triplet = 'arm64-osx'
 } else {
-    $Triplet = 'x86-windows'
+    $Triplet = 'x64-windows'
 }
 
 New-Item -Path $WorkingRoot -ItemType Directory -Force | Out-Null

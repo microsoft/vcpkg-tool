@@ -5,6 +5,7 @@
 #include <vcpkg/base/fwd/span.h>
 
 #include <vcpkg/fwd/dependencies.h>
+#include <vcpkg/fwd/installeddatabase.h>
 #include <vcpkg/fwd/packagespec.h>
 #include <vcpkg/fwd/portfileprovider.h>
 #include <vcpkg/fwd/triplet.h>
@@ -22,24 +23,25 @@ namespace vcpkg::CMakeVars
     {
         virtual ~CMakeVarProvider() = default;
 
-        virtual Optional<const CMakeVars&> get_generic_triplet_vars(Triplet triplet) const = 0;
+        virtual const CMakeVars* get_generic_triplet_vars(Triplet triplet) const = 0;
 
-        virtual Optional<const CMakeVars&> get_dep_info_vars(const PackageSpec& spec) const = 0;
+        virtual const CMakeVars* get_dep_info_vars(const PackageSpec& spec) const = 0;
 
         const CMakeVars& get_or_load_dep_info_vars(const PackageSpec& spec, Triplet host_triplet) const;
 
-        virtual Optional<const CMakeVars&> get_tag_vars(const PackageSpec& spec) const = 0;
+        virtual const CMakeVars* get_tag_vars(const PackageSpec& spec) const = 0;
 
         virtual void load_generic_triplet_vars(Triplet triplet) const = 0;
 
         virtual void load_dep_info_vars(View<PackageSpec> specs, Triplet host_triplet) const = 0;
 
-        virtual void load_tag_vars(View<FullPackageSpec> specs,
-                                   View<Path> port_locations,
-                                   Triplet host_triplet) const = 0;
+        virtual void load_tag_vars(View<FullPackageSpec> specs, Triplet host_triplet) const = 0;
 
-        void load_tag_vars(const ActionPlan& action_plan, Triplet host_triplet) const;
+        void load_tag_vars(const std::vector<InstallPlanAction>& install_actions, Triplet host_triplet) const;
     };
 
-    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths);
+    // Ideally, buildtrees would have its own locks rather than reusing the installed database lock; this behavior
+    // attempts to match previous versions of vcpkg which used one lock on VCPKG_ROOT.
+    std::unique_ptr<CMakeVarProvider> make_triplet_cmake_var_provider(const VcpkgPaths& paths,
+                                                                      const InstallAndBuildDatabaseLock& /* witness */);
 }

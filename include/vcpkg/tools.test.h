@@ -1,11 +1,11 @@
 #pragma once
 
 #include <vcpkg/base/fwd/expected.h>
-#include <vcpkg/base/fwd/fmt.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 #include <vcpkg/base/fwd/system.h>
 
+#include <vcpkg/base/fmt.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/path.h>
 
@@ -47,6 +47,7 @@ namespace vcpkg
         Linux,
         FreeBsd,
         OpenBsd,
+        NetBsd,
         Solaris,
     };
 
@@ -66,7 +67,9 @@ namespace vcpkg
         std::string archiveName;
     };
 
-    ExpectedL<std::vector<ToolDataEntry>> parse_tool_data(StringView contents, StringView origin);
+    Optional<std::vector<ToolDataEntry>> parse_tool_data(DiagnosticContext& context,
+                                                         StringView contents,
+                                                         StringView origin);
 
     const ToolDataEntry* get_raw_tool_data(const std::vector<ToolDataEntry>& tool_data_table,
                                            StringView toolname,

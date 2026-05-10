@@ -1,0 +1,8 @@
+{
+  "name": "static-skipped-cascade-required-to-pass",
+  "version": "1.0.0",
+  "description": "this port depends on a port skipped so it cascades but is marked as needing to pass",
+  "dependencies": [
+    "skip"
+  ]
+}

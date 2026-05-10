@@ -1,0 +1,1 @@
+((x64 & (windows | osx | linux)) | (x86 & windows) | (arm64 & osx)) & !uwp & !static

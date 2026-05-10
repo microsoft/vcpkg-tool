@@ -105,7 +105,11 @@ namespace vcpkg
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
-        extract_tar(find_system_tar(fs).value_or_exit(VCPKG_LINE_INFO), *tarball, vcpkg_root);
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(
+            VCPKG_LINE_INFO,
+            !extract_tar(console_diagnostic_context,
+                         find_system_tar(console_diagnostic_context, fs).value_or_exit(VCPKG_LINE_INFO),
+                         *tarball,
+                         vcpkg_root));
     }
 }

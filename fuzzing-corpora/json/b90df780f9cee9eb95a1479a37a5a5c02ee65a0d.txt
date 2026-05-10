@@ -1,0 +1,13 @@
+{
+  "default-registry": null,
+  "registries": [
+    {
+      "kind": "filesystem",
+      "path": "./vcpkg_registry",
+      "packages": [
+        "arrow",
+        "bloom-filter"
+      ]
+    }
+  ]
+}

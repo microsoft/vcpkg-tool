@@ -1,0 +1,1 @@
+!(uwp | osx | (arm64 & windows))

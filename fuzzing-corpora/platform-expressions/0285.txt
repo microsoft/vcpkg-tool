@@ -1,0 +1,1 @@
+(linux | (windows & !static) | osx) & (x86 | x64 | arm64)

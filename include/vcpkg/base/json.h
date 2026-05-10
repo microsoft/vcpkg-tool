@@ -335,10 +335,11 @@ namespace vcpkg::Json
         JsonStyle style;
     };
 
-    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem&, const Path&, std::error_code& ec);
+    ExpectedL<ParsedJson> parse_file(const ReadOnlyFilesystem& fs, const Path& json_file, std::error_code& ec);
     ExpectedL<ParsedJson> parse(StringView text, StringView origin);
-    ParsedJson parse_file(LineInfo li, const ReadOnlyFilesystem&, const Path&);
+    Optional<ParsedJson> parse(DiagnosticContext& context, StringView text, StringView origin);
     ExpectedL<Json::Object> parse_object(StringView text, StringView origin);
+    Optional<Json::Object> parse_object(DiagnosticContext& context, StringView text, StringView origin);
 
     std::string stringify(const Value&);
     std::string stringify(const Value&, JsonStyle style);

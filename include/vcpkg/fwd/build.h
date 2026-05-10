@@ -9,8 +9,15 @@ namespace vcpkg
         PostBuildChecksFailed,
         FileConflicts,
         CascadedDueToMissingDependencies,
-        Excluded,
+        CascadedDueToSupports,
+        CascadedDueToBaseline,
+        Skipped,
+        SkippedByParentHashes,
+        SkippedByDryRun,
+        SkippedBySkipFailures,
+        Unsupported,
         CacheMissing,
+        Cached,
         Downloaded,
         Removed
     };

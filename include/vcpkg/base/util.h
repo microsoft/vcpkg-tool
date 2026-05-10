@@ -189,15 +189,11 @@ namespace vcpkg::Util
     }
 
     template<class Map, class Key>
-    Optional<const typename Map::mapped_type&> lookup_value(const Map& map, Key&& key)
+    const typename Map::mapped_type* lookup_value(const Map& map, Key&& key)
     {
         const auto it = map.find(static_cast<Key&&>(key));
-        if (it == map.end())
-        {
-            return nullopt;
-        }
-
-        return it->second;
+        if (it == map.end()) return nullptr;
+        return &it->second;
     }
 
     template<class Map, class Key>
@@ -221,10 +217,7 @@ namespace vcpkg::Util
     }
 
     template<class Range, class Func>
-    using FmapRefOut = decltype(std::declval<Func&>()(*std::declval<Range>().begin()));
-
-    template<class Range, class Func>
-    using FmapOut = std::decay_t<FmapRefOut<Range, Func>>;
+    using FmapOut = std::decay_t<decltype(std::declval<Func&>()(*std::declval<Range>().begin()))>;
 
     template<class Range,
              class Func,
@@ -262,28 +255,6 @@ namespace vcpkg::Util
         }
 
         return ret;
-    }
-
-    template<class Range, class Proj, class Out = FmapRefOut<Range, Proj>>
-    Optional<Out> common_projection(Range&& input, Proj&& proj)
-    {
-        const auto last = input.end();
-        auto first = input.begin();
-        if (first == last)
-        {
-            return nullopt;
-        }
-
-        Out prototype = proj(*first);
-        while (++first != last)
-        {
-            if (prototype != proj(*first))
-            {
-                return nullopt;
-            }
-        }
-
-        return prototype;
     }
 
     template<class Cont, class Func>

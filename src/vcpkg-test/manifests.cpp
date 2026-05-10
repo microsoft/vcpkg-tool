@@ -1380,6 +1380,7 @@ TEST_CASE ("licenses with compounds", "[manifests][license]")
 {
     CHECK(license_is_strict("GPL-3.0+ WITH GCC-exception-3.1"));
     CHECK(license_is_strict("Apache-2.0 WITH LLVM-exception"));
+    CHECK(license_is_strict("MIT WITH fmt-exception"));
     CHECK_FALSE(license_is_parsable("(Apache-2.0) WITH LLVM-exception"));
     CHECK(license_is_strict("(Apache-2.0 OR MIT) AND GPL-3.0+ WITH GCC-exception-3.1"));
     CHECK_FALSE(license_is_parsable("Apache-2.0 WITH"));
@@ -1399,6 +1400,7 @@ TEST_CASE ("license serialization", "[manifests][license]")
 
     CHECK(test_serialized_license("MIT") == "MIT");
     CHECK(test_serialized_license("mit") == "MIT");
+    CHECK(test_serialized_license("mit WITH fmt-exception") == "MIT WITH fmt-exception");
     CHECK(test_serialized_license("MiT    AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") == "MIT AND (Apache-2.0 OR GPL-2.0+)");
     CHECK(test_serialized_license("MiT    AND (BsL-1.0) AND (aPACHe-2.0 \tOR   \n gpl-2.0+)") ==
           "MIT AND BSL-1.0 AND (Apache-2.0 OR GPL-2.0+)");

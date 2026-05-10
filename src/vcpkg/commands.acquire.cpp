@@ -35,8 +35,7 @@ namespace vcpkg
         std::vector<std::string> ecmascript_args;
         ecmascript_args.emplace_back("acquire");
         forward_common_artifacts_arguments(ecmascript_args, parsed);
-        auto maybe_versions = Util::lookup_value(parsed.multisettings, SwitchVersion);
-        if (auto versions = maybe_versions.get())
+        if (const auto* versions = Util::lookup_value(parsed.multisettings, SwitchVersion))
         {
             if (versions->size() != parsed.command_arguments.size())
             {

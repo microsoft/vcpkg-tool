@@ -47,7 +47,6 @@ namespace vcpkg
         obj.insert(JsonIdDefaultTriplet, default_triplet.canonical_name());
         obj.insert(JsonIdHostTriplet, host_triplet.canonical_name());
         obj.insert(JsonIdVcpkgRoot, paths.root.native());
-        obj.insert(JsonIdTools, paths.tools.native());
         if (auto ci_env = args.detected_ci_environment_name().get())
         {
             obj.insert(JsonIdDetectedCIEnvironment, *ci_env);

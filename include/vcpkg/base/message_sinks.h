@@ -27,6 +27,19 @@ namespace vcpkg
 
         void print(Color color, StringView text);
         void print(StringView text);
+        void print(Color color, std::string&& text);
+        void print(std::string&& text);
+        template<int N>
+        void print(Color color, const char (&text)[N])
+        {
+            print(color, StringView(text, N - 1));
+        }
+        template<int N>
+        void print(const char (&text)[N])
+        {
+            print(StringView(text, N - 1));
+        }
+
         const std::vector<MessageLineSegment>& get_segments() const noexcept;
 
         std::string to_string() const;

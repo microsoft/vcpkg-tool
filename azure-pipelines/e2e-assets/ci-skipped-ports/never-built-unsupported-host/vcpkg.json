@@ -1,0 +1,20 @@
+{
+  "name": "never-built-unsupported-host",
+  "version": "1",
+  "supports": "!native",
+  "dependencies": [
+    {
+      "name": "never-built-unsupported-host",
+      "default-features": false,
+      "features": [
+        "always-host-feature"
+      ]
+    }
+  ],
+  "features": {
+    "always-host-feature": {
+      "description": "This feature is always unsupported and should not be built.",
+      "supports": "native"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "vcpkg-policy-empty-folders",
+  "version": "1",
+  "features": {
+    "policy": {
+      "description": "enable VCPKG_POLICY_ALLOW_EMPTY_FOLDERS"
+    }
+  }
+}

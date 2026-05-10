@@ -1,3 +1,5 @@
+#include <vcpkg/base/checks.h>
+#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -27,6 +29,7 @@ namespace vcpkg::PlatformExpression
         linux,
         freebsd,
         openbsd,
+        netbsd,
         bsd,
         solaris,
         osx,
@@ -63,6 +66,7 @@ namespace vcpkg::PlatformExpression
             {"linux", Identifier::linux},
             {"freebsd", Identifier::freebsd},
             {"openbsd", Identifier::openbsd},
+            {"netbsd", Identifier::netbsd},
             {"bsd", Identifier::bsd},
             {"solaris", Identifier::solaris},
             {"osx", Identifier::osx},
@@ -123,6 +127,117 @@ namespace vcpkg::PlatformExpression
             {
                 return std::make_unique<ExprImpl>(
                     ExprImpl{kind, identifier, Util::fmap(exprs, [](auto&& p) { return p->clone(); })});
+            }
+
+            bool operator==(const ExprImpl& other) const noexcept
+            {
+                if (kind != other.kind) return false;
+                if (kind == ExprKind::identifier)
+                {
+                    return identifier == other.identifier;
+                }
+                return std::equal(exprs.begin(),
+                                  exprs.end(),
+                                  other.exprs.begin(),
+                                  other.exprs.end(),
+                                  [](const std::unique_ptr<detail::ExprImpl>& lhs,
+                                     const std::unique_ptr<detail::ExprImpl>& rhs) noexcept { return *lhs == *rhs; });
+            }
+
+            bool operator!=(const ExprImpl& other) const { return !(*this == other); }
+
+            void negate()
+            {
+                switch (kind)
+                {
+                    case ExprKind::identifier:
+                    {
+                        exprs.push_back(std::make_unique<ExprImpl>(std::move(*this)));
+                        kind = ExprKind::op_not;
+                        return;
+                    }
+                    case ExprKind::op_not:
+                    {
+                        auto sub_expr = std::move(*exprs.at(0));
+                        *this = std::move(sub_expr);
+                        return;
+                    }
+                    case ExprKind::op_and:
+                    case ExprKind::op_or:
+                    case ExprKind::op_list:
+                    {
+                        kind = (kind == ExprKind::op_and ? ExprKind::op_or : ExprKind::op_and);
+                        for (auto& expr : exprs)
+                        {
+                            expr->negate();
+                        }
+                        return;
+                    }
+                    case ExprKind::op_empty:
+                    case ExprKind::op_invalid: return;
+                }
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
+
+            static void add_if_not_contains(std::vector<std::unique_ptr<ExprImpl>>& exprs,
+                                            std::unique_ptr<ExprImpl>&& new_expr)
+            {
+                if (Util::all_of(exprs, [&](const auto& expr) { return *expr != *new_expr; }))
+                {
+                    exprs.push_back(std::move(new_expr));
+                }
+            }
+
+            static bool is_orish(ExprKind kind) { return kind == ExprKind::op_or || kind == ExprKind::op_list; }
+
+            void simplify()
+            {
+                switch (kind)
+                {
+                    case ExprKind::op_not:
+                    {
+                        exprs.at(0)->simplify();
+                        if (exprs.at(0)->kind == ExprKind::op_not)
+                        {
+                            auto sub_sub_expr = std::move(*exprs.at(0)->exprs.at(0));
+                            *this = std::move(sub_sub_expr);
+                            simplify();
+                        }
+                        return;
+                    }
+                    case ExprKind::op_and:
+                    case ExprKind::op_or:
+                    case ExprKind::op_list:
+                    {
+                        auto old_exprs = std::move(exprs);
+                        for (auto&& expr : old_exprs)
+                        {
+                            expr->simplify();
+                            if ((kind == ExprKind::op_and && expr->kind == ExprKind::op_and) ||
+                                (is_orish(kind) && is_orish(expr->kind)))
+                            {
+                                for (auto&& sub_expr : expr->exprs)
+                                {
+                                    add_if_not_contains(exprs, std::move(sub_expr));
+                                }
+                            }
+                            else
+                            {
+                                add_if_not_contains(exprs, std::move(expr));
+                            }
+                        }
+                        if (exprs.size() == 1)
+                        {
+                            auto sub_expr = std::move(*exprs[0]);
+                            *this = std::move(sub_expr);
+                        }
+                        return;
+                    }
+                    case ExprKind::identifier:
+                    case ExprKind::op_empty:
+                    case ExprKind::op_invalid: return;
+                }
+                Checks::unreachable(VCPKG_LINE_INFO);
             }
         };
 
@@ -570,9 +685,11 @@ namespace vcpkg::PlatformExpression
                         case Identifier::linux: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Linux");
                         case Identifier::freebsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD");
                         case Identifier::openbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
+                        case Identifier::netbsd: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD");
                         case Identifier::bsd:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD") ||
-                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD");
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "NetBSD");
                         case Identifier::solaris: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "SunOS");
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
@@ -666,6 +783,18 @@ namespace vcpkg::PlatformExpression
         return Impl{}(underlying_);
     }
 
+    Expr& Expr::negate()
+    {
+        underlying_->negate();
+        return *this;
+    }
+
+    Expr& Expr::simplify()
+    {
+        underlying_->simplify();
+        return *this;
+    }
+
     ExpectedL<Expr> parse_platform_expression(StringView expression, MultipleBinaryOperators multiple_binary_operators)
     {
         ExpressionParser parser(expression, multiple_binary_operators);
@@ -681,39 +810,11 @@ namespace vcpkg::PlatformExpression
 
     bool structurally_equal(const Expr& lhs, const Expr& rhs)
     {
-        struct Impl
+        if (lhs.underlying_ && rhs.underlying_)
         {
-            bool operator()(const std::unique_ptr<detail::ExprImpl>& lhs,
-                            const std::unique_ptr<detail::ExprImpl>& rhs) const
-            {
-                return (*this)(*lhs, *rhs);
-            }
-            bool operator()(const detail::ExprImpl& lhs, const detail::ExprImpl& rhs) const
-            {
-                if (lhs.kind != rhs.kind) return false;
-
-                if (lhs.kind == ExprKind::identifier)
-                {
-                    return lhs.identifier == rhs.identifier;
-                }
-                else
-                {
-                    const auto& exprs_l = lhs.exprs;
-                    const auto& exprs_r = rhs.exprs;
-                    return std::equal(exprs_l.begin(), exprs_l.end(), exprs_r.begin(), exprs_r.end(), *this);
-                }
-            }
-        };
-
-        if (lhs.is_empty())
-        {
-            return rhs.is_empty();
+            return *lhs.underlying_ == *rhs.underlying_;
         }
-        if (rhs.is_empty())
-        {
-            return false;
-        }
-        return Impl{}(lhs.underlying_, rhs.underlying_);
+        return !lhs.underlying_ && !rhs.underlying_;
     }
 
     int compare(const Expr& lhs, const Expr& rhs)

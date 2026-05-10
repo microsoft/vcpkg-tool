@@ -34,8 +34,15 @@ namespace vcpkg
         const auto parsed = args.parse_arguments(CommandFetchMetadata);
         const bool stderr_status = Util::Sets::contains(parsed.switches, STDERR_STATUS[0].name);
         const std::string tool = parsed.command_arguments[0];
-        const Path& tool_path = paths.get_tool_exe(tool, stderr_status ? stderr_sink : stdout_sink);
-        msg::write_unlocalized_text(Color::none, tool_path.native() + '\n');
-        Checks::exit_success(VCPKG_LINE_INFO);
+        if (const auto* tool_path =
+                paths.get_tool_path(stderr_status ? stderr_diagnostic_context : console_diagnostic_context, tool))
+        {
+            msg::write_unlocalized_text_to_stdout(Color::none, tool_path->native() + '\n');
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+        else
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
     }
 } // namespace vcpkg

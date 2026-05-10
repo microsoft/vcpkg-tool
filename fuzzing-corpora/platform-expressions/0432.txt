@@ -1,0 +1,1 @@
+windows & !uwp & (x64 | x86)
