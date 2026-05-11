@@ -38,6 +38,114 @@ Write-Host $CurrentTest
 Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
+$CurrentTest = "x-add-version --all rewrites baseline"
+Set-Content -LiteralPath "$versionFilesPath/versions/baseline.json" -Value @"
+{
+  "default": {
+    "cat": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dog": {
+      "baseline": "2001-01-01",
+      "port-version": 0
+    },
+    "duck": {
+      "baseline": "mallard",
+      "port-version": 0
+    },
+    "mouse": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    },
+    "stale-entry": {
+      "baseline": "9.9.9",
+      "port-version": 0
+    }
+  }
+}
+"@ -Encoding Ascii -NoNewline
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all
+Throw-IfFailed
+Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
+{
+  "default": {
+    "cat": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dog": {
+      "baseline": "2001-01-01",
+      "port-version": 0
+    },
+    "duck": {
+      "baseline": "mallard",
+      "port-version": 0
+    },
+    "mouse": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    }
+  }
+}
+"@
+
+$CurrentTest = "x-add-version --all creates baseline"
+Remove-Item -LiteralPath "$versionFilesPath/versions/baseline.json"
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all
+Throw-IfFailed
+Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
+{
+  "default": {
+    "cat": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dog": {
+      "baseline": "2001-01-01",
+      "port-version": 0
+    },
+    "duck": {
+      "baseline": "mallard",
+      "port-version": 0
+    },
+    "mouse": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    }
+  }
+}
+"@
+
+$CurrentTest = "x-add-version --all recreates versions directory"
+Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/versions"
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all
+Throw-IfFailed
+Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
+{
+  "default": {
+    "cat": {
+      "baseline": "1.0",
+      "port-version": 0
+    },
+    "dog": {
+      "baseline": "2001-01-01",
+      "port-version": 0
+    },
+    "duck": {
+      "baseline": "mallard",
+      "port-version": 0
+    },
+    "mouse": {
+      "baseline": "1.0.0",
+      "port-version": 0
+    }
+  }
+}
+"@
+Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/versions"
+Copy-Item -Recurse "$versionFilesPathSources/versions" "$versionFilesPath/versions"
+
 $CurrentTest = "x-verify-ci-versions (Incomplete)"
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfNotFailed

@@ -60,7 +60,6 @@
   "AddVersionAddedVersionToFile": "добавлена версия {version} в {path}",
   "AddVersionArtifactsOnly": "--version содержит только артефакты и не может использоваться с портом добавления vcpkg",
   "AddVersionCommitChangesReminder": "Вы не забыли зафиксировать изменения?",
-  "AddVersionFileNotFound": "не удалось найти необходимый файл {path}",
   "AddVersionFormatPortSuggestion": "Выполните \"{command_line}\", чтобы форматировать файл",
   "AddVersionIgnoringOptionAll": "пропуск --{option}, так как указан аргумент имени порта",
   "AddVersionInstructions": "для автоматического добавления текущей версии {package_name} можно выполнить следующие команды:",

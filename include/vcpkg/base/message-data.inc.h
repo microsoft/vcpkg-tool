@@ -43,7 +43,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
 DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
