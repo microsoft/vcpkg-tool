@@ -1213,16 +1213,24 @@ namespace vcpkg
         {
             if (url_template->empty())
             {
-                return true;
+                context.report_error(msgStoreAssetShaWithoutAssetCache, msg::sha = sha512, msg::path = file_to_put);
+                return false;
             }
 
             auto raw_upload_url = Strings::replace_all(*url_template, "<SHA>", sha512);
             SanitizedUrl sanitized_upload_url{raw_upload_url, asset_cache_settings.m_secrets};
-            return store_to_asset_cache(
-                context, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, file_to_put);
+            if (store_to_asset_cache(
+                    context, raw_upload_url, sanitized_upload_url, asset_cache_settings.m_write_headers, file_to_put))
+            {
+                context.statusln(
+                    msg::format(msgStoreAssetSuccess, msg::url = sanitized_upload_url, msg::path = file_to_put));
+                return false;
+            }
+            return true;
         }
 
-        return true;
+        context.report_error(msgStoreAssetShaWithoutAssetCache, msg::sha = sha512, msg::path = file_to_put);
+        return false;
     }
 
     std::string url_encode_spaces(StringView url) { return Strings::replace_all(url, StringLiteral{" "}, "%20"); }
