@@ -652,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[couldn't find required file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[找不到必要的檔案 {path}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionFormatPortSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Run `{command_line}` to format the file]]></Val>
@@ -1125,15 +1116,6 @@
           <Val><![CDATA[an SPDX license expression]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[SPDX 授權運算式]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AnotherInstallationInProgress" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Another installation is in progress on the machine, sleeping 6s before retrying.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[另一個安裝正在機器上進行中，睡眠 6 秒後再試一次。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1635,15 +1617,6 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[所有 MSBuild C++ 專案現在都可將任何已安裝的程式庫透過 #include 納入。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AutomaticLinkingForVS2017AndLater" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visual Studio 2017 和更新版本現在可以將任何已安裝的程式庫透過 #include 納入。系統會自動處理連結。安裝新的程式庫會讓它們立即可供使用。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7344,12 +7317,12 @@
       </Item>
       <Item ItemId=";IntegrateInstallHelpWindows" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Makes installed packages available user-wide. Requires admin privileges on first use]]></Val>
+          <Val><![CDATA[Makes installed packages available to MSBuild C++ projects for the current user]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[讓安裝的套件可供全使用者使用。第一次使用時需要管理員權限]]></Val>
+            <Val><![CDATA[讓目前使用者的 MSBuild C++ 專案可以使用已安裝的套件]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+            <Val><![CDATA[Makes installed packages available user-wide. Requires admin privileges on first use]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -7417,15 +7390,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Enable zsh tab-completion. Non-Windows only.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";IntegrationFailedVS2015" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Integration was not applied for Visual Studio 2015.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[整合並不適用 Visual Studio 2015。]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9913,15 +9877,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Previous integration file was not removed.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[未移除先前的整合檔案。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed with exit code {exit_code}]]></Val>
@@ -10455,15 +10410,6 @@
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[呼叫 {system_api} 失敗，{exit_code} ({error_msg})]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to install system targets file to {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[無法將系統目標檔案安裝到 {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

@@ -652,15 +652,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";AddVersionFileNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[couldn't find required file {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die erforderliche Datei "{path}" wurde nicht gefunden]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";AddVersionFormatPortSuggestion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Run `{command_line}` to format the file]]></Val>
@@ -1125,15 +1116,6 @@
           <Val><![CDATA[an SPDX license expression]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[ein SPDX-Lizenzausdruck]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AnotherInstallationInProgress" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Another installation is in progress on the machine, sleeping 6s before retrying.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Auf dem Computer wird gerade eine andere Installation ausgeführt. 6 Sekunden warten, bevor der Versuch wiederholt wird.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -1635,15 +1617,6 @@
           <Val><![CDATA[All MSBuild C++ projects can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Es ist jetzt möglich, dass alle MSBuild C++-Projekte #include alle installierten Bibliotheken. Die Verknüpfung wird automatisch verarbeitet. Durch die Installation neuer Bibliotheken werden diese sofort verfügbar.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";AutomaticLinkingForVS2017AndLater" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled automatically. Installing new libraries will make them instantly available.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Visual Studio 2017 und höher kann jetzt alle installierten Bibliotheken beinhalten (#include). Die Verknüpfung wird automatisch verarbeitet. Durch die Installation neuer Bibliotheken werden diese sofort verfügbar.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -7344,12 +7317,12 @@
       </Item>
       <Item ItemId=";IntegrateInstallHelpWindows" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Makes installed packages available user-wide. Requires admin privileges on first use]]></Val>
+          <Val><![CDATA[Makes installed packages available to MSBuild C++ projects for the current user]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Stellt installierte Pakete benutzerweit zur Verfügung. Erfordert Administratorrechte bei der ersten Verwendung]]></Val>
+            <Val><![CDATA[Macht installierte Pakete für MSBuild-C++-Projekte für den aktuellen Benutzer verfügbar.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Make installed packages available user-wide. Requires admin privileges on first use.]]></Val>
+            <Val><![CDATA[Makes installed packages available user-wide. Requires admin privileges on first use]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -7417,15 +7390,6 @@
           <Prev Cat="Text">
             <Val><![CDATA[Enable zsh tab-completion. Non-Windows only.]]></Val>
           </Prev>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";IntegrationFailedVS2015" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Integration was not applied for Visual Studio 2015.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die Integration wurde für Visual Studio 2015 nicht angewendet.]]></Val>
-          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9910,15 +9874,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";PreviousIntegrationFileRemains" ItemType="0" PsrId="306" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[Previous integration file was not removed.]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Die vorherige Integrationsdatei wurde nicht entfernt.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed with exit code {exit_code}]]></Val>
@@ -10452,15 +10407,6 @@
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Fehler beim Aufrufen von {system_api}. {exit_code} ({error_msg})]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";SystemTargetsInstallFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[failed to install system targets file to {path}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Fehler beim Installieren der Systemzieldatei {path}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
