@@ -828,11 +828,13 @@ namespace vcpkg
                 continue;
             }
 
-            if (auto iter = Util::find_if(install_plan.install_actions,
-                                          [&known_failures](const auto& install_action) {
-                                              return Util::Sets::contains(
-                                                  known_failures, install_action.package_abi_or_exit(VCPKG_LINE_INFO));
-                                          });
+            if (auto iter =
+                    Util::find_if(install_plan.install_actions,
+                                  [&known_failures, &spec](const auto& install_action) {
+                                      return install_action.spec != spec.package_spec &&
+                                             Util::Sets::contains(known_failures,
+                                                                  install_action.package_abi_or_exit(VCPKG_LINE_INFO));
+                                  });
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
