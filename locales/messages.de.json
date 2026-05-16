@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Aktivieren Sie die Tab-Vervollständigung in bash. Nur Nicht-Windows",
   "IntegrateFishHelp": "Aktivieren Sie die Tab-Vervollständigung in Fish. Nur Nicht-Windows",
   "IntegrateInstallHelpLinux": "Macht installierte Pakete benutzerweit verfügbar",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Macht installierte Pakete für MSBuild-C++-Projekte für den aktuellen Benutzer verfügbar.",
   "IntegrateNonWindowsOnly": "{command_line} ist nur für Nicht-Windows verfügbar und wird auf diesem System nicht unterstützt.",
   "IntegratePowerShellHelp": "Aktivieren Sie die Tab-Vervollständigung in PowerShell. Nur Windows",
   "IntegrateProjectHelp": "Generiert ein verweisendes NuGet-Paket für einzelne Visual Studio-Projektverwendung. Nur Windows",

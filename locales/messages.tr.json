@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "bash sekme tamamlamayı etkinleştirir. Yalnızca Windows olmayanlarda yapılabilir.",
   "IntegrateFishHelp": "fish sekme tamamlamayı etkinleştirir. Yalnızca Windows olmayanlarda yapılabilir.",
   "IntegrateInstallHelpLinux": "Yüklü paketleri kullanıcı genelinde kullanılabilir hale getirir",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Yüklü paketlerin geçerli kullanıcı için MSBuild C++ projelerinde kullanılabilir olmasını sağlar",
   "IntegrateNonWindowsOnly": "{command_line} yalnızca Windows'a özgü değildir ve bu sistemde desteklenmez.",
   "IntegratePowerShellHelp": "PowerShell sekme tamamlamayı etkinleştirir. Yalnızca Windows olanlarda yapılabilir.",
   "IntegrateProjectHelp": "Bireysel Visual Studio projesi kullanımı için referans veren bir NuGet paketi oluşturur. Yalnızca Windows olanlarda yapılabilir.",

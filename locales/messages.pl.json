@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Włącz bash tab-completion. Dotyczy systemu innego niż Windows",
   "IntegrateFishHelp": "Włącz uzupełnianie karty ryby. Dotyczy systemu innego niż Windows",
   "IntegrateInstallHelpLinux": "Udostępnia zainstalowane pakiety dla wszystkich użytkowników",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Udostępnia zainstalowane pakiety dla projektów MSBuild C++ w przypadku bieżącego użytkownika",
   "IntegrateNonWindowsOnly": "{command_line} nie jest przeznaczony tylko dla systemu Windows i nie jest obsługiwany w tym systemie.",
   "IntegratePowerShellHelp": "Włącz uzupełnianie karty programu PowerShell. Dotyczy tylko systemu Windows",
   "IntegrateProjectHelp": "Wygeneruj odwołujący się pakiet NuGet dla pojedynczego użycia projektu programu Visual Studio. Dotyczy tylko systemu Windows",

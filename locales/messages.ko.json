@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "bash 탭 완성을 사용합니다. 비 Windows 전용입니다.",
   "IntegrateFishHelp": "fish 탭 완성을 사용합니다. 비 Windows 전용입니다.",
   "IntegrateInstallHelpLinux": "설치된 패키지를 사용자 전체가 사용할 수 있도록 함",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "현재 사용자에 대해 설치된 패키지를 MSBuild C++ 프로젝트에서 사용할 수 있도록 합니다.",
   "IntegrateNonWindowsOnly": "{command_line}은(는) Windows 전용이 아니므로 이 시스템에서 지원되지 않습니다.",
   "IntegratePowerShellHelp": "PowerShell 탭 완성을 사용합니다. Windows 전용입니다.",
   "IntegrateProjectHelp": "개별 Visual Studio 프로젝트 사용에 대한 참조 NuGet 패키지를 생성합니다. Windows 전용입니다.",

@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "啟用 bash Tab 鍵自動完成。僅限非 Windows",
   "IntegrateFishHelp": "啟用 fish Tab 鍵自動完成。僅限非 Windows",
   "IntegrateInstallHelpLinux": "讓安裝的套件可供全使用者使用",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "讓目前使用者的 MSBuild C++ 專案可以使用已安裝的套件",
   "IntegrateNonWindowsOnly": "{command_line} 非僅限 Windows，而且不支援此系統。",
   "IntegratePowerShellHelp": "啟用 PowerShell Tab 鍵自動完成。僅限 Windows",
   "IntegrateProjectHelp": "產生個別 Visual Studio 專案使用的參考 NuGet 套件。僅限 Windows",

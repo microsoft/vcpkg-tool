@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Включить завершение табуляции bash. Только для систем, отличных от Windows",
   "IntegrateFishHelp": "Включить завершение табуляции fish. Только для систем, отличных от Windows.",
   "IntegrateInstallHelpLinux": "Делает установленные пакеты доступными на уровне пользователя.",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Делает установленные пакеты доступными для проектов C++ в MSBuild текущего пользователя",
   "IntegrateNonWindowsOnly": "{command_line} используется только для систем, отличных от Windows, и не поддерживается в этой системе.",
   "IntegratePowerShellHelp": "Включите заполнение табуляции Windows PowerShell. Только для Windows",
   "IntegrateProjectHelp": "Создает ссылочный пакет NuGet для использования в отдельном проекте Visual Studio. Только для Windows.",

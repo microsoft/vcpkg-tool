@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Povolit dokončování karet bash. Pouze jiný systém než Windows",
   "IntegrateFishHelp": "Povolit dokončování karet fish. Pouze jiný systém než Windows",
   "IntegrateInstallHelpLinux": "Zpřístupní nainstalované balíčky pro všechny uživatele",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Zpřístupní nainstalované balíčky pro projekty MSBuild C++ pro aktuálního uživatele.",
   "IntegrateNonWindowsOnly": "{command_line} je pouze pro jiné systémy než Windows a není na tomto systému podporován.",
   "IntegratePowerShellHelp": "Povolte dokončování karet PowerShellu. Pouze pro Windows",
   "IntegrateProjectHelp": "Vygeneruje odkazující balíček NuGet pro jednotlivé Visual Studio použití projektu. Pouze pro Windows",

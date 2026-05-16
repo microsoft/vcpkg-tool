@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Habilitar la finalización con tabulación de Bash. Solo para usuarios que no son de Windows",
   "IntegrateFishHelp": "Habilitar la finalización de tabulación de pez. Solo para usuarios que no son de Windows",
   "IntegrateInstallHelpLinux": "Hace que los paquetes instalados estén disponibles para todo el usuario",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Hace que los paquetes instalados estén disponibles para los proyectos de C++ de MSBuild para el usuario actual",
   "IntegrateNonWindowsOnly": "{command_line} no es de solo Windows y no se admite en este sistema.",
   "IntegratePowerShellHelp": "Habilite la finalización con tabulación de PowerShell. Solo Windows",
   "IntegrateProjectHelp": "Genera un paquete NuGet de referencia para el uso de proyectos de Visual Studio individuales. Solo Windows",

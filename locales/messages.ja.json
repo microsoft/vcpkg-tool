@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "bash タブ補完を有効にします。Windows 以外のみ",
   "IntegrateFishHelp": "fish タブ補完を有効にします。Windows 以外のみ",
   "IntegrateInstallHelpLinux": "インストールされているパッケージをユーザー全体で利用できるようにします",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "現在のユーザーの MSBuild C++ プロジェクトで、インストールされたパッケージを使用できるようにします",
   "IntegrateNonWindowsOnly": "{command_line} は Windows 以外のみではなく、このシステムではサポートされていません。",
   "IntegratePowerShellHelp": "PowerShell タブ補完を有効にします。Windows のみ",
   "IntegrateProjectHelp": "個々の Visual Studio プロジェクトで使用する参照元の NuGet パッケージを生成します。Windows のみ",

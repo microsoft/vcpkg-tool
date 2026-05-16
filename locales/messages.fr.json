@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Activez la saisie semi-automatique de tabulation Bash. Non-Windows uniquement",
   "IntegrateFishHelp": "Activez la saisie semi-automatique des onglets. Non Windows uniquement",
   "IntegrateInstallHelpLinux": "Rend les packages installés disponibles à l’échelle de l’utilisateur",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Rend les packages installés disponibles pour les projets C++ MSBuild pour l’utilisateur(-trice) actuel(le)",
   "IntegrateNonWindowsOnly": "{command_line} n’est pas Windows uniquement et n’est pas pris en charge sur ce système.",
   "IntegratePowerShellHelp": "Activez la saisie semi-automatique des onglets PowerShell. Windows uniquement",
   "IntegrateProjectHelp": "Génère un package NuGet référençant pour une utilisation de projet Visual Studio individuelle. Windows uniquement",

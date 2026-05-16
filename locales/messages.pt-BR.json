@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Habilite a conclusão de guias bash. Apenas fora do Windows",
   "IntegrateFishHelp": "Habilite a conclusão da guia peixe. Apenas fora do Windows",
   "IntegrateInstallHelpLinux": "Disponibiliza pacotes instalados em todo o usuário",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Disponibiliza os pacotes instalados para projetos C++ do MSBuild para o usuário atual",
   "IntegrateNonWindowsOnly": "{command_line} não é apenas para Windows e não é compatível com este sistema.",
   "IntegratePowerShellHelp": "Habilite a conclusão de guias do PowerShell. Somente Windows",
   "IntegrateProjectHelp": "Gera um pacote NuGet de referência para uso individual do projeto do Visual Studio. Somente Windows",
