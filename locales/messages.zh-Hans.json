@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "启用 bash Tab-completion。仅限非 Windows",
   "IntegrateFishHelp": "启用 fish 选项卡补全。仅限非 Windows",
   "IntegrateInstallHelpLinux": "使已安装的包在用户范围内可用",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "将已安装的包设为可用于当前用户的 MSBuild C++ 项目",
   "IntegrateNonWindowsOnly": "{command_line} 仅限非 Windows，在此系统上不受支持。",
   "IntegratePowerShellHelp": "启用 PowerShell 选项卡补全。仅限 Windows",
   "IntegrateProjectHelp": "为单个 Visual Studio 项目使用生成引用 NuGet 包。仅限 Windows",

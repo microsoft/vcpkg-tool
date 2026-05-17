@@ -695,7 +695,7 @@
   "IntegrateBashHelp": "Abilitare il completamento tramite tabulazione bash. Solo non Windows",
   "IntegrateFishHelp": "Abilitare il completamento tramite tabulazione fish. Solo non Windows",
   "IntegrateInstallHelpLinux": "Rende disponibili i pacchetti installati a livello di utente",
-  "IntegrateInstallHelpWindows": "Makes installed packages available to MSBuild C++ projects for the current user",
+  "IntegrateInstallHelpWindows": "Rende i pacchetti installati disponibili ai progetti C++ di MSBuild per l'utente corrente",
   "IntegrateNonWindowsOnly": "{command_line} non è solo Windows e non è supportato in questo sistema.",
   "IntegratePowerShellHelp": "Abilitare il completamento tramite tabulazione di PowerShell. Solo Windows",
   "IntegrateProjectHelp": "Genera un pacchetto NuGet di riferimento per l'uso di singoli progetti Visual Studio. Solo Windows",
