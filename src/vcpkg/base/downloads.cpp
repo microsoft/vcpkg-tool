@@ -1224,9 +1224,9 @@ namespace vcpkg
             {
                 context.statusln(
                     msg::format(msgStoreAssetSuccess, msg::url = sanitized_upload_url, msg::path = file_to_put));
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
 
         context.report_error(msgStoreAssetShaWithoutAssetCache, msg::sha = sha512, msg::path = file_to_put);

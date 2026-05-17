@@ -2819,7 +2819,7 @@ DECLARE_MESSAGE(StartingFeatureTest,
 DECLARE_MESSAGE(StoreAssetShaWithoutAssetCache,
                 (msg::sha, msg::path),
                 "",
-                "requested store of asset cache entry {sha} -> {path}, but no asset cache write URL is configured")
+                "requested store of asset cache entry {sha} -> {path}, but no writable asset cache is configured")
 DECLARE_MESSAGE(StoreAssetSuccess, (msg::url, msg::path), "", "stored {path} in asset cache at {url}")
 DECLARE_MESSAGE(StoreUsingSha, (msg::sha), "", "Using {sha} to store entry in asset cache")
 DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
