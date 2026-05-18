@@ -2809,7 +2809,12 @@ DECLARE_MESSAGE(StartingFeatureTest,
                 (msg::value, msg::feature_spec),
                 "{value} is the position in the run, for example '1/4'",
                 "Feature Test [{value}] {feature_spec}")
-DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(StoreAssetShaWithoutAssetCache,
+                (msg::sha, msg::path),
+                "",
+                "requested store of asset cache entry {sha} -> {path}, but no writable asset cache is configured")
+DECLARE_MESSAGE(StoreAssetSuccess, (msg::url, msg::path), "", "stored {path} in asset cache at {url}")
+DECLARE_MESSAGE(StoreUsingSha, (msg::sha), "", "Using {sha} to store entry in asset cache")
 DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
                 (msg::spec, msg::count),
                 "",

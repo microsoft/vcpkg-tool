@@ -101,12 +101,6 @@ namespace vcpkg
         // Is this a store command?
         if (Util::Sets::contains(parsed.switches, SwitchStore))
         {
-            auto hash = sha.get();
-            if (!hash)
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgStoreOptionMissingSha);
-            }
-
             auto s = fs.status(file, VCPKG_LINE_INFO);
             if (s != FileType::regular)
             {
@@ -114,7 +108,12 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO);
             }
             auto actual_hash = Hash::get_file_hash(fs, file, Hash::Algorithm::Sha512).value_or_exit(VCPKG_LINE_INFO);
-            if (!Strings::case_insensitive_ascii_equals(*hash, actual_hash))
+            auto hash = sha.get();
+            if (!hash)
+            {
+                msg::println(msgStoreUsingSha, msg::sha = actual_hash);
+            }
+            else if (!Strings::case_insensitive_ascii_equals(*hash, actual_hash))
             {
                 msg::println_error(msgMismatchedFiles);
                 Checks::unreachable(VCPKG_LINE_INFO);
