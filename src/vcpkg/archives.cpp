@@ -80,7 +80,7 @@ namespace
                        .string_arg(to_path)
                        .string_arg("-Source")
                        .string_arg(archive.parent_path())
-                       .string_arg("-nocache")
+                       .string_arg("-NoHttpCache")
                        .string_arg("-DirectDownload")
                        .string_arg("-NonInteractive")
                        .string_arg("-ForceEnglishOutput")
