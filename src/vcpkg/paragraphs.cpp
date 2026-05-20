@@ -426,8 +426,7 @@ namespace vcpkg::Paragraphs
                                   manifest_contents};
         }
 
-        auto manifest_exists = ec != std::errc::no_such_file_or_directory;
-        if (manifest_exists)
+        if (!is_not_found_errc(ec))
         {
             return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
                                       .append_raw(": ")
@@ -448,7 +447,7 @@ namespace vcpkg::Paragraphs
                                   control_contents};
         }
 
-        if (ec != std::errc::no_such_file_or_directory)
+        if (!is_not_found_errc(ec))
         {
             return PortLoadResult{LocalizedString::from_raw(port_location.port_directory)
                                       .append_raw(": ")

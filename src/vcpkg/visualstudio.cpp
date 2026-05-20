@@ -144,11 +144,12 @@ namespace vcpkg::VisualStudio
 
         const auto maybe_append_comntools = [&](ZStringView env_var, ZStringView version, bool check_cl = true) {
             auto maybe_comntools = get_environment_variable(env_var);
-            if (const auto path_as_string = maybe_comntools.get())
+            const auto pcomntools = maybe_comntools.get();
+            if (pcomntools && !pcomntools->empty())
             {
                 // We want lexically_normal(), but it is not available
                 // Correct root path might be 2 or 3 levels up, depending on if the path has trailing backslash.
-                Path common7_tools = *path_as_string;
+                Path common7_tools = std::move(*pcomntools);
                 if (common7_tools.filename().empty())
                 {
                     common7_tools = common7_tools.parent_path();

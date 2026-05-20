@@ -179,9 +179,10 @@ namespace vcpkg
         // Scope to prevent use of moved-from variable
         {
             auto maybe_editor_path = get_environment_variable(EnvironmentVariableEditor);
-            if (std::string* editor_path = maybe_editor_path.get())
+            const auto peditor_path = maybe_editor_path.get();
+            if (peditor_path && !peditor_path->empty())
             {
-                candidate_paths.emplace_back(std::move(*editor_path));
+                candidate_paths.emplace_back(std::move(*peditor_path));
             }
         }
 
@@ -203,10 +204,11 @@ namespace vcpkg
             candidate_paths.push_back(*pf / VS_CODE);
         }
 
-        auto app_data = get_environment_variable(EnvironmentVariableAppData);
-        if (auto* ad = app_data.get())
+        auto maybe_app_data = get_environment_variable(EnvironmentVariableAppData);
+        const auto papp_data = maybe_app_data.get();
+        if (papp_data && !papp_data->empty())
         {
-            Path default_base = std::move(*ad);
+            Path default_base = std::move(*papp_data);
             default_base.replace_filename("Local\\Programs");
             candidate_paths.push_back(default_base / VS_CODE_INSIDERS);
             candidate_paths.push_back(std::move(default_base) / VS_CODE);

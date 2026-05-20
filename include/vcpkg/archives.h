@@ -22,7 +22,6 @@ namespace vcpkg
         Zip,
         SevenZip,
         Nupkg,
-        Msi,
         Exe,
         SelfExtracting7z
     };

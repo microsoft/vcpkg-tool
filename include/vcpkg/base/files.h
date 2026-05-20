@@ -27,6 +27,8 @@
 
 namespace vcpkg
 {
+    bool is_not_found_errc(const std::error_code& ec) noexcept;
+
     LocalizedString format_filesystem_call_error(const std::error_code& ec,
                                                  StringView call_name,
                                                  std::initializer_list<StringView> args);

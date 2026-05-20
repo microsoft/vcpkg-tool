@@ -1,0 +1,21 @@
+{
+  "name": "vcpkg-self-fail",
+  "version": "0",
+  "features": {
+    "depends-on-self": {
+      "description": "Depends on the other feature, mirroring cpprestsdk[brotli] depending on cpprestsdk[compression]",
+      "dependencies": [
+        {
+          "name": "vcpkg-self-fail",
+          "default-features": false,
+          "features": [
+            "other"
+          ]
+        }
+      ]
+    },
+    "other": {
+      "description": "Some other feature"
+    }
+  }
+}

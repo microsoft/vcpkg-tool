@@ -66,7 +66,8 @@ namespace vcpkg
         msg::println(msgLocalPortfileVersion);
 
         auto& fs = paths.get_filesystem();
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         const StatusParagraphs status_db = database_load(fs, paths.installed(), installed_lock);
 
         auto registry_set = paths.make_registry_set();
