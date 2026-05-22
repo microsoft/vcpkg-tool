@@ -10324,11 +10324,29 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";StoreOptionMissingSha" ItemType="0" PsrId="306" Leaf="true">
+      <Item ItemId=";StoreAssetShaWithoutAssetCache" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--store option is invalid without a sha512]]></Val>
+          <Val><![CDATA[requested store of asset cache entry {sha} -> {path}, but no writable asset cache is configured]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[L'opzione --store non è valida senza sha512]]></Val>
+            <Val><![CDATA[è stato richiesto l'archivio della voce della cache delle risorse {sha} -> {path}, ma non è configurata alcuna cache delle risorse scrivibile]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StoreAssetSuccess" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[stored {path} in asset cache at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[archiviato {path} nella cache delle risorse in {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";StoreUsingSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Using {sha} to store entry in asset cache]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Uso di {sha} per archiviare la voce nella cache delle risorse]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
