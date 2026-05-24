@@ -30,6 +30,24 @@ Require-FileExists "$installRoot/$Triplet/include/hello-1.h"
 Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
 Require-FileExists "$buildtreesRoot/detect_compiler"
 
+# Test --skip-install-if-cached
+$manifestDir = Join-Path $TestingRoot "skip-install-if-cached-manifest"
+$manifestJson = @{
+    name = "skip-install-if-cached-test"
+    version = "1.0.0"
+    dependencies = @("vcpkg-hello-world-1", "vcpkg-cmake", "vcpkg-cmake-config")
+} | ConvertTo-Json
+New-Item -Path $manifestDir -ItemType Directory | Out-Null
+Set-Content -LiteralPath (Join-Path $manifestDir "vcpkg.json") -Value $manifestJson -Encoding Ascii
+
+Remove-Item -Recurse -Force $installRoot
+Remove-Item -Recurse -Force $buildtreesRoot
+$output = Run-VcpkgAndCaptureOutput @($commonArgs + @("install", "--x-manifest-root=$manifestDir", "--skip-install-if-cached", "--x-binarysource=clear;files,$ArchiveRoot,read"))
+Throw-IfFailed
+Throw-IfNonContains -Actual $output -Expected "All packages already exist in the binary cache. Installation skipped."
+Require-FileNotExists "$installRoot/$Triplet/include/hello-1.h"
+Require-FileNotExists "$buildtreesRoot/vcpkg-hello-world-1/src"
+
 # Test --no-binarycaching
 Remove-Item -Recurse -Force $installRoot
 Remove-Item -Recurse -Force $buildtreesRoot
