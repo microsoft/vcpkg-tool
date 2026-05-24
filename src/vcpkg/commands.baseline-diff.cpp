@@ -92,8 +92,8 @@ namespace vcpkg
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingManifestFile);
         }
         auto options = args.parse_arguments(CommandBaselineDiffMetadata);
-        check_for_valid_sha(options.command_arguments.at(0));
-        check_for_valid_sha(options.command_arguments.at(1));
+        check_for_valid_sha(options.command_arguments[0]);
+        check_for_valid_sha(options.command_arguments[1]);
 
         auto& fs = paths.get_filesystem();
         InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
@@ -111,17 +111,17 @@ namespace vcpkg
         auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
         ActionPlan plan[2];
-        for (int i = 0; i < 2; ++i)
+        for (size_t i = 0; i < 2; ++i)
         {
             if (auto default_reg = configuration.config.default_reg.get())
             {
-                default_reg->baseline = options.command_arguments.at(i);
+                default_reg->baseline = options.command_arguments[i];
             }
             else
             {
                 RegistryConfig synthesized_registry;
                 synthesized_registry.kind = JsonIdBuiltin.to_string();
-                synthesized_registry.baseline = options.command_arguments.at(i);
+                synthesized_registry.baseline = options.command_arguments[i];
                 configuration.config.default_reg.emplace(synthesized_registry);
             }
 
