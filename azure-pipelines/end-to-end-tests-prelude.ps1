@@ -9,6 +9,24 @@ $VersionFilesRoot = Join-Path $TestingRoot 'version-test'
 $TestDownloadsRoot = Join-Path $TestingRoot 'downloads'
 $AssetCache = Join-Path $TestingRoot 'asset-cache'
 
+if ($IsLinux) {
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $HostTriplet = 'arm64-linux'
+    } else {
+        $HostTriplet = 'x64-linux'
+    }
+} elseif ($IsMacOS) {
+    $HostTriplet = 'arm64-osx'
+} else {
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $HostTriplet = 'arm64-windows'
+    } else {
+        $HostTriplet = 'x64-windows'
+    }
+}
+
+$HostE2ETriplet = "$HostTriplet-e2e"
+
 $tripletFile = "$env:VCPKG_ROOT/triplets/$Triplet.cmake";
 if (-not (Test-Path $tripletFile)) {
     $tripletFile = "$env:VCPKG_ROOT/triplets/community/$Triplet.cmake"
