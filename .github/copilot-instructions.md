@@ -7,9 +7,14 @@
 - Build: `cmake --build --preset windows-ci -- -k0`
 - Run tests: `ctest --preset windows-ci --output-on-failure`
 
+### Windows local development
+- Use `Win-arm64-Debug-WithArtifacts` on Windows Arm64 hosts.
+- Use `Win-x64-Debug-WithArtifacts` on Windows x64 hosts.
+- Prefer these host-matching `WithArtifacts` presets for normal local configure, build, and test workflows instead of `windows-ci`.
+
 ### Run a single test
-- Run one CTest target: `ctest --preset windows-ci -R "^vcpkg-test$" --output-on-failure`
-- Run specific Catch2 tests directly: `.\out\build\windows-ci\vcpkg-test.exe [tag-or-filter]`
+- Run one CTest target: `ctest --preset Win-arm64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure` or `ctest --preset Win-x64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure`
+- Run specific Catch2 tests directly: `.\out\build\Win-arm64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]` or `.\out\build\Win-x64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]`
   - Tags follow the source filename convention (for example `[arguments]`).
 - Run one e2e suite: `pwsh azure-pipelines/end-to-end-tests.ps1 -Filter "<suite-file-name-without-.ps1>"`
 
@@ -21,8 +26,8 @@
 
 ### Formatting / checks
 - C++ format check path used in PR workflow: `pwsh .\azure-pipelines\Format-CxxCode.ps1`
-- Regenerate message map: `cmake --build --preset windows-ci --target generate-message-map -- -k0`
-- Verify message usage: `cmake --build --preset windows-ci --target verify-messages -- -k0`
+- Regenerate message map: `cmake --build --preset Win-arm64-Debug-WithArtifacts --target generate-message-map -- -k0` or `cmake --build --preset Win-x64-Debug-WithArtifacts --target generate-message-map -- -k0`
+- Verify message usage: `cmake --build --preset Win-arm64-Debug-WithArtifacts --target verify-messages -- -k0` or `cmake --build --preset Win-x64-Debug-WithArtifacts --target verify-messages -- -k0`
 
 ### vcpkg-artifacts (TypeScript) checks
 - Install deps: `npm --prefix .\vcpkg-artifacts ci`

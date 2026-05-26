@@ -3152,7 +3152,7 @@ DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
 DECLARE_MESSAGE(VcpkgCeIsExperimental,
                 (),
                 "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
-                "vcpkg-artifacts is experimental and may change at any time.")
+                "vcpkg artifacts will be removed shortly after July 1, 2026.")
 DECLARE_MESSAGE(
     VcpkgCompletion,
     (msg::value, msg::path),
