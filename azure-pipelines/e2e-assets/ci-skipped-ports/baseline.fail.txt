@@ -3,6 +3,7 @@ always-skip:arm64-linux=skip
 always-skip:arm64-osx=skip
 always-skip:x64-linux=skip
 always-skip:x64-windows=skip
+always-skip:arm64-windows=skip
 always-skip:x86-windows=skip
 
 # not skipping maybe-skip for "cross" triplet
@@ -11,4 +12,5 @@ maybe-skip:arm64-osx=skip
 maybe-skip:arm64-windows=skip
 maybe-skip:x64-linux=skip
 maybe-skip:x64-windows=skip
+maybe-skip:arm64-windows=skip
 maybe-skip:x86-windows=skip
