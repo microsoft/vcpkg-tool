@@ -240,7 +240,7 @@ Throw-IfFailed
 Throw-IfNonContains -Actual $Output -Expected 'Building shared-dependency[core,default-feature,depended-on-by-fail,depended-on-by-normal]:cross@1.0.0...'
 Throw-IfNonContains -Actual $Output -Expected 'Building host-dependency:cross@1.0.0...'
 Throw-IfNonContains -Actual $Output -Expected "Building fail-port:cross@1.0.0..."
-Throw-IfNonContains -Actual $Output -Expected "Building host-dependency:$Triplet@1.0.0..."
+Throw-IfNonContains -Actual $Output -Expected "Building host-dependency:$($Triplet)@1.0.0..."
 Throw-IfContains -Actual $Output -Expected "Building skip-port"
 Throw-IfContains -Actual $Output -Expected "Building skip-port-host"
 Throw-IfContains -Actual $Output -Expected "fail-port:$($Triplet):"

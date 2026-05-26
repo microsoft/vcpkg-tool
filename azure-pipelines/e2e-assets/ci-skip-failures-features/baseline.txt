@@ -5,5 +5,6 @@ skip-port-host:cross=skip
 skip-port-host:arm64-osx=skip
 skip-port-host:x64-linux=skip
 skip-port-host:arm64-linux=skip
+skip-port-host:arm64-windows=skip
 skip-port-host:x64-windows=skip
 skip-port-host:x86-windows=skip

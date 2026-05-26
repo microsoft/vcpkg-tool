@@ -49,13 +49,24 @@ Import-Module Pester -Force -MinimumVersion '5.6.1' -MaximumVersion '5.99'
 if ($IsLinux) {
     if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
         $Triplet = 'arm64-linux'
+        $TripletStatic = 'arm64-linux'
     } else {
         $Triplet = 'x64-linux'
+        $TripletStatic = 'x64-linux'
     }
 } elseif ($IsMacOS) {
     $Triplet = 'arm64-osx'
+    $TripletStatic = 'arm64-osx'
 } else {
-    $Triplet = 'x64-windows'
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') {
+        $Triplet = 'arm64-windows'
+        $TripletStatic = 'arm64-windows-static'
+        $TripletUwp = 'arm64-uwp'
+    } else {
+        $Triplet = 'x64-windows'
+        $TripletStatic = 'x64-windows-static'
+        $TripletUwp = 'x64-uwp'
+    }
 }
 
 New-Item -Path $WorkingRoot -ItemType Directory -Force | Out-Null
