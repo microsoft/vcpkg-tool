@@ -27,6 +27,7 @@ namespace
         {SwitchKeepGoing, msgHelpTxtOptKeepGoing},
         {SwitchEnforcePortChecks, msgHelpTxtOptEnforcePortChecks},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
+        {SwitchSkipInstallIfCached, msgHelpTxtOptSkipInstallIfCached},
     };
 
     constexpr CommandSetting INSTALL_SETTINGS[] = {
@@ -190,7 +191,8 @@ namespace vcpkg
                                            DryRun dry_run,
                                            PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
-                                           bool include_manifest_in_github_issue)
+                                           bool include_manifest_in_github_issue,
+                                           bool skip_install_if_cached)
     {
         auto& fs = paths.get_filesystem();
 
@@ -254,7 +256,6 @@ namespace vcpkg
         paths.flush_lockfile();
 
         track_install_plan(action_plan);
-        install_preclear_plan_packages(paths, action_plan);
 
         BinaryCache binary_cache(fs);
         if (build_options.only_downloads == OnlyDownloads::No)
@@ -265,7 +266,21 @@ namespace vcpkg
             }
         }
 
+        if (skip_install_if_cached)
+        {
+            auto install_actions =
+                Util::fmap(action_plan.install_actions, [](const InstallPlanAction& action) { return &action; });
+            auto availability = binary_cache.precheck(console_diagnostic_context, fs, install_actions);
+            if (Util::all_of(availability,
+                             [](CacheAvailability state) { return state == CacheAvailability::available; }))
+            {
+                msg::println(msgPackagesCached);
+                Checks::exit_success(VCPKG_LINE_INFO);
+            }
+        }
+        install_preclear_plan_packages(paths, action_plan);
         binary_cache.fetch(console_diagnostic_context, fs, action_plan.install_actions);
+
         const auto summary = install_execute_plan(args,
                                                   paths,
                                                   host_triplet,
@@ -343,6 +358,7 @@ namespace vcpkg
         const auto prohibit_backcompat_features = Util::Sets::contains(options.switches, SwitchEnforcePortChecks)
                                                       ? BackcompatFeatures::Prohibit
                                                       : BackcompatFeatures::Allow;
+        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
 
         const BuildPackageOptions build_options{
             BuildMissing::Yes,
@@ -398,6 +414,7 @@ namespace vcpkg
             Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
             Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
             pkgsconfig,
-            false);
+            false,
+            skip_install_if_cached);
     }
 } // namespace vcpkg
