@@ -181,7 +181,6 @@ namespace vcpkg
 
         if (!configuration.default_reg.has_value())
         {
-            // fill out the default baseline if we don't have one yet
             auto maybe_current_builtin_sha = paths.get_current_git_sha();
             if (auto current_builtin_sha = maybe_current_builtin_sha.get())
             {
@@ -191,17 +190,6 @@ namespace vcpkg
                 default_registry.baseline.emplace(*current_builtin_sha);
                 configuration.default_reg.emplace(std::move(default_registry));
             }
-        }
-
-        if (configuration.registries.empty())
-        {
-            // fill out default registries if there aren't any
-            RegistryConfig default_ms_registry;
-            default_ms_registry.kind.emplace(JsonIdArtifact);
-            default_ms_registry.name.emplace(JsonIdMicrosoft);
-            default_ms_registry.location.emplace(
-                "https://github.com/microsoft/vcpkg-ce-catalog/archive/refs/heads/main.zip");
-            configuration.registries.emplace_back(std::move(default_ms_registry));
         }
 
         if (option_single_file)

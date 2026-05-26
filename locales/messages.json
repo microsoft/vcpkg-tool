@@ -1639,7 +1639,7 @@
   "VSExaminedInstances": "The following Visual Studio instances were considered:",
   "VSExaminedPaths": "The following paths were examined for Visual Studio instances:",
   "VSNoInstances": "Could not locate a complete Visual Studio instance",
-  "VcpkgCeIsExperimental": "vcpkg-artifacts is experimental and may change at any time.",
+  "VcpkgCeIsExperimental": "vcpkg artifacts will be removed shortly after July 1, 2026.",
   "_VcpkgCeIsExperimental.comment": "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
   "VcpkgCompletion": "vcpkg {value} completion is already imported to your \"{path}\" file.\nThe following entries were found:",
   "_VcpkgCompletion.comment": "'{value}' is the subject for completion. i.e. bash, zsh, etc. An example of {path} is /foo/bar.",
