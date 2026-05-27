@@ -146,8 +146,6 @@ namespace vcpkg
     // NOTE: New metric names should use `_` instead of `-` to simplify query syntax.
     const constexpr StringMetricEntry all_string_metrics[static_cast<size_t>(StringMetric::COUNT)] = {
         // registryUri:id:version,...
-        {StringMetric::AcquiredArtifacts, "acquired_artifacts", plan_example},
-        {StringMetric::ActivatedArtifacts, "activated_artifacts", plan_example},
         {StringMetric::CiOwnerId, "ci_owner_id", "0"},
         {StringMetric::CiProjectId, "ci_project_id", "0"},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},

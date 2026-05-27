@@ -26,23 +26,69 @@ BeforeAll {
 
     $VcpkgPredefined = @{
         CommandList         = @(
-            'acquire_project', 'acquire', 'activate', 'add', 'create', 'deactivate', 'depend-info', 'edit', 'env'
-            'export', 'fetch', 'find', 'format-feature-baseline', 'format-manifest', 'hash', 'help', 'install', 'integrate',
-            'license-report', 'list', 'new', 'owns', 'portsdiff', 'remove', 'search', 'update', 'upgrade', 'use', 'version',
-            'x-add-version', 'x-check-support', 'x-init-registry', 'x-package-info', 'x-regenerate', 'x-set-installed',
-            'x-test-features', 'x-update-baseline', 'x-update-registry', 'x-vsinstances'
+            'add'
+            'create'
+            'depend-info'
+            'edit'
+            'env'
+            'export'
+            'fetch'
+            'find'
+            'format-feature-baseline'
+            'format-manifest'
+            'hash'
+            'help'
+            'install'
+            'integrate'
+            'license-report'
+            'list'
+            'new'
+            'owns'
+            'portsdiff'
+            'remove'
+            'search'
+            'update'
+            'upgrade'
+            'version'
+            'x-add-version'
+            'x-check-support'
+            'x-init-registry'
+            'x-package-info'
+            'x-set-installed'
+            'x-test-features'
+            'x-update-baseline'
+            'x-vsinstances'
         )
         CommonParameterList = @()
         CommandOptionList   = @{
             install = @(
-                '--allow-unsupported', '--clean-after-build', '--clean-buildtrees-after-build'
-                '--clean-downloads-after-build', '--clean-packages-after-build', '--dry-run', '--editable'
-                '--enforce-port-checks', '--head', '--keep-going', '--no-downloads', '--no-print-usage'
-                '--only-binarycaching', '--only-downloads', '--recurse', '--x-feature', '--x-no-default-features'
-                '--x-prohibit-backcompat-features', '--x-write-nuget-packages-config', '--x-xunit', '--skip-install-if-cached'
+                '--allow-unsupported'
+                '--clean-after-build'
+                '--clean-buildtrees-after-build'
+                '--clean-downloads-after-build'
+                '--clean-packages-after-build'
+                '--dry-run'
+                '--editable'
+                '--enforce-port-checks'
+                '--head'
+                '--keep-going'
+                '--no-downloads'
+                '--no-print-usage'
+                '--only-binarycaching'
+                '--only-downloads'
+                '--recurse'
+                '--x-feature'
+                '--x-no-default-features'
+                '--x-prohibit-backcompat-features'
+                '--x-write-nuget-packages-config'
+                '--x-xunit'
+                '--skip-install-if-cached'
             )
             remove  = @(
-                '--dry-run', '--outdated', '--purge', '--recurse'
+                '--dry-run'
+                '--outdated'
+                '--purge'
+                '--recurse'
             )
         }
     }

@@ -1,6 +1,7 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/checks.h>
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
 #include <vcpkg/base/messages.h>
@@ -8,7 +9,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.add.h>
-#include <vcpkg/configure-environment.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
@@ -22,12 +22,12 @@ namespace vcpkg
     constexpr CommandMetadata CommandAddMetadata{
         "add",
         msgCmdAddSynopsis,
-        {msgCmdAddExample1, "vcpkg add port png", msgCmdAddExample2, "vcpkg add artifact cmake"},
+        {msgCmdAddExample1, "vcpkg add port png"},
         Undocumented,
         AutocompletePriority::Public,
         2,
         SIZE_MAX,
-        {{}, CommonSelectArtifactVersionSettings},
+        {},
         nullptr,
     };
 
@@ -39,27 +39,7 @@ namespace vcpkg
 
         if (selector == "artifact")
         {
-            Checks::msg_check_exit(VCPKG_LINE_INFO,
-                                   parsed.command_arguments.size() <= 2,
-                                   msgAddArtifactOnlyOne,
-                                   msg::command_line = "vcpkg add artifact");
-
-            auto& artifact_name = parsed.command_arguments[1];
-            auto artifact_hash = Hash::get_string_hash(artifact_name, Hash::Algorithm::Sha256);
-            metrics.track_string(StringMetric::CommandContext, "artifact");
-            metrics.track_string(StringMetric::CommandArgs, artifact_hash);
-            get_global_metrics_collector().track_submission(std::move(metrics));
-
-            std::vector<std::string> ecmascript_args;
-            ecmascript_args.emplace_back("add");
-            ecmascript_args.emplace_back(artifact_name);
-            if (const auto* version = Util::lookup_value(parsed.settings, SwitchVersion))
-            {
-                ecmascript_args.emplace_back("--version");
-                ecmascript_args.emplace_back(*version);
-            }
-
-            Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ecmascript_args));
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgArtifactsHasBeenRemoved);
         }
 
         if (selector == "port")
@@ -72,11 +52,6 @@ namespace vcpkg
                     msg::format(msgAddPortRequiresManifest, msg::command_line = "vcpkg add port")
                         .append_raw('\n')
                         .append(msgSeeURL, msg::url = docs::add_command_url));
-            }
-
-            if (Util::Maps::contains(parsed.settings, SwitchVersion))
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgAddVersionArtifactsOnly);
             }
 
             std::vector<ParsedQualifiedSpecifier> specs;

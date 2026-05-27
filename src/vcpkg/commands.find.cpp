@@ -6,7 +6,6 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.find.h>
-#include <vcpkg/configure-environment.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
@@ -104,26 +103,6 @@ namespace
         {SwitchXFullDesc, msgHelpTextOptFullDesc},
         {SwitchXJson, msgJsonSwitch},
     };
-
-    void perform_find_artifact_and_exit(const VcpkgPaths& paths,
-                                        Optional<StringView> filter,
-                                        Optional<StringView> version)
-    {
-        std::vector<std::string> ce_args;
-        ce_args.emplace_back("find");
-        if (auto* filter_str = filter.get())
-        {
-            ce_args.emplace_back(filter_str->data(), filter_str->size());
-        }
-
-        if (auto v = version.get())
-        {
-            ce_args.emplace_back("--version");
-            ce_args.emplace_back(*v);
-        }
-
-        Checks::exit_with_code(VCPKG_LINE_INFO, run_configure_environment_command(paths, ce_args));
-    }
 } // unnamed namespace
 
 namespace vcpkg
@@ -210,17 +189,12 @@ namespace vcpkg
     constexpr CommandMetadata CommandFindMetadata{
         "find",
         msgCmdFindSynopsis,
-        {
-            msgCmdFindExample1,
-            "vcpkg find port png",
-            msgCmdFindExample2,
-            "vcpkg find artifact cmake",
-        },
+        {msgCmdFindExample1, "vcpkg find port png"},
         Undocumented,
         AutocompletePriority::Public,
         1,
         2,
-        {FindSwitches, CommonSelectArtifactVersionSettings},
+        {FindSwitches},
         nullptr,
     };
 
@@ -239,42 +213,11 @@ namespace vcpkg
 
         if (selector == "artifact")
         {
-            if (full_description)
-            {
-                msg::write_unlocalized_text_to_stderr(
-                    Color::warning,
-                    msg::format_warning(msgArtifactsOptionIncompatibility, msg::option = SwitchXFullDesc)
-                        .append_raw('\n'));
-            }
-
-            if (enable_json)
-            {
-                msg::write_unlocalized_text_to_stderr(
-                    Color::warning,
-                    msg::format_warning(msgArtifactsOptionIncompatibility, msg::option = "x-json").append_raw('\n'));
-            }
-
-            Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
-            MetricsSubmission metrics;
-            metrics.track_string(StringMetric::CommandContext, "artifact");
-            if (auto p_filter_hash = filter_hash.get())
-            {
-                metrics.track_string(StringMetric::CommandArgs, *p_filter_hash);
-            }
-
-            get_global_metrics_collector().track_submission(std::move(metrics));
-            const auto* version_ptr = Util::lookup_value(options.settings, SwitchVersion);
-            perform_find_artifact_and_exit(
-                paths, filter, version_ptr ? Optional<StringView>(*version_ptr) : Optional<StringView>{});
+            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgArtifactsHasBeenRemoved);
         }
 
         if (selector == "port")
         {
-            if (Util::Maps::contains(options.settings, SwitchVersion))
-            {
-                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgFindVersionArtifactsOnly);
-            }
-
             Optional<std::string> filter_hash = filter.map(Hash::get_string_sha256);
             MetricsSubmission metrics;
             metrics.track_string(StringMetric::CommandContext, "port");

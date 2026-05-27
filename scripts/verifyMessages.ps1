@@ -3,20 +3,12 @@
 # Define paths relative to the script's directory
 $SEARCH_DIR = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\")
 $CPP_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\locales\messages.json")
-$ARITFACT_MESSAGES = Resolve-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\vcpkg-artifacts\locales\messages.json")
 
 Write-Host "Processing message declarations..."
 
 # Read JSON file into a hashtable to accommodate case-sensitive keys
 $jsonContent = Get-Content $CPP_MESSAGES -Raw | ConvertFrom-Json -AsHashTable
 $declared_messages = @($jsonContent.Keys) | Where-Object { -not $_.EndsWith('.comment') }
-
-# Read the JSON file with messages to remove into another hashtable
-$jsonToRemove = Get-Content $ARITFACT_MESSAGES -Raw | ConvertFrom-Json -AsHashTable
-$messages_to_remove = @($jsonToRemove.Keys) | Where-Object { -not $_.EndsWith('.comment') }
-
-# Subtract the artifact messages
-$declared_messages = Compare-Object -ReferenceObject $declared_messages -DifferenceObject $messages_to_remove -PassThru
 
 # Find all instances of 'msg' prefixed variables in .cpp and .h files and store them in an array
 $used_messages = Get-ChildItem -Path $SEARCH_DIR -Include @('*.cpp', '*.h') -Recurse |

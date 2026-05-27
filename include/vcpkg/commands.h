@@ -26,6 +26,7 @@ namespace vcpkg
         T function;
     };
 
+    extern const View<StringLiteral> removed_artifacts_commands;
     extern const View<CommandRegistration<BasicCommandFn>> basic_commands;
     extern const View<CommandRegistration<PathsCommandFn>> paths_commands;
     extern const View<CommandRegistration<TripletCommandFn>> triplet_commands;

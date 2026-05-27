@@ -23,9 +23,12 @@ option(VCPKG_BUILD_FUZZING "Build vcpkg fuzz tests" OFF)
 option(VCPKG_FUZZER_INSTRUMENTATION "Build vcpkg with fuzzing instrumentation. Not generally useful without VCPKG_BUILD_FUZZING turned on" OFF)
 option(VCPKG_EMBED_GIT_SHA "Option for to fill in the Git SHA version; off by default to avoid privacy concerns out of official builds" OFF)
 option(VCPKG_ADD_SOURCELINK "Option for enabling SourceLink in debug information on Windows/MSVC builds" "${VCPKG_EMBED_GIT_SHA}")
-option(VCPKG_ARTIFACTS_DEVELOPMENT "Hard code path to artifacts TypeScript. Requires node.js and npm." OFF)
 option(VCPKG_OFFICIAL_BUILD "Option to cause immediate failure if variables required for official builds are unset." OFF)
 set(VCPKG_PDB_SUFFIX "" CACHE STRING "Append this string to the name of the PDB for shipping vcpkg binaries.")
+
+if(VCPKG_ARTIFACTS_DEVELOPMENT)
+    message(FATAL_ERROR "vcpkg-artifacts has been removed.")
+endif()
 
 CMAKE_DEPENDENT_OPTION(VCPKG_BUILD_BENCHMARKING "Option for enabling benchmarking" OFF
     "BUILD_TESTING" OFF)
@@ -285,118 +288,6 @@ elseif(VCPKG_OFFICIAL_BUILD)
     message(FATAL_ERROR "VCPKG_STANDALONE_BUNDLE_SHA is required for official builds.")
 endif()
 
-if(VCPKG_ARTIFACTS_SHA)
-    target_compile_definitions(vcpkglib PUBLIC
-        "VCPKG_ARTIFACTS_SHA=${VCPKG_ARTIFACTS_SHA}"
-    )
-elseif(VCPKG_OFFICIAL_BUILD)
-    message(FATAL_ERROR "VCPKG_ARTIFACTS_SHA is required for official builds.")
-endif()
-
-file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg-artifacts" VCPKG_ARTIFACTS_SOURCE_DIR)
-if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    # The directory constructed by this portion of the build script needs to be kept in sync with
-    # that created by azure-pipelines/signing.yml
-
-    if (WIN32)
-        set(NPM_SUFFIX ".cmd")
-    else()
-        set(NPM_SUFFIX "")
-    endif()
-
-    find_program(NODEJS "node")
-    find_program(NPM "npm${NPM_SUFFIX}")
-    if (NOT NODEJS OR NOT NPM)
-        message(FATAL_ERROR "node.js and npm must be installed when VCPKG_ARTIFACTS_DEVELOPMENT is set")
-    endif()
-
-    add_custom_command(
-        OUTPUT
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-        COMMAND "${NPM}" ARGS "ci" "--include=dev"
-        WORKING_DIRECTORY
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-        COMMENT
-            "Running npm install..."
-        MAIN_DEPENDENCY
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
-        VERBATIM
-        )
-
-    add_custom_target(npm-restore
-        ALL
-        DEPENDS
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-            )
-    set_target_properties(npm-restore
-        PROPERTIES
-            ADDITIONAL_CLEAN_FILES "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-    )
-
-# === Target: vcpkg-artifacts-target ===
-# The suffix "-target" is added to avoid a conflict in CMake with the directory named vcpkg-artifacts and the target named vcpkg-artifacts.
-    file(GLOB VCPKG_ARTIFACTS_ROOT_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS "${VCPKG_ARTIFACTS_SOURCE_DIR}/*.ts")
-    file(GLOB_RECURSE VCPKG_ARTIFACTS_NESTED_SOURCES LIST_DIRECTORIES false RELATIVE "${VCPKG_ARTIFACTS_SOURCE_DIR}" CONFIGURE_DEPENDS
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/amf/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/archivers/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/artifacts/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/cli/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/fs/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/installers/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/interfaces/*.ts"
-        # "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/*.ts" 
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/mediaquery/*.ts"
-        # "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/registries/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/test/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/test-resources/*" # Note no *.ts
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/util/*.ts"
-        "${VCPKG_ARTIFACTS_SOURCE_DIR}/yaml/*.ts"
-    )
-    set(VCPKG_ARTIFACTS_SOURCES ${VCPKG_ARTIFACTS_ROOT_SOURCES} ${VCPKG_ARTIFACTS_NESTED_SOURCES})
-    list(TRANSFORM VCPKG_ARTIFACTS_SOURCES PREPEND "${VCPKG_ARTIFACTS_SOURCE_DIR}/")
-
-    set(VCPKG_ARTIFACTS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts-build")
-    set(VCPKG_ARTIFACTS_BINARY "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-artifacts.mjs")
-    add_custom_command(
-        OUTPUT "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-        COMMAND "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/translate-strings/dist/main.js" "." "--json"
-        DEPENDS
-            ${VCPKG_ARTIFACTS_SOURCES}
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules"
-        WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-        COMMENT "Running artifacts translate-strings..."
-        VERBATIM
-    )
-
-    add_custom_command(
-        OUTPUT
-            ${VCPKG_ARTIFACTS_BINARY}
-        COMMAND
-            "${NODEJS}" ARGS "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/@vercel/ncc/dist/ncc/cli.js"
-                build "main.ts"
-                --out "${VCPKG_ARTIFACTS_BUILD_DIR}"
-        COMMAND
-            "${CMAKE_COMMAND}" ARGS -E copy "${VCPKG_ARTIFACTS_BUILD_DIR}/index.js" "${VCPKG_ARTIFACTS_BINARY}"
-        WORKING_DIRECTORY
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}"
-        DEPENDS
-            npm-restore
-            ${VCPKG_ARTIFACTS_SOURCES}
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/tsconfig.json"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package.json"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/package-lock.json"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/.npmrc"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/.mocharc.json"
-            "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-        COMMENT
-            "Building vcpkg-artifacts..."
-        VERBATIM
-        )
-
-    add_custom_target(vcpkg-artifacts-target ALL DEPENDS "${VCPKG_ARTIFACTS_BINARY}")
-endif()
-
 set(CPP_ATOMIC_LIBRARY "")
 include(CheckCXXSourceCompiles)
 if(NOT MSVC)
@@ -464,18 +355,6 @@ if(MINGW)
     target_link_libraries(vcpkglib PUBLIC winhttp bcrypt version ole32 uuid)
 endif()
 
-# === Target: vcpkg-ps1 ===
-add_custom_command(
-    OUTPUT
-        "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
-    COMMAND
-        "${CMAKE_COMMAND}" ARGS -E copy "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1" "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1"
-    DEPENDS
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg-in-development.ps1"
-    VERBATIM
-)
-add_custom_target(vcpkg-ps1 ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/vcpkg-shell.ps1")
-
 # === Target: vcpkg ===
 
 add_executable(vcpkg ${VCPKG_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
@@ -494,14 +373,9 @@ endif()
 set_property(TARGET vcpkg PROPERTY PDB_NAME "vcpkg${VCPKG_PDB_SUFFIX}")
 
 # === Target: generate-message-map ===
-set(GENERATE_MESSAGE_MAP_DEPENDENCIES vcpkg)
-if (VCPKG_ARTIFACTS_DEVELOPMENT)
-    list(APPEND GENERATE_MESSAGE_MAP_DEPENDENCIES "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json")
-endif()
-
 add_custom_target(generate-message-map
-    COMMAND "$<TARGET_FILE:vcpkg>" z-generate-default-message-map locales/messages.json "${VCPKG_ARTIFACTS_SOURCE_DIR}/locales/messages.json"
-    DEPENDS ${GENERATE_MESSAGE_MAP_DEPENDENCIES}
+    COMMAND "$<TARGET_FILE:vcpkg>" z-generate-default-message-map locales/messages.json
+    DEPENDS vcpkg
     WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
     COMMENT "Update locales/messages.json"
     VERBATIM
@@ -534,9 +408,6 @@ if (BUILD_TESTING)
     add_test(NAME vcpkg-test COMMAND "${CMAKE_COMMAND}" -E env LC_ALL=C "$<TARGET_FILE:vcpkg-test>" --order rand --rng-seed time)
     if(VCPKG_BUILD_BENCHMARKING)
         target_compile_options(vcpkg-test PRIVATE -DCATCH_CONFIG_ENABLE_BENCHMARKING)
-    endif()
-    if(VCPKG_ARTIFACTS_DEVELOPMENT)
-        add_test(NAME artifacts COMMAND "${NODEJS}" "${VCPKG_ARTIFACTS_SOURCE_DIR}/node_modules/mocha/bin/mocha.js" "--import=tsx" WORKING_DIRECTORY "${VCPKG_ARTIFACTS_SOURCE_DIR}")
     endif()
 endif()
 
