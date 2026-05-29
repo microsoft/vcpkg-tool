@@ -121,7 +121,6 @@ if (-not $IsMacOS -and -not $IsLinux) {
 # place. Regression test for microsoft/vcpkg#50051. The archive is served from a
 # local asset cache so the eight concurrent jobs stay offline; they share a
 # downloads directory so they genuinely race on the extraction.
-$priorDownloads = if (Test-Path env:VCPKG_DOWNLOADS) { $env:VCPKG_DOWNLOADS } else { $null }
 $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'concurrent-fetch-downloads'
 Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
 $ninjaAssetSource = "x-azurl,file://$AssetCache,,readwrite"
@@ -147,5 +146,3 @@ $failed = @($exitCodes | Where-Object { $_ -ne 0 })
 if ($failed.Count -gt 0) {
     throw "Concurrent vcpkg fetch ninja: $($failed.Count) of $($exitCodes.Count) invocations failed (regression of microsoft/vcpkg#50051)"
 }
-
-if ($null -eq $priorDownloads) { Remove-Item env:VCPKG_DOWNLOADS } else { $env:VCPKG_DOWNLOADS = $priorDownloads }
