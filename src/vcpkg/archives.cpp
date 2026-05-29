@@ -250,18 +250,15 @@ namespace vcpkg
         return false;
     }
 
-    Path extraction_partial_path(const Path& to_path)
-    {
-        return to_path + ".partial." + std::to_string(get_process_id());
-    }
-
     Optional<Path> extract_archive_to_temp_subdirectory(DiagnosticContext& context,
                                                         const Filesystem& fs,
                                                         const ToolCache& tools,
                                                         const Path& archive,
                                                         const Path& to_path)
     {
-        Path to_path_partial = extraction_partial_path(to_path);
+        // Suffix the partial directory with the current process id so concurrent vcpkg
+        // invocations don't collide on it (microsoft/vcpkg#50051).
+        Path to_path_partial = to_path + ".partial." + std::to_string(get_process_id());
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);

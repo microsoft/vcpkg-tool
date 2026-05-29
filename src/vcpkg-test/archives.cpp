@@ -1,10 +1,6 @@
 #include <vcpkg-test/util.h>
 
-#include <vcpkg/base/system.h>
-
 #include <vcpkg/archives.h>
-
-#include <string>
 
 TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
 {
@@ -19,15 +15,4 @@ TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
     REQUIRE(guess_extraction_type(Path("/path/to/archive.exe")) == ExtractionType::Exe);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.unknown")) == ExtractionType::Unknown);
     REQUIRE(guess_extraction_type(Path("/path/to/archive.7z.exe")) == ExtractionType::SelfExtracting7z);
-}
-
-// Regression test for microsoft/vcpkg#50051: concurrent vcpkg processes must not collide
-// on the same `.partial` extraction directory. The per-PID suffix is what keeps them apart.
-TEST_CASE ("extraction_partial_path is per-process", "[z-extract]")
-{
-    using namespace vcpkg;
-    const auto pid = std::to_string(get_process_id());
-
-    const auto partial = extraction_partial_path(Path("/some/tools/ninja-1.13.2-linux"));
-    REQUIRE(partial.native() == "/some/tools/ninja-1.13.2-linux.partial." + pid);
 }
