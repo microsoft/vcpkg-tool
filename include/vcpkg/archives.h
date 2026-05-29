@@ -45,6 +45,10 @@ namespace vcpkg
                                                         const Path& archive,
                                                         const Path& to_path);
 
+    // The `.partial` directory used by extract_archive_to_temp_subdirectory; suffixed with the
+    // current process id so concurrent vcpkg invocations don't collide on it.
+    Path extraction_partial_path(const Path& to_path);
+
     ExtractionType guess_extraction_type(const Path& archive);
 #ifdef _WIN32
     // Extract the 7z archive part of a self extracting 7z installer

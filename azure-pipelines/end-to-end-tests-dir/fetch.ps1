@@ -115,3 +115,27 @@ if (-not $IsMacOS -and -not $IsLinux) {
         throw 'Couldn''t run resulting ninja'
     }
 }
+
+# Concurrent `vcpkg fetch ninja` invocations must all succeed: each process
+# extracts into a per-PID partial directory before atomically renaming into
+# place. Regression test for microsoft/vcpkg#50051.
+$env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'concurrent-fetch-downloads'
+Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
+
+$jobs = @()
+for ($i = 0; $i -lt 8; $i++) {
+    $jobs += Start-Job -ScriptBlock {
+        param($vcpkg, $vcpkgArgs)
+        & $vcpkg @vcpkgArgs
+        $LASTEXITCODE
+    } -ArgumentList @($VcpkgExe, ($commonArgs + @("fetch", "ninja", "--x-stderr-status")))
+}
+
+$results = $jobs | Wait-Job | Receive-Job
+$jobs | Remove-Job
+$failed = @($results | Where-Object { $_ -ne 0 })
+if ($failed.Count -gt 0) {
+    throw "Concurrent vcpkg fetch ninja: $($failed.Count) of 8 invocations failed (regression of microsoft/vcpkg#50051)"
+}
+
+Remove-Item env:VCPKG_DOWNLOADS

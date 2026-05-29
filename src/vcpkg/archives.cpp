@@ -250,16 +250,24 @@ namespace vcpkg
         return false;
     }
 
+    Path extraction_partial_path(const Path& to_path)
+    {
+        Path partial = to_path + ".partial";
+#if defined(_WIN32)
+        partial += "." + std::to_string(GetCurrentProcessId());
+#else
+        partial += "." + std::to_string(getpid());
+#endif
+        return partial;
+    }
+
     Optional<Path> extract_archive_to_temp_subdirectory(DiagnosticContext& context,
                                                         const Filesystem& fs,
                                                         const ToolCache& tools,
                                                         const Path& archive,
                                                         const Path& to_path)
     {
-        Path to_path_partial = to_path + ".partial";
-#if defined(_WIN32)
-        to_path_partial += "." + std::to_string(GetCurrentProcessId());
-#endif
+        Path to_path_partial = extraction_partial_path(to_path);
 
         fs.remove_all(to_path_partial, VCPKG_LINE_INFO);
         fs.create_directories(to_path_partial, VCPKG_LINE_INFO);
