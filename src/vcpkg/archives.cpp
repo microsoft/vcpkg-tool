@@ -252,13 +252,7 @@ namespace vcpkg
 
     Path extraction_partial_path(const Path& to_path)
     {
-        Path partial = to_path + ".partial";
-#if defined(_WIN32)
-        partial += "." + std::to_string(GetCurrentProcessId());
-#else
-        partial += "." + std::to_string(getpid());
-#endif
-        return partial;
+        return to_path + ".partial." + std::to_string(get_process_id());
     }
 
     Optional<Path> extract_archive_to_temp_subdirectory(DiagnosticContext& context,

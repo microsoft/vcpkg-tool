@@ -1,6 +1,6 @@
-#include <vcpkg/base/system-headers.h>
-
 #include <vcpkg-test/util.h>
+
+#include <vcpkg/base/system.h>
 
 #include <vcpkg/archives.h>
 
@@ -26,11 +26,7 @@ TEST_CASE ("Testing guess_extraction_type", "[z-extract]")
 TEST_CASE ("extraction_partial_path is per-process", "[z-extract]")
 {
     using namespace vcpkg;
-#if defined(_WIN32)
-    const auto pid = std::to_string(GetCurrentProcessId());
-#else
-    const auto pid = std::to_string(getpid());
-#endif
+    const auto pid = std::to_string(get_process_id());
 
     const auto partial = extraction_partial_path(Path("/some/tools/ninja-1.13.2-linux"));
     REQUIRE(partial.native() == "/some/tools/ninja-1.13.2-linux.partial." + pid);
