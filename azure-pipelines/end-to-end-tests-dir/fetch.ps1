@@ -115,3 +115,34 @@ if (-not $IsMacOS -and -not $IsLinux) {
         throw 'Couldn''t run resulting ninja'
     }
 }
+
+# Concurrent `vcpkg fetch ninja` invocations must all succeed: each process
+# extracts into a per-PID partial directory before atomically renaming into
+# place. Regression test for microsoft/vcpkg#50051. The archive is served from a
+# local asset cache so the eight concurrent jobs stay offline; they share a
+# downloads directory so they genuinely race on the extraction.
+$env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'concurrent-fetch-downloads'
+Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
+$ninjaAssetSource = "x-azurl,file://$AssetCache,,readwrite"
+
+# Populate the asset cache from the authoritative source once, then clear the
+# downloads so each concurrent job re-fetches the archive from the cache offline.
+Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--x-stderr-status", "--x-asset-sources=$ninjaAssetSource"))
+Throw-IfFailed
+Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
+
+$jobs = @()
+for ($i = 0; $i -lt 8; $i++) {
+    $jobs += Start-Job -ScriptBlock {
+        param($vcpkg, $vcpkgArgs)
+        & $vcpkg @vcpkgArgs | Out-Null
+        $LASTEXITCODE
+    } -ArgumentList @($VcpkgExe, ($commonArgs + @("fetch", "ninja", "--x-stderr-status", "--x-asset-sources=$ninjaAssetSource;x-block-origin")))
+}
+
+$exitCodes = @($jobs | Wait-Job | Receive-Job)
+$jobs | Remove-Job
+$failed = @($exitCodes | Where-Object { $_ -ne 0 })
+if ($failed.Count -gt 0) {
+    throw "Concurrent vcpkg fetch ninja: $($failed.Count) of $($exitCodes.Count) invocations failed (regression of microsoft/vcpkg#50051)"
+}
