@@ -104,12 +104,14 @@ namespace vcpkg
     {
         Optional<Path> working_directory;
         Optional<Environment> environment;
+        std::vector<std::string> remove_environment_variables;
     };
 
     struct RedirectedProcessLaunchSettings
     {
         Optional<Path> working_directory;
         Optional<Environment> environment;
+        std::vector<std::string> remove_environment_variables;
 
         // the encoding to use for standard streams of the child
         Encoding encoding = Encoding::Utf8;

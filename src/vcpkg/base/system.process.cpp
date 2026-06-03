@@ -1558,8 +1558,29 @@ namespace vcpkg
 
         if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg("env").raw_arg("-u").raw_arg("DESTDIR");
-            real_command_line_builder.raw_arg(env->get());
+            if (settings.remove_environment_variables.empty())
+            {
+                real_command_line_builder.raw_arg(env->get());
+            }
+            else
+            {
+                real_command_line_builder.raw_arg("env");
+                for (const auto& remove_var : settings.remove_environment_variables)
+                {
+                    real_command_line_builder.raw_arg("-u");
+                    real_command_line_builder.string_arg(remove_var);
+                }
+                real_command_line_builder.raw_arg(env->get());
+            }
+        }
+        else if (!settings.remove_environment_variables.empty())
+        {
+            real_command_line_builder.raw_arg("env");
+            for (const auto& remove_var : settings.remove_environment_variables)
+            {
+                real_command_line_builder.raw_arg("-u");
+                real_command_line_builder.string_arg(remove_var);
+            }
         }
 
         real_command_line_builder.raw_arg(cmd.command_line());
@@ -1778,8 +1799,32 @@ namespace
 
         if (auto env_unpacked = settings.environment.get())
         {
-            actual_cmd_line.append("env -u DESTDIR ");
-            actual_cmd_line.append(env_unpacked->get());
+            if (settings.remove_environment_variables.empty())
+            {
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
+            else
+            {
+                actual_cmd_line.append("env");
+                for (const auto& remove_var : settings.remove_environment_variables)
+                {
+                    actual_cmd_line.append(" -u ");
+                    append_shell_escaped(actual_cmd_line, remove_var);
+                }
+                actual_cmd_line.push_back(' ');
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
+        }
+        else if (!settings.remove_environment_variables.empty())
+        {
+            actual_cmd_line.append("env");
+            for (const auto& remove_var : settings.remove_environment_variables)
+            {
+                actual_cmd_line.append(" -u ");
+                append_shell_escaped(actual_cmd_line, remove_var);
+            }
             actual_cmd_line.push_back(' ');
         }
 
