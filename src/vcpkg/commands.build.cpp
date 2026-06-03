@@ -826,8 +826,8 @@ namespace vcpkg
 
         auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
         RedirectedProcessLaunchSettings settings;
-        settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
-        settings.remove_environment_variables.emplace_back(EnvironmentVariableDestDir);
+        auto& env = settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
+        env.add_remove_entry(EnvironmentVariableDestDir);
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -1192,8 +1192,8 @@ namespace vcpkg
             paths, paths.ports_cmake, get_cmake_build_args(args, paths, host_triplet, build_options, action));
 
         RedirectedProcessLaunchSettings settings;
-        settings.remove_environment_variables.emplace_back(EnvironmentVariableDestDir);
         auto& env = settings.environment.emplace(paths.get_action_env(*abi_info.pre_build_info, *toolset));
+        env.add_remove_entry(EnvironmentVariableDestDir);
 
         auto buildpath = paths.build_dir(action.spec.name());
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
