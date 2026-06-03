@@ -1558,6 +1558,7 @@ namespace vcpkg
 
         if (const auto env = settings.environment.get())
         {
+            real_command_line_builder.raw_arg("env").raw_arg("-u").raw_arg("DESTDIR");
             real_command_line_builder.raw_arg(env->get());
         }
 
@@ -1777,6 +1778,7 @@ namespace
 
         if (auto env_unpacked = settings.environment.get())
         {
+            actual_cmd_line.append("env -u DESTDIR ");
             actual_cmd_line.append(env_unpacked->get());
             actual_cmd_line.push_back(' ');
         }
