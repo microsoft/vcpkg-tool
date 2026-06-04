@@ -763,6 +763,8 @@ namespace vcpkg
 #endif
     }
 
+    void Environment::add_remove_entry(StringView key) { m_remove_entries.emplace_back(key.to_string()); }
+
     Optional<std::string> Environment::remove_entry(StringView key)
     {
 #if defined(_WIN32)
@@ -863,6 +865,7 @@ namespace vcpkg
     }
 
     const Environment::string_t& Environment::get() const { return m_env_data; }
+    const std::vector<std::string>& Environment::remove_entries() const { return m_remove_entries; }
 
     const Environment& get_clean_environment()
     {
@@ -1558,7 +1561,20 @@ namespace vcpkg
 
         if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg(env->get());
+            if (env->remove_entries().empty())
+            {
+                real_command_line_builder.raw_arg(env->get());
+            }
+            else
+            {
+                real_command_line_builder.raw_arg("env");
+                for (const auto& remove_var : env->remove_entries())
+                {
+                    real_command_line_builder.raw_arg("-u");
+                    real_command_line_builder.string_arg(remove_var);
+                }
+                real_command_line_builder.raw_arg(env->get());
+            }
         }
 
         real_command_line_builder.raw_arg(cmd.command_line());
@@ -1777,8 +1793,23 @@ namespace
 
         if (auto env_unpacked = settings.environment.get())
         {
-            actual_cmd_line.append(env_unpacked->get());
-            actual_cmd_line.push_back(' ');
+            if (env_unpacked->remove_entries().empty())
+            {
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
+            else
+            {
+                actual_cmd_line.append("env");
+                for (const auto& remove_var : env_unpacked->remove_entries())
+                {
+                    actual_cmd_line.append(" -u ");
+                    append_shell_escaped(actual_cmd_line, remove_var);
+                }
+                actual_cmd_line.push_back(' ');
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
         }
 
         const auto unwrapped_to_execute = cmd.command_line();
