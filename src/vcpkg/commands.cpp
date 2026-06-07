@@ -1,6 +1,3 @@
-#include <vcpkg/commands.acquire-project.h>
-#include <vcpkg/commands.acquire.h>
-#include <vcpkg/commands.activate.h>
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
 #include <vcpkg/commands.autocomplete.h>
@@ -13,7 +10,6 @@
 #include <vcpkg/commands.ci.h>
 #include <vcpkg/commands.contact.h>
 #include <vcpkg/commands.create.h>
-#include <vcpkg/commands.deactivate.h>
 #include <vcpkg/commands.depend-info.h>
 #include <vcpkg/commands.download.h>
 #include <vcpkg/commands.edit.h>
@@ -23,7 +19,6 @@
 #include <vcpkg/commands.find.h>
 #include <vcpkg/commands.format-feature-baselinet.h>
 #include <vcpkg/commands.format-manifest.h>
-#include <vcpkg/commands.generate-msbuild-props.h>
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.help.h>
@@ -36,20 +31,16 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.package-info.h>
 #include <vcpkg/commands.portsdiff.h>
-#include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.search.h>
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/commands.test-features.h>
 #include <vcpkg/commands.update-baseline.h>
-#include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.vsinstances.h>
 #include <vcpkg/commands.z-applocal.h>
-#include <vcpkg/commands.z-ce.h>
 #include <vcpkg/commands.z-changelog.h>
 #include <vcpkg/commands.z-check-tools-sha.h>
 #include <vcpkg/commands.z-extract.h>
@@ -61,37 +52,45 @@
 
 namespace vcpkg
 {
+    static constexpr StringLiteral removed_artifacts_commands_storage[] = {
+        "acquire",
+        "acquire_project",
+        "activate",
+        "deactivate",
+        "generate-msbuild-props",
+        "use",
+        "x-regenerate",
+        "x-update-registry",
+    };
+
+    constexpr View<StringLiteral> removed_artifacts_commands = removed_artifacts_commands_storage;
+
     static constexpr CommandRegistration<BasicCommandFn> basic_commands_storage[] = {
         {CommandBootstrapStandaloneMetadata, command_bootstrap_standalone_and_exit},
+        {CommandCheckToolsShaMetadata, command_check_tools_sha_and_exit},
         {CommandContactMetadata, command_contact_and_exit},
         {CommandDownloadMetadata, command_download_and_exit},
         {CommandFormatFeatureBaselineMetadata, command_format_feature_baseline_and_exit},
         {CommandHashMetadata, command_hash_and_exit},
-        {CommandCheckToolsShaMetadata, command_check_tools_sha_and_exit},
         {CommandInitRegistryMetadata, command_init_registry_and_exit},
         {CommandVersionMetadata, command_version_and_exit},
-        {CommandZUploadMetricsMetadata, command_z_upload_metrics_and_exit},
         {CommandZApplocalMetadata, command_z_applocal_and_exit},
         {CommandZGenerateDefaultMessageMapMetadata, command_z_generate_default_message_map_and_exit},
         {CommandZPreregisterTelemetryMetadata, command_z_preregister_telemetry_and_exit},
+        {CommandZUploadMetricsMetadata, command_z_upload_metrics_and_exit},
     };
 
     constexpr View<CommandRegistration<BasicCommandFn>> basic_commands = basic_commands_storage;
 
     static constexpr CommandRegistration<PathsCommandFn> paths_commands_storage[] = {
-        {CommandAcquireMetadata, command_acquire_and_exit},
-        {CommandAcquireProjectMetadata, command_acquire_project_and_exit},
-        {CommandActivateMetadata, command_activate_and_exit},
         {CommandAddMetadata, command_add_and_exit},
         {CommandAddVersionMetadata, command_add_version_and_exit},
         {CommandAutocompleteMetadata, command_autocomplete_and_exit},
         {CommandCiCleanMetadata, command_ci_clean_and_exit},
         {CommandCiVerifyVersionsMetadata, command_ci_verify_versions_and_exit},
         {CommandCreateMetadata, command_create_and_exit},
-        {CommandDeactivateMetadata, command_deactivate_and_exit},
         {CommandEditMetadata, command_edit_and_exit},
         {CommandFetchMetadata, command_fetch_and_exit},
-        {CommandGenerateMsbuildPropsMetadata, command_generate_msbuild_props_and_exit},
         {CommandFindMetadata, command_find_and_exit},
         {CommandFormatManifestMetadata, command_format_manifest_and_exit},
         {CommandHelpMetadata, command_help_and_exit},
@@ -102,16 +101,12 @@ namespace vcpkg
         {CommandOwnsMetadata, command_owns_and_exit},
         {CommandPackageInfoMetadata, command_package_info_and_exit},
         {CommandPortsdiffMetadata, command_portsdiff_and_exit},
-        {CommandRegenerateMetadata, command_regenerate_and_exit},
         {CommandSearchMetadata, command_search_and_exit},
-        {CommandUpdateMetadata, command_update_and_exit},
         {CommandUpdateBaselineMetadata, command_update_baseline_and_exit},
-        {CommandUpdateRegistryMetadata, command_update_registry_and_exit},
-        {CommandUseMetadata, command_use_and_exit},
+        {CommandUpdateMetadata, command_update_and_exit},
         {CommandVsInstancesMetadata, command_vs_instances_and_exit},
-        {CommandZCEMetadata, command_z_ce_and_exit},
-        {CommandZExtractMetadata, command_z_extract_and_exit},
         {CommandZChangelogMetadata, command_z_changelog_and_exit},
+        {CommandZExtractMetadata, command_z_extract_and_exit},
     };
 
     constexpr View<CommandRegistration<PathsCommandFn>> paths_commands = paths_commands_storage;

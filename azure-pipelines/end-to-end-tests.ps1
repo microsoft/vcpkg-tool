@@ -30,9 +30,7 @@ Param(
     [Parameter(Mandatory = $false)]
     [string]$StartAt,
     [Parameter(Mandatory = $false)]
-    [string]$VcpkgExe,
-    [Parameter(Mandatory = $false, HelpMessage="Run artifacts tests, only usable when vcpkg was built with VCPKG_ARTIFACTS_DEVELOPMENT=ON")]
-    [switch]$RunArtifactsTests
+    [string]$VcpkgExe
 )
 
 $ErrorActionPreference = "Stop"
@@ -95,7 +93,6 @@ if ([string]::IsNullOrEmpty($VcpkgExe))
 
 $VcpkgItem = Get-Item $VcpkgExe
 $VcpkgExe = $VcpkgItem.FullName
-$VcpkgPs1 = Join-Path $VcpkgItem.Directory "vcpkg-shell.ps1"
 $TestScriptAssetCacheExe = Join-Path $VcpkgItem.Directory "test-script-asset-cache"
 $TestSuitesDir = Join-Path $PSScriptRoot "end-to-end-tests-dir"
 

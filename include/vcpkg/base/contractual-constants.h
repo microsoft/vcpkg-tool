@@ -176,12 +176,9 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchAbiToolsUseExactVersions = "abi-tools-use-exact-versions";
     inline constexpr StringLiteral SwitchAddInitialBaseline = "add-initial-baseline";
     inline constexpr StringLiteral SwitchAll = "all";
-    inline constexpr StringLiteral SwitchAllLanguages = "all-languages";
     inline constexpr StringLiteral SwitchAllowUnexpectedPassing = "allow-unexpected-passing";
     inline constexpr StringLiteral SwitchAllowUnsupported = "allow-unsupported";
     inline constexpr StringLiteral SwitchApplication = "application";
-    inline constexpr StringLiteral SwitchArm = "arm";
-    inline constexpr StringLiteral SwitchArm64 = "arm64";
     inline constexpr StringLiteral SwitchAssetSources = "asset-sources";
     inline constexpr StringLiteral SwitchBaseline = "baseline";
     inline constexpr StringLiteral SwitchBin = "bin";
@@ -219,9 +216,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFeatureFlags = "feature-flags";
     inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
-    inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
-    inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
@@ -232,8 +227,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchJson = "json";
     inline constexpr StringLiteral SwitchKeepGoing = "keep-going";
     inline constexpr StringLiteral SwitchKnownFailuresFrom = "known-failures-from";
-    inline constexpr StringLiteral SwitchLinux = "linux";
-    inline constexpr StringLiteral SwitchMSBuildProps = "msbuild-props";
     inline constexpr StringLiteral SwitchManifestRoot = "manifest-root";
     inline constexpr StringLiteral SwitchMaxRecurse = "max-recurse";
     inline constexpr StringLiteral SwitchName = "name";
@@ -245,7 +238,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchNoOutputComments = "no-output-comments";
     inline constexpr StringLiteral SwitchNoPrintUsage = "no-print-usage";
     inline constexpr StringLiteral SwitchNoSeparated = "no-separated";
-    inline constexpr StringLiteral SwitchNormalize = "normalize";
     inline constexpr StringLiteral SwitchNuGet = "nuget";
     inline constexpr StringLiteral SwitchNuGetDescription = "nuget-description";
     inline constexpr StringLiteral SwitchNuGetId = "nuget-id";
@@ -253,7 +245,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchOnlyBinarycaching = "only-binarycaching";
     inline constexpr StringLiteral SwitchOnlyDownloads = "only-downloads";
     inline constexpr StringLiteral SwitchOnlyWithName = "only-with-name";
-    inline constexpr StringLiteral SwitchOsx = "osx";
     inline constexpr StringLiteral SwitchOutdated = "outdated";
     inline constexpr StringLiteral SwitchOutput = "output";
     inline constexpr StringLiteral SwitchOutputDir = "output-dir";
@@ -284,11 +275,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchStore = "store";
     inline constexpr StringLiteral SwitchStrip = "strip";
     inline constexpr StringLiteral SwitchTLogFile = "tlog-file";
-    inline constexpr StringLiteral SwitchTargetArm = "target:arm";
-    inline constexpr StringLiteral SwitchTargetArm64 = "target:arm64";
     inline constexpr StringLiteral SwitchTargetBinary = "target-binary";
-    inline constexpr StringLiteral SwitchTargetX64 = "target:x64";
-    inline constexpr StringLiteral SwitchTargetX86 = "target:x86";
     inline constexpr StringLiteral SwitchToolDataFile = "tool-data-file";
     inline constexpr StringLiteral SwitchTools = "tools";
     inline constexpr StringLiteral SwitchTriplet = "triplet";
@@ -301,9 +288,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchVersionRelaxed = "version-relaxed";
     inline constexpr StringLiteral SwitchVersionString = "version-string";
     inline constexpr StringLiteral SwitchWaitForLock = "wait-for-lock";
-    inline constexpr StringLiteral SwitchWindows = "windows";
-    inline constexpr StringLiteral SwitchX64 = "x64";
-    inline constexpr StringLiteral SwitchX86 = "x86";
     inline constexpr StringLiteral SwitchXAllInstalled = "x-all-installed";
     inline constexpr StringLiteral SwitchXFeature = "x-feature";
     inline constexpr StringLiteral SwitchXFullDesc = "x-full-desc";

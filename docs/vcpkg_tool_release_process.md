@@ -19,9 +19,6 @@ such as https://github.com/microsoft/vcpkg/pull/23757
   localization tools which will start with `* LEGO: Pull request from juno/`.
 1. Publish that draft release as "pre-release".
 1. Clean up a machine for the following tests:
-    * Delete `VCPKG_DOWNLOADS/artifacts` (Windows) `HOME/.cache/vcpkg/downloads` (non-Windows)
-      (which forces artifacts to be reacquired). (This is the path calculated in `VcpkgPaths` with
-      `get_platform_cache_vcpkg().value_or_exit(VCPKG_LINE_INFO) / "downloads";`)
     * Delete `LOCALAPPDATA/vcpkg` (Windows) `HOME/.cache/vcpkg` (non-Windows) (which forces
       registries to be reacquired)
 1. Smoke test the 'one liner' installer. Run these in an environment with VCPKG_ROOT unset;
@@ -197,17 +194,3 @@ flowchart TD
     build_msvc\program.exe
     ```
     and check that a reasonable zlib version is printed.
-1. Back in the developer command prompt, verify that the copy of CMake can be customized by running:
-    ```
-    vcpkg-shell use microsoft:cmake
-    cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE="%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake" -S . -B build_artifact
-    ninja -C build_artifact
-    build_artifact\program.exe
-    ```
-    and check that the cmake version acquired by artifacts is printed during the cmake configure, and that a reasonable zlib version is printed.
-1. Close Visual Studio.
-1. Back in the developer command prompt, run:
-    ```
-    vcpkg add artifact microsoft:cmake
-    ```
-1. Open Visual Studio and use "Open Folder" on the directory containing the vcxproj. Verify that vcpkg activation happens in the terminal.

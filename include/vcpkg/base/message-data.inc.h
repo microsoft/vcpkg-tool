@@ -14,8 +14,7 @@ DECLARE_MESSAGE(ADemandObject,
 DECLARE_MESSAGE(AString, (), "", "a string")
 DECLARE_MESSAGE(ASha512, (), "", "a SHA-512 hash")
 DECLARE_MESSAGE(ADateVersionString, (), "", "a date version string")
-DECLARE_MESSAGE(AddArtifactOnlyOne, (msg::command_line), "", "'{command_line}' can only add one artifact at a time.")
-DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'artifact' or 'port'.")
+DECLARE_MESSAGE(AddCommandFirstArg, (), "", "The first parameter to add must be 'port'.")
 DECLARE_MESSAGE(AddingCompletionEntry, (msg::path), "", "Adding vcpkg completion entry to {path}.")
 DECLARE_MESSAGE(AdditionalPackagesToExport,
                 (),
@@ -37,10 +36,6 @@ DECLARE_MESSAGE(AddTripletExpressionNotAllowed,
                 "",
                 "triplet expressions are not allowed here. You may want to change "
                 "`{package_name}:{triplet}` to `{package_name}` instead.")
-DECLARE_MESSAGE(AddVersionArtifactsOnly,
-                (),
-                "'--version', and 'vcpkg add port' are command lines that must not be localized",
-                "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
@@ -188,47 +183,6 @@ DECLARE_MESSAGE(
     (),
     "",
     "one or more ports requested to be installed were not present in the action plan. (Probably a vcpkg bug)")
-DECLARE_MESSAGE(ArtifactsBootstrapFailed, (), "", "vcpkg-artifacts is not installed and could not be bootstrapped.")
-DECLARE_MESSAGE(ArtifactsOptionIncompatibility, (msg::option), "", "--{option} has no effect on find artifact.")
-DECLARE_MESSAGE(ArtifactsOptionJson,
-                (),
-                "",
-                "Full path to JSON file where environment variables and other properties are recorded")
-DECLARE_MESSAGE(ArtifactsOptionMSBuildProps,
-                (),
-                "",
-                "Full path to the file in which MSBuild properties will be written")
-DECLARE_MESSAGE(ArtifactsOptionVersion, (), "", "A version or version range to match; only valid for artifacts")
-DECLARE_MESSAGE(ArtifactsOptionVersionMismatch,
-                (),
-                "--version is a command line switch and must not be localized",
-                "The number of --version switches must match the number of named artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchAllLanguages, (), "", "Acquires all language files when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchARM, (), "", "Forces host detection to ARM when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchARM64, (), "", "Forces host detection to ARM64 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchForce, (), "", "Forces reacquire if an artifact is already acquired")
-DECLARE_MESSAGE(ArtifactsSwitchFreebsd, (), "", "Forces host detection to FreeBSD when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchLinux, (), "", "Forces host detection to Linux when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchTargetARM, (), "", "Sets target detection to ARM when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchTargetARM64, (), "", "Sets target detection to ARM64 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchTargetX64, (), "", "Sets target detection to x64 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchTargetX86, (), "", "Sets target to x86 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchOnlyOneOperatingSystem,
-                (),
-                "The words after -- are command line switches and must not be localized.",
-                "Only one operating system (--windows, --osx, --linux, --freebsd) may be set.")
-DECLARE_MESSAGE(ArtifactsSwitchOnlyOneHostPlatform,
-                (),
-                "The words after -- are command line switches and must not be localized.",
-                "Only one host platform (--x64, --x86, --arm, --arm64) may be set.")
-DECLARE_MESSAGE(ArtifactsSwitchOnlyOneTargetPlatform,
-                (),
-                "The words after -- are command line switches and must not be localized.",
-                "Only one target platform (--target:x64, --target:x86, --target:arm, --target:arm64) may be set.")
-DECLARE_MESSAGE(ArtifactsSwitchOsx, (), "", "Forces host detection to MacOS when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchX64, (), "", "Forces host detection to x64 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchX86, (), "", "Forces host detection to x86 when acquiring artifacts")
-DECLARE_MESSAGE(ArtifactsSwitchWindows, (), "", "Forces host detection to Windows when acquiring artifacts")
 DECLARE_MESSAGE(AssetCacheConsult, (msg::path, msg::url), "", "Trying to download {path} using asset cache {url}")
 DECLARE_MESSAGE(AssetCacheConsultScript, (msg::path), "", "Trying to download {path} using asset cache script")
 DECLARE_MESSAGE(AssetCacheHit, (), "", "Download successful! Asset cache hit.")
@@ -569,15 +523,7 @@ DECLARE_MESSAGE(CMakeUsingExportedLibs,
                 (msg::value),
                 "{value} is a CMake command line switch of the form -DFOO=BAR",
                 "To use exported libraries in CMake projects, add {value} to your CMake command line.")
-DECLARE_MESSAGE(CmdAcquireExample1,
-                (),
-                "This is a command line, only the <>s part should be localized",
-                "vcpkg acquire <artifact>")
-DECLARE_MESSAGE(CmdAcquireProjectSynopsis, (), "", "Acquires all artifacts referenced by a manifest")
-DECLARE_MESSAGE(CmdAcquireSynopsis, (), "", "Acquires the named artifact")
-DECLARE_MESSAGE(CmdActivateSynopsis, (), "", "Activates artifacts from a manifest")
 DECLARE_MESSAGE(CmdAddExample1, (), "", "vcpkg add port <port name>")
-DECLARE_MESSAGE(CmdAddExample2, (), "", "vcpkg add artifact <artifact name>")
 DECLARE_MESSAGE(CmdAddSynopsis, (), "", "Adds dependency to manifest")
 DECLARE_MESSAGE(CmdAddVersionSynopsis, (), "", "Adds a version to the version database")
 DECLARE_MESSAGE(CmdAddVersionExample1,
@@ -636,7 +582,6 @@ DECLARE_MESSAGE(CmdCreateExample3,
                 (),
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg create <port name> <uri> <downloaded filename>")
-DECLARE_MESSAGE(CmdDeactivateSynopsis, (), "", "Removes all artifact activations from the current shell")
 DECLARE_MESSAGE(CmdDependInfoExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",
@@ -724,11 +669,7 @@ DECLARE_MESSAGE(CmdFindExample1,
                 (),
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg find port <port name>")
-DECLARE_MESSAGE(CmdFindExample2,
-                (),
-                "This is a command line, only the <>s part should be localized",
-                "vcpkg find artifact <artifact name>")
-DECLARE_MESSAGE(CmdFindSynopsis, (), "", "Finds a port or artifact that may be installed or activated")
+DECLARE_MESSAGE(CmdFindSynopsis, (), "", "Finds a port that may be installed")
 DECLARE_MESSAGE(CmdFormatFeatureBaselineSynopsis, (), "", "Formats a feature baseline file")
 DECLARE_MESSAGE(CmdFormatFeatureBaselineExample,
                 (),
@@ -746,19 +687,6 @@ DECLARE_MESSAGE(
     "",
     "Excludes comments when generating the message map (useful for generating the English localization file)")
 DECLARE_MESSAGE(CmdFormatManifestSynopsis, (), "", "Prettyfies vcpkg.json")
-DECLARE_MESSAGE(CmdGenerateMSBuildPropsExample1,
-                (),
-                "This is a command line, only the <path> part should be localized",
-                "vcpkg generate-msbuild-props --msbuild-props <path>")
-DECLARE_MESSAGE(CmdGenerateMSBuildPropsExample2,
-                (),
-                "This is a command line, only the word 'out' should be localized",
-                "vcpkg generate-msbuild-props --msbuild-props out.props")
-DECLARE_MESSAGE(
-    CmdGenerateMSBuildPropsSynopsis,
-    (),
-    "",
-    "Generates msbuild .props files as if activating a manifest's artifact dependencies, without acquiring them")
 DECLARE_MESSAGE(CmdHashExample1,
                 (),
                 "This is a command line, only the <path> part should be localized",
@@ -822,9 +750,6 @@ DECLARE_MESSAGE(CmdPortsdiffExample2,
                 "This is a command line, only the parts in <>s should be localized",
                 "vcpkg portsdiff <from> <to>")
 DECLARE_MESSAGE(CmdPortsdiffSynopsis, (), "", "Diffs changes in port versions between commits")
-DECLARE_MESSAGE(CmdRegenerateOptDryRun, (), "", "Does not actually perform the action, shows only what would be done")
-DECLARE_MESSAGE(CmdRegenerateOptForce, (), "", "Proceeds with the (potentially dangerous) action without confirmation")
-DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "Applies any deprecation fixes")
 DECLARE_MESSAGE(CmdRemoveExample1,
                 (),
                 "This is a command line, only the part <package name> should be localized.",
@@ -878,27 +803,8 @@ DECLARE_MESSAGE(CmdUpdateBaselineSynopsis,
                 (),
                 "",
                 "Updates baselines of git registries in a manifest to those registries' HEAD commit")
-DECLARE_MESSAGE(CmdUpdateRegistryAll, (), "", "Updates all known artifact registries")
-DECLARE_MESSAGE(CmdUpdateRegistryAllExcludesTargets,
-                (),
-                "",
-                "Update registry --all cannot be used with a list of artifact registries")
-DECLARE_MESSAGE(CmdUpdateRegistryExample3,
-                (),
-                "This is a command line, only the <artifact registry name> part should be localized.",
-                "vcpkg x-update-registry <artifact registry name>")
-DECLARE_MESSAGE(CmdUpdateRegistrySynopsis, (), "", "Re-downloads an artifact registry")
-DECLARE_MESSAGE(CmdUpdateRegistryAllOrTargets,
-                (),
-                "",
-                "Update registry requires either a list of artifact registry names or URiIs to update, or --all.")
 DECLARE_MESSAGE(CmdUpgradeOptNoDryRun, (), "", "Actually upgrade")
 DECLARE_MESSAGE(CmdUpgradeOptNoKeepGoing, (), "", "Stop installing packages on failure")
-DECLARE_MESSAGE(CmdUseExample1,
-                (),
-                "This is a command line, only the <artifact name> part should be localized.",
-                "vcpkg use <artifact name>")
-DECLARE_MESSAGE(CmdUseSynopsis, (), "", "Activate a single artifact in this shell")
 DECLARE_MESSAGE(CmdVSInstancesSynopsis, (), "", "Lists detected Visual Studio instances")
 DECLARE_MESSAGE(CmdXDownloadOptHeader, (), "", "Additional header to use when fetching from URLs")
 DECLARE_MESSAGE(CmdXDownloadOptSha, (), "", "The hash of the file to be downloaded")
@@ -1398,10 +1304,6 @@ DECLARE_MESSAGE(FilesContainAbsolutePathPkgconfigNote,
                 (),
                 "",
                 "Adding a call to `vcpkg_fixup_pkgconfig()` may fix absolute paths in .pc files")
-DECLARE_MESSAGE(FindVersionArtifactsOnly,
-                (),
-                "'--version', 'vcpkg search', and 'vcpkg find port' are command lines that must not be localized",
-                "--version can't be used with vcpkg search or vcpkg find port")
 DECLARE_MESSAGE(FieldKindDidNotHaveExpectedValue,
                 (msg::expected, msg::actual),
                 "{expected} is a list of literal kinds the user must type, separated by commas, {actual} is what "
@@ -1424,8 +1326,8 @@ DECLARE_MESSAGE(FileSeekFailed,
 DECLARE_MESSAGE(FilesExported, (msg::path), "", "Files exported at: {path}")
 DECLARE_MESSAGE(FindCommandFirstArg,
                 (),
-                "'find', 'artifact', and 'port' are vcpkg specific terms and should not be translated.",
-                "The first argument to 'find' must be 'artifact' or 'port' .")
+                "'find' and 'port' are vcpkg specific terms and should not be translated.",
+                "The first argument to 'find' must be 'port' .")
 DECLARE_MESSAGE(FishCompletion, (msg::path), "", "vcpkg fish completion is already added at \"{path}\".")
 DECLARE_MESSAGE(FixedEntriesInFile, (msg::count, msg::path), "", "Fixed {count} entries in {path}.")
 DECLARE_MESSAGE(FloatingPointConstTooBig, (msg::count), "", "Floating point constant too big: {count}")
@@ -2689,7 +2591,6 @@ DECLARE_MESSAGE(ProvideExportType,
                 "",
                 "At least one of the following options are required: --raw --nuget --zip --7zip.")
 DECLARE_MESSAGE(RegistryCreated, (msg::path), "", "Successfully created registry at {path}")
-DECLARE_MESSAGE(RegeneratesArtifactRegistry, (), "", "Regenerates an artifact registry")
 DECLARE_MESSAGE(RegistryValueWrongType, (msg::path), "", "The registry value {path} was an unexpected type.")
 DECLARE_MESSAGE(RemoveDependencies,
                 (),
@@ -3149,10 +3050,10 @@ DECLARE_MESSAGE(UserWideIntegrationDeleted, (), "", "User-wide integration is no
 DECLARE_MESSAGE(UserWideIntegrationRemoved, (), "", "User-wide integration was removed.")
 DECLARE_MESSAGE(UsingManifestAt, (msg::path), "", "Using manifest file at {path}.")
 DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
-DECLARE_MESSAGE(VcpkgCeIsExperimental,
+DECLARE_MESSAGE(VcpkgArtifactsHasBeenRemoved,
                 (),
-                "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
-                "vcpkg artifacts will be removed shortly after July 1, 2026.")
+                "The name of the feature is 'vcpkg artifacts' and should be singular despite ending in s",
+                "vcpkg artifacts has been removed")
 DECLARE_MESSAGE(
     VcpkgCompletion,
     (msg::value, msg::path),

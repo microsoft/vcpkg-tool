@@ -8,13 +8,12 @@
 - Run tests: `ctest --preset windows-ci --output-on-failure`
 
 ### Windows local development
-- Use `Win-arm64-Debug-WithArtifacts` on Windows Arm64 hosts.
-- Use `Win-x64-Debug-WithArtifacts` on Windows x64 hosts.
-- Prefer these host-matching `WithArtifacts` presets for normal local configure, build, and test workflows instead of `windows-ci`.
+- Use `Win-arm64-Debug` on Windows Arm64 hosts.
+- Use `Win-x64-Debug` on Windows x64 hosts.
 
 ### Run a single test
-- Run one CTest target: `ctest --preset Win-arm64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure` or `ctest --preset Win-x64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure`
-- Run specific Catch2 tests directly: `.\out\build\Win-arm64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]` or `.\out\build\Win-x64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]`
+- Run one CTest target: `ctest --preset Win-arm64-Debug -R "^vcpkg-test$" --output-on-failure` or `ctest --preset Win-x64-Debug -R "^vcpkg-test$" --output-on-failure`
+- Run specific Catch2 tests directly: `.\out\build\Win-arm64-Debug\vcpkg-test.exe [tag-or-filter]` or `.\out\build\Win-x64-Debug\vcpkg-test.exe [tag-or-filter]`
   - Tags follow the source filename convention (for example `[arguments]`).
 - Run one e2e suite: `pwsh azure-pipelines/end-to-end-tests.ps1 -Filter "<suite-file-name-without-.ps1>"`
 
@@ -26,13 +25,8 @@
 
 ### Formatting / checks
 - C++ format check path used in PR workflow: `pwsh .\azure-pipelines\Format-CxxCode.ps1`
-- Regenerate message map: `cmake --build --preset Win-arm64-Debug-WithArtifacts --target generate-message-map -- -k0` or `cmake --build --preset Win-x64-Debug-WithArtifacts --target generate-message-map -- -k0`
-- Verify message usage: `cmake --build --preset Win-arm64-Debug-WithArtifacts --target verify-messages -- -k0` or `cmake --build --preset Win-x64-Debug-WithArtifacts --target verify-messages -- -k0`
-
-### vcpkg-artifacts (TypeScript) checks
-- Install deps: `npm --prefix .\vcpkg-artifacts ci`
-- Lint: `npm --prefix .\vcpkg-artifacts run eslint`
-- Unit tests: `npm --prefix .\vcpkg-artifacts test`
+- Regenerate message map: `cmake --build --preset Win-arm64-Debug --target generate-message-map -- -k0` or `cmake --build --preset Win-x64-Debug --target generate-message-map -- -k0`
+- Verify message usage: `cmake --build --preset Win-arm64-Debug --target verify-messages -- -k0` or `cmake --build --preset Win-x64-Debug --target verify-messages -- -k0`
 
 ## High-level architecture
 
@@ -40,7 +34,6 @@
 - Command dispatch is tiered: `basic_commands` run without `VcpkgPaths`, `paths_commands` require initialized paths, and `triplet_commands` additionally resolve default/host triplets before executing.
 - Core implementation lives in the `vcpkglib` object library built from `src/vcpkg/*.cpp` and `src/vcpkg/base/*.cpp`, with public headers in `include/vcpkg/**`.
 - Tests are built into `vcpkg-test` from `src/vcpkg-test/*.cpp` (Catch2), plus small helper executables (`reads-stdin`, `test-editor`, etc.) used by tests.
-- The `vcpkg-artifacts` TypeScript code is bundled into `vcpkg-artifacts.mjs` during CMake builds only when `VCPKG_ARTIFACTS_DEVELOPMENT=ON` (enabled by CI presets).
 - Localization is a first-class pipeline: message declarations in `include/vcpkg/base/message-data.inc.h`, generated maps in `locales/messages.json`, and enforcement via `generate-message-map` + `verify-messages`.
 
 ## Key conventions
