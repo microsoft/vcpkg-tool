@@ -603,6 +603,20 @@ DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree o
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(CmdBaselineDiffExample1,
+                (),
+                "This is a command line, only the <old commit sha> and <newer commit sha> parts should be localized.",
+                "vcpkg x-baseline-diff <old commit sha> <newer commit sha>")
+DECLARE_MESSAGE(CmdBaselineDiffMissingBuiltinBaseline,
+                (),
+                "",
+                "Only one commit was provided but the manifest does not have a 'builtin-baseline'. "
+                "Please specify two commits or add a 'builtin-baseline' to vcpkg.json.")
+DECLARE_MESSAGE(CmdBaselineDiffMissingRegistryBaseline,
+                (),
+                "",
+                "Only one commit was provided but the default registry in vcpkg-configuration.json does not "
+                "have a 'baseline'. Please specify two commits or add a 'baseline' to the default registry.")
 DECLARE_MESSAGE(CmdBaselineDiffSynopsis,
                 (),
                 "",
@@ -3134,6 +3148,10 @@ DECLARE_MESSAGE(UpdateBaselineNoUpdate,
                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                 "registry '{url}' not updated: '{value}'")
 DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'")
+DECLARE_MESSAGE(UpdateBaselineSuggestBaselineDiff,
+                (msg::old_value, msg::new_value),
+                "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                "To see what packages changed run: vcpkg x-baseline-diff {old_value} {new_value}")
 DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",

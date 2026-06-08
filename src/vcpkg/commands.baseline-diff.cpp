@@ -1,9 +1,10 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
+#include <vcpkg/base/git.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/parse.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
@@ -18,6 +19,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/paragraphs.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -56,14 +58,6 @@ namespace
         return true;
     }
 
-    void check_for_valid_sha(StringView sha)
-    {
-        if (sha.size() < 7 || !Util::all_of(sha, ParserBase::is_hex_digit_lower))
-        {
-            Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidCommitId, msg::commit_sha = sha);
-        }
-    }
-
 } // unnamed namespace
 
 namespace vcpkg
@@ -71,11 +65,10 @@ namespace vcpkg
     constexpr CommandMetadata CommandBaselineDiffMetadata{
         "x-baseline-diff",
         msgCmdBaselineDiffSynopsis,
-        {"vcpkg x-baseline-diff <old_commit_sha> <newer_commit_sha>",
-         "vcpkg x-baseline-diff $(git rev-parse 2026.02.27) $(git rev-parse 2026.03.18)"},
+        {msgCmdBaselineDiffExample1, "vcpkg x-baseline-diff 2026.02.27 2026.03.18"},
         Undocumented,
         AutocompletePriority::Public,
-        2,
+        1,
         2,
         {switches, {}, multisettings},
         nullptr,
@@ -92,8 +85,6 @@ namespace vcpkg
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingManifestFile);
         }
         auto options = args.parse_arguments(CommandBaselineDiffMetadata);
-        check_for_valid_sha(options.command_arguments[0]);
-        check_for_valid_sha(options.command_arguments[1]);
 
         auto& fs = paths.get_filesystem();
         InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
@@ -101,8 +92,148 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         auto configuration = paths.get_configuration();
-        bool is_default_builtin = configuration.instantiate_registry_set(paths)->is_default_builtin_registry();
-        auto manifest_scf = parse_manifest_scf_or_exit(*manifest, paths, is_default_builtin);
+        // is_default_builtin_registry() only matches BuiltinFilesRegistry (kind "builtin-files"),
+        // but when the manifest carries a builtin-baseline, merge_validate_configs synthesises a
+        // RegistryConfig with kind "builtin" that creates BuiltinGitRegistry instead.  Both are
+        // the local vcpkg clone, so treat either builtin kind as "is default builtin".
+        auto registry_set = configuration.instantiate_registry_set(paths);
+        bool is_default_builtin = [&] {
+            if (!configuration.config.default_reg.has_value())
+            {
+                return true; // null default_reg → BuiltinFilesRegistry
+            }
+            auto* kind = configuration.config.default_reg.get()->kind.get();
+            return !kind || *kind == JsonIdBuiltin || *kind == JsonIdBuiltinFiles;
+        }();
+        auto manifest_scf = parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
+
+        // Determine the two baseline refs. If only one arg, use the manifest's builtin-baseline as the old one.
+        StringView old_baseline_ref;
+        StringView new_baseline_ref;
+        if (options.command_arguments.size() == 2)
+        {
+            old_baseline_ref = options.command_arguments[0];
+            new_baseline_ref = options.command_arguments[1];
+        }
+        else
+        {
+            // Prefer builtin-baseline from the manifest; fall back to the baseline field of
+            // an explicitly configured default registry (e.g. a git registry in
+            // vcpkg-configuration.json).
+            const std::string* old_ref = manifest_scf->core_paragraph->builtin_baseline.get();
+            if (!old_ref)
+            {
+                auto* default_reg = configuration.config.default_reg.get();
+                if (default_reg)
+                {
+                    old_ref = default_reg->baseline.get();
+                    if (!old_ref)
+                    {
+                        Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCmdBaselineDiffMissingRegistryBaseline);
+                    }
+                }
+                else
+                {
+                    Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgCmdBaselineDiffMissingBuiltinBaseline);
+                }
+            }
+            old_baseline_ref = *old_ref;
+            new_baseline_ref = options.command_arguments[0];
+        }
+
+        // Resolve tags and branch names to full SHAs when a local vcpkg clone is available.
+        // This covers two cases:
+        //   1. The builtin registry (no explicit default-registry configured, cloned mode).
+        //   2. An explicit git registry pointing at https://github.com/microsoft/vcpkg while
+        //      running from a local clone — the clone already has the same commits/tags.
+        // In both cases we use the git dir belonging to the versions directory so that
+        // --x-builtin-registry-versions-dir works correctly in tests.
+        std::string old_baseline;
+        std::string new_baseline;
+
+        // Determine whether the configured default registry is the vcpkg GitHub repo.
+        bool is_builtin_git_registry = false;
+        if (!is_default_builtin)
+        {
+            if (auto* default_reg = configuration.config.default_reg.get())
+            {
+                auto* kind = default_reg->kind.get();
+                auto* repo = default_reg->repo.get();
+                is_builtin_git_registry = kind && *kind == JsonIdGit && repo && *repo == builtin_registry_git_url;
+            }
+        }
+
+        // Resolve tags and branch names via the local vcpkg clone when available.
+        // - Builtin registry (cloned mode): resolution is required; use paths.root.
+        // - Git registry pointing at the vcpkg GitHub repo while in cloned mode: try
+        //   paths.root opportunistically; fall back to raw strings if unavailable.
+        // - Any other registry: no resolution, arguments must already be full SHAs.
+        //
+        // We use CurrentDirectory with paths.root (the vcpkg root) rather than
+        // DotGitDir so that git can locate packed-refs and tag objects reliably.
+        // Use the git root for ref resolution when a local vcpkg clone is available.
+        // versions_dot_git_dir() walks up from the builtin registry versions dir to find the
+        // repo root, so --x-builtin-registry-versions-dir is respected in tests.
+        const bool need_resolve = is_default_builtin || is_builtin_git_registry;
+        Path local_git_root; // non-empty when a usable local clone was found
+        if (need_resolve)
+        {
+            auto git_dir_result = paths.versions_dot_git_dir();
+            if (auto* p = git_dir_result.get(); p && !p->empty())
+            {
+                // parent_path() of the .git dir is the repo working directory
+                local_git_root = p->parent_path();
+            }
+        }
+
+        if (!local_git_root.empty())
+        {
+            const auto* git_exe = paths.get_tool_path(console_diagnostic_context, Tools::GIT);
+            if (!git_exe) Checks::exit_fail(VCPKG_LINE_INFO);
+
+            GitRepoLocator locator{GitRepoLocatorKind::CurrentDirectory, local_git_root};
+            auto maybe_old = git_resolve_to_full_sha(console_diagnostic_context, *git_exe, locator, old_baseline_ref);
+            auto maybe_new = git_resolve_to_full_sha(console_diagnostic_context, *git_exe, locator, new_baseline_ref);
+            if (is_default_builtin && (!maybe_old || !maybe_new)) Checks::exit_fail(VCPKG_LINE_INFO);
+            if (maybe_old && maybe_new)
+            {
+                old_baseline = std::move(*maybe_old.get());
+                new_baseline = std::move(*maybe_new.get());
+            }
+            else
+            {
+                // is_builtin_git_registry with a local clone but ref not found; treat as raw strings.
+                old_baseline = old_baseline_ref.to_string();
+                new_baseline = new_baseline_ref.to_string();
+            }
+        }
+        else // no local git clone available or not a resolvable registry
+        {
+            old_baseline = old_baseline_ref.to_string();
+            new_baseline = new_baseline_ref.to_string();
+
+            // Filesystem registries use named string keys as baselines, not commit SHAs.
+            // For builtin and git registries the argument must be a full 40-character SHA.
+            bool needs_sha_validation = true;
+            if (auto* default_reg = configuration.config.default_reg.get())
+            {
+                auto* kind = default_reg->kind.get();
+                needs_sha_validation = !kind || *kind != JsonIdFilesystem;
+            }
+            if (needs_sha_validation)
+            {
+                if (!is_git_sha(old_baseline))
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidCommitId, msg::commit_sha = old_baseline);
+                }
+                if (!is_git_sha(new_baseline))
+                {
+                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidCommitId, msg::commit_sha = new_baseline);
+                }
+            }
+        }
+
+        const std::string* baselines[2] = {&old_baseline, &new_baseline};
 
         const auto& manifest_core = *manifest_scf->core_paragraph;
         PackageSpec toplevel{manifest_core.name, default_triplet};
@@ -115,13 +246,13 @@ namespace vcpkg
         {
             if (auto default_reg = configuration.config.default_reg.get())
             {
-                default_reg->baseline = options.command_arguments[i];
+                default_reg->baseline = *baselines[i];
             }
             else
             {
                 RegistryConfig synthesized_registry;
                 synthesized_registry.kind = JsonIdBuiltin.to_string();
-                synthesized_registry.baseline = options.command_arguments[i];
+                synthesized_registry.baseline = *baselines[i];
                 configuration.config.default_reg.emplace(synthesized_registry);
             }
 
