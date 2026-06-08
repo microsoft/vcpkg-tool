@@ -65,12 +65,32 @@ namespace vcpkg
         }
     }
 
-    InstalledDatabaseLock::InstalledDatabaseLock(const Filesystem& fs,
-                                                 const InstalledPaths& installed,
-                                                 const Optional<bool>& wait_for_lock,
-                                                 const Optional<bool>& ignore_lock_failures)
+    static void take_lock(DiagnosticContext& context,
+                          std::vector<std::unique_ptr<IExclusiveFileLock>>& locks,
+                          const Filesystem& fs,
+                          const Path& lock_file,
+                          bool really_wait_for_lock,
+                          bool allow_errors)
+    {
+        auto this_lock = really_wait_for_lock ? fs.take_exclusive_file_lock(context, lock_file)
+                                              : fs.try_take_exclusive_file_lock(context, lock_file);
+        if (!this_lock && !allow_errors)
+        {
+            context.report(DiagnosticLine{DiagKind::Error, lock_file, msg::format(msgFailedToTakeLock)});
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
+
+        locks.push_back(std::move(this_lock));
+    }
+
+    InstalledDatabaseLockImpl::InstalledDatabaseLockImpl(const Filesystem& fs,
+                                                         const InstalledPaths& installed,
+                                                         const std::vector<Path>& extra_lock_files,
+                                                         const Optional<bool>& wait_for_lock,
+                                                         const Optional<bool>& ignore_lock_failures)
     {
         installed.create_directories(fs);
+        const bool really_wait_for_lock = wait_for_lock.value_or(false);
         const bool allow_errors = ignore_lock_failures.value_or(false);
         DiagnosticContext* lock_taking_context = &stderr_diagnostic_context;
         WarningDiagnosticContext wdc{stderr_diagnostic_context};
@@ -79,25 +99,47 @@ namespace vcpkg
             lock_taking_context = &wdc;
         }
 
-        const auto lock_file = installed.vcpkg_running_lock();
-        if (wait_for_lock.value_or(false))
+        take_lock(
+            *lock_taking_context, m_locks, fs, installed.vcpkg_running_lock(), really_wait_for_lock, allow_errors);
+        for (auto&& lock_file : extra_lock_files)
         {
-            m_lock = fs.take_exclusive_file_lock(*lock_taking_context, lock_file);
-        }
-        else
-        {
-            m_lock = fs.try_take_exclusive_file_lock(*lock_taking_context, lock_file);
-        }
+            auto parent = lock_file.parent_path();
+            if (!parent.empty())
+            {
+                fs.create_directories(parent, IgnoreErrors{});
+            }
 
-        if (!m_lock && !allow_errors)
-        {
-            stderr_diagnostic_context.report(
-                DiagnosticLine{DiagKind::Error, lock_file, msg::format(msgFailedToTakeInstalledLock)});
-            Checks::exit_fail(VCPKG_LINE_INFO);
+            take_lock(*lock_taking_context, m_locks, fs, lock_file, really_wait_for_lock, allow_errors);
         }
     }
 
+    InstalledDatabaseLockImpl::~InstalledDatabaseLockImpl() = default;
+
+    InstalledDatabaseLock::InstalledDatabaseLock(const Filesystem& fs,
+                                                 const InstalledPaths& installed,
+                                                 const Optional<bool>& wait_for_lock,
+                                                 const Optional<bool>& ignore_lock_failures)
+        : InstalledDatabaseLockImpl(fs, installed, {}, wait_for_lock, ignore_lock_failures)
+    {
+    }
+
     InstalledDatabaseLock::~InstalledDatabaseLock() = default;
+
+    InstallAndBuildDatabaseLock::InstallAndBuildDatabaseLock(const Filesystem& fs,
+                                                             const InstalledPaths& installed,
+                                                             const Path& buildtrees,
+                                                             const Path& packages,
+                                                             const Optional<bool>& wait_for_lock,
+                                                             const Optional<bool>& ignore_lock_failures)
+        : InstalledDatabaseLock(fs,
+                                installed,
+                                {vcpkg_running_lock(buildtrees), vcpkg_running_lock(packages)},
+                                wait_for_lock,
+                                ignore_lock_failures)
+    {
+    }
+
+    InstallAndBuildDatabaseLock::~InstallAndBuildDatabaseLock() = default;
 
     StatusParagraphs database_load(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,

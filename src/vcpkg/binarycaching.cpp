@@ -724,7 +724,7 @@ namespace
                 .string_arg("-PreRelease")
                 .string_arg("-PackageSaveMode")
                 .string_arg("nupkg");
-            if (!m_use_nuget_cache) cmd.string_arg("-DirectDownload").string_arg("-NoCache");
+            if (!m_use_nuget_cache) cmd.string_arg("-DirectDownload").string_arg("-NoHttpCache");
             cmd.string_arg(src.option).string_arg(src.value);
             return cmd;
         }
@@ -1673,11 +1673,11 @@ namespace
 
     ExpectedL<Path> default_cache_path_impl()
     {
-        auto maybe_cachepath = get_environment_variable(EnvironmentVariableVcpkgDefaultBinaryCache);
-        if (auto p_str = maybe_cachepath.get())
+        auto maybe_cachepath = get_environment_variable_nonempty(EnvironmentVariableVcpkgDefaultBinaryCache);
+        if (const auto pcachepath = maybe_cachepath.get())
         {
             get_global_metrics_collector().track_define(DefineMetric::VcpkgDefaultBinaryCache);
-            Path path = std::move(*p_str);
+            Path path = std::move(*pcachepath);
             path.make_preferred();
             if (!real_filesystem.is_directory(path))
             {
@@ -2423,20 +2423,22 @@ namespace vcpkg
             return {*p};
         }
 
-        auto gh_repo = get_environment_variable(EnvironmentVariableGitHubRepository).value_or("");
-        if (gh_repo.empty())
+        auto maybe_gh_repo = get_environment_variable(EnvironmentVariableGitHubRepository);
+        const auto pgh_repo = maybe_gh_repo.get();
+        if (!pgh_repo || pgh_repo->empty())
         {
             return {};
         }
 
-        auto gh_server = get_environment_variable(EnvironmentVariableGitHubServerUrl).value_or("");
-        if (gh_server.empty())
+        auto maybe_gh_server = get_environment_variable(EnvironmentVariableGitHubServerUrl);
+        const auto pgh_server = maybe_gh_server.get();
+        if (!pgh_server || pgh_server->empty())
         {
             return {};
         }
 
         get_global_metrics_collector().track_define(DefineMetric::GitHubRepository);
-        return {Strings::concat(gh_server, '/', gh_repo, ".git"),
+        return {Strings::concat(*pgh_server, '/', *pgh_repo, ".git"),
                 get_environment_variable(EnvironmentVariableGitHubRef).value_or(""),
                 get_environment_variable(EnvironmentVariableGitHubSha).value_or("")};
     }

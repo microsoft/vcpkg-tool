@@ -176,7 +176,7 @@ namespace vcpkg
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
                                    const BuildPackageOptions& build_options,
-                                   const InstalledDatabaseLock& installed_lock,
+                                   const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
                                    const IBuildLogsRecorder& build_logs_recorder)
@@ -223,7 +223,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         Checks::exit_with_code(VCPKG_LINE_INFO,
                                command_build_ex(args,
                                                 paths,
@@ -239,7 +240,7 @@ namespace vcpkg
                          const VcpkgPaths& paths,
                          Triplet host_triplet,
                          const BuildPackageOptions& build_options,
-                         const InstalledDatabaseLock& installed_lock,
+                         const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
                          const IBuildLogsRecorder& build_logs_recorder)
@@ -489,7 +490,7 @@ namespace vcpkg
             for (auto&& env_var : pre_build_info.passthrough_env_vars)
             {
                 auto maybe_env_val = get_environment_variable(env_var);
-                if (auto env_val = maybe_env_val.get())
+                if (const auto env_val = maybe_env_val.get())
                 {
                     env[env_var] = std::move(*env_val);
                 }
@@ -503,7 +504,10 @@ namespace vcpkg
             for (const auto& var : s_extra_vars)
             {
                 auto val = get_environment_variable(var);
-                if (auto p_val = val.get()) env.emplace(var, *p_val);
+                if (const auto p_val = val.get())
+                {
+                    env.emplace(var, *p_val);
+                }
             }
 
             /*
@@ -518,8 +522,8 @@ namespace vcpkg
 
             // 2021-05-09 Fix: Detect If there's already HTTP(S)_PROXY presented in the environment variables.
             // If so, we no longer overwrite them.
-            bool proxy_from_env = (get_environment_variable(EnvironmentVariableHttpProxy).has_value() ||
-                                   get_environment_variable(EnvironmentVariableHttpsProxy).has_value());
+            bool proxy_from_env = (get_environment_variable_nonempty(EnvironmentVariableHttpProxy).has_value() ||
+                                   get_environment_variable_nonempty(EnvironmentVariableHttpsProxy).has_value());
 
             if (proxy_from_env)
             {
@@ -822,7 +826,8 @@ namespace vcpkg
 
         auto cmd = vcpkg::make_cmake_cmd(paths, paths.ports_cmake, std::move(cmake_args));
         RedirectedProcessLaunchSettings settings;
-        settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
+        auto& env = settings.environment.emplace(paths.get_action_env(pre_build_info, toolset));
+        env.add_remove_entry(EnvironmentVariableDestDir);
         auto& fs = paths.get_filesystem();
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
         auto stdoutlog = buildpath / ("stdout-" + triplet.canonical_name() + ".log");
@@ -1046,6 +1051,10 @@ namespace vcpkg
         {
             return m_paths.scripts / "toolchains/ios.cmake";
         }
+        else if (cmake_system_name == "OHOS")
+        {
+            return m_paths.scripts / "toolchains/ohos.cmake";
+        }
         else
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO,
@@ -1184,6 +1193,7 @@ namespace vcpkg
 
         RedirectedProcessLaunchSettings settings;
         auto& env = settings.environment.emplace(paths.get_action_env(*abi_info.pre_build_info, *toolset));
+        env.add_remove_entry(EnvironmentVariableDestDir);
 
         auto buildpath = paths.build_dir(action.spec.name());
         fs.create_directory(buildpath, VCPKG_LINE_INFO);
@@ -1337,10 +1347,10 @@ namespace vcpkg
     {
         for (const auto& env_var : pre_build_info.passthrough_env_vars_tracked)
         {
-            if (auto e = get_environment_variable(env_var))
+            auto maybe_e = get_environment_variable(env_var);
+            if (const auto e = maybe_e.get())
             {
-                abi_tag_entries.emplace_back(
-                    "ENV:" + env_var, Hash::get_string_hash(e.value_or_exit(VCPKG_LINE_INFO), Hash::Algorithm::Sha256));
+                abi_tag_entries.emplace_back("ENV:" + env_var, Hash::get_string_hash(*e, Hash::Algorithm::Sha256));
             }
         }
 

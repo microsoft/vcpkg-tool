@@ -39,12 +39,13 @@ namespace vcpkg
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
-                                           const InstalledDatabaseLock& installed_lock,
+                                           const InstallAndBuildDatabaseLock& installed_lock,
                                            ActionPlan action_plan,
                                            DryRun dry_run,
                                            PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
-                                           bool include_manifest_in_github_issue);
+                                           bool include_manifest_in_github_issue,
+                                           bool skip_install_if_cached);
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,

@@ -73,8 +73,12 @@ namespace vcpkg
 
         const CreateUpgradePlanOptions create_upgrade_plan_options{nullptr, host_triplet, unsupported_port_action};
 
-        InstalledDatabaseLock installed_lock{
-            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
         StatusParagraphs status_db = database_sync(paths.get_filesystem(), paths.installed(), installed_lock);
 
         // Load ports from ports dirs

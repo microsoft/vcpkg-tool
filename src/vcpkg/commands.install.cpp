@@ -714,7 +714,7 @@ namespace vcpkg
                                         const VcpkgPaths& paths,
                                         Triplet host_triplet,
                                         const BuildPackageOptions& build_options,
-                                        const InstalledDatabaseLock& installed_lock,
+                                        const InstallAndBuildDatabaseLock& installed_lock,
                                         const ActionPlan& action_plan,
                                         StatusParagraphs& status_db,
                                         BinaryCache& binary_cache,
@@ -869,6 +869,7 @@ namespace vcpkg
         {SwitchXProhibitBackcompatFeatures, {}},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchNoPrintUsage, msgHelpTxtOptNoUsage},
+        {SwitchSkipInstallIfCached, msgHelpTxtOptSkipInstallIfCached},
     };
 
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
@@ -1318,6 +1319,7 @@ namespace vcpkg
                                                  ? UnsupportedPortAction::Warn
                                                  : UnsupportedPortAction::Error;
         const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
+        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
@@ -1360,6 +1362,11 @@ namespace vcpkg
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
                 failure = true;
             }
+            if (skip_install_if_cached)
+            {
+                msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchSkipInstallIfCached);
+                failure = true;
+            }
             if (Util::Sets::contains(options.multisettings, SwitchXFeature))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXFeature);
@@ -1393,7 +1400,8 @@ namespace vcpkg
                                                       Util::Enum::to_enum<Editable>(is_editable)};
 
         auto registry_set = paths.make_registry_set();
-        InstalledDatabaseLock installed_lock{fs, paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{
+            fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
         auto& var_provider = *var_provider_storage;
         if (manifest)
@@ -1453,7 +1461,8 @@ namespace vcpkg
                                               dry_run ? DryRun::Yes : DryRun::No,
                                               print_cmake_usage ? PrintUsage::Yes : PrintUsage::No,
                                               pkgsconfig,
-                                              true);
+                                              true,
+                                              skip_install_if_cached);
         }
 
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));

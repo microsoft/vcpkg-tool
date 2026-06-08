@@ -19,15 +19,7 @@ if (-not $IsMacOS -and -not $IsLinux) {
     @'
 {
     "schema-version": 1,
-    "tools": [{
-        "name": "7zip_msi",
-        "os": "windows",
-        "version": "19.00",
-        "executable": "Files\\7-Zip\\7z.exe",
-        "url": "https://www.7-zip.org/a/7z1900-x64.msi",
-        "sha512": "7837a8677a01eed9c3309923f7084bc864063ba214ee169882c5b04a7a8b198ed052c15e981860d9d7952c98f459a4fab87a72fd78e7d0303004dcb86f4324c8",
-        "archive": "7z1900-x64.msi"
-    },
+    "tools": [
     {
         "name": "ninja-testing",
         "os": "windows",
@@ -90,10 +82,6 @@ if (-not $IsMacOS -and -not $IsLinux) {
     }
 
     $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'down loads'
-    Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "7zip_msi", "--vcpkg-root=$TestingRoot"))
-    Throw-IfFailed
-    Require-FileExists "$env:VCPKG_DOWNLOADS/tools/7zip_msi-19.00-windows/Files/7-Zip/7z.exe"
-
     Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja-testing", "--vcpkg-root=$TestingRoot"))
     Throw-IfFailed
     Require-FileExists "$env:VCPKG_DOWNLOADS/tools/ninja-testing-1.10.2-windows/ninja.exe"
@@ -126,4 +114,35 @@ if (-not $IsMacOS -and -not $IsLinux) {
     if ($LASTEXITCODE -ne 0) {
         throw 'Couldn''t run resulting ninja'
     }
+}
+
+# Concurrent `vcpkg fetch ninja` invocations must all succeed: each process
+# extracts into a per-PID partial directory before atomically renaming into
+# place. Regression test for microsoft/vcpkg#50051. The archive is served from a
+# local asset cache so the eight concurrent jobs stay offline; they share a
+# downloads directory so they genuinely race on the extraction.
+$env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'concurrent-fetch-downloads'
+Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
+$ninjaAssetSource = "x-azurl,file://$AssetCache,,readwrite"
+
+# Populate the asset cache from the authoritative source once, then clear the
+# downloads so each concurrent job re-fetches the archive from the cache offline.
+Run-Vcpkg -TestArgs ($commonArgs + @("fetch", "ninja", "--x-stderr-status", "--x-asset-sources=$ninjaAssetSource"))
+Throw-IfFailed
+Remove-Item -Recurse -Force $env:VCPKG_DOWNLOADS -ErrorAction SilentlyContinue
+
+$jobs = @()
+for ($i = 0; $i -lt 8; $i++) {
+    $jobs += Start-Job -ScriptBlock {
+        param($vcpkg, $vcpkgArgs)
+        & $vcpkg @vcpkgArgs | Out-Null
+        $LASTEXITCODE
+    } -ArgumentList @($VcpkgExe, ($commonArgs + @("fetch", "ninja", "--x-stderr-status", "--x-asset-sources=$ninjaAssetSource;x-block-origin")))
+}
+
+$exitCodes = @($jobs | Wait-Job | Receive-Job)
+$jobs | Remove-Job
+$failed = @($exitCodes | Where-Object { $_ -ne 0 })
+if ($failed.Count -gt 0) {
+    throw "Concurrent vcpkg fetch ninja: $($failed.Count) of $($exitCodes.Count) invocations failed (regression of microsoft/vcpkg#50051)"
 }

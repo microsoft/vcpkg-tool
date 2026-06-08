@@ -343,21 +343,62 @@ namespace vcpkg
     {
 #if defined(_WIN32)
         const auto w_varname = Strings::to_utf16(varname);
-        const auto sz = GetEnvironmentVariableW(w_varname.c_str(), nullptr, 0);
-        if (sz == 0) return nullopt;
+        // Try to read into the small string optimization buffer first to avoid a second API call
+        std::wstring ret;
+        const auto initial_capacity = ret.capacity();
+        Checks::check_exit(VCPKG_LINE_INFO, MAXDWORD > initial_capacity);
+        // +1 for null terminator
+        const DWORD initial_buffer_size = static_cast<DWORD>(initial_capacity + 1);
+        ret.resize(ret.capacity());
+        SetLastError(ERROR_SUCCESS);
+        const auto sz = GetEnvironmentVariableW(w_varname.c_str(), ret.data(), initial_buffer_size);
+        if (sz == 0)
+        {
+            const auto last_error = GetLastError();
+            if (last_error == ERROR_ENVVAR_NOT_FOUND)
+            {
+                return nullopt;
+            }
+            else if (last_error != ERROR_SUCCESS)
+            {
+                Checks::unreachable(VCPKG_LINE_INFO);
+            }
 
-        std::wstring ret(sz, L'\0');
+            // last_error == ERROR_SUCCESS means the variable is present but empty, so it will be returned in the "Fits
+            // in SSO buffer" block below
+        }
 
-        Checks::check_exit(VCPKG_LINE_INFO, MAXDWORD >= ret.size());
-        const auto sz2 = GetEnvironmentVariableW(w_varname.c_str(), ret.data(), static_cast<DWORD>(ret.size()));
+        if (sz < initial_buffer_size)
+        {
+            // Fits in SSO buffer
+            ret.resize(sz);
+            return Strings::to_utf8(ret);
+        }
+
+        // sz is the required size including the null terminator
+        ret.resize(sz - 1);
+        const auto sz2 = GetEnvironmentVariableW(w_varname.c_str(), ret.data(), sz);
         Checks::check_exit(VCPKG_LINE_INFO, sz2 + 1 == sz);
-        ret.pop_back();
-        return Strings::to_utf8(ret.c_str());
+        return Strings::to_utf8(ret);
 #else
         auto v = getenv(varname.c_str());
         if (!v) return nullopt;
         return std::string(v);
 #endif
+    }
+
+    Optional<std::string> get_environment_variable_nonempty(ZStringView varname)
+    {
+        auto maybe_result = get_environment_variable(varname);
+        if (auto presult = maybe_result.get())
+        {
+            if (presult->empty())
+            {
+                maybe_result.clear();
+            }
+        }
+
+        return maybe_result; // NRVO
     }
 
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept
@@ -435,13 +476,14 @@ namespace vcpkg
 #endif // ^^^ !_WIN32
 
             auto maybe_home = get_environment_variable(HOMEVAR);
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
+            const auto phome = maybe_home.get();
+            if (!phome || phome->empty())
             {
                 return msg::format(msgUnableToReadEnvironmentVariable,
                                    msg::env_var = format_environment_variable(HOMEVAR));
             }
 
-            Path p = std::move(*maybe_home.get());
+            Path p = std::move(*phome);
             if (!p.is_absolute())
             {
                 return msg::format(
@@ -464,18 +506,20 @@ namespace vcpkg
     const ExpectedL<Path>& get_appdata_local()
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
-            auto maybe_home = get_environment_variable(EnvironmentVariableLocalAppData);
-            if (!maybe_home.has_value() || maybe_home.get()->empty())
+            auto maybe_appdata = get_environment_variable(EnvironmentVariableLocalAppData);
+            auto pappdata = maybe_appdata.get();
+            if (!pappdata || pappdata->empty())
             {
                 // Consult %APPDATA% as a workaround for Service accounts
                 // Microsoft/vcpkg#12285
-                maybe_home = get_environment_variable(EnvironmentVariableAppData);
-                if (!maybe_home.has_value() || maybe_home.get()->empty())
+                maybe_appdata = get_environment_variable(EnvironmentVariableAppData);
+                pappdata = maybe_appdata.get();
+                if (!pappdata || pappdata->empty())
                 {
                     return msg::format(msgUnableToReadAppDatas);
                 }
 
-                auto p = Path(Path(*maybe_home.get()).parent_path());
+                auto p = Path(Path(*pappdata).parent_path());
                 p /= "Local";
                 if (!p.is_absolute())
                 {
@@ -487,7 +531,7 @@ namespace vcpkg
                 return p;
             }
 
-            auto p = Path(*maybe_home.get());
+            auto p = Path(std::move(*pappdata));
             if (!p.is_absolute())
             {
                 return msg::format(msgEnvVarMustBeAbsolutePath,
@@ -507,10 +551,11 @@ namespace vcpkg
 
     static ExpectedL<Path> get_windows_forced_environment_variable(StringLiteral environment_variable)
     {
-        auto env = get_environment_variable(environment_variable);
-        if (const auto p = env.get())
+        auto maybe_env = get_environment_variable(environment_variable);
+        const auto penv = maybe_env.get();
+        if (penv && !penv->empty())
         {
-            return Path(std::move(*p));
+            return Path(std::move(*penv));
         }
 
         return msg::format(msgWindowsEnvMustAlwaysBePresent,
@@ -557,15 +602,13 @@ namespace vcpkg
     {
         static ExpectedL<Path> s_home = []() -> ExpectedL<Path> {
             auto maybe_home = get_environment_variable("XDG_CACHE_HOME");
-            if (auto p = maybe_home.get())
+            const auto phome = maybe_home.get();
+            if (phome && !phome->empty())
             {
-                return Path(std::move(*p));
+                return Path(std::move(*phome));
             }
 
-            return get_home_dir().map([](Path home) {
-                home /= ".cache";
-                return home;
-            });
+            return get_home_dir().map([](const Path& home) { return home / ".cache"; });
         }();
         return s_home;
     }
@@ -605,7 +648,8 @@ namespace vcpkg
         static const ExpectedL<Path> result =
             get_appdata_local().map([](const Path& appdata_local) { return appdata_local / "vcpkg"; });
 #else
-        static const ExpectedL<Path> result = Path(get_environment_variable("HOME").value_or("/var")) / ".vcpkg";
+        static const ExpectedL<Path> result =
+            Path(get_environment_variable_nonempty("HOME").value_or("/var")) / ".vcpkg";
 #endif
         return result;
     }
@@ -714,27 +758,23 @@ namespace vcpkg
 
     static const Optional<Path>& get_program_files()
     {
-        static const auto PROGRAMFILES = []() -> Optional<Path> {
-            auto value = get_environment_variable(EnvironmentVariableProgramFiles);
-            if (auto v = value.get())
-            {
-                return *v;
-            }
-
-            return nullopt;
-        }();
-
+        static const auto PROGRAMFILES =
+            get_environment_variable_nonempty(EnvironmentVariableProgramFiles).map([](std::string&& pf) {
+                return Path(std::move(pf));
+            });
         return PROGRAMFILES;
     }
 
     const Optional<Path>& get_program_files_32_bit()
     {
         static const auto PROGRAMFILES_x86 = []() -> Optional<Path> {
-            auto value = get_environment_variable(EnvironmentVariableProgramFilesX86);
-            if (auto v = value.get())
+            auto maybe_value = get_environment_variable_nonempty(EnvironmentVariableProgramFilesX86);
+            const auto pvalue = maybe_value.get();
+            if (pvalue)
             {
-                return *v;
+                return Path(std::move(*pvalue));
             }
+
             return get_program_files();
         }();
         return PROGRAMFILES_x86;
@@ -743,11 +783,13 @@ namespace vcpkg
     const Optional<Path>& get_program_files_platform_bitness()
     {
         static const auto ProgramW6432 = []() -> Optional<Path> {
-            auto value = get_environment_variable(EnvironmentVariableProgramW6432);
-            if (auto v = value.get())
+            auto maybe_value = get_environment_variable(EnvironmentVariableProgramW6432);
+            const auto pvalue = maybe_value.get();
+            if (pvalue && !pvalue->empty())
             {
-                return *v;
+                return std::move(*pvalue);
             }
+
             return get_program_files();
         }();
         return ProgramW6432;
@@ -756,13 +798,14 @@ namespace vcpkg
     unsigned int get_concurrency()
     {
         static unsigned int concurrency = [] {
-            auto user_defined_concurrency = get_environment_variable(EnvironmentVariableVcpkgMaxConcurrency);
-            if (user_defined_concurrency)
+            auto maybe_user_defined_concurrency = get_environment_variable(EnvironmentVariableVcpkgMaxConcurrency);
+            const auto puser_defined_concurrency = maybe_user_defined_concurrency.get();
+            if (puser_defined_concurrency)
             {
                 int res = -1;
                 try
                 {
-                    res = std::stoi(user_defined_concurrency.value_or_exit(VCPKG_LINE_INFO));
+                    res = std::stoi(*puser_defined_concurrency);
                 }
                 catch (std::exception&)
                 {
@@ -800,24 +843,22 @@ namespace vcpkg
     Optional<CPUArchitecture> guess_visual_studio_prompt_target_architecture()
     {
         // Check for the "vsdevcmd" infrastructure used by Visual Studio 2017 and later
-        const auto vscmd_arg_tgt_arch_env = get_environment_variable(EnvironmentVariableVscmdArgTgtArch);
-        if (vscmd_arg_tgt_arch_env)
+        auto maybe_vscmd_arg_tgt_arch_env = get_environment_variable_nonempty(EnvironmentVariableVscmdArgTgtArch);
+        if (const auto pvscmd_arg_tgt_arch_env = maybe_vscmd_arg_tgt_arch_env.get())
         {
-            return to_cpu_architecture(vscmd_arg_tgt_arch_env.value_or_exit(VCPKG_LINE_INFO));
+            return to_cpu_architecture(*pvscmd_arg_tgt_arch_env);
         }
 
         // Check for the "vcvarsall" infrastructure used by Visual Studio 2015
-        if (get_environment_variable(EnvironmentVariableVCInstallDir))
+        if (get_environment_variable_nonempty(EnvironmentVariableVCInstallDir))
         {
-            const auto Platform = get_environment_variable(EnvironmentVariablePlatform);
-            if (Platform)
+            auto maybe_platform = get_environment_variable_nonempty(EnvironmentVariablePlatform);
+            if (const auto pplatform = maybe_platform.get())
             {
-                return to_cpu_architecture(Platform.value_or_exit(VCPKG_LINE_INFO));
+                return to_cpu_architecture(*pplatform);
             }
-            else
-            {
-                return CPUArchitecture::X86;
-            }
+
+            return CPUArchitecture::X86;
         }
 
         return nullopt;

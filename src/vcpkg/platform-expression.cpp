@@ -43,6 +43,7 @@ namespace vcpkg::PlatformExpression
         tvos,
         watchos,
         visionos,
+        ohos,
 
         static_link,
         static_crt,
@@ -80,6 +81,7 @@ namespace vcpkg::PlatformExpression
             {"tvos", Identifier::tvos},
             {"watchos", Identifier::watchos},
             {"visionos", Identifier::visionos},
+            {"ohos", Identifier::ohos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
             {"native", Identifier::native},
@@ -707,6 +709,7 @@ namespace vcpkg::PlatformExpression
                         case Identifier::watchos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS");
                         case Identifier::visionos:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
+                        case Identifier::ohos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OHOS");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");
                         case Identifier::static_crt: return true_if_exists_and_equal("VCPKG_CRT_LINKAGE", "static");

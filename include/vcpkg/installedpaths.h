@@ -12,6 +12,8 @@
 
 namespace vcpkg
 {
+    inline Path vcpkg_running_lock(const Path& root) { return root / FileVcpkgRunningLock; }
+
     struct InstalledPaths
     {
         explicit InstalledPaths(Path&& root) : m_root(std::move(root)) { }
@@ -56,7 +58,7 @@ namespace vcpkg
         // (each update is written immediately after each port install and the results merged only at the end)
 
         // /vcpkg/vcpkg-running.lock is a file system lock used to synchronize access to the installed tree
-        Path vcpkg_running_lock() const { return vcpkg_dir() / FileVcpkgRunningLock; }
+        Path vcpkg_running_lock() const { return vcpkg::vcpkg_running_lock(vcpkg_dir()); }
 
         // /<triplet> is the root for user facing contents associated with <triplet>
         // for example, /x64-windows/include/zlib.h would be the path to zlib's public header when installed for

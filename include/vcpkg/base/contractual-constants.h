@@ -277,6 +277,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchSingleFile = "single-file";
     inline constexpr StringLiteral SwitchSkipFailures = "skip-failures";
     inline constexpr StringLiteral SwitchSkipFormattingCheck = "skip-formatting-check";
+    inline constexpr StringLiteral SwitchSkipInstallIfCached = "skip-install-if-cached";
     inline constexpr StringLiteral SwitchSkipSha512 = "skip-sha512";
     inline constexpr StringLiteral SwitchSkipVersionFormatCheck = "skip-version-format-check";
     inline constexpr StringLiteral SwitchSort = "sort";
@@ -489,6 +490,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableCIProjectId = "CI_PROJECT_ID";
     inline constexpr StringLiteral EnvironmentVariableCircleCI = "CIRCLECI";
     inline constexpr StringLiteral EnvironmentVariableCodebuildBuildId = "CODEBUILD_BUILD_ID";
+    inline constexpr StringLiteral EnvironmentVariableDestDir = "DESTDIR";
     inline constexpr StringLiteral EnvironmentVariableEditor = "EDITOR";
     inline constexpr StringLiteral EnvironmentVariableGitCeilingDirectories = "GIT_CEILING_DIRECTORIES";
     inline constexpr StringLiteral EnvironmentVariableGitHubActions = "GITHUB_ACTIONS";

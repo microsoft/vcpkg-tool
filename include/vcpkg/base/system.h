@@ -15,6 +15,8 @@
 namespace vcpkg
 {
     Optional<std::string> get_environment_variable(ZStringView varname);
+    // identical to get_environment_variable but returns nullopt if the variable is set to an empty string
+    Optional<std::string> get_environment_variable_nonempty(ZStringView varname);
     void set_environment_variable(ZStringView varname, Optional<ZStringView> value) noexcept;
 
     std::vector<std::string> get_environment_variables();

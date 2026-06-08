@@ -51,6 +51,11 @@ void vcpkg_curl_global_init(long flags)
         // It's possible that someone explicitly installs this one
         handle = dlopen("libcurl-nss.so.4", RTLD_NOW | RTLD_LOCAL);
     }
+    if (!handle)
+    {
+        // Termux has this if the user only installs `libcurl`
+        handle = dlopen("libcurl.so", RTLD_NOW | RTLD_LOCAL);
+    }
 
     if (!handle)
     {

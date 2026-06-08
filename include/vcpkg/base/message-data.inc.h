@@ -43,7 +43,6 @@ DECLARE_MESSAGE(AddVersionArtifactsOnly,
                 "--version is artifacts only and can't be used with vcpkg add port")
 DECLARE_MESSAGE(AddVersionAddedVersionToFile, (msg::version, msg::path), "", "added version {version} to {path}")
 DECLARE_MESSAGE(AddVersionCommitChangesReminder, (), "", "Did you remember to commit your changes?")
-DECLARE_MESSAGE(AddVersionFileNotFound, (msg::path), "", "couldn't find required file {path}")
 DECLARE_MESSAGE(AddVersionFormatPortSuggestion, (msg::command_line), "", "Run `{command_line}` to format the file")
 DECLARE_MESSAGE(AddVersionIgnoringOptionAll,
                 (msg::option),
@@ -162,10 +161,6 @@ DECLARE_MESSAGE(AnOverlayPath, (), "", "an overlay path")
 DECLARE_MESSAGE(AnOverlayTripletsPath, (), "", "a triplet path")
 DECLARE_MESSAGE(AnOverride, (), "", "an override")
 DECLARE_MESSAGE(ANonNegativeInteger, (), "", "a nonnegative integer")
-DECLARE_MESSAGE(AnotherInstallationInProgress,
-                (),
-                "",
-                "Another installation is in progress on the machine, sleeping 6s before retrying.")
 DECLARE_MESSAGE(AnSpdxLicenseExpression, (), "", "an SPDX license expression")
 DECLARE_MESSAGE(APackageName, (), "", "a package name")
 DECLARE_MESSAGE(APackagePattern, (), "", "a package pattern")
@@ -306,11 +301,6 @@ DECLARE_MESSAGE(AutomaticLinkingForMSBuildProjects,
                 (),
                 "",
                 "All MSBuild C++ projects can now #include any installed libraries. Linking will be handled "
-                "automatically. Installing new libraries will make them instantly available.")
-DECLARE_MESSAGE(AutomaticLinkingForVS2017AndLater,
-                (),
-                "",
-                "Visual Studio 2017 and later can now #include any installed libraries. Linking will be handled "
                 "automatically. Installing new libraries will make them instantly available.")
 DECLARE_MESSAGE(AutoSettingEnvVar,
                 (msg::env_var, msg::url),
@@ -1394,10 +1384,10 @@ DECLARE_MESSAGE(FailedToParseSerializedBinParagraph,
                 "with the following output:\n{error_msg}\nSerialized Binary Paragraph:")
 DECLARE_MESSAGE(FailedToStoreBackToMirror, (msg::path, msg::url), "", "Failed to store {path} to {url}.")
 DECLARE_MESSAGE(FailedToStoreBinaryCache, (msg::path), "", "Failed to store binary cache {path}")
-DECLARE_MESSAGE(FailedToTakeInstalledLock,
+DECLARE_MESSAGE(FailedToTakeLock,
                 (),
                 "",
-                "failed to take lock, another vcpkg may be running against the same installed tree")
+                "failed to take lock, another vcpkg may be running against the same directory")
 DECLARE_MESSAGE(FailedVendorAuthentication,
                 (msg::vendor, msg::url),
                 "",
@@ -1769,6 +1759,10 @@ DECLARE_MESSAGE(HelpTxtOptManifestNoDefault,
                 "Does not install the default features from the top-level manifest (manifest mode)")
 DECLARE_MESSAGE(HelpTxtOptNoDownloads, (), "", "Does not download new sources")
 DECLARE_MESSAGE(HelpTxtOptNoUsage, (), "", "Does not print CMake usage information after install")
+DECLARE_MESSAGE(HelpTxtOptSkipInstallIfCached,
+                (),
+                "",
+                "Skips the installation of packages if every package is already cached")
 DECLARE_MESSAGE(HelpTxtOptOnlyBinCache, (), "", "Fails if cached binaries are not available")
 DECLARE_MESSAGE(HelpTxtOptOnlyDownloads, (), "", "Makes best-effort attempt to download sources without building")
 DECLARE_MESSAGE(HelpTxtOptRecurse, (), "", "Allows removal of packages as part of installation")
@@ -1880,7 +1874,7 @@ DECLARE_MESSAGE(IntegrateInstallHelpLinux, (), "", "Makes installed packages ava
 DECLARE_MESSAGE(IntegrateInstallHelpWindows,
                 (),
                 "",
-                "Makes installed packages available user-wide. Requires admin privileges on first use")
+                "Makes installed packages available to MSBuild C++ projects for the current user")
 DECLARE_MESSAGE(IntegrateNonWindowsOnly,
                 (msg::command_line),
                 "",
@@ -1899,7 +1893,6 @@ DECLARE_MESSAGE(IntegrateZshHelp,
                 (),
                 "'zsh' is a terminal program which should be unlocalized.",
                 "Enable zsh tab-completion. Non-Windows only")
-DECLARE_MESSAGE(IntegrationFailedVS2015, (), "", "Integration was not applied for Visual Studio 2015.")
 DECLARE_MESSAGE(InternalCICommand,
                 (),
                 "",
@@ -2367,6 +2360,7 @@ DECLARE_MESSAGE(PackageManipulationHeader, (), "", "Package Manipulation")
 DECLARE_MESSAGE(PackageInfoHelp, (), "", "Display detailed information on packages")
 DECLARE_MESSAGE(PackageInstallationHeader, (), "", "Package Installation")
 DECLARE_MESSAGE(PackageRootDir, (), "", "Packages directory (experimental)")
+DECLARE_MESSAGE(PackagesCached, (), "", "All packages already exist in the binary cache. Installation skipped.")
 DECLARE_MESSAGE(PackagesToInstall, (), "", "The following packages will be built and installed:")
 DECLARE_MESSAGE(PackagesToModify, (), "", "Additional packages (*) will be modified to complete this operation.")
 DECLARE_MESSAGE(PackagesToRebuild, (), "", "The following packages will be rebuilt:")
@@ -2710,7 +2704,6 @@ DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Ver
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
 DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
-DECLARE_MESSAGE(PreviousIntegrationFileRemains, (), "", "Previous integration file was not removed.")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
@@ -2846,7 +2839,12 @@ DECLARE_MESSAGE(StartingFeatureTest,
                 (msg::value, msg::feature_spec),
                 "{value} is the position in the run, for example '1/4'",
                 "Feature Test [{value}] {feature_spec}")
-DECLARE_MESSAGE(StoreOptionMissingSha, (), "", "--store option is invalid without a sha512")
+DECLARE_MESSAGE(StoreAssetShaWithoutAssetCache,
+                (msg::sha, msg::path),
+                "",
+                "requested store of asset cache entry {sha} -> {path}, but no writable asset cache is configured")
+DECLARE_MESSAGE(StoreAssetSuccess, (msg::url, msg::path), "", "stored {path} in asset cache at {url}")
+DECLARE_MESSAGE(StoreUsingSha, (msg::sha), "", "Using {sha} to store entry in asset cache")
 DECLARE_MESSAGE(SubmittingBinaryCacheBackground,
                 (msg::spec, msg::count),
                 "",
@@ -2867,7 +2865,6 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
-DECLARE_MESSAGE(SystemTargetsInstallFailed, (msg::path), "", "failed to install system targets file to {path}")
 DECLARE_MESSAGE(
     ToolHashMismatch,
     (msg::tool_name, msg::expected, msg::actual),
@@ -3185,7 +3182,7 @@ DECLARE_MESSAGE(Utf8ConversionFailed, (), "", "Failed to convert to UTF-8")
 DECLARE_MESSAGE(VcpkgCeIsExperimental,
                 (),
                 "The name of the feature is 'vcpkg-artifacts' and should be singular despite ending in s",
-                "vcpkg-artifacts is experimental and may change at any time.")
+                "vcpkg artifacts will be removed shortly after July 1, 2026.")
 DECLARE_MESSAGE(
     VcpkgCompletion,
     (msg::value, msg::path),
@@ -3402,7 +3399,7 @@ DECLARE_MESSAGE(VSExaminedInstances, (), "", "The following Visual Studio instan
 DECLARE_MESSAGE(VSExaminedPaths, (), "", "The following paths were examined for Visual Studio instances:")
 DECLARE_MESSAGE(VSNoInstances, (), "", "Could not locate a complete Visual Studio instance")
 DECLARE_MESSAGE(WaitingForChildrenToExit, (), "", "Waiting for child processes to exit...")
-DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (msg::path), "", "waiting to take filesystem lock on {path}...")
+DECLARE_MESSAGE(WaitingToTakeFilesystemLock, (), "", "waiting to take filesystem lock...")
 DECLARE_MESSAGE(WaitUntilPackagesUploaded,
                 (msg::count),
                 "",

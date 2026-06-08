@@ -119,7 +119,7 @@ namespace vcpkg::Test
     static Path internal_base_temporary_directory()
     {
 #if defined(_WIN32)
-        return Path(vcpkg::get_environment_variable("TEMP").value_or_exit(VCPKG_LINE_INFO)) / "vcpkg-test";
+        return Path(vcpkg::get_environment_variable_nonempty("TEMP").value_or_exit(VCPKG_LINE_INFO)) / "vcpkg-test";
 #else
         return "/tmp/vcpkg-test";
 #endif

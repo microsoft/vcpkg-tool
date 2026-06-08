@@ -10,6 +10,8 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#include <intrin.h>
+
 #include <Shlobj.h>
 #include <shellapi.h>
 #include <windows.h>

@@ -303,14 +303,14 @@ if ($IsWindows) {
     Refresh-TestRoot
     mkdir "$TestingRoot/exes-in-bin"
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-exe-port-template" "$TestingRoot/exes-in-bin/test-exe"
-    Run-Vcpkg env "$TestingRoot/exes-in-bin/test-exe/build.cmd" --Triplet x64-windows
+    Run-Vcpkg env "$TestingRoot/exes-in-bin/test-exe/build.cmd"
 
     $PortfilePath = "$TestingRoot/exes-in-bin$($NativeSlash)test-exe$($NativeSlash)portfile.cmake"
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/exes-in-bin" 'test-exe[release-only]' --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The following executables were found in `${CURRENT_PACKAGES_DIR}/bin or `${CURRENT_PACKAGES_DIR}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using ``vcpkg_copy_tools``. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)
-$($packagesRoot)$($NativeSlash)test-exe_x64-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-exe_$($Triplet): note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/test_exe.exe
 "@
 
@@ -322,7 +322,7 @@ note: bin/test_exe.exe
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The following executables were found in `${CURRENT_PACKAGES_DIR}/bin or `${CURRENT_PACKAGES_DIR}/debug/bin. Executables are not valid distribution targets. If these executables are build tools, consider using ``vcpkg_copy_tools``. To suppress this message, add set(VCPKG_POLICY_ALLOW_EXES_IN_BIN enabled)
-$($packagesRoot)$($NativeSlash)test-exe_x64-windows: note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-exe_$($Triplet): note: the executables are relative to `${CURRENT_PACKAGES_DIR} here
 note: debug/bin/test_exe.exe
 note: bin/test_exe.exe
 "@
@@ -368,7 +368,7 @@ if ($IsWindows) {
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($Triplet): note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/bin/test_dll.dll
@@ -382,7 +382,7 @@ note: Release binaries were not found.
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($Triplet): note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: Debug binaries were not found.
 note: The following are release binaries:
 note: lib/test_dll.lib
@@ -396,7 +396,7 @@ note: bin/test_dll.dll
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($Triplet): note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/lib/test_dll2.lib
@@ -414,7 +414,7 @@ note: bin/test_dll.dll
 
 $expected = @"
 $($PortfilePath): warning: mismatching number of debug and release binaries. This often indicates incorrect handling of debug or release in portfile.cmake or the build system. If the intent is to only ever produce release components for this triplet, the triplet should have set(VCPKG_BUILD_TYPE release) added to its .cmake file. To suppress this message, add set(VCPKG_POLICY_MISMATCHED_NUMBER_OF_BINARIES enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows: note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($Triplet): note: the binaries are relative to `${CURRENT_PACKAGES_DIR} here
 note: The following are debug binaries:
 note: debug/lib/test_dll.lib
 note: debug/bin/test_dll.dll
@@ -442,7 +442,7 @@ if ($IsWindows) {
     Refresh-TestRoot
     mkdir "$TestingRoot/kernel32-from-xbox"
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/kernel32-from-xbox/test-dll"
-    Run-Vcpkg env "$TestingRoot/kernel32-from-xbox/test-dll/build.cmd" --Triplet x64-windows
+    Run-Vcpkg env "$TestingRoot/kernel32-from-xbox/test-dll/build.cmd" --triplet x64-windows
 
     $PortfilePath = "$TestingRoot/kernel32-from-xbox$($NativeSlash)test-dll$($NativeSlash)portfile.cmake"
     $buildOutput = Run-VcpkgAndCaptureOutput --triplet x64-xbox-xboxone "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/kernel32-from-xbox" test-dll --no-binarycaching --enforce-port-checks
@@ -565,7 +565,7 @@ if ($IsWindows) {
     Refresh-TestRoot
     mkdir "$TestingRoot/wrong-architecture"
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/wrong-architecture/test-dll"
-    Run-Vcpkg env "$TestingRoot/wrong-architecture/test-dll/build.cmd" --Triplet x64-windows
+    Run-Vcpkg env "$TestingRoot/wrong-architecture/test-dll/build.cmd" --triplet x64-windows
     $PortfilePath = "$TestingRoot/wrong-architecture$($NativeSlash)test-dll$($NativeSlash)portfile.cmake"
     $buildOutput = Run-VcpkgAndCaptureOutput @commonArgs install --overlay-ports="$TestingRoot/wrong-architecture" test-dll:x86-windows --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
@@ -594,14 +594,14 @@ if ($IsWindows) {
     Refresh-TestRoot
     mkdir "$TestingRoot/wrong-appcontainer"
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/wrong-appcontainer/test-dll"
-    Run-Vcpkg env "$TestingRoot/wrong-appcontainer/test-dll/build.cmd" --Triplet x64-windows
+    Run-Vcpkg env "$TestingRoot/wrong-appcontainer/test-dll/build.cmd"
 
     $PortfilePath = "$TestingRoot/wrong-appcontainer$($NativeSlash)test-dll$($NativeSlash)portfile.cmake"
-    $buildOutput = Run-VcpkgAndCaptureOutput --triplet x64-uwp "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/wrong-appcontainer" test-dll --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput --triplet $TripletUwp "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/wrong-appcontainer" test-dll --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: The App Container bit must be set for all DLLs in Windows Store apps, and the triplet requests targeting the Windows Store, but the following DLLs were not built with the bit set. This usually means that toolchain linker flags are not being properly propagated, or the linker in use does not support the /APPCONTAINER switch. To suppress this message, add set(VCPKG_POLICY_SKIP_APPCONTAINER_CHECK enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-uwp: note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($TripletUwp): note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
 note: debug/bin/test_dll.dll
 note: bin/test_dll.dll
 "@
@@ -610,7 +610,7 @@ note: bin/test_dll.dll
         throw 'Did not detect DLL with wrong appcontainer.'
     }
 
-    $buildOutput = Run-VcpkgAndCaptureOutput --triplet x64-uwp "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/wrong-appcontainer" 'test-dll[policy-skip-appcontainer-check]' --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput --triplet $TripletUwp "--x-buildtrees-root=$buildtreesRoot" "--x-install-root=$installRoot" "--x-packages-root=$packagesRoot" install --overlay-ports="$TestingRoot/wrong-appcontainer" 'test-dll[policy-skip-appcontainer-check]' --no-binarycaching --enforce-port-checks
     Throw-IfFailed
     if ($buildOutput.Contains("warning: The App Container bit must be set")) {
         throw 'VCPKG_POLICY_SKIP_APPCONTAINER_CHECK didn''t suppress'
@@ -659,14 +659,14 @@ if ($IsWindows) {
     Refresh-TestRoot
     mkdir "$TestingRoot/dlls-in-static"
     Copy-Item -Recurse "$PSScriptRoot/../e2e-assets/test-dll-port-template" "$TestingRoot/dlls-in-static/test-dll"
-    Run-Vcpkg @directoryArgs env "$TestingRoot/dlls-in-static/test-dll/build.cmd" --triplet x64-windows
+    Run-Vcpkg @directoryArgs env "$TestingRoot/dlls-in-static/test-dll/build.cmd"
 
     $PortfilePath = "$TestingRoot/dlls-in-static$($NativeSlash)test-dll$($NativeSlash)portfile.cmake"
-    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet x64-windows-static --overlay-ports="$TestingRoot/dlls-in-static" "test-dll[release-only]" --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet $TripletStatic --overlay-ports="$TestingRoot/dlls-in-static" "test-dll[release-only]" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: DLLs should not be present in a static build, but the following DLLs were found. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows-static: note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($TripletStatic): note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
 note: bin/test_dll.dll
 $($PortfilePath): warning: `${CURRENT_PACKAGES_DIR}/bin exists but should not in a static build. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)
 note: if creation of these directories cannot be disabled, you can add the following in portfile.cmake to remove them
@@ -680,11 +680,11 @@ endif()
     } 
 
 
-    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet x64-windows-static --overlay-ports="$TestingRoot/dlls-in-static" "test-dll" --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet $TripletStatic --overlay-ports="$TestingRoot/dlls-in-static" "test-dll" --no-binarycaching --enforce-port-checks
     Throw-IfNotFailed
     $expected = @"
 $($PortfilePath): warning: DLLs should not be present in a static build, but the following DLLs were found. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)
-$($packagesRoot)$($NativeSlash)test-dll_x64-windows-static: note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
+$($packagesRoot)$($NativeSlash)test-dll_$($TripletStatic): note: the DLLs are relative to `${CURRENT_PACKAGES_DIR} here
 note: debug/bin/test_dll.dll
 note: bin/test_dll.dll
 $($PortfilePath): warning: `${CURRENT_PACKAGES_DIR}/debug/bin exists but should not in a static build. To suppress this message, add set(VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY enabled)
@@ -699,7 +699,7 @@ endif()
         throw 'Did not detect DLL in static.'
     }
 
-    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet x64-windows-static --overlay-ports="$TestingRoot/dlls-in-static" "test-dll[policy-dlls-in-static-library]" --no-binarycaching --enforce-port-checks
+    $buildOutput = Run-VcpkgAndCaptureOutput @directoryArgs install --triplet $TripletStatic --overlay-ports="$TestingRoot/dlls-in-static" "test-dll[policy-dlls-in-static-library]" --no-binarycaching --enforce-port-checks
     Throw-IfFailed
     if ($buildOutput.Contains($expected)) {
         throw 'VCPKG_POLICY_DLLS_IN_STATIC_LIBRARY didn''t suppress'

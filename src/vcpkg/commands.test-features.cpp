@@ -519,8 +519,12 @@ namespace vcpkg
             }
         }
 
-        InstalledDatabaseLock installed_lock{
-            paths.get_filesystem(), paths.installed(), args.wait_for_lock, args.ignore_lock_failures};
+        InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                   paths.installed(),
+                                                   paths.buildtrees(),
+                                                   paths.packages(),
+                                                   args.wait_for_lock,
+                                                   args.ignore_lock_failures};
         auto registry_set = paths.make_registry_set();
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
@@ -824,11 +828,13 @@ namespace vcpkg
                 continue;
             }
 
-            if (auto iter = Util::find_if(install_plan.install_actions,
-                                          [&known_failures](const auto& install_action) {
-                                              return Util::Sets::contains(
-                                                  known_failures, install_action.package_abi_or_exit(VCPKG_LINE_INFO));
-                                          });
+            if (auto iter =
+                    Util::find_if(install_plan.install_actions,
+                                  [&known_failures, &spec](const auto& install_action) {
+                                      return install_action.spec != spec.package_spec &&
+                                             Util::Sets::contains(known_failures,
+                                                                  install_action.package_abi_or_exit(VCPKG_LINE_INFO));
+                                  });
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());

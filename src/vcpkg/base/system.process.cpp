@@ -763,6 +763,8 @@ namespace vcpkg
 #endif
     }
 
+    void Environment::add_remove_entry(StringView key) { m_remove_entries.emplace_back(key.to_string()); }
+
     Optional<std::string> Environment::remove_entry(StringView key)
     {
 #if defined(_WIN32)
@@ -863,6 +865,7 @@ namespace vcpkg
     }
 
     const Environment::string_t& Environment::get() const { return m_env_data; }
+    const std::vector<std::string>& Environment::remove_entries() const { return m_remove_entries; }
 
     const Environment& get_clean_environment()
     {
@@ -1558,7 +1561,20 @@ namespace vcpkg
 
         if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg(env->get());
+            if (env->remove_entries().empty())
+            {
+                real_command_line_builder.raw_arg(env->get());
+            }
+            else
+            {
+                real_command_line_builder.raw_arg("env");
+                for (const auto& remove_var : env->remove_entries())
+                {
+                    real_command_line_builder.raw_arg("-u");
+                    real_command_line_builder.string_arg(remove_var);
+                }
+                real_command_line_builder.raw_arg(env->get());
+            }
         }
 
         real_command_line_builder.raw_arg(cmd.command_line());
@@ -1662,16 +1678,7 @@ namespace
                                                                 uint32_t debug_id)
     {
 #if defined(_WIN32)
-        std::wstring as_utf16;
-        StringView stdin_content = settings.stdin_content;
-        if (!stdin_content.empty() && settings.encoding == Encoding::Utf16)
-        {
-            as_utf16 = Strings::to_utf16(stdin_content);
-            stdin_content =
-                StringView{reinterpret_cast<const char*>(as_utf16.data()), as_utf16.size() * sizeof(wchar_t)};
-        }
-
-        auto stdin_content_size_raw = stdin_content.size();
+        auto stdin_content_size_raw = settings.stdin_content.size();
         if (stdin_content_size_raw > MAXDWORD)
         {
             context.report_system_error("WriteFileEx", ERROR_INSUFFICIENT_BUFFER);
@@ -1759,23 +1766,6 @@ namespace
                     data_cb(StringView{buf, bytes_read});
                 };
                 break;
-            case Encoding::Utf16:
-                raw_cb = [&](char* buf, size_t bytes_read) {
-                    // Note: This doesn't handle unpaired surrogates or partial encoding units correctly in
-                    // order to be able to reuse Strings::to_utf8 which we believe will be fine 99% of the time.
-                    std::string encoded;
-                    // clang-format off
-                    Strings::to_utf8(encoded, reinterpret_cast<const wchar_t*>(buf), bytes_read / 2); // CodeQL [SM02986] This is not an incorrect cast to shut up the compiler, the suggested "call an encoding conversion function instead" is exactly what this is doing.
-                    // clang-format on
-                    std::replace(encoded.begin(), encoded.end(), '\0', '?');
-                    if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
-                    {
-                        context.statusln(LocalizedString::from_raw(encoded));
-                    }
-
-                    data_cb(StringView{encoded});
-                };
-                break;
             case Encoding::Utf8WithNulls:
                 raw_cb = [&](char* buf, size_t bytes_read) {
                     if (settings.echo_in_debug == EchoInDebug::Show && Debug::g_debugging)
@@ -1790,7 +1780,7 @@ namespace
             default: vcpkg::Checks::unreachable(VCPKG_LINE_INFO);
         }
 
-        return process_info.wait_and_stream_output(debug_id, stdin_content.data(), stdin_content_size, raw_cb);
+        return process_info.wait_and_stream_output(debug_id, settings.stdin_content.data(), stdin_content_size, raw_cb);
 #else  // ^^^ _WIN32 // !_WIN32 vvv
 
         std::string actual_cmd_line;
@@ -1803,8 +1793,23 @@ namespace
 
         if (auto env_unpacked = settings.environment.get())
         {
-            actual_cmd_line.append(env_unpacked->get());
-            actual_cmd_line.push_back(' ');
+            if (env_unpacked->remove_entries().empty())
+            {
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
+            else
+            {
+                actual_cmd_line.append("env");
+                for (const auto& remove_var : env_unpacked->remove_entries())
+                {
+                    actual_cmd_line.append(" -u ");
+                    append_shell_escaped(actual_cmd_line, remove_var);
+                }
+                actual_cmd_line.push_back(' ');
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
         }
 
         const auto unwrapped_to_execute = cmd.command_line();

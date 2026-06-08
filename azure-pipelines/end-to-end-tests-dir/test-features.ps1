@@ -148,6 +148,21 @@ $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self
 Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
 
+# Regression test: a self-dependent port marked `=fail` must not be misclassified as cascading on
+# itself. cpprestsdk hit this because cpprestsdk[brotli] depends on cpprestsdk[compression]: the
+# install plan for the [brotli] separate test and the all-features combined test share an ABI with
+# an earlier failed feature test of the same port, which caused the second test to be treated as a
+# cascade rather than a build failure.
+$vcpkgSelfFailPortsArg = New-TestPortsRootArg vcpkg-self-fail
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self-fail.txt"
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfFailPortsArg --all --ci-feature-baseline $ciFeatureBaseline
+Throw-IfFailed
+Throw-IfNonContains -Expected "Feature Test [1/4] vcpkg-self-fail[core]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected "Feature Test [2/4] vcpkg-self-fail[core,depends-on-self]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected "Feature Test [3/4] vcpkg-self-fail[core,other]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected "Feature Test [4/4] vcpkg-self-fail[core,depends-on-self,other]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected "All feature tests passed." -Actual $output
+
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/empty-baseline.txt"
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfNotFailed
