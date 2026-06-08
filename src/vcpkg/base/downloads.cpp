@@ -39,6 +39,12 @@ namespace
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
+
+        auto maybe_ca_bundle = get_environment_variable_nonempty(EnvironmentVariableVcpkgCaBundle);
+        if (const auto ca_bundle = maybe_ca_bundle.get())
+        {
+            vcpkg_curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle->c_str());
+        }
     }
 }
 

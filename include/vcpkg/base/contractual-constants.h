@@ -530,6 +530,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVCInstallDir = "VCINSTALLDIR";
     inline constexpr StringLiteral EnvironmentVariableVSCmdSkipSendTelemetry = "VSCMD_SKIP_SENDTELEMETRY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgBinarySources = "VCPKG_BINARY_SOURCES";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgCaBundle = "VCPKG_CA_BUNDLE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgCommand = "VCPKG_COMMAND";
     inline constexpr StringLiteral EnvironmentVariableVcpkgDefaultBinaryCache = "VCPKG_DEFAULT_BINARY_CACHE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgDefaultHostTriplet = "VCPKG_DEFAULT_HOST_TRIPLET";
