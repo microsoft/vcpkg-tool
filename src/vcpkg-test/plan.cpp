@@ -1226,6 +1226,94 @@ TEST_CASE ("basic existing tool port scheme", "[plan]")
     }
 }
 
+TEST_CASE ("host dependencies suppress default feature metadata", "[plan]")
+{
+    PackageSpecMap spec_map;
+    spec_map.emplace("a", "a", {{"x", ""}}, {"x"});
+    auto& dep = spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0];
+    dep.host = true;
+    dep.default_features = false;
+
+    MapPortFileProvider map_port(spec_map.map);
+    MockCMakeVarProvider var_provider;
+
+    auto install_plan =
+        create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a"), {}, Test::X64_WINDOWS);
+
+    REQUIRE(install_plan.size() == 2);
+    auto host_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.triplet() == Test::X64_WINDOWS;
+    });
+    REQUIRE(host_it != install_plan.install_actions.end());
+    features_check(*host_it, "a", {"core"}, Test::X64_WINDOWS);
+    REQUIRE(host_it->default_features.empty());
+
+    auto target_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.triplet() != Test::X64_WINDOWS;
+    });
+    REQUIRE(target_it != install_plan.install_actions.end());
+    features_check(*target_it, "a", {"x", "core"});
+    REQUIRE(target_it->default_features == std::vector<std::string>{"x"});
+}
+
+TEST_CASE ("host dependencies respect explicit no-defaults on core install", "[plan]")
+{
+    PackageSpecMap spec_map;
+    spec_map.emplace("a", "a", {{"x", ""}}, {"x"});
+    auto& dep = spec_map.map.at("a").source_control_file->core_paragraph->dependencies[0];
+    dep.host = true;
+    dep.default_features = false;
+
+    MapPortFileProvider map_port(spec_map.map);
+    MockCMakeVarProvider var_provider;
+
+    auto install_plan =
+        create_feature_install_plan(map_port, var_provider, Test::parse_test_fspecs("a[core]"), {}, Test::X64_WINDOWS);
+
+    REQUIRE(install_plan.size() == 2);
+    features_check(install_plan.install_actions.at(0), "a", {"core"}, Test::X64_WINDOWS);
+    REQUIRE(install_plan.install_actions.at(0).default_features.empty());
+    features_check(install_plan.install_actions.at(1), "a", {"core"});
+    REQUIRE(install_plan.install_actions.at(1).default_features.empty());
+}
+
+TEST_CASE ("host dependency reinstall respects explicit no-defaults", "[plan]")
+{
+    std::vector<std::unique_ptr<StatusParagraph>> status_paragraphs;
+    status_paragraphs.push_back(make_status_pgh("a", "", "", "x64-windows"));
+    StatusParagraphs status_db(std::move(status_paragraphs));
+
+    PackageSpecMap spec_map(Test::ARM_UWP);
+    spec_map.emplace("a", "", {{"x", ""}, {"y", ""}}, {"x"});
+    spec_map.emplace("b", "a[y]");
+    auto& dep = spec_map.map.at("b").source_control_file->core_paragraph->dependencies[0];
+    dep.host = true;
+    dep.default_features = false;
+
+    MapPortFileProvider map_port(spec_map.map);
+    MockCMakeVarProvider var_provider;
+
+    auto install_plan = create_feature_install_plan(
+        map_port, var_provider, Test::parse_test_fspecs("b:arm-uwp"), status_db, Test::X64_WINDOWS);
+
+    REQUIRE(install_plan.remove_actions.size() == 1);
+    remove_plan_check(install_plan.remove_actions.at(0), "a", Test::X64_WINDOWS);
+    REQUIRE(install_plan.install_actions.size() == 2);
+
+    auto host_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.name() == "a" && action.spec.triplet() == Test::X64_WINDOWS;
+    });
+    REQUIRE(host_it != install_plan.install_actions.end());
+    features_check(*host_it, "a", {"y", "core"}, Test::X64_WINDOWS);
+    REQUIRE(host_it->default_features.empty());
+
+    auto target_it = Util::find_if(install_plan.install_actions, [](const InstallPlanAction& action) {
+        return action.spec.name() == "b" && action.spec.triplet() == Test::ARM_UWP;
+    });
+    REQUIRE(target_it != install_plan.install_actions.end());
+    features_check(*target_it, "b", {"core"}, Test::ARM_UWP);
+}
+
 TEST_CASE ("remove tool port scheme", "[plan]")
 {
     std::vector<std::unique_ptr<StatusParagraph>> pghs;
