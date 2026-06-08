@@ -331,6 +331,10 @@ DECLARE_MESSAGE(BaselineConflict,
                 "",
                 "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
                 "baseline.\nPlease remove one of these conflicting settings.")
+DECLARE_MESSAGE(BaselineDiffNoChange,
+                (),
+                "commit is a git commit here",
+                "No package that would have been installed was updated between the two commits")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
@@ -589,6 +593,25 @@ DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree o
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(CmdBaselineDiffExample1,
+                (),
+                "This is a command line, only the <old commit sha> and <newer commit sha> parts should be localized.",
+                "vcpkg x-baseline-diff <old commit sha> <newer commit sha>")
+DECLARE_MESSAGE(CmdBaselineDiffMissingBuiltinBaseline,
+                (),
+                "",
+                "Only one commit was provided but the manifest does not have a 'builtin-baseline'. "
+                "Please specify two commits or add a 'builtin-baseline' to vcpkg.json.")
+DECLARE_MESSAGE(CmdBaselineDiffMissingRegistryBaseline,
+                (),
+                "",
+                "Only one commit was provided but the default registry in vcpkg-configuration.json does not "
+                "have a 'baseline'. Please specify two commits or add a 'baseline' to the default registry.")
+DECLARE_MESSAGE(CmdBaselineDiffSynopsis,
+                (),
+                "",
+                "Computes the set of packages installed for different baselines and compares the versions that "
+                "would be installed")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
@@ -1056,6 +1079,7 @@ DECLARE_MESSAGE(DependencyWillFail,
                 "'cascade' is a keyword and should not be translated",
                 "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
+DECLARE_MESSAGE(DirectDependencies, (), "", "Direct dependencies")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
                 (),
                 "",
@@ -2173,6 +2197,7 @@ DECLARE_MESSAGE(MissingDependency,
                 (msg::spec, msg::package_name),
                 "",
                 "Package {spec} is installed, but dependency {package_name} is not.")
+DECLARE_MESSAGE(MissingManifestFile, (), "", "Could not find manifest file (vcpkg.json file)")
 DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}")
 DECLARE_MESSAGE(MissingOrInvalidIdentifer, (), "", "missing or invalid identifier")
 DECLARE_MESSAGE(MissingPortSuggestPullRequest,
@@ -2867,6 +2892,7 @@ DECLARE_MESSAGE(ToUpdatePackages,
                 "To update these packages and all dependencies, run\n{command_name} upgrade'")
 DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array")
 DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object")
+DECLARE_MESSAGE(TransitiveDependencies, (), "", "Transitive dependencies")
 DECLARE_MESSAGE(TripletLabel, (), "", "Triplet:")
 DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found")
 DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
@@ -3119,6 +3145,10 @@ DECLARE_MESSAGE(UpdateBaselineNoUpdate,
                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                 "registry '{url}' not updated: '{value}'")
 DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'")
+DECLARE_MESSAGE(UpdateBaselineSuggestBaselineDiff,
+                (msg::old_value, msg::new_value),
+                "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
+                "To see what packages changed run: vcpkg x-baseline-diff {old_value} {new_value}")
 DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",

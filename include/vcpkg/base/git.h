@@ -112,4 +112,11 @@ namespace vcpkg
                              const Path& git_exe,
                              const Path& builtin_ports_dir,
                              StringView git_commit_id);
+
+    // Resolves a git ref (tag, branch, or commit-ish) to a full 40-character SHA using `git rev-parse`.
+    // Returns nullopt and reports an error if the ref cannot be resolved.
+    Optional<std::string> git_resolve_to_full_sha(DiagnosticContext& context,
+                                                  const Path& git_exe,
+                                                  GitRepoLocator locator,
+                                                  StringView ref);
 }
