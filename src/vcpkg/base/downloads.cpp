@@ -39,6 +39,17 @@ namespace
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
+        
+        // Fix for schannel missing certificate revocation list errors with proxy server.
+        const auto maybe_revoke_best_effort = get_environment_variable_nonempty(EnvironmentVariableVcpkgSSLRevokeBestEffort);
+        if (const auto revoke_best_effort = maybe_revoke_best_effort.get())
+        {
+            // Only applied if VCPKG_SSL_REVOKE_BEST_EFFORT is explicitly set to "1"
+            if (*revoke_best_effort == "1")
+            {
+                vcpkg_curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, CURLSSLOPT_REVOKE_BEST_EFFORT);
+            }
+        }
     }
 }
 
