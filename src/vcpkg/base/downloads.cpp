@@ -59,7 +59,7 @@ namespace
         // Apply accumulated SSL options if any were set
         if (ssl_options != 0L)
         {
-#if defined(CURLOPT_SSL_OPTIONS)
+#if LIBCURL_VERSION_NUM >= 0x071900 // 7.25.0
             vcpkg_curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, ssl_options);
 #endif
         }
