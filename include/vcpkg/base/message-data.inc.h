@@ -1992,7 +1992,10 @@ DECLARE_MESSAGE(InvalidCommentStyle,
                 "",
                 "vcpkg does not support c-style comments, however most objects allow $-prefixed fields to be used as "
                 "comments.")
-DECLARE_MESSAGE(InvalidCommitId, (msg::commit_sha), "", "Invalid commit id: {commit_sha}")
+DECLARE_MESSAGE(InvalidCommitId,
+                (msg::commit_sha),
+                "",
+                "Invalid commit id (expected 40 hexadecimal characters): {commit_sha}")
 DECLARE_MESSAGE(InvalidDefaultFeatureName, (), "", "'default' is a reserved feature name")
 DECLARE_MESSAGE(InvalidFeature,
                 (),
@@ -2008,6 +2011,10 @@ DECLARE_MESSAGE(InvalidFormatString,
                 (msg::actual),
                 "{actual} is the provided format string",
                 "invalid format string: {actual}")
+DECLARE_MESSAGE(InvalidGitRef,
+                (msg::value),
+                "{value} is a git breanch, tag or short git sha",
+                "Can not resolve {value}")
 DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape")
 DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}")
 DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.")

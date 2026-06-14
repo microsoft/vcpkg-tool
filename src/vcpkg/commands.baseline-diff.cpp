@@ -1,12 +1,15 @@
 #include <vcpkg/base/fwd/message_sinks.h>
 
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/git.h>
+#include <vcpkg/base/lineinfo.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/path.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/stringview.h>
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
@@ -193,20 +196,18 @@ namespace vcpkg
             if (!git_exe) Checks::exit_fail(VCPKG_LINE_INFO);
 
             GitRepoLocator locator{GitRepoLocatorKind::CurrentDirectory, local_git_root};
-            auto maybe_old = git_resolve_to_full_sha(console_diagnostic_context, *git_exe, locator, old_baseline_ref);
-            auto maybe_new = git_resolve_to_full_sha(console_diagnostic_context, *git_exe, locator, new_baseline_ref);
-            if (is_default_builtin && (!maybe_old || !maybe_new)) Checks::exit_fail(VCPKG_LINE_INFO);
-            if (maybe_old && maybe_new)
-            {
-                old_baseline = std::move(*maybe_old.get());
-                new_baseline = std::move(*maybe_new.get());
-            }
-            else
-            {
-                // is_builtin_git_registry with a local clone but ref not found; treat as raw strings.
-                old_baseline = old_baseline_ref.to_string();
-                new_baseline = new_baseline_ref.to_string();
-            }
+            const auto resolve_baseline_ref = [&](StringView baseline) {
+                if (is_git_sha(baseline))
+                {
+                    return baseline.to_string();
+                }
+                auto maybe_resolved = git_resolve_to_full_sha(console_diagnostic_context, *git_exe, locator, baseline);
+                Checks::msg_check_exit(
+                    VCPKG_LINE_INFO, maybe_resolved.has_value(), msgInvalidGitRef, msg::value = baseline);
+                return *maybe_resolved.get();
+            };
+            old_baseline = resolve_baseline_ref(old_baseline_ref);
+            new_baseline = resolve_baseline_ref(new_baseline_ref);
         }
         else // no local git clone available or not a resolvable registry
         {
@@ -223,14 +224,10 @@ namespace vcpkg
             }
             if (needs_sha_validation)
             {
-                if (!is_git_sha(old_baseline))
-                {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidCommitId, msg::commit_sha = old_baseline);
-                }
-                if (!is_git_sha(new_baseline))
-                {
-                    Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgInvalidCommitId, msg::commit_sha = new_baseline);
-                }
+                Checks::msg_check_exit(
+                    VCPKG_LINE_INFO, is_git_sha(old_baseline), msgInvalidCommitId, msg::commit_sha = old_baseline);
+                Checks::msg_check_exit(
+                    VCPKG_LINE_INFO, is_git_sha(new_baseline), msgInvalidCommitId, msg::commit_sha = new_baseline);
             }
         }
 
