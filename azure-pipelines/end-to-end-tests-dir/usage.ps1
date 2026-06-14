@@ -70,3 +70,37 @@ foreach ($prohibitedUsage in $prohibitedUsages) {
         throw "The usage text contains the prohibited entry:`n$prohibitedUsage"
     }
 }
+
+Refresh-TestRoot
+
+$usageInfoArgs = $commonArgs + @("--overlay-ports=$PSScriptRoot/../e2e-ports")
+
+Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated
+Throw-IfFailed
+
+$out = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'vcpkg-explicit-usage-generated'))
+Throw-IfNonEqual -Actual $out -Expected @"
+This is some usage text explicitly set by the port.
+
+This output should end up on the console.
+
+
+"@
+
+$generated = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfNonEqual -Actual $generated -Expected @"
+vcpkg-explicit-usage-generated provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(explicit-usage-generated CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE explicit-usage-generated::explicit-usage-generated)
+
+
+"@
+
+$generatedExplicit = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfNonEqual -Actual $generatedExplicit -Expected $generated
+
+$missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'not-a-real-port'))
+Throw-IfNotFailed
+Throw-IfNonEqual -Actual $missing -Expected "error: error: not-a-real-port:arm64-windows is not installed.`n"

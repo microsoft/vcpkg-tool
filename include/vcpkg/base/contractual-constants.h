@@ -255,6 +255,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchOnlyWithName = "only-with-name";
     inline constexpr StringLiteral SwitchOsx = "osx";
     inline constexpr StringLiteral SwitchOutdated = "outdated";
+    inline constexpr StringLiteral SwitchGenerated = "generated";
     inline constexpr StringLiteral SwitchOutput = "output";
     inline constexpr StringLiteral SwitchOutputDir = "output-dir";
     inline constexpr StringLiteral SwitchOutputHashes = "output-hashes";

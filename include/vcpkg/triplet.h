@@ -11,6 +11,7 @@
 #include <vcpkg/base/stringview.h>
 
 #include <string>
+#include <vector>
 
 namespace vcpkg
 {

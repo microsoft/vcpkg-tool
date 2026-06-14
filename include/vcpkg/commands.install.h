@@ -131,6 +131,9 @@ namespace vcpkg
     CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,
                                    const BinaryParagraph& bpgh);
+    CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
+                                                  const InstalledPaths& installed,
+                                                  const BinaryParagraph& bpgh);
 
     extern const CommandMetadata CommandInstallMetadata;
 

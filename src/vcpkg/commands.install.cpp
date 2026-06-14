@@ -1018,27 +1018,13 @@ namespace vcpkg
         return std::string(res);
     }
 
-    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
-                                   const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh)
+    CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
+                                                  const InstalledPaths& installed,
+                                                  const BinaryParagraph& bpgh)
     {
         CMakeUsageInfo ret;
 
         std::error_code ec;
-
-        auto usage_file = installed.usage_file(bpgh.spec);
-        if (fs.is_regular_file(usage_file))
-        {
-            ret.usage_file = true;
-            auto contents = fs.read_contents(usage_file, ec);
-            if (!ec)
-            {
-                ret.message = std::move(contents);
-                ret.message.push_back('\n');
-            }
-
-            return ret;
-        }
 
         struct ConfigPackage
         {
@@ -1243,6 +1229,30 @@ namespace vcpkg
             }
         }
         return ret;
+    }
+
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh)
+    {
+        CMakeUsageInfo ret;
+
+        auto usage_file = installed.usage_file(bpgh.spec);
+        if (fs.is_regular_file(usage_file))
+        {
+            ret.usage_file = true;
+            std::error_code ec;
+            auto contents = fs.read_contents(usage_file, ec);
+            if (!ec)
+            {
+                ret.message = std::move(contents);
+                ret.message.push_back('\n');
+            }
+
+            return ret;
+        }
+
+        return get_cmake_usage_from_generated(fs, installed, bpgh);
     }
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
