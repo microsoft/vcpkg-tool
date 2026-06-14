@@ -934,7 +934,7 @@ namespace vcpkg
                                          const ReadOnlyFilesystem& fs,
                                          const InstalledPaths& installed)
     {
-        auto message = get_cmake_usage(fs, installed, bpgh).message;
+        auto message = get_cmake_usage(fs, installed, bpgh, false).message;
         if (!message.empty())
         {
             auto existing = printed_usages.lower_bound(message);
@@ -1238,7 +1238,8 @@ namespace vcpkg
 
     CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh)
+                                   const BinaryParagraph& bpgh,
+                                   bool force_accurate)
     {
         CMakeUsageInfo ret;
 
@@ -1257,7 +1258,7 @@ namespace vcpkg
             return ret;
         }
 
-        return get_cmake_usage_from_generated(fs, installed, bpgh, false);
+        return get_cmake_usage_from_generated(fs, installed, bpgh, force_accurate);
     }
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)

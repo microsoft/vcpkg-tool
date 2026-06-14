@@ -131,7 +131,8 @@ namespace vcpkg
     std::string get_cmake_find_package_name(StringView dirname, StringView filename);
     CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh);
+                                   const BinaryParagraph& bpgh,
+                                   bool force_accurate);
     CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
                                                   const InstalledPaths& installed,
                                                   const BinaryParagraph& bpgh,

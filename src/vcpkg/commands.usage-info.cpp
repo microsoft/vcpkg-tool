@@ -58,7 +58,7 @@ namespace vcpkg
             const auto& bpgh = it->get()->package;
             const auto usage = generated_only
                                    ? get_cmake_usage_from_generated(fs, paths.installed(), bpgh, force_accurate)
-                                   : get_cmake_usage(fs, paths.installed(), bpgh);
+                                   : get_cmake_usage(fs, paths.installed(), bpgh, force_accurate);
             if (!usage.message.empty())
             {
                 msg::write_unlocalized_text(Color::none, usage.message);

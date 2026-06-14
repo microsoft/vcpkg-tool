@@ -126,6 +126,10 @@ vcpkg-hello-world-1 provides CMake targets:
 
 "@
 
+$defaultForcedAccurate = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--force-accurate', 'vcpkg-hello-world-1'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $defaultForcedAccurate -Expected $generatedForcedAccurate
+
 $missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'not-a-real-port'))
 Throw-IfNotFailed
 Throw-IfNonEqual -Actual $missing -Expected "error: not-a-real-port:$Triplet is not installed.`n"
