@@ -73,7 +73,7 @@ foreach ($prohibitedUsage in $prohibitedUsages) {
 
 Refresh-TestRoot
 
-$usageInfoArgs = $commonArgs + @("--overlay-ports=$PSScriptRoot/../e2e-ports")
+$usageInfoArgs = $commonArgs + @("--overlay-ports=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
 
 Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated
 Throw-IfFailed
@@ -103,4 +103,15 @@ Throw-IfNonEqual -Actual $generatedExplicit -Expected $generated
 
 $missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'not-a-real-port'))
 Throw-IfNotFailed
-Throw-IfNonEqual -Actual $missing -Expected "error: error: not-a-real-port:arm64-windows is not installed.`n"
+Throw-IfNonEqual -Actual $missing -Expected "error: not-a-real-port:$Triplet is not installed.`n"
+
+Run-Vcpkg install @usageInfoArgs "vcpkg-empty-port:$HostE2ETriplet"
+Throw-IfFailed
+
+$wrongTriplet = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', "vcpkg-empty-port:$Triplet"))
+Throw-IfNotFailed
+Throw-IfNonEqual -Actual $wrongTriplet -Expected @"
+warning: vcpkg-empty-port:$Triplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?
+error: vcpkg-empty-port:$Triplet is not installed.
+
+"@

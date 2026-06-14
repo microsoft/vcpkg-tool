@@ -61,6 +61,18 @@ namespace vcpkg
             return;
         }
 
+        for (const auto& package : status_db)
+        {
+            if (package->is_installed() && !package->package.is_feature() &&
+                package->package.spec.name() == spec.package_spec.name())
+            {
+                msg::println_warning(msgRemovePackageConflict,
+                                     msg::package_name = spec.package_spec.name(),
+                                     msg::spec = spec.package_spec,
+                                     msg::triplet = package->package.spec.triplet());
+            }
+        }
+
         Checks::msg_exit_with_error(VCPKG_LINE_INFO,
                                     msg::format(msgPackageNotInstalled, msg::spec = spec.package_spec));
     }
