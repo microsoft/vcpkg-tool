@@ -331,10 +331,7 @@ DECLARE_MESSAGE(BaselineConflict,
                 "",
                 "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
                 "baseline.\nPlease remove one of these conflicting settings.")
-DECLARE_MESSAGE(BaselineDiffNoChange,
-                (),
-                "commit is a git commit here",
-                "No packages that would have been installed were updated between the two commits.")
+DECLARE_MESSAGE(BaselineDiffNoChange, (), "", "No changes to installed packages between baselines")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
