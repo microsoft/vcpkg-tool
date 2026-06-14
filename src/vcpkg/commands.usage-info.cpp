@@ -13,7 +13,7 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr CommandSwitch SWITCHES[] = {{SwitchGenerated, {}}};
+    constexpr CommandSwitch SWITCHES[] = {{SwitchGenerated}, {SwitchForceAccurate}};
 }
 
 namespace vcpkg
@@ -40,6 +40,7 @@ namespace vcpkg
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandUsageInfoMetadata);
         const bool generated_only = Util::Sets::contains(options.switches, SwitchGenerated);
+        const bool force_accurate = Util::Sets::contains(options.switches, SwitchForceAccurate);
 
         const FullPackageSpec spec =
             check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())
@@ -52,8 +53,9 @@ namespace vcpkg
         if (const auto it = status_db.find_installed(spec.package_spec); it != status_db.end())
         {
             const auto& bpgh = it->get()->package;
-            const auto usage = generated_only ? get_cmake_usage_from_generated(fs, paths.installed(), bpgh)
-                                              : get_cmake_usage(fs, paths.installed(), bpgh);
+            const auto usage = generated_only
+                                   ? get_cmake_usage_from_generated(fs, paths.installed(), bpgh, force_accurate)
+                                   : get_cmake_usage(fs, paths.installed(), bpgh);
             if (!usage.message.empty())
             {
                 msg::write_unlocalized_text(Color::none, usage.message);

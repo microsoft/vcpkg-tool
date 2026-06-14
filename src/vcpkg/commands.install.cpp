@@ -1020,9 +1020,11 @@ namespace vcpkg
 
     CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
                                                   const InstalledPaths& installed,
-                                                  const BinaryParagraph& bpgh)
+                                                  const BinaryParagraph& bpgh,
+                                                  bool force_accurate)
     {
         CMakeUsageInfo ret;
+        ret.generated_usage_accurate = force_accurate || fs.is_regular_file(installed.usage_accurate_file(bpgh.spec));
 
         std::error_code ec;
 
@@ -1147,7 +1149,10 @@ namespace vcpkg
             if (has_targets_for_output)
             {
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                if (!ret.generated_usage_accurate)
+                {
+                    msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                }
 
                 for (auto&& package_targets_pair : ret.cmake_targets_map)
                 {
@@ -1252,7 +1257,7 @@ namespace vcpkg
             return ret;
         }
 
-        return get_cmake_usage_from_generated(fs, installed, bpgh);
+        return get_cmake_usage_from_generated(fs, installed, bpgh, false);
     }
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)

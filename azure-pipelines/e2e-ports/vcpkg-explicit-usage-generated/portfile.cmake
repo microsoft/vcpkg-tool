@@ -14,5 +14,6 @@ file(WRITE "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage" [[This is some usage te
 
 This output should end up on the console.
 ]])
+file(TOUCH "${CURRENT_PACKAGES_DIR}/share/${PORT}/usage-accurate")
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/../../../LICENSE.txt" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)

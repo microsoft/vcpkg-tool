@@ -75,7 +75,7 @@ Refresh-TestRoot
 
 $usageInfoArgs = $commonArgs + @("--overlay-ports=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
 
-Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated
+Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated vcpkg-hello-world-1
 Throw-IfFailed
 
 $out = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'vcpkg-explicit-usage-generated'))
@@ -91,7 +91,6 @@ $generated = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-in
 Throw-IfNonEqual -Actual $generated -Expected @"
 vcpkg-explicit-usage-generated provides CMake targets:
 
-  # this is heuristically generated, and may not be correct
   find_package(explicit-usage-generated CONFIG REQUIRED)
   target_link_libraries(main PRIVATE explicit-usage-generated::explicit-usage-generated)
 
@@ -100,6 +99,27 @@ vcpkg-explicit-usage-generated provides CMake targets:
 
 $generatedExplicit = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-explicit-usage-generated'))
 Throw-IfNonEqual -Actual $generatedExplicit -Expected $generated
+
+$generatedHeuristic = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-hello-world-1'))
+Throw-IfNonEqual -Actual $generatedHeuristic -Expected @"
+vcpkg-hello-world-1 provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(hello-world-1 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE hello-world-1::hello-world-1)
+
+
+"@
+
+$generatedForcedAccurate = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', '--force-accurate', 'vcpkg-hello-world-1'))
+Throw-IfNonEqual -Actual $generatedForcedAccurate -Expected @"
+vcpkg-hello-world-1 provides CMake targets:
+
+  find_package(hello-world-1 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE hello-world-1::hello-world-1)
+
+
+"@
 
 $missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'not-a-real-port'))
 Throw-IfNotFailed

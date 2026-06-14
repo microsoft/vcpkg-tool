@@ -75,6 +75,7 @@ namespace vcpkg
         // <name>
         Path share_dir(const PackageSpec& p) const { return triplet_dir(p.triplet()) / FileShare / p.name(); }
         Path usage_file(const PackageSpec& p) const { return share_dir(p) / FileUsage; }
+        Path usage_accurate_file(const PackageSpec& p) const { return share_dir(p) / FileUsageAcccurate; }
         Path spdx_file(const PackageSpec& p) const { return share_dir(p) / FileVcpkgSpdxJson; }
         Path vcpkg_port_config_cmake(const PackageSpec& p) const { return share_dir(p) / FileVcpkgPortConfig; }
 
