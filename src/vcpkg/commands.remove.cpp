@@ -264,8 +264,8 @@ namespace vcpkg
         std::map<std::string, PackageSpec> not_installed_names;
         for (auto&& action : plan.not_installed)
         {
-            // Only keep one spec per name
-            not_installed_names.emplace(action.spec.name(), action.spec);
+            // Only keep the first spec per name.
+            not_installed_names.try_emplace(action.spec.name(), action.spec);
         }
         if (!not_installed_names.empty())
         {
