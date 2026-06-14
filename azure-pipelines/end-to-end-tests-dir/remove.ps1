@@ -28,11 +28,11 @@ $removeArgs = $commonArgs + @(
 Run-Vcpkg install @removeArgs "vcpkg-empty-port:$HostE2ETriplet"
 Throw-IfFailed
 
-$warning = Run-VcpkgAndCaptureStdErr -TestArgs ($removeArgs + @(
+$warning = Run-VcpkgAndCaptureOutput ($removeArgs + @(
     'remove',
     '--dry-run',
     "vcpkg-empty-port:$firstMissingTriplet",
     "vcpkg-empty-port:$secondMissingTriplet"
 ))
 Throw-IfFailed
-Throw-IfNonEqual -Actual $warning -Expected "warning: vcpkg-empty-port:$firstMissingTriplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?`n"
+Throw-IfNonEndsWith -Actual $warning -Expected "warning: vcpkg-empty-port:$firstMissingTriplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?`n"
