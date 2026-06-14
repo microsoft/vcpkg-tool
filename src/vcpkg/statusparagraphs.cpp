@@ -154,6 +154,30 @@ namespace vcpkg
         }
     }
 
+    void print_package_not_installed_but_exists_for_other_triplets(const StatusParagraphs& status_db,
+                                                                   const PackageSpec& spec)
+    {
+        for (const auto& package : status_db)
+        {
+            if (package->is_installed() && !package->package.is_feature() &&
+                package->package.spec.name() == spec.name())
+            {
+                msg::println_warning(msgRemovePackageConflict,
+                                     msg::package_name = spec.name(),
+                                     msg::spec = spec,
+                                     msg::triplet = package->package.spec.triplet());
+            }
+        }
+    }
+
+    void exit_with_package_not_installed(const LineInfo& line_info,
+                                         const StatusParagraphs& status_db,
+                                         const PackageSpec& spec)
+    {
+        print_package_not_installed_but_exists_for_other_triplets(status_db, spec);
+        Checks::msg_exit_with_error(line_info, msg::format(msgPackageNotInstalled, msg::spec = spec));
+    }
+
     Json::Value serialize_ipv(const InstalledPackageView& ipv,
                               const InstalledPaths& installed,
                               const ReadOnlyFilesystem& fs)
