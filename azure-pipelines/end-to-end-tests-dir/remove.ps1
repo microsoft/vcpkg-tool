@@ -1,10 +1,24 @@
 . "$PSScriptRoot/../end-to-end-tests-prelude.ps1"
 
-$secondMissingTriplet = $TripletStatic
-if ($secondMissingTriplet -eq $Triplet -or $secondMissingTriplet -eq $HostE2ETriplet)
+$candidateMissingTriplets = @(
+    $TripletStatic,
+    $Triplet,
+    'x64-windows',
+    'x64-linux',
+    'x64-osx'
+)
+
+$distinctMissingTriplets = @()
+foreach ($candidateMissingTriplet in $candidateMissingTriplets)
 {
-    $secondMissingTriplet = 'x64-windows'
+    if ($candidateMissingTriplet -ne $HostE2ETriplet -and -not $distinctMissingTriplets.Contains($candidateMissingTriplet))
+    {
+        $distinctMissingTriplets += $candidateMissingTriplet
+    }
 }
+
+$firstMissingTriplet = $distinctMissingTriplets[0]
+$secondMissingTriplet = $distinctMissingTriplets[1]
 
 $removeArgs = $commonArgs + @(
     "--overlay-ports=$PSScriptRoot/../e2e-ports",
@@ -17,8 +31,8 @@ Throw-IfFailed
 $warning = Run-VcpkgAndCaptureStdErr -TestArgs ($removeArgs + @(
     'remove',
     '--dry-run',
-    "vcpkg-empty-port:$Triplet",
+    "vcpkg-empty-port:$firstMissingTriplet",
     "vcpkg-empty-port:$secondMissingTriplet"
 ))
 Throw-IfFailed
-Throw-IfNonEqual -Actual $warning -Expected "warning: vcpkg-empty-port:$Triplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?`n"
+Throw-IfNonEqual -Actual $warning -Expected "warning: vcpkg-empty-port:$firstMissingTriplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?`n"
