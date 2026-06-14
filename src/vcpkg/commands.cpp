@@ -45,6 +45,7 @@
 #include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
+#include <vcpkg/commands.usage-info.h>
 #include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.vsinstances.h>
@@ -127,6 +128,7 @@ namespace vcpkg
         {CommandInstallMetadata, command_install_and_exit},
         {CommandRemoveMetadata, command_remove_and_exit},
         {CommandTestFeaturesMetadata, command_test_features_and_exit},
+        {CommandUsageInfoMetadata, command_usage_info_and_exit},
         {CommandSetInstalledMetadata, command_set_installed_and_exit},
         {CommandUpgradeMetadata, command_upgrade_and_exit},
         {CommandZPrintConfigMetadata, command_z_print_config_and_exit},

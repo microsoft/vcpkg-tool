@@ -122,6 +122,7 @@ namespace vcpkg
     {
         std::string message;
         bool usage_file = false;
+        bool generated_usage_accurate = false;
         bool header_only = false;
         std::map<std::string, std::vector<std::string>> cmake_targets_map;
     };
@@ -130,7 +131,12 @@ namespace vcpkg
     std::string get_cmake_find_package_name(StringView dirname, StringView filename);
     CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh);
+                                   const BinaryParagraph& bpgh,
+                                   bool force_accurate);
+    CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
+                                                  const InstalledPaths& installed,
+                                                  const BinaryParagraph& bpgh,
+                                                  bool force_accurate);
 
     extern const CommandMetadata CommandInstallMetadata;
 

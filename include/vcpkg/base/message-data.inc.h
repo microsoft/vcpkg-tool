@@ -2321,6 +2321,7 @@ DECLARE_MESSAGE(PackageLicenseSpdxThisInstall,
                 (),
                 "",
                 "Packages installed in this vcpkg installation declare the following licenses:")
+DECLARE_MESSAGE(PackageNotInstalled, (msg::spec), "", "{spec} is not installed.")
 DECLARE_MESSAGE(PackageLicenseUnknown,
                 (),
                 "",

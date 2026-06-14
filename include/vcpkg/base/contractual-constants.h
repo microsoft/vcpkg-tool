@@ -220,8 +220,10 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
     inline constexpr StringLiteral SwitchForce = "force";
+    inline constexpr StringLiteral SwitchForceAccurate = "force-accurate";
     inline constexpr StringLiteral SwitchFormat = "format";
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
+    inline constexpr StringLiteral SwitchGenerated = "generated";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
@@ -352,6 +354,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";
+    inline constexpr StringLiteral FileUsageAccurate = "usage-accurate";
     inline constexpr StringLiteral FileVcpkg = "vcpkg";
     inline constexpr StringLiteral FileVcpkgAbiInfo = "vcpkg_abi_info.txt";
     inline constexpr StringLiteral FileVcpkgBundleDotJson = "vcpkg-bundle.json";

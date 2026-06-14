@@ -264,27 +264,12 @@ namespace vcpkg
         std::map<std::string, PackageSpec> not_installed_names;
         for (auto&& action : plan.not_installed)
         {
-            // Only keep one spec per name
-            not_installed_names.emplace(action.spec.name(), action.spec);
+            // Only keep the first spec per name.
+            not_installed_names.try_emplace(action.spec.name(), action.spec);
         }
         if (!not_installed_names.empty())
         {
-            // The user requested removing a package that was not installed. If the port is installed for another
-            // triplet, warn the user that they may have meant that other package.
-            for (const auto& package : status_db)
-            {
-                if (package->is_installed() && !package->package.is_feature())
-                {
-                    auto it = not_installed_names.find(package->package.spec.name());
-                    if (it != not_installed_names.end())
-                    {
-                        msg::println_warning(msgRemovePackageConflict,
-                                             msg::package_name = it->first,
-                                             msg::spec = it->second,
-                                             msg::triplet = package->package.spec.triplet());
-                    }
-                }
-            }
+            print_package_not_installed_but_exists_for_other_triplets(status_db, not_installed_names);
         }
 
         if (dry_run)

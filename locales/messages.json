@@ -1284,6 +1284,8 @@
   "PackageLicenseUnknown": "Some packages did not declare an SPDX license. Check the `copyright` file for each package for more information about their licensing.",
   "PackageLicenseWarning": "Installed contents are licensed to you by owners. Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.",
   "PackageManipulationHeader": "Package Manipulation",
+  "PackageNotInstalled": "{spec} is not installed.",
+  "_PackageNotInstalled.comment": "An example of {spec} is zlib:x64-windows.",
   "PackageRootDir": "Packages directory (experimental)",
   "PackagesCached": "All packages already exist in the binary cache. Installation skipped.",
   "PackagesToInstall": "The following packages will be built and installed:",
