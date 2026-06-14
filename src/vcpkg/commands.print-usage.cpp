@@ -2,7 +2,7 @@
 #include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.install.h>
-#include <vcpkg/commands.usage-info.h>
+#include <vcpkg/commands.print-usage.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
@@ -22,10 +22,10 @@ namespace
 namespace vcpkg
 {
 
-    constexpr CommandMetadata CommandUsageInfoMetadata{
-        "x-usage-info",
+    constexpr CommandMetadata CommandPrintUsageMetadata{
+        "print-usage",
         "Prints usage information for a single installed port",
-        {"vcpkg x-usage-info zlib:x64-windows"},
+        {"vcpkg print-usage zlib:x64-windows"},
         Undocumented,
         AutocompletePriority::Internal,
         1,
@@ -34,14 +34,14 @@ namespace vcpkg
         nullptr,
     };
 
-    void command_usage_info_and_exit(const VcpkgCmdArguments& args,
-                                     const VcpkgPaths& paths,
-                                     Triplet default_triplet,
-                                     Triplet host_triplet)
+    void command_print_usage_and_exit(const VcpkgCmdArguments& args,
+                                      const VcpkgPaths& paths,
+                                      Triplet default_triplet,
+                                      Triplet host_triplet)
     {
         (void)host_triplet;
         msg::default_output_stream = OutputStream::StdErr;
-        const ParsedArguments options = args.parse_arguments(CommandUsageInfoMetadata);
+        const ParsedArguments options = args.parse_arguments(CommandPrintUsageMetadata);
         const bool generated_only = Util::Sets::contains(options.switches, SwitchGenerated);
         const bool force_accurate = Util::Sets::contains(options.switches, SwitchForceAccurate);
 
