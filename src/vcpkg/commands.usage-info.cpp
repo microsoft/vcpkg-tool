@@ -1,3 +1,4 @@
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 
 #include <vcpkg/commands.install.h>
@@ -8,6 +9,8 @@
 #include <vcpkg/statusparagraphs.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
+
+#include <map>
 
 using namespace vcpkg;
 
@@ -60,7 +63,7 @@ namespace vcpkg
             {
                 msg::write_unlocalized_text(Color::none, usage.message);
             }
-            return;
+            Checks::exit_success(VCPKG_LINE_INFO);
         }
 
         exit_with_package_not_installed(VCPKG_LINE_INFO, status_db, spec.package_spec);

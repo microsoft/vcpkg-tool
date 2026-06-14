@@ -79,6 +79,7 @@ Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated vcpkg-hello-worl
 Throw-IfFailed
 
 $out = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
 Throw-IfNonEqual -Actual $out -Expected @"
 This is some usage text explicitly set by the port.
 
@@ -88,6 +89,7 @@ This output should end up on the console.
 "@
 
 $generated = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
 Throw-IfNonEqual -Actual $generated -Expected @"
 vcpkg-explicit-usage-generated provides CMake targets:
 
@@ -98,9 +100,11 @@ vcpkg-explicit-usage-generated provides CMake targets:
 "@
 
 $generatedExplicit = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
 Throw-IfNonEqual -Actual $generatedExplicit -Expected $generated
 
 $generatedHeuristic = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', 'vcpkg-hello-world-1'))
+Throw-IfFailed
 Throw-IfNonEqual -Actual $generatedHeuristic -Expected @"
 vcpkg-hello-world-1 provides CMake targets:
 
@@ -112,6 +116,7 @@ vcpkg-hello-world-1 provides CMake targets:
 "@
 
 $generatedForcedAccurate = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('x-usage-info', '--generated', '--force-accurate', 'vcpkg-hello-world-1'))
+Throw-IfFailed
 Throw-IfNonEqual -Actual $generatedForcedAccurate -Expected @"
 vcpkg-hello-world-1 provides CMake targets:
 

@@ -269,10 +269,7 @@ namespace vcpkg
         }
         if (!not_installed_names.empty())
         {
-            for (const auto& not_installed_name : not_installed_names)
-            {
-                print_package_not_installed_but_exists_for_other_triplets(status_db, not_installed_name.second);
-            }
+            print_package_not_installed_but_exists_for_other_triplets(status_db, not_installed_names);
         }
 
         if (dry_run)

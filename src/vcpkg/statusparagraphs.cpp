@@ -155,17 +155,20 @@ namespace vcpkg
     }
 
     void print_package_not_installed_but_exists_for_other_triplets(const StatusParagraphs& status_db,
-                                                                   const PackageSpec& spec)
+                                                                   const std::map<std::string, PackageSpec>& specs)
     {
         for (const auto& package : status_db)
         {
-            if (package->is_installed() && !package->package.is_feature() &&
-                package->package.spec.name() == spec.name())
+            if (package->is_installed() && !package->package.is_feature())
             {
-                msg::println_warning(msgRemovePackageConflict,
-                                     msg::package_name = spec.name(),
-                                     msg::spec = spec,
-                                     msg::triplet = package->package.spec.triplet());
+                auto it = specs.find(package->package.spec.name());
+                if (it != specs.end())
+                {
+                    msg::println_warning(msgRemovePackageConflict,
+                                         msg::package_name = it->first,
+                                         msg::spec = it->second,
+                                         msg::triplet = package->package.spec.triplet());
+                }
             }
         }
     }
@@ -174,7 +177,7 @@ namespace vcpkg
                                          const StatusParagraphs& status_db,
                                          const PackageSpec& spec)
     {
-        print_package_not_installed_but_exists_for_other_triplets(status_db, spec);
+        print_package_not_installed_but_exists_for_other_triplets(status_db, {{spec.name(), spec}});
         Checks::msg_exit_with_error(line_info, msg::format(msgPackageNotInstalled, msg::spec = spec));
     }
 
