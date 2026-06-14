@@ -334,7 +334,7 @@ DECLARE_MESSAGE(BaselineConflict,
 DECLARE_MESSAGE(BaselineDiffNoChange,
                 (),
                 "commit is a git commit here",
-                "No package that would have been installed was updated between the two commits")
+                "No packages that would have been installed were updated between the two commits.")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
@@ -607,11 +607,7 @@ DECLARE_MESSAGE(CmdBaselineDiffMissingRegistryBaseline,
                 "",
                 "Only one commit was provided but the default registry in vcpkg-configuration.json does not "
                 "have a 'baseline'. Please specify two commits or add a 'baseline' to the default registry.")
-DECLARE_MESSAGE(CmdBaselineDiffSynopsis,
-                (),
-                "",
-                "Computes the set of packages installed for different baselines and compares the versions that "
-                "would be installed")
+DECLARE_MESSAGE(CmdBaselineDiffSynopsis, (), "", "Computes version changes to installable packages between baselines")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
@@ -2197,7 +2193,7 @@ DECLARE_MESSAGE(MissingDependency,
                 (msg::spec, msg::package_name),
                 "",
                 "Package {spec} is installed, but dependency {package_name} is not.")
-DECLARE_MESSAGE(MissingManifestFile, (), "", "Could not find manifest file (vcpkg.json file)")
+DECLARE_MESSAGE(MissingManifestFile, (), "", "Couldn't find a manifest file (vcpkg.json file)")
 DECLARE_MESSAGE(MissingOption, (msg::option), "", "This command requires --{option}")
 DECLARE_MESSAGE(MissingOrInvalidIdentifer, (), "", "missing or invalid identifier")
 DECLARE_MESSAGE(MissingPortSuggestPullRequest,
