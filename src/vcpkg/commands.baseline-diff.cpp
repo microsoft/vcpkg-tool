@@ -257,9 +257,9 @@ namespace vcpkg
                 configuration.config.default_reg.emplace(synthesized_registry);
             }
 
-            auto registry_set = configuration.instantiate_registry_set(paths);
-            auto verprovider = make_versioned_portfile_provider(*registry_set);
-            auto baseprovider = make_baseline_provider(*registry_set);
+            auto updated_registry_set = configuration.instantiate_registry_set(paths);
+            auto verprovider = make_versioned_portfile_provider(*updated_registry_set);
+            auto baseprovider = make_baseline_provider(*updated_registry_set);
 
             auto extended_overlay_port_directories = paths.overlay_ports;
 
