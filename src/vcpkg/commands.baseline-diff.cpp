@@ -69,7 +69,7 @@ namespace vcpkg
         "x-baseline-diff",
         msgCmdBaselineDiffSynopsis,
         {msgCmdBaselineDiffExample1, "vcpkg x-baseline-diff 2026.02.27 2026.03.18"},
-        Undocumented,
+        "https://learn.microsoft.com/vcpkg/commands/baseline-diff",
         AutocompletePriority::Public,
         1,
         2,
