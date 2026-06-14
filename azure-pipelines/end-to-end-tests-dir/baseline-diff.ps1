@@ -99,6 +99,7 @@ $Output = Run-VcpkgAndCaptureOutput x-baseline-diff @commonArgs @builtinArgs `
     "--x-manifest-root=$manifestDir" $newTag $newTag
 Throw-IfFailed
 Throw-IfContains -Actual $Output -Expected ' -> '
+Throw-IfNonContains -Actual $Output -Expected 'No changes to installed packages between baselines'
 
 # =====================================================================
 # Test 5: Missing manifest — must fail
