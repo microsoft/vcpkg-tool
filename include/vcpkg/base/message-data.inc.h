@@ -331,7 +331,10 @@ DECLARE_MESSAGE(BaselineConflict,
                 "",
                 "Specifying vcpkg-configuration.default-registry in a manifest file conflicts with built-in "
                 "baseline.\nPlease remove one of these conflicting settings.")
-DECLARE_MESSAGE(BaselineDiffNoChange, (), "", "No changes to installed packages between baselines")
+DECLARE_MESSAGE(BaselineDiffNoChange,
+                (),
+                "Theoretically it is wrong to say installed, but this is probably the case most of the time",
+                "No changes to installed packages between baselines")
 DECLARE_MESSAGE(BaselineGitShowFailed,
                 (msg::commit_sha),
                 "",
@@ -1992,7 +1995,7 @@ DECLARE_MESSAGE(InvalidCommentStyle,
 DECLARE_MESSAGE(InvalidCommitId,
                 (msg::commit_sha),
                 "",
-                "Invalid commit id (expected 40 hexadecimal characters): {commit_sha}")
+                "Invalid commit id (expected lowercase 40 hexadecimal characters): {commit_sha}")
 DECLARE_MESSAGE(InvalidDefaultFeatureName, (), "", "'default' is a reserved feature name")
 DECLARE_MESSAGE(InvalidFeature,
                 (),
@@ -2010,8 +2013,8 @@ DECLARE_MESSAGE(InvalidFormatString,
                 "invalid format string: {actual}")
 DECLARE_MESSAGE(InvalidGitRef,
                 (msg::value),
-                "{value} is a git breanch, tag or short git sha",
-                "Can not resolve {value}")
+                "{value} is a git branch, tag or short git sha",
+                "Could not resolve git ref '{value}'")
 DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape")
 DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}")
 DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.")
