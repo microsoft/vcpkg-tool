@@ -86,7 +86,7 @@ namespace vcpkg
 
     std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
                                                                   const VcpkgPaths& paths,
-                                                                  bool is_default_builtin_registry);
+                                                                  bool is_default_builtin_files_registry);
 
     std::vector<std::string> get_manifest_features(const ParsedArguments& options,
                                                    const SourceParagraph& manifest_core,

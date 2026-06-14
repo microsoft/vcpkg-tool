@@ -96,20 +96,16 @@ namespace vcpkg
         auto& var_provider = *var_provider_storage;
 
         auto configuration = paths.get_configuration();
-        // is_default_builtin_registry() only matches BuiltinFilesRegistry (kind "builtin-files"),
-        // but when the manifest carries a builtin-baseline, merge_validate_configs synthesises a
-        // RegistryConfig with kind "builtin" that creates BuiltinGitRegistry instead.  Both are
-        // the local vcpkg clone, so treat either builtin kind as "is default builtin".
         auto registry_set = configuration.instantiate_registry_set(paths);
-        bool is_default_builtin = [&] {
-            if (!configuration.config.default_reg.has_value())
-            {
-                return true; // null default_reg → BuiltinFilesRegistry
-            }
-            auto* kind = configuration.config.default_reg.get()->kind.get();
-            return !kind || *kind == JsonIdBuiltin || *kind == JsonIdBuiltinFiles;
-        }();
-        auto manifest_scf = parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
+        // is_default_builtin_files_registry() only matches BuiltinFilesRegistry (kind JsonIdBuiltinFiles),
+        // but when the manifest carries a builtin-baseline, instantiate_registry_set synthesises a
+        // RegistryConfig with kind "builtin" that creates BuiltinGitRegistry (kind JsonIdBuiltinGit) instead.
+        // Both are the local vcpkg clone, so treat either builtin kind as "is default builtin".
+        bool is_default_builtin =
+            registry_set->default_registry() && (registry_set->default_registry()->kind() == JsonIdBuiltinFiles ||
+                                                 registry_set->default_registry()->kind() == JsonIdBuiltinGit);
+        auto manifest_scf =
+            parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_files_registry());
 
         // Determine the two baseline refs. If only one arg, use the manifest's builtin-baseline as the old one.
         StringView old_baseline_ref;

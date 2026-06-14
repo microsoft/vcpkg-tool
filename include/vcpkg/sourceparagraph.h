@@ -265,7 +265,7 @@ namespace vcpkg
 
         ExpectedL<Unit> check_against_feature_flags(const Path& origin,
                                                     const FeatureFlagSettings& flags,
-                                                    bool is_default_builtin_registry = true) const;
+                                                    bool is_default_builtin_files_registry = true) const;
 
         const std::string& to_name() const noexcept { return core_paragraph->name; }
         VersionScheme to_version_scheme() const noexcept { return core_paragraph->version_scheme; }

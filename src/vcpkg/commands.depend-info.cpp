@@ -486,7 +486,7 @@ namespace vcpkg
                 nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No};
 
             auto manifest_scf =
-                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
+                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_files_registry());
             const auto& manifest_core = *manifest_scf->core_paragraph;
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
@@ -494,7 +494,7 @@ namespace vcpkg
             auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
             const bool add_builtin_ports_directory_as_overlay =
-                registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+                registry_set->is_default_builtin_files_registry() && !paths.use_git_default_registry();
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
