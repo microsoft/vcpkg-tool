@@ -36,6 +36,7 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.package-info.h>
 #include <vcpkg/commands.portsdiff.h>
+#include <vcpkg/commands.print-usage.h>
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.search.h>
@@ -45,7 +46,6 @@
 #include <vcpkg/commands.update-registry.h>
 #include <vcpkg/commands.update.h>
 #include <vcpkg/commands.upgrade.h>
-#include <vcpkg/commands.print-usage.h>
 #include <vcpkg/commands.use.h>
 #include <vcpkg/commands.version.h>
 #include <vcpkg/commands.vsinstances.h>
