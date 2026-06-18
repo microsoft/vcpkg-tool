@@ -110,7 +110,8 @@ namespace
                   m_fs.exists(m_installed / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
             , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
                                  m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt_installed(m_fs.exists(m_installed / (m_is_debug ? "debug/plugins/qtdeploy.ps1" : "plugins/qtdeploy.ps1"),
+                                        VCPKG_LINE_INFO))
 #if !defined(_WIN32)
             , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
 #endif // ^^^ !_WIN32
@@ -166,19 +167,16 @@ namespace
 
                     if (m_magnum_installed)
                     {
-                        if (m_is_debug)
-                        {
-                            deployMagnum(target_binary_dir, m_installed / "bin/magnum-d", imported_name);
-                        }
-                        else
-                        {
-                            deployMagnum(target_binary_dir, m_installed / "bin/magnum", imported_name);
-                        }
+                        deployMagnum(target_binary_dir,
+                                     m_installed / (m_is_debug ? "debug/bin/magnum-d" : "bin/magnum"),
+                                     imported_name);
                     }
 
                     if (m_qt_installed)
                     {
-                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
+                        deployQt(m_deployment_dir,
+                                m_installed / (m_is_debug ? "debug/plugins" : "plugins"),
+                                imported_name);
                     }
 
                     resolve(m_deployment_dir / imported_name);
