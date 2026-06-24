@@ -16,7 +16,10 @@ using namespace vcpkg;
 
 namespace
 {
-    constexpr CommandSwitch SWITCHES[] = {{SwitchGenerated}, {SwitchAffirm}};
+    constexpr CommandSwitch SWITCHES[] = {
+        {SwitchGenerated, msgCmdPrintUsageSwitchGenerated},
+        {SwitchAffirm, msgCmdPrintUsageSwitchAffirm},
+    };
 }
 
 namespace vcpkg
@@ -27,7 +30,7 @@ namespace vcpkg
         msgCmdPrintUsageSynopsis,
         {"vcpkg print-usage zlib:x64-windows"},
         Undocumented,
-        AutocompletePriority::Internal,
+        AutocompletePriority::Public,
         1,
         1,
         {SWITCHES},
