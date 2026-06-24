@@ -822,6 +822,7 @@ DECLARE_MESSAGE(CmdPortsdiffExample2,
                 "This is a command line, only the parts in <>s should be localized",
                 "vcpkg portsdiff <from> <to>")
 DECLARE_MESSAGE(CmdPortsdiffSynopsis, (), "", "Diffs changes in port versions between commits")
+DECLARE_MESSAGE(CmdPrintUsageSynopsis, (), "", "Prints usage information for a single installed port")
 DECLARE_MESSAGE(CmdRegenerateOptDryRun, (), "", "Does not actually perform the action, shows only what would be done")
 DECLARE_MESSAGE(CmdRegenerateOptForce, (), "", "Proceeds with the (potentially dangerous) action without confirmation")
 DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "Applies any deprecation fixes")

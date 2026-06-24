@@ -24,7 +24,7 @@ namespace vcpkg
 
     constexpr CommandMetadata CommandPrintUsageMetadata{
         "print-usage",
-        "Prints usage information for a single installed port",
+        msgCmdPrintUsageSynopsis,
         {"vcpkg print-usage zlib:x64-windows"},
         Undocumented,
         AutocompletePriority::Internal,
@@ -56,9 +56,8 @@ namespace vcpkg
         if (const auto it = status_db.find_installed(spec.package_spec); it != status_db.end())
         {
             const auto& bpgh = it->get()->package;
-            const auto usage = generated_only
-                                   ? get_cmake_usage_from_generated(fs, paths.installed(), bpgh, affirm)
-                                   : get_cmake_usage(fs, paths.installed(), bpgh, affirm);
+            const auto usage = generated_only ? get_cmake_usage_from_generated(fs, paths.installed(), bpgh, affirm)
+                                              : get_cmake_usage(fs, paths.installed(), bpgh, affirm);
             if (!usage.message.empty())
             {
                 msg::write_unlocalized_text(Color::none, usage.message);

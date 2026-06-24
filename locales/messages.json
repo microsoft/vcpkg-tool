@@ -474,6 +474,7 @@
   "CmdPortsdiffExample2": "vcpkg portsdiff <from> <to>",
   "_CmdPortsdiffExample2.comment": "This is a command line, only the parts in <>s should be localized",
   "CmdPortsdiffSynopsis": "Diffs changes in port versions between commits",
+  "CmdPrintUsageSynopsis": "Prints usage information for a single installed port",
   "CmdRegenerateOptDryRun": "Does not actually perform the action, shows only what would be done",
   "CmdRegenerateOptForce": "Proceeds with the (potentially dangerous) action without confirmation",
   "CmdRegenerateOptNormalize": "Applies any deprecation fixes",
