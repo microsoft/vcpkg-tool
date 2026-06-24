@@ -175,6 +175,7 @@ namespace vcpkg
     // Switches are lowercase separated by dashes
     inline constexpr StringLiteral SwitchAbiToolsUseExactVersions = "abi-tools-use-exact-versions";
     inline constexpr StringLiteral SwitchAddInitialBaseline = "add-initial-baseline";
+    inline constexpr StringLiteral SwitchAffirm = "affirm";
     inline constexpr StringLiteral SwitchAll = "all";
     inline constexpr StringLiteral SwitchAllLanguages = "all-languages";
     inline constexpr StringLiteral SwitchAllowUnexpectedPassing = "allow-unexpected-passing";
@@ -220,7 +221,6 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
     inline constexpr StringLiteral SwitchForce = "force";
-    inline constexpr StringLiteral SwitchForceAccurate = "force-accurate";
     inline constexpr StringLiteral SwitchFormat = "format";
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
     inline constexpr StringLiteral SwitchGenerated = "generated";

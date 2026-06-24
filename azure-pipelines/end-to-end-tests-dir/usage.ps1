@@ -115,9 +115,9 @@ vcpkg-hello-world-1 provides CMake targets:
 
 "@
 
-$generatedForcedAccurate = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', '--force-accurate', 'vcpkg-hello-world-1'))
+$generatedAffirm = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', '--affirm', 'vcpkg-hello-world-1'))
 Throw-IfFailed
-Throw-IfNonEqual -Actual $generatedForcedAccurate -Expected @"
+Throw-IfNonEqual -Actual $generatedAffirm -Expected @"
 vcpkg-hello-world-1 provides CMake targets:
 
   find_package(hello-world-1 CONFIG REQUIRED)
@@ -126,9 +126,9 @@ vcpkg-hello-world-1 provides CMake targets:
 
 "@
 
-$defaultForcedAccurate = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--force-accurate', 'vcpkg-hello-world-1'))
+$defaultAffirm = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--affirm', 'vcpkg-hello-world-1'))
 Throw-IfFailed
-Throw-IfNonEqual -Actual $defaultForcedAccurate -Expected $generatedForcedAccurate
+Throw-IfNonEqual -Actual $defaultAffirm -Expected $generatedAffirm
 
 $missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', 'not-a-real-port'))
 Throw-IfNotFailed

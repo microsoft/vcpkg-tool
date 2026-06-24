@@ -1021,10 +1021,10 @@ namespace vcpkg
     CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
                                                   const InstalledPaths& installed,
                                                   const BinaryParagraph& bpgh,
-                                                  bool force_accurate)
+                                                  bool affirm)
     {
         CMakeUsageInfo ret;
-        ret.generated_usage_accurate = force_accurate || fs.is_regular_file(installed.usage_accurate_file(bpgh.spec));
+        ret.generated_usage_accurate = affirm || fs.is_regular_file(installed.usage_accurate_file(bpgh.spec));
 
         std::error_code ec;
 
@@ -1239,7 +1239,7 @@ namespace vcpkg
     CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
                                    const InstalledPaths& installed,
                                    const BinaryParagraph& bpgh,
-                                   bool force_accurate)
+                                   bool affirm)
     {
         CMakeUsageInfo ret;
 
@@ -1258,7 +1258,7 @@ namespace vcpkg
             return ret;
         }
 
-        return get_cmake_usage_from_generated(fs, installed, bpgh, force_accurate);
+        return get_cmake_usage_from_generated(fs, installed, bpgh, affirm);
     }
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
