@@ -441,9 +441,11 @@ namespace vcpkg
             baseline_map = vcpkg::get_builtin_baseline(paths).value_or_exit(VCPKG_LINE_INFO);
         }
 
+        const bool can_use_version_tree_shortcut =
+            add_all && fs.exists(paths.builtin_registry_versions, IgnoreErrors{});
         auto versions_db = FullGitVersionsDatabase{
             fs, paths.builtin_registry_versions, std::map<std::string, GitVersionsLoadResult, std::less<>>{}};
-        if (add_all && fs.exists(paths.builtin_registry_versions, IgnoreErrors{}))
+        if (can_use_version_tree_shortcut)
         {
             versions_db =
                 load_all_git_versions_files(fs, paths.builtin_registry_versions).value_or_exit(VCPKG_LINE_INFO);
@@ -456,6 +458,38 @@ namespace vcpkg
         for (auto&& port_git_tree_entry : port_git_trees)
         {
             auto& port_name = port_git_tree_entry.file_name;
+            if (can_use_version_tree_shortcut)
+            {
+                // If the current port tree is already recorded in the versions database, that database entry already
+                // contains the version needed for the baseline. Avoid loading, parsing, and format-checking the port
+                // manifest unless the tree is missing from the versions database.
+                auto&& loaded_versions = versions_db.lookup(port_name);
+                auto maybe_versions = loaded_versions.entries.get();
+                if (!maybe_versions)
+                {
+                    msg::println(Color::error, loaded_versions.entries.error());
+                    Checks::exit_fail(VCPKG_LINE_INFO);
+                }
+
+                if (auto versions = maybe_versions->get())
+                {
+                    auto git_tree_match = Util::find_if(*versions, [&](const GitVersionDbEntry& entry) {
+                        return entry.git_tree == port_git_tree_entry.git_tree_sha;
+                    });
+                    if (git_tree_match != versions->end())
+                    {
+                        auto baseline_update =
+                            update_baseline_version(port_name, git_tree_match->version.version, baseline_map);
+                        port_updates.push_back(
+                            PortUpdate{port_name,
+                                       git_tree_match->version,
+                                       {UpdateResult::NotUpdated, loaded_versions.versions_file_path, {}, false},
+                                       baseline_update});
+                        continue;
+                    }
+                }
+            }
+
             auto load_result = Paragraphs::try_load_builtin_port_required(fs, port_name, builtin_ports_directory);
             auto& maybe_scfl = load_result.maybe_scfl;
             auto scfl = maybe_scfl.get();
