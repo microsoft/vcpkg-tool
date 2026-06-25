@@ -45,7 +45,8 @@ namespace
 
 #if defined(CURLSSLOPT_REVOKE_BEST_EFFORT)
         // Fix for schannel missing certificate revocation list errors with proxy server.
-        const auto maybe_revoke_best_effort = get_environment_variable_nonempty(EnvironmentVariableVcpkgSSLRevokeBestEffort);
+        const auto maybe_revoke_best_effort =
+            get_environment_variable_nonempty(EnvironmentVariableVcpkgSSLRevokeBestEffort);
         if (const auto revoke_best_effort = maybe_revoke_best_effort.get())
         {
             // Only applied if VCPKG_SSL_REVOKE_BEST_EFFORT is explicitly set to "1"
