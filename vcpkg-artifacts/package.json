@@ -33,7 +33,7 @@
     "mocha": "11.7.5",
     "source-map-support": "0.5.21",
     "translate-strings": "1.1.15",
-    "tsx": "^4.20.3",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.37.0"
   },
@@ -50,6 +50,7 @@
   },
   "overrides": {
     "diff": "8.0.3",
-    "serialize-javascript": "7.0.5"
+    "serialize-javascript": "7.0.5",
+    "uuid": "11.1.1"
   }
 }

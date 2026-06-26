@@ -40,6 +40,12 @@ namespace
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
 
+        static const auto maybe_ca_bundle = get_environment_variable_nonempty(EnvironmentVariableCurlCaBundle);
+        if (const auto ca_bundle = maybe_ca_bundle.get())
+        {
+            vcpkg_curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle->c_str());
+        }
+
         // Track SSL options as a bitmask to avoid clobbering flags if more are added in the future
         long ssl_options = 0L;
 
