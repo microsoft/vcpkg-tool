@@ -3,6 +3,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 
+#include <cmath>
 #include <iostream>
 
 // TODO: remove this once we switch to C++20 completely
@@ -150,12 +151,12 @@ TEST_CASE ("JSON parse floats", "[json]")
     REQUIRE(res.get()->value.is_number());
     REQUIRE(!res.get()->value.is_integer());
     REQUIRE(res.get()->value.number(VCPKG_LINE_INFO) == 0.0);
-    REQUIRE(!signbit(res.get()->value.number(VCPKG_LINE_INFO)));
+    REQUIRE(!std::signbit(res.get()->value.number(VCPKG_LINE_INFO)));
     res = Json::parse("-0.0", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
     REQUIRE(res.get()->value.number(VCPKG_LINE_INFO) == 0.0);
-    REQUIRE(signbit(res.get()->value.number(VCPKG_LINE_INFO)));
+    REQUIRE(std::signbit(res.get()->value.number(VCPKG_LINE_INFO)));
     res = Json::parse("12345.6789", "test");
     REQUIRE(res);
     REQUIRE(res.get()->value.is_number());
