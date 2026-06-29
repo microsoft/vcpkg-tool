@@ -119,11 +119,14 @@ namespace
 
         void resolve(const Path& binary)
         {
-            msg::print(LocalizedString::from_raw(binary)
-                           .append_raw(": ")
-                           .append_raw(MessagePrefix)
-                           .append(msgApplocalProcessing)
-                           .append_raw('\n'));
+            if (Debug::g_debugging)
+            {
+                msg::print(LocalizedString::from_raw(binary)
+                               .append_raw(": ")
+                               .append_raw(MessagePrefix)
+                               .append(msgApplocalProcessing)
+                               .append_raw('\n'));
+            }
 
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata_required(dll_file).value_or_exit(VCPKG_LINE_INFO);
@@ -514,7 +517,11 @@ namespace
             }
             else if (!ec)
             {
-                msg::println(msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
+                if (Debug::g_debugging)
+                {
+                    msg::println(
+                        msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
+                }
             }
             else if (is_not_found_errc(ec))
             {
@@ -621,11 +628,14 @@ namespace vcpkg
 
         // the first binary is special in that it might not be a DLL or might not exist
         const Path target_binary_path = target_binary->second;
-        msg::print(LocalizedString::from_raw(target_binary_path)
-                       .append_raw(": ")
-                       .append_raw(MessagePrefix)
-                       .append(msgApplocalProcessing)
-                       .append_raw('\n'));
+        if (Debug::g_debugging)
+        {
+            msg::print(LocalizedString::from_raw(target_binary_path)
+                           .append_raw(": ")
+                           .append_raw(MessagePrefix)
+                           .append(msgApplocalProcessing)
+                           .append_raw('\n'));
+        }
 
         std::error_code ec;
         auto dll_file = fs.open_for_read(target_binary_path, ec);
