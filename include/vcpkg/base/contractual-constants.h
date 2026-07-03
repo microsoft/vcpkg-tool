@@ -546,6 +546,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgNuGetRepository = "VCPKG_NUGET_REPOSITORY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgOverlayPorts = "VCPKG_OVERLAY_PORTS";
     inline constexpr StringLiteral EnvironmentVariableVcpkgRoot = "VCPKG_ROOT";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgSSLRevokeBestEffort = "VCPKG_SSL_REVOKE_BEST_EFFORT";
     inline constexpr StringLiteral EnvironmentVariableVcpkgUseNuGetCache = "VCPKG_USE_NUGET_CACHE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgVisualStudioPath = "VCPKG_VISUAL_STUDIO_PATH";
     inline constexpr StringLiteral EnvironmentVariableVsLang = "VSLANG";
