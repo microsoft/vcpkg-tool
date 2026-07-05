@@ -326,7 +326,8 @@ namespace vcpkg
         {
             uri = *github_server_url;
         }
-        else
+
+        if (uri.empty())
         {
             uri = "https://api.github.com";
         }
