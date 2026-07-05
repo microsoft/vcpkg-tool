@@ -501,6 +501,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableGitHubRepositoryID = "GITHUB_REPOSITORY_ID";
     inline constexpr StringLiteral EnvironmentVariableGitHubRepositoryOwnerId = "GITHUB_REPOSITORY_OWNER_ID";
     inline constexpr StringLiteral EnvironmentVariableGitHubRunId = "GITHUB_RUN_ID";
+    inline constexpr StringLiteral EnvironmentVariableGitHubServerUrl = "GITHUB_SERVER_URL";
     inline constexpr StringLiteral EnvironmentVariableGitHubApiUrl = "GITHUB_API_URL";
     inline constexpr StringLiteral EnvironmentVariableGitHubSha = "GITHUB_SHA";
     inline constexpr StringLiteral EnvironmentVariableGitHubToken = "GITHUB_TOKEN";
