@@ -325,7 +325,6 @@ namespace vcpkg
         if (auto github_server_url = maybe_github_server_url.get())
         {
             uri = *github_server_url;
-            uri.append("/api/v3");
         }
         else
         {

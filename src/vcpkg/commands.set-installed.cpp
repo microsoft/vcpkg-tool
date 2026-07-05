@@ -221,7 +221,7 @@ namespace vcpkg
             {
                 WarningDiagnosticContext wdc{console_diagnostic_context};
                 dependency_graph_success = submit_github_dependency_graph_snapshot(
-                    wdc, args.github_server_url, *github_token, *github_repository, *snapshot);
+                    wdc, args.github_api_url, *github_token, *github_repository, *snapshot);
                 if (dependency_graph_success)
                 {
                     msg::println(msgDependencyGraphSuccess);

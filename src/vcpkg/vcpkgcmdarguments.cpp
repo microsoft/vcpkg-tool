@@ -574,7 +574,7 @@ namespace vcpkg
         });
         from_env(get_env, EnvironmentVariableVcpkgNuGetRepository, vcpkg_nuget_repository);
         from_env(get_env, EnvironmentVariableGitHubRepository, github_repository);
-        from_env(get_env, EnvironmentVariableGitHubServerUrl, github_server_url);
+        from_env(get_env, EnvironmentVariableGitHubApiUrl, github_api_url);
         from_env(get_env, EnvironmentVariableGitHubRef, github_ref);
         from_env(get_env, EnvironmentVariableGitHubSha, github_sha);
         from_env(get_env, EnvironmentVariableGitHubJob, github_job);

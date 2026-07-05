@@ -240,7 +240,7 @@ namespace vcpkg
         Optional<bool> use_nuget_cache;
         Optional<std::string> vcpkg_nuget_repository;
         Optional<std::string> github_repository;
-        Optional<std::string> github_server_url;
+        Optional<std::string> github_api_url;
         Optional<std::string> github_ref;
         Optional<std::string> github_sha;
         Optional<std::string> ci_repository_id;
