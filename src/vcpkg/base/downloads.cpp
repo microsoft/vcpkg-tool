@@ -316,18 +316,18 @@ namespace vcpkg
     }
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
-                                                 const Optional<std::string>& maybe_github_server_url,
+                                                 const Optional<std::string>& maybe_github_api_url,
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
         std::string uri;
-        if (auto github_server_url = maybe_github_server_url.get())
+        if (auto github_api_url = maybe_github_api_url.get())
         {
-            uri = *github_server_url;
-            uri.append("/api/v3");
+            uri = *github_api_url;
         }
-        else
+
+        if (uri.empty())
         {
             uri = "https://api.github.com";
         }
