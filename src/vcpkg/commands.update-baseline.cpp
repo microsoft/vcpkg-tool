@@ -97,6 +97,11 @@ namespace vcpkg
             Checks::exit_success(VCPKG_LINE_INFO);
         }
 
+        // Track the old and new baselines of the primary registry so we can suggest
+        // x-baseline-diff afterwards.
+        std::string primary_old_baseline;
+        std::string primary_new_baseline;
+
         if (has_builtin_baseline || add_builtin_baseline)
         {
             // remove default_reg, since that's filled in with the builtin-baseline
@@ -109,7 +114,9 @@ namespace vcpkg
                 synthesized_registry.baseline = p->string(VCPKG_LINE_INFO).to_string();
             }
 
+            primary_old_baseline = synthesized_registry.baseline.value_or("");
             update_baseline_in_config(paths, synthesized_registry);
+            primary_new_baseline = synthesized_registry.baseline.value_or("");
 
             if (auto p = synthesized_registry.baseline.get())
             {
@@ -119,7 +126,9 @@ namespace vcpkg
 
         if (auto default_reg = configuration.config.default_reg.get())
         {
+            primary_old_baseline = default_reg->baseline.value_or("");
             update_baseline_in_config(paths, *default_reg);
+            primary_new_baseline = default_reg->baseline.value_or("");
         }
 
         for (auto& reg : configuration.config.registries)
@@ -152,6 +161,13 @@ namespace vcpkg
         if (!dry_run && has_manifest)
         {
             paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
+        }
+
+        if (!dry_run && !primary_old_baseline.empty() && primary_new_baseline != primary_old_baseline)
+        {
+            msg::println(msgUpdateBaselineSuggestBaselineDiff,
+                         msg::old_value = primary_old_baseline,
+                         msg::new_value = primary_new_baseline);
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

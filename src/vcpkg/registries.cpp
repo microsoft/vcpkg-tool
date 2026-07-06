@@ -1199,11 +1199,11 @@ namespace vcpkg
         return impl->get_baseline_version(port_name);
     }
 
-    bool RegistrySet::is_default_builtin_registry() const
+    bool RegistrySet::is_default_builtin_files_registry() const
     {
         return default_registry_ && default_registry_->kind() == JsonIdBuiltinFiles;
     }
-    bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_registry(); }
+    bool RegistrySet::has_modifications() const { return !registries_.empty() || !is_default_builtin_files_registry(); }
 } // namespace vcpkg
 
 namespace

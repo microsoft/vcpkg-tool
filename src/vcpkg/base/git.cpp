@@ -545,6 +545,23 @@ namespace vcpkg
         return nullopt;
     }
 
+    Optional<std::string> git_resolve_to_full_sha(DiagnosticContext& context,
+                                                  const Path& git_exe,
+                                                  GitRepoLocator locator,
+                                                  StringView ref)
+    {
+        const auto commitish = fmt::format("{}^{{commit}}", ref);
+        StringView args[] = {StringLiteral{"rev-parse"}, commitish};
+        auto cmd = make_git_command(git_exe, locator, args);
+        auto maybe_output = cmd_execute_and_capture_output(context, cmd);
+        if (auto output = check_zero_exit_code(context, cmd, maybe_output))
+        {
+            Strings::inplace_trim_end(*output);
+            return std::move(*output);
+        }
+        return nullopt;
+    }
+
     bool check_commit_exists(DiagnosticContext& context,
                              const Path& git_exe,
                              const Path& builtin_ports_dir,

@@ -92,7 +92,7 @@ namespace vcpkg
 {
     std::unique_ptr<SourceControlFile> parse_manifest_scf_or_exit(const ManifestAndPath& manifest,
                                                                   const VcpkgPaths& paths,
-                                                                  bool is_default_builtin_registry)
+                                                                  bool is_default_builtin_files_registry)
     {
         auto maybe_manifest_scf =
             SourceControlFile::parse_project_manifest_object(manifest.path, manifest.manifest, out_sink);
@@ -109,7 +109,8 @@ namespace vcpkg
         }
 
         auto manifest_scf = std::move(maybe_manifest_scf).value(VCPKG_LINE_INFO);
-        manifest_scf->check_against_feature_flags(manifest.path, paths.get_feature_flags(), is_default_builtin_registry)
+        manifest_scf
+            ->check_against_feature_flags(manifest.path, paths.get_feature_flags(), is_default_builtin_files_registry)
             .value_or_exit(VCPKG_LINE_INFO);
         return manifest_scf;
     }
@@ -1407,7 +1408,7 @@ namespace vcpkg
         if (manifest)
         {
             auto manifest_scf =
-                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_registry());
+                parse_manifest_scf_or_exit(*manifest, paths, registry_set->is_default_builtin_files_registry());
             const auto& manifest_core = *manifest_scf->core_paragraph;
             PackageSpec toplevel{manifest_core.name, default_triplet};
             auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
@@ -1415,7 +1416,7 @@ namespace vcpkg
             auto dependencies = get_manifest_dependencies(*manifest_scf, features);
 
             const bool add_builtin_ports_directory_as_overlay =
-                registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+                registry_set->is_default_builtin_files_registry() && !paths.use_git_default_registry();
             auto verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 

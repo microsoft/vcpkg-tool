@@ -4,6 +4,7 @@
 #include <vcpkg/commands.add-version.h>
 #include <vcpkg/commands.add.h>
 #include <vcpkg/commands.autocomplete.h>
+#include <vcpkg/commands.baseline-diff.h>
 #include <vcpkg/commands.bootstrap-standalone.h>
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
@@ -127,6 +128,7 @@ namespace vcpkg
         {CommandInstallMetadata, command_install_and_exit},
         {CommandRemoveMetadata, command_remove_and_exit},
         {CommandTestFeaturesMetadata, command_test_features_and_exit},
+        {CommandBaselineDiffMetadata, command_baseline_diff_and_exit},
         {CommandSetInstalledMetadata, command_set_installed_and_exit},
         {CommandUpgradeMetadata, command_upgrade_and_exit},
         {CommandZPrintConfigMetadata, command_z_print_config_and_exit},

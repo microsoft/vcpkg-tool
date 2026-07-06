@@ -130,7 +130,7 @@ namespace vcpkg
 
         const RegistryImplementation* default_registry() const { return default_registry_.get(); }
 
-        bool is_default_builtin_registry() const;
+        bool is_default_builtin_files_registry() const;
 
         // returns whether the registry set has any modifications to the default
         // (i.e., whether `default_registry` was set, or `registries` had any entries)

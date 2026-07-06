@@ -1660,7 +1660,7 @@ namespace vcpkg
 
     ExpectedL<Unit> SourceControlFile::check_against_feature_flags(const Path& origin,
                                                                    const FeatureFlagSettings& flags,
-                                                                   bool is_default_builtin_registry) const
+                                                                   bool is_default_builtin_files_registry) const
     {
         if (!flags.versions)
         {
@@ -1711,7 +1711,7 @@ namespace vcpkg
         }
         else
         {
-            if (!core_paragraph->builtin_baseline.has_value() && is_default_builtin_registry)
+            if (!core_paragraph->builtin_baseline.has_value() && is_default_builtin_files_registry)
             {
                 if (std::any_of(core_paragraph->dependencies.begin(),
                                 core_paragraph->dependencies.end(),
