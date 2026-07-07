@@ -3125,7 +3125,6 @@ DECLARE_MESSAGE(UpdateBaselineNoUpdate,
                 (msg::url, msg::value),
                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
                 "registry '{url}' not updated: {value}")
-DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'")
 DECLARE_MESSAGE(UpdateBaselineRemovedDependencyVersion,
                 (msg::package_name, msg::version),
                 "example of {package_name} is zlib. example of {version} is 1.3.2#1",
