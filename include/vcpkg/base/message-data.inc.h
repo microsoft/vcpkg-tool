@@ -874,6 +874,7 @@ DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
                 "",
                 "Adds a `builtin-baseline` to a vcpkg.json that doesn't already have it")
+DECLARE_MESSAGE(CmdUpdateBaselineOptQuiet, (), "", "Does not print the port version diff after updating baselines")
 DECLARE_MESSAGE(CmdUpdateBaselineSynopsis,
                 (),
                 "",
@@ -1056,6 +1057,7 @@ DECLARE_MESSAGE(DependencyWillFail,
                 "'cascade' is a keyword and should not be translated",
                 "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
+DECLARE_MESSAGE(DirectDependencies, (), "", "Direct dependencies")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
                 (),
                 "",
@@ -2867,6 +2869,7 @@ DECLARE_MESSAGE(ToUpdatePackages,
                 "To update these packages and all dependencies, run\n{command_name} upgrade'")
 DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array")
 DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object")
+DECLARE_MESSAGE(TransitiveDependencies, (), "", "Transitive dependencies")
 DECLARE_MESSAGE(TripletLabel, (), "", "Triplet:")
 DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found")
 DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
@@ -3114,15 +3117,27 @@ DECLARE_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
                 "",
                 "the manifest file currently does not contain a `builtin-baseline` field; in order to "
                 "add one, pass the --{option} switch.")
+DECLARE_MESSAGE(UpdateBaselineNewDependencyVersion,
+                (msg::package_name, msg::version),
+                "example of {package_name} is zlib. example of {version} is 1.3.2#1",
+                "{package_name}: new: {version}")
 DECLARE_MESSAGE(UpdateBaselineNoUpdate,
                 (msg::url, msg::value),
                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                "registry '{url}' not updated: '{value}'")
+                "registry '{url}' not updated: {value}")
 DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'")
+DECLARE_MESSAGE(UpdateBaselineRemovedDependencyVersion,
+                (msg::package_name, msg::version),
+                "example of {package_name} is zlib. example of {version} is 1.3.2#1",
+                "{package_name}: removed: {version}")
+DECLARE_MESSAGE(UpdateBaselineVersionUpdates,
+                (),
+                "",
+                "Updating baselines has resulted in the following version updates:")
 DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                "updated registry '{url}': baseline '{old_value}' -> '{new_value}'")
+                "updated registry '{url}': {old_value} -> {new_value}")
 DECLARE_MESSAGE(
     UpgradeInManifest,
     (),

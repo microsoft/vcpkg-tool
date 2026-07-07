@@ -266,6 +266,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchPrintmetrics = "printmetrics";
     inline constexpr StringLiteral SwitchPurge = "purge";
     inline constexpr StringLiteral SwitchPython = "python";
+    inline constexpr StringLiteral SwitchQuiet = "quiet";
     inline constexpr StringLiteral SwitchRaw = "raw";
     inline constexpr StringLiteral SwitchRecurse = "recurse";
     inline constexpr StringLiteral SwitchRegistriesCache = "registries-cache";

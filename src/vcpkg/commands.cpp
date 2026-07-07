@@ -105,7 +105,6 @@ namespace vcpkg
         {CommandRegenerateMetadata, command_regenerate_and_exit},
         {CommandSearchMetadata, command_search_and_exit},
         {CommandUpdateMetadata, command_update_and_exit},
-        {CommandUpdateBaselineMetadata, command_update_baseline_and_exit},
         {CommandUpdateRegistryMetadata, command_update_registry_and_exit},
         {CommandUseMetadata, command_use_and_exit},
         {CommandVsInstancesMetadata, command_vs_instances_and_exit},
@@ -128,6 +127,7 @@ namespace vcpkg
         {CommandRemoveMetadata, command_remove_and_exit},
         {CommandTestFeaturesMetadata, command_test_features_and_exit},
         {CommandSetInstalledMetadata, command_set_installed_and_exit},
+        {CommandUpdateBaselineMetadata, command_update_baseline_and_exit},
         {CommandUpgradeMetadata, command_upgrade_and_exit},
         {CommandZPrintConfigMetadata, command_z_print_config_and_exit},
     };
