@@ -2668,7 +2668,7 @@ DECLARE_MESSAGE(PortMissingManifest2,
                 "",
                 "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortNotSupported, (msg::package_name, msg::triplet), "", "{package_name} is not supported on {triplet}")
-DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
+DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
 DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")")

@@ -1379,7 +1379,7 @@
   "PortVersionMultipleSpecification": "\"port_version\" cannot be combined with an embedded '#' in the version",
   "PortsAdded": "The following {count} ports were added:",
   "_PortsAdded.comment": "An example of {count} is 42.",
-  "PortsNoDiff": "There were no changes in the ports between the two commits.",
+  "PortsNoDiff": "There were no changes in the ports.",
   "PortsRemoved": "The following {count} ports were removed:",
   "_PortsRemoved.comment": "An example of {count} is 42.",
   "PortsUpdated": "The following {count} ports were updated:",
