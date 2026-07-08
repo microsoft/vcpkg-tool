@@ -92,6 +92,7 @@ namespace
                            const Path& installed_bin_dir,
                            const Path& installed,
                            bool is_debug,
+                           bool verbose,
 #if defined(_WIN32)
                            WriteFilePointer&& tlog_file,
 #endif // ^^^ _WIN32
@@ -101,6 +102,7 @@ namespace
             , m_installed_bin_dir(installed_bin_dir)
             , m_installed(installed)
             , m_is_debug(is_debug)
+            , m_verbose(verbose)
 #if defined(_WIN32)
             , m_tlog_file(std::move(tlog_file))
 #endif // ^^^ _WIN32
@@ -119,7 +121,7 @@ namespace
 
         void resolve(const Path& binary)
         {
-            if (Debug::g_debugging)
+            if (m_verbose)
             {
                 msg::print(LocalizedString::from_raw(binary)
                                .append_raw(": ")
@@ -517,7 +519,7 @@ namespace
             }
             else if (!ec)
             {
-                if (Debug::g_debugging)
+                if (m_verbose)
                 {
                     msg::println(
                         msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
@@ -563,6 +565,7 @@ namespace
         Path m_installed_bin_dir;
         Path m_installed;
         bool m_is_debug;
+        bool m_verbose;
 #if defined(_WIN32)
         WriteFilePointer m_tlog_file;
 #endif // ^^^ _WIN32
@@ -575,6 +578,10 @@ namespace
 #if !defined(_WIN32)
         Path m_temp_dir;
 #endif // ^^^ !_WIN32
+    };
+
+    constexpr CommandSwitch SWITCHES[] = {
+        {SwitchVerbose, msgCmdZApplocalOptVerbose},
     };
 
     constexpr CommandSetting SETTINGS[] = {
@@ -603,13 +610,14 @@ namespace vcpkg
         AutocompletePriority::Internal,
         0,
         0,
-        {{}, SETTINGS},
+        {SWITCHES, SETTINGS},
         nullptr,
     };
 
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
+        const bool verbose = Util::Sets::contains(parsed.switches, SwitchVerbose);
         const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {
@@ -628,7 +636,7 @@ namespace vcpkg
 
         // the first binary is special in that it might not be a DLL or might not exist
         const Path target_binary_path = target_binary->second;
-        if (Debug::g_debugging)
+        if (verbose)
         {
             msg::print(LocalizedString::from_raw(target_binary_path)
                            .append_raw(": ")
@@ -687,6 +695,7 @@ namespace vcpkg
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
+                                      verbose,
 #if defined(_WIN32)
                                       maybe_create_log(parsed.settings, SwitchTLogFile, fs),
 #endif // ^^^ _WIN32

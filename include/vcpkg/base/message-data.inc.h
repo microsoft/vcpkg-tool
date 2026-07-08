@@ -910,6 +910,10 @@ DECLARE_MESSAGE(
     (),
     "",
     "Copies a binary's dependencies from the installed tree to where that binary's location for app-local deployment")
+DECLARE_MESSAGE(CmdZApplocalOptVerbose,
+                (),
+                "",
+                "Prints which dependencies are being processed and which are already up to date")
 DECLARE_MESSAGE(CmdZExtractExample1,
                 (),
                 "This is a command line, only the parts in <>s should be localized",

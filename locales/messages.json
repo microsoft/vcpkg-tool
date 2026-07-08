@@ -522,6 +522,7 @@
   "CmdXDownloadOptSkipSha": "Skips check of SHA512 of the downloaded file",
   "CmdXDownloadOptStore": "Stores the the file should father than fetching it",
   "CmdXDownloadOptUrl": "URL to download and store if missing from cache",
+  "CmdZApplocalOptVerbose": "Prints which dependencies are being processed and which are already up to date",
   "CmdZApplocalSynopsis": "Copies a binary's dependencies from the installed tree to where that binary's location for app-local deployment",
   "CmdZExtractExample1": "vcpkg z-extract <archive path> <output directory>",
   "_CmdZExtractExample1.comment": "This is a command line, only the parts in <>s should be localized",
