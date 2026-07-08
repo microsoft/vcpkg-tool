@@ -335,6 +335,56 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         if (!cpgh.description.empty()) obj.insert(JsonIdDescription, Strings::join("\n", cpgh.description));
         obj.insert(JsonIdComment, "This is the port (recipe) consumed by vcpkg.");
         {
+            std::string purl = fmt::format("pkg:vcpkg/{}", Strings::percent_encode(action.spec.name()));
+            if (!cpgh.version.text.empty())
+            {
+                purl += fmt::format("@{}", Strings::percent_encode(cpgh.version.text));
+            }
+
+            // PURL qualifiers, emitted in canonical (alphabetical) key order.
+            std::vector<std::string> qualifiers;
+            if (cpgh.version.port_version != 0)
+            {
+                qualifiers.push_back(fmt::format("port_version={}", cpgh.version.port_version));
+            }
+
+            StringView spdx_location = scfl.spdx_location;
+            if (scfl.kind == PortSourceKind::Git && spdx_location.starts_with("git+"))
+            {
+                // spdx_location has the form "git+<repository_url>@<git-tree>". The default microsoft/vcpkg
+                // registry is Builtin, so only non-default registries reach this branch.
+                auto revision_sep = scfl.spdx_location.rfind('@');
+                if (revision_sep == std::string::npos)
+                {
+                    revision_sep = spdx_location.size();
+                }
+
+                StringView repository_url = spdx_location.substr(4, revision_sep - 4);
+                qualifiers.push_back(fmt::format("repository_url={}", Strings::percent_encode(repository_url)));
+            }
+
+            qualifiers.push_back(
+                fmt::format("triplet={}", Strings::percent_encode(action.spec.triplet().canonical_name())));
+
+            // spdx_location is the SPDX PackageDownloadLocation: a VCS URL that pins the port's
+            // git-tree, which identifies the exact port recipe.
+            if (!spdx_location.empty())
+            {
+                qualifiers.push_back(fmt::format("vcs_url={}", Strings::percent_encode(spdx_location)));
+            }
+
+            if (!qualifiers.empty())
+            {
+                purl += fmt::format("?{}", Strings::join("&", qualifiers));
+            }
+
+            auto& external_refs = obj.insert(SpdxExternalRefs, Json::Array());
+            auto& purl_ref = external_refs.push_back(Json::Object());
+            purl_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPackageManager);
+            purl_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypePurl);
+            purl_ref.insert(SpdxExternalReferenceLocator, std::move(purl));
+        }
+        {
             auto& rel = rels.push_back(Json::Object());
             rel.insert(SpdxElementId, SpdxRefPort);
             rel.insert(SpdxRelationshipType, SpdxGenerates);
