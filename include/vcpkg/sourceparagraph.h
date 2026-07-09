@@ -211,16 +211,8 @@ namespace vcpkg
         Filesystem,
     };
 
-    struct NoAssertionTag
-    {
-    };
-
-    inline constexpr NoAssertionTag no_assertion;
-
     struct PortLocation
     {
-        explicit PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind);
-        explicit PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind);
         explicit PortLocation(const Path& port_directory,
                               std::string&& spdx_location,
                               std::string&& spdx_repository_url,

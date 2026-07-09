@@ -133,16 +133,6 @@ namespace vcpkg
         return true;
     }
 
-    PortLocation::PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind)
-        : port_directory(port_directory), spdx_location(), spdx_repository_url(), kind(kind)
-    {
-    }
-
-    PortLocation::PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind)
-        : port_directory(std::move(port_directory)), spdx_location(), spdx_repository_url(), kind(kind)
-    {
-    }
-
     PortLocation::PortLocation(const Path& port_directory,
                                std::string&& spdx_location,
                                std::string&& spdx_repository_url,
