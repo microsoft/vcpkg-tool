@@ -410,7 +410,10 @@ namespace vcpkg::msg
                     Checks::final_cleanup_and_exit(EXIT_SUCCESS);
                 }
 
-                ::fprintf(stderr, "[DEBUG] Failed to write to the output stream: %d\n", errno);
+                ::fprintf(stderr,
+                          "[DEBUG] Failed to write to %s: %d\n",
+                          fd == STDOUT_FILENO ? "stdout" : "stderr",
+                          errno);
                 std::abort();
             }
             ptr += written;
