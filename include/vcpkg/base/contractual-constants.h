@@ -133,6 +133,12 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxDocumentNamespace = "documentNamespace";
     inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
     inline constexpr StringLiteral SpdxElementId = "spdxElementId";
+    inline constexpr StringLiteral SpdxExternalReferenceCategory = "referenceCategory";
+    inline constexpr StringLiteral SpdxExternalReferenceCategoryPackageManager = "PACKAGE_MANAGER";
+    inline constexpr StringLiteral SpdxExternalReferenceLocator = "referenceLocator";
+    inline constexpr StringLiteral SpdxExternalReferenceType = "referenceType";
+    inline constexpr StringLiteral SpdxExternalReferenceTypePurl = "purl";
+    inline constexpr StringLiteral SpdxExternalRefs = "externalRefs";
     inline constexpr StringLiteral SpdxFileName = "fileName";
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";

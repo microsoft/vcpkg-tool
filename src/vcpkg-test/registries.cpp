@@ -583,6 +583,27 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
     CHECK(!r.messages().any_errors());
 }
 
+TEST_CASE ("builtin git registry url detection", "[registries]")
+{
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg/"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg\\"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git/"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git\\"));
+    CHECK(is_builtin_git_registry_url("https://github.com/Microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg/"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg\\"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git/"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git\\"));
+    CHECK(is_builtin_git_registry_url("git@github.com:Microsoft/vcpkg.git"));
+
+    CHECK_FALSE(is_builtin_git_registry_url("https://github.com/example/vcpkg"));
+    CHECK_FALSE(is_builtin_git_registry_url("git@github.com:example/vcpkg"));
+}
+
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
     FilesystemVersionDbEntryArrayDeserializer filesystem_version_db("a/b");

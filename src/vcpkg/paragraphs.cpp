@@ -421,6 +421,7 @@ namespace vcpkg::Paragraphs
                                           return SourceControlFileAndLocation{std::move(scf),
                                                                               std::move(manifest_path),
                                                                               port_location.spdx_location,
+                                                                              port_location.spdx_repository_url,
                                                                               port_location.kind};
                                       }),
                                   manifest_contents};
@@ -442,6 +443,7 @@ namespace vcpkg::Paragraphs
                                           return SourceControlFileAndLocation{std::move(scf),
                                                                               std::move(control_path),
                                                                               port_location.spdx_location,
+                                                                              port_location.spdx_repository_url,
                                                                               port_location.kind};
                                       }),
                                   control_contents};
@@ -507,10 +509,13 @@ namespace vcpkg::Paragraphs
                                                   StringView port_name,
                                                   const Path& builtin_ports_directory)
     {
+        // note that spdx_repository_url is intentionally left empty here because PURL suggests only supplying that for
+        // non "default" registries
         return Paragraphs::try_load_port_required(fs,
                                                   port_name,
                                                   PortLocation{builtin_ports_directory / port_name,
                                                                builtin_port_spdx_location(port_name),
+                                                               std::string(),
                                                                PortSourceKind::Builtin});
     }
 

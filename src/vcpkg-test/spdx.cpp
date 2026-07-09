@@ -450,7 +450,14 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
       "copyrightText": "NOASSERTION",
       "summary": "summary",
       "description": "description",
-      "comment": "This is the port (recipe) consumed by vcpkg."
+      "comment": "This is the port (recipe) consumed by vcpkg.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:vcpkg/zlib@1.0?port_version=5&triplet=arm-uwp&vcs_url=git%3A%2F%2Fsome-vcs-url"
+        }
+      ]
     },
     {
       "name": "zlib:arm-uwp",
@@ -604,7 +611,14 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
-      "comment": "This is the port (recipe) consumed by vcpkg."
+      "comment": "This is the port (recipe) consumed by vcpkg.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:vcpkg/zlib@1.0?triplet=arm-uwp"
+        }
+      ]
     },
     {
       "name": "zlib:arm-uwp",
@@ -719,7 +733,14 @@ TEST_CASE ("spdx concat resources", "[spdx]")
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
-      "comment": "This is the port (recipe) consumed by vcpkg."
+      "comment": "This is the port (recipe) consumed by vcpkg.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE_MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:vcpkg/zlib@1.0?triplet=arm-uwp"
+        }
+      ]
     },
     {
       "name": "zlib:arm-uwp",
@@ -748,6 +769,150 @@ TEST_CASE ("spdx concat resources", "[spdx]")
 
     auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
     Test::check_json_eq(expected.value, doc.value);
+}
+
+static std::string port_purl(StringView sbom)
+{
+    auto parsed = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
+    return parsed.value.object(VCPKG_LINE_INFO)["packages"]
+        .array(VCPKG_LINE_INFO)[0]
+        .object(VCPKG_LINE_INFO)["externalRefs"]
+        .array(VCPKG_LINE_INFO)[0]
+        .object(VCPKG_LINE_INFO)["referenceLocator"]
+        .string(VCPKG_LINE_INFO)
+        .to_string();
+}
+
+TEST_CASE ("spdx purl omits empty version", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"", 1};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib?triplet=arm-uwp");
+}
+
+TEST_CASE ("spdx purl percent-encodes the version", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0+r2", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0%2Br2?triplet=arm-uwp");
+}
+
+TEST_CASE ("spdx purl includes vcs_url for a builtin git-tree", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Builtin;
+    scfl.spdx_location = "git+https://github.com/Microsoft/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    // The default microsoft/vcpkg registry is Builtin, so the locator has no repository_url.
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2FMicrosoft%2Fvcpkg%40"
+                             "84a143e4caf6b70db57f28d04c41df4a85c480fa");
+}
+
+TEST_CASE ("spdx purl includes repository_url and vcs_url for a non-default git registry", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Git;
+    scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    scfl.spdx_repository_url = "https://github.com/azure-sdk/vcpkg";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    // repository_url is the registry URL with the git+ prefix and @git-tree stripped; vcs_url keeps both.
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?repository_url=https%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg"
+                             "&triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg%40"
+                             "84a143e4caf6b70db57f28d04c41df4a85c480fa");
+}
+
+TEST_CASE ("spdx purl uses the dedicated repository_url field for git registries", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Git;
+    scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg";
+    scfl.spdx_repository_url = "https://example.com/registry";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?repository_url=https%3A%2F%2Fexample.com%2Fregistry"
+                             "&triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg");
+}
+
+TEST_CASE ("spdx purl omits vcs_url and repository_url for overlay ports", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Overlay;
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?triplet=arm-uwp");
 }
 
 TEST_CASE ("spdx license parse edge cases", "[spdx]")
