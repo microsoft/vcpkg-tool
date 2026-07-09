@@ -316,7 +316,10 @@ namespace vcpkg::msg
                 Checks::final_cleanup_and_exit(EXIT_SUCCESS);
             }
 
-            ::fwprintf(stderr, L"[DEBUG] Failed to write to the output stream: %lu\n", last_error);
+            ::fwprintf(stderr,
+                       L"[DEBUG] Failed to write to %s: %lu\n",
+                       is_stdout ? L"stdout" : L"stderr",
+                       last_error);
             std::abort();
         }
     }
