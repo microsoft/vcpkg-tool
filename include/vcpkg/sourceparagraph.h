@@ -221,8 +221,14 @@ namespace vcpkg
     {
         explicit PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind);
         explicit PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind);
-        explicit PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind);
-        explicit PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind);
+        explicit PortLocation(const Path& port_directory,
+                              std::string&& spdx_location,
+                              std::string&& spdx_repository_url,
+                              PortSourceKind kind);
+        explicit PortLocation(Path&& port_directory,
+                              std::string&& spdx_location,
+                              std::string&& spdx_repository_url,
+                              PortSourceKind kind);
         PortLocation(const PortLocation&) = default;
         PortLocation(PortLocation&&) = default;
         PortLocation& operator=(const PortLocation&) = default;
@@ -233,6 +239,9 @@ namespace vcpkg
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
+
+        /// The repository URL portion of spdx_location for git registries. Empty otherwise.
+        std::string spdx_repository_url;
 
         PortSourceKind kind;
     };
@@ -306,7 +315,7 @@ namespace vcpkg
                 scf = std::make_unique<SourceControlFile>(source_control_file->clone());
             }
 
-            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location, kind};
+            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location, spdx_repository_url, kind};
         }
 
         std::unique_ptr<SourceControlFile> source_control_file;
@@ -315,6 +324,9 @@ namespace vcpkg
         /// Should model SPDX PackageDownloadLocation. Empty implies NOASSERTION.
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
+
+        /// The repository URL portion of spdx_location for git registries. Empty otherwise.
+        std::string spdx_repository_url;
 
         PortSourceKind kind = PortSourceKind::Unknown;
     };

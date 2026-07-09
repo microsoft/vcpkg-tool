@@ -134,22 +134,34 @@ namespace vcpkg
     }
 
     PortLocation::PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind)
-        : port_directory(port_directory), spdx_location(), kind(kind)
+        : port_directory(port_directory), spdx_location(), spdx_repository_url(), kind(kind)
     {
     }
 
     PortLocation::PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind)
-        : port_directory(std::move(port_directory)), spdx_location(), kind(kind)
+        : port_directory(std::move(port_directory)), spdx_location(), spdx_repository_url(), kind(kind)
     {
     }
 
-    PortLocation::PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind)
-        : port_directory(port_directory), spdx_location(std::move(spdx_location)), kind(kind)
+    PortLocation::PortLocation(const Path& port_directory,
+                               std::string&& spdx_location,
+                               std::string&& spdx_repository_url,
+                               PortSourceKind kind)
+        : port_directory(port_directory)
+        , spdx_location(std::move(spdx_location))
+        , spdx_repository_url(std::move(spdx_repository_url))
+        , kind(kind)
     {
     }
 
-    PortLocation::PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind)
-        : port_directory(std::move(port_directory)), spdx_location(std::move(spdx_location)), kind(kind)
+    PortLocation::PortLocation(Path&& port_directory,
+                               std::string&& spdx_location,
+                               std::string&& spdx_repository_url,
+                               PortSourceKind kind)
+        : port_directory(std::move(port_directory))
+        , spdx_location(std::move(spdx_location))
+        , spdx_repository_url(std::move(spdx_repository_url))
+        , kind(kind)
     {
     }
 

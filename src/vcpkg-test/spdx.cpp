@@ -799,7 +799,7 @@ TEST_CASE ("spdx purl omits empty version", "[spdx]")
     abi.package_abi = "ABIHASH";
 
     const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
-    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib?port_version=1&triplet=arm-uwp");
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib?triplet=arm-uwp");
 }
 
 TEST_CASE ("spdx purl percent-encodes the version", "[spdx]")
@@ -852,6 +852,7 @@ TEST_CASE ("spdx purl includes repository_url and vcs_url for a non-default git 
     SourceControlFileAndLocation scfl;
     scfl.kind = PortSourceKind::Git;
     scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    scfl.spdx_repository_url = "https://github.com/azure-sdk/vcpkg";
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
@@ -868,6 +869,30 @@ TEST_CASE ("spdx purl includes repository_url and vcs_url for a non-default git 
                              "&triplet=arm-uwp"
                              "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg%40"
                              "84a143e4caf6b70db57f28d04c41df4a85c480fa");
+}
+
+TEST_CASE ("spdx purl uses the dedicated repository_url field for git registries", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Git;
+    scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg";
+    scfl.spdx_repository_url = "https://example.com/registry";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?repository_url=https%3A%2F%2Fexample.com%2Fregistry"
+                             "&triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg");
 }
 
 TEST_CASE ("spdx purl omits vcs_url and repository_url for overlay ports", "[spdx]")

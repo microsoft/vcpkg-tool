@@ -338,45 +338,33 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             std::string purl = fmt::format("pkg:vcpkg/{}", Strings::percent_encode(action.spec.name()));
             if (!cpgh.version.text.empty())
             {
-                purl += fmt::format("@{}", Strings::percent_encode(cpgh.version.text));
+                purl.push_back('@');
+                purl += Strings::percent_encode(cpgh.version.text);
             }
 
             // PURL qualifiers, emitted in canonical (alphabetical) key order.
             std::vector<std::string> qualifiers;
-            if (cpgh.version.port_version != 0)
+            if (!cpgh.version.text.empty() && cpgh.version.port_version != 0)
             {
                 qualifiers.push_back(fmt::format("port_version={}", cpgh.version.port_version));
             }
 
-            StringView spdx_location = scfl.spdx_location;
-            if (scfl.kind == PortSourceKind::Git && spdx_location.starts_with("git+"))
+            if (!scfl.spdx_repository_url.empty())
             {
-                // spdx_location has the form "git+<repository_url>@<git-tree>". The default microsoft/vcpkg
-                // registry is Builtin, so only non-default registries reach this branch.
-                auto revision_sep = scfl.spdx_location.rfind('@');
-                if (revision_sep == std::string::npos)
-                {
-                    revision_sep = spdx_location.size();
-                }
-
-                StringView repository_url = spdx_location.substr(4, revision_sep - 4);
-                qualifiers.push_back(fmt::format("repository_url={}", Strings::percent_encode(repository_url)));
+                qualifiers.push_back("repository_url=" + Strings::percent_encode(scfl.spdx_repository_url));
             }
 
-            qualifiers.push_back(
-                fmt::format("triplet={}", Strings::percent_encode(action.spec.triplet().canonical_name())));
+            qualifiers.push_back("triplet=" + Strings::percent_encode(action.spec.triplet().canonical_name()));
 
             // spdx_location is the SPDX PackageDownloadLocation: a VCS URL that pins the port's
             // git-tree, which identifies the exact port recipe.
-            if (!spdx_location.empty())
+            if (!scfl.spdx_location.empty())
             {
-                qualifiers.push_back(fmt::format("vcs_url={}", Strings::percent_encode(spdx_location)));
+                qualifiers.push_back("vcs_url=" + Strings::percent_encode(scfl.spdx_location));
             }
 
-            if (!qualifiers.empty())
-            {
-                purl += fmt::format("?{}", Strings::join("&", qualifiers));
-            }
+            purl.push_back('?');
+            purl += Strings::join("&", qualifiers);
 
             auto& external_refs = obj.insert(SpdxExternalRefs, Json::Array());
             auto& purl_ref = external_refs.push_back(Json::Object());
