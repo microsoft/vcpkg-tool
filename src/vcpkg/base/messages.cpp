@@ -1,5 +1,6 @@
 #include <vcpkg/base/system-headers.h>
 
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
@@ -300,17 +301,28 @@ namespace vcpkg::msg
         return GetConsoleMode(h, &mode);
     }
 
-    static void check_write(BOOL success)
+    static void check_write(BOOL success, bool is_stdout)
     {
         if (!success)
         {
-            ::fwprintf(stderr, L"[DEBUG] Failed to write to stdout: %lu\n", GetLastError());
+            const DWORD last_error = ::GetLastError();
+            if (is_stdout && (last_error == ERROR_BROKEN_PIPE || last_error == ERROR_NO_DATA))
+            {
+                // stdout's reader (for example a pager like `more`/`less`) closed the pipe early;
+                // there is nothing more to write, so shut down cleanly rather than aborting. use
+                // final_cleanup_and_exit directly instead of exit_success so we do not re-enter this
+                // msg path via Debug::println when stdout is the broken stream. only stdout is treated
+                // this way; a broken pipe on stderr should not mask a real failure.
+                Checks::final_cleanup_and_exit(EXIT_SUCCESS);
+            }
+
+            ::fwprintf(stderr, L"[DEBUG] Failed to write to the output stream: %lu\n", last_error);
             std::abort();
         }
     }
     static DWORD size_to_write(::size_t size) { return size > MAXDWORD ? MAXDWORD : static_cast<DWORD>(size); }
 
-    static void write_unlocalized_text_impl(Color c, StringView sv, HANDLE the_handle, bool is_console)
+    static void write_unlocalized_text_impl(Color c, StringView sv, HANDLE the_handle, bool is_console, bool is_stdout)
     {
         if (sv.empty()) return;
 
@@ -333,7 +345,7 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteConsoleW(the_handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteConsoleW(the_handle, pointer, size_to_write(size), &written, nullptr), is_stdout);
                 pointer += written;
                 size -= written;
             }
@@ -351,7 +363,7 @@ namespace vcpkg::msg
             while (size != 0)
             {
                 DWORD written = 0;
-                check_write(::WriteFile(the_handle, pointer, size_to_write(size), &written, nullptr));
+                check_write(::WriteFile(the_handle, pointer, size_to_write(size), &written, nullptr), is_stdout);
                 pointer += written;
                 size -= written;
             }
@@ -362,14 +374,14 @@ namespace vcpkg::msg
     {
         static const HANDLE stdout_handle = ::GetStdHandle(STD_OUTPUT_HANDLE);
         static const bool stdout_is_console = is_console(stdout_handle);
-        return write_unlocalized_text_impl(c, sv, stdout_handle, stdout_is_console);
+        return write_unlocalized_text_impl(c, sv, stdout_handle, stdout_is_console, true);
     }
 
     void write_unlocalized_text_to_stderr(Color c, StringView sv)
     {
         static const HANDLE stderr_handle = ::GetStdHandle(STD_ERROR_HANDLE);
         static const bool stderr_is_console = is_console(stderr_handle);
-        return write_unlocalized_text_impl(c, sv, stderr_handle, stderr_is_console);
+        return write_unlocalized_text_impl(c, sv, stderr_handle, stderr_is_console, false);
     }
 #else
     static void write_all(const char* ptr, size_t to_write, int fd)
@@ -379,7 +391,23 @@ namespace vcpkg::msg
             auto written = ::write(fd, ptr, to_write);
             if (written == -1)
             {
-                ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
+                if (errno == EINTR)
+                {
+                    // interrupted by a signal before writing anything; retry
+                    continue;
+                }
+
+                if (errno == EPIPE && fd == STDOUT_FILENO)
+                {
+                    // stdout's reader (for example a pager like `more`/`less`) closed the pipe early;
+                    // there is nothing more to write, so shut down cleanly rather than aborting. use
+                    // final_cleanup_and_exit directly instead of exit_success so we do not re-enter this
+                    // msg path via Debug::println when stdout is the broken stream. only stdout is treated
+                    // this way; a broken pipe on stderr should not mask a real failure.
+                    Checks::final_cleanup_and_exit(EXIT_SUCCESS);
+                }
+
+                ::fprintf(stderr, "[DEBUG] Failed to write to the output stream: %d\n", errno);
                 std::abort();
             }
             ptr += written;
