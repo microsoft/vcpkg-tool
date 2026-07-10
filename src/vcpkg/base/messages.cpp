@@ -308,12 +308,10 @@ namespace vcpkg::msg
             const DWORD last_error = ::GetLastError();
             if (is_stdout && (last_error == ERROR_BROKEN_PIPE || last_error == ERROR_NO_DATA))
             {
-                // stdout's reader (for example a pager like `more`/`less`) closed the pipe early;
-                // there is nothing more to write, so shut down cleanly rather than aborting. use
-                // final_cleanup_and_exit directly instead of exit_success so we do not re-enter this
-                // msg path via Debug::println when stdout is the broken stream. only stdout is treated
-                // this way; a broken pipe on stderr should not mask a real failure.
-                Checks::final_cleanup_and_exit(EXIT_SUCCESS);
+                // stdout's reader (e.g. a pager) closed the pipe; exit with a failure code rather than
+                // crashing via abort(). clear debugging first so cleanup doesn't re-write to the broken pipe.
+                Debug::g_debugging = false;
+                Checks::final_cleanup_and_exit(EXIT_FAILURE);
             }
 
             ::fwprintf(stderr,
@@ -402,12 +400,10 @@ namespace vcpkg::msg
 
                 if (errno == EPIPE && fd == STDOUT_FILENO)
                 {
-                    // stdout's reader (for example a pager like `more`/`less`) closed the pipe early;
-                    // there is nothing more to write, so shut down cleanly rather than aborting. use
-                    // final_cleanup_and_exit directly instead of exit_success so we do not re-enter this
-                    // msg path via Debug::println when stdout is the broken stream. only stdout is treated
-                    // this way; a broken pipe on stderr should not mask a real failure.
-                    Checks::final_cleanup_and_exit(EXIT_SUCCESS);
+                    // stdout's reader (e.g. a pager) closed the pipe; exit with a failure code rather than
+                    // crashing via abort(). clear debugging first so cleanup doesn't re-write to the broken pipe.
+                    Debug::g_debugging = false;
+                    Checks::final_cleanup_and_exit(EXIT_FAILURE);
                 }
 
                 ::fprintf(stderr,
