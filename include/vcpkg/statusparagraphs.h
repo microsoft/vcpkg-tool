@@ -1,9 +1,12 @@
 #pragma once
 #include <vcpkg/fwd/statusparagraphs.h>
 
+#include <vcpkg/base/lineinfo.h>
+
 #include <vcpkg/statusparagraph.h>
 
 #include <iterator>
+#include <map>
 #include <memory>
 
 namespace vcpkg
@@ -79,6 +82,13 @@ namespace vcpkg
     private:
         std::vector<std::unique_ptr<StatusParagraph>> paragraphs;
     };
+
+    void print_package_not_installed_but_exists_for_other_triplets(const StatusParagraphs& status_db,
+                                                                   const std::map<std::string, PackageSpec>& specs);
+
+    [[noreturn]] void exit_with_package_not_installed(const LineInfo& line_info,
+                                                      const StatusParagraphs& status_db,
+                                                      const PackageSpec& spec);
 
     void serialize(const StatusParagraphs& pgh, std::string& out_str);
 }

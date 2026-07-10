@@ -36,6 +36,7 @@
 #include <vcpkg/commands.owns.h>
 #include <vcpkg/commands.package-info.h>
 #include <vcpkg/commands.portsdiff.h>
+#include <vcpkg/commands.print-usage.h>
 #include <vcpkg/commands.regenerate.h>
 #include <vcpkg/commands.remove.h>
 #include <vcpkg/commands.search.h>
@@ -127,6 +128,7 @@ namespace vcpkg
         {CommandInstallMetadata, command_install_and_exit},
         {CommandRemoveMetadata, command_remove_and_exit},
         {CommandTestFeaturesMetadata, command_test_features_and_exit},
+        {CommandPrintUsageMetadata, command_print_usage_and_exit},
         {CommandSetInstalledMetadata, command_set_installed_and_exit},
         {CommandUpgradeMetadata, command_upgrade_and_exit},
         {CommandZPrintConfigMetadata, command_z_print_config_and_exit},

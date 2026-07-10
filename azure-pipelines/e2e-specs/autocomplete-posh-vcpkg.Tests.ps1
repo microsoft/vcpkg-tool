@@ -28,7 +28,7 @@ BeforeAll {
         CommandList         = @(
             'acquire_project', 'acquire', 'activate', 'add', 'create', 'deactivate', 'depend-info', 'edit', 'env'
             'export', 'fetch', 'find', 'format-feature-baseline', 'format-manifest', 'hash', 'help', 'install', 'integrate',
-            'license-report', 'list', 'new', 'owns', 'portsdiff', 'remove', 'search', 'update', 'upgrade', 'use', 'version',
+            'license-report', 'list', 'new', 'owns', 'portsdiff', 'print-usage', 'remove', 'search', 'update', 'upgrade', 'use', 'version',
             'x-add-version', 'x-check-support', 'x-init-registry', 'x-package-info', 'x-regenerate', 'x-set-installed',
             'x-test-features', 'x-update-baseline', 'x-update-registry', 'x-vsinstances'
         )

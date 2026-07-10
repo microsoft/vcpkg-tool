@@ -1,0 +1,14 @@
+{
+  "name": "vcpkg-explicit-usage-generated",
+  "version": "1.0.0",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

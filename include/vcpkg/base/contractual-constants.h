@@ -181,6 +181,7 @@ namespace vcpkg
     // Switches are lowercase separated by dashes
     inline constexpr StringLiteral SwitchAbiToolsUseExactVersions = "abi-tools-use-exact-versions";
     inline constexpr StringLiteral SwitchAddInitialBaseline = "add-initial-baseline";
+    inline constexpr StringLiteral SwitchAffirm = "affirm";
     inline constexpr StringLiteral SwitchAll = "all";
     inline constexpr StringLiteral SwitchAllLanguages = "all-languages";
     inline constexpr StringLiteral SwitchAllowUnexpectedPassing = "allow-unexpected-passing";
@@ -228,6 +229,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchForce = "force";
     inline constexpr StringLiteral SwitchFormat = "format";
     inline constexpr StringLiteral SwitchFreeBsd = "freebsd";
+    inline constexpr StringLiteral SwitchGenerated = "generated";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
@@ -358,6 +360,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";
+    inline constexpr StringLiteral FileUsageAccurate = "usage-accurate";
     inline constexpr StringLiteral FileVcpkg = "vcpkg";
     inline constexpr StringLiteral FileVcpkgAbiInfo = "vcpkg_abi_info.txt";
     inline constexpr StringLiteral FileVcpkgBundleDotJson = "vcpkg-bundle.json";

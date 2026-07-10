@@ -934,7 +934,7 @@ namespace vcpkg
                                          const ReadOnlyFilesystem& fs,
                                          const InstalledPaths& installed)
     {
-        auto message = get_cmake_usage(fs, installed, bpgh).message;
+        auto message = get_cmake_usage(fs, installed, bpgh, false).message;
         if (!message.empty())
         {
             auto existing = printed_usages.lower_bound(message);
@@ -1018,27 +1018,15 @@ namespace vcpkg
         return std::string(res);
     }
 
-    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
-                                   const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh)
+    CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
+                                                  const InstalledPaths& installed,
+                                                  const BinaryParagraph& bpgh,
+                                                  bool affirm)
     {
         CMakeUsageInfo ret;
+        ret.generated_usage_accurate = affirm || fs.is_regular_file(installed.usage_accurate_file(bpgh.spec));
 
         std::error_code ec;
-
-        auto usage_file = installed.usage_file(bpgh.spec);
-        if (fs.is_regular_file(usage_file))
-        {
-            ret.usage_file = true;
-            auto contents = fs.read_contents(usage_file, ec);
-            if (!ec)
-            {
-                ret.message = std::move(contents);
-                ret.message.push_back('\n');
-            }
-
-            return ret;
-        }
 
         struct ConfigPackage
         {
@@ -1161,7 +1149,10 @@ namespace vcpkg
             if (has_targets_for_output)
             {
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                if (!ret.generated_usage_accurate)
+                {
+                    msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                }
 
                 for (auto&& package_targets_pair : ret.cmake_targets_map)
                 {
@@ -1243,6 +1234,31 @@ namespace vcpkg
             }
         }
         return ret;
+    }
+
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh,
+                                   bool affirm)
+    {
+        CMakeUsageInfo ret;
+
+        auto usage_file = installed.usage_file(bpgh.spec);
+        if (fs.is_regular_file(usage_file))
+        {
+            ret.usage_file = true;
+            std::error_code ec;
+            auto contents = fs.read_contents(usage_file, ec);
+            if (!ec)
+            {
+                ret.message = std::move(contents);
+                ret.message.push_back('\n');
+            }
+
+            return ret;
+        }
+
+        return get_cmake_usage_from_generated(fs, installed, bpgh, affirm);
     }
 
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)

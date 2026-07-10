@@ -822,6 +822,12 @@ DECLARE_MESSAGE(CmdPortsdiffExample2,
                 "This is a command line, only the parts in <>s should be localized",
                 "vcpkg portsdiff <from> <to>")
 DECLARE_MESSAGE(CmdPortsdiffSynopsis, (), "", "Diffs changes in port versions between commits")
+DECLARE_MESSAGE(CmdPrintUsageSynopsis, (), "", "Prints usage information for a single installed port")
+DECLARE_MESSAGE(CmdPrintUsageSwitchAffirm,
+                (),
+                "",
+                "Affirms that generated usage is correct and removes 'may not be correct' warnings from the output")
+DECLARE_MESSAGE(CmdPrintUsageSwitchGenerated, (), "", "Print heuristic usage even if a usage file is installed")
 DECLARE_MESSAGE(CmdRegenerateOptDryRun, (), "", "Does not actually perform the action, shows only what would be done")
 DECLARE_MESSAGE(CmdRegenerateOptForce, (), "", "Proceeds with the (potentially dangerous) action without confirmation")
 DECLARE_MESSAGE(CmdRegenerateOptNormalize, (), "", "Applies any deprecation fixes")
@@ -2325,6 +2331,7 @@ DECLARE_MESSAGE(PackageLicenseSpdxThisInstall,
                 (),
                 "",
                 "Packages installed in this vcpkg installation declare the following licenses:")
+DECLARE_MESSAGE(PackageNotInstalled, (msg::spec), "", "{spec} is not installed.")
 DECLARE_MESSAGE(PackageLicenseUnknown,
                 (),
                 "",

@@ -154,6 +154,33 @@ namespace vcpkg
         }
     }
 
+    void print_package_not_installed_but_exists_for_other_triplets(const StatusParagraphs& status_db,
+                                                                   const std::map<std::string, PackageSpec>& specs)
+    {
+        for (const auto& package : status_db)
+        {
+            if (package->is_installed() && !package->package.is_feature())
+            {
+                auto it = specs.find(package->package.spec.name());
+                if (it != specs.end())
+                {
+                    msg::println_warning(msgRemovePackageConflict,
+                                         msg::package_name = it->first,
+                                         msg::spec = it->second,
+                                         msg::triplet = package->package.spec.triplet());
+                }
+            }
+        }
+    }
+
+    void exit_with_package_not_installed(const LineInfo& line_info,
+                                         const StatusParagraphs& status_db,
+                                         const PackageSpec& spec)
+    {
+        print_package_not_installed_but_exists_for_other_triplets(status_db, {{spec.name(), spec}});
+        Checks::msg_exit_with_error(line_info, msg::format(msgPackageNotInstalled, msg::spec = spec));
+    }
+
     Json::Value serialize_ipv(const InstalledPackageView& ipv,
                               const InstalledPaths& installed,
                               const ReadOnlyFilesystem& fs)
@@ -179,7 +206,7 @@ namespace vcpkg
         {
             iobj.insert("features", std::move(features));
         }
-        auto usage = get_cmake_usage(fs, installed, ipv.core->package);
+        auto usage = get_cmake_usage(fs, installed, ipv.core->package, false);
         if (!usage.message.empty())
         {
             iobj.insert("usage", Json::Value::string(std::move(usage.message)));
