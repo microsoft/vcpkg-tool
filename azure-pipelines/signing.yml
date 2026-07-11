@@ -117,6 +117,7 @@ extends:
             command: 'restore'
             restoreSolution: 'azure-pipelines/arch-independent-signing.signproj'
             feedsToUse: 'config'
+            nugetConfigPath: 'azure-pipelines/signing-nuget.config'
             restoreDirectory: '$(Build.SourcesDirectory)\packages'
         - task: MSBuild@1
           displayName: 'Sign Architecture Independent Files'
@@ -403,6 +404,7 @@ extends:
             command: 'restore'
             restoreSolution: 'azure-pipelines/binary-signing.signproj'
             feedsToUse: 'config'
+            nugetConfigPath: 'azure-pipelines/signing-nuget.config'
             restoreDirectory: '$(Build.SourcesDirectory)\packages'
         - task: CmdLine@2
           displayName: 'Copy Linux Binaries to BinariesDirectory'
