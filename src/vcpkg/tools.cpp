@@ -17,7 +17,6 @@
 
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
-#include <vcpkg/tools.test.h>
 #include <vcpkg/versions.h>
 
 #include <map>

@@ -3,7 +3,6 @@
 #include <vcpkg/base/jsonreader.h>
 
 #include <vcpkg/tools.h>
-#include <vcpkg/tools.test.h>
 
 using namespace vcpkg;
 
