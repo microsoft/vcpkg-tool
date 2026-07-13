@@ -3872,8 +3872,12 @@ namespace vcpkg
             if (ec == std::errc::no_such_file_or_directory &&
                 (options == CopyOptions::overwrite_existing || options == CopyOptions::update_existing))
             {
-                destination_fd = PosixFd{destination.c_str(), O_WRONLY | O_CREAT, open_mode, ec};
+                destination_fd = PosixFd{destination.c_str(), O_WRONLY | O_CREAT | O_EXCL, open_mode, ec};
                 destination_was_created = !ec;
+                if (ec == std::errc::file_exists)
+                {
+                    destination_fd = PosixFd{destination.c_str(), O_WRONLY, ec};
+                }
             }
 
             if (ec)
@@ -4114,6 +4118,7 @@ namespace vcpkg
                                                msg::system_api = "futimens",
                                                msg::exit_code = local_errno,
                                                msg::error_msg = std::system_category().message(local_errno))});
+                return false;
             }
 
             return true;
