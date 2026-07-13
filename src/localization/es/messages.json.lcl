@@ -3463,6 +3463,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdPrintUsageSwitchAffirm" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Affirms that generated usage is correct and removes 'may not be correct' warnings from the output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Confirma que el uso generado es correcto y quita las advertencias de "puede que no sea correcto" del resultado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSwitchGenerated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Print heuristic usage even if a usage file is installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Imprime el uso heurístico aunque haya un archivo de uso instalado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints usage information for a single installed port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Imprime información de uso para un único puerto instalado]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
@@ -3879,6 +3906,15 @@
           <Val><![CDATA[URL to download and store if missing from cache]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Dirección URL que se descargará y almacenará si faltase en la memoria caché]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZApplocalOptVerbose" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints which dependencies are being processed and which are already up to date]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Imprime qué dependencias se están procesando y cuáles ya están actualizadas]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9048,6 +9084,15 @@
           <Val><![CDATA[Package Manipulation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Manipulación de paquetes]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageNotInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is not installed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} no está instalado.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

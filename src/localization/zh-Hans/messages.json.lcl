@@ -3463,6 +3463,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdPrintUsageSwitchAffirm" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Affirms that generated usage is correct and removes 'may not be correct' warnings from the output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[确认生成的使用情况正确无误，并从输出中移除“可能不正确”警告]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSwitchGenerated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Print heuristic usage even if a usage file is installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[打印启发式使用情况(即使已安装使用情况文件)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints usage information for a single installed port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[打印单个已安装端口的使用情况信息]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
@@ -3879,6 +3906,15 @@
           <Val><![CDATA[URL to download and store if missing from cache]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[要下载和存储的 URL (如果缓存中缺失)]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZApplocalOptVerbose" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints which dependencies are being processed and which are already up to date]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[打印正在处理的依赖项以及已处于最新状态的依赖项]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9051,6 +9087,15 @@
           <Val><![CDATA[Package Manipulation]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[包操作]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackageNotInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is not installed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[未安装 {spec}。]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
