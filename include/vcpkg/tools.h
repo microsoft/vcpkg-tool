@@ -93,7 +93,7 @@ namespace vcpkg
     {
         std::string name;
 
-        Optional<std::array<int, 3>> version; // at least one of version or min_version must be set
+        Optional<ToolVersion> version; // at least one of version or min_version must be set
         Optional<std::array<int, 3>> min_version;
         // relative path inside tool_dir_subpath
         Path exe_subpath;

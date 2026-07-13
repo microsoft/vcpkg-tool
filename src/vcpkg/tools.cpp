@@ -214,7 +214,7 @@ namespace vcpkg
         }
 
         return ToolData{tool.to_string(),
-                        data->version.map([](const ToolVersion& version) { return version.cooked; }),
+                        data->version,
                         data->minVersion.map([](const ToolVersion& version) { return version.cooked; }),
                         data->exeRelativePath,
                         data->url,
@@ -928,7 +928,7 @@ namespace vcpkg
         }
 
         /**
-         * @param accept_version Callback that accepts a std::array<int,3> and returns true if the version is accepted
+         * @param accept_version Callback that accepts the raw and parsed versions and returns true if accepted
          * @param log_candidate Callback that accepts Path, ExpectedL<std::string> maybe_version. Gets called on every
          * existing candidate.
          */
@@ -958,7 +958,7 @@ namespace vcpkg
                 const auto parsed_version = parse_tool_version_string(*version);
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
-                if (!accept_version(actual_version)) continue;
+                if (!accept_version(*version, actual_version)) continue;
                 if (!tool_provider.is_acceptable(candidate)) continue;
                 adc.commit();
 
@@ -972,10 +972,9 @@ namespace vcpkg
         {
             using namespace Hash;
 
-            const std::array<int, 3>& version = tool_data.version.value_or_exit(VCPKG_LINE_INFO);
-            const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
+            const std::string& version = tool_data.version.value_or_exit(VCPKG_LINE_INFO).raw;
             context.statusln(msg::format(
-                msgDownloadingPortableToolVersionX, msg::tool_name = tool_data.name, msg::version = version_as_string));
+                msgDownloadingPortableToolVersionX, msg::tool_name = tool_data.name, msg::version = version));
             const auto download_path = downloads / tool_data.download_subpath;
             const auto hash_result = get_file_hash(context, fs, download_path, Algorithm::Sha512);
             switch (hash_result.prognosis)
@@ -1092,20 +1091,23 @@ namespace vcpkg
 
             std::vector<Path> candidate_paths;
             std::array<int, 3> min_version = tool.default_min_version();
+            const std::string* expected_exact_version = nullptr;
 
             if (auto tool_data = maybe_tool_data.get())
             {
-                if (exact_version && tool_data->version.has_value())
+                auto version = tool_data->version.get();
+                if (exact_version && version)
                 {
-                    min_version = *tool_data->version.get();
+                    min_version = version->cooked;
+                    expected_exact_version = &version->raw;
                 }
                 else if (auto configured_min_version = tool_data->min_version.get())
                 {
                     min_version = *configured_min_version;
                 }
-                else if (auto download_version = tool_data->version.get())
+                else if (version)
                 {
-                    min_version = *download_version;
+                    min_version = version->cooked;
                 }
 
                 if (consider_downloads && download_available)
@@ -1148,12 +1150,21 @@ namespace vcpkg
                     fs,
                     tool,
                     candidate_paths,
-                    [&min_version, exact_version](const std::array<int, 3>& actual_version) {
+                    [&min_version, expected_exact_version, exact_version](StringView actual_raw_version,
+                                                                          const std::array<int, 3>& actual_version) {
+                        if (expected_exact_version)
+                        {
+                            return actual_raw_version == *expected_exact_version;
+                        }
+
                         if (exact_version)
                         {
+                            // Without an acquisition version, compare numerically against min-version or the provider
+                            // default; there is no canonical raw version or download to fall back to.
                             return actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
                                    actual_version[2] == min_version[2];
                         }
+
                         return actual_version[0] > min_version[0] ||
                                (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
                                (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&

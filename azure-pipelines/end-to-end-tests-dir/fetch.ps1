@@ -160,6 +160,15 @@ if (-not $IsMacOS -and -not $IsLinux) {
     }
 
     Remove-Item env:VCPKG_FORCE_DOWNLOADED_BINARIES
+
+    # Exact-version mode must reject a system tool whose numeric version matches but whose suffix differs.
+    $env:VCPKG_DOWNLOADS = Join-Path $TestingRoot 'exact version suffix downloads'
+    $env:VCPKG_TEST_CMAKE_VERSION = "3.22.2-msvc3"
+    $env:PATH = "$PSScriptRoot\..\e2e-assets\fetch;$path"
+    Run-Vcpkg -TestArgs $exactCMakeArgs
+    Throw-IfFailed
+    Require-FileExists "$env:VCPKG_DOWNLOADS/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/bin/cmake.exe"
+    Remove-Item env:VCPKG_TEST_CMAKE_VERSION
 }
 
 # Concurrent `vcpkg fetch ninja` invocations must all succeed: each process
