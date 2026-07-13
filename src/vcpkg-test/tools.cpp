@@ -129,7 +129,7 @@ TEST_CASE ("parse_tool_data", "[tools]")
         {
             "name": "node",
             "os": "windows",
-            "version": "node version 16.12.0.windows.2",
+            "version": "16.12.0",
             "min-version": "16.10.0",
             "executable": "node-v16.12.0-win-x64\\node.exe",
             "url": "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z",
@@ -193,7 +193,7 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK_FALSE(node_windows.arch.has_value());
     REQUIRE(node_windows.version.has_value());
     CHECK(node_windows.version.get()->cooked == std::array<int, 3>{16, 12, 0});
-    CHECK(node_windows.version.get()->raw == "node version 16.12.0.windows.2");
+    CHECK(node_windows.version.get()->raw == "16.12.0");
     REQUIRE(node_windows.minVersion.has_value());
     CHECK(node_windows.minVersion.get()->cooked == std::array<int, 3>{16, 10, 0});
     CHECK(node_windows.minVersion.get()->raw == "16.10.0");
@@ -252,7 +252,7 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK_FALSE(tool_node_windows->arch.has_value());
     REQUIRE(tool_node_windows->version.has_value());
     CHECK(tool_node_windows->version.get()->cooked == std::array<int, 3>{16, 12, 0});
-    CHECK(tool_node_windows->version.get()->raw == "node version 16.12.0.windows.2");
+    CHECK(tool_node_windows->version.get()->raw == "16.12.0");
     REQUIRE(tool_node_windows->minVersion.has_value());
     CHECK(tool_node_windows->minVersion.get()->cooked == std::array<int, 3>{16, 10, 0});
     CHECK(tool_node_windows->minVersion.get()->raw == "16.10.0");
