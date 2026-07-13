@@ -288,10 +288,6 @@ DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
 DECLARE_MESSAGE(AToolDataFile, (), "", "a tool data file")
 DECLARE_MESSAGE(AToolDataOS, (), "", "a tool data operating system")
 DECLARE_MESSAGE(AToolDataVersion, (), "", "a tool data version")
-DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
-                (msg::version),
-                "",
-                "document schema version {version} is not supported by this version of vcpkg")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",
@@ -2851,18 +2847,21 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
+DECLARE_MESSAGE(ToolDataEntryVersionMissing,
+                (),
+                "",
+                "tool metadata must contain at least one of 'version' or 'min-version'")
+DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
+                (msg::version),
+                "",
+                "document schema version {version} is not supported by this version of vcpkg")
+DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(
     ToolHashMismatch,
     (msg::tool_name, msg::expected, msg::actual),
     "{expected} and {actual} are SHA512 hashes in hex format.",
     "{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}")
-DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.")
-DECLARE_MESSAGE(ToolOfVersionXNotFound,
-                (msg::tool_name, msg::version),
-                "",
-                "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically "
-                "download a portable one. Please install a newer version of {tool_name}")
 DECLARE_MESSAGE(ToRemovePackages,
                 (msg::command_name),
                 "",

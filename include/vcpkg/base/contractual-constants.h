@@ -71,6 +71,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdManifests = "manifests";
     inline constexpr StringLiteral JsonIdMessage = "message";
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
+    inline constexpr StringLiteral JsonIdMinVersion = "min-version";
     inline constexpr StringLiteral JsonIdName = "name";
     inline constexpr StringLiteral JsonIdOS = "os";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";

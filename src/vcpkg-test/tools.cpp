@@ -103,26 +103,25 @@ TEST_CASE ("parse_tool_data", "[tools]")
     const StringView tool_doc = R"(
 {
     "$comment": "This is a comment",
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [
         {
             "$comment": "This is a comment",
             "name": "git",
             "os": "linux",
-            "version": "2.7.4",
-            "executable": "git"
+            "min-version": "2.7.3"
         },
         {
             "name": "git",
             "os": "linux",
             "arch": "arm64",
-            "version": "2.7.4",
-            "executable": "git-arm64"
+            "min-version": "2.7.4"
         },
         {
             "name": "nuget",
             "os": "osx",
             "version": "5.11.0",
+            "min-version": "4.6.2",
             "executable": "nuget.exe",
             "url": "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe",
             "sha512": "06a337c9404dec392709834ef2cdbdce611e104b510ef40201849595d46d242151749aef65bc2d7ce5ade9ebfda83b64c03ce14c8f35ca9957a17a8c02b8c4b7"
@@ -131,6 +130,7 @@ TEST_CASE ("parse_tool_data", "[tools]")
             "name": "node",
             "os": "windows",
             "version": "node version 16.12.0.windows.2",
+            "min-version": "16.10.0",
             "executable": "node-v16.12.0-win-x64\\node.exe",
             "url": "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z",
             "sha512": "0bb793fce8140bd59c17f3ac9661b062eac0f611d704117774f5cb2453d717da94b1e8b17d021d47baff598dc023fb7068ed1f8a7678e446260c3db3537fa888",
@@ -151,9 +151,11 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(git_linux.tool == "git");
     CHECK(git_linux.os == ToolOs::Linux);
     CHECK_FALSE(git_linux.arch.has_value());
-    CHECK(git_linux.version.cooked == std::array<int, 3>{2, 7, 4});
-    CHECK(git_linux.version.raw == "2.7.4");
-    CHECK(git_linux.exeRelativePath == "git");
+    CHECK_FALSE(git_linux.version.has_value());
+    REQUIRE(git_linux.minVersion.has_value());
+    CHECK(git_linux.minVersion.get()->cooked == std::array<int, 3>{2, 7, 3});
+    CHECK(git_linux.minVersion.get()->raw == "2.7.3");
+    CHECK(git_linux.exeRelativePath == "");
     CHECK(git_linux.url == "");
     CHECK(git_linux.sha512 == "");
 
@@ -162,9 +164,11 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(git_arm64.os == ToolOs::Linux);
     CHECK(git_arm64.arch.has_value());
     CHECK(*git_arm64.arch.get() == CPUArchitecture::ARM64);
-    CHECK(git_linux.version.cooked == std::array<int, 3>{2, 7, 4});
-    CHECK(git_linux.version.raw == "2.7.4");
-    CHECK(git_arm64.exeRelativePath == "git-arm64");
+    CHECK_FALSE(git_arm64.version.has_value());
+    REQUIRE(git_arm64.minVersion.has_value());
+    CHECK(git_arm64.minVersion.get()->cooked == std::array<int, 3>{2, 7, 4});
+    CHECK(git_arm64.minVersion.get()->raw == "2.7.4");
+    CHECK(git_arm64.exeRelativePath == "");
     CHECK(git_arm64.url == "");
     CHECK(git_arm64.sha512 == "");
 
@@ -172,8 +176,12 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(nuget_osx.tool == "nuget");
     CHECK(nuget_osx.os == ToolOs::Osx);
     CHECK_FALSE(nuget_osx.arch.has_value());
-    CHECK(nuget_osx.version.cooked == std::array<int, 3>{5, 11, 0});
-    CHECK(nuget_osx.version.raw == "5.11.0");
+    REQUIRE(nuget_osx.version.has_value());
+    CHECK(nuget_osx.version.get()->cooked == std::array<int, 3>{5, 11, 0});
+    CHECK(nuget_osx.version.get()->raw == "5.11.0");
+    REQUIRE(nuget_osx.minVersion.has_value());
+    CHECK(nuget_osx.minVersion.get()->cooked == std::array<int, 3>{4, 6, 2});
+    CHECK(nuget_osx.minVersion.get()->raw == "4.6.2");
     CHECK(nuget_osx.exeRelativePath == "nuget.exe");
     CHECK(nuget_osx.url == "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe");
     CHECK(nuget_osx.sha512 == "06a337c9404dec392709834ef2cdbdce611e104b510ef40201849595d46d242151749aef65bc2d7ce5ade9eb"
@@ -183,8 +191,12 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(node_windows.tool == "node");
     CHECK(node_windows.os == ToolOs::Windows);
     CHECK_FALSE(node_windows.arch.has_value());
-    CHECK(node_windows.version.cooked == std::array<int, 3>{16, 12, 0});
-    CHECK(node_windows.version.raw == "node version 16.12.0.windows.2");
+    REQUIRE(node_windows.version.has_value());
+    CHECK(node_windows.version.get()->cooked == std::array<int, 3>{16, 12, 0});
+    CHECK(node_windows.version.get()->raw == "node version 16.12.0.windows.2");
+    REQUIRE(node_windows.minVersion.has_value());
+    CHECK(node_windows.minVersion.get()->cooked == std::array<int, 3>{16, 10, 0});
+    CHECK(node_windows.minVersion.get()->raw == "16.10.0");
     CHECK(node_windows.exeRelativePath == "node-v16.12.0-win-x64\\node.exe");
     CHECK(node_windows.url == "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z");
     CHECK(node_windows.sha512 ==
@@ -197,9 +209,11 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(tool_git_linux->tool == "git");
     CHECK(tool_git_linux->os == ToolOs::Linux);
     CHECK_FALSE(tool_git_linux->arch.has_value());
-    CHECK(tool_git_linux->version.cooked == std::array<int, 3>{2, 7, 4});
-    CHECK(tool_git_linux->version.raw == "2.7.4");
-    CHECK(tool_git_linux->exeRelativePath == "git");
+    CHECK_FALSE(tool_git_linux->version.has_value());
+    REQUIRE(tool_git_linux->minVersion.has_value());
+    CHECK(tool_git_linux->minVersion.get()->cooked == std::array<int, 3>{2, 7, 3});
+    CHECK(tool_git_linux->minVersion.get()->raw == "2.7.3");
+    CHECK(tool_git_linux->exeRelativePath == "");
     CHECK(tool_git_linux->url == "");
     CHECK(tool_git_linux->sha512 == "");
 
@@ -209,9 +223,11 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(tool_git_arm64->os == ToolOs::Linux);
     CHECK(tool_git_arm64->arch.has_value());
     CHECK(*tool_git_arm64->arch.get() == CPUArchitecture::ARM64);
-    CHECK(tool_git_arm64->version.cooked == std::array<int, 3>{2, 7, 4});
-    CHECK(tool_git_arm64->version.raw == "2.7.4");
-    CHECK(tool_git_arm64->exeRelativePath == "git-arm64");
+    CHECK_FALSE(tool_git_arm64->version.has_value());
+    REQUIRE(tool_git_arm64->minVersion.has_value());
+    CHECK(tool_git_arm64->minVersion.get()->cooked == std::array<int, 3>{2, 7, 4});
+    CHECK(tool_git_arm64->minVersion.get()->raw == "2.7.4");
+    CHECK(tool_git_arm64->exeRelativePath == "");
     CHECK(tool_git_arm64->url == "");
     CHECK(tool_git_arm64->sha512 == "");
 
@@ -220,8 +236,12 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(tool_nuget_osx->tool == "nuget");
     CHECK(tool_nuget_osx->os == ToolOs::Osx);
     CHECK_FALSE(tool_nuget_osx->arch.has_value());
-    CHECK(tool_nuget_osx->version.cooked == std::array<int, 3>{5, 11, 0});
-    CHECK(tool_nuget_osx->version.raw == "5.11.0");
+    REQUIRE(tool_nuget_osx->version.has_value());
+    CHECK(tool_nuget_osx->version.get()->cooked == std::array<int, 3>{5, 11, 0});
+    CHECK(tool_nuget_osx->version.get()->raw == "5.11.0");
+    REQUIRE(tool_nuget_osx->minVersion.has_value());
+    CHECK(tool_nuget_osx->minVersion.get()->cooked == std::array<int, 3>{4, 6, 2});
+    CHECK(tool_nuget_osx->minVersion.get()->raw == "4.6.2");
     CHECK(tool_nuget_osx->exeRelativePath == "nuget.exe");
     CHECK(tool_nuget_osx->url == "https://dist.nuget.org/win-x86-commandline/v5.11.0/nuget.exe");
 
@@ -230,14 +250,64 @@ TEST_CASE ("parse_tool_data", "[tools]")
     CHECK(tool_node_windows->tool == "node");
     CHECK(tool_node_windows->os == ToolOs::Windows);
     CHECK_FALSE(tool_node_windows->arch.has_value());
-    CHECK(tool_node_windows->version.cooked == std::array<int, 3>{16, 12, 0});
-    CHECK(tool_node_windows->version.raw == "node version 16.12.0.windows.2");
+    REQUIRE(tool_node_windows->version.has_value());
+    CHECK(tool_node_windows->version.get()->cooked == std::array<int, 3>{16, 12, 0});
+    CHECK(tool_node_windows->version.get()->raw == "node version 16.12.0.windows.2");
+    REQUIRE(tool_node_windows->minVersion.has_value());
+    CHECK(tool_node_windows->minVersion.get()->cooked == std::array<int, 3>{16, 10, 0});
+    CHECK(tool_node_windows->minVersion.get()->raw == "16.10.0");
     CHECK(tool_node_windows->exeRelativePath == "node-v16.12.0-win-x64\\node.exe");
     CHECK(tool_node_windows->url == "https://nodejs.org/dist/v16.12.0/node-v16.12.0-win-x64.7z");
     CHECK(tool_node_windows->sha512 ==
           "0bb793fce8140bd59c17f3ac9661b062eac0f611d704117774f5cb2453d717da94b1e8b17d021d47baff598dc023"
           "fb7068ed1f8a7678e446260c3db3537fa888");
     CHECK(tool_node_windows->archiveName == "node-v16.12.0-win-x64.7z");
+}
+
+TEST_CASE ("parse_tool_data version and acquisition field combinations", "[tools]")
+{
+    const std::string sha512(128, '0');
+    const auto executable = R"(, "executable": "tool")";
+    const auto url = R"(, "url": "https://example.com/tool")";
+    const auto sha = Strings::concat(R"(, "sha512": ")", sha512, '"');
+    const auto archive = R"(, "archive": "tool.zip")";
+    const auto min_version = R"(, "min-version": "1.0.0")";
+    const auto version = R"(, "version": "2.0.0")";
+    const auto acquisition = Strings::concat(executable, url, sha);
+
+    struct TestCase
+    {
+        std::string fields;
+        bool valid;
+    };
+
+    const std::vector<TestCase> test_cases = {
+        {min_version, true},
+        {Strings::concat(version, acquisition), true},
+        {Strings::concat(version, min_version, acquisition), true},
+        {Strings::concat(version, acquisition, archive), true},
+        {"", false},
+        {version, false},
+        {Strings::concat(version, url, sha), false},
+        {Strings::concat(version, executable, sha), false},
+        {Strings::concat(version, executable, url), false},
+        {Strings::concat(min_version, executable), false},
+        {Strings::concat(min_version, url), false},
+        {Strings::concat(min_version, sha), false},
+        {Strings::concat(min_version, archive), false},
+        {Strings::concat(min_version, acquisition, archive), false},
+    };
+
+    for (const auto& test_case : test_cases)
+    {
+        CAPTURE(test_case.fields);
+        const auto document = Strings::concat(
+            R"({ "schema-version": 2, "tools": [{ "name": "tool", "os": "linux")", test_case.fields, R"( }]})");
+        FullyBufferedDiagnosticContext fbdc;
+        const auto parsed = parse_tool_data(fbdc, document, "field_combinations.json");
+        CHECK(parsed.has_value() == test_case.valid);
+        CHECK(fbdc.empty() == test_case.valid);
+    }
 }
 
 TEST_CASE ("parse_tool_data errors", "[tools]")
@@ -260,15 +330,51 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
 
     {
         FullyBufferedDiagnosticContext fbdc;
-        auto missing_required = parse_tool_data(
-            fbdc, R"({ "schema-version": 1, "tools": [{ "executable": "git.exe" }]})", "missing_required.json");
+        auto schema_v1 = parse_tool_data(fbdc, R"({ "schema-version": 1, "tools": [] })", "schema_v1.json");
+        REQUIRE(!schema_v1.has_value());
+        CHECK(fbdc.to_string() ==
+              "schema_v1.json: error: $ (a tool data file): document schema version 1 is not supported by this version "
+              "of vcpkg");
+    }
+
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto missing_required =
+            parse_tool_data(fbdc, R"({ "schema-version": 2, "tools": [{}]})", "missing_required.json");
         REQUIRE(!missing_required.has_value());
         CHECK(fbdc.to_string() ==
               "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'name' (a string)\n"
               "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'os' (a tool data "
               "operating system)\n"
-              "missing_required.json: error: $.tools[0] (tool metadata): missing required field 'version' (a tool data "
-              "version)");
+              "missing_required.json: error: $.tools[0] (tool metadata): tool metadata must contain at least one of "
+              "'version' or 'min-version'");
+    }
+
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto missing_acquisition = parse_tool_data(
+            fbdc,
+            R"({ "schema-version": 2, "tools": [{ "name": "git", "os": "windows", "version": "2.7.4" }]})",
+            "missing_acquisition.json");
+        REQUIRE(!missing_acquisition.has_value());
+        CHECK(fbdc.to_string() ==
+              "missing_acquisition.json: error: $.tools[0] (tool metadata): missing required field 'executable' (a "
+              "string)\n"
+              "missing_acquisition.json: error: $.tools[0] (tool metadata): missing required field 'url' (a string)\n"
+              "missing_acquisition.json: error: $.tools[0] (tool metadata): missing required field 'sha512' (a SHA-512 "
+              "hash)");
+    }
+
+    {
+        FullyBufferedDiagnosticContext fbdc;
+        auto acquisition_without_version = parse_tool_data(
+            fbdc,
+            R"({ "schema-version": 2, "tools": [{ "name": "git", "os": "linux", "min-version": "2.7.4", "archive": "git.tar.gz" }]})",
+            "acquisition_without_version.json");
+        REQUIRE(!acquisition_without_version.has_value());
+        CHECK(fbdc.to_string() ==
+              "acquisition_without_version.json: error: $.tools[0] (tool metadata): missing required field 'version' "
+              "(a tool data version)");
     }
 
     {
@@ -276,11 +382,11 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         auto uexpected_field = parse_tool_data(fbdc,
                                                R"(
 {
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [{
         "name": "git",
         "os": "linux",
-        "version": "2.7.4",
+        "min-version": "2.7.4",
         "arc": "x64"
     }]
 })",
@@ -295,11 +401,11 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         auto invalid_os = parse_tool_data(fbdc,
                                           R"(
 {
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [{ 
         "name": "git",
         "os": "notanos",
-        "version": "2.7.4"
+        "min-version": "2.7.4"
     }]
 })",
                                           "invalid_os.json");
@@ -315,11 +421,14 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         auto invalid_version = parse_tool_data(fbdc,
                                                R"(
 {
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [{ 
         "name": "git",
         "os": "windows",
-        "version": "abc"
+        "version": "abc",
+        "executable": "git.exe",
+        "url": "https://example.com/git.exe",
+        "sha512": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     }]
 })",
                                                "invalid_version.json");
@@ -331,14 +440,33 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
 
     {
         FullyBufferedDiagnosticContext fbdc;
+        auto invalid_min_version = parse_tool_data(fbdc,
+                                                   R"(
+{
+    "schema-version": 2,
+    "tools": [{
+        "name": "git",
+        "os": "windows",
+        "min-version": "abc"
+    }]
+})",
+                                                   "invalid_min_version.json");
+        REQUIRE(!invalid_min_version.has_value());
+        CHECK(fbdc.to_string() ==
+              "invalid_min_version.json: error: $.tools[0].min-version (a tool data version): Invalid tool version; "
+              "expected a string containing a substring of between 1 and 3 numbers separated by dots.");
+    }
+
+    {
+        FullyBufferedDiagnosticContext fbdc;
         auto invalid_arch = parse_tool_data(fbdc,
                                             R"(
 {
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [{ 
         "name": "git",
         "os": "linux",
-        "version": "2.7.4",
+        "min-version": "2.7.4",
         "arch": "notanarchitecture"
     }]
 })",
@@ -356,12 +484,14 @@ TEST_CASE ("parse_tool_data errors", "[tools]")
         auto invalid_sha512 = parse_tool_data(fbdc,
                                               R"(
 {
-    "schema-version": 1,
+    "schema-version": 2,
     "tools": [{ 
         "name": "git",
         "os": "linux",
         "version": "2.7.4",
+        "min-version": "2.7.4",
         "executable": "git",
+        "url": "https://example.com/git",
         "sha512": "notasha512"
     }]
 })",

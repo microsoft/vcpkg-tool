@@ -93,7 +93,8 @@ namespace vcpkg
     {
         std::string name;
 
-        std::array<int, 3> version;
+        Optional<std::array<int, 3>> version; // at least one of version or min_version must be set
+        Optional<std::array<int, 3>> min_version;
         // relative path inside tool_dir_subpath
         Path exe_subpath;
         std::string url;
@@ -129,7 +130,8 @@ namespace vcpkg
         std::string tool;
         ToolOs os;
         Optional<CPUArchitecture> arch;
-        ToolVersion version;
+        Optional<ToolVersion> version; // at least one of version or min_version must be set
+        Optional<ToolVersion> minVersion;
         std::string exeRelativePath;
         std::string url;
         std::string sha512;
