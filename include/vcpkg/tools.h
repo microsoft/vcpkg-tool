@@ -85,8 +85,8 @@ namespace vcpkg
 
     struct ToolVersion
     {
-        std::array<int, 3> cooked; // e.g. 24.8  or 2.7.4 or 1.0.0
-        std::string raw;           // e.g. 24.08 or 2.7.4 or 1.0
+        std::array<int, 3> cooked = {0, 0, 0}; // e.g. 24.8  or 2.7.4 or 1.0.0
+        std::string raw;                       // e.g. 24.08 or 2.7.4 or 1.0 or 1.0.0-beta
     };
 
     struct ToolData
