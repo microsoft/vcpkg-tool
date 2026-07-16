@@ -1,5 +1,7 @@
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/json.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -303,8 +305,8 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     const auto stringized_license = calculate_spdx_license(action);
     Json::Object doc;
-    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
-    doc.insert(SpdxVersion, SpdxTwoTwo);
+    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json");
+    doc.insert(SpdxVersion, SpdxTwoThree);
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
@@ -340,6 +342,18 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             purl_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPackageManager);
             purl_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypePurl);
             purl_ref.insert(SpdxExternalReferenceLocator, make_vcpkg_purl(action));
+
+            if (!scfl.git_tree.empty())
+            {
+                Checks::check_exit(
+                    VCPKG_LINE_INFO,
+                    scfl.git_tree.size() == 40 &&
+                        std::all_of(scfl.git_tree.begin(), scfl.git_tree.end(), ParserBase::is_hex_digit_lower));
+                auto& gitoid_ref = external_refs.push_back(Json::Object());
+                gitoid_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPersistentId);
+                gitoid_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypeGitoid);
+                gitoid_ref.insert(SpdxExternalReferenceLocator, fmt::format("gitoid:tree:sha1:{}", scfl.git_tree));
+            }
         }
         {
             auto& rel = rels.push_back(Json::Object());
