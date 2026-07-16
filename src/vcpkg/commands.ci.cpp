@@ -645,7 +645,7 @@ namespace vcpkg
             }
         }
 
-        binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_uploads_succeeded = binary_cache.wait_for_async_complete_and_join();
         msg::println();
         std::map<Triplet, BuildResultCounts> summary_counts;
         auto summary_report = msg::format(msgTripletLabel).data();
@@ -693,7 +693,7 @@ namespace vcpkg
             fs.write_contents(it_xunit->second, xunitTestResults.build_xml(target_triplet), VCPKG_LINE_INFO);
         }
 
-        if (any_regressions)
+        if (any_regressions || !binary_cache_uploads_succeeded)
         {
             Checks::exit_fail(VCPKG_LINE_INFO);
         }

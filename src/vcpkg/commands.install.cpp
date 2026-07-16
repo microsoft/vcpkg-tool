@@ -1604,9 +1604,9 @@ namespace vcpkg
                 }
             }
         }
-        binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_uploads_succeeded = binary_cache.wait_for_async_complete_and_join();
         summary.print_complete_message();
-        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed);
+        Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed || !binary_cache_uploads_succeeded);
     }
 
     SpecSummary::SpecSummary(ExtendedBuildResult&& build_result,

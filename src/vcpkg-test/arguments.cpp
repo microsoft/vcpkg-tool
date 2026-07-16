@@ -179,6 +179,20 @@ TEST_CASE ("Feature flag off", "[arguments]")
     CHECK(!v.versions_enabled());
 }
 
+TEST_CASE ("Require binary cache upload", "[arguments]")
+{
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    CHECK_FALSE(args.require_binary_cache_upload_enabled());
+
+    std::vector<std::string> enabled_args = {"--require-binary-cache-upload"};
+    args = VcpkgCmdArguments::create_from_arg_sequence(enabled_args.data(), enabled_args.data() + 1);
+    CHECK(args.require_binary_cache_upload_enabled());
+
+    std::vector<std::string> disabled_args = {"--no-require-binary-cache-upload"};
+    args = VcpkgCmdArguments::create_from_arg_sequence(disabled_args.data(), disabled_args.data() + 1);
+    CHECK_FALSE(args.require_binary_cache_upload_enabled());
+}
+
 TEST_CASE ("CMake debugger flags", "[arguments]")
 {
     std::vector<std::string> t = {"--x-cmake-debug",

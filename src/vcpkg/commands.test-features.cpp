@@ -958,13 +958,17 @@ namespace vcpkg
             msg::println();
         }
 
-        binary_cache.wait_for_async_complete_and_join(); // make sure "all feature tests passed" is the last line
+        const bool binary_cache_uploads_succeeded =
+            binary_cache.wait_for_async_complete_and_join(); // make sure "all feature tests passed" is the last line
 
         int exit_code;
         if (diagnostics.empty())
         {
-            exit_code = EXIT_SUCCESS;
-            msg::println(msgAllFeatureTestsPassed);
+            exit_code = binary_cache_uploads_succeeded ? EXIT_SUCCESS : EXIT_FAILURE;
+            if (binary_cache_uploads_succeeded)
+            {
+                msg::println(msgAllFeatureTestsPassed);
+            }
         }
         else
         {

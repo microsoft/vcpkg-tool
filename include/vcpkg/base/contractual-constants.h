@@ -272,6 +272,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchPackagesRoot = "packages-root";
     inline constexpr StringLiteral SwitchParentHashes = "parent-hashes";
     inline constexpr StringLiteral SwitchPrintmetrics = "printmetrics";
+    inline constexpr StringLiteral SwitchRequireBinaryCacheUpload = "require-binary-cache-upload";
     inline constexpr StringLiteral SwitchPurge = "purge";
     inline constexpr StringLiteral SwitchPython = "python";
     inline constexpr StringLiteral SwitchRaw = "raw";

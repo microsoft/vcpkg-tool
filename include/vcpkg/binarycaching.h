@@ -88,6 +88,9 @@ namespace vcpkg
                                     const Filesystem& fs,
                                     const BinaryPackageWriteInfo& request) = 0;
 
+        /// Returns the number of uploads attempted by push_success().
+        virtual size_t upload_count() const noexcept = 0;
+
         virtual bool needs_nuspec_data() const = 0;
         virtual bool needs_zip_file() const = 0;
     };
@@ -300,7 +303,8 @@ namespace vcpkg
         void push_success(CleanPackages clean_packages, const InstallPlanAction& action);
 
         void print_updates();
-        void wait_for_async_complete_and_join();
+        // Returns false if --require-binary-cache-upload was specified and any upload failed.
+        bool wait_for_async_complete_and_join();
 
     private:
         struct ActionToPush
@@ -319,6 +323,8 @@ namespace vcpkg
         BackgroundWorkQueue<ActionToPush> m_actions_to_push;
         BinaryCacheSynchronizer m_synchronizer;
         std::thread m_push_thread;
+        size_t m_failed_uploads = 0;
+        bool m_require_upload_success = false;
 
         void push_thread_main();
     };

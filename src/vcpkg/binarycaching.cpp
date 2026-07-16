@@ -302,6 +302,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_dirs.size(); }
 
     private:
         std::vector<Path> m_dirs;
@@ -501,6 +502,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_urls.size(); }
 
     private:
         std::vector<UrlTemplate> m_urls;
@@ -622,6 +624,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_urls.size(); }
 
     private:
         std::vector<UrlTemplate> m_urls;
@@ -947,6 +950,7 @@ namespace
 
         bool needs_nuspec_data() const override { return true; }
         bool needs_zip_file() const override { return false; }
+        size_t upload_count() const noexcept override { return m_sources.size() + m_configs.size(); }
 
         size_t push_success(DiagnosticContext& context,
                             const Filesystem& fs,
@@ -1110,6 +1114,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_prefixes.size(); }
 
         std::vector<std::string> m_prefixes;
         std::shared_ptr<const IObjectStorageTool> m_tool;
@@ -1300,6 +1305,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_containers.size(); }
 
         std::vector<AzCopyUrl> m_containers;
         Path m_tool;
@@ -1603,6 +1609,7 @@ namespace
 
         bool needs_nuspec_data() const override { return false; }
         bool needs_zip_file() const override { return true; }
+        size_t upload_count() const noexcept override { return m_sources.size(); }
 
     private:
         AzureUpkgTool m_azure_tool;
@@ -2622,6 +2629,7 @@ namespace vcpkg
                                         const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths)
     {
+        m_require_upload_success = args.require_binary_cache_upload_enabled();
         auto& fs = paths.get_filesystem();
         auto& tools = paths.get_tool_cache();
         if (args.binary_caching_enabled())
@@ -2952,7 +2960,7 @@ namespace vcpkg
 
     void BinaryCache::print_updates() { m_bg_msg_sink.print_published(); }
 
-    void BinaryCache::wait_for_async_complete_and_join()
+    bool BinaryCache::wait_for_async_complete_and_join()
     {
         m_bg_msg_sink.print_published();
         auto incomplete_count = m_synchronizer.fetch_incomplete_mark_submission_complete();
@@ -2963,10 +2971,22 @@ namespace vcpkg
 
         m_bg_msg_sink.publish_directly_to_out_sink();
         m_actions_to_push.stop();
+        const bool should_report_result = m_push_thread.joinable();
         if (m_push_thread.joinable())
         {
             m_push_thread.join();
         }
+
+        if (m_require_upload_success && m_failed_uploads != 0)
+        {
+            if (should_report_result)
+            {
+                msg::println_error(msgBinaryCacheUploadFailed, msg::count = m_failed_uploads);
+            }
+            return false;
+        }
+
+        return true;
     }
 
     void BinaryCache::push_thread_main()
@@ -2991,9 +3011,16 @@ namespace vcpkg
                 size_t num_destinations = 0;
                 for (auto&& provider : m_config.write)
                 {
+                    const auto expected_uploads = provider->upload_count();
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(pdc, m_fs, action_to_push.request);
+                        const auto successful_uploads = provider->push_success(pdc, m_fs, action_to_push.request);
+                        num_destinations += successful_uploads;
+                        m_failed_uploads += expected_uploads - successful_uploads;
+                    }
+                    else
+                    {
+                        m_failed_uploads += expected_uploads;
                     }
                 }
 

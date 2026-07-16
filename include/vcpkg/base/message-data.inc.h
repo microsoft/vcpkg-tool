@@ -345,6 +345,7 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
+DECLARE_MESSAGE(BinaryCacheUploadFailed, (msg::count), "", "{count} binary cache upload(s) failed")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",
@@ -2720,6 +2721,7 @@ DECLARE_MESSAGE(ResponseFileCode,
                 "Explains to the user that they can use response files on the command line, 'response_file' must "
                 "have no spaces and be a legal file name.",
                 "@response_file")
+DECLARE_MESSAGE(RequireBinaryCacheUploadHelp, (), "", "Fails the command if any binary cache upload fails")
 DECLARE_MESSAGE(RestoredPackagesFromAWS,
                 (msg::count, msg::elapsed),
                 "",

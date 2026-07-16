@@ -232,7 +232,10 @@ namespace vcpkg
             msg::print(summary.format_results());
         }
 
-        binary_cache.wait_for_async_complete_and_join();
+        if (!binary_cache.wait_for_async_complete_and_join())
+        {
+            Checks::exit_fail(VCPKG_LINE_INFO);
+        }
         summary.print_complete_message();
         Checks::exit_success(VCPKG_LINE_INFO);
     }

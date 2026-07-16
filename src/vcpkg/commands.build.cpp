@@ -307,7 +307,9 @@ namespace vcpkg
         msg::print(msgElapsedForPackage, msg::spec = full_spec, msg::elapsed = build_timer);
         switch (result.code)
         {
-            case BuildResult::Succeeded: binary_cache.push_success(build_options.clean_packages, *action); return 0;
+            case BuildResult::Succeeded:
+                binary_cache.push_success(build_options.clean_packages, *action);
+                return binary_cache.wait_for_async_complete_and_join() ? EXIT_SUCCESS : EXIT_FAILURE;
             case BuildResult::CascadedDueToMissingDependencies:
             {
                 LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
