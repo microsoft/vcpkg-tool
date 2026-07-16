@@ -2,6 +2,7 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
@@ -60,12 +61,24 @@ namespace vcpkg
         const auto github_run_id = args.github_run_id.get();
         if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
+            std::vector<std::string> triplets;
+            for (const auto& action : action_plan.install_actions)
+            {
+                triplets.push_back(action.spec.triplet().canonical_name());
+            }
+            Util::sort_unique_erase(triplets);
+
             Json::Object snapshot;
             {
+                std::string correlator = fmt::format("{}-{}", *github_workflow, *github_job);
+                for (const auto& triplet : triplets)
+                {
+                    fmt::format_to(std::back_inserter(correlator), "-{}", triplet);
+                }
+
                 Json::Object job;
                 job.insert(JsonIdId, Json::Value::string(*github_run_id));
-                job.insert(JsonIdCorrelator,
-                           Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+                job.insert(JsonIdCorrelator, Json::Value::string(std::move(correlator)));
                 snapshot.insert(JsonIdJob, std::move(job));
             } // destroy job
 
@@ -104,7 +117,10 @@ namespace vcpkg
                 const auto& pkg_url = found->second;
                 Json::Object resolved_item;
                 resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
+                resolved_item.insert(JsonIdRelationship,
+                                     Json::Value::string(action.request_type == RequestType::USER_REQUESTED
+                                                             ? JsonIdDirect
+                                                             : JsonIdIndirect));
 
                 Json::Array deps_list;
                 for (auto&& dep : action.package_dependencies)

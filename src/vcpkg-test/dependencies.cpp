@@ -2583,7 +2583,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     InstallPlanAction install_a({"a", Test::X86_WINDOWS},
                                 scfl_a,
                                 packages_dir_assigner,
-                                RequestType::AUTO_SELECTED,
+                                RequestType::USER_REQUESTED,
                                 UseHeadVersion::No,
                                 Editable::No,
                                 {},
@@ -2603,7 +2603,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
     std::map<StringLiteral, std::string, std::less<>> envmap = {
-        {EnvironmentVariableGitHubJob, "123"},
+        {EnvironmentVariableGitHubJob, "build"},
         {EnvironmentVariableGitHubRunId, "123"},
         {EnvironmentVariableGitHubRef, "refs/heads/main"},
         {EnvironmentVariableGitHubRepository, "owner/repo"},
@@ -2650,7 +2650,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
 
     CHECK(static_cast<int>(version) == 0);
     CHECK(id == "123");
-    CHECK(correlator == "test-123");
+    CHECK(correlator == "test-build-x64-windows-x86-windows");
     CHECK(sha == "abc123");
     CHECK(ref == "refs/heads/main");
     CHECK(name == "vcpkg");
@@ -2658,10 +2658,19 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     CHECK(url == "https://github.com/microsoft/vcpkg");
     CHECK(name1 == "vcpkg.json");
     CHECK(package_url_a_host == purl_a_host);
-    CHECK(relationship_a_host == "direct");
+    CHECK(relationship_a_host == "indirect");
     CHECK(dependencies_a_host.size() == 0);
     CHECK(package_url_a == purl_a_target);
     CHECK(relationship_a == "direct");
     REQUIRE(dependencies_a.size() == 1);
     CHECK(dependencies_a[0].string(VCPKG_LINE_INFO) == purl_a_host);
+
+    envmap[EnvironmentVariableGitHubRunId] = "456";
+    auto v2 = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v2.imbue_from_fake_environment(envmap);
+    auto s2 = create_dependency_graph_snapshot(v2, plan);
+    REQUIRE(s2.has_value());
+    auto job2 = s2.get()->get("job")->object(VCPKG_LINE_INFO);
+    CHECK(job2.get("id")->string(VCPKG_LINE_INFO) == "456");
+    CHECK(job2.get("correlator")->string(VCPKG_LINE_INFO) == correlator);
 }
