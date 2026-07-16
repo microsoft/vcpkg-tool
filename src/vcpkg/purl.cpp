@@ -1,9 +1,8 @@
-#include <vcpkg/purl.h>
-
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/dependencies.h>
+#include <vcpkg/purl.h>
 #include <vcpkg/sourceparagraph.h>
 
 #include <vector>
