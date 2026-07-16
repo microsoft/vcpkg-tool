@@ -958,14 +958,14 @@ namespace vcpkg
             msg::println();
         }
 
-        const bool binary_cache_uploads_succeeded =
+        const bool binary_cache_upload_requirement_satisfied =
             binary_cache.wait_for_async_complete_and_join(); // make sure "all feature tests passed" is the last line
 
         int exit_code;
         if (diagnostics.empty())
         {
-            exit_code = binary_cache_uploads_succeeded ? EXIT_SUCCESS : EXIT_FAILURE;
-            if (binary_cache_uploads_succeeded)
+            exit_code = binary_cache_upload_requirement_satisfied ? EXIT_SUCCESS : EXIT_FAILURE;
+            if (binary_cache_upload_requirement_satisfied)
             {
                 msg::println(msgAllFeatureTestsPassed);
             }
