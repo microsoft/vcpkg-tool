@@ -7,6 +7,7 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
@@ -77,7 +78,7 @@ namespace vcpkg
                 Json::Object detector;
                 detector.insert(JsonIdName, Json::Value::string("vcpkg"));
                 detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                detector.insert(JsonIdVersion, Json::Value::string("2.0.0"));
                 snapshot.insert(JsonIdDetector, std::move(detector));
             } // destroy detector
 
@@ -85,7 +86,7 @@ namespace vcpkg
             for (auto&& action : action_plan.install_actions)
             {
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
+                map.emplace(spec, make_vcpkg_purl(action));
             }
 
             Json::Object manifest;

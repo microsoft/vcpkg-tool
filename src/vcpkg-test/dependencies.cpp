@@ -2571,11 +2571,15 @@ TEST_CASE ("formatting plan 1", "[dependencies]")
                   "Additional packages (*) will be modified to complete this operation.\n");
 }
 
-TEST_CASE ("dependency graph API snapshot: host and target")
+TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]")
 {
     MockVersionedPortfileProvider vp;
     PackagesDirAssigner packages_dir_assigner{"packages_root"};
-    auto& scfl_a = vp.emplace("a", {"1", 0});
+    auto& scfl_a = vp.emplace("a",
+                              {"1.0+r2", 5},
+                              PortSourceKind::Git,
+                              "git+https://example.com/registry@0123456789012345678901234567890123456789");
+    scfl_a.spdx_repository_url = "https://example.com/registry";
     InstallPlanAction install_a({"a", Test::X86_WINDOWS},
                                 scfl_a,
                                 packages_dir_assigner,
@@ -2594,6 +2598,7 @@ TEST_CASE ("dependency graph API snapshot: host and target")
                                      {},
                                      {},
                                      {});
+    install_a.package_dependencies.push_back(install_a_host.spec);
     ActionPlan plan;
     plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
@@ -2626,11 +2631,19 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     auto manifest1 = manifests.get("vcpkg.json")->object(VCPKG_LINE_INFO);
     auto name1 = manifest1.get("name")->string(VCPKG_LINE_INFO);
     auto resolved1 = manifest1.get("resolved")->object(VCPKG_LINE_INFO);
-    auto dependency_a_host = resolved1.get("pkg:github/vcpkg/a:x64-windows@1")->object(VCPKG_LINE_INFO);
+    const std::string purl_a_host =
+        "pkg:vcpkg/a@1.0%2Br2?port_version=5&repository_url=https%3A%2F%2Fexample.com%2Fregistry"
+        "&triplet=x64-windows"
+        "&vcs_url=git%2Bhttps%3A%2F%2Fexample.com%2Fregistry%400123456789012345678901234567890123456789";
+    const std::string purl_a_target =
+        "pkg:vcpkg/a@1.0%2Br2?port_version=5&repository_url=https%3A%2F%2Fexample.com%2Fregistry"
+        "&triplet=x86-windows"
+        "&vcs_url=git%2Bhttps%3A%2F%2Fexample.com%2Fregistry%400123456789012345678901234567890123456789";
+    auto dependency_a_host = resolved1.get(purl_a_host)->object(VCPKG_LINE_INFO);
     auto package_url_a_host = dependency_a_host.get("package_url")->string(VCPKG_LINE_INFO);
     auto relationship_a_host = dependency_a_host.get("relationship")->string(VCPKG_LINE_INFO);
     auto dependencies_a_host = dependency_a_host.get("dependencies")->array(VCPKG_LINE_INFO);
-    auto dependency_a = resolved1.get("pkg:github/vcpkg/a:x86-windows@1")->object(VCPKG_LINE_INFO);
+    auto dependency_a = resolved1.get(purl_a_target)->object(VCPKG_LINE_INFO);
     auto package_url_a = dependency_a.get("package_url")->string(VCPKG_LINE_INFO);
     auto relationship_a = dependency_a.get("relationship")->string(VCPKG_LINE_INFO);
     auto dependencies_a = dependency_a.get("dependencies")->array(VCPKG_LINE_INFO);
@@ -2641,13 +2654,14 @@ TEST_CASE ("dependency graph API snapshot: host and target")
     CHECK(sha == "abc123");
     CHECK(ref == "refs/heads/main");
     CHECK(name == "vcpkg");
-    CHECK(detector_version == "1.0.0");
+    CHECK(detector_version == "2.0.0");
     CHECK(url == "https://github.com/microsoft/vcpkg");
     CHECK(name1 == "vcpkg.json");
-    CHECK(package_url_a_host == "pkg:github/vcpkg/a:x64-windows@1");
+    CHECK(package_url_a_host == purl_a_host);
     CHECK(relationship_a_host == "direct");
     CHECK(dependencies_a_host.size() == 0);
-    CHECK(package_url_a == "pkg:github/vcpkg/a:x86-windows@1");
+    CHECK(package_url_a == purl_a_target);
     CHECK(relationship_a == "direct");
-    CHECK(dependencies_a.size() == 0);
+    REQUIRE(dependencies_a.size() == 1);
+    CHECK(dependencies_a[0].string(VCPKG_LINE_INFO) == purl_a_host);
 }
