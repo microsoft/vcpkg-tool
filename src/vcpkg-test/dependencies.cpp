@@ -2602,8 +2602,8 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
                                      {});
     install_a.package_dependencies.push_back(install_a_host.spec);
     ActionPlan plan;
-    plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
+    plan.install_actions.push_back(std::move(install_a));
     std::map<StringLiteral, std::string, std::less<>> envmap = {
         {EnvironmentVariableGitHubJob, "build"},
         {EnvironmentVariableGitHubRunId, "123"},
