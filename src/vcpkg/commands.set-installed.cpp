@@ -52,7 +52,9 @@ namespace vcpkg
     };
 
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                            const ActionPlan& action_plan)
+                                                            const ActionPlan& action_plan,
+                                                            Triplet default_triplet,
+                                                            Triplet host_triplet)
     {
         const auto github_ref = args.github_ref.get();
         const auto github_sha = args.github_sha.get();
@@ -61,20 +63,10 @@ namespace vcpkg
         const auto github_run_id = args.github_run_id.get();
         if (github_ref && github_sha && github_job && github_workflow && github_run_id)
         {
-            std::vector<std::string> triplets;
-            for (const auto& action : action_plan.install_actions)
-            {
-                triplets.push_back(action.spec.triplet().canonical_name());
-            }
-            Util::sort_unique_erase(triplets);
-
             Json::Object snapshot;
             {
-                std::string correlator = fmt::format("{}-{}", *github_workflow, *github_job);
-                for (const auto& triplet : triplets)
-                {
-                    fmt::format_to(std::back_inserter(correlator), "-{}", triplet);
-                }
+                std::string correlator = fmt::format(
+                    "{}-{}-target-{}-host-{}", *github_workflow, *github_job, default_triplet, host_triplet);
 
                 Json::Object job;
                 job.insert(JsonIdId, Json::Value::string(*github_run_id));
@@ -200,6 +192,7 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet default_triplet,
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
@@ -229,7 +222,7 @@ namespace vcpkg
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
-            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan);
+            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan, default_triplet, host_triplet);
             auto snapshot = maybe_snapshot.get();
             auto github_token = args.github_token.get();
             auto github_repository = args.github_repository.get();
@@ -423,6 +416,7 @@ namespace vcpkg
         command_set_installed_and_exit_ex(
             args,
             paths,
+            default_triplet,
             host_triplet,
             build_options,
             *cmake_vars,
