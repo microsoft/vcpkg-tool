@@ -422,7 +422,8 @@ namespace vcpkg::Paragraphs
                                                                               std::move(manifest_path),
                                                                               port_location.spdx_location,
                                                                               port_location.spdx_repository_url,
-                                                                              port_location.kind};
+                                                                              port_location.kind,
+                                                                              port_location.git_tree};
                                       }),
                                   manifest_contents};
         }
@@ -444,7 +445,8 @@ namespace vcpkg::Paragraphs
                                                                               std::move(control_path),
                                                                               port_location.spdx_location,
                                                                               port_location.spdx_repository_url,
-                                                                              port_location.kind};
+                                                                              port_location.kind,
+                                                                              port_location.git_tree};
                                       }),
                                   control_contents};
         }

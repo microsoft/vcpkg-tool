@@ -885,7 +885,8 @@ namespace
                            PortLocation{std::move(p),
                                         Paragraphs::builtin_git_tree_spdx_location(it->git_tree),
                                         std::string(),
-                                        PortSourceKind::Builtin})
+                                        PortSourceKind::Builtin,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }
@@ -976,7 +977,8 @@ namespace
                                         fmt::format("git+{}@{}", parent.m_repo, it->git_tree),
                                         is_builtin_git_registry_url(parent.m_repo) ? std::string()
                                                                                    : std::string(parent.m_repo),
-                                        PortSourceKind::Git})
+                                        PortSourceKind::Git,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }

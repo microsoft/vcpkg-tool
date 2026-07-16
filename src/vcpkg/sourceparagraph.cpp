@@ -136,22 +136,26 @@ namespace vcpkg
     PortLocation::PortLocation(const Path& port_directory,
                                std::string&& spdx_location,
                                std::string&& spdx_repository_url,
-                               PortSourceKind kind)
+                               PortSourceKind kind,
+                               StringView git_tree)
         : port_directory(port_directory)
         , spdx_location(std::move(spdx_location))
         , spdx_repository_url(std::move(spdx_repository_url))
         , kind(kind)
+        , git_tree(git_tree.to_string())
     {
     }
 
     PortLocation::PortLocation(Path&& port_directory,
                                std::string&& spdx_location,
                                std::string&& spdx_repository_url,
-                               PortSourceKind kind)
+                               PortSourceKind kind,
+                               StringView git_tree)
         : port_directory(std::move(port_directory))
         , spdx_location(std::move(spdx_location))
         , spdx_repository_url(std::move(spdx_repository_url))
         , kind(kind)
+        , git_tree(git_tree.to_string())
     {
     }
 
