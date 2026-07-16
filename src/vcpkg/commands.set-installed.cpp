@@ -7,12 +7,12 @@
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
-#include <vcpkg/purl.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
