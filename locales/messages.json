@@ -1085,6 +1085,8 @@
   "_InvalidFloatingPointConst.comment": "An example of {count} is 42.",
   "InvalidFormatString": "invalid format string: {actual}",
   "_InvalidFormatString.comment": "{actual} is the provided format string",
+  "InvalidGitObjectSha": "Invalid Git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
+  "_InvalidGitObjectSha.comment": "{sha} is the invalid Git object SHA An example of {sha} is eb32643dd2164c72b8a660ef52f1e701bb368324ae461e12d70d6a9aefc0c9573387ee2ed3828037ed62bb3e8f566416a2d3b3827a3928f0bff7c29f7662293e.",
   "InvalidHexDigit": "Invalid hex digit in unicode escape",
   "InvalidIntegerConst": "Invalid integer constant: {count}",
   "_InvalidIntegerConst.comment": "An example of {count} is 42.",

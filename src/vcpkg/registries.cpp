@@ -6,6 +6,7 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -35,9 +36,22 @@ namespace
     struct GitTreeStringDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAGitObjectSha); }
+        Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override;
 
         static const GitTreeStringDeserializer instance;
     };
+
+    Optional<std::string> GitTreeStringDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (sv.size() == 40 && std::all_of(sv.begin(), sv.end(), ParserBase::is_hex_digit_lower))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidGitObjectSha, msg::sha = sv));
+        return std::string();
+    }
+
     const GitTreeStringDeserializer GitTreeStringDeserializer::instance;
 
     struct RegistryPathStringDeserializer : Json::StringDeserializer
