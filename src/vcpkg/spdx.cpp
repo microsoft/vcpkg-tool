@@ -5,7 +5,6 @@
 
 #include <vcpkg/commands.version.h>
 #include <vcpkg/dependencies.h>
-#include <vcpkg/purl.h>
 #include <vcpkg/spdx.h>
 
 using namespace vcpkg;

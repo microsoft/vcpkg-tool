@@ -97,6 +97,8 @@ namespace vcpkg
         Path package_dir;
     };
 
+    std::string make_vcpkg_purl(const InstallPlanAction& action);
+
     struct NotInstalledAction : BasicAction
     {
         NotInstalledAction(const PackageSpec& spec);
