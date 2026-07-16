@@ -12,6 +12,7 @@
 #include <vcpkg/installedpaths.h>
 #include <vcpkg/metrics.h>
 #include <vcpkg/portfileprovider.h>
+#include <vcpkg/purl.h>
 #include <vcpkg/registries.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
@@ -77,7 +78,7 @@ namespace vcpkg
                 Json::Object detector;
                 detector.insert(JsonIdName, Json::Value::string("vcpkg"));
                 detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                detector.insert(JsonIdVersion, Json::Value::string("2.0.0"));
                 snapshot.insert(JsonIdDetector, std::move(detector));
             } // destroy detector
 
@@ -85,7 +86,7 @@ namespace vcpkg
             for (auto&& action : action_plan.install_actions)
             {
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
+                map.emplace(spec, make_vcpkg_purl(action));
             }
 
             Json::Object manifest;
