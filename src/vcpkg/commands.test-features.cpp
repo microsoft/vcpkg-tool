@@ -48,6 +48,11 @@ namespace
         diagnostics.push_back(SpecDiagnostic{&spec.package_spec, std::move(line)});
     }
 
+    void add_diagnostic(DiagnosticVec& diagnostics, DiagnosticLine&& line)
+    {
+        diagnostics.push_back(SpecDiagnostic{nullptr, std::move(line)});
+    }
+
     Path ci_build_log_feature_test_base_path(const Path& base_path, std::size_t counter, const FullPackageSpec& spec)
     {
         std::string feature_dir = spec.package_spec.name();
@@ -465,6 +470,7 @@ namespace vcpkg
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
         {SwitchNoCombined, msgCmdTestFeaturesNoCombined},
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
     };
 
     static constexpr CommandSetting TEST_FEATURES_SETTINGS[] = {
@@ -500,6 +506,7 @@ namespace vcpkg
         const auto test_feature_core = !Util::Sets::contains(options.switches, SwitchNoCore);
         const auto test_features_combined = !Util::Sets::contains(options.switches, SwitchNoCombined);
         const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
+        const bool require_binary_cache_upload = Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload);
 
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
@@ -958,17 +965,16 @@ namespace vcpkg
             msg::println();
         }
 
-        const bool binary_cache_upload_requirement_satisfied =
-            binary_cache.wait_for_async_complete_and_join(); // make sure "all feature tests passed" is the last line
+        if (!binary_cache.wait_for_async_complete_and_join() && require_binary_cache_upload)
+        {
+            add_diagnostic(diagnostics, DiagnosticLine{DiagKind::Error, msg::format(msgBinaryCacheUploadFailed)});
+        }
 
         int exit_code;
         if (diagnostics.empty())
         {
-            exit_code = binary_cache_upload_requirement_satisfied ? EXIT_SUCCESS : EXIT_FAILURE;
-            if (binary_cache_upload_requirement_satisfied)
-            {
-                msg::println(msgAllFeatureTestsPassed);
-            }
+            exit_code = EXIT_SUCCESS;
+            msg::println(msgAllFeatureTestsPassed);
         }
         else
         {
@@ -976,6 +982,8 @@ namespace vcpkg
             // group diagnostics about the same spec together
             std::stable_sort(
                 diagnostics.begin(), diagnostics.end(), [](const SpecDiagnostic& lhs, const SpecDiagnostic& rhs) {
+                    if (lhs.spec == nullptr) return rhs.spec != nullptr;
+                    if (rhs.spec == nullptr) return false;
                     return *lhs.spec < *rhs.spec;
                 });
 

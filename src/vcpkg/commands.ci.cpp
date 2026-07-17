@@ -54,6 +54,7 @@ namespace
         {SwitchAllowUnexpectedPassing, msgCISwitchOptAllowUnexpectedPassing},
         {SwitchSkipFailures, msgCISwitchOptSkipFailures},
         {SwitchXXUnitAll, msgCISwitchOptXUnitAll},
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
     };
 
     struct CIPreBuildStatus
@@ -490,6 +491,7 @@ namespace vcpkg
         auto baseline_iter = settings.find(SwitchCIBaseline);
         const std::string* ci_baseline_file_name = nullptr;
         const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
+        const bool require_binary_cache_upload = Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload);
         CiBaselineData baseline_data;
         auto skip_failures =
             Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
@@ -645,7 +647,12 @@ namespace vcpkg
             }
         }
 
-        const bool binary_cache_upload_requirement_satisfied = binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
+        {
+            msg::println_error(msgBinaryCacheUploadFailed);
+        }
         msg::println();
         std::map<Triplet, BuildResultCounts> summary_counts;
         auto summary_report = msg::format(msgTripletLabel).data();

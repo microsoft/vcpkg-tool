@@ -322,10 +322,6 @@ namespace vcpkg
         args.parser.parse_switch(FeatureFlagFeaturepackages, StabilityTag::Standard, args.feature_packages);
         args.parser.parse_switch(SwitchBinarycaching, StabilityTag::Standard, args.binary_caching);
         args.parser.parse_switch(SwitchWaitForLock, StabilityTag::Experimental, args.wait_for_lock);
-        args.parser.parse_switch(SwitchRequireBinaryCacheUpload,
-                                 StabilityTag::Standard,
-                                 args.require_binary_cache_upload,
-                                 msg::format(msgRequireBinaryCacheUploadHelp));
         args.parser.parse_switch(SwitchIgnoreLockFailures, StabilityTag::Experimental, args.ignore_lock_failures);
         args.parser.parse_switch(
             SwitchAbiToolsUseExactVersions, StabilityTag::Experimental, args.exact_abi_tools_versions);

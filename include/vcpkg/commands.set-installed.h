@@ -45,7 +45,8 @@ namespace vcpkg
                                            PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue,
-                                           bool skip_install_if_cached);
+                                           bool skip_install_if_cached,
+                                           bool require_binary_cache_upload);
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths,
                                         Triplet default_triplet,

@@ -261,7 +261,6 @@ namespace vcpkg
         Optional<bool> print_metrics = nullopt;
 
         Optional<bool> wait_for_lock = nullopt;
-        Optional<bool> require_binary_cache_upload = nullopt;
 
         Optional<bool> ignore_lock_failures = nullopt;
 
@@ -282,7 +281,6 @@ namespace vcpkg
 
         bool dependency_graph_enabled() const { return dependency_graph_feature.value_or(false); }
         bool binary_caching_enabled() const { return binary_caching.value_or(true); }
-        bool require_binary_cache_upload_enabled() const { return require_binary_cache_upload.value_or(false); }
         bool compiler_tracking_enabled() const { return compiler_tracking.value_or(true); }
         bool registries_enabled() const { return registries_feature.value_or(true); }
         bool versions_enabled() const { return versions_feature.value_or(true); }

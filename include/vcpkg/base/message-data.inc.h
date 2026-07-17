@@ -345,7 +345,11 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
-DECLARE_MESSAGE(BinaryCacheUploadFailed, (msg::count), "", "{count} binary cache upload(s) failed")
+DECLARE_MESSAGE(BinaryCacheUploadFailed,
+                (),
+                "",
+                "One or more binary cache uploads failed. Since --require-binary-cache-upload was specified, the "
+                "command will exit with a non-zero exit code.")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",

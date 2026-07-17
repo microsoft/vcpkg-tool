@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/strings.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -181,16 +182,18 @@ TEST_CASE ("Feature flag off", "[arguments]")
 
 TEST_CASE ("Require binary cache upload", "[arguments]")
 {
+    CommandSwitch switches[] = {{SwitchRequireBinaryCacheUpload, {}}};
+    CommandMetadata command_metadata = {
+        "command", {}, {}, Undocumented, AutocompletePriority::Public, 0, 0, {switches}, nullptr};
+
     auto args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
-    CHECK_FALSE(args.require_binary_cache_upload_enabled());
+    auto options = args.parse_arguments(command_metadata);
+    CHECK_FALSE(Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload));
 
     std::vector<std::string> enabled_args = {"--require-binary-cache-upload"};
     args = VcpkgCmdArguments::create_from_arg_sequence(enabled_args.data(), enabled_args.data() + 1);
-    CHECK(args.require_binary_cache_upload_enabled());
-
-    std::vector<std::string> disabled_args = {"--no-require-binary-cache-upload"};
-    args = VcpkgCmdArguments::create_from_arg_sequence(disabled_args.data(), disabled_args.data() + 1);
-    CHECK_FALSE(args.require_binary_cache_upload_enabled());
+    options = args.parse_arguments(command_metadata);
+    CHECK(Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload));
 }
 
 TEST_CASE ("CMake debugger flags", "[arguments]")

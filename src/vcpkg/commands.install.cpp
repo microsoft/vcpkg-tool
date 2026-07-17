@@ -870,6 +870,7 @@ namespace vcpkg
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchNoPrintUsage, msgHelpTxtOptNoUsage},
         {SwitchSkipInstallIfCached, msgHelpTxtOptSkipInstallIfCached},
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
     };
 
     static constexpr CommandSetting INSTALL_SETTINGS[] = {
@@ -1317,6 +1318,7 @@ namespace vcpkg
         const bool no_downloads = Util::Sets::contains(options.switches, (SwitchNoDownloads));
         const bool only_downloads = Util::Sets::contains(options.switches, (SwitchOnlyDownloads));
         const bool no_build_missing = Util::Sets::contains(options.switches, SwitchOnlyBinarycaching);
+        const bool require_binary_cache_upload = Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload);
         const bool is_recursive = Util::Sets::contains(options.switches, (SwitchRecurse));
         const bool is_editable =
             Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
@@ -1478,7 +1480,8 @@ namespace vcpkg
                                               print_cmake_usage ? PrintUsage::Yes : PrintUsage::No,
                                               pkgsconfig,
                                               true,
-                                              skip_install_if_cached);
+                                              skip_install_if_cached,
+                                              require_binary_cache_upload);
         }
 
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
@@ -1604,7 +1607,12 @@ namespace vcpkg
                 }
             }
         }
-        const bool binary_cache_upload_requirement_satisfied = binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
+        {
+            msg::println_error(msgBinaryCacheUploadFailed);
+        }
         summary.print_complete_message();
         Checks::exit_with_code(VCPKG_LINE_INFO, summary.failed || !binary_cache_upload_requirement_satisfied);
     }

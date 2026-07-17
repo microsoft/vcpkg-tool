@@ -179,13 +179,24 @@ namespace vcpkg
                                    const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder)
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   bool require_binary_cache_upload)
     {
-        Checks::exit_with_code(
-            VCPKG_LINE_INFO,
-            command_build_ex(
-                args, paths, host_triplet, build_options, installed_lock, full_spec, provider, build_logs_recorder));
+        Checks::exit_with_code(VCPKG_LINE_INFO,
+                               command_build_ex(args,
+                                                paths,
+                                                host_triplet,
+                                                build_options,
+                                                installed_lock,
+                                                full_spec,
+                                                provider,
+                                                build_logs_recorder,
+                                                require_binary_cache_upload));
     }
+
+    constexpr CommandSwitch BUILD_SWITCHES[] = {
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
+    };
 
     constexpr CommandMetadata CommandBuildMetadata{
         "build",
@@ -195,7 +206,7 @@ namespace vcpkg
         AutocompletePriority::Internal,
         1,
         1,
-        {},
+        {BUILD_SWITCHES},
         nullptr,
     };
 
@@ -225,15 +236,17 @@ namespace vcpkg
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, paths.overlay_ports));
         InstallAndBuildDatabaseLock installed_lock{
             fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
-        Checks::exit_with_code(VCPKG_LINE_INFO,
-                               command_build_ex(args,
-                                                paths,
-                                                host_triplet,
-                                                build_command_build_package_options,
-                                                installed_lock,
-                                                spec,
-                                                provider,
-                                                null_build_logs_recorder));
+        Checks::exit_with_code(
+            VCPKG_LINE_INFO,
+            command_build_ex(args,
+                             paths,
+                             host_triplet,
+                             build_command_build_package_options,
+                             installed_lock,
+                             spec,
+                             provider,
+                             null_build_logs_recorder,
+                             Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload)));
     }
 
     int command_build_ex(const VcpkgCmdArguments& args,
@@ -243,7 +256,8 @@ namespace vcpkg
                          const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder)
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         bool require_binary_cache_upload)
     {
         const PackageSpec& spec = full_spec.package_spec;
         auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
@@ -309,7 +323,12 @@ namespace vcpkg
         {
             case BuildResult::Succeeded:
                 binary_cache.push_success(build_options.clean_packages, *action);
-                return binary_cache.wait_for_async_complete_and_join() ? EXIT_SUCCESS : EXIT_FAILURE;
+                if (!binary_cache.wait_for_async_complete_and_join() && require_binary_cache_upload)
+                {
+                    msg::println_error(msgBinaryCacheUploadFailed);
+                    return EXIT_FAILURE;
+                }
+                return EXIT_SUCCESS;
             case BuildResult::CascadedDueToMissingDependencies:
             {
                 LocalizedString errorMsg = msg::format_error(msgBuildDependenciesMissing);
