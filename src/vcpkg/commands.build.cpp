@@ -1090,13 +1090,12 @@ namespace vcpkg
         auto resource_contents = fs.read_contents(resource_path, resource_ec);
         if (!resource_ec)
         {
-            resource_document =
-                Json::parse_object(resource_contents, resource_path).value_or_exit(VCPKG_LINE_INFO);
+            resource_document = Json::parse_object(resource_contents, resource_path).value_or_exit(VCPKG_LINE_INFO);
         }
         else if (!is_not_found_errc(resource_ec))
         {
-            Checks::msg_exit_with_message(
-                VCPKG_LINE_INFO, format_filesystem_call_error(resource_ec, "read_contents", {resource_path}));
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          format_filesystem_call_error(resource_ec, "read_contents", {resource_path}));
         }
         // Gather all the files in the package directory
         // Note: For packages with many files, this sequential hashing may be slow
