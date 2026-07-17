@@ -55,11 +55,30 @@ if ($IsWindows) {
     Require-FileExists "$pluginsDir/k4a.dll"
     Require-FileExists "$pluginsDir/depthengine_2_0.dll"
 
-    # Tests deploy azure kinect sensor SDK plugins from debug directories
+    # Tests deploy azure kinect sensor SDK plugins from release and debug directories when both are present
     $pluginsDebugDir = "$TestingRoot/applocal/plugins-debug"
     Run-Vcpkg env "$pluginsDebugDir/build.bat"
     Require-FileNotExists "$pluginsDebugDir/k4a.dll"
     Require-FileNotExists "$pluginsDebugDir/depthengine_2_0.dll"
+
+    $applocalOutput = Run-VcpkgAndCaptureOutput z-applocal `
+           --target-binary=$pluginsDebugDir/main.exe `
+           --installed-bin-dir=$pluginsDebugDir/installed/bin
+    Throw-IfFailed
+    if (-Not ($applocalOutput -match '.*\\applocal\\plugins-debug\\installed\\bin\\k4a\.dll -> .*\\applocal\\plugins-debug\\k4a\.dll.*'))
+    {
+        throw "z-applocal didn't copy dependent release binary"
+    }
+
+    if (-Not ($applocalOutput -match '.*\\applocal\\plugins-debug\\installed\\tools\\azure-kinect-sensor-sdk\\depthengine_2_0\.dll -> .*\\applocal\\plugins-debug\\depthengine_2_0\.dll.*'))
+    {
+        throw "z-applocal didn't copy release xbox plugins"
+    }
+
+    Require-FileExists "$pluginsDebugDir/k4a.dll"
+    Require-FileExists "$pluginsDebugDir/depthengine_2_0.dll"
+    Remove-Item -LiteralPath "$pluginsDebugDir/k4a.dll", "$pluginsDebugDir/depthengine_2_0.dll"
+
     $applocalOutput = Run-VcpkgAndCaptureOutput z-applocal `
            --target-binary=$pluginsDebugDir/main.exe `
            --installed-bin-dir=$pluginsDebugDir/installed/debug/bin
@@ -69,13 +88,13 @@ if ($IsWindows) {
         throw "z-applocal didn't copy dependent debug binary"
     }
 
-    if (-Not ($applocalOutput -match '.*\\applocal\\plugins-debug\\installed\\tools\\azure-kinect-sensor-sdk\\depthengine_2_0\.dll -> .*\\applocal\\plugins-debug\\depthengine_2_0\.dll.*'))
+    if (-Not ($applocalOutput -match '.*\\applocal\\plugins-debug\\installed\\debug\\tools\\azure-kinect-sensor-sdk\\depthengine_2_0\.dll -> .*\\applocal\\plugins-debug\\depthengine_2_0\.dll.*'))
     {
-        throw "z-applocal didn't copy xbox plugins"
+        throw "z-applocal didn't copy debug xbox plugins"
     }
 
-    Require-FileExists "$pluginsDir/k4a.dll"
-    Require-FileExists "$pluginsDir/depthengine_2_0.dll"
+    Require-FileExists "$pluginsDebugDir/k4a.dll"
+    Require-FileExists "$pluginsDebugDir/depthengine_2_0.dll"
 
     # Tests that nonexistent files are merely warnings
     $nonexistentDll = Join-Path $basicDir 'nonexisting.dll'
