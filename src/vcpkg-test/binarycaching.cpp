@@ -610,6 +610,14 @@ Description: test port
         binary_cache.push_success(CleanPackages::No, action);
         CHECK_FALSE(binary_cache.wait_for_async_complete_and_join());
     }
+
+    SECTION ("provider reports more successful uploads than expected")
+    {
+        TestBinaryCache binary_cache{always_failing_filesystem};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(1, 2));
+        binary_cache.push_success(CleanPackages::No, action);
+        CHECK(binary_cache.wait_for_async_complete_and_join());
+    }
 }
 
 TEST_CASE ("Test batch_command_arguments_with_fixed_length", "[batch-arguments]")

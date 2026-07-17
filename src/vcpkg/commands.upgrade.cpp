@@ -234,12 +234,13 @@ namespace vcpkg
             msg::print(summary.format_results());
         }
 
-        if (!binary_cache.wait_for_async_complete_and_join() && require_binary_cache_upload)
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
         {
             msg::println_error(msgBinaryCacheUploadFailed);
-            Checks::exit_fail(VCPKG_LINE_INFO);
         }
         summary.print_complete_message();
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, !binary_cache_upload_requirement_satisfied);
     }
 } // namespace vcpkg

@@ -332,13 +332,14 @@ namespace vcpkg
             fs.write_contents(installed_paths->manifest_info_path(), Json::stringify(manifest_info), VCPKG_LINE_INFO);
         }
 
-        if (!binary_cache.wait_for_async_complete_and_join() && require_binary_cache_upload)
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
         {
             msg::println_error(msgBinaryCacheUploadFailed);
-            Checks::exit_fail(VCPKG_LINE_INFO);
         }
         summary.print_complete_message();
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, !binary_cache_upload_requirement_satisfied);
     }
 
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,

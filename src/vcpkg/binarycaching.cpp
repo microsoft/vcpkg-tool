@@ -3005,7 +3005,10 @@ namespace vcpkg
                     {
                         const auto successful_uploads = provider->push_success(pdc, m_fs, action_to_push.request);
                         num_destinations += successful_uploads;
-                        m_failed_uploads += expected_uploads - successful_uploads;
+                        if (successful_uploads < expected_uploads)
+                        {
+                            m_failed_uploads += expected_uploads - successful_uploads;
+                        }
                     }
                     else
                     {
