@@ -9,87 +9,6 @@
 
 using namespace vcpkg;
 
-StringView vcpkg::extract_first_cmake_invocation_args(StringView content, StringView command)
-{
-    // command\s*\(([^)]+)\)
-    auto it = content.begin();
-    do
-    {
-        it = Util::search_and_skip(it, content.end(), command);
-        if (it == content.end())
-        {
-            return {};
-        }
-
-        while (ParserBase::is_whitespace(*it))
-        {
-            ++it;
-            if (it == content.end())
-            {
-                return {};
-            }
-        }
-        // if we don't get a ( here, then we matched a prefix of the command but not the command itself
-    } while (*it != '(');
-    ++it;
-    auto it_end = std::find(it, content.end(), ')');
-    if (it_end == content.end())
-    {
-        return {};
-    }
-
-    return StringView{it, it_end};
-}
-
-StringView vcpkg::extract_arg_from_cmake_invocation_args(StringView invocation_args, StringView target_arg)
-{
-    auto it = invocation_args.begin();
-    do
-    {
-        it = Util::search_and_skip(it, invocation_args.end(), target_arg);
-        if (it == invocation_args.end())
-        {
-            return {};
-        }
-    } while (!ParserBase::is_whitespace(*it));
-    it = std::find_if_not(it, invocation_args.end(), ParserBase::is_whitespace);
-    if (it == invocation_args.end())
-    {
-        return {};
-    }
-
-    if (*it == '"')
-    {
-        // quoted value
-        ++it;
-        auto it_end = std::find(it, invocation_args.end(), '"');
-        if (it_end == invocation_args.end())
-        {
-            return {};
-        }
-
-        return {it, it_end};
-    }
-
-    // unquoted value
-    return {it, std::find_if(it + 1, invocation_args.end(), ParserBase::is_whitespace)};
-}
-
-std::string vcpkg::replace_cmake_var(StringView text, StringView var, StringView value)
-{
-    std::string replacement;
-    replacement.reserve(var.size() + 3);
-    replacement.append("${", 2);
-    replacement.append(var.data(), var.size());
-    replacement.push_back('}');
-    return Strings::replace_all(text, replacement, value);
-}
-
-static std::string fix_ref_version(StringView ref, StringView version)
-{
-    return replace_cmake_var(ref, CMakeVariableVersion, version);
-}
-
 static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj, StringView property)
 {
     if (auto p = obj.get(property))
@@ -104,183 +23,6 @@ static void append_move_if_exists_and_array(Json::Array& out, Json::Object& obj,
     }
 }
 
-static Json::Object make_resource(
-    std::string spdxid, StringView name, std::string downloadLocation, StringView sha512, StringView filename)
-{
-    Json::Object obj;
-    obj.insert(SpdxSpdxId, std::move(spdxid));
-    obj.insert(JsonIdName, name);
-    if (!filename.empty())
-    {
-        obj.insert(SpdxPackageFileName, filename);
-    }
-    obj.insert(SpdxDownloadLocation, std::move(downloadLocation));
-    obj.insert(SpdxLicenseConcluded, SpdxNoAssertion);
-    obj.insert(SpdxLicenseDeclared, SpdxNoAssertion);
-    obj.insert(SpdxCopyrightText, SpdxNoAssertion);
-    if (!sha512.empty())
-    {
-        auto& chk = obj.insert(JsonIdChecksums, Json::Array());
-        auto& chk512 = chk.push_back(Json::Object());
-        chk512.insert(JsonIdAlgorithm, JsonIdAllCapsSHA512);
-        chk512.insert(SpdxChecksumValue, Strings::ascii_to_lowercase(sha512));
-    }
-    return obj;
-}
-
-static void find_all_github(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto github = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_github");
-        if (github.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto repo = extract_arg_from_cmake_invocation_args(github, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(github, CMakeVariableRef), version_text);
-        auto sha = extract_arg_from_cmake_invocation_args(github, CMakeVariableSHA512);
-
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
-                                         repo,
-                                         fmt::format("git+https://github.com/{}@{}", repo, ref),
-                                         sha,
-                                         {}));
-        it = github.end();
-    }
-}
-
-static void find_all_bitbucket(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto bitbucket = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_bitbucket");
-        if (bitbucket.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto repo = extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableRef), version_text);
-        auto sha = extract_arg_from_cmake_invocation_args(bitbucket, CMakeVariableSHA512);
-
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
-                                         repo,
-                                         fmt::format("git+https://bitbucket.com/{}@{}", repo, ref),
-                                         sha,
-                                         {}));
-        it = bitbucket.end();
-    }
-}
-
-static void find_all_gitlab(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto gitlab = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_gitlab");
-        if (gitlab.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto repo = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableRepo);
-        auto url = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableGitlabUrl);
-        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableRef), version_text);
-        auto sha = extract_arg_from_cmake_invocation_args(gitlab, CMakeVariableSHA512);
-
-        packages.push_back(make_resource(fmt::format("SPDXRef-resource-{}", packages.size()),
-                                         repo,
-                                         fmt::format("git+{}/{}@{}", url, repo, ref),
-                                         sha,
-                                         {}));
-        it = gitlab.end();
-    }
-}
-
-static void find_all_git(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto git = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_git");
-        if (git.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto url = extract_arg_from_cmake_invocation_args(git, CMakeVariableUrl);
-        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(git, CMakeVariableRef), version_text);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", packages.size()), url, fmt::format("git+{}@{}", url, ref), {}, {}));
-        it = git.end();
-    }
-}
-
-static void find_all_distfile(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto distfile = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_download_distfile");
-        if (distfile.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto url = fix_ref_version(extract_arg_from_cmake_invocation_args(distfile, CMakeVariableUrls), version_text);
-        auto filename =
-            fix_ref_version(extract_arg_from_cmake_invocation_args(distfile, CMakeVariableFilename), version_text);
-        auto sha = extract_arg_from_cmake_invocation_args(distfile, CMakeVariableSHA512);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", packages.size()), filename, std::move(url), sha, filename));
-        it = distfile.end();
-    }
-}
-
-static void find_all_sourceforge(StringView text, Json::Array& packages, StringView version_text)
-{
-    auto it = text.begin();
-    while (it != text.end())
-    {
-        auto sfg = extract_first_cmake_invocation_args(StringView{it, text.end()}, "vcpkg_from_sourceforge");
-        if (sfg.empty())
-        {
-            it = text.end();
-            continue;
-        }
-        auto repo = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRepo);
-        auto ref = fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableRef), version_text);
-        auto filename =
-            fix_ref_version(extract_arg_from_cmake_invocation_args(sfg, CMakeVariableFilename), version_text);
-        auto sha = extract_arg_from_cmake_invocation_args(sfg, CMakeVariableSHA512);
-        auto url = fmt::format("https://sourceforge.net/projects/{}/files/{}/{}", repo, ref, filename);
-        packages.push_back(make_resource(
-            fmt::format("SPDXRef-resource-{}", packages.size()), filename, std::move(url), sha, filename));
-        it = sfg.end();
-    }
-}
-
-Json::Object vcpkg::run_resource_heuristics(StringView contents, StringView version_text)
-{
-    // These are a sequence of heuristics to enable proof-of-concept extraction of remote resources for SPDX SBOM
-    // inclusion
-    Json::Object ret;
-    auto& packages = ret.insert(JsonIdPackages, Json::Array{});
-
-    find_all_github(contents, packages, version_text);
-    find_all_gitlab(contents, packages, version_text);
-    find_all_git(contents, packages, version_text);
-    find_all_distfile(contents, packages, version_text);
-    find_all_sourceforge(contents, packages, version_text);
-    find_all_bitbucket(contents, packages, version_text);
-
-    return ret;
-}
-
 std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<Path> relative_paths,
                                     View<std::string> hashes,
@@ -288,7 +30,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
                                     View<std::string> package_hashes,
                                     std::string created_time,
                                     std::string document_namespace,
-                                    std::vector<Json::Object>&& resource_docs)
+                                    Json::Object&& resource_doc)
 {
     Checks::check_exit(VCPKG_LINE_INFO, relative_paths.size() == hashes.size());
     Checks::check_exit(VCPKG_LINE_INFO, relative_package_paths.size() == package_hashes.size());
@@ -401,12 +143,7 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
     process_files(relative_paths, hashes, "port", SpdxRefPort);
     process_files(relative_package_paths, package_hashes, "binary", SpdxRefBinary);
 
-    for (auto&& rdoc : resource_docs)
-    {
-        append_move_if_exists_and_array(rels, rdoc, JsonIdRelationships);
-        append_move_if_exists_and_array(files, rdoc, JsonIdFiles);
-        append_move_if_exists_and_array(packages, rdoc, JsonIdPackages);
-    }
+    append_move_if_exists_and_array(packages, resource_doc, JsonIdPackages);
 
     return Json::stringify(doc);
 }
