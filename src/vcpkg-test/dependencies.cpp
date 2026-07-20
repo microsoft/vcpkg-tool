@@ -1,6 +1,8 @@
 #include <vcpkg-test/util.h>
 
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/json.h>
+#include <vcpkg/base/messages.h>
 
 #include <vcpkg/commands.set-installed.h>
 #include <vcpkg/dependencies.h>
@@ -2583,7 +2585,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     InstallPlanAction install_a({"a", Test::X86_WINDOWS},
                                 scfl_a,
                                 packages_dir_assigner,
-                                RequestType::AUTO_SELECTED,
+                                RequestType::USER_REQUESTED,
                                 UseHeadVersion::No,
                                 Editable::No,
                                 {},
@@ -2600,10 +2602,10 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
                                      {});
     install_a.package_dependencies.push_back(install_a_host.spec);
     ActionPlan plan;
-    plan.install_actions.push_back(std::move(install_a));
     plan.install_actions.push_back(std::move(install_a_host));
+    plan.install_actions.push_back(std::move(install_a));
     std::map<StringLiteral, std::string, std::less<>> envmap = {
-        {EnvironmentVariableGitHubJob, "123"},
+        {EnvironmentVariableGitHubJob, "build"},
         {EnvironmentVariableGitHubRunId, "123"},
         {EnvironmentVariableGitHubRef, "refs/heads/main"},
         {EnvironmentVariableGitHubRepository, "owner/repo"},
@@ -2613,7 +2615,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     };
     auto v = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
     v.imbue_from_fake_environment(envmap);
-    auto s = create_dependency_graph_snapshot(v, plan);
+    auto s = create_dependency_graph_snapshot(v, plan, Test::X86_WINDOWS, Test::X64_WINDOWS);
 
     CHECK(s.has_value());
     auto obj = *s.get();
@@ -2650,7 +2652,7 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
 
     CHECK(static_cast<int>(version) == 0);
     CHECK(id == "123");
-    CHECK(correlator == "test-123");
+    CHECK(correlator == "test-build-target-x86-windows-host-x64-windows");
     CHECK(sha == "abc123");
     CHECK(ref == "refs/heads/main");
     CHECK(name == "vcpkg");
@@ -2658,10 +2660,91 @@ TEST_CASE ("dependency graph API snapshot uses canonical purls", "[dependencies]
     CHECK(url == "https://github.com/microsoft/vcpkg");
     CHECK(name1 == "vcpkg.json");
     CHECK(package_url_a_host == purl_a_host);
-    CHECK(relationship_a_host == "direct");
+    CHECK(relationship_a_host == "indirect");
     CHECK(dependencies_a_host.size() == 0);
     CHECK(package_url_a == purl_a_target);
     CHECK(relationship_a == "direct");
     REQUIRE(dependencies_a.size() == 1);
     CHECK(dependencies_a[0].string(VCPKG_LINE_INFO) == purl_a_host);
+
+    envmap[EnvironmentVariableGitHubRunId] = "456";
+    auto v2 = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    v2.imbue_from_fake_environment(envmap);
+    auto s2 = create_dependency_graph_snapshot(v2, plan, Test::X86_WINDOWS, Test::X64_WINDOWS);
+    REQUIRE(s2.has_value());
+    auto job2 = s2.get()->get("job")->object(VCPKG_LINE_INFO);
+    CHECK(job2.get("id")->string(VCPKG_LINE_INFO) == "456");
+    CHECK(job2.get("correlator")->string(VCPKG_LINE_INFO) == correlator);
+
+    auto s3 = create_dependency_graph_snapshot(v2, plan, Test::X64_WINDOWS, Test::X86_WINDOWS);
+    REQUIRE(s3.has_value());
+    auto job3 = s3.get()->get("job")->object(VCPKG_LINE_INFO);
+    CHECK(job3.get("correlator")->string(VCPKG_LINE_INFO) != correlator);
+}
+
+TEST_CASE ("dependency graph API snapshot uses manifest relationships", "[dependencies]")
+{
+    auto parsed_manifest = Json::parse(R"json(
+{
+    "name": "toplevel-spec",
+    "version-string": "1.0",
+    "dependencies": ["a"]
+}
+)json",
+                                       "test manifest")
+                               .value(VCPKG_LINE_INFO);
+    auto manifest = SourceControlFile::parse_project_manifest_object(
+                        "test manifest", parsed_manifest.value.object(VCPKG_LINE_INFO), null_sink)
+                        .value(VCPKG_LINE_INFO);
+
+    MockBaselineProvider bp;
+    bp.v["a"] = {"1", 0};
+    bp.v["b"] = {"1", 0};
+
+    MockVersionedPortfileProvider vp;
+    vp.emplace("a", {"1", 0}).source_control_file->core_paragraph->dependencies = {Dependency{"b"}};
+    vp.emplace("b", {"1", 0});
+
+    MockCMakeVarProvider var_provider;
+    auto plan =
+        create_versioned_install_plan(vp, bp, var_provider, manifest->core_paragraph->dependencies, {}, toplevel_spec())
+            .value_or_exit(VCPKG_LINE_INFO);
+
+    const auto direct = std::find_if(plan.install_actions.begin(), plan.install_actions.end(), [](const auto& action) {
+        return action.spec.name() == "a";
+    });
+    const auto indirect = std::find_if(plan.install_actions.begin(),
+                                       plan.install_actions.end(),
+                                       [](const auto& action) { return action.spec.name() == "b"; });
+    REQUIRE(direct != plan.install_actions.end());
+    REQUIRE(indirect != plan.install_actions.end());
+    const auto direct_purl = make_vcpkg_purl(*direct);
+    const auto indirect_purl = make_vcpkg_purl(*indirect);
+
+    std::map<StringLiteral, std::string, std::less<>> envmap = {
+        {EnvironmentVariableGitHubJob, "build"},
+        {EnvironmentVariableGitHubRunId, "123"},
+        {EnvironmentVariableGitHubRef, "refs/heads/main"},
+        {EnvironmentVariableGitHubSha, "abc123"},
+        {EnvironmentVariableGitHubWorkflow, "test"},
+    };
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    args.imbue_from_fake_environment(envmap);
+    auto snapshot = create_dependency_graph_snapshot(args, plan, Test::X86_WINDOWS, Test::X64_WINDOWS);
+    REQUIRE(snapshot.has_value());
+
+    const auto resolved = snapshot.get()
+                              ->get("manifests")
+                              ->object(VCPKG_LINE_INFO)
+                              .get("vcpkg.json")
+                              ->object(VCPKG_LINE_INFO)
+                              .get("resolved")
+                              ->object(VCPKG_LINE_INFO);
+    const auto direct_item = resolved.get(direct_purl)->object(VCPKG_LINE_INFO);
+    const auto indirect_item = resolved.get(indirect_purl)->object(VCPKG_LINE_INFO);
+    CHECK(direct_item.get("relationship")->string(VCPKG_LINE_INFO) == "direct");
+    CHECK(indirect_item.get("relationship")->string(VCPKG_LINE_INFO) == "indirect");
+    const auto dependencies = direct_item.get("dependencies")->array(VCPKG_LINE_INFO);
+    REQUIRE(dependencies.size() == 1);
+    CHECK(dependencies[0].string(VCPKG_LINE_INFO) == indirect_purl);
 }

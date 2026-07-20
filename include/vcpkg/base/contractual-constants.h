@@ -59,6 +59,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdHost = "host";
     inline constexpr StringLiteral JsonIdHostTriplet = "host-triplet";
     inline constexpr StringLiteral JsonIdId = "id";
+    inline constexpr StringLiteral JsonIdIndirect = "indirect";
     inline constexpr StringLiteral JsonIdInstalled = "installed";
     inline constexpr StringLiteral JsonIdJob = "job";
     inline constexpr StringLiteral JsonIdKey = "key";
