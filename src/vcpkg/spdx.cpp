@@ -303,8 +303,8 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     const auto stringized_license = calculate_spdx_license(action);
     Json::Object doc;
-    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
-    doc.insert(SpdxVersion, SpdxTwoTwo);
+    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json");
+    doc.insert(SpdxVersion, SpdxTwoThree);
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
@@ -340,6 +340,14 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
             purl_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPackageManager);
             purl_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypePurl);
             purl_ref.insert(SpdxExternalReferenceLocator, make_vcpkg_purl(action));
+
+            if (!scfl.git_tree.empty())
+            {
+                auto& gitoid_ref = external_refs.push_back(Json::Object());
+                gitoid_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPersistentId);
+                gitoid_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypeGitoid);
+                gitoid_ref.insert(SpdxExternalReferenceLocator, fmt::format("gitoid:tree:sha1:{}", scfl.git_tree));
+            }
         }
         {
             auto& rel = rels.push_back(Json::Object());
