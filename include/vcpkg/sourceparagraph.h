@@ -217,12 +217,12 @@ namespace vcpkg
                               std::string&& spdx_location,
                               std::string&& spdx_repository_url,
                               PortSourceKind kind,
-                              StringView git_tree = {});
+                              StringView git_tree);
         explicit PortLocation(Path&& port_directory,
                               std::string&& spdx_location,
                               std::string&& spdx_repository_url,
                               PortSourceKind kind,
-                              StringView git_tree = {});
+                              StringView git_tree);
         PortLocation(const PortLocation&) = default;
         PortLocation(PortLocation&&) = default;
         PortLocation& operator=(const PortLocation&) = default;

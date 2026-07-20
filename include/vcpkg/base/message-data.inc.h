@@ -2000,8 +2000,8 @@ DECLARE_MESSAGE(InvalidFormatString,
                 "invalid format string: {actual}")
 DECLARE_MESSAGE(InvalidGitObjectSha,
                 (msg::sha),
-                "{sha} is the invalid Git object SHA",
-                "Invalid Git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.")
+                "",
+                "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.")
 DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape")
 DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}")
 DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.")

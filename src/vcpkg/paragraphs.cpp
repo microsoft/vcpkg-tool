@@ -518,7 +518,8 @@ namespace vcpkg::Paragraphs
                                                   PortLocation{builtin_ports_directory / port_name,
                                                                builtin_port_spdx_location(port_name),
                                                                std::string(),
-                                                               PortSourceKind::Builtin});
+                                                               PortSourceKind::Builtin,
+                                                               StringView{}});
     }
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,

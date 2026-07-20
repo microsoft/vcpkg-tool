@@ -6,7 +6,6 @@
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/jsonreader.h>
 #include <vcpkg/base/messages.h>
-#include <vcpkg/base/parse.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 
@@ -43,7 +42,7 @@ namespace
 
     Optional<std::string> GitTreeStringDeserializer::visit_string(Json::Reader& r, StringView sv) const
     {
-        if (sv.size() == 40 && std::all_of(sv.begin(), sv.end(), ParserBase::is_hex_digit_lower))
+        if (is_git_sha(sv))
         {
             return sv.to_string();
         }
@@ -920,7 +919,9 @@ namespace
         }
 
         return Paragraphs::try_load_port_required(
-                   fs, port_name, PortLocation{it->p, std::string{}, std::string{}, PortSourceKind::Filesystem})
+                   fs,
+                   port_name,
+                   PortLocation{it->p, std::string{}, std::string{}, PortSourceKind::Filesystem, StringView{}})
             .maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
