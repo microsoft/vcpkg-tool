@@ -742,6 +742,7 @@
   "InvalidFilename": "Le nom de fichier ne peut pas contenir de caractères non valides {value}, mais était {path}",
   "InvalidFloatingPointConst": "Constante à virgule flottante non valide : {count}",
   "InvalidFormatString": "format de chaîne non valide : {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Chiffre hexadécimal non valide dans l’échappement Unicode",
   "InvalidIntegerConst": "Constante entière non valide : {count}",
   "InvalidLibraryMissingLinkerMembers": "La bibliothèque n’était pas valide : aucun membre de l’éditeur de liens n’a été trouvé.",

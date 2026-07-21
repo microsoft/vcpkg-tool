@@ -742,6 +742,7 @@
   "InvalidFilename": "文件名不能包含无效字符 {value}，但为 {path}",
   "InvalidFloatingPointConst": "无效的浮点常量: {count}",
   "InvalidFormatString": "格式字符串无效: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "unicode 转义中的十六进制数字无效",
   "InvalidIntegerConst": "无效的整数常量: {count}",
   "InvalidLibraryMissingLinkerMembers": "库无效: 找不到链接器成员。",

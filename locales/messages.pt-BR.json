@@ -742,6 +742,7 @@
   "InvalidFilename": "O nome do arquivo não pode conter caracteres inválidos {value}, mas era {path}",
   "InvalidFloatingPointConst": "Constante de ponto flutuante inválida: {count}",
   "InvalidFormatString": "cadeia de caracteres de formato inválido: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Dígito hexadecimal inválido no escape unicode",
   "InvalidIntegerConst": "Constante inteira inválida: {count}",
   "InvalidLibraryMissingLinkerMembers": "A biblioteca era inválida: não foi possível localizar um membro do vinculador.",

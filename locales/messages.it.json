@@ -742,6 +742,7 @@
   "InvalidFilename": "Il nome file non può contenere caratteri non validi {value}, ma è stato {path}",
   "InvalidFloatingPointConst": "Costante a virgola mobile non valida: {count}",
   "InvalidFormatString": "stringa di formato non valida: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Cifra esadecimale non valida nella sequenza di escape Unicode",
   "InvalidIntegerConst": "Costante integer non valida: {count}",
   "InvalidLibraryMissingLinkerMembers": "Libreria non valida: impossibile trovare un membro del linker.",

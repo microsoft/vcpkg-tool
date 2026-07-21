@@ -742,6 +742,7 @@
   "InvalidFilename": "Nazwa pliku nie może zawierać nieprawidłowych znaków {value}, ale była {path}",
   "InvalidFloatingPointConst": "Nieprawidłowa stała zmiennoprzecinkowa: {count}",
   "InvalidFormatString": "Nieprawidłowy ciąg formatu: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Nieprawidłowa cyfra szesnastkowa w sekwencji ucieczki Unicode",
   "InvalidIntegerConst": "Nieprawidłowa stała całkowita: {count}",
   "InvalidLibraryMissingLinkerMembers": "Biblioteka była nieprawidłowa: nie można odnaleźć elementu członkowskiego konsolidatora.",
