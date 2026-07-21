@@ -742,6 +742,7 @@
   "InvalidFilename": "檔案名不能包含無效字元 {value}，但為 {path}",
   "InvalidFloatingPointConst": "無效的浮點常數: {count}",
   "InvalidFormatString": "格式字串無效: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Unicode 逸出中無效的十六進位數字",
   "InvalidIntegerConst": "無效的整數常數: {count}",
   "InvalidLibraryMissingLinkerMembers": "程式庫無效: 找不到連結器成員。",
