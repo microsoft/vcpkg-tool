@@ -1471,6 +1471,7 @@ namespace vcpkg
             track_manifest_metrics(dependencies, manifest_core);
             command_set_installed_and_exit_ex(args,
                                               paths,
+                                              default_triplet,
                                               host_triplet,
                                               build_package_options,
                                               var_provider,

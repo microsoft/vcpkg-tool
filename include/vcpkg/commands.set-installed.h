@@ -36,6 +36,7 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet default_triplet,
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
@@ -53,5 +54,7 @@ namespace vcpkg
                                         Triplet host_triplet);
 
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                            const ActionPlan& action_plan);
+                                                            const ActionPlan& action_plan,
+                                                            Triplet default_triplet,
+                                                            Triplet host_triplet);
 }

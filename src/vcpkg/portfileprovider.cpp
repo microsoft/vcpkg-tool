@@ -25,12 +25,14 @@ namespace
         switch (kind)
         {
             case OverlayPortKind::Directory:
-                return PortLocation{directory / port_name, std::string{}, std::string{}, PortSourceKind::Overlay};
+                return PortLocation{
+                    directory / port_name, std::string{}, std::string{}, PortSourceKind::Overlay, StringView{}};
             case OverlayPortKind::Builtin:
                 return PortLocation{directory / port_name,
                                     Paragraphs::builtin_port_spdx_location(port_name),
                                     std::string(),
-                                    PortSourceKind::Builtin};
+                                    PortSourceKind::Builtin,
+                                    StringView{}};
             case OverlayPortKind::Unknown:
             case OverlayPortKind::Port:
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -60,9 +62,10 @@ namespace vcpkg
                 Checks::unreachable(VCPKG_LINE_INFO, "OverlayPortKind::Unknown empty cache constraint violated");
             }
 
-            auto maybe_scfl = Paragraphs::try_load_port(
-                                  fs, PortLocation{m_directory, std::string{}, std::string{}, PortSourceKind::Overlay})
-                                  .maybe_scfl;
+            auto maybe_scfl =
+                Paragraphs::try_load_port(
+                    fs, PortLocation{m_directory, std::string{}, std::string{}, PortSourceKind::Overlay, StringView{}})
+                    .maybe_scfl;
             if (auto scfl = maybe_scfl.get())
             {
                 if (scfl->source_control_file)

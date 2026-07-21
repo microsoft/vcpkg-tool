@@ -59,6 +59,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdHost = "host";
     inline constexpr StringLiteral JsonIdHostTriplet = "host-triplet";
     inline constexpr StringLiteral JsonIdId = "id";
+    inline constexpr StringLiteral JsonIdIndirect = "indirect";
     inline constexpr StringLiteral JsonIdInstalled = "installed";
     inline constexpr StringLiteral JsonIdJob = "job";
     inline constexpr StringLiteral JsonIdKey = "key";
@@ -134,9 +135,11 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
     inline constexpr StringLiteral SpdxElementId = "spdxElementId";
     inline constexpr StringLiteral SpdxExternalReferenceCategory = "referenceCategory";
-    inline constexpr StringLiteral SpdxExternalReferenceCategoryPackageManager = "PACKAGE_MANAGER";
+    inline constexpr StringLiteral SpdxExternalReferenceCategoryPackageManager = "PACKAGE-MANAGER";
+    inline constexpr StringLiteral SpdxExternalReferenceCategoryPersistentId = "PERSISTENT-ID";
     inline constexpr StringLiteral SpdxExternalReferenceLocator = "referenceLocator";
     inline constexpr StringLiteral SpdxExternalReferenceType = "referenceType";
+    inline constexpr StringLiteral SpdxExternalReferenceTypeGitoid = "gitoid";
     inline constexpr StringLiteral SpdxExternalReferenceTypePurl = "purl";
     inline constexpr StringLiteral SpdxExternalRefs = "externalRefs";
     inline constexpr StringLiteral SpdxFileName = "fileName";
@@ -153,7 +156,7 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxRelatedSpdxElement = "relatedSpdxElement";
     inline constexpr StringLiteral SpdxRelationshipType = "relationshipType";
     inline constexpr StringLiteral SpdxSpdxId = "SPDXID";
-    inline constexpr StringLiteral SpdxTwoTwo = "SPDX-2.2";
+    inline constexpr StringLiteral SpdxTwoThree = "SPDX-2.3";
     inline constexpr StringLiteral SpdxVersion = "spdxVersion";
     inline constexpr StringLiteral SpdxVersionInfo = "versionInfo";
 

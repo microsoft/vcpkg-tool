@@ -35,9 +35,22 @@ namespace
     struct GitTreeStringDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAGitObjectSha); }
+        Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override;
 
         static const GitTreeStringDeserializer instance;
     };
+
+    Optional<std::string> GitTreeStringDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (is_git_sha(sv))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidGitObjectSha, msg::sha = sv));
+        return std::string();
+    }
+
     const GitTreeStringDeserializer GitTreeStringDeserializer::instance;
 
     struct RegistryPathStringDeserializer : Json::StringDeserializer
@@ -885,7 +898,8 @@ namespace
                            PortLocation{std::move(p),
                                         Paragraphs::builtin_git_tree_spdx_location(it->git_tree),
                                         std::string(),
-                                        PortSourceKind::Builtin})
+                                        PortSourceKind::Builtin,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }
@@ -905,7 +919,9 @@ namespace
         }
 
         return Paragraphs::try_load_port_required(
-                   fs, port_name, PortLocation{it->p, std::string{}, std::string{}, PortSourceKind::Filesystem})
+                   fs,
+                   port_name,
+                   PortLocation{it->p, std::string{}, std::string{}, PortSourceKind::Filesystem, StringView{}})
             .maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
@@ -976,7 +992,8 @@ namespace
                                         fmt::format("git+{}@{}", parent.m_repo, it->git_tree),
                                         is_builtin_git_registry_url(parent.m_repo) ? std::string()
                                                                                    : std::string(parent.m_repo),
-                                        PortSourceKind::Git})
+                                        PortSourceKind::Git,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }
