@@ -2,11 +2,13 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
@@ -50,7 +52,9 @@ namespace vcpkg
     };
 
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                            const ActionPlan& action_plan)
+                                                            const ActionPlan& action_plan,
+                                                            Triplet default_triplet,
+                                                            Triplet host_triplet)
     {
         const auto github_ref = args.github_ref.get();
         const auto github_sha = args.github_sha.get();
@@ -61,10 +65,12 @@ namespace vcpkg
         {
             Json::Object snapshot;
             {
+                std::string correlator = fmt::format(
+                    "{}-{}-target-{}-host-{}", *github_workflow, *github_job, default_triplet, host_triplet);
+
                 Json::Object job;
                 job.insert(JsonIdId, Json::Value::string(*github_run_id));
-                job.insert(JsonIdCorrelator,
-                           Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+                job.insert(JsonIdCorrelator, Json::Value::string(std::move(correlator)));
                 snapshot.insert(JsonIdJob, std::move(job));
             } // destroy job
 
@@ -77,7 +83,7 @@ namespace vcpkg
                 Json::Object detector;
                 detector.insert(JsonIdName, Json::Value::string("vcpkg"));
                 detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                detector.insert(JsonIdVersion, Json::Value::string("2.0.0"));
                 snapshot.insert(JsonIdDetector, std::move(detector));
             } // destroy detector
 
@@ -85,7 +91,7 @@ namespace vcpkg
             for (auto&& action : action_plan.install_actions)
             {
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
+                map.emplace(spec, make_vcpkg_purl(action));
             }
 
             Json::Object manifest;
@@ -103,7 +109,10 @@ namespace vcpkg
                 const auto& pkg_url = found->second;
                 Json::Object resolved_item;
                 resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
+                resolved_item.insert(JsonIdRelationship,
+                                     Json::Value::string(action.request_type == RequestType::USER_REQUESTED
+                                                             ? JsonIdDirect
+                                                             : JsonIdIndirect));
 
                 Json::Array deps_list;
                 for (auto&& dep : action.package_dependencies)
@@ -183,6 +192,7 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet default_triplet,
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
@@ -212,7 +222,7 @@ namespace vcpkg
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
-            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan);
+            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan, default_triplet, host_triplet);
             auto snapshot = maybe_snapshot.get();
             auto github_token = args.github_token.get();
             auto github_repository = args.github_repository.get();
@@ -406,6 +416,7 @@ namespace vcpkg
         command_set_installed_and_exit_ex(
             args,
             paths,
+            default_triplet,
             host_triplet,
             build_options,
             *cmake_vars,

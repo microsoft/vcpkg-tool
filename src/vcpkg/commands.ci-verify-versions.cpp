@@ -60,7 +60,8 @@ namespace
             PortLocation(*extracted_tree,
                          Paragraphs::builtin_git_tree_spdx_location(version_entry.git_tree),
                          std::string(),
-                         PortSourceKind::Git));
+                         PortSourceKind::Git,
+                         version_entry.git_tree));
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {

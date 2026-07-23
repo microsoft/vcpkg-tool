@@ -303,8 +303,8 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
 
     const auto stringized_license = calculate_spdx_license(action);
     Json::Object doc;
-    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json");
-    doc.insert(SpdxVersion, SpdxTwoTwo);
+    doc.insert(JsonIdDollarSchema, "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json");
+    doc.insert(SpdxVersion, SpdxTwoThree);
     doc.insert(SpdxDataLicense, SpdxCCZero);
     doc.insert(SpdxSpdxId, SpdxRefDocument);
     doc.insert(SpdxDocumentNamespace, std::move(document_namespace));
@@ -335,42 +335,19 @@ std::string vcpkg::create_spdx_sbom(const InstallPlanAction& action,
         if (!cpgh.description.empty()) obj.insert(JsonIdDescription, Strings::join("\n", cpgh.description));
         obj.insert(JsonIdComment, "This is the port (recipe) consumed by vcpkg.");
         {
-            std::string purl = fmt::format("pkg:vcpkg/{}", Strings::percent_encode(action.spec.name()));
-            if (!cpgh.version.text.empty())
-            {
-                purl.push_back('@');
-                purl += Strings::percent_encode(cpgh.version.text);
-            }
-
-            // PURL qualifiers, emitted in canonical (alphabetical) key order.
-            std::vector<std::string> qualifiers;
-            if (!cpgh.version.text.empty() && cpgh.version.port_version != 0)
-            {
-                qualifiers.push_back(fmt::format("port_version={}", cpgh.version.port_version));
-            }
-
-            if (!scfl.spdx_repository_url.empty())
-            {
-                qualifiers.push_back("repository_url=" + Strings::percent_encode(scfl.spdx_repository_url));
-            }
-
-            qualifiers.push_back("triplet=" + Strings::percent_encode(action.spec.triplet().canonical_name()));
-
-            // spdx_location is the SPDX PackageDownloadLocation: a VCS URL that pins the port's
-            // git-tree, which identifies the exact port recipe.
-            if (!scfl.spdx_location.empty())
-            {
-                qualifiers.push_back("vcs_url=" + Strings::percent_encode(scfl.spdx_location));
-            }
-
-            purl.push_back('?');
-            purl += Strings::join("&", qualifiers);
-
             auto& external_refs = obj.insert(SpdxExternalRefs, Json::Array());
             auto& purl_ref = external_refs.push_back(Json::Object());
             purl_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPackageManager);
             purl_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypePurl);
-            purl_ref.insert(SpdxExternalReferenceLocator, std::move(purl));
+            purl_ref.insert(SpdxExternalReferenceLocator, make_vcpkg_purl(action));
+
+            if (!scfl.git_tree.empty())
+            {
+                auto& gitoid_ref = external_refs.push_back(Json::Object());
+                gitoid_ref.insert(SpdxExternalReferenceCategory, SpdxExternalReferenceCategoryPersistentId);
+                gitoid_ref.insert(SpdxExternalReferenceType, SpdxExternalReferenceTypeGitoid);
+                gitoid_ref.insert(SpdxExternalReferenceLocator, fmt::format("gitoid:tree:sha1:{}", scfl.git_tree));
+            }
         }
         {
             auto& rel = rels.push_back(Json::Object());
