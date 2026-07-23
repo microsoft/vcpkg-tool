@@ -1,3 +1,7 @@
+#include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/messages.h>
+#include <vcpkg/base/util.h>
+
 #include <vcpkg/commands.build-external.h>
 #include <vcpkg/commands.build.h>
 #include <vcpkg/input.h>
@@ -9,6 +13,10 @@
 
 namespace vcpkg
 {
+    constexpr CommandSwitch BUILD_EXTERNAL_SWITCHES[] = {
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
+    };
+
     constexpr CommandMetadata CommandBuildExternalMetadata{
         "build-external",
         msgCmdBuildExternalSynopsis,
@@ -17,7 +25,7 @@ namespace vcpkg
         AutocompletePriority::Internal,
         2,
         2,
-        {},
+        {BUILD_EXTERNAL_SWITCHES},
         nullptr,
     };
 
@@ -50,7 +58,14 @@ namespace vcpkg
         PathsPortFileProvider provider(*registry_set, make_overlay_provider(fs, overlays));
         InstallAndBuildDatabaseLock installed_lock{
             fs, paths.installed(), paths.buildtrees(), paths.packages(), args.wait_for_lock, args.ignore_lock_failures};
-        command_build_and_exit_ex(
-            args, paths, host_triplet, build_options, installed_lock, spec, provider, null_build_logs_recorder);
+        command_build_and_exit_ex(args,
+                                  paths,
+                                  host_triplet,
+                                  build_options,
+                                  installed_lock,
+                                  spec,
+                                  provider,
+                                  null_build_logs_recorder,
+                                  Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload));
     }
 }

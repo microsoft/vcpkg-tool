@@ -30,6 +30,7 @@ namespace
         {SwitchEnforcePortChecks, msgHelpTxtOptEnforcePortChecks},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
         {SwitchSkipInstallIfCached, msgHelpTxtOptSkipInstallIfCached},
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
     };
 
     constexpr CommandSetting INSTALL_SETTINGS[] = {
@@ -202,7 +203,8 @@ namespace vcpkg
                                            PrintUsage print_usage,
                                            const Optional<Path>& maybe_pkgconfig,
                                            bool include_manifest_in_github_issue,
-                                           bool skip_install_if_cached)
+                                           bool skip_install_if_cached,
+                                           bool require_binary_cache_upload)
     {
         auto& fs = paths.get_filesystem();
 
@@ -339,9 +341,14 @@ namespace vcpkg
             fs.write_contents(installed_paths->manifest_info_path(), Json::stringify(manifest_info), VCPKG_LINE_INFO);
         }
 
-        binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
+        {
+            msg::println_error(msgBinaryCacheUploadFailed);
+        }
         summary.print_complete_message();
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, !binary_cache_upload_requirement_satisfied);
     }
 
     void command_set_installed_and_exit(const VcpkgCmdArguments& args,
@@ -426,6 +433,7 @@ namespace vcpkg
             Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
             pkgsconfig,
             false,
-            skip_install_if_cached);
+            skip_install_if_cached,
+            Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload));
     }
 } // namespace vcpkg

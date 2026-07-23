@@ -24,6 +24,7 @@ namespace
         {SwitchNoDryRun, msgCmdUpgradeOptNoDryRun},
         {SwitchNoKeepGoing, msgCmdUpgradeOptNoKeepGoing},
         {SwitchAllowUnsupported, msgHelpTxtOptAllowUnsupportedPort},
+        {SwitchRequireBinaryCacheUpload, msgRequireBinaryCacheUploadHelp},
     };
 } // unnamed namespace
 
@@ -54,6 +55,7 @@ namespace vcpkg
         const ParsedArguments options = args.parse_arguments(CommandUpgradeMetadata);
 
         const bool no_dry_run = Util::Sets::contains(options.switches, SwitchNoDryRun);
+        const bool require_binary_cache_upload = Util::Sets::contains(options.switches, SwitchRequireBinaryCacheUpload);
         const KeepGoing keep_going =
             Util::Sets::contains(options.switches, SwitchNoKeepGoing) ? KeepGoing::No : KeepGoing::Yes;
         const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
@@ -232,8 +234,13 @@ namespace vcpkg
             msg::print(summary.format_results());
         }
 
-        binary_cache.wait_for_async_complete_and_join();
+        const bool binary_cache_upload_requirement_satisfied =
+            binary_cache.wait_for_async_complete_and_join() || !require_binary_cache_upload;
+        if (!binary_cache_upload_requirement_satisfied)
+        {
+            msg::println_error(msgBinaryCacheUploadFailed);
+        }
         summary.print_complete_message();
-        Checks::exit_success(VCPKG_LINE_INFO);
+        Checks::exit_with_code(VCPKG_LINE_INFO, !binary_cache_upload_requirement_satisfied);
     }
 } // namespace vcpkg
