@@ -422,7 +422,8 @@ namespace vcpkg::Paragraphs
                                                                               std::move(manifest_path),
                                                                               port_location.spdx_location,
                                                                               port_location.spdx_repository_url,
-                                                                              port_location.kind};
+                                                                              port_location.kind,
+                                                                              port_location.git_tree};
                                       }),
                                   manifest_contents};
         }
@@ -444,7 +445,8 @@ namespace vcpkg::Paragraphs
                                                                               std::move(control_path),
                                                                               port_location.spdx_location,
                                                                               port_location.spdx_repository_url,
-                                                                              port_location.kind};
+                                                                              port_location.kind,
+                                                                              port_location.git_tree};
                                       }),
                                   control_contents};
         }
@@ -516,7 +518,8 @@ namespace vcpkg::Paragraphs
                                                   PortLocation{builtin_ports_directory / port_name,
                                                                builtin_port_spdx_location(port_name),
                                                                std::string(),
-                                                               PortSourceKind::Builtin});
+                                                               PortSourceKind::Builtin,
+                                                               StringView{}});
     }
 
     ExpectedL<BinaryControlFile> try_load_cached_package(const ReadOnlyFilesystem& fs,

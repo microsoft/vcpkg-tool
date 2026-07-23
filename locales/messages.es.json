@@ -742,6 +742,7 @@
   "InvalidFilename": "El nombre de archivo no puede contener los caracteres que no son válidos {value}, pero tenía la ruta {path}",
   "InvalidFloatingPointConst": "Constante de punto flotante no válida: {count}",
   "InvalidFormatString": "cadena de formato no válida: {actual}",
+  "InvalidGitObjectSha": "SHA de objeto Git no válido: {sha}. Se esperaba una cadena hexadecimal en minúsculas de 40 caracteres.",
   "InvalidHexDigit": "Dígito hexadecimal no válido en el escape unicode",
   "InvalidIntegerConst": "Constante entera no válida: {count}",
   "InvalidLibraryMissingLinkerMembers": "La biblioteca no era válida: no se pudo encontrar un miembro vinculador.",

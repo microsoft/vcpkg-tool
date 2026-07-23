@@ -1,5 +1,6 @@
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/paragraphs.h>
@@ -47,6 +48,30 @@ TEST_CASE ("SourceParagraph construct minimum", "[paragraph]")
     REQUIRE(pgh.core_paragraph->maintainers.empty());
     REQUIRE(pgh.core_paragraph->description.empty());
     REQUIRE(pgh.core_paragraph->dependencies.size() == 0);
+}
+
+TEST_CASE ("Port location preserves git tree", "[paragraph]")
+{
+    const auto port_directory = Test::base_temporary_directory() / "port-location-git-tree";
+    real_filesystem.remove_all(port_directory, VCPKG_LINE_INFO);
+    real_filesystem.create_directories(port_directory, VCPKG_LINE_INFO);
+    real_filesystem.write_contents(
+        port_directory / "vcpkg.json", R"json({"name":"zlib","version-string":"1.0"})json", VCPKG_LINE_INFO);
+
+    constexpr StringLiteral git_tree = "84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    auto load_result = Paragraphs::try_load_port(
+        real_filesystem,
+        PortLocation{port_directory,
+                     std::string{"git+https://github.com/Microsoft/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa"},
+                     std::string{},
+                     PortSourceKind::Git,
+                     git_tree});
+    auto scfl = load_result.maybe_scfl.get();
+    REQUIRE(scfl);
+    CHECK(scfl->git_tree == git_tree);
+    CHECK(scfl->clone().git_tree == git_tree);
+
+    real_filesystem.remove_all(port_directory, VCPKG_LINE_INFO);
 }
 
 TEST_CASE ("SourceParagraph construct invalid", "[paragraph]")

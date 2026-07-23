@@ -742,6 +742,7 @@
   "InvalidFilename": "Имя файла не может содержать недопустимые символы {value}, но использовалось имя {path}",
   "InvalidFloatingPointConst": "Недопустимые константы с плавающей точкой: {count}",
   "InvalidFormatString": "Недопустимая строка формата: {actual}",
+  "InvalidGitObjectSha": "недопустимый объект Git SHA: {sha}. Ожидалась строка из 40 символов в нижнем регистре в шестнадцатеричном формате.",
   "InvalidHexDigit": "Недопустимая шестнадцатеричная цифра в escape-коде Юникода",
   "InvalidIntegerConst": "Недопустимая целая константа: {count}",
   "InvalidLibraryMissingLinkerMembers": "Недопустимая библиотека: не удалось найти элемент компоновщика.",

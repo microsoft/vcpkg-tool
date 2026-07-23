@@ -742,6 +742,7 @@
   "InvalidFilename": "Název souboru nemůže obsahovat neplatné znaky {value}, ale byl {path}.",
   "InvalidFloatingPointConst": "Neplatná konstanta čísla s plovoucí desetinnou čárkou: {count}",
   "InvalidFormatString": "neplatný formátovací řetězec: {actual}",
+  "InvalidGitObjectSha": "Neplatný objekt Git SHA: {sha}. Očekával se 40znakový šestnáctkový řetězec obsahující pouze malá písmena.",
   "InvalidHexDigit": "Neplatná šestnáctková číslice v řídicím znaku Unicode",
   "InvalidIntegerConst": "Neplatná celočíselná konstanta: {count}",
   "InvalidLibraryMissingLinkerMembers": "Knihovna byla neplatná: Nelze najít člena linkeru.",

@@ -13,7 +13,7 @@
 
 namespace vcpkg
 {
-    /// Generate an SDPX 2.2.1 manifest (https://spdx.github.io/spdx-spec)
+    /// Generate an SPDX 2.3 manifest (https://spdx.github.io/spdx-spec)
     /// @param action Install action to be represented by this manifest
     /// @param relative_paths Must contain relative paths of all files in the port directory (from the port directory)
     /// @param hashes Must contain ordered hashes of `relative_paths`

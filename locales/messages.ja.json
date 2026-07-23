@@ -742,6 +742,7 @@
   "InvalidFilename": "ファイル名に無効な文字 {value} を含めることはできませんが、{path} を含みます",
   "InvalidFloatingPointConst": "無効な浮動小数点定数: {count}",
   "InvalidFormatString": "無効な形式の文字列: {actual}",
+  "InvalidGitObjectSha": "無効な Git オブジェクト SHA: {sha}。40 文字の小文字の 16 進数文字列が必要です。",
   "InvalidHexDigit": "Unicode エスケープの 16 進数が無効です",
   "InvalidIntegerConst": "整数定数が無効です: {count}",
   "InvalidLibraryMissingLinkerMembers": "ライブラリが無効です: リンカー メンバーが見つかりませんでした。",

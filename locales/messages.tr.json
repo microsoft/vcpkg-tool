@@ -742,6 +742,7 @@
   "InvalidFilename": "Dosya adı geçersiz karakterler {value} içeremez, ancak {path} geçersizdi",
   "InvalidFloatingPointConst": "Geçersiz kayan nokta sabiti: {count}",
   "InvalidFormatString": "geçersiz biçim dizesi: {actual}",
+  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
   "InvalidHexDigit": "Unicode kaçışında geçersiz onaltılık basamak",
   "InvalidIntegerConst": "Invalid integer constant: {count}",
   "InvalidLibraryMissingLinkerMembers": "Kitaplık geçersizdi: bağlayıcı üyesi bulunamadı.",
