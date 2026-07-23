@@ -4190,11 +4190,11 @@ namespace vcpkg
             {
                 Checks::check_exit(VCPKG_LINE_INFO, handle == INVALID_HANDLE_VALUE);
                 handle = CreateFileW(native.c_str(),
-                                     GENERIC_READ,
+                                     FILE_GENERIC_READ | DELETE,
                                      0 /* no sharing */,
                                      nullptr /* no security attributes */,
                                      OPEN_ALWAYS,
-                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
                                      nullptr /* no template file */);
                 if (handle != INVALID_HANDLE_VALUE)
                 {
@@ -4260,6 +4260,8 @@ namespace vcpkg
             {
                 if (locked)
                 {
+                    // Do not unlink this file before unlocking. Another process may already have this file open while
+                    // waiting on flock(); unlinking here would let later processes create and lock a different inode.
                     Checks::check_exit(VCPKG_LINE_INFO, fd && fd.flock(LOCK_UN) == 0);
                 }
             }
