@@ -742,7 +742,7 @@
   "InvalidFilename": "Der Dateiname darf keine ungültigen Zeichen {value} enthalten, lautete aber {path}",
   "InvalidFloatingPointConst": "Ungültige Gleitkommakonstante: {count}",
   "InvalidFormatString": "Ungültige Formatzeichenfolge. {actual}",
-  "InvalidGitObjectSha": "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.",
+  "InvalidGitObjectSha": "ungültiges Git-Objekt SHA: {sha}. Es wurde eine Hexadezimalzeichenfolge mit 40 Zeichen in Kleinbuchstaben erwartet.",
   "InvalidHexDigit": "Ungültige Hexadezimalziffer im Unicode-Escapezeichen",
   "InvalidIntegerConst": "Ungültige ganzzahlige Konstante: {count}",
   "InvalidLibraryMissingLinkerMembers": "Die Bibliothek war ungültig: Es wurde kein Linkerelement gefunden.",
