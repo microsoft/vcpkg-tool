@@ -21,7 +21,7 @@
 
 ### Windows e2e notes
 - Windows e2e runs require `pwsh` and Pester 5.x; `azure-pipelines/end-to-end-tests.ps1` imports Pester with `-MinimumVersion '5.6.1' -MaximumVersion '5.99'`.
-- `vcpkg-tool` is a tool-only repo; Windows e2e runs also need a separate full `microsoft/vcpkg` checkout passed as `-VcpkgRoot` (for example `C:\Dev\vcpkg`) so triplets, scripts, and registry history come from the real `VCPKG_ROOT`.
+- `vcpkg-tool` is a tool-only repo; Windows e2e runs also need a separate full `microsoft/vcpkg` checkout provided via `-VcpkgRoot` (or by setting `VCPKG_ROOT`) so triplets, scripts, and registry history come from the real vcpkg repo.
 - Pass `-VcpkgExe` to the built tool under `out\build\Win-<arch>-Debug-WithArtifacts\`; the script defaults to `.\vcpkg.exe` in the current directory if omitted.
 
 ### Local Linux e2e notes
