@@ -161,6 +161,21 @@
             ]
         },
         {
+            "name": "Win-arm64-Release",
+            "inherits": [
+                "base",
+                "windows-arm64",
+                "release"
+            ]
+        },
+        {
+            "name": "Win-arm64-Release-Official",
+            "inherits": [
+                "Win-arm64-Release",
+                "official"
+            ]
+        },
+        {
             "name": "windows-ci",
             "inherits": "Win-x64-Debug-WithArtifacts",
             "cacheVariables": {
