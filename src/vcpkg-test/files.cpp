@@ -2,6 +2,7 @@
 
 #include <vcpkg-test/util.h>
 
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/strings.h>
 
@@ -896,6 +897,31 @@ TEST_CASE ("copy_file", "[files]")
     REQUIRE(fs.copy_file(existing_from, existing_to, CopyOptions::overwrite_existing, ec));
     REQUIRE(!ec);
     REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_from_contents);
+
+    constexpr int64_t timestamp_difference = 10'000'000'000;
+    const auto source_write_time = fs.last_write_time(existing_from, VCPKG_LINE_INFO);
+    FullyBufferedDiagnosticContext diagnostics;
+
+    // [update_existing] and exists(to) is true and to is newer than from
+    fs.write_contents(existing_to, existing_to_contents, VCPKG_LINE_INFO);
+    REQUIRE(fs.last_write_time(diagnostics, existing_to, source_write_time + timestamp_difference));
+    REQUIRE(diagnostics.empty());
+    REQUIRE(!fs.copy_file(existing_from, existing_to, CopyOptions::update_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
+
+    // [update_existing] and exists(to) is true and to is older than from
+    REQUIRE(fs.last_write_time(diagnostics, existing_to, source_write_time - timestamp_difference));
+    REQUIRE(diagnostics.empty());
+    REQUIRE(fs.copy_file(existing_from, existing_to, CopyOptions::update_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_from_contents);
+
+    // [update_existing] and exists(to) is false
+    const auto update_nonexistent = temp_dir / "update_nonexistent";
+    REQUIRE(fs.copy_file(existing_from, update_nonexistent, CopyOptions::update_existing, ec));
+    REQUIRE(!ec);
+    REQUIRE(fs.read_contents(update_nonexistent, VCPKG_LINE_INFO) == existing_from_contents);
 
 #if !defined(_WIN32)
     // Also check that mode bits are copied
