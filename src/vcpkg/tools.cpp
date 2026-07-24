@@ -17,7 +17,6 @@
 
 #include <vcpkg/archives.h>
 #include <vcpkg/tools.h>
-#include <vcpkg/tools.test.h>
 #include <vcpkg/versions.h>
 
 #include <map>
@@ -198,7 +197,12 @@ namespace vcpkg
             return nullopt;
         }
 
-        Path tool_dir_name = fmt::format("{}-{}-{}", tool, data->version.raw, data->os);
+        Path tool_dir_name;
+        if (auto version = data->version.get())
+        {
+            tool_dir_name = fmt::format("{}-{}-{}", tool, version->raw, data->os);
+        }
+
         Path download_subpath;
         if (!data->archiveName.empty())
         {
@@ -210,7 +214,8 @@ namespace vcpkg
         }
 
         return ToolData{tool.to_string(),
-                        data->version.cooked,
+                        data->version,
+                        data->minVersion.map([](const ToolVersion& version) { return version.cooked; }),
                         data->exeRelativePath,
                         data->url,
                         download_subpath,
@@ -223,7 +228,7 @@ namespace vcpkg
     {
         if (auto td = tool_data.get())
         {
-            return !td->url.empty();
+            return td->version.has_value() && !td->url.empty();
         }
 
         return false;
@@ -923,7 +928,7 @@ namespace vcpkg
         }
 
         /**
-         * @param accept_version Callback that accepts a std::array<int,3> and returns true if the version is accepted
+         * @param accept_version Callback that accepts the raw and parsed versions and returns true if accepted
          * @param log_candidate Callback that accepts Path, ExpectedL<std::string> maybe_version. Gets called on every
          * existing candidate.
          */
@@ -953,7 +958,7 @@ namespace vcpkg
                 const auto parsed_version = parse_tool_version_string(*version);
                 if (!parsed_version) continue;
                 auto& actual_version = *parsed_version.get();
-                if (!accept_version(actual_version)) continue;
+                if (!accept_version(*version, actual_version)) continue;
                 if (!tool_provider.is_acceptable(candidate)) continue;
                 adc.commit();
 
@@ -967,20 +972,9 @@ namespace vcpkg
         {
             using namespace Hash;
 
-            const std::array<int, 3>& version = tool_data.version;
-            const std::string version_as_string = fmt::format("{}.{}.{}", version[0], version[1], version[2]);
-            if (tool_data.url.empty())
-            {
-                context.report(DiagnosticLine{DiagKind::Error,
-                                              config_path,
-                                              msg::format(msgToolOfVersionXNotFound,
-                                                          msg::tool_name = tool_data.name,
-                                                          msg::version = version_as_string)});
-                return nullopt;
-            }
-
+            const std::string& version = tool_data.version.value_or_exit(VCPKG_LINE_INFO).raw;
             context.statusln(msg::format(
-                msgDownloadingPortableToolVersionX, msg::tool_name = tool_data.name, msg::version = version_as_string));
+                msgDownloadingPortableToolVersionX, msg::tool_name = tool_data.name, msg::version = version));
             const auto download_path = downloads / tool_data.download_subpath;
             const auto hash_result = get_file_hash(context, fs, download_path, Algorithm::Sha512);
             switch (hash_result.prognosis)
@@ -1097,13 +1091,26 @@ namespace vcpkg
 
             std::vector<Path> candidate_paths;
             std::array<int, 3> min_version = tool.default_min_version();
+            const std::string* expected_exact_version = nullptr;
 
             if (auto tool_data = maybe_tool_data.get())
             {
-                // If there is an entry for the tool in vcpkg-tools.json, use that version as the minimum
-                min_version = tool_data->version;
+                auto version = tool_data->version.get();
+                if (exact_version && version)
+                {
+                    min_version = version->cooked;
+                    expected_exact_version = &version->raw;
+                }
+                else if (auto configured_min_version = tool_data->min_version.get())
+                {
+                    min_version = *configured_min_version;
+                }
+                else if (version)
+                {
+                    min_version = version->cooked;
+                }
 
-                if (consider_downloads)
+                if (consider_downloads && download_available)
                 {
                     // If we would consider downloading the tool, prefer the downloaded copy
                     candidate_paths.push_back(tool_data->exe_path(tools));
@@ -1143,12 +1150,21 @@ namespace vcpkg
                     fs,
                     tool,
                     candidate_paths,
-                    [&min_version, exact_version](const std::array<int, 3>& actual_version) {
+                    [&min_version, expected_exact_version, exact_version](StringView actual_raw_version,
+                                                                          const std::array<int, 3>& actual_version) {
+                        if (expected_exact_version)
+                        {
+                            return actual_raw_version == *expected_exact_version;
+                        }
+
                         if (exact_version)
                         {
+                            // Without an acquisition version, compare numerically against min-version or the provider
+                            // default; there is no canonical raw version or download to fall back to.
                             return actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
                                    actual_version[2] == min_version[2];
                         }
+
                         return actual_version[0] > min_version[0] ||
                                (actual_version[0] == min_version[0] && actual_version[1] > min_version[1]) ||
                                (actual_version[0] == min_version[0] && actual_version[1] == min_version[1] &&
@@ -1163,7 +1179,7 @@ namespace vcpkg
                 }
             }
 
-            if (consider_downloads)
+            if (consider_downloads && download_available)
             {
                 // If none of the current entries are acceptable, fall back to downloading if possible
                 if (auto tool_data = maybe_tool_data.get())
@@ -1406,6 +1422,7 @@ namespace vcpkg
                 JsonIdName,
                 JsonIdOS,
                 JsonIdVersion,
+                JsonIdMinVersion,
                 JsonIdArch,
                 JsonIdExecutable,
                 JsonIdUrl,
@@ -1422,14 +1439,58 @@ namespace vcpkg
             r.required_object_field(
                 type_name(), obj, JsonIdName, value.tool, Json::UntypedStringDeserializer::instance);
             r.required_object_field(type_name(), obj, JsonIdOS, value.os, ToolOsDeserializer::instance);
-            r.required_object_field(type_name(), obj, JsonIdVersion, value.version, ToolVersionDeserializer::instance);
+
+            ToolVersion version;
+            const bool has_version =
+                r.optional_object_field(obj, JsonIdVersion, version, ToolVersionDeserializer::instance);
+            if (has_version)
+            {
+                value.version = std::move(version);
+            }
+
+            ToolVersion min_version;
+            if (r.optional_object_field(obj, JsonIdMinVersion, min_version, ToolVersionDeserializer::instance))
+            {
+                value.minVersion = std::move(min_version);
+            }
+
+            if (!value.version.has_value() && !value.minVersion.has_value())
+            {
+                r.add_generic_error(type_name(), msg::format(msgToolDataEntryVersionMissing));
+            }
 
             r.optional_object_field(obj, JsonIdArch, value.arch, Json::ArchitectureDeserializer::instance);
-            r.optional_object_field(
-                obj, JsonIdExecutable, value.exeRelativePath, Json::UntypedStringDeserializer::instance);
-            r.optional_object_field(obj, JsonIdUrl, value.url, Json::UntypedStringDeserializer::instance);
-            r.optional_object_field(obj, JsonIdSha512, value.sha512, Json::Sha512Deserializer::instance);
-            r.optional_object_field(obj, JsonIdArchive, value.archiveName, Json::UntypedStringDeserializer::instance);
+            if (has_version)
+            {
+                r.required_object_field(type_name(),
+                                        obj,
+                                        JsonIdExecutable,
+                                        value.exeRelativePath,
+                                        Json::UntypedStringDeserializer::instance);
+                r.required_object_field(
+                    type_name(), obj, JsonIdUrl, value.url, Json::UntypedStringDeserializer::instance);
+                r.required_object_field(
+                    type_name(), obj, JsonIdSha512, value.sha512, Json::Sha512Deserializer::instance);
+                r.optional_object_field(
+                    obj, JsonIdArchive, value.archiveName, Json::UntypedStringDeserializer::instance);
+            }
+            else
+            {
+                const bool has_executable = r.optional_object_field(
+                    obj, JsonIdExecutable, value.exeRelativePath, Json::UntypedStringDeserializer::instance);
+                const bool has_url =
+                    r.optional_object_field(obj, JsonIdUrl, value.url, Json::UntypedStringDeserializer::instance);
+                const bool has_sha512 =
+                    r.optional_object_field(obj, JsonIdSha512, value.sha512, Json::Sha512Deserializer::instance);
+                const bool has_archive = r.optional_object_field(
+                    obj, JsonIdArchive, value.archiveName, Json::UntypedStringDeserializer::instance);
+                if (has_executable || has_url || has_sha512 || has_archive)
+                {
+                    r.add_missing_field_error(
+                        type_name(), JsonIdVersion, ToolVersionDeserializer::instance.type_name());
+                }
+            }
+
             return value;
         }
 
@@ -1461,7 +1522,7 @@ namespace vcpkg
             type_name(), obj, JsonIdSchemaVersion, schema_version, Json::NaturalNumberDeserializer::instance);
 
         std::vector<ToolDataEntry> value;
-        if (schema_version == 1)
+        if (schema_version == 2)
         {
             r.required_object_field(type_name(), obj, JsonIdTools, value, ToolDataArrayDeserializer::instance);
         }

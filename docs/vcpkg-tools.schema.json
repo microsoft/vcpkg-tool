@@ -4,10 +4,10 @@
   "type": "object",
   "properties": {
     "schema-version": {
-      "description": "Identifies the version of the tools database format; currently always 1.",
+      "description": "Identifies the version of the tools database format; currently always 2.",
       "type": "number",
-      "minimum": 1,
-      "maximum": 1
+      "minimum": 2,
+      "maximum": 2
     },
     "tools": {
       "type": "array",
@@ -26,7 +26,12 @@
           },
           "version": {
             "type": "string",
-            "description": "The version to match against against a system provided copy of this tool.",
+            "description": "The version of the tool provided by the download.",
+            "pattern": "\\d+(\\.\\d+(\\.\\d+)?)?"
+          },
+          "min-version": {
+            "type": "string",
+            "description": "The minimum acceptable version of a system-provided copy of this tool. Defaults to `version` when omitted.",
             "pattern": "\\d+(\\.\\d+(\\.\\d+)?)?"
           },
           "arch": {
@@ -56,7 +61,18 @@
         "patternProperties": {
           "^\\$": {}
         },
-        "required": ["name", "os", "version"],
+        "required": ["name", "os"],
+        "anyOf": [
+          { "required": ["version"] },
+          { "required": ["min-version"] }
+        ],
+        "dependencies": {
+          "version": ["executable", "url", "sha512"],
+          "executable": ["version"],
+          "url": ["version"],
+          "sha512": ["version"],
+          "archive": ["version"]
+        },
         "additionalProperties": false
       }
     }
