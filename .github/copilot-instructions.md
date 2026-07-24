@@ -11,7 +11,7 @@
 - Use `Win-arm64-Debug-WithArtifacts` on Windows Arm64 hosts.
 - Use `Win-x64-Debug-WithArtifacts` on Windows x64 hosts.
 - Prefer these host-matching `WithArtifacts` presets for normal local configure, build, and test workflows instead of `windows-ci`.
-- On Windows Arm64 hosts, prefer `host=arm64-windows` and audit tests, scripts, and fixtures for hard-coded `x64-windows` assumptions; do not apply this guidance on x64 hosts.
+- On Windows Arm64 hosts, prefer `--host-triplet=arm64-windows` (or set `VCPKG_DEFAULT_HOST_TRIPLET=arm64-windows`) and audit tests, scripts, and fixtures for hard-coded `x64-windows` assumptions; do not apply this guidance on x64 hosts.
 
 ### Run a single test
 - Run one CTest target: `ctest --preset Win-arm64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure` or `ctest --preset Win-x64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure`
