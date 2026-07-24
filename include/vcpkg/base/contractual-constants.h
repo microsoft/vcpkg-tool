@@ -374,6 +374,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileVcpkgPathTxt = "vcpkg.path.txt";
     inline constexpr StringLiteral FileVcpkgPortConfig = "vcpkg-port-config.cmake";
     inline constexpr StringLiteral FileVcpkgRunningLock = "vcpkg-running.lock";
+    inline constexpr StringLiteral FileVcpkgSpdxResourcesJson = "vcpkg-spdx-resources.json";
     inline constexpr StringLiteral FileVcpkgSpdxJson = "vcpkg.spdx.json";
     inline constexpr StringLiteral FileVcpkgUserProps = "vcpkg.user.props";
     inline constexpr StringLiteral FileVcpkgUserTargets = "vcpkg.user.targets";

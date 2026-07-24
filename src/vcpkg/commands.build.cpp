@@ -1064,9 +1064,7 @@ namespace vcpkg
         }
     }
 
-    static void write_sbom(const VcpkgPaths& paths,
-                           const InstallPlanAction& action,
-                           std::vector<Json::Object> heuristic_resources)
+    static void write_sbom(const VcpkgPaths& paths, const InstallPlanAction& action)
     {
         auto& fs = paths.get_filesystem();
         const auto& scfl = action.source_control_file_and_location();
@@ -1086,6 +1084,19 @@ namespace vcpkg
         const auto& package_dir = action.package_dir;
 
         const auto json_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxJson;
+        const auto resource_path = package_dir / FileShare / action.spec.name() / FileVcpkgSpdxResourcesJson;
+        Json::Object resource_document;
+        std::error_code resource_ec;
+        auto resource_contents = fs.read_contents(resource_path, resource_ec);
+        if (!resource_ec)
+        {
+            resource_document = Json::parse_object(resource_contents, resource_path).value_or_exit(VCPKG_LINE_INFO);
+        }
+        else if (!is_not_found_errc(resource_ec))
+        {
+            Checks::msg_exit_with_message(VCPKG_LINE_INFO,
+                                          format_filesystem_call_error(resource_ec, "read_contents", {resource_path}));
+        }
         // Gather all the files in the package directory
         // Note: For packages with many files, this sequential hashing may be slow
         std::vector<Path> package_files;
@@ -1115,7 +1126,7 @@ namespace vcpkg
                                                     package_hashes,
                                                     now,
                                                     doc_ns,
-                                                    std::move(heuristic_resources)),
+                                                    std::move(resource_document)),
                                    VCPKG_LINE_INFO);
     }
 
@@ -1266,7 +1277,7 @@ namespace vcpkg
 
         std::unique_ptr<BinaryControlFile> bcf = create_binary_control_file(action, build_info);
 
-        write_sbom(paths, action, abi_info.heuristic_resources);
+        write_sbom(paths, action);
         write_binary_control_file(paths.get_filesystem(), action.package_dir, *bcf);
         return {action.spec, BuildResult::Succeeded, std::move(bcf)};
     }
@@ -1462,10 +1473,6 @@ namespace vcpkg
                 port_dir_cache_entry.abi_entries.emplace_back(rel_port_file, port_dir_cache_entry.hashes.back());
             }
 
-            auto& scf = action.source_control_file_and_location().source_control_file;
-            port_dir_cache_entry.heuristic_resources =
-                run_resource_heuristics(portfile_cmake_contents, scf->core_paragraph->version.text);
-
             auto& helpers = paths.get_cmake_script_hashes();
             for (auto&& helper : helpers)
             {
@@ -1552,7 +1559,6 @@ namespace vcpkg
         abi_info.abi_tag_file.emplace(std::move(abi_file_path));
         abi_info.relative_port_files = port_dir_cache_entry.files;
         abi_info.relative_port_hashes = port_dir_cache_entry.hashes;
-        abi_info.heuristic_resources.push_back(port_dir_cache_entry.heuristic_resources);
     }
 
     void compute_all_abis(const VcpkgPaths& paths,

@@ -283,7 +283,6 @@ namespace vcpkg
         std::vector<AbiEntry> abi_entries;
         std::vector<Path> files;
         std::vector<std::string> hashes;
-        Json::Object heuristic_resources;
     };
 
     using SpecAbiInfoCache = Cache<PackageSpec, SpecAbiInfoCacheEntry>;
@@ -308,7 +307,6 @@ namespace vcpkg
         Optional<Path> abi_tag_file;
         std::vector<Path> relative_port_files;
         std::vector<std::string> relative_port_hashes;
-        std::vector<Json::Object> heuristic_resources;
     };
 
     // It is important that `status_db` is the same status database as was used when constructing `action_plan`. Note
