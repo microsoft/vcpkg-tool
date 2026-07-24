@@ -6,7 +6,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.z-check-tools-sha.h>
-#include <vcpkg/tools.test.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg
