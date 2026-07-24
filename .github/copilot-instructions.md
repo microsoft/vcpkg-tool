@@ -11,12 +11,18 @@
 - Use `Win-arm64-Debug-WithArtifacts` on Windows Arm64 hosts.
 - Use `Win-x64-Debug-WithArtifacts` on Windows x64 hosts.
 - Prefer these host-matching `WithArtifacts` presets for normal local configure, build, and test workflows instead of `windows-ci`.
+- On Windows Arm64 hosts, prefer `host=arm64-windows` and audit tests, scripts, and fixtures for hard-coded `x64-windows` assumptions; do not apply this guidance on x64 hosts.
 
 ### Run a single test
 - Run one CTest target: `ctest --preset Win-arm64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure` or `ctest --preset Win-x64-Debug-WithArtifacts -R "^vcpkg-test$" --output-on-failure`
 - Run specific Catch2 tests directly: `.\out\build\Win-arm64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]` or `.\out\build\Win-x64-Debug-WithArtifacts\vcpkg-test.exe [tag-or-filter]`
   - Tags follow the source filename convention (for example `[arguments]`).
-- Run one e2e suite: `pwsh azure-pipelines/end-to-end-tests.ps1 -Filter "<suite-file-name-without-.ps1>"`
+- Run one e2e suite: `pwsh azure-pipelines/end-to-end-tests.ps1 -Filter "<suite-file-name-without-.ps1>" -VcpkgExe .\out\build\Win-arm64-Debug-WithArtifacts\vcpkg.exe -VcpkgRoot C:\Dev\vcpkg` (swap in `Win-x64-Debug-WithArtifacts` on Windows x64 hosts)
+
+### Windows e2e notes
+- Windows e2e runs require `pwsh` and Pester 5.x; `azure-pipelines/end-to-end-tests.ps1` imports Pester with `-MinimumVersion '5.6.1' -MaximumVersion '5.99'`.
+- `vcpkg-tool` is a tool-only repo; Windows e2e runs also need a separate full `microsoft/vcpkg` checkout passed as `-VcpkgRoot` (for example `C:\Dev\vcpkg`) so triplets, scripts, and registry history come from the real `VCPKG_ROOT`.
+- Pass `-VcpkgExe` to the built tool under `out\build\Win-<arch>-Debug-WithArtifacts\`; the script defaults to `.\vcpkg.exe` in the current directory if omitted.
 
 ### Local Linux e2e notes
 - `vcpkg-tool` is a tool-only repo; local Linux e2e runs need a separate full `microsoft/vcpkg` checkout as `VCPKG_ROOT` for built-in triplets, scripts, and registry history.
@@ -53,4 +59,6 @@
   - add localized synopsis/examples (`CmdCommandNameSynopsis`, `CmdCommandNameExampleN`).
 - Command naming semantics: `x-` commands are user-facing experimental commands (invoked without `x-`), while `z-` commands are internal and keep the `z-` prefix.
 - Tests in `src/vcpkg-test` use Catch2 tags, and the expected tag convention is `[filename-without-extension]`; use this for targeted runs.
+- End-to-end PowerShell suites share `azure-pipelines/end-to-end-tests-prelude.ps1`; keep host and target triplets distinct there and in `end-to-end-tests-dir/*.ps1`. `$HostE2ETriplet` is derived as `"$Triplet-e2e"` and should stay separate from the target triplet used for cross-install scenarios.
+- For regression tests, assert the exact state transition or post-condition the fix is meant to preserve; avoid indirect "still parses/works" checks when the real contract is that state was fully reset or output changed in a specific way.
 - For localizable output, prefer the message system (`msg::format(...)`, message declarations, and declared message args) over hardcoded English strings or raw warning/error prefixes.
