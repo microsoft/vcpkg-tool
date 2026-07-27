@@ -46,6 +46,7 @@
 
 ## Key conventions
 
+- Update the vcpkg scripts SHA with `vcpkg-init/update-scripts-sha.ps1`; pass `-Sha <commit>` to use a specific commit instead of the current `microsoft/vcpkg` `master`.
 - New commands follow `docs/command-guidelines.md`:
   - file name pattern `commands.<command-name>.cpp` (dashes, not underscores),
   - register command metadata/dispatch in `commands.cpp`,
