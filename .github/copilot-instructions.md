@@ -46,6 +46,7 @@
 
 ## Key conventions
 
+- When updating the vcpkg scripts SHA, update both `vcpkg-init/vcpkg-scripts-sha.txt` and the baseline in `src/vcpkg-configuration.json` to the same commit.
 - New commands follow `docs/command-guidelines.md`:
   - file name pattern `commands.<command-name>.cpp` (dashes, not underscores),
   - register command metadata/dispatch in `commands.cpp`,
