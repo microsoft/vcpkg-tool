@@ -10531,6 +10531,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";ToolDataEntryVersionMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata must contain at least one of 'version' or 'min-version']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[ツール メタデータには、少なくとも 'version' または 'min-version' が含まれている必要があります]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ToolDataFileSchemaVersionNotSupported" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[document schema version {version} is not supported by this version of vcpkg]]></Val>
@@ -10563,15 +10572,6 @@
           <Val><![CDATA[This utility is bundled with Windows 10 or later.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[このユーティリティは、Windows 10 以降にバンドルされています。]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
-      <Item ItemId=";ToolOfVersionXNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[{tool_name} の適切なバージョンが見つからず (v{version} が必要)、ポータブル バージョンを自動的にダウンロードできません。{tool_name} の新しいバージョンをインストールしてください]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
