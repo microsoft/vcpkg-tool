@@ -2690,6 +2690,7 @@ DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Ver
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
 DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
+DECLARE_MESSAGE(PrivacyNotice, (msg::url), "", "Read the Microsoft Privacy Statement at {url}")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
@@ -2851,6 +2852,15 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
+DECLARE_MESSAGE(TelemetryNotice,
+                (msg::url),
+                "",
+                "vcpkg collects usage data in order to help us improve your experience.\n"
+                "The data collected by Microsoft is anonymous.\n"
+                "You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, "
+                "passing --disable-metrics to vcpkg on the command line, "
+                "or by setting the VCPKG_DISABLE_METRICS environment variable.\n\n"
+                "Read more about vcpkg telemetry at {url}")
 DECLARE_MESSAGE(ToolDataEntryVersionMissing,
                 (),
                 "",

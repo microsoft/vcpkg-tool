@@ -78,6 +78,15 @@ namespace
         {"assetcaching", [](const VcpkgPaths&) { msg::println(format_help_topic_asset_caching()); }},
         {"binarycaching", [](const VcpkgPaths&) { msg::println(format_help_topic_binary_caching()); }},
         {"commands", [](const VcpkgPaths&) { print_full_command_list(); }},
+        {"privacy",
+         [](const VcpkgPaths&) {
+             msg::println(msgPrivacyNotice, msg::url = "https://go.microsoft.com/fwlink/?LinkId=521839");
+         }},
+        {"telemetry",
+         [](const VcpkgPaths&) {
+             msg::println(msgTelemetryNotice, msg::url = "https://learn.microsoft.com/vcpkg/about/privacy");
+             msg::println(msgPrivacyNotice, msg::url = "https://go.microsoft.com/fwlink/?LinkId=521839");
+         }},
         {"topics", [](const VcpkgPaths&) { msg::println(help_topics()); }},
         {"triplet", [](const VcpkgPaths& paths) { help_topic_valid_triplet(paths.get_triplet_db()); }},
         {"versioning", help_topic_versioning},
