@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "呼び出し {system_api} が {exit_code} ({error_msg}) で失敗しました",
   "ToRemovePackages": "古いパッケージのみを削除するには、\n{command_name} remove --outdated を実行します",
   "ToUpdatePackages": "これらのパッケージとすべての依存関係を更新するには、\n{command_name} upgrade' を実行します",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "ツール メタデータには、少なくとも 'version' または 'min-version' が含まれている必要があります",
   "ToolDataFileSchemaVersionNotSupported": "ドキュメント スキーマのバージョン {version} は、このバージョンの vcpkg ではサポートされていません",
   "ToolFetchFailed": "{tool_name} をフェッチできませんでした。",
   "ToolHashMismatch": "{tool_name} は既にダウンロードされているようですが、ハッシュが正しくありません。{expected} が必要ですが、{actual} されました",

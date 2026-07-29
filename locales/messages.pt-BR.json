@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "Falha ao chamar {system_api} com {exit_code} ({error_msg})",
   "ToRemovePackages": "Para remover somente pacotes desatualizados, execute\n{command_name} remove --outdated",
   "ToUpdatePackages": "Para atualizar esses pacotes e todas as dependências, execute\n {command_name} upgrade'",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "metadados da ferramenta devem conter pelo menos um de 'version' ou 'min-version'",
   "ToolDataFileSchemaVersionNotSupported": "versão do esquema de {version} não tem suporte nesta versão do vcpkg",
   "ToolFetchFailed": "Não foi possível buscar {tool_name}.",
   "ToolHashMismatch": "{tool_name} parece já ter sido baixado, mas tem um hash incorreto. Esperado {expected} mas foi {actual}",

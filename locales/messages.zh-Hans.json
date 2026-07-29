@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "调用 {system_api} 失败，{exit_code} ({error_msg})",
   "ToRemovePackages": "若要仅删除过时的包，请运行\n{command_name} remove --outdated",
   "ToUpdatePackages": "若要更新这些包和所有依赖项，请运行\n{command_name} upgrade'",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "工具元数据必须至少包含 'version' 或 'min-version' 其中之一",
   "ToolDataFileSchemaVersionNotSupported": "此版本的 vcpkg 不支持文档架构版本 {version}",
   "ToolFetchFailed": "无法提取 {tool_name}。",
   "ToolHashMismatch": "{tool_name} 似乎已下载，但哈希不正确。应为 {expected}，但已 {actual}",

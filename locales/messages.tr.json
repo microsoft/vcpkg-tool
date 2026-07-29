@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "{system_api} çağrısı {exit_code} ile başarısız oldu ({error_msg})",
   "ToRemovePackages": "Yalnızca süresi geçmiş paketleri kaldırmak için\n{command_name} remove --outdated çalıştırın",
   "ToUpdatePackages": "Bu paketleri ve tüm bağımlılıkları güncelleştirmek için\n{command_name} upgrade' çalıştırın",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "araç meta verileri, 'version' veya 'min-version' değerlerinden en az birini içermelidir",
   "ToolDataFileSchemaVersionNotSupported": "belge şeması {version} bu vcpkg sürümü tarafından desteklenmiyor",
   "ToolFetchFailed": "{tool_name} getirilemedi.",
   "ToolHashMismatch": "{tool_name} zaten indirildi gibi görünüyor, ancak karma yanlış. Beklenen {expected} ancak {actual}",
