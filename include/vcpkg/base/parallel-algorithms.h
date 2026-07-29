@@ -140,7 +140,6 @@ namespace vcpkg
         }
         WorkCallbackContext<F> context{work, work_count};
         auto max_threads = std::min({work_count, max_concurrency, static_cast<size_t>(get_concurrency())});
-        auto max_threads = std::min({work_count, max_concurrency, static_cast<size_t>(get_concurrency())});
         max_threads = std::min(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
         auto bg_thread_count = max_threads - 1;
         std::vector<JThread> bg_threads;
