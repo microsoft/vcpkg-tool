@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "échec de l’appel {system_api} avec {exit_code} ({error_msg})",
   "ToRemovePackages": "Pour supprimer uniquement les packages obsolètes, exécutez\n{command_name} supprimer --outdated",
   "ToUpdatePackages": "Pour mettre à jour ces packages et toutes les dépendances, exécutez\n{command_name} la mise à niveau'",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "Les métadonnées de l’outil doivent contenir au moins l’une des valeurs « version » ou « min-version »",
   "ToolDataFileSchemaVersionNotSupported": "version de schéma de document {version} n’est pas prise en charge par cette version de vcpkg",
   "ToolFetchFailed": "Impossible de récupérer les {tool_name}.",
   "ToolHashMismatch": "{tool_name} semble être déjà téléchargé, mais son hachage est incorrect. {expected} attendu mais {actual}",

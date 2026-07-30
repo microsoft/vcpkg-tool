@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "volání {system_api} selhalo s ukončovacím kódem {exit_code} ({error_msg}).",
   "ToRemovePackages": "Pokud chcete odebrat jenom zastaralé balíčky, spusťte\n{command_name} odeberte --outdated.",
   "ToUpdatePackages": "Pokud chcete aktualizovat tyto balíčky a všechny závislosti, spusťte\n{command_name} upgrade.",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "Metadata nástroje musí obsahovat alespoň jednu z hodnot version nebo min-version.",
   "ToolDataFileSchemaVersionNotSupported": "verze schématu dokumentu {version} není podporována touto verzí vcpkg.",
   "ToolFetchFailed": "Nepovedlo se načíst {tool_name}.",
   "ToolHashMismatch": "{tool_name} se zdá být již stažen, ale má nesprávnou hodnotu hash. Očekával se {expected}, ale byl {actual}",

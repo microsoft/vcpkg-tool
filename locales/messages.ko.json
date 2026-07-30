@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "{exit_code}({error_msg})(으)로 인해 {system_api} 호출에 실패했습니다.",
   "ToRemovePackages": "오래된 패키지만 제거하려면 \n{command_name}을(를) 실행하고 오래된 버전을 제거하세요.",
   "ToUpdatePackages": "이러한 패키지 및 모든 종속성을 업데이트하려면 \n{command_name} 업그레이드'를 실행합니다.",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "도구 메타데이터에는 'version' 또는 'min-version' 중 하나 이상이 포함되어야 합니다.",
   "ToolDataFileSchemaVersionNotSupported": "이 버전의 vcpkg에서는 문서 스키마 버전 {version} 지원되지 않습니다.",
   "ToolFetchFailed": "{tool_name}을(를) 가져올 수 없습니다.",
   "ToolHashMismatch": "{tool_name} 이미 다운로드되었지만 잘못된 해시가 있습니다. 필요한 {expected} {actual}",

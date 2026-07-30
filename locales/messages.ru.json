@@ -1007,7 +1007,7 @@
   "SystemApiErrorMessage": "Сбой вызова API {system_api} с кодом завершения {exit_code} ({error_msg})",
   "ToRemovePackages": "Чтобы удалить только устаревшие пакеты, запустите команду\n{command_name} remove --outdated",
   "ToUpdatePackages": "Чтобы обновить эти пакеты и все зависимости, запустите команду обновления\n{command_name}",
-  "ToolDataEntryVersionMissing": "tool metadata must contain at least one of 'version' or 'min-version'",
+  "ToolDataEntryVersionMissing": "метаданные инструмента должны содержать как минимум одно из значений: version или min-version",
   "ToolDataFileSchemaVersionNotSupported": "версия схемы {version} не поддерживается данной версией vcpkg",
   "ToolFetchFailed": "Не удалось получить {tool_name}.",
   "ToolHashMismatch": "{tool_name} уже скачан, но имеет неправильный хэш. Ожидалось {expected}, но {actual}",
