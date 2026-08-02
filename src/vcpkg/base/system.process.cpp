@@ -651,6 +651,8 @@ namespace vcpkg
             "Z_VCPKG_UNDO",
             // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
             "VCPKG_KEEP_ENV_VARS",
+            // Enable REVOKE_BEST_EFFORT for libcurl downloads (same as curl --ssl-revoke-best-effort)
+            "VCPKG_SSL_REVOKE_BEST_EFFORT",
             // Enables Xbox SDKs
             "GameDKLatest",
             "GRDKLatest",
