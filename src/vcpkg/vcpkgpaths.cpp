@@ -1045,18 +1045,19 @@ namespace vcpkg
         }
 
         const auto base_cmd = git_cmd_builder(*git_tool_path, dot_git_dir, work_tree);
-        auto init_cmd = base_cmd;
-        init_cmd.string_arg("init");
-        auto maybe_init_output = cmd_execute_and_capture_output(bdc, init_cmd);
-        if (!check_zero_exit_code(bdc, init_cmd, maybe_init_output))
-        {
-            return LocalizedString::from_raw(bdc.to_string());
-        }
 
         auto lock_file = work_tree / ".vcpkg-lock";
 
         auto guard = fs.take_exclusive_file_lock(bdc, lock_file);
         if (!guard)
+        {
+            return LocalizedString::from_raw(bdc.to_string());
+        }
+
+        auto init_cmd = base_cmd;
+        init_cmd.string_arg("init");
+        auto maybe_init_output = cmd_execute_and_capture_output(bdc, init_cmd);
+        if (!check_zero_exit_code(bdc, init_cmd, maybe_init_output))
         {
             return LocalizedString::from_raw(bdc.to_string());
         }
