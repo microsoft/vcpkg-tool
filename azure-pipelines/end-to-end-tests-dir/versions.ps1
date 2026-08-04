@@ -11,6 +11,16 @@ function Refresh-VersionFiles() {
     git -C $versionFilesPath @gitConfigOptions commit -m testing
 }
 
+function Get-VersionFileSnapshot([string]$Root) {
+    return (Get-ChildItem -LiteralPath $Root -Recurse -File |
+        Sort-Object FullName |
+        ForEach-Object {
+            $relativePath = $_.FullName.Substring($Root.Length).TrimStart('\', '/')
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash
+            "$relativePath`:$hash"
+        }) -join "`n"
+}
+
 Refresh-VersionFiles
 
 # Ensure transitive packages can be used even if they add version constraints
@@ -149,6 +159,13 @@ Copy-Item -Recurse "$versionFilesPathSources/versions" "$versionFilesPath/versio
 $CurrentTest = "x-verify-ci-versions (Incomplete)"
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfNotFailed
+
+$CurrentTest = "x-add-version failure writes nothing"
+$versionFileSnapshotBefore = Get-VersionFileSnapshot "$VersionFilesRoot/versions-incomplete"
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version dog fish
+Throw-IfNotFailed
+$versionFileSnapshotAfter = Get-VersionFileSnapshot "$VersionFilesRoot/versions-incomplete"
+Throw-IfNonEqual $versionFileSnapshotAfter $versionFileSnapshotBefore
 
 $CurrentTest = "x-add-version cat"
 # Do not fail if there's nothing to update
