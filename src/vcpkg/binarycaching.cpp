@@ -36,6 +36,7 @@ namespace
 {
     // The length of an ABI in the binary cache
     static constexpr size_t ABI_LENGTH = 64;
+    static constexpr size_t OBJECT_STORAGE_DOWNLOAD_CONCURRENCY = 8;
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -1030,12 +1031,12 @@ namespace
                           View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
+            std::vector<FullyBufferedDiagnosticContext> diagnostic_contexts(actions.size());
+            execute_in_parallel(actions.size(), OBJECT_STORAGE_DOWNLOAD_CONCURRENCY, [&](size_t idx) {
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                 auto tmp = make_temp_archive_path(m_buildtrees, action.spec, abi);
-                WarningDiagnosticContext wdc{context};
+                WarningDiagnosticContext wdc{diagnostic_contexts[idx]};
                 auto res = m_tool->download_file(wdc, make_object_path(m_prefix, abi), tmp);
                 if (auto cache_result = res.get())
                 {
@@ -1044,6 +1045,11 @@ namespace
                         out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
                     }
                 }
+            });
+
+            for (auto&& diagnostic_context : diagnostic_contexts)
+            {
+                std::move(diagnostic_context).report_to(context);
             }
         }
 
