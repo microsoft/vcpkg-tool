@@ -9949,6 +9949,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Přečtěte si Prohlášení společnosti Microsoft o zásadách ochrany osobních údajů na adrese {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed with exit code {exit_code}]]></Val>
@@ -10500,6 +10509,15 @@
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[volání {system_api} selhalo s ukončovacím kódem {exit_code} ({error_msg}).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Nástroj vcpkg shromažďuje data o používání, abychom mohli zlepšovat vaše prostředí.]A;Data shromažďovaná společností Microsoft jsou anonymní.]A;Telemetrii můžete vypnout tak, že znovu spustíte skript bootstrap-vcpkg s parametrem -disableMetrics, na příkazovém řádku předáte nástroji vcpkg parametr --disable-metrics nebo nastavíte proměnnou prostředí VCPKG_DISABLE_METRICS.]A;]A;Další informace o telemetrii nástroje vcpkg najdete na adrese {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
