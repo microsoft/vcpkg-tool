@@ -644,7 +644,11 @@ namespace vcpkg
             return DownloadPrognosis::OtherError;
         }
 
-        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+        if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+        {
+            return DownloadPrognosis::OtherError;
+        }
+
         return DownloadPrognosis::Success;
     }
 
@@ -831,7 +835,11 @@ namespace vcpkg
                             *out_sha512 = std::move(hash_result.hash);
                         }
 
-                        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                        if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+                        {
+                            return DownloadPrognosis::OtherError;
+                        }
+
                         return DownloadPrognosis::Success;
                     }
 
@@ -865,7 +873,11 @@ namespace vcpkg
 
         if (fs.exists(download_path_part_path, VCPKG_LINE_INFO))
         {
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+            if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+            {
+                return DownloadPrognosis::OtherError;
+            }
+
             return DownloadPrognosis::Success;
         }
 
