@@ -9946,6 +9946,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Microsoft 개인정보처리방침({url}) 읽기]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";ProgramPathReturnedNonzeroExitCode" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[failed with exit code {exit_code}]]></Val>
@@ -10497,6 +10506,15 @@
           <Val><![CDATA[calling {system_api} failed with {exit_code} ({error_msg})]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[{exit_code}({error_msg})(으)로 인해 {system_api} 호출에 실패했습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg는 사용량 현황 데이터를 수집하여 사용자 환경을 개선하는 데 도움을 줍니다.]A;Microsoft가 수집하는 데이터는 익명입니다.]A;-bootstrap-vcpkg 스크립트를 -disableMetrics와 함께 다시 실행하거나, 명령줄에서 vcpkg에 --disable-metrics를 전달하거나, VCPKG_DISABLE_METRICS 환경 변수를 설정하면 원격 분석을 사용하지 않도록 설정할 수 있습니다.]A;]A;vcpkg 원격 분석({url})에 관해 자세히 알아보기]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
