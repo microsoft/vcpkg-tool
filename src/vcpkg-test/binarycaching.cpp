@@ -46,6 +46,36 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
     }
 };
 
+struct TestWriteBinaryProvider : IWriteBinaryProvider
+{
+    TestWriteBinaryProvider(size_t expected_uploads, size_t successful_uploads)
+        : expected_uploads(expected_uploads), successful_uploads(successful_uploads)
+    {
+    }
+
+    size_t push_success(DiagnosticContext&, const Filesystem&, const BinaryPackageWriteInfo&) override
+    {
+        return successful_uploads;
+    }
+
+    size_t expected_upload_count() const noexcept override { return expected_uploads; }
+    bool needs_nuspec_data() const override { return false; }
+    bool needs_zip_file() const override { return false; }
+
+    size_t expected_uploads;
+    size_t successful_uploads;
+};
+
+struct TestBinaryCache : BinaryCache
+{
+    using BinaryCache::BinaryCache;
+
+    void install_write_provider(std::unique_ptr<IWriteBinaryProvider>&& provider)
+    {
+        m_config.write.push_back(std::move(provider));
+    }
+};
+
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")
 {
     KnowNothingBinaryProvider know_nothing;
@@ -537,6 +567,56 @@ TEST_CASE ("Synchronizer operations", "[BinaryCache]")
         REQUIRE(result.jobs_submitted == 2);
         REQUIRE(result.jobs_completed == 2);
         REQUIRE(result.submission_complete);
+    }
+}
+
+TEST_CASE ("Binary cache upload result", "[BinaryCache]")
+{
+    auto pghs = Paragraphs::parse_paragraphs(R"(
+Source: test-port
+Version: 1
+Description: test port
+)",
+                                             "<testdata>");
+    REQUIRE(pghs.has_value());
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
+    REQUIRE(maybe_scf.has_value());
+    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    InstallPlanAction action(PackageSpec{"test-port", Test::X64_WINDOWS},
+                             scfl,
+                             packages_dir_assigner,
+                             RequestType::USER_REQUESTED,
+                             UseHeadVersion::No,
+                             Editable::No,
+                             {},
+                             {},
+                             {});
+    action.abi_info = AbiInfo{};
+    action.abi_info.get()->package_abi = "packageabi";
+
+    SECTION ("all uploads succeed")
+    {
+        TestBinaryCache binary_cache{always_failing_filesystem};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(2, 2));
+        binary_cache.push_success(CleanPackages::No, action);
+        CHECK(binary_cache.wait_for_async_complete_and_join());
+    }
+
+    SECTION ("an upload fails")
+    {
+        TestBinaryCache binary_cache{always_failing_filesystem};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(2, 1));
+        binary_cache.push_success(CleanPackages::No, action);
+        CHECK_FALSE(binary_cache.wait_for_async_complete_and_join());
+    }
+
+    SECTION ("provider reports more successful uploads than expected")
+    {
+        TestBinaryCache binary_cache{always_failing_filesystem};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(1, 2));
+        binary_cache.push_success(CleanPackages::No, action);
+        CHECK(binary_cache.wait_for_async_complete_and_join());
     }
 }
 

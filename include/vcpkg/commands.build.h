@@ -84,7 +84,8 @@ namespace vcpkg
                          const InstallAndBuildDatabaseLock& installed_lock,
                          const FullPackageSpec& full_spec,
                          const PathsPortFileProvider& provider,
-                         const IBuildLogsRecorder& build_logs_recorder);
+                         const IBuildLogsRecorder& build_logs_recorder,
+                         bool require_binary_cache_upload);
     void command_build_and_exit_ex(const VcpkgCmdArguments& args,
                                    const VcpkgPaths& paths,
                                    Triplet host_triplet,
@@ -92,7 +93,8 @@ namespace vcpkg
                                    const InstallAndBuildDatabaseLock& installed_lock,
                                    const FullPackageSpec& full_spec,
                                    const PathsPortFileProvider& provider,
-                                   const IBuildLogsRecorder& build_logs_recorder);
+                                   const IBuildLogsRecorder& build_logs_recorder,
+                                   bool require_binary_cache_upload);
 
     void command_build_and_exit(const VcpkgCmdArguments& args,
                                 const VcpkgPaths& paths,
