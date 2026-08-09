@@ -3757,6 +3757,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateBaselineOptQuiet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Does not print the port version diff after updating baselines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新基线后不打印端口版本差异]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
@@ -4489,6 +4498,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Direct dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[直接依赖项]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9894,10 +9912,13 @@
       </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          <Val><![CDATA[There were no changes in the ports.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[两次提交之间的端口没有变化。]]></Val>
+            <Val><![CDATA[端口中没有更改。]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9945,6 +9966,15 @@
           <Val><![CDATA[previous declaration was here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[上一个声明在此处]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[在 {url} 阅读 Microsoft 隐私声明]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10504,6 +10534,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg 将收集使用情况数据，以帮助我们改进你的使用体验。]A;Microsoft 收集的数据均为匿名数据。]A;你可以通过以下任一方式选择不发送遥测数据: 重新运行 bootstrap-vcpkg 脚本并添加 -disableMetrics，在命令行中向 vcpkg 传递 --disable-metrics，或设置 VCPKG_DISABLE_METRICS 环境变量。]A;]A;有关 vcpkg 遥测的详细信息，请访问 {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -10608,6 +10647,15 @@
           <Val><![CDATA[Trailing comma in an object]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[对象中的尾随逗号]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TransitiveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Transitive dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[可传递的依赖项]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11518,6 +11566,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateBaselineNewDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name}: new: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}: 新: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
@@ -11538,27 +11595,42 @@
       </Item>
       <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Val><![CDATA[registry '{url}' not updated: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[注册表“{url}”未更新:“{value}”]]></Val>
+            <Val><![CDATA[注册表 '{url}' 未更新: {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UpdateBaselineRemovedDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Val><![CDATA[{package_name}: removed: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[git 无法提取远程存储库“{url}”]]></Val>
+            <Val><![CDATA[{package_name}: 已移除: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Val><![CDATA[updated registry '{url}': {old_value} -> {new_value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[已更新注册表“{url}”: 基线“{old_value}”->“{new_value}”]]></Val>
+            <Val><![CDATA[已更新注册表 '{url}': {old_value} -> {new_value}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineVersionUpdates" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updating baselines has resulted in the following version updates:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[更新基线导致了以下版本更新:]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

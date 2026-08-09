@@ -3757,6 +3757,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateBaselineOptQuiet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Does not print the port version diff after updating baselines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준을 업데이트한 후 포트 버전 diff를 출력하지 않음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
@@ -4489,6 +4498,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Direct dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[직접 종속성]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9891,10 +9909,13 @@
       </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          <Val><![CDATA[There were no changes in the ports.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[두 커밋 사이의 포트에 변경 내용이 없습니다.]]></Val>
+            <Val><![CDATA[포트에 변경 내용이 없습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9942,6 +9963,15 @@
           <Val><![CDATA[previous declaration was here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이전 선언 참조가 있음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Microsoft 개인정보처리방침({url}) 읽기]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10501,6 +10531,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg는 사용량 현황 데이터를 수집하여 사용자 환경을 개선하는 데 도움을 줍니다.]A;Microsoft가 수집하는 데이터는 익명입니다.]A;-bootstrap-vcpkg 스크립트를 -disableMetrics와 함께 다시 실행하거나, 명령줄에서 vcpkg에 --disable-metrics를 전달하거나, VCPKG_DISABLE_METRICS 환경 변수를 설정하면 원격 분석을 사용하지 않도록 설정할 수 있습니다.]A;]A;vcpkg 원격 분석({url})에 관해 자세히 알아보기]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -10605,6 +10644,15 @@
           <Val><![CDATA[Trailing comma in an object]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[개체의 후행 쉼표]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TransitiveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Transitive dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[전이적 종속성]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11515,6 +11563,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateBaselineNewDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name}: new: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}: 새 버전: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
@@ -11535,27 +11592,42 @@
       </Item>
       <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Val><![CDATA[registry '{url}' not updated: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[레지스트리 '{url}'이(가) 업데이트되지 않았습니다. '{value}']]></Val>
+            <Val><![CDATA[레지스트리 '{url}'이(가) 업데이트되지 않았습니다. {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UpdateBaselineRemovedDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Val><![CDATA[{package_name}: removed: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[git에서 원격 리포지토리 '{url}'을(를) 가져오지 못했습니다.]]></Val>
+            <Val><![CDATA[{package_name}: 제거됨: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Val><![CDATA[updated registry '{url}': {old_value} -> {new_value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[업데이트된 레지스트리 '{url}': 기준 '{old_value}' -> '{new_value}']]></Val>
+            <Val><![CDATA['{url}' 레지스트리 업데이트됨: {old_value} -> {new_value}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineVersionUpdates" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updating baselines has resulted in the following version updates:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준을 업데이트한 결과 다음 버전 업데이트가 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />

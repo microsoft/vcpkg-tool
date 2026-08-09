@@ -3757,6 +3757,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateBaselineOptQuiet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Does not print the port version diff after updating baselines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[N’imprime pas la différence de version du port après la mise à jour des lignes de base]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
@@ -4489,6 +4498,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Direct dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dépendances directes]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9891,10 +9909,13 @@
       </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          <Val><![CDATA[There were no changes in the ports.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Il n’y a eu aucune modification dans les ports entre les deux validations.]]></Val>
+            <Val><![CDATA[Aucune modification n’a été apportée aux ports.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9942,6 +9963,15 @@
           <Val><![CDATA[previous declaration was here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[la déclaration précédente était ici]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Lire la Déclaration de confidentialité de Microsoft sur {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10501,6 +10531,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg collecte des données d’utilisation afin de nous aider à améliorer votre expérience.]A;Les données collectées par Microsoft sont anonymes.]A;Vous pouvez désactiver la télémétrie en réexécutant le script bootstrap-vcpkg avec -disableMetrics, en transmettant --disable-metrics à vcpkg sur la ligne de commande ou en définissant la variable d’environnement VCPKG_DISABLE_METRICS.]A;]A;Voir plus d’informations sur la télémétrie de vcpkg à l’adresse {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -10605,6 +10644,15 @@
           <Val><![CDATA[Trailing comma in an object]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Virgule de fin dans un objet]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TransitiveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Transitive dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dépendances transitives]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11515,6 +11563,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateBaselineNewDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name}: new: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} : nouveau : {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
@@ -11535,27 +11592,42 @@
       </Item>
       <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Val><![CDATA[registry '{url}' not updated: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[registre '{url}' pas mis à jour : '{value}']]></Val>
+            <Val><![CDATA[Registre '{url}' non mis à jour : {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UpdateBaselineRemovedDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Val><![CDATA[{package_name}: removed: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[git n’a pas pu récupérer les '{url}' du dépôt distant]]></Val>
+            <Val><![CDATA[{package_name} : supprimé : {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Val><![CDATA[updated registry '{url}': {old_value} -> {new_value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Registre '{url}' mis à jour : base de référence '{old_value}' -> '{new_value}']]></Val>
+            <Val><![CDATA[Registre « {url} » mis à jour : {old_value} -> {new_value}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineVersionUpdates" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updating baselines has resulted in the following version updates:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La mise à jour des lignes de base a entraîné les mises à jour de version suivantes :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
