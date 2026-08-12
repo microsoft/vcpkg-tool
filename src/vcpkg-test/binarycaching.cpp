@@ -46,6 +46,55 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
     }
 };
 
+struct TestMessageSink : MessageSink
+{
+    void println(const MessageLine& line) override { lines.push_back(line.to_string()); }
+    void println(MessageLine&& line) override { lines.push_back(line.to_string()); }
+
+    bool contains_line(const std::string& expected) const
+    {
+        for (const auto& line : lines)
+        {
+            if (line == expected) return true;
+        }
+
+        return false;
+    }
+
+    std::vector<std::string> lines;
+};
+
+struct TestWriteBinaryProvider : IWriteBinaryProvider
+{
+    TestWriteBinaryProvider(bool upload_fails) : upload_fails(upload_fails) { }
+
+    size_t push_success(DiagnosticContext& context, const Filesystem&, const BinaryPackageWriteInfo&) override
+    {
+        if (upload_fails)
+        {
+            context.report(DiagnosticLine{DiagKind::Warning, LocalizedString::from_raw("provider-specific failure")});
+            return 0;
+        }
+
+        return 1;
+    }
+
+    bool needs_nuspec_data() const override { return false; }
+    bool needs_zip_file() const override { return false; }
+
+    bool upload_fails;
+};
+
+struct TestBinaryCache : BinaryCache
+{
+    TestBinaryCache(const Filesystem& fs, MessageSink& message_sink) : BinaryCache(fs, message_sink) { }
+
+    void install_write_provider(std::unique_ptr<IWriteBinaryProvider>&& provider)
+    {
+        m_config.write.push_back(std::move(provider));
+    }
+};
+
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")
 {
     KnowNothingBinaryProvider know_nothing;
@@ -537,6 +586,54 @@ TEST_CASE ("Synchronizer operations", "[BinaryCache]")
         REQUIRE(result.jobs_submitted == 2);
         REQUIRE(result.jobs_completed == 2);
         REQUIRE(result.submission_complete);
+    }
+}
+
+TEST_CASE ("Binary cache upload failure logging", "[BinaryCache]")
+{
+    auto pghs = Paragraphs::parse_paragraphs(R"(
+Source: test-port
+Version: 1
+Description: test port
+)",
+                                             "<testdata>");
+    REQUIRE(pghs.has_value());
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
+    REQUIRE(maybe_scf.has_value());
+    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    InstallPlanAction action(PackageSpec{"test-port", Test::X64_WINDOWS},
+                             scfl,
+                             packages_dir_assigner,
+                             RequestType::USER_REQUESTED,
+                             UseHeadVersion::No,
+                             Editable::No,
+                             {},
+                             {},
+                             {});
+    action.abi_info = AbiInfo{};
+    action.abi_info.get()->package_abi = "packageabi";
+
+    const std::string expected_warning = "warning: Binary cache upload failed: provider-specific failure";
+
+    SECTION ("all uploads succeed")
+    {
+        TestMessageSink message_sink;
+        TestBinaryCache binary_cache{always_failing_filesystem, message_sink};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(false));
+        binary_cache.push_success(CleanPackages::No, action);
+        binary_cache.wait_for_async_complete_and_join();
+        CHECK_FALSE(message_sink.contains_line(expected_warning));
+    }
+
+    SECTION ("upload fails")
+    {
+        TestMessageSink message_sink;
+        TestBinaryCache binary_cache{always_failing_filesystem, message_sink};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(true));
+        binary_cache.push_success(CleanPackages::No, action);
+        binary_cache.wait_for_async_complete_and_join();
+        CHECK(message_sink.contains_line(expected_warning));
     }
 }
 

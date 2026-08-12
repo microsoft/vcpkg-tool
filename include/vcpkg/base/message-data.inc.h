@@ -345,6 +345,10 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
+DECLARE_MESSAGE(BinaryCacheUploadFailed,
+                (),
+                "This is a standardized prefix prepended to binary cache upload failure diagnostics.",
+                "Binary cache upload failed")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",
