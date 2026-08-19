@@ -23,8 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24.x"
           cache: 'npm'
@@ -33,7 +33,7 @@ jobs:
         run: echo "::add-matcher::.github/workflows/matchers.json"
       - name: '[CI Only] Initialize CodeQL'
         if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           languages: javascript-typescript, c-cpp
       - name: Configure and Build
@@ -55,7 +55,7 @@ jobs:
           cmake --build --preset ${{ matrix.preset }} -- -k0
       - name: '[CI Only] Perform CodeQL Analysis'
         if: inputs.codeql && matrix.preset != 'linux-arm64-ci' && matrix.preset != 'macos-ci'
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
       - name: Run vcpkg and vcpkg-artifacts unit tests
         run: ctest --preset ${{ matrix.preset }} --output-on-failure 2>&1
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
@@ -64,7 +64,7 @@ jobs:
         run: |
           "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
       - name: Checkout microsoft/vcpkg for end-to-end tests
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
           path: ${{ github.workspace }}/vcpkg-root
