@@ -743,6 +743,7 @@ namespace
         {
             return subcommand("push")
                 .string_arg(nupkg_path)
+                .string_arg("-SkipDuplicate")
                 .string_arg("-Timeout")
                 .string_arg(m_timeout)
                 .string_arg(src.option)
