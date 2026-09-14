@@ -32,11 +32,12 @@ export class Git {
 
     const result = await execute(this.#toolPath, [
       'clone',
-      remote,
-      this.#targetFolder.fsPath,
       options.recursive ? '--recursive' : '',
       options.depth ? `--depth=${options.depth}` : '',
-      '--progress'
+      '--progress',
+      '--',
+      remote,
+      this.#targetFolder.fsPath
     ], {
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
@@ -58,9 +59,10 @@ export class Git {
       '-C',
       this.#targetFolder.fsPath,
       'fetch',
+      options.depth ? `--depth=${options.depth}` : '',
+      '--',
       remoteName,
-      options.commit ? options.commit : '',
-      options.depth ? `--depth=${options.depth}` : ''
+      options.commit ? options.commit : ''
     ], {
       cwd: this.#targetFolder.fsPath
     });
@@ -103,9 +105,9 @@ export class Git {
       '-C',
       this.#targetFolder.fsPath,
       'reset',
-      options.commit ? options.commit : '',
       options.recurse ? '--recurse-submodules' : '',
-      options.hard ? '--hard' : ''
+      options.hard ? '--hard' : '',
+      options.commit ? options.commit : ''
     ], {
       cwd: this.#targetFolder.fsPath,
       onStdErrData: chunkToHeartbeat(events),
@@ -147,6 +149,7 @@ export class Git {
       this.#targetFolder.fsPath,
       'remote',
       'add',
+      '--',
       name,
       location.toString()
     ], {
@@ -193,6 +196,7 @@ export class Git {
       'config',
       '-f',
       this.#targetFolder.join(configFile).fsPath,
+      '--',
       key,
       value
     ], {
