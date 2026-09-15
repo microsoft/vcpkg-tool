@@ -371,7 +371,7 @@ extends:
         steps:
         - task: NuGetToolInstaller@1
           inputs:
-            versionSpec: 5.7
+            versionSpec: 7.9
         - task: NuGetCommand@2
           displayName: 'Extract Microsoft.Build.Vcpkg'
           inputs:
