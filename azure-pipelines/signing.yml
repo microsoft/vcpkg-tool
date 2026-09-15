@@ -27,7 +27,7 @@ extends:
     sdl:
       sourceAnalysisPool:
         name: AzurePipelines-EO
-        image: 1ESPT-Windows2022
+        image: 1ESPT-Windows2025
     stages:
     - stage: stage
       displayName: 'Build and Sign vcpkg'
@@ -84,9 +84,9 @@ extends:
             filePath: vcpkg-init/lock-versions.ps1
             arguments: '-Destination "$(Build.BinariesDirectory)" -VcpkgBaseVersion $(VCPKG_INITIAL_BASE_VERSION)'
         - task: UseNode@1
-          displayName: Use Node 18 or later
+          displayName: Use Node 24 or later
           inputs:
-            version: "18.x"
+            version: "24.x"
         - task: Npm@1
           inputs:
             command: 'custom'
@@ -110,7 +110,7 @@ extends:
           displayName: Collect PowerShell Scripts for Signing
         - task: NuGetToolInstaller@1
           inputs:
-            versionSpec: 5.7
+            versionSpec: 7.9
         - task: NuGetCommand@2
           displayName: 'NuGet Restore MicroBuild Signing Extension'
           inputs:
@@ -165,7 +165,7 @@ extends:
         - arch_independent
         pool:
           name: Azure Pipelines
-          vmImage: macOS-14
+          vmImage: macOS-26
           os: macOS
         variables:
           VCPKG_BASE_VERSION: $[ dependencies.arch_independent.outputs['versions.VCPKG_BASE_VERSION'] ]
@@ -191,7 +191,7 @@ extends:
           inputs:
             failOnStderr: true
             script: |
-              cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" "-DVCPKG_ARTIFACTS_SHA=$VCPKG_ARTIFACTS_SHA" -B "$(Build.BinariesDirectory)/build" 2>&1
+              cmake -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DVCPKG_DEVELOPMENT_WARNINGS=ON -DVCPKG_WARNINGS_AS_ERRORS=ON -DVCPKG_BUILD_FUZZING=OFF -DVCPKG_EMBED_GIT_SHA=ON -DVCPKG_OFFICIAL_BUILD=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" "-DVCPKG_FMT_URL=$(fmt-tarball-url)" "-DVCPKG_CMAKERC_URL=$(cmakerc-tarball-url)" "-DVCPKG_BASE_VERSION=$VCPKG_BASE_VERSION" "-DVCPKG_VERSION=$(Build.SourceVersion)" "-DVCPKG_STANDALONE_BUNDLE_SHA=$VCPKG_STANDALONE_BUNDLE_SHA" "-DVCPKG_ARTIFACTS_SHA=$VCPKG_ARTIFACTS_SHA" -B "$(Build.BinariesDirectory)/build" 2>&1
               make -j 8 -C "$(Build.BinariesDirectory)/build"
               zip -j "$(Build.ArtifactStagingDirectory)/vcpkg-macos.zip" "$(Build.BinariesDirectory)/build/vcpkg"
       - job: glibc_build
@@ -371,7 +371,7 @@ extends:
         steps:
         - task: NuGetToolInstaller@1
           inputs:
-            versionSpec: 5.7
+            versionSpec: 7.9
         - task: NuGetCommand@2
           displayName: 'Extract Microsoft.Build.Vcpkg'
           inputs:
