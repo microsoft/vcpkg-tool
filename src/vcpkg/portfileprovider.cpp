@@ -436,17 +436,7 @@ namespace vcpkg
                 {
                     if (auto reg = m_registry_set.registry_for_port(name))
                     {
-                        if (auto entry = reg->get_port_entry(name))
-                        {
-                            entry_it = m_entry_cache.emplace(name.to_string(), std::move(entry)).first;
-                        }
-                        else
-                        {
-                            entry_it = m_entry_cache
-                                           .emplace(name.to_string(),
-                                                    msg::format(msgPortDoesNotExist, msg::package_name = name))
-                                           .first;
-                        }
+                        entry_it = m_entry_cache.emplace(name.to_string(), reg->get_port_entry(name)).first;
                     }
                     else
                     {
