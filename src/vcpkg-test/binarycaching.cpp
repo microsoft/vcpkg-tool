@@ -46,6 +46,43 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
     }
 };
 
+struct TestPrecheckBinaryProvider : IReadBinaryProvider
+{
+    using Result = std::pair<const char*, CacheAvailability>;
+
+    explicit TestPrecheckBinaryProvider(std::vector<Result> results) : results(std::move(results)) { }
+
+    void fetch(DiagnosticContext&,
+               const Filesystem&,
+               View<const InstallPlanAction*>,
+               Span<RestoreResult>) const override
+    {
+        FAIL("unexpected call to fetch");
+    }
+
+    void precheck(DiagnosticContext&,
+                  const Filesystem& fs,
+                  View<const InstallPlanAction*> actions,
+                  Span<CacheAvailability> out_status) const override
+    {
+        REQUIRE(&fs == &always_failing_filesystem);
+        REQUIRE(actions.size() == results.size());
+        REQUIRE(out_status.size() == results.size());
+        for (size_t i = 0; i < actions.size(); ++i)
+        {
+            CHECK(actions[i]->package_abi_or_exit(VCPKG_LINE_INFO) == results[i].first);
+            out_status[i] = results[i].second;
+        }
+    }
+
+    LocalizedString restored_message(size_t, std::chrono::high_resolution_clock::duration) const override
+    {
+        return LocalizedString::from_raw("Test");
+    }
+
+    std::vector<Result> results;
+};
+
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")
 {
     KnowNothingBinaryProvider know_nothing;
@@ -367,6 +404,42 @@ Description:
     // test that the binary cache does the right thing. See also CHECKs etc. in KnowNothingBinaryProvider
     FullyBufferedDiagnosticContext fbdc;
     uut.fetch(fbdc, always_failing_filesystem, install_plan); // should have no effects
+    REQUIRE(fbdc.empty());
+}
+
+TEST_CASE ("precheck maps filtered provider results to the original actions", "[BinaryCache]")
+{
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(
+        std::make_unique<TestPrecheckBinaryProvider>(std::vector<TestPrecheckBinaryProvider::Result>{
+            {"abi-a", CacheAvailability::available}, {"abi-b", CacheAvailability::unavailable}}));
+    uut.install_read_provider(std::make_unique<TestPrecheckBinaryProvider>(
+        std::vector<TestPrecheckBinaryProvider::Result>{{"abi-b", CacheAvailability::available}}));
+
+    SourceControlFileAndLocation scfl{Test::make_control_file("test-package", ""), Path{}};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    std::vector<InstallPlanAction> actions;
+    for (const auto abi : {"abi-a", "abi-b"})
+    {
+        actions.push_back(InstallPlanAction{PackageSpec{"test-package", Test::X64_WINDOWS},
+                                            scfl,
+                                            packages_dir_assigner,
+                                            RequestType::USER_REQUESTED,
+                                            UseHeadVersion::No,
+                                            Editable::No,
+                                            {},
+                                            {},
+                                            {}});
+        auto& abi_info = actions.back().abi_info.emplace();
+        abi_info.package_abi = abi;
+    }
+
+    const auto action_ptrs = Util::fmap(
+        actions, [](const InstallPlanAction& action) { return static_cast<const InstallPlanAction*>(&action); });
+    FullyBufferedDiagnosticContext fbdc;
+    const auto result = uut.precheck(fbdc, always_failing_filesystem, action_ptrs);
+
+    REQUIRE(result == std::vector<CacheAvailability>{CacheAvailability::available, CacheAvailability::available});
     REQUIRE(fbdc.empty());
 }
 

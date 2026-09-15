@@ -2551,11 +2551,11 @@ namespace vcpkg
             {
                 if (cache_result[i] == CacheAvailability::available)
                 {
-                    statuses[i]->mark_available(provider.get());
+                    statuses[indexes[i]]->mark_available(provider.get());
                 }
                 else if (cache_result[i] == CacheAvailability::unavailable)
                 {
-                    statuses[i]->mark_unavailable(provider.get());
+                    statuses[indexes[i]]->mark_unavailable(provider.get());
                 }
             }
         }
