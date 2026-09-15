@@ -18,13 +18,13 @@ jobs:
     runs-on: windows-2025-vs2026
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24.x"
           cache: 'npm'
           cache-dependency-path: vcpkg-artifacts/package-lock.json
-      - uses: lukka/get-cmake@71b7adfe2603f48bb9ed50d2b01a72499ae94885 # v3.31.0
+      - uses: lukka/get-cmake@fffaaafeea488556c2c12dad60690008bc1caacb # v4.4.2
         with:
           cmakeVersion: 3.22.1 # ubuntu 22.04
           ninjaVersion: 1.11.1
@@ -65,7 +65,7 @@ jobs:
             exit 1
           }
       - name: 'Publish Format and Messages File Diff'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure() && steps.diff.outcome == 'failure'
         with:
           name: format.patch
@@ -75,14 +75,14 @@ jobs:
     runs-on: windows-2025-vs2026
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get microsoft/vcpkg pinned sha into VCPKG_SHA
         id: vcpkg_sha
         shell: pwsh
         run: |
           "VCPKG_SHA="+(Get-Content vcpkg-init/vcpkg-scripts-sha.txt -Raw).Trim() >> $env:GITHUB_OUTPUT
       - name: Checkout microsoft/vcpkg for end-to-end tests
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           path: ${{ github.workspace }}/vcpkg-root
