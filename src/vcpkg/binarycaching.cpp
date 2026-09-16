@@ -219,14 +219,28 @@ namespace
 
         void report(const DiagnosticLine& line) override
         {
-            if (line.kind() == DiagKind::Error || line.kind() == DiagKind::Warning)
+            switch (line.kind())
             {
-                inner_context.report(DiagnosticLine{
-                    line.kind(), msg::format(msgBinaryCacheUploadFailed).append_raw(": ").append(line.message_text())});
+                case DiagKind::Error:
+                case DiagKind::Warning: inner_context.report(line.with_pre_note(msgBinaryCacheUploadFailed)); break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(line); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
-            else
+        }
+        void report(DiagnosticLine&& line) override
+        {
+            switch (line.kind())
             {
-                inner_context.report(line);
+                case DiagKind::Error:
+                case DiagKind::Warning:
+                    inner_context.report(std::move(line).with_pre_note(msgBinaryCacheUploadFailed));
+                    break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(std::move(line)); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
 
@@ -3007,7 +3021,6 @@ namespace vcpkg
         std::vector<ActionToPush> my_tasks;
         PrintingDiagnosticContext pdc{m_bg_msg_sink};
         WarningDiagnosticContext wdc{pdc};
-        BinaryCacheUploadDiagnosticContext upload_context{pdc};
         while (m_actions_to_push.get_work(my_tasks))
         {
             for (auto& action_to_push : my_tasks)
@@ -3027,6 +3040,7 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
+                        BinaryCacheUploadDiagnosticContext upload_context{pdc};
                         num_destinations += provider->push_success(upload_context, m_fs, action_to_push.request);
                     }
                 }

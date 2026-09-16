@@ -169,6 +169,20 @@ namespace vcpkg
         return LocalizedString::from_raw(result);
     }
 
+    DiagnosticLine DiagnosticLine::with_pre_note(const msg::MessageT<>& message) const&
+    {
+        return DiagnosticLine{
+            InternalTag{}, m_kind, m_origin, m_position, msg::format(message).append_raw(ColonSpace).append(m_message)};
+    }
+    DiagnosticLine DiagnosticLine::with_pre_note(const msg::MessageT<>& message) &&
+    {
+        return DiagnosticLine{InternalTag{},
+                              m_kind,
+                              std::move(m_origin),
+                              m_position,
+                              msg::format(message).append_raw(ColonSpace).append(std::move(m_message))};
+    }
+
     DiagnosticLine DiagnosticLine::reduce_to_warning() const&
     {
         return DiagnosticLine{

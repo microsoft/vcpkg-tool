@@ -687,7 +687,7 @@ Description: test port
     action.abi_info = AbiInfo{};
     action.abi_info.get()->package_abi = "packageabi";
 
-    const std::string expected_warning = "warning: Binary cache upload failed: provider-specific failure";
+    const std::string expected_warning = "warning: binary cache submission failed: provider-specific failure";
 
     SECTION ("all uploads succeed")
     {
