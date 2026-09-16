@@ -207,10 +207,16 @@ TEST_CASE ("append_shell_escaped", "[system]")
     cmd.string_arg("?");
     cmd.string_arg("[");
     cmd.string_arg("#");
+    cmd.string_arg("<");
+    cmd.string_arg(">");
+    cmd.string_arg("~");
+    cmd.string_arg("{");
+    cmd.string_arg("}");
 #if defined(_WIN32)
-    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"`\" \"$\" * ? [ #");
+    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"`\" \"$\" * ? [ # < > ~ { }");
 #else
-    REQUIRE(cmd.command_line() == "shell_escaped_chars3 \"\\`\" \"\\$\" \"*\" \"?\" \"[\" \"#\"");
+    REQUIRE(cmd.command_line() ==
+            "shell_escaped_chars3 \"\\`\" \"\\$\" \"*\" \"?\" \"[\" \"#\" \"<\" \">\" \"~\" \"{\" \"}\"");
 #endif
 
     cmd.clear();
