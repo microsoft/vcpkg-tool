@@ -242,7 +242,8 @@ namespace vcpkg
         launch_settings.encoding = Encoding::Utf8WithNulls;
         Optional<std::vector<GitLSTreeEntry>> result;
 
-        StringView args[] = {StringLiteral{"ls-tree"}, StringLiteral{"--full-tree"}, StringLiteral{"-z"}, treeish};
+        StringView args[] = {
+            StringLiteral{"ls-tree"}, StringLiteral{"--full-tree"}, StringLiteral{"-z"}, StringLiteral{"--"}, treeish};
         auto cmd = make_git_command(git_exe, locator, args);
         auto maybe_ls_tree_result = run_cmd_trim(context, cmd, launch_settings);
         if (auto ls_tree_output = maybe_ls_tree_result.get())
