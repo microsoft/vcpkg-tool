@@ -168,7 +168,7 @@ namespace vcpkg
         if (content.empty() || Strings::find_first_of(content,
                                                       " \t\n\r\"\\`$,;&^|'()"
 #if !defined(_WIN32)
-                                                      "*?[#"
+                                                      "*?[#<>~{}"
 #endif // ^^^ !_WIN32
                                                       ) != content.end())
         {
@@ -198,8 +198,9 @@ namespace vcpkg
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
             // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
-            // shell. Characters like '*', '?', '[', and '#' are handled by deciding to quote the whole argument;
-            // once inside double quotes, they no longer need per-character escaping before invoking /bin/sh.
+            // shell. Characters like '*', '?', '[', '#', '<', '>', '~', '{', and '}' are handled by deciding to
+            // quote the whole argument; once inside double quotes, they no longer need per-character escaping
+            // before invoking /bin/sh.
             target.push_back('"');
             for (auto ch : content)
             {
