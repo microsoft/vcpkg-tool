@@ -698,7 +698,9 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
-                        case Identifier::xbox: return true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
+                        case Identifier::xbox:
+                            return !true_if_exists_and_nonempty("VCPKG_CMAKE_SYSTEM_NAME") &&
+                                   true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
