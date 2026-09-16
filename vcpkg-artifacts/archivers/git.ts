@@ -32,11 +32,12 @@ export class Git {
 
     const result = await execute(this.#toolPath, [
       'clone',
-      remote,
-      this.#targetFolder.fsPath,
       options.recursive ? '--recursive' : '',
       options.depth ? `--depth=${options.depth}` : '',
-      '--progress'
+      '--progress',
+      '--',
+      remote,
+      this.#targetFolder.fsPath
     ], {
       onStdErrData: chunkToHeartbeat(events),
       onStdOutData: chunkToHeartbeat(events)
@@ -58,9 +59,10 @@ export class Git {
       '-C',
       this.#targetFolder.fsPath,
       'fetch',
+      options.depth ? `--depth=${options.depth}` : '',
+      '--',
       remoteName,
-      options.commit ? options.commit : '',
-      options.depth ? `--depth=${options.depth}` : ''
+      options.commit ? options.commit : ''
     ], {
       cwd: this.#targetFolder.fsPath
     });
@@ -89,31 +91,6 @@ export class Git {
     });
     return result.code === 0 ? true : false;
   }
-
-
-  /**
-   * Performs a reset on the git repo.
-   * @param events Events to possibly track progress.
-   * @param options Options to control how the reset is called.
-   * @returns Boolean representing whether the execution was completed without error, this is not necessarily
-   *  a guarantee that the reset did what we expected.
-   */
-  async reset(events: Partial<UnpackEvents>, options: { commit?: string, recurse?: boolean, hard?: boolean } = {}) {
-    const result = await execute(this.#toolPath, [
-      '-C',
-      this.#targetFolder.fsPath,
-      'reset',
-      options.commit ? options.commit : '',
-      options.recurse ? '--recurse-submodules' : '',
-      options.hard ? '--hard' : ''
-    ], {
-      cwd: this.#targetFolder.fsPath,
-      onStdErrData: chunkToHeartbeat(events),
-      onStdOutData: chunkToHeartbeat(events)
-    });
-    return result.code === 0 ? true : false;
-  }
-
 
   /**
    * Initializes a folder on disk to be a git repository
@@ -147,6 +124,7 @@ export class Git {
       this.#targetFolder.fsPath,
       'remote',
       'add',
+      '--',
       name,
       location.toString()
     ], {
@@ -193,6 +171,7 @@ export class Git {
       'config',
       '-f',
       this.#targetFolder.join(configFile).fsPath,
+      '--',
       key,
       value
     ], {
