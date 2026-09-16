@@ -6434,7 +6434,7 @@
         <Str Cat="Text">
           <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Google Cloud Storage (GCS) source. Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed with a "/".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[**실험적: 경고 없이 변경되거나 제거됩니다**]A;Google Cloud Storage(GCS) 원본을 추가합니다. 업로드 및 다운로드에 gsutil CLI를 사용합니다. 접두사는 gs:// 체계를 포함해야 하며 "/"로 접미사를 붙여야 합니다.]]></Val>
+            <Val><![CDATA[**실험적: 경고 없이 변경되거나 제거됩니다**]A;Google 클라우드 스토리지(GCS) 원본을 추가합니다. 업로드 및 다운로드에 gsutil CLI를 사용합니다. 접두사는 gs:// 체계를 포함해야 하며 "/"로 접미사를 붙여야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
