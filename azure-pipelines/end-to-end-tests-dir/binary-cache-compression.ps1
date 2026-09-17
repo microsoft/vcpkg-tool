@@ -3,7 +3,7 @@
 $commonArgs += @("--overlay-ports=$PSScriptRoot/../e2e-ports", "--host-triplet=$Triplet")
 $oldLevel = $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL
 try {
-    foreach ($level in @(0, 1, 5, 9)) {
+    foreach ($level in 0..9) {
         Refresh-TestRoot
         # Exercise the environment setting and command-line precedence over an invalid environment value.
         $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = "$level"
