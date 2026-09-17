@@ -197,6 +197,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchBaseline = "baseline";
     inline constexpr StringLiteral SwitchBin = "bin";
     inline constexpr StringLiteral SwitchBinarycaching = "binarycaching";
+    inline constexpr StringLiteral SwitchBinaryCacheCompressionLevel = "binary-cache-compression-level";
     inline constexpr StringLiteral SwitchBinarysource = "binarysource";
     inline constexpr StringLiteral SwitchBuildtrees = "buildtrees";
     inline constexpr StringLiteral SwitchBuildtreesRoot = "buildtrees-root";
@@ -546,6 +547,8 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableUserprofile = "USERPROFILE";
     inline constexpr StringLiteral EnvironmentVariableVCInstallDir = "VCINSTALLDIR";
     inline constexpr StringLiteral EnvironmentVariableVSCmdSkipSendTelemetry = "VSCMD_SKIP_SENDTELEMETRY";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgBinaryCacheCompressionLevel =
+        "VCPKG_BINARY_CACHE_COMPRESSION_LEVEL";
     inline constexpr StringLiteral EnvironmentVariableVcpkgBinarySources = "VCPKG_BINARY_SOURCES";
     inline constexpr StringLiteral EnvironmentVariableVcpkgCommand = "VCPKG_COMMAND";
     inline constexpr StringLiteral EnvironmentVariableVcpkgDefaultBinaryCache = "VCPKG_DEFAULT_BINARY_CACHE";

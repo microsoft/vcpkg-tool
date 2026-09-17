@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -395,6 +396,10 @@ namespace vcpkg
             args.cli_overlay_triplets,
             msg::format(msgOverlayTripletDirectoriesHelp,
                         msg::env_var = format_environment_variable(EnvironmentVariableOverlayTriplets)));
+        args.parser.parse_option(SwitchBinaryCacheCompressionLevel,
+                                 StabilityTag::Standard,
+                                 args.binary_cache_compression_level,
+                                 msg::format(msgBinaryCacheCompressionLevelHelp));
         args.parser.parse_multi_option(
             SwitchBinarysource, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(SwitchCMakeArgs, StabilityTag::Standard, args.cmake_args);
@@ -568,6 +573,7 @@ namespace vcpkg
         from_env(get_env, EnvironmentVariableXVcpkgRegistriesCache, registries_cache_dir);
         from_env(get_env, EnvironmentVariableVcpkgVisualStudioPath, default_visual_studio_path);
         from_env(get_env, EnvironmentVariableVcpkgBinarySources, env_binary_sources);
+        from_env(get_env, EnvironmentVariableVcpkgBinaryCacheCompressionLevel, binary_cache_compression_level);
         from_env(get_env, EnvironmentVariableXVcpkgNuGetIDPrefix, nuget_id_prefix);
         use_nuget_cache = get_env(EnvironmentVariableVcpkgUseNuGetCache).map([](const std::string& s) {
             return Strings::case_insensitive_ascii_equals(s, "true") || s == "1";
@@ -820,5 +826,20 @@ namespace vcpkg
         }
         if (asset_sources_template.empty()) return nullopt;
         return Optional<std::string>(std::move(asset_sources_template));
+    }
+
+    bool VcpkgCmdArguments::parse_binary_cache_compression_level(DiagnosticContext& context, Optional<int>& out) const
+    {
+        out = nullopt;
+        if (const auto value = binary_cache_compression_level.get())
+        {
+            if (value->size() != 1 || (*value)[0] < '0' || (*value)[0] > '9')
+            {
+                context.report_error(msg::format(msgInvalidBinaryCacheCompressionLevel, msg::value = *value));
+                return false;
+            }
+            out = (*value)[0] - '0';
+        }
+        return true;
     }
 }

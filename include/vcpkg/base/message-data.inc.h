@@ -341,6 +341,11 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
+DECLARE_MESSAGE(BinaryCacheCompressionLevelHelp,
+                (),
+                "",
+                "Binary cache ZIP compression level (0-9). Overrides VCPKG_BINARY_CACHE_COMPRESSION_LEVEL; "
+                "unset uses the archive tool default.")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",
@@ -1953,6 +1958,12 @@ DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
                 "",
                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                 "preceeding '?' as the second argument")
+DECLARE_MESSAGE(
+    InvalidBinaryCacheCompressionLevel,
+    (msg::value),
+    "{value} is the supplied compression level.",
+    "Invalid binary cache compression level '{value}'. "
+    "--binary-cache-compression-level and VCPKG_BINARY_CACHE_COMPRESSION_LEVEL require a single digit (0-9).")
 DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}")
 DECLARE_MESSAGE(
     InvalidBuiltInBaseline,

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
@@ -236,6 +237,8 @@ namespace vcpkg
 
         std::vector<std::string> cli_binary_sources;
         Optional<std::string> env_binary_sources;
+        Optional<std::string> binary_cache_compression_level;
+        bool parse_binary_cache_compression_level(DiagnosticContext& context, Optional<int>& out) const;
         Optional<std::string> nuget_id_prefix;
         Optional<bool> use_nuget_cache;
         Optional<std::string> vcpkg_nuget_repository;

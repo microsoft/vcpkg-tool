@@ -62,7 +62,8 @@ namespace vcpkg
         bool compress_directory_to_zip(DiagnosticContext& context,
                                        const Filesystem& fs,
                                        const Path& source,
-                                       const Path& destination) const;
+                                       const Path& destination,
+                                       Optional<int> compression_level = nullopt) const;
 
         Command decompress_zip_archive_cmd(const Path& dst, const Path& archive_path) const;
 
