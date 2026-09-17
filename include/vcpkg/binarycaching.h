@@ -302,6 +302,9 @@ namespace vcpkg
         void print_updates();
         void wait_for_async_complete_and_join();
 
+    protected:
+        BinaryCache(const Filesystem& fs, MessageSink& message_sink);
+
     private:
         struct ActionToPush
         {
