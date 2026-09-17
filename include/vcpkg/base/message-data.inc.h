@@ -341,7 +341,7 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
-DECLARE_MESSAGE(BinaryCacheUploadFailed,
+DECLARE_MESSAGE(BinaryCacheSubmissionFailed,
                 (),
                 "This is a standardized prefix prepended to binary cache upload failure diagnostics.",
                 "binary cache submission failed")

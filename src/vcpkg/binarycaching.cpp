@@ -222,7 +222,7 @@ namespace
             switch (line.kind())
             {
                 case DiagKind::Error:
-                case DiagKind::Warning: inner_context.report(line.with_pre_note(msgBinaryCacheUploadFailed)); break;
+                case DiagKind::Warning: inner_context.report(line.with_pre_note(msgBinaryCacheSubmissionFailed)); break;
                 case DiagKind::None:
                 case DiagKind::Message:
                 case DiagKind::Note: inner_context.report(line); break;
@@ -235,7 +235,7 @@ namespace
             {
                 case DiagKind::Error:
                 case DiagKind::Warning:
-                    inner_context.report(std::move(line).with_pre_note(msgBinaryCacheUploadFailed));
+                    inner_context.report(std::move(line).with_pre_note(msgBinaryCacheSubmissionFailed));
                     break;
                 case DiagKind::None:
                 case DiagKind::Message:
