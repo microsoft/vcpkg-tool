@@ -3,12 +3,14 @@
 $commonArgs += @("--overlay-ports=$PSScriptRoot/../e2e-ports", "--host-triplet=$Triplet")
 $oldLevel = $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL
 try {
-    foreach ($level in 0..9) {
+    foreach ($level in (@($null) + @(0..9))) {
         Refresh-TestRoot
-        # Exercise the environment setting and command-line precedence over an invalid environment value.
-        $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = "$level"
+        # Exercise the tool default, the environment setting, and command-line precedence.
+        Remove-Item Env:\VCPKG_BINARY_CACHE_COMPRESSION_LEVEL -ErrorAction SilentlyContinue
         $levelArgs = @()
-        if ($level -ne 1) {
+        if ($level -eq 1) {
+            $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = "$level"
+        } elseif ($null -ne $level) {
             $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = 'invalid'
             $levelArgs = @("--binary-cache-compression-level=$level")
         }
@@ -23,7 +25,7 @@ try {
             if ($null -eq $entry) { throw 'Missing package content in archive' }
             if ($level -eq 0) {
                 if ($entry.CompressedLength -ne $entry.Length) { throw 'Level 0 must store without compression' }
-            } elseif ($entry.CompressedLength -ge $entry.Length) {
+            } elseif ($null -ne $level -and $entry.CompressedLength -ge $entry.Length) {
                 throw 'Expected compression of repetitive package content'
             }
         } finally {
