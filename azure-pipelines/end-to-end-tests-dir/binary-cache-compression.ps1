@@ -34,12 +34,14 @@ try {
     }
 
     # Restore once with a different setting; rebuilding must not hide a cache miss.
+    $payloadPath = "$installRoot/$Triplet/share/binary-cache-compression/copyright"
+    $originalHash = (Get-FileHash -LiteralPath $payloadPath -Algorithm SHA256).Hash
     Remove-Item -Recurse -Force $installRoot
     $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = '0'
     Run-Vcpkg -TestArgs ($commonArgs + @('install', 'binary-cache-compression', '--only-binarycaching', "--binarysource=clear;files,$ArchiveRoot,read"))
     Throw-IfFailed
-    $contents = Get-Content -LiteralPath "$installRoot/$Triplet/share/binary-cache-compression/copyright" -Raw
-    if ($contents -cne ("binary cache compression test`n" * 10000)) {
+    $restoredHash = (Get-FileHash -LiteralPath $payloadPath -Algorithm SHA256).Hash
+    if ($restoredHash -ne $originalHash) {
         throw 'Restored package content does not match the original payload'
     }
 } finally {
