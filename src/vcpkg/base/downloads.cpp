@@ -206,7 +206,7 @@ namespace vcpkg
             {
                 const auto& output = outputs[request_index];
                 std::error_code ec;
-                auto& request_write_pointer = write_pointers.emplace_back(output, Append::NO, ec);
+                auto& request_write_pointer = write_pointers.emplace_back(output, Append::NO, Overwrite::YES, ec);
                 if (ec)
                 {
                     context.report_error(format_filesystem_call_error(ec, "fopen", {output}));
@@ -520,7 +520,7 @@ namespace vcpkg
                                               View<std::string> headers)
     {
         std::error_code ec;
-        WriteFilePointer fileptr(download_path, Append::NO, ec);
+        WriteFilePointer fileptr(download_path, Append::NO, Overwrite::YES, ec);
         if (ec)
         {
             context.report_error(format_filesystem_call_error(ec, "fopen", {download_path}));
