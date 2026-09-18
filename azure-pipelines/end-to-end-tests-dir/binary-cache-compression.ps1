@@ -31,16 +31,16 @@ try {
         } finally {
             $archive.Dispose()
         }
+    }
 
-        Remove-Item -Recurse -Force $installRoot
-        Remove-Item -Recurse -Force $buildtreesRoot
-        # A different compression setting must still restore the same ABI from the cache.
-        $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = '9'
-        $output = Run-VcpkgAndCaptureOutput ($commonArgs + @('install', 'binary-cache-compression', "--binarysource=clear;files,$ArchiveRoot,read"))
-        Throw-IfFailed
-        Require-FileExists "$installRoot/$Triplet/share/binary-cache-compression/copyright"
-        Throw-IfNonContains -Actual $output -Expected "Restored 1 package(s)"
-        Require-FileNotExists "$buildtreesRoot/binary-cache-compression/built-marker"
+    # Restore once with a different setting; rebuilding must not hide a cache miss.
+    Remove-Item -Recurse -Force $installRoot
+    $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = '0'
+    Run-Vcpkg -TestArgs ($commonArgs + @('install', 'binary-cache-compression', '--only-binarycaching', "--binarysource=clear;files,$ArchiveRoot,read"))
+    Throw-IfFailed
+    $contents = Get-Content -LiteralPath "$installRoot/$Triplet/share/binary-cache-compression/copyright" -Raw
+    if ($contents -cne ("binary cache compression test`n" * 10000)) {
+        throw 'Restored package content does not match the original payload'
     }
 } finally {
     $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = $oldLevel
