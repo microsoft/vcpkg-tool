@@ -1,0 +1,6 @@
+{
+  "name": "PrintSupport",
+  "plugin_types": [
+    "printsupport"
+  ]
+}

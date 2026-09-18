@@ -1,0 +1,6 @@
+{
+  "name": "Sql",
+  "plugin_types": [
+    "sqldrivers"
+  ]
+}
