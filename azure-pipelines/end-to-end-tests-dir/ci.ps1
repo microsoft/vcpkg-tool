@@ -1,7 +1,22 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
+# Keep each stream intact: regression diagnostics on stderr can otherwise split
+# the summary on stdout when PowerShell merges the two streams asynchronously.
+function Run-CiAndCaptureBoth {
+    Param(
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$TestArgs
+    )
+
+    $stderr = Run-VcpkgAndCaptureStdErr @TestArgs
+    $stdout = Get-Content -LiteralPath $unusedStdoutFile -Encoding 'utf8' -Raw
+    $result = ([string]$stdout + $stderr).Replace("`r`n", "`n")
+    Write-Host -ForegroundColor Gray $result
+    return $result
+}
+
 # test skipped ports
-$Output = Run-VcpkgAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
+$Output = Run-CiAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.baseline.txt"
 Throw-IfNotFailed
 # dep-on-feature-not-sup must cascade because it depends on a features that is not supported
 Throw-IfNonContains -Actual $Output -Expected "dep-on-feature-not-sup:${Triplet}: cascade"
@@ -26,7 +41,7 @@ Throw-IfNonContains -Actual $Output -Expected "REGRESSION: not-sup-host-b:${Trip
 Throw-IfNonContains -Actual $Output -Expected "REGRESSION: dep-on-feature-not-sup:${Triplet} is marked as fail but one dependency is not supported for ${Triplet}."
 
 # pass means pass
-$Output = Run-VcpkgAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.pass.baseline.txt"
+$Output = Run-CiAndCaptureBoth ci --dry-run --triplet=$Triplet --x-builtin-ports-root="$PSScriptRoot/../e2e-ports/ci"  --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci/ci.pass.baseline.txt"
 Throw-IfNotFailed
 # feature-not-sup's baseline pass entry should result in a regression because the port is not supported
 Throw-IfNonContains -Actual $Output -Expected "REGRESSION: not-sup-host-b:${Triplet} is marked as pass but not supported for ${Triplet}."
@@ -291,7 +306,7 @@ SUMMARY FOR $Triplet
 Refresh-TestRoot
 Copy-Item $tripletFile "$TestingRoot/cross.cmake"
 Remove-Problem-Matchers
-$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt"
+$Output = Run-CiAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt"
 Restore-Problem-Matchers
 Throw-IfNotFailed
 Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
@@ -320,7 +335,7 @@ SUMMARY FOR cross
 Refresh-TestRoot
 Copy-Item $tripletFile "$TestingRoot/cross.cmake"
 Remove-Problem-Matchers
-$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --allow-unexpected-passing
+$Output = Run-CiAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --allow-unexpected-passing
 Restore-Problem-Matchers
 Throw-IfNotFailed
 Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
@@ -350,7 +365,7 @@ SUMMARY FOR cross
 Refresh-TestRoot
 Copy-Item $tripletFile "$TestingRoot/cross.cmake"
 Remove-Problem-Matchers
-$Output = Run-VcpkgAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --skip-failures
+$Output = Run-CiAndCaptureBoth ci --triplet cross --overlay-triplets $TestingRoot @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-regression-reports" --binarysource=clear --ci-baseline="$PSScriptRoot/../e2e-assets/ci-regression-reports/baseline.txt" --skip-failures
 Restore-Problem-Matchers
 Throw-IfNotFailed
 Throw-IfNonContains -Actual $Output -Expected 'REGRESSION: depends-on-fail-but-unsupported:cross is marked as fail but one dependency is not supported for cross.'
@@ -382,7 +397,7 @@ Run-Vcpkg install transitive-3 --binarysource="clear;files,$ArchiveRoot,readwrit
 Throw-IfFailed
 Run-Vcpkg remove transitive-3 transitive-4 transitive-5 transitive-6 @directoryArgs
 Throw-IfFailed
-$Output = Run-VcpkgAndCaptureBoth ci --binarysource="clear;files,$ArchiveRoot" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
+$Output = Run-CiAndCaptureBoth ci --binarysource="clear;files,$ArchiveRoot" @directoryArgs --x-builtin-ports-root="$PSScriptRoot/../e2e-assets/ci-transitive"
 Throw-IfFailed
 
 Throw-IfNonContains -Actual $Output -Expected "Installing 1/6 transitive-6:$($Triplet)@1.0.0..."

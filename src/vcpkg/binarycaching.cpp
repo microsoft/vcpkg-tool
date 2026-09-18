@@ -2668,6 +2668,11 @@ namespace vcpkg
                                         const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths)
     {
+        if (!args.parse_binary_cache_compression_level(context, m_compression_level))
+        {
+            return false;
+        }
+
         auto& fs = paths.get_filesystem();
         auto& tools = paths.get_tool_cache();
         if (args.binary_caching_enabled())
@@ -3029,7 +3034,8 @@ namespace vcpkg
                 if (m_needs_zip_file)
                 {
                     Path zip_path = action_to_push.request.package_dir + ".zip";
-                    if (m_zip_tool.compress_directory_to_zip(pdc, m_fs, action_to_push.request.package_dir, zip_path))
+                    if (m_zip_tool.compress_directory_to_zip(
+                            pdc, m_fs, action_to_push.request.package_dir, zip_path, m_compression_level))
                     {
                         action_to_push.request.zip_path = std::move(zip_path);
                     }

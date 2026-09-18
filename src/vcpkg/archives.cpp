@@ -332,7 +332,8 @@ namespace vcpkg
     bool ZipTool::compress_directory_to_zip(DiagnosticContext& context,
                                             const Filesystem& fs,
                                             const Path& source,
-                                            const Path& destination) const
+                                            const Path& destination,
+                                            Optional<int> compression_level) const
     {
         fs.remove(destination, VCPKG_LINE_INFO);
 #if defined(_WIN32)
@@ -340,13 +341,22 @@ namespace vcpkg
         settings.environment = get_clean_environment();
         auto& seven_zip_path = seven_zip.value_or_exit(VCPKG_LINE_INFO);
         Command seven_zip_command{seven_zip_path};
-        seven_zip_command.string_arg("a").string_arg(destination).string_arg(source / "*");
+        seven_zip_command.string_arg("a").string_arg("-tzip");
+        if (const auto level = compression_level.get())
+        {
+            seven_zip_command.string_arg(fmt::format("-mx={}", *level));
+        }
+        seven_zip_command.string_arg(destination).string_arg(source / "*");
         auto output = cmd_execute_and_capture_output(context, seven_zip_command, settings);
         return check_zero_exit_code(context, seven_zip_command, output) != nullptr;
 #else
         RedirectedProcessLaunchSettings settings;
         settings.working_directory = source;
         Command zip_command{"zip"};
+        if (const auto level = compression_level.get())
+        {
+            zip_command.string_arg(fmt::format("-{}", *level));
+        }
         zip_command.string_arg("--quiet")
             .string_arg("-y")
             .string_arg("-r")
