@@ -845,6 +845,12 @@ namespace vcpkg
         return Optional<std::string>(std::move(asset_sources_template));
     }
 
+    void VcpkgCmdArguments::clear_asset_sources() noexcept
+    {
+        asset_sources_template_env.clear();
+        asset_sources_template_arg.clear();
+    }
+
     bool VcpkgCmdArguments::parse_binary_cache_compression_level(DiagnosticContext& context, Optional<int>& out) const
     {
         out = nullopt;

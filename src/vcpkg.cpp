@@ -320,12 +320,7 @@ int main(const int argc, const char* const* const argv)
         }
     }
 
-    auto bundle_path = current_exe_path;
-    bundle_path.replace_filename(FileVcpkgBundleDotJson);
-    Debug::println("Trying to load bundleconfig from ", bundle_path);
-    auto bundle =
-        real_filesystem.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
-    Debug::println("Bundle config: ", bundle.to_string());
+    auto bundle = load_bundle_settings(real_filesystem);
 
     if (to_enable_metrics)
     {

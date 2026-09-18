@@ -303,8 +303,11 @@ void Strings::inplace_trim_end(std::string& s)
 
 StringView Strings::trim(StringView sv)
 {
-    auto last = std::find_if_not(sv.rbegin(), sv.rend(), is_space_char).base();
+    // Searching back only as far as first keeps last from passing it when sv
+    // is all whitespace.
     auto first = std::find_if_not(sv.begin(), sv.end(), is_space_char);
+    auto last =
+        std::find_if_not(std::make_reverse_iterator(sv.end()), std::make_reverse_iterator(first), is_space_char).base();
     return StringView(first, last);
 }
 

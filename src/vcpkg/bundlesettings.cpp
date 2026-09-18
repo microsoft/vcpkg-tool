@@ -1,7 +1,11 @@
+#include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/file-contents.h>
+#include <vcpkg/base/files.h>
 #include <vcpkg/base/fmt.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
+#include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/system.process.h>
 
 #include <vcpkg/bundlesettings.h>
 
@@ -113,5 +117,15 @@ namespace vcpkg
         }
 
         return ret;
+    }
+
+    BundleSettings load_bundle_settings(const ReadOnlyFilesystem& fs)
+    {
+        auto bundle_path = get_exe_path_of_current_process();
+        bundle_path.replace_filename(FileVcpkgBundleDotJson);
+        Debug::println("Trying to load bundleconfig from ", bundle_path);
+        auto bundle = fs.try_read_contents(bundle_path).then(&try_parse_bundle_settings).value_or(BundleSettings{});
+        Debug::println("Bundle config: ", bundle.to_string());
+        return bundle;
     }
 }
