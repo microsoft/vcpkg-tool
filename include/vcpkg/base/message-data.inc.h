@@ -346,6 +346,10 @@ DECLARE_MESSAGE(BinaryCacheCompressionLevelHelp,
                 "",
                 "Binary cache ZIP compression level (0-9). Overrides VCPKG_BINARY_CACHE_COMPRESSION_LEVEL; "
                 "unset uses the archive tool default.")
+DECLARE_MESSAGE(BinaryCacheSubmissionFailed,
+                (),
+                "This is a standardized prefix prepended to binary cache upload failure diagnostics.",
+                "binary cache submission failed")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",

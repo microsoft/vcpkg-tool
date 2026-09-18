@@ -213,6 +213,45 @@ namespace
         return false;
     }
 
+    struct BinaryCacheUploadDiagnosticContext final : DiagnosticContext
+    {
+        explicit BinaryCacheUploadDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
+
+        void report(const DiagnosticLine& line) override
+        {
+            switch (line.kind())
+            {
+                case DiagKind::Error:
+                case DiagKind::Warning: inner_context.report(line.with_pre_note(msgBinaryCacheSubmissionFailed)); break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(line); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+        void report(DiagnosticLine&& line) override
+        {
+            switch (line.kind())
+            {
+                case DiagKind::Error:
+                case DiagKind::Warning:
+                    inner_context.report(std::move(line).with_pre_note(msgBinaryCacheSubmissionFailed));
+                    break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(std::move(line)); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        void statusln(const LocalizedString& message) override { inner_context.statusln(message); }
+        void statusln(LocalizedString&& message) override { inner_context.statusln(std::move(message)); }
+        void statusln(const MessageLine& message) override { inner_context.statusln(message); }
+        void statusln(MessageLine&& message) override { inner_context.statusln(std::move(message)); }
+
+        DiagnosticContext& inner_context;
+    };
+
 #ifdef _WIN32
     bool directory_last_write_time(DiagnosticContext& context, const Filesystem& fs, const Path& dir)
     {
@@ -2905,8 +2944,9 @@ namespace vcpkg
 
         return true;
     }
-    BinaryCache::BinaryCache(const Filesystem& fs)
-        : m_fs(fs), m_bg_msg_sink(stdout_sink), m_push_thread(&BinaryCache::push_thread_main, this)
+    BinaryCache::BinaryCache(const Filesystem& fs) : BinaryCache(fs, stdout_sink) { }
+    BinaryCache::BinaryCache(const Filesystem& fs, MessageSink& message_sink)
+        : m_fs(fs), m_bg_msg_sink(message_sink), m_push_thread(&BinaryCache::push_thread_main, this)
     {
     }
     BinaryCache::~BinaryCache() { wait_for_async_complete_and_join(); }
@@ -3006,7 +3046,8 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(pdc, m_fs, action_to_push.request);
+                        BinaryCacheUploadDiagnosticContext upload_context{pdc};
+                        num_destinations += provider->push_success(upload_context, m_fs, action_to_push.request);
                     }
                 }
 
