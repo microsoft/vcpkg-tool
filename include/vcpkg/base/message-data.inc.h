@@ -1671,6 +1671,10 @@ DECLARE_MESSAGE(HelpEditCommand,
 DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling")
 DECLARE_MESSAGE(HelpExampleCommand, (), "", "For more help (including examples) see https://learn.microsoft.com/vcpkg")
 DECLARE_MESSAGE(HelpExampleManifest, (), "", "Example manifest:")
+DECLARE_MESSAGE(HelpHostInfoCommand,
+                (),
+                "",
+                "Displays information about the host and the vcpkg configuration in effect")
 DECLARE_MESSAGE(HelpInstallCommand, (), "", "Installs a package")
 DECLARE_MESSAGE(HelpManifestConstraints,
                 (),
