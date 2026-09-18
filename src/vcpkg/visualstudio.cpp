@@ -1,7 +1,6 @@
 #if defined(_WIN32)
 
 #include <vcpkg/base/files.h>
-#include <vcpkg/base/sortedvector.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/stringview.h>
 #include <vcpkg/base/system.h>
@@ -10,6 +9,8 @@
 
 #include <vcpkg/vcpkgpaths.h>
 #include <vcpkg/visualstudio.h>
+
+#include <algorithm>
 
 #endif
 
@@ -66,14 +67,28 @@ namespace vcpkg::VisualStudio
             return left.version > right.version;
         }
 
-        VisualStudioInstance(Path&& root_path, std::string&& version, const ReleaseType& release_type)
-            : root_path(std::move(root_path)), version(std::move(version)), release_type(release_type)
+        VisualStudioInstance(Path&& root_path,
+                             std::string&& version,
+                             const ReleaseType& release_type,
+                             std::string&& display_name = {},
+                             std::string&& display_version = {})
+            : root_path(std::move(root_path))
+            , version(std::move(version))
+            , release_type(release_type)
+            , display_name(std::move(display_name))
+            , display_version(std::move(display_version))
         {
         }
 
         Path root_path;
         std::string version;
         ReleaseType release_type;
+        // Only vswhere knows these, so they are empty, or assume a healthy
+        // install, for instances found any other way.
+        std::string display_name;
+        std::string display_version;
+        bool is_complete = true;
+        bool is_reboot_required = false;
 
         std::string to_string() const
         {
@@ -121,12 +136,30 @@ namespace vcpkg::VisualStudio
                         Checks::unreachable(VCPKG_LINE_INFO);
                 }
 
+                const auto optional_field = [&](StringView open, StringView close) {
+                    auto maybe_field = Strings::find_at_most_one_enclosed(instance, open, close);
+                    if (const auto field = maybe_field.get())
+                    {
+                        return field->to_string();
+                    }
+
+                    return std::string();
+                };
+
                 instances.emplace_back(
                     Strings::find_exactly_one_enclosed(instance, "<installationPath>", "</installationPath>")
                         .to_string(),
                     Strings::find_exactly_one_enclosed(instance, "<installationVersion>", "</installationVersion>")
                         .to_string(),
-                    release_type);
+                    release_type,
+                    optional_field("<displayName>", "</displayName>"),
+                    optional_field("<productDisplayVersion>", "</productDisplayVersion>"));
+
+                // An interrupted install or update leaves an instance
+                // incomplete, and one can be waiting on a reboot to finish.
+                auto& added = instances.back();
+                added.is_complete = optional_field("<isComplete>", "</isComplete>") != "0";
+                added.is_reboot_required = optional_field("<isRebootRequired>", "</isRebootRequired>") == "1";
             }
         }
 
@@ -186,7 +219,15 @@ namespace vcpkg::VisualStudio
         return Util::fmap(sorted, [](const VisualStudioInstance& instance) { return instance.to_string(); });
     }
 
-    ToolsetsInformation find_toolset_instances_preferred_first(const ReadOnlyFilesystem& fs)
+    static std::vector<VisualStudioInstance> get_sorted_instances(const ReadOnlyFilesystem& fs)
+    {
+        auto instances = get_visual_studio_instances_internal(fs);
+        std::stable_sort(instances.begin(), instances.end(), VisualStudioInstance::preferred_first_comparator);
+        return instances;
+    }
+
+    static ToolsetsInformation find_toolsets(const ReadOnlyFilesystem& fs,
+                                             const std::vector<VisualStudioInstance>& sorted)
     {
         ToolsetsInformation ret;
 
@@ -195,9 +236,6 @@ namespace vcpkg::VisualStudio
         // Note: this will contain a mix of vcvarsall.bat locations and dumpbin.exe locations.
         std::vector<Path>& paths_examined = ret.paths_examined;
         std::vector<Toolset>& found_toolsets = ret.toolsets;
-
-        const SortedVector<VisualStudioInstance, decltype(&VisualStudioInstance::preferred_first_comparator)> sorted{
-            get_visual_studio_instances_internal(fs), VisualStudioInstance::preferred_first_comparator};
 
         const bool v140_is_available = Util::any_of(
             sorted, [&](const VisualStudioInstance& vs_instance) { return vs_instance.major_version() == "14"; });
@@ -357,6 +395,65 @@ namespace vcpkg::VisualStudio
                                                      supported_architectures});
                 }
             }
+        }
+
+        return ret;
+    }
+
+    ToolsetsInformation find_toolset_instances_preferred_first(const ReadOnlyFilesystem& fs)
+    {
+        // Selection has always considered only one of the instances the
+        // comparator cannot tell apart, such as two editions of the same
+        // version, and still does. Reporting keeps them all.
+        auto sorted = get_sorted_instances(fs);
+        sorted.erase(std::unique(sorted.begin(),
+                                 sorted.end(),
+                                 [](const VisualStudioInstance& lhs, const VisualStudioInstance& rhs) {
+                                     return !VisualStudioInstance::preferred_first_comparator(lhs, rhs);
+                                 }),
+                     sorted.end());
+        return find_toolsets(fs, sorted);
+    }
+
+    std::vector<VisualStudioInstanceDetails> get_visual_studio_instance_details(const ReadOnlyFilesystem& fs)
+    {
+        const auto sorted = get_sorted_instances(fs);
+        auto toolsets = find_toolsets(fs, sorted).toolsets;
+
+        std::vector<VisualStudioInstanceDetails> ret;
+        for (const VisualStudioInstance& instance : sorted)
+        {
+            // An instance can be found more than once, by vswhere and through
+            // its comntools variable, which a developer command prompt sets.
+            // The first is the preferred one and knows the most about it.
+            if (Util::any_of(ret, [&](const VisualStudioInstanceDetails& seen) {
+                    return Strings::case_insensitive_ascii_equals(seen.root_path.native(), instance.root_path.native());
+                }))
+            {
+                continue;
+            }
+
+            VisualStudioInstanceDetails details;
+            details.root_path = instance.root_path;
+            details.version = instance.version;
+            details.release_type = VisualStudioInstance::release_type_to_string(instance.release_type);
+            details.display_name = instance.display_name;
+            details.display_version = instance.display_version;
+            details.is_complete = instance.is_complete;
+            details.is_reboot_required = instance.is_reboot_required;
+
+            for (auto&& toolset : toolsets)
+            {
+                if (toolset.visual_studio_root_path == instance.root_path &&
+                    !Util::any_of(details.toolsets, [&](const Toolset& existing) {
+                        return existing.full_version == toolset.full_version;
+                    }))
+                {
+                    details.toolsets.push_back(toolset);
+                }
+            }
+
+            ret.push_back(std::move(details));
         }
 
         return ret;
