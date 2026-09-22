@@ -174,6 +174,15 @@ function Run-VcpkgAndCaptureStdErr {
     return $result.Replace("`r`n", "`n")
 }
 
+function ConvertTo-WindowsCommandLineArgument([string]$Argument) {
+    $trailingBackslashes = 0
+    for ($index = $Argument.Length - 1; $index -ge 0 -and $Argument[$index] -eq '\'; --$index) {
+        ++$trailingBackslashes
+    }
+
+    return '"' + $Argument + ('\' * $trailingBackslashes) + '"'
+}
+
 function Run-VcpkgAndCaptureBoth {
     Param(
         [Parameter(ValueFromRemainingArguments)]
@@ -182,7 +191,28 @@ function Run-VcpkgAndCaptureBoth {
 
     $Script:CurrentTest = "$VcpkgExe $($testArgs -join ' ')"
     Write-Host -ForegroundColor red $Script:CurrentTest
-    $result = (& "$VcpkgExe" @testArgs 2>&1) | Out-String
+
+    # PowerShell gives native processes separate stdout and stderr pipes for 2>&1,
+    # then merges them asynchronously. Let a native shell give vcpkg one pipe.
+    if ($IsWindows) {
+        $arguments = @($VcpkgExe) + $TestArgs
+        foreach ($argument in $arguments) {
+            if ($argument.IndexOfAny([char[]]@('"', '%', "`r", "`n")) -ne -1) {
+                Write-Error "'$Script:CurrentTest' contains an argument with a character that cannot be passed through cmd.exe"
+                throw
+            }
+        }
+
+        $quotedArguments = foreach ($argument in $arguments) {
+            ConvertTo-WindowsCommandLineArgument $argument
+        }
+
+        $command = ($quotedArguments -join ' ') + ' 2>&1'
+        $result = (& $env:ComSpec /d /v:off /s /c $command) | Out-String
+    } else {
+        $result = (& /bin/sh -c '"$0" "$@" 2>&1' $VcpkgExe @TestArgs) | Out-String
+    }
+
     Write-Host -ForegroundColor Gray $result
     return $result.Replace("`r`n", "`n")
 }
