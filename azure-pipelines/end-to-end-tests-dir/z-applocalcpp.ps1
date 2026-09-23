@@ -19,6 +19,29 @@ if ($IsWindows) {
 
     Require-FileExists $basicDir/mylib.dll
 
+    # Transitive dependencies are resolved from the installed tree, not the deployment directory.
+    Set-Content -LiteralPath $basicDir/mylib.dll -Value 'not a PE'
+    Run-Vcpkg z-applocal `
+            --target-binary=$basicDir/main.exe `
+            --installed-bin-dir=$basicDir/installed/bin
+    Throw-IfFailed
+
+    # Dependencies outside the installed tree are handled by their own z-applocal invocation.
+    $installedMylib = "$basicDir/installed/bin/mylib.dll"
+    $savedInstalledMylib = "$installedMylib.saved"
+    Move-Item -LiteralPath $installedMylib -Destination $savedInstalledMylib
+    try
+    {
+        Run-Vcpkg z-applocal `
+                --target-binary=$basicDir/main.exe `
+                --installed-bin-dir=$basicDir/installed/bin
+        Throw-IfFailed
+    }
+    finally
+    {
+        Move-Item -LiteralPath $savedInstalledMylib -Destination $installedMylib
+    }
+
     # Tests z-applocal command with no arguments
     Run-Vcpkg z-applocal
     Throw-IfNotFailed
