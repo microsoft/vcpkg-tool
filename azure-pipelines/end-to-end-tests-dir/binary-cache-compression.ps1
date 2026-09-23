@@ -14,19 +14,23 @@ try {
             $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = 'invalid'
             $levelArgs = @("--binary-cache-compression-level=$level")
         }
-        Run-Vcpkg -TestArgs ($commonArgs + $levelArgs + @('install', 'binary-cache-compression', "--binarysource=clear;files,$ArchiveRoot,write"))
+        Run-Vcpkg -TestArgs ($commonArgs + $levelArgs + @('install', 'vcpkg-header-only', "--binarysource=clear;files,$ArchiveRoot,write"))
         Throw-IfFailed
 
         $archives = @(Get-ChildItem $ArchiveRoot -Recurse -Filter '*.zip')
         if ($archives.Count -ne 1) { throw "Expected one binary cache archive" }
         $archive = [System.IO.Compression.ZipFile]::OpenRead($archives[0].FullName)
         try {
-            $entry = $archive.GetEntry('share/binary-cache-compression/copyright')
+            $entry = $archive.GetEntry('include/vcpkg-header-only.h')
             if ($null -eq $entry) { throw 'Missing package content in archive' }
             if ($level -eq 0) {
-                if ($entry.CompressedLength -ne $entry.Length) { throw 'Level 0 must store without compression' }
-            } elseif ($null -ne $level -and $entry.CompressedLength -ge $entry.Length) {
-                throw 'Expected compression of repetitive package content'
+                foreach ($entry in $archive.Entries) {
+                    if ($entry.CompressedLength -ne $entry.Length) { throw 'Level 0 must store without compression' }
+                }
+            } elseif ($null -ne $level) {
+                # Tiny files may grow under compression; check that at least one entry shrinks.
+                $compressedEntries = @($archive.Entries | Where-Object { $_.CompressedLength -lt $_.Length })
+                if ($compressedEntries.Count -eq 0) { throw 'Expected compressed package content' }
             }
         } finally {
             $archive.Dispose()
@@ -34,11 +38,11 @@ try {
     }
 
     # Restore once with a different setting; rebuilding must not hide a cache miss.
-    $payloadPath = "$installRoot/$Triplet/share/binary-cache-compression/copyright"
+    $payloadPath = "$installRoot/$Triplet/include/vcpkg-header-only.h"
     $originalHash = (Get-FileHash -LiteralPath $payloadPath -Algorithm SHA256).Hash
     Remove-Item -Recurse -Force $installRoot
     $env:VCPKG_BINARY_CACHE_COMPRESSION_LEVEL = '0'
-    Run-Vcpkg -TestArgs ($commonArgs + @('install', 'binary-cache-compression', '--only-binarycaching', "--binarysource=clear;files,$ArchiveRoot,read"))
+    Run-Vcpkg -TestArgs ($commonArgs + @('install', 'vcpkg-header-only', '--only-binarycaching', "--binarysource=clear;files,$ArchiveRoot,read"))
     Throw-IfFailed
     $restoredHash = (Get-FileHash -LiteralPath $payloadPath -Algorithm SHA256).Hash
     if ($restoredHash -ne $originalHash) {
