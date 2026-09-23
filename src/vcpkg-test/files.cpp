@@ -1167,13 +1167,13 @@ TEST_CASE ("exclusive file locks are not inherited across exec", "[files]")
 
     lock.reset();
     auto second_lock = fs.try_take_exclusive_file_lock(null_diagnostic_context, lock_path);
+    CHECK(second_lock);
 
     (void)kill(child_pid, SIGKILL);
     int child_status;
     (void)waitpid(child_pid, &child_status, 0);
 
     REQUIRE(exec_result == 0);
-    CHECK(second_lock);
 }
 #endif // !_WIN32
 
