@@ -4243,7 +4243,7 @@ namespace vcpkg
             Path p;
             bool locked = false;
             ExclusiveFileLock(const Path& path, std::error_code& ec)
-                : fd(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, ec), p(path)
+                : fd(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, ec), p(path)
             {
             }
 

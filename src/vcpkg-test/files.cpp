@@ -11,7 +11,11 @@
 #include <vector>
 
 #if !defined(_WIN32)
+#include <fcntl.h>
+#include <signal.h>
+
 #include <sys/stat.h>
+#include <sys/wait.h>
 #endif // ^^^ !_WIN32
 
 using namespace vcpkg;
@@ -1132,6 +1136,46 @@ TEST_CASE ("find_file_recursively_up", "[files]")
 
     fs.remove_all(test_root, VCPKG_LINE_INFO);
 }
+
+#if !defined(_WIN32)
+TEST_CASE ("exclusive file locks are not inherited across exec", "[files]")
+{
+    auto& fs = setup();
+    const auto lock_path = base_temporary_directory() / "exclusive-file-lock";
+    auto lock = fs.take_exclusive_file_lock(null_diagnostic_context, lock_path);
+    REQUIRE(lock);
+
+    int exec_pipe[2];
+    REQUIRE(pipe(exec_pipe) == 0);
+    REQUIRE(fcntl(exec_pipe[1], F_SETFD, FD_CLOEXEC) == 0);
+
+    const auto child_pid = fork();
+    REQUIRE(child_pid >= 0);
+    if (child_pid == 0)
+    {
+        close(exec_pipe[0]);
+        execl("/bin/sleep", "sleep", "30", nullptr);
+        const char exec_failed = 1;
+        (void)write(exec_pipe[1], &exec_failed, sizeof(exec_failed));
+        _exit(1);
+    }
+
+    close(exec_pipe[1]);
+    char exec_failed;
+    const auto exec_result = read(exec_pipe[0], &exec_failed, sizeof(exec_failed));
+    close(exec_pipe[0]);
+
+    lock.reset();
+    auto second_lock = fs.try_take_exclusive_file_lock(null_diagnostic_context, lock_path);
+
+    (void)kill(child_pid, SIGKILL);
+    int child_status;
+    (void)waitpid(child_pid, &child_status, 0);
+
+    REQUIRE(exec_result == 0);
+    CHECK(second_lock);
+}
+#endif // !_WIN32
 
 #if defined(_WIN32)
 TEST_CASE ("win32_fix_path_case", "[files]")
