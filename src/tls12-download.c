@@ -10,6 +10,8 @@
 #include <Softpub.h>
 #pragma warning(pop)
 
+#include "tls12-download-proxy.h"
+
 /*
  * This program must be as small as possible, because it is committed in binary form to the
  * vcpkg github repo to enable downloading the main vcpkg program on Windows 7, where TLS 1.2 is
@@ -170,6 +172,17 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
     }
 }
 
+static void warn_unsupported_proxy_bypass(const wchar_t* entry, void* context)
+{
+    const HANDLE std_out = (HANDLE)context;
+    write_message(std_out, L"\r\nwarning: Skipping NO_PROXY entry \"");
+    write_message(std_out, entry);
+    write_message(std_out,
+                  L"\": unsupported by Windows WinHTTP. The configured proxy will still be used unless another "
+                  L"bypass entry matches. Use WinHTTP host names or wildcard patterns instead of bare IPv6 or CIDR "
+                  L"ranges.\r\n");
+}
+
 // these are sucked out to avoid
 // warning C6262: Function uses '98624' bytes of stack.  Consider moving some data to heap.
 static wchar_t https_proxy_env[32768];
@@ -275,10 +288,17 @@ int __stdcall entry()
     // Setting delete on close before we do anything means the file will get deleted for us if we crash
     set_delete_on_close_flag(std_out, out_file, TRUE);
 
-    const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
+    const HINTERNET session =
+        WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!session)
     {
         abort_api_failure(std_out, L"WinHttpOpen");
+    }
+
+    if (access_type == WINHTTP_ACCESS_TYPE_NAMED_PROXY && proxy_bypass_setting &&
+        !set_proxy_bypass(session, proxy_setting, no_proxy_env, warn_unsupported_proxy_bypass, std_out))
+    {
+        abort_api_failure(std_out, L"WinHttpSetOption (NO_PROXY)");
     }
 
     // If HTTPS_PROXY not found, try use IE Proxy. This works on Windows 10 20H2, so there's no need to determine

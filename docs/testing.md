@@ -64,6 +64,40 @@ $ # i.e., ./out/vcpkg-test [arguments]
 If you make any modifications to `vcpkg`, you'll have to do the
 `cmake --build .` step again.
 
+## Windows bootstrap proxy tests
+
+Run `vcpkg-test.exe "[tls12-download]"` to test the bootstrap helper's `NO_PROXY`
+handling. Routing tests use loopback HTTP servers and reserved `.invalid` names;
+the servers never forward traffic. They check both directions of a cross-host
+redirect, in addition to checking accepted bypass strings.
+
+When `HTTPS_PROXY` is nonempty, the helper first submits the complete `NO_PROXY`
+list to WinHTTP in one configuration call. If accepted, the helper does not
+scan or rewrite the list itself. Only if WinHTTP rejects it with
+`ERROR_INVALID_PARAMETER` does the helper split it on commas, semicolons, and
+whitespace, and ask WinHTTP to validate each entry. Entries rejected with
+`ERROR_INVALID_PARAMETER` (for example bare `::1` or
+`192.0.2.0/24`) produce individual warnings and are omitted. Other errors remain
+fatal. Supported entries are retained, and omitting entries never disables the
+configured proxy. If all entries are rejected, all requests use that proxy.
+
+Matching remains WinHTTP matching, not curl-style domain suffix matching:
+`example.invalid` matches that host, while `*.example.invalid` matches its
+subdomains. A leading-dot entry such as `.example.invalid` is accepted by
+WinHTTP but does not match `host.example.invalid`; it is not an unsupported
+entry and is not rewritten. Bracketed IPv6 and host-with-port entries are
+retained when accepted by the installed WinHTTP version. The session-level
+bypass list also applies to redirected destinations.
+
+When `VCPKG_BUILD_TLS12_DOWNLOADER` is enabled, these tests also run the actual
+helper to check empty/unset environment variables, individual warnings, HTTPS
+proxy routing, and deletion of failed downloads. The local proxy rejects HTTPS
+tunnels; these tests do not download or trust test certificates.
+
+Empty or unset `HTTPS_PROXY` still selects the existing Windows/IE proxy
+fallback, including its own bypass list. `NO_PROXY` does not override that
+fallback. Empty or unset `NO_PROXY` supplies no environment bypass list.
+
 ## Writing Tests
 
 In your journey to write new tests, and to modify existing tests, reading the
