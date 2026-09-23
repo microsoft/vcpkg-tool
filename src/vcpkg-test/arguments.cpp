@@ -1,6 +1,7 @@
 #include <vcpkg-test/util.h>
 
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -198,4 +199,47 @@ TEST_CASE ("CMake debugger flags", "[arguments]")
     REQUIRE(cmake_configure_debug.value == "\\\\.\\pipe\\configure-pipe");
     REQUIRE(cmake_configure_debug.is_port_affected("7zip"));
     REQUIRE(cmake_configure_debug.is_port_affected("zlib"));
+}
+
+TEST_CASE ("Binary cache compression level", "[arguments]")
+{
+    FullyBufferedDiagnosticContext context;
+    Optional<int> level;
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    REQUIRE(args.parse_binary_cache_compression_level(context, level));
+    REQUIRE_FALSE(level.has_value());
+
+    for (int i = 0; i <= 9; ++i)
+    {
+        const auto value = std::to_string(i);
+        std::map<StringLiteral, std::string, std::less<>> env = {
+            {EnvironmentVariableVcpkgBinaryCacheCompressionLevel, value}};
+        args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+        args.imbue_from_fake_environment(env);
+        REQUIRE(args.parse_binary_cache_compression_level(context, level));
+        REQUIRE(level == i);
+
+        for (const auto& cli : std::vector<std::vector<std::string>>{{"--binary-cache-compression-level=" + value},
+                                                                     {"--binary-cache-compression-level", value}})
+        {
+            args = VcpkgCmdArguments::create_from_arg_sequence(cli.data(), cli.data() + cli.size());
+            env[EnvironmentVariableVcpkgBinaryCacheCompressionLevel] = "invalid";
+            args.imbue_from_fake_environment(env);
+            REQUIRE(args.parse_binary_cache_compression_level(context, level));
+            REQUIRE(level == i);
+        }
+    }
+
+    for (const auto& value : {"", "-1", "10", "01", "+1", "1.0", " 1", "1 ", "fast", "1;echo"})
+    {
+        INFO(value);
+        std::vector<std::string> cli = {std::string("--binary-cache-compression-level=") + value};
+        args = VcpkgCmdArguments::create_from_arg_sequence(cli.data(), cli.data() + cli.size());
+        REQUIRE_FALSE(args.parse_binary_cache_compression_level(context, level));
+        REQUIRE_FALSE(level.has_value());
+
+        args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+        args.imbue_from_fake_environment({{EnvironmentVariableVcpkgBinaryCacheCompressionLevel, value}});
+        REQUIRE_FALSE(args.parse_binary_cache_compression_level(context, level));
+    }
 }

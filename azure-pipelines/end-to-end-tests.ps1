@@ -105,6 +105,7 @@ if ($null -ne $Filter) {
 }
 
 $envvars_clear = @(
+    'VCPKG_BINARY_CACHE_COMPRESSION_LEVEL',
     'VCPKG_BINARY_SOURCES',
     'VCPKG_DEFAULT_HOST_TRIPLET',
     'VCPKG_DEFAULT_TRIPLET',
