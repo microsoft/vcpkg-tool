@@ -42,6 +42,27 @@ if ($IsWindows) {
         Move-Item -LiteralPath $savedInstalledMylib -Destination $installedMylib
     }
 
+    # Concurrent deployments into the same directory are serialized.
+    Remove-Item -LiteralPath $basicDir/mylib.dll
+    $parallelApplocal = 1..8 | ForEach-Object {
+        Start-Process -FilePath $VcpkgExe `
+                -ArgumentList @(
+                    'z-applocal',
+                    "--target-binary=$basicDir/main.exe",
+                    "--installed-bin-dir=$basicDir/installed/bin") `
+                -NoNewWindow `
+                -PassThru
+    }
+    foreach ($process in $parallelApplocal)
+    {
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0)
+        {
+            throw "Concurrent z-applocal process failed with exit code $($process.ExitCode)"
+        }
+    }
+    Require-FileExists $basicDir/mylib.dll
+
     # Tests z-applocal command with no arguments
     Run-Vcpkg z-applocal
     Throw-IfNotFailed
@@ -128,7 +149,9 @@ if ($IsWindows) {
     Throw-IfFailed
     Require-FileExists "$pluginTransitiveDir/MagnumAudio.dll"
     Require-FileExists "$pluginTransitiveDir/OpenNI2.dll"
+    Require-FileExists "$pluginTransitiveDir/OpenNI.ini"
     Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/importer.dll"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/OpenNI2.dll"
     Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/OpenNI.ini"
 
     # Tests that nonexistent files are merely warnings

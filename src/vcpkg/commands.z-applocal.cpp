@@ -81,14 +81,16 @@ namespace
     struct DeploymentLockGuard
     {
 #if defined(_WIN32)
-        DeploymentLockGuard(const Filesystem&, const Path&, const Path& destination)
-            : m_mutant("vcpkg-applocal-" + Hash::get_string_sha256(Strings::ascii_to_lowercase(destination.native())))
+        DeploymentLockGuard(const Filesystem&, const Path&, const Path& target_directory)
+            : m_mutant("vcpkg-applocal-" +
+                       Hash::get_string_sha256(Strings::ascii_to_lowercase(target_directory.native())))
         {
         }
 #else  // ^^^ _WIN32 / !_WIN32 vvv
-        DeploymentLockGuard(const Filesystem& fs, const Path& temp_dir, const Path& destination)
+        DeploymentLockGuard(const Filesystem& fs, const Path& temp_dir, const Path& target_directory)
             : m_file_lock(fs.take_exclusive_file_lock(
-                  stderr_diagnostic_context, temp_dir / ("vcpkg-applocal-" + Hash::get_string_sha256(destination))))
+                  stderr_diagnostic_context,
+                  temp_dir / ("vcpkg-applocal-" + Hash::get_string_sha256(target_directory))))
         {
         }
 #endif // ^^^ !_WIN32
@@ -145,7 +147,7 @@ namespace
         {
         }
 
-        void resolve(const Path& source_binary, const Path& destination_binary)
+        void resolve(const Path& source_binary, const Path& destination_binary_relative)
         {
             if (m_verbose)
             {
@@ -161,54 +163,63 @@ namespace
             const auto imported_names =
                 vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
             dll_file.close();
-            resolve_explicit(destination_binary, imported_names);
+            resolve_explicit(destination_binary_relative, imported_names);
         }
 
-        void resolve_explicit(const Path& destination_binary, const std::vector<std::string>& imported_names)
+        void resolve_explicit(const Path& destination_binary_relative, const std::vector<std::string>& imported_names)
         {
-            Debug::print(
-                "Imported DLLs deployed as ", destination_binary, " were ", Strings::join("\n", imported_names), "\n");
+            Debug::print("Imported DLLs deployed as ",
+                         m_deployment_dir / destination_binary_relative,
+                         " were ",
+                         Strings::join("\n", imported_names),
+                         "\n");
 
             for (auto&& imported_name : imported_names)
             {
                 const auto normalized_imported_name = Strings::ascii_to_lowercase(imported_name);
-                if (m_searched.find(normalized_imported_name) != m_searched.end())
+                Path target_binary_dir_relative = destination_binary_relative.parent_path();
+                target_binary_dir_relative.make_preferred();
+                auto search_key = target_binary_dir_relative.native();
+#if defined(_WIN32)
+                Strings::inplace_ascii_to_lowercase(search_key);
+#endif // defined(_WIN32)
+                search_key.push_back('\0');
+                search_key.append(normalized_imported_name);
+                if (!m_searched.insert(std::move(search_key)).second)
                 {
                     Debug::println(" ", imported_name, "previously searched - Skip");
                     continue;
                 }
-                m_searched.insert(normalized_imported_name);
 
-                const auto target_binary_dir = destination_binary.parent_path();
                 Path installed_item_file_path = m_installed_bin_dir / imported_name;
 
                 if (m_fs.exists(installed_item_file_path, VCPKG_LINE_INFO))
                 {
-                    plan_binary_deployment(m_deployment_dir, m_installed_bin_dir, imported_name);
+                    plan_binary_deployment(target_binary_dir_relative, m_installed_bin_dir, imported_name);
 
                     if (m_openni2_installed)
                     {
-                        deployOpenNI2(target_binary_dir, m_installed, imported_name);
+                        deployOpenNI2(target_binary_dir_relative, m_installed, imported_name);
                     }
 
                     if (m_azurekinectsdk_installed)
                     {
-                        deployAzureKinectSensorSDK(target_binary_dir, m_installed, imported_name);
+                        deployAzureKinectSensorSDK(target_binary_dir_relative, m_installed, imported_name);
                     }
 
                     if (m_magnum_installed)
                     {
-                        deployMagnum(target_binary_dir,
+                        deployMagnum(target_binary_dir_relative,
                                      m_installed / (m_is_debug ? "bin/magnum-d" : "bin/magnum"),
                                      imported_name);
                     }
 
                     if (m_qt_installed)
                     {
-                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
+                        deployQt(target_binary_dir_relative, m_installed / "plugins", imported_name);
                     }
 
-                    resolve(installed_item_file_path, m_deployment_dir / imported_name);
+                    resolve(installed_item_file_path, target_binary_dir_relative / imported_name);
                 }
                 else
                 {
@@ -221,7 +232,7 @@ namespace
         {
             for (const auto& deployment : m_deployments)
             {
-                const DeploymentLockGuard guard(m_fs, m_temp_dir, deployment.destination);
+                const DeploymentLockGuard guard(m_fs, m_temp_dir, deployment.destination.parent_path());
                 deploy_file(deployment);
             }
 
@@ -236,7 +247,7 @@ namespace
 
             for (const auto& qt_conf : m_qt_conf_files)
             {
-                const DeploymentLockGuard guard(m_fs, m_temp_dir, qt_conf);
+                const DeploymentLockGuard guard(m_fs, m_temp_dir, qt_conf.parent_path());
                 if (!m_fs.exists(qt_conf, VCPKG_LINE_INFO))
                 {
                     m_fs.write_contents(qt_conf, "[Paths]\n", VCPKG_LINE_INFO);
@@ -393,7 +404,7 @@ namespace
             if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Cored.dll") ||
                 Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Core.dll"))
             {
-                m_qt_conf_files.push_back(target_binary_dir / "qt.conf");
+                m_qt_conf_files.push_back(m_deployment_dir / target_binary_dir / "qt.conf");
             }
             else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Guid.dll") ||
                      Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Gui.dll"))
@@ -463,15 +474,16 @@ namespace
                      Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Qml.dll"))
             {
                 std::error_code ec;
-                if (!m_fs.exists(target_binary_dir / "qml", ec))
+                const auto target_qml_dir = m_deployment_dir / target_binary_dir / "qml";
+                if (!m_fs.exists(target_qml_dir, ec))
                 {
                     if (m_fs.exists(bin_dir / "../qml", ec))
                     {
-                        m_recursive_deployments.push_back({bin_dir / "../qml", target_binary_dir / "qml"});
+                        m_recursive_deployments.push_back({bin_dir / "../qml", target_qml_dir});
                     }
                     else if (m_fs.exists(bin_dir / "../../qml", ec))
                     {
-                        m_recursive_deployments.push_back({bin_dir / "../../qml", target_binary_dir / "qml"});
+                        m_recursive_deployments.push_back({bin_dir / "../../qml", target_qml_dir});
                     }
                     else
                     {
@@ -569,13 +581,13 @@ namespace
             }
         }
 
-        void plan_binary_deployment(const Path& target_binary_dir,
+        void plan_binary_deployment(const Path& target_binary_dir_relative,
                                     const Path& installed_dir,
                                     StringView target_binary_name)
         {
             auto source = installed_dir / target_binary_name;
             source.make_preferred();
-            auto target = target_binary_dir / target_binary_name;
+            auto target = m_deployment_dir / target_binary_dir_relative / target_binary_name;
             target.make_preferred();
             m_deployments.push_back({std::move(source), std::move(target)});
         }
@@ -776,7 +788,7 @@ namespace vcpkg
                                       maybe_create_log(parsed.settings, SwitchTLogFile, fs),
 #endif // ^^^ _WIN32
                                       maybe_create_log(parsed.settings, SwitchCopiedFilesLog, fs));
-        invocation.resolve_explicit(target_binary_path, imported_names);
+        invocation.resolve_explicit(target_binary_path.filename(), imported_names);
         invocation.execute_deployment_plan();
         Checks::exit_success(VCPKG_LINE_INFO);
     }
