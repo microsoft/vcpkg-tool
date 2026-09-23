@@ -145,28 +145,29 @@ namespace
         {
         }
 
-        void resolve(const Path& binary)
+        void resolve(const Path& source_binary, const Path& destination_binary)
         {
             if (m_verbose)
             {
-                msg::print(LocalizedString::from_raw(binary)
+                msg::print(LocalizedString::from_raw(source_binary)
                                .append_raw(": ")
                                .append_raw(MessagePrefix)
                                .append(msgApplocalProcessing)
                                .append_raw('\n'));
             }
 
-            auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
+            auto dll_file = m_fs.open_for_read(source_binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata_required(dll_file).value_or_exit(VCPKG_LINE_INFO);
             const auto imported_names =
                 vcpkg::try_read_dll_imported_dll_names(dll_metadata, dll_file).value_or_exit(VCPKG_LINE_INFO);
             dll_file.close();
-            resolve_explicit(binary, imported_names);
+            resolve_explicit(destination_binary, imported_names);
         }
 
-        void resolve_explicit(const Path& binary, const std::vector<std::string>& imported_names)
+        void resolve_explicit(const Path& destination_binary, const std::vector<std::string>& imported_names)
         {
-            Debug::print("Imported DLLs of ", binary, " were ", Strings::join("\n", imported_names), "\n");
+            Debug::print(
+                "Imported DLLs deployed as ", destination_binary, " were ", Strings::join("\n", imported_names), "\n");
 
             for (auto&& imported_name : imported_names)
             {
@@ -178,6 +179,7 @@ namespace
                 }
                 m_searched.insert(normalized_imported_name);
 
+                const auto target_binary_dir = destination_binary.parent_path();
                 Path installed_item_file_path = m_installed_bin_dir / imported_name;
 
                 if (m_fs.exists(installed_item_file_path, VCPKG_LINE_INFO))
@@ -186,17 +188,17 @@ namespace
 
                     if (m_openni2_installed)
                     {
-                        deployOpenNI2(m_deployment_dir, m_installed, imported_name);
+                        deployOpenNI2(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_azurekinectsdk_installed)
                     {
-                        deployAzureKinectSensorSDK(m_deployment_dir, m_installed, imported_name);
+                        deployAzureKinectSensorSDK(target_binary_dir, m_installed, imported_name);
                     }
 
                     if (m_magnum_installed)
                     {
-                        deployMagnum(m_deployment_dir,
+                        deployMagnum(target_binary_dir,
                                      m_installed / (m_is_debug ? "bin/magnum-d" : "bin/magnum"),
                                      imported_name);
                     }
@@ -206,7 +208,7 @@ namespace
                         deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
                     }
 
-                    resolve(installed_item_file_path);
+                    resolve(installed_item_file_path, m_deployment_dir / imported_name);
                 }
                 else
                 {
@@ -311,7 +313,7 @@ namespace
                         plan_binary_deployment(new_dir, magnum_plugins_dir / plugins_subdir_name, filename);
                         if (is_dll)
                         {
-                            resolve(c);
+                            resolve(c, new_dir / filename);
                         }
                     }
                 }
@@ -374,7 +376,7 @@ namespace
                     if (Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
                     {
                         plan_binary_deployment(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
-                        resolve(c);
+                        resolve(c, new_dir / c_filename);
                     }
                 }
             }

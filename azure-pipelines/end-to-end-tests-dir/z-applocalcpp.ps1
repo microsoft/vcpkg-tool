@@ -119,6 +119,18 @@ if ($IsWindows) {
     Require-FileExists "$pluginsDebugDir/k4a.dll"
     Require-FileExists "$pluginsDebugDir/depthengine_2_0.dll"
 
+    # Tests that installed plugin dependencies retain the plugin's deployment directory.
+    $pluginTransitiveDir = "$TestingRoot/applocal/plugin-transitive"
+    Run-Vcpkg env "$pluginTransitiveDir/build.bat"
+    Run-Vcpkg z-applocal `
+            --target-binary=$pluginTransitiveDir/main.exe `
+            --installed-bin-dir=$pluginTransitiveDir/installed/bin
+    Throw-IfFailed
+    Require-FileExists "$pluginTransitiveDir/MagnumAudio.dll"
+    Require-FileExists "$pluginTransitiveDir/OpenNI2.dll"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/importer.dll"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/OpenNI.ini"
+
     # Tests that nonexistent files are merely warnings
     $nonexistentDll = Join-Path $basicDir 'nonexisting.dll'
     Require-FileNotExists $nonexistentDll
