@@ -22,11 +22,62 @@ if (-Not $zipFilesExist)
     throw "No zip files found in $outputDir"
 }
 
-# Check existence of NuGet file(s)
-$nuGetFilesExist = Test-Path "$outputDir/*.nupkg"
-if (-Not $nuGetFilesExist)
+# Check contents of NuGet file(s)
+$nuGetFiles = Get-ChildItem "$outputDir/*.nupkg"
+if ($nuGetFiles.Count -eq 0)
 {
 	throw "No NuGet files found in $outputDir"
+}
+
+foreach ($nuGetFile in $nuGetFiles)
+{
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($nuGetFile)
+    try
+    {
+        $entryNames = $archive.Entries.FullName
+        $packageId = $nuGetFile.BaseName -replace "\.1\.0\.0$", ""
+        $expectedFiles = @(
+            ".vcpkg-root",
+            "build/native/$packageId.props",
+            "build/native/$packageId.targets"
+        )
+        if ($IsWindows)
+        {
+            $expectedFiles += "vcpkg.exe"
+        }
+
+        foreach ($expectedFile in $expectedFiles)
+        {
+            if ($entryNames -notcontains $expectedFile)
+            {
+                throw "$nuGetFile does not contain $expectedFile"
+            }
+        }
+
+        $redirects = @{
+            "build/native/$packageId.props" = "../../scripts/buildsystems/msbuild/vcpkg.props"
+            "build/native/$packageId.targets" = "../../scripts/buildsystems/msbuild/vcpkg.targets"
+        }
+        foreach ($redirect in $redirects.GetEnumerator())
+        {
+            $reader = [System.IO.StreamReader]::new($archive.GetEntry($redirect.Key).Open())
+            try
+            {
+                if ($reader.ReadToEnd() -notlike "*$($redirect.Value)*")
+                {
+                    throw "$nuGetFile contains an invalid $($redirect.Key)"
+                }
+            }
+            finally
+            {
+                $reader.Dispose()
+            }
+        }
+    }
+    finally
+    {
+        $archive.Dispose()
+    }
 }
 
 # Check existence of 7zip file(s)
@@ -63,5 +114,3 @@ if ($out -notmatch "Refusing to create an export of zero packages. Install packa
 {
 	throw "Expected to fail and print warning about empty export plan."
 }
-
-

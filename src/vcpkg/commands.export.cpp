@@ -56,6 +56,14 @@ namespace
             .finish_self_closing_complex_tag()
             .line_break();
 
+#if defined(_WIN32)
+        xml.start_complex_open_tag("file")
+            .text_attr("src", raw_exported_dir.native() + "\\vcpkg.exe")
+            .text_attr("target", "")
+            .finish_self_closing_complex_tag()
+            .line_break();
+#endif
+
         xml.start_complex_open_tag("file")
             .text_attr("src", targets_redirect_path)
             .text_attr("target", Strings::concat("build\\native\\", nuget_id, ".targets"))
