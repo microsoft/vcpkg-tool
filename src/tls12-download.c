@@ -170,7 +170,6 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
     }
 }
 
-// Keep the download buffer off the stack.
 static char buffer[32768];
 
 #ifndef NDEBUG
