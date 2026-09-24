@@ -10,8 +10,6 @@
 #include <Softpub.h>
 #pragma warning(pop)
 
-#include "tls12-download-proxy.h"
-
 /*
  * This program must be as small as possible, because it is committed in binary form to the
  * vcpkg github repo to enable downloading the main vcpkg program on Windows 7, where TLS 1.2 is
@@ -172,21 +170,7 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
     }
 }
 
-static void warn_unsupported_proxy_bypass(const wchar_t* entry, void* context)
-{
-    const HANDLE std_out = (HANDLE)context;
-    write_message(std_out, L"\r\nwarning: Skipping NO_PROXY entry \"");
-    write_message(std_out, entry);
-    write_message(std_out,
-                  L"\": unsupported by Windows WinHTTP. The configured proxy will still be used unless another "
-                  L"bypass entry matches. Use WinHTTP host names or wildcard patterns instead of bare IPv6 or CIDR "
-                  L"ranges.\r\n");
-}
-
-// these are sucked out to avoid
-// warning C6262: Function uses '98624' bytes of stack.  Consider moving some data to heap.
-static wchar_t https_proxy_env[32768];
-static wchar_t no_proxy_env[32768];
+// Keep the download buffer off the stack.
 static char buffer[32768];
 
 #ifndef NDEBUG
@@ -227,50 +211,6 @@ int __stdcall entry()
     write_message(std_out, L" -> ");
     write_message(std_out, out_file_path);
 
-    DWORD access_type;
-    const wchar_t* proxy_setting;
-    SetLastError(ERROR_SUCCESS);
-    DWORD get_result =
-        GetEnvironmentVariableW(L"HTTPS_PROXY", https_proxy_env, sizeof(https_proxy_env) / sizeof(wchar_t));
-    DWORD last_error = GetLastError();
-    if (get_result)
-    {
-        access_type = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-        proxy_setting = https_proxy_env;
-        write_message(std_out, L" (using proxy: ");
-        write_message(std_out, proxy_setting);
-        write_message(std_out, L")");
-    }
-    else if (last_error == ERROR_ENVVAR_NOT_FOUND || last_error == ERROR_SUCCESS)
-    {
-        access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
-        proxy_setting = WINHTTP_NO_PROXY_NAME;
-    }
-    else
-    {
-        abort_api_failure_with_last_error(std_out, L"GetEnvironmentVariableW", last_error);
-    }
-
-    const wchar_t* proxy_bypass_setting;
-    SetLastError(ERROR_SUCCESS);
-    get_result = GetEnvironmentVariableW(L"NO_PROXY", no_proxy_env, sizeof(no_proxy_env) / sizeof(wchar_t));
-    last_error = GetLastError();
-    if (get_result)
-    {
-        proxy_bypass_setting = no_proxy_env;
-        write_message(std_out, L" (using proxy bypass: ");
-        write_message(std_out, no_proxy_env);
-        write_message(std_out, L")");
-    }
-    else if (last_error == ERROR_ENVVAR_NOT_FOUND || last_error == ERROR_SUCCESS)
-    {
-        proxy_bypass_setting = WINHTTP_NO_PROXY_BYPASS;
-    }
-    else
-    {
-        abort_api_failure_with_last_error(std_out, L"GetEnvironmentVariableW", last_error);
-    }
-
     const HANDLE out_file = CreateFileW(out_file_path,                             // lpFileName
                                         FILE_WRITE_DATA | FILE_READ_DATA | DELETE, // dwDesiredAccess
                                         0,                                         // dwShareMode
@@ -289,39 +229,29 @@ int __stdcall entry()
     set_delete_on_close_flag(std_out, out_file, TRUE);
 
     const HINTERNET session =
-        WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, WINHTTP_NO_PROXY_BYPASS, 0);
+        WinHttpOpen(L"tls12-download/1.0", WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
     if (!session)
     {
         abort_api_failure(std_out, L"WinHttpOpen");
     }
 
-    if (access_type == WINHTTP_ACCESS_TYPE_NAMED_PROXY && proxy_bypass_setting &&
-        !set_proxy_bypass(session, proxy_setting, no_proxy_env, warn_unsupported_proxy_bypass, std_out))
+    // Use the current user's explicit Windows/IE proxy settings, not proxy environment variables.
+    WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
+    if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != NULL)
     {
-        abort_api_failure(std_out, L"WinHttpSetOption (NO_PROXY)");
-    }
+        WINHTTP_PROXY_INFO proxy;
+        proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
+        proxy.lpszProxy = ieProxy.lpszProxy;
+        proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
+        WinHttpSetOption(session, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
 
-    // If HTTPS_PROXY not found, try use IE Proxy. This works on Windows 10 20H2, so there's no need to determine
-    // the OS version >= 8.1.
-    if (access_type == WINHTTP_ACCESS_TYPE_NO_PROXY)
-    {
-        WINHTTP_CURRENT_USER_IE_PROXY_CONFIG ieProxy;
-        if (WinHttpGetIEProxyConfigForCurrentUser(&ieProxy) && ieProxy.lpszProxy != NULL)
-        {
-            WINHTTP_PROXY_INFO proxy;
-            proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
-            proxy.lpszProxy = ieProxy.lpszProxy;
-            proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
-            WinHttpSetOption(session, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
+        write_message(std_out, L" (using IE proxy: ");
+        write_message(std_out, proxy.lpszProxy);
+        write_message(std_out, L")");
 
-            write_message(std_out, L" (using IE proxy: ");
-            write_message(std_out, proxy.lpszProxy);
-            write_message(std_out, L")");
-
-            GlobalFree(ieProxy.lpszProxy);
-            GlobalFree(ieProxy.lpszProxyBypass);
-            GlobalFree(ieProxy.lpszAutoConfigUrl);
-        }
+        GlobalFree(ieProxy.lpszProxy);
+        GlobalFree(ieProxy.lpszProxyBypass);
+        GlobalFree(ieProxy.lpszAutoConfigUrl);
     }
 
     write_message(std_out, L"...");
