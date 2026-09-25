@@ -164,6 +164,7 @@
   "BaselineMissing": "Для {package_name} не назначена версия",
   "BaselineOnlyPlatformExpressionOrTriplet": "Невозможно указать выражение платформы и триаду",
   "BinariesRelativeToThePackageDirectoryHere": "двоичные файлы здесь относятся к ${{CURRENT_PACKAGES_DIR}}",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "Источники для двоичного кэширования. См. \"vcpkg help binarycaching\"",
   "BinaryWithInvalidArchitecture": "{path} создан для {arch}",
   "BuildAlreadyInstalled": "{spec} — уже установлено. Удалите {spec}, прежде чем выполнять сборку.",
