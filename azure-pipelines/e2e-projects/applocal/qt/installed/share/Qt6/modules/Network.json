@@ -1,0 +1,8 @@
+{
+  "name": "Network",
+  "plugin_types": [
+    "networkaccess",
+    "networkinformation",
+    "tls"
+  ]
+}

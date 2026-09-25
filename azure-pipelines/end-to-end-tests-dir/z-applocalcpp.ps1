@@ -33,6 +33,149 @@ if ($IsWindows) {
             --installed-bin-dir=$basicDir
     Throw-IfNotFailed
 
+    # Tests deploy Qt 5 and Qt 6 libraries and plugins when both versions are installed
+    $qtDir = "$TestingRoot/applocal/qt"
+    Run-Vcpkg env "$qtDir/build.bat"
+
+    $qtCases = @(
+        @{
+            Name = "Qt 5 release"
+            Major = 5
+            Suffix = ""
+            AppDir = "qt5-release"
+            InstalledBinDir = "installed/bin"
+            PluginsDir = "installed/plugins"
+            OtherPluginsDir = "installed/Qt6/plugins"
+        },
+        @{
+            Name = "Qt 5 debug"
+            Major = 5
+            Suffix = "d"
+            AppDir = "qt5-debug"
+            InstalledBinDir = "installed/debug/bin"
+            PluginsDir = "installed/debug/plugins"
+            OtherPluginsDir = "installed/debug/Qt6/plugins"
+        },
+        @{
+            Name = "Qt 6 release"
+            Major = 6
+            Suffix = ""
+            AppDir = "qt6-release"
+            InstalledBinDir = "installed/bin"
+            PluginsDir = "installed/Qt6/plugins"
+            OtherPluginsDir = "installed/plugins"
+        },
+        @{
+            Name = "Qt 6 debug"
+            Major = 6
+            Suffix = "d"
+            AppDir = "qt6-debug"
+            InstalledBinDir = "installed/debug/bin"
+            PluginsDir = "installed/debug/Qt6/plugins"
+            OtherPluginsDir = "installed/debug/plugins"
+        }
+    )
+
+    foreach ($qtCase in $qtCases)
+    {
+        $appDir = Join-Path $qtDir $qtCase.AppDir
+        $installedBinDir = Join-Path $qtDir $qtCase.InstalledBinDir
+        $coreLibrary = "Qt$($qtCase.Major)Core$($qtCase.Suffix).dll"
+        $guiLibrary = "Qt$($qtCase.Major)Gui$($qtCase.Suffix).dll"
+        $networkLibrary = "Qt$($qtCase.Major)Network$($qtCase.Suffix).dll"
+        $printSupportLibrary = "Qt$($qtCase.Major)PrintSupport$($qtCase.Suffix).dll"
+        $sqlLibrary = "Qt$($qtCase.Major)Sql$($qtCase.Suffix).dll"
+        $widgetsLibrary = "Qt$($qtCase.Major)Widgets$($qtCase.Suffix).dll"
+        $imageFormatPlugin = "qjpeg$($qtCase.Suffix).dll"
+        $platformPlugin = "qwindows$($qtCase.Suffix).dll"
+        $otherSuffix = if ($qtCase.Suffix) { "" } else { "d" }
+        $otherImageFormatPlugin = "qjpeg$otherSuffix.dll"
+        $otherPlatformPlugin = "qwindows$otherSuffix.dll"
+        $copiedFilesLog = Join-Path $appDir "copied-files.log"
+        $pluginFiles = @(
+            "imageformats/$imageFormatPlugin",
+            "platforms/$platformPlugin",
+            "printsupport/qprint$($qtCase.Suffix).dll",
+            "sqldrivers/qsqlite$($qtCase.Suffix).dll",
+            "styles/qstyle$($qtCase.Suffix).dll"
+        )
+        if ($qtCase.Major -eq 5)
+        {
+            $pluginFiles += "bearer/qbearer$($qtCase.Suffix).dll"
+        }
+        else
+        {
+            $pluginFiles += @(
+                "generic/qgeneric$($qtCase.Suffix).dll",
+                "networkinformation/qnetworkinformation$($qtCase.Suffix).dll",
+                "platformthemes/qplatformtheme$($qtCase.Suffix).dll",
+                "tls/qtls$($qtCase.Suffix).dll"
+            )
+        }
+
+        Require-FileNotExists (Join-Path $appDir $coreLibrary)
+        Require-FileNotExists (Join-Path $appDir $guiLibrary)
+        Require-FileNotExists (Join-Path $appDir $networkLibrary)
+        Require-FileNotExists (Join-Path $appDir $printSupportLibrary)
+        Require-FileNotExists (Join-Path $appDir $sqlLibrary)
+        Require-FileNotExists (Join-Path $appDir $widgetsLibrary)
+        Require-FileNotExists (Join-Path $appDir "qt.conf")
+        foreach ($pluginFile in $pluginFiles)
+        {
+            Require-FileNotExists (Join-Path $appDir "plugins/$pluginFile")
+        }
+
+        Run-Vcpkg z-applocal `
+            "--target-binary=$(Join-Path $appDir 'main.exe')" `
+            "--installed-bin-dir=$installedBinDir" `
+            "--copied-files-log=$copiedFilesLog"
+        Throw-IfFailed
+        Require-FileExists (Join-Path $appDir $coreLibrary)
+        Require-FileExists (Join-Path $appDir $guiLibrary)
+        Require-FileExists (Join-Path $appDir $networkLibrary)
+        Require-FileExists (Join-Path $appDir $printSupportLibrary)
+        Require-FileExists (Join-Path $appDir $sqlLibrary)
+        Require-FileExists (Join-Path $appDir $widgetsLibrary)
+        Require-FileExists (Join-Path $appDir "qt.conf")
+        foreach ($pluginFile in $pluginFiles)
+        {
+            Require-FileExists (Join-Path $appDir "plugins/$pluginFile")
+        }
+
+        Require-FileNotExists (Join-Path $appDir "plugins/imageformats/$otherImageFormatPlugin")
+        Require-FileNotExists (Join-Path $appDir "plugins/platforms/$otherPlatformPlugin")
+        if ($qtCase.Major -eq 5)
+        {
+            Require-FileNotExists (Join-Path $appDir "plugins/generic/qgeneric$($qtCase.Suffix).dll")
+            Require-FileNotExists (Join-Path $appDir "plugins/platformthemes/qplatformtheme$($qtCase.Suffix).dll")
+            Require-FileNotExists (Join-Path $appDir "plugins/tls/qtls$($qtCase.Suffix).dll")
+            Require-FileExists (Join-Path $appDir "libssl-unused.dll")
+        }
+        else
+        {
+            Require-FileNotExists (Join-Path $appDir "plugins/bearer/qbearer$($qtCase.Suffix).dll")
+            Require-FileNotExists (Join-Path $appDir "libssl-unused.dll")
+        }
+
+        if ((Get-Content -Raw -LiteralPath (Join-Path $appDir "qt.conf")) -ne "[Paths]`n")
+        {
+            throw "z-applocal generated an unexpected $($qtCase.Name) qt.conf"
+        }
+
+        $copiedFiles = Get-Content -LiteralPath $copiedFilesLog
+        $expectedPluginSource = Join-Path (Join-Path $qtDir $qtCase.PluginsDir) "platforms/$platformPlugin"
+        $unexpectedPluginSource = Join-Path (Join-Path $qtDir $qtCase.OtherPluginsDir) "platforms/$platformPlugin"
+        if ($copiedFiles -notcontains $expectedPluginSource)
+        {
+            throw "z-applocal didn't deploy the $($qtCase.Name) platform plugin from $expectedPluginSource"
+        }
+
+        if ($copiedFiles -contains $unexpectedPluginSource)
+        {
+            throw "z-applocal deployed the $($qtCase.Name) platform plugin from $unexpectedPluginSource"
+        }
+    }
+
     # Tests deploy azure kinect sensor SDK plugins
     $pluginsDir = "$TestingRoot/applocal/plugins"
     Run-Vcpkg env "$pluginsDir/build.bat"
