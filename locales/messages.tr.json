@@ -164,6 +164,7 @@
   "BaselineMissing": "{package_name}'e bir sürüm atanmadı",
   "BaselineOnlyPlatformExpressionOrTriplet": "Bir platform ifadesi ve bir üçlü ifade belirtemezsiniz",
   "BinariesRelativeToThePackageDirectoryHere": "ikililer burada ${{CURRENT_PACKAGES_DIR}} ile görelidir",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "İkili önbelleğe alma kaynakları. Bkz. 'vcpkg help binarycaching'",
   "BinaryWithInvalidArchitecture": "{arch} için {path} oluşturuldu",
   "BuildAlreadyInstalled": "{spec} zaten yüklü; derlemeyi denemeden önce lütfen {spec} öğesini kaldırın.",
