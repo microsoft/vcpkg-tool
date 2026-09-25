@@ -164,6 +164,7 @@
   "BaselineMissing": "{package_name} nemá přiřazenou verzi",
   "BaselineOnlyPlatformExpressionOrTriplet": "Nemůžete specifikovat výraz platformy a trojici.",
   "BinariesRelativeToThePackageDirectoryHere": "binární soubory jsou tady relativní vzhledem k ${{CURRENT_PACKAGES_DIR}}",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "Binární zdroje ukládání do mezipaměti. Viz vcpkg help binarycaching",
   "BinaryWithInvalidArchitecture": "{path} – sestaveno pro {arch}",
   "BuildAlreadyInstalled": "{spec} je už nainstalovaný; před pokusem o sestavení prosím odeberte {spec}.",

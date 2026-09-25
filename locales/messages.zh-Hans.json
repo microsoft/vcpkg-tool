@@ -164,6 +164,7 @@
   "BaselineMissing": "{package_name} 未分配版本",
   "BaselineOnlyPlatformExpressionOrTriplet": "无法指定平台表达式和三元组",
   "BinariesRelativeToThePackageDirectoryHere": "二进制文件相对于此处的 ${{CURRENT_PACKAGES_DIR}}",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "二进制缓存源。请参阅“vcpkg 帮助 binarycaching”。",
   "BinaryWithInvalidArchitecture": "{path} 专为 {arch} 生成",
   "BuildAlreadyInstalled": "已安装{spec}；请在尝试生成之前先删除{spec}。",
