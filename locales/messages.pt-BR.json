@@ -164,6 +164,7 @@
   "BaselineMissing": "uma versão não foi atribuída a {package_name}",
   "BaselineOnlyPlatformExpressionOrTriplet": "Você não pode especificar uma expressão de plataforma e um tripleto",
   "BinariesRelativeToThePackageDirectoryHere": "os binários são relativos a ${{CURRENT_PACKAGES_DIR}} aqui",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "Fontes de cache binárias. Consulte 'vcpkg help binarycaching'",
   "BinaryWithInvalidArchitecture": "{path} foi criado para {arch}",
   "BuildAlreadyInstalled": "A {spec} já está instalada; remover {spec} antes de tentar compilá-la.",
