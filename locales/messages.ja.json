@@ -164,6 +164,7 @@
   "BaselineMissing": "{package_name} にはバージョンが割り当てられていません",
   "BaselineOnlyPlatformExpressionOrTriplet": "プラットフォーム式とトリプレットを同時に指定することはできません。",
   "BinariesRelativeToThePackageDirectoryHere": "バイナリは ${{CURRENT_PACKAGES_DIR}} に対して相対的です",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "バイナリ キャッシュ ソース。'vcpkg help binarycaching' を参照してください",
   "BinaryWithInvalidArchitecture": "{path} は {arch} 用に構築されています",
   "BuildAlreadyInstalled": "{spec} は既にインストールされています。ビルドする前に {spec} を削除してください。",
