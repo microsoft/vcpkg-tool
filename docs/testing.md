@@ -64,6 +64,26 @@ $ # i.e., ./out/vcpkg-test [arguments]
 If you make any modifications to `vcpkg`, you'll have to do the
 `cmake --build .` step again.
 
+## Windows bootstrap proxy configuration
+
+The Windows bootstrap helper (`tls12-download.exe`) first passes `HTTPS_PROXY`
+and `NO_PROXY` to WinHTTP. If `WinHttpOpen` rejects the configuration with
+`ERROR_INVALID_PARAMETER` (87), the helper warns and retries without the
+environment configuration, then applies the current user's explicit Windows/IE
+proxy address and bypass list. The entire environment configuration is ignored
+for this retry; entries are not parsed or filtered. Without an explicit Windows
+proxy, the retry connects directly.
+
+Accepted environment configurations keep their existing behavior. Empty or
+unset `HTTPS_PROXY` also selects the Windows/IE settings, as before. Other
+initialization errors and a failed retry are fatal. Connection and TLS failures
+do not trigger this fallback.
+For example, bare IPv6 (`::1`) and CIDR bypass entries can trigger error 87.
+An accepted but nonmatching bypass entry does not trigger fallback:
+`.example.com` does not bypass subdomains in WinHTTP; `*.example.com` does.
+PAC scripts and automatic proxy discovery are not evaluated. This applies only
+to the bootstrap helper, not the main vcpkg executable.
+
 ## Writing Tests
 
 In your journey to write new tests, and to modify existing tests, reading the
