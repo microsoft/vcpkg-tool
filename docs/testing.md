@@ -76,8 +76,8 @@ proxy, the retry connects directly.
 
 Accepted environment configurations keep their existing behavior. Empty or
 unset `HTTPS_PROXY` also selects the Windows/IE settings, as before. Other
-initialization errors, a failed retry, and failures applying an explicit Windows
-proxy are fatal. Connection and TLS failures do not trigger this fallback.
+initialization errors and a failed retry are fatal. Connection and TLS failures
+do not trigger this fallback.
 For example, bare IPv6 (`::1`) and CIDR bypass entries can trigger error 87.
 An accepted but nonmatching bypass entry does not trigger fallback:
 `.example.com` does not bypass subdomains in WinHTTP; `*.example.com` does.

@@ -308,10 +308,7 @@ int __stdcall entry()
             proxy.dwAccessType = WINHTTP_ACCESS_TYPE_NAMED_PROXY;
             proxy.lpszProxy = ieProxy.lpszProxy;
             proxy.lpszProxyBypass = ieProxy.lpszProxyBypass;
-            if (!WinHttpSetOption(session, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy)))
-            {
-                abort_api_failure(std_out, L"WinHttpSetOption");
-            }
+            WinHttpSetOption(session, WINHTTP_OPTION_PROXY, &proxy, sizeof(proxy));
 
             write_message(std_out, L" (using IE proxy: ");
             write_message(std_out, proxy.lpszProxy);
