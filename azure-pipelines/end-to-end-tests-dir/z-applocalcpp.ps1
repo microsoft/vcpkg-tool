@@ -19,6 +19,50 @@ if ($IsWindows) {
 
     Require-FileExists $basicDir/mylib.dll
 
+    # Transitive dependencies are resolved from the installed tree, not the deployment directory.
+    Set-Content -LiteralPath $basicDir/mylib.dll -Value 'not a PE'
+    Run-Vcpkg z-applocal `
+            --target-binary=$basicDir/main.exe `
+            --installed-bin-dir=$basicDir/installed/bin
+    Throw-IfFailed
+
+    # Dependencies outside the installed tree are handled by their own z-applocal invocation.
+    $installedMylib = "$basicDir/installed/bin/mylib.dll"
+    $savedInstalledMylib = "$installedMylib.saved"
+    Move-Item -LiteralPath $installedMylib -Destination $savedInstalledMylib
+    try
+    {
+        Run-Vcpkg z-applocal `
+                --target-binary=$basicDir/main.exe `
+                --installed-bin-dir=$basicDir/installed/bin
+        Throw-IfFailed
+    }
+    finally
+    {
+        Move-Item -LiteralPath $savedInstalledMylib -Destination $installedMylib
+    }
+
+    # Concurrent deployments into the same directory are serialized.
+    Remove-Item -LiteralPath $basicDir/mylib.dll
+    $parallelApplocal = 1..8 | ForEach-Object {
+        Start-Process -FilePath $VcpkgExe `
+                -ArgumentList @(
+                    'z-applocal',
+                    "--target-binary=$basicDir/main.exe",
+                    "--installed-bin-dir=$basicDir/installed/bin") `
+                -NoNewWindow `
+                -PassThru
+    }
+    foreach ($process in $parallelApplocal)
+    {
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0)
+        {
+            throw "Concurrent z-applocal process failed with exit code $($process.ExitCode)"
+        }
+    }
+    Require-FileExists $basicDir/mylib.dll
+
     # Tests z-applocal command with no arguments
     Run-Vcpkg z-applocal
     Throw-IfNotFailed
@@ -95,6 +139,20 @@ if ($IsWindows) {
 
     Require-FileExists "$pluginsDebugDir/k4a.dll"
     Require-FileExists "$pluginsDebugDir/depthengine_2_0.dll"
+
+    # Tests that installed plugin dependencies retain the plugin's deployment directory.
+    $pluginTransitiveDir = "$TestingRoot/applocal/plugin-transitive"
+    Run-Vcpkg env "$pluginTransitiveDir/build.bat"
+    Run-Vcpkg z-applocal `
+            --target-binary=$pluginTransitiveDir/main.exe `
+            --installed-bin-dir=$pluginTransitiveDir/installed/bin
+    Throw-IfFailed
+    Require-FileExists "$pluginTransitiveDir/MagnumAudio.dll"
+    Require-FileExists "$pluginTransitiveDir/OpenNI2.dll"
+    Require-FileExists "$pluginTransitiveDir/OpenNI.ini"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/importer.dll"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/OpenNI2.dll"
+    Require-FileExists "$pluginTransitiveDir/magnum/audioimporters/OpenNI.ini"
 
     # Tests that nonexistent files are merely warnings
     $nonexistentDll = Join-Path $basicDir 'nonexisting.dll'
