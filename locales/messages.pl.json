@@ -164,6 +164,7 @@
   "BaselineMissing": "Pakiet {package_name} nie ma przypisanej wersji",
   "BaselineOnlyPlatformExpressionOrTriplet": "Nie można określić wyrażenia platformy i trypletu",
   "BinariesRelativeToThePackageDirectoryHere": "pliki binarne są względne wobec ${{CURRENT_PACKAGES_DIR}} w tym miejscu",
+  "BinaryCacheSubmissionFailed": "binary cache submission failed",
   "BinarySourcesArg": "Binarne źródła buforowania. Zobacz „vcpkg help binarycaching”",
   "BinaryWithInvalidArchitecture": "Utworzono ścieżkę {path} dla {arch}",
   "BuildAlreadyInstalled": "{spec} jest już zainstalowana; usuń {spec} przed podjęciem próby jej skompilowania.",
