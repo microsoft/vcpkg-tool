@@ -1717,6 +1717,9 @@
       <Item ItemId=";BinaryCacheSubmissionFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[binary cache submission failed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[не удалось отправить двоичный кэш]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
