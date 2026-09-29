@@ -35,35 +35,6 @@ namespace
         }
     };
 
-    struct ManifestVersionSnapshotVersionEntry
-    {
-        Triplet triplet;
-        Version version;
-
-        ManifestVersionSnapshotVersionEntry(Triplet triplet, Version version)
-            : triplet(triplet), version(std::move(version))
-        {
-        }
-    };
-
-    struct ManifestVersionSnapshotEntry
-    {
-        std::string port_name;
-        // Entries are sorted by triplet.
-        std::vector<ManifestVersionSnapshotVersionEntry> versions;
-        RequestType request_type;
-
-        ManifestVersionSnapshotEntry(std::string port_name,
-                                     std::vector<ManifestVersionSnapshotVersionEntry> versions,
-                                     RequestType request_type)
-            : port_name(std::move(port_name)), versions(std::move(versions)), request_type(request_type)
-        {
-        }
-    };
-
-    // These are sorted by port name.
-    using ManifestVersionSnapshot = std::vector<ManifestVersionSnapshotEntry>;
-
     template<class Iterator>
     bool exactly_one_version(Iterator first, Iterator last)
     {
@@ -197,40 +168,6 @@ namespace
         msg::write_unlocalized_text(Color::none, "\n");
     }
 
-    struct PrintableVersionDiff
-    {
-        std::vector<std::string> direct_dependencies;
-        std::vector<std::string> transitive_dependencies;
-
-        void add_version_snapshot_diff_line(RequestType request_type, std::string&& line)
-        {
-            if (request_type == RequestType::USER_REQUESTED)
-            {
-                direct_dependencies.push_back(std::move(line));
-                return;
-            }
-
-            transitive_dependencies.push_back(std::move(line));
-        }
-
-        void print()
-        {
-            const bool has_changes = !direct_dependencies.empty() || !transitive_dependencies.empty();
-            if (has_changes)
-            {
-                msg::println(msgUpdateBaselineVersionUpdates);
-                msg::write_unlocalized_text(Color::none, "\n");
-            }
-
-            print_version_snapshot_diff_lines(msgDirectDependencies, std::move(direct_dependencies));
-            print_version_snapshot_diff_lines(msgTransitiveDependencies, std::move(transitive_dependencies));
-            if (!has_changes)
-            {
-                msg::println(msgPortsNoDiff);
-            }
-        }
-    };
-
     void add_whole_port_version_snapshot_diff(PrintableVersionDiff& diff,
                                               const ManifestVersionSnapshotEntry& port,
                                               const msg::MessageT<msg::package_name_t, msg::version_t>& message)
@@ -323,39 +260,6 @@ namespace
         }
     }
 
-    void print_version_snapshot_diff(const ManifestVersionSnapshot& previous, const ManifestVersionSnapshot& current)
-    {
-        PrintableVersionDiff diff;
-
-        auto old_port = previous.begin();
-        auto new_port = current.begin();
-        while (old_port != previous.end() || new_port != current.end())
-        {
-            if (new_port == current.end() || (old_port != previous.end() && old_port->port_name < new_port->port_name))
-            {
-                // whole port is in the old plan but removed in this one
-                add_whole_port_version_snapshot_diff(diff, *old_port, msgUpdateBaselineRemovedDependencyVersion);
-
-                ++old_port;
-            }
-            else if (old_port == previous.end() || new_port->port_name < old_port->port_name)
-            {
-                // whole port is new in this plan
-                add_whole_port_version_snapshot_diff(diff, *new_port, msgUpdateBaselineNewDependencyVersion);
-
-                ++new_port;
-            }
-            else
-            {
-                add_port_version_snapshot_diff(diff, *old_port, *new_port);
-                ++old_port;
-                ++new_port;
-            }
-        }
-
-        diff.print();
-    }
-
     void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
     {
         auto url = reg.pretty_location();
@@ -397,6 +301,68 @@ namespace
 
 namespace vcpkg
 {
+    void PrintableVersionDiff::add_version_snapshot_diff_line(RequestType request_type, std::string&& line)
+    {
+        if (request_type == RequestType::USER_REQUESTED)
+        {
+            direct_dependencies.push_back(std::move(line));
+            return;
+        }
+
+        transitive_dependencies.push_back(std::move(line));
+    }
+
+    void PrintableVersionDiff::print()
+    {
+        const bool has_changes = !direct_dependencies.empty() || !transitive_dependencies.empty();
+        if (has_changes)
+        {
+            msg::println(msgUpdateBaselineVersionUpdates);
+            msg::write_unlocalized_text(Color::none, "\n");
+        }
+
+        print_version_snapshot_diff_lines(msgDirectDependencies, std::move(direct_dependencies));
+        print_version_snapshot_diff_lines(msgTransitiveDependencies, std::move(transitive_dependencies));
+        if (!has_changes)
+        {
+            msg::println(msgPortsNoDiff);
+        }
+    }
+
+    PrintableVersionDiff calculate_version_snapshot_diff(const ManifestVersionSnapshot& previous,
+                                                         const ManifestVersionSnapshot& current)
+    {
+        PrintableVersionDiff diff;
+
+        auto old_port = previous.begin();
+        auto new_port = current.begin();
+        while (old_port != previous.end() || new_port != current.end())
+        {
+            if (new_port == current.end() || (old_port != previous.end() && old_port->port_name < new_port->port_name))
+            {
+                // whole port is in the old plan but removed in this one
+                add_whole_port_version_snapshot_diff(diff, *old_port, msgUpdateBaselineRemovedDependencyVersion);
+
+                ++old_port;
+            }
+            else if (old_port == previous.end() || new_port->port_name < old_port->port_name)
+            {
+                // whole port is new in this plan
+                add_whole_port_version_snapshot_diff(diff, *new_port, msgUpdateBaselineNewDependencyVersion);
+
+                ++new_port;
+            }
+            else
+            {
+                add_port_version_snapshot_diff(diff, *old_port, *new_port);
+                ++old_port;
+                ++new_port;
+            }
+        }
+
+        return diff;
+    }
+
     constexpr CommandMetadata CommandUpdateBaselineMetadata{
         "x-update-baseline",
         msgCmdUpdateBaselineSynopsis,
@@ -518,7 +484,7 @@ namespace vcpkg
                 paths, old_manifest, old_configuration, options, var_provider, default_triplet, host_triplet);
             const auto current_snapshot = create_manifest_version_snapshot(
                 paths, manifest, configuration, options, var_provider, default_triplet, host_triplet);
-            print_version_snapshot_diff(previous_snapshot, current_snapshot);
+            calculate_version_snapshot_diff(previous_snapshot, current_snapshot).print();
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);
