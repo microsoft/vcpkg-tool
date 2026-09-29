@@ -248,6 +248,60 @@ Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
 git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
 
+# Changing only the version scheme must be picked up by --overwrite-version
+$CurrentTest = "x-add-version squid"
+Set-EmptyTestPort -Name squid -Version 1.0.0 -PortsRoot "$versionFilesPath/ports"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add squid 1.0.0"
+
+function Get-SquidVersionEntry {
+    return (Get-Content -Raw -LiteralPath "$versionFilesPath/versions/s-/squid.json" | ConvertFrom-Json).versions[0]
+}
+
+$squidJson = @"
+{
+  "name": "squid",
+  "version-semver": "1.0.0"
+}
+"@
+Set-Content -Value $squidJson -LiteralPath "$versionFilesPath/ports/squid/vcpkg.json" -Encoding Ascii
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "squid uses version-semver"
+
+$CurrentTest = "x-add-version squid version scheme change (must fail)"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfNotFailed
+
+$CurrentTest = "x-add-version squid version scheme change --overwrite-version"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid --overwrite-version
+Throw-IfFailed
+$squidEntry = Get-SquidVersionEntry
+if ($squidEntry.'version-semver' -ne '1.0.0' -or $null -ne $squidEntry.version) {
+    throw "Expected --overwrite-version to record squid 1.0.0 as version-semver"
+}
+
+# The git tree is already correct and only the recorded scheme is stale
+$squidVersionsFile = "$versionFilesPath/versions/s-/squid.json"
+$staleSchemeContent = (Get-Content -Raw -LiteralPath $squidVersionsFile).Replace('"version-semver"', '"version"')
+Set-Content -Value $staleSchemeContent -LiteralPath $squidVersionsFile -NoNewline -Encoding Ascii
+
+$CurrentTest = "x-add-version squid stale version scheme (must fail)"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfNotFailed
+
+$CurrentTest = "x-add-version squid stale version scheme --overwrite-version"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid --overwrite-version
+Throw-IfFailed
+$squidEntry = Get-SquidVersionEntry
+if ($squidEntry.'version-semver' -ne '1.0.0' -or $null -ne $squidEntry.version) {
+    throw "Expected --overwrite-version to fix the stale version scheme of squid 1.0.0"
+}
+
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "squid version database uses version-semver"
+
 $CurrentTest = "default baseline"
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1
 Throw-IfNotFailed
