@@ -273,6 +273,26 @@ $updatedSharedNewBaseline = Add-TestRegistryCommit -Registry $updatedSharedRegis
     @{ Name = 'partial-removal-wrapper'; Version = '2.0.0'; Dependencies = @('shared-port') }
 )
 
+$retainedTargetRegistry = New-TestRegistry (Join-Path $TestingRoot 'retained-target-registry')
+$retainedTargetOldBaseline = Add-TestRegistryCommit -Registry $retainedTargetRegistry -Message 'host and target before removal' -Ports @(
+    @{ Name = 'shared-port'; Version = '1.0.0' },
+    @{ Name = 'retained-target-wrapper'; Version = '1.0.0'; Dependencies = @(
+        'shared-port',
+        [ordered]@{ name = 'shared-port'; host = $true; 'version>=' = '1.0.1' }
+    ) },
+    @{ Name = 'switched-wrapper'; Version = '1.0.0'; Dependencies = @(
+        [ordered]@{ name = 'shared-port'; host = $true; 'version>=' = '1.0.1' }
+    ) }
+)
+Add-TestRegistryCommit -Registry $retainedTargetRegistry -Message 'host minimum version' -Ports @(
+    @{ Name = 'shared-port'; Version = '1.0.1' }
+) | Out-Null
+$retainedTargetNewBaseline = Add-TestRegistryCommit -Registry $retainedTargetRegistry -Message 'host removed, target unchanged' -Ports @(
+    @{ Name = 'shared-port'; Version = '1.0.0' },
+    @{ Name = 'retained-target-wrapper'; Version = '2.0.0'; Dependencies = @('shared-port') },
+    @{ Name = 'switched-wrapper'; Version = '2.0.0'; Dependencies = @('shared-port') }
+)
+
 Write-Trace 'test direct and transitive dependency diff output'
 $manifestDir = Join-Path $TestingRoot 'direct-and-transitive'
 New-TestManifest -Path $manifestDir -Dependencies @('direct-port') -Configuration ([ordered]@{
@@ -401,7 +421,7 @@ Throw-IfNonContains -Actual $out -Expected 'shared-port: removed: 1.0.0'
 Throw-IfContains -Actual $out -Expected "shared-port:${HostE2ETriplet}:"
 Throw-IfContains -Actual $out -Expected "shared-port:${Triplet}:"
 
-Write-Trace 'test a shared new version is compared against both old versions'
+Write-Trace 'test removing a host does not invent its new version'
 $manifestDir = Join-Path $TestingRoot 'removed-host-retained-target'
 New-TestManifest -Path $manifestDir -Dependencies @('partial-removal-wrapper') -Configuration ([ordered]@{
     'default-registry' = New-DefaultGitRegistryConfiguration -Repository $updatedSharedRegistry.Path -Baseline $updatedSharedOldBaseline
@@ -410,8 +430,35 @@ New-TestManifest -Path $manifestDir -Dependencies @('partial-removal-wrapper') -
 $out = Run-VcpkgAndCaptureOutput x-update-baseline @commonArgs "--host-triplet=$HostE2ETriplet" `
     "--overlay-triplets=$PSScriptRoot/../overlay-triplets" --dry-run "--x-manifest-root=$manifestDir"
 Throw-IfFailed
-Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: 1.0.1 -> 2.0.0"
+Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: removed: 1.0.1"
 Throw-IfNonContains -Actual $out -Expected "shared-port:${Triplet}: 1.0.0 -> 2.0.0"
+Throw-IfContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: 1.0.1 -> 2.0.0"
+
+Write-Trace 'test removing a host leaves an unchanged target unreported'
+$manifestDir = Join-Path $TestingRoot 'unchanged-target-host-removed'
+New-TestManifest -Path $manifestDir -Dependencies @('retained-target-wrapper') -Configuration ([ordered]@{
+    'default-registry' = New-DefaultGitRegistryConfiguration -Repository $retainedTargetRegistry.Path -Baseline $retainedTargetOldBaseline
+})
+
+$out = Run-VcpkgAndCaptureOutput x-update-baseline @commonArgs "--host-triplet=$HostE2ETriplet" `
+    "--overlay-triplets=$PSScriptRoot/../overlay-triplets" --dry-run "--x-manifest-root=$manifestDir"
+Throw-IfFailed
+Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: removed: 1.0.1"
+Throw-IfContains -Actual $out -Expected "shared-port:${Triplet}:"
+Throw-IfContains -Actual $out -Expected 'shared-port: 1.0.1 -> 1.0.0'
+
+Write-Trace 'test replacing a host with a target keeps the compact version diff'
+$manifestDir = Join-Path $TestingRoot 'host-replaced-by-target'
+New-TestManifest -Path $manifestDir -Dependencies @('switched-wrapper') -Configuration ([ordered]@{
+    'default-registry' = New-DefaultGitRegistryConfiguration -Repository $retainedTargetRegistry.Path -Baseline $retainedTargetOldBaseline
+})
+
+$out = Run-VcpkgAndCaptureOutput x-update-baseline @commonArgs "--host-triplet=$HostE2ETriplet" `
+    "--overlay-triplets=$PSScriptRoot/../overlay-triplets" --dry-run "--x-manifest-root=$manifestDir"
+Throw-IfFailed
+Throw-IfNonContains -Actual $out -Expected 'shared-port: 1.0.1 -> 1.0.0'
+Throw-IfContains -Actual $out -Expected "shared-port:${HostE2ETriplet}:"
+Throw-IfContains -Actual $out -Expected "shared-port:${Triplet}:"
 
 Write-Trace 'test a new target dependency with the same update uses one line'
 $manifestDir = Join-Path $TestingRoot 'new-target-shared-port'
@@ -438,7 +485,8 @@ New-TestManifest -Path $manifestDir -Dependencies @('shared-port', 'different-ho
 $out = Run-VcpkgAndCaptureOutput x-update-baseline @commonArgs "--host-triplet=$HostE2ETriplet" `
     "--overlay-triplets=$PSScriptRoot/../overlay-triplets" --dry-run "--x-manifest-root=$manifestDir"
 Throw-IfFailed
-Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: 1.0.0 -> 2.0.1"
+Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: new: 2.0.1"
+Throw-IfContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: 1.0.0 -> 2.0.1"
 Throw-IfNonContains -Actual $out -Expected "shared-port:${Triplet}: 1.0.0 -> 2.0.0"
 Throw-IfContains -Actual $out -Expected 'shared-port: 1.0.0 -> 2.0.0'
 
@@ -472,7 +520,8 @@ New-TestManifest -Path $manifestDir -Dependencies @(
 $out = Run-VcpkgAndCaptureOutput x-update-baseline @commonArgs "--host-triplet=$HostE2ETriplet" `
     "--overlay-triplets=$PSScriptRoot/../overlay-triplets" --dry-run "--x-manifest-root=$manifestDir"
 Throw-IfFailed
-Throw-IfNonContains -Actual $out -Expected "shared-port:${Triplet}: 1.0.1 -> 2.0.0"
+Throw-IfNonContains -Actual $out -Expected "shared-port:${Triplet}: new: 2.0.0"
+Throw-IfContains -Actual $out -Expected "shared-port:${Triplet}: 1.0.1 -> 2.0.0"
 Throw-IfNonContains -Actual $out -Expected "shared-port:${HostE2ETriplet}: 1.0.1 -> 2.0.1"
 
 Write-Trace 'test different host and target version changes use triplets'
