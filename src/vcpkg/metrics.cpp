@@ -18,8 +18,7 @@
 #include <vcpkg/metrics.h>
 #include <vcpkg/paragraphs.h>
 
-#include <math.h>
-
+#include <cmath>
 #include <iterator>
 #include <limits>
 #include <mutex>
@@ -190,7 +189,7 @@ namespace vcpkg
 
     void MetricsSubmission::track_elapsed_us(double value)
     {
-        if (!isfinite(value) || value < 0.0)
+        if (!std::isfinite(value) || value < 0.0)
         {
             value = 0.0;
         }
