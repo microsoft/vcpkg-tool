@@ -227,6 +227,8 @@ namespace vcpkg
         Optional<std::string> tools_data_file;
 
         Optional<std::string> default_visual_studio_path;
+        Optional<std::string> default_platform_toolset;
+        Optional<std::string> default_platform_toolset_version;
 
         Optional<std::string> triplet;
         Optional<std::string> host_triplet;

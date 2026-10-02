@@ -572,6 +572,8 @@ namespace vcpkg
         from_env(get_env, EnvironmentVariableXVcpkgAssetSources, asset_sources_template_env);
         from_env(get_env, EnvironmentVariableXVcpkgRegistriesCache, registries_cache_dir);
         from_env(get_env, EnvironmentVariableVcpkgVisualStudioPath, default_visual_studio_path);
+        from_env(get_env, EnvironmentVariableVcpkgPlatformToolset, default_platform_toolset);
+        from_env(get_env, EnvironmentVariableVcpkgPlatformToolsetVersion, default_platform_toolset_version);
         from_env(get_env, EnvironmentVariableVcpkgBinarySources, env_binary_sources);
         from_env(get_env, EnvironmentVariableVcpkgBinaryCacheCompressionLevel, binary_cache_compression_level);
         from_env(get_env, EnvironmentVariableXVcpkgNuGetIDPrefix, nuget_id_prefix);

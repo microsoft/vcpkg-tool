@@ -340,6 +340,8 @@ namespace
                                         return fs.almost_canonical(default_visual_studio_path, VCPKG_LINE_INFO);
                                     })
                                     .value_or(Path{}))
+            , m_default_platform_toolset(args.default_platform_toolset.value_or(std::string{}))
+            , m_default_platform_toolset_version(args.default_platform_toolset_version.value_or(std::string{}))
             , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
             , m_registries_cache(compute_registries_cache_root(fs, args))
         {
@@ -355,6 +357,8 @@ namespace
         const Path m_default_vs_path;
         const Path scripts;
         const Path m_registries_cache;
+        const std::string m_default_platform_toolset;
+        const std::string m_default_platform_toolset_version;
     };
 
     Optional<InstalledPaths> compute_installed(const ReadOnlyFilesystem& fs,
@@ -1293,8 +1297,16 @@ namespace vcpkg
         const auto& toolsets_info = get_all_toolsets(*m_pimpl, get_filesystem());
         View<Toolset> vs_toolsets = toolsets_info.toolsets;
 
-        const auto tsv = prebuildinfo.platform_toolset.get();
-        const auto tsvf = prebuildinfo.platform_toolset_version.get();
+        auto tsv = prebuildinfo.platform_toolset.get();
+        if (!tsv && !m_pimpl->m_default_platform_toolset.empty())
+        {
+            tsv = &m_pimpl->m_default_platform_toolset;
+        }
+        auto tsvf = prebuildinfo.platform_toolset_version.get();
+        if (!tsvf && !m_pimpl->m_default_platform_toolset_version.empty())
+        {
+            tsvf = &m_pimpl->m_default_platform_toolset_version;
+        }
         auto vsp = prebuildinfo.visual_studio_path.get();
         if (!vsp && !m_pimpl->m_default_vs_path.empty())
         {

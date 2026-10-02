@@ -568,6 +568,8 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgSSLRevokeBestEffort = "VCPKG_SSL_REVOKE_BEST_EFFORT";
     inline constexpr StringLiteral EnvironmentVariableVcpkgUseNuGetCache = "VCPKG_USE_NUGET_CACHE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgVisualStudioPath = "VCPKG_VISUAL_STUDIO_PATH";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgPlatformToolset = "VCPKG_PLATFORM_TOOLSET";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgPlatformToolsetVersion = "VCPKG_PLATFORM_TOOLSET_VERSION";
     inline constexpr StringLiteral EnvironmentVariableVsLang = "VSLANG";
     inline constexpr StringLiteral EnvironmentVariableVscmdArgTgtArch = "VSCMD_ARG_TGT_ARCH";
     inline constexpr StringLiteral EnvironmentVariableXVcpkgAssetSources = "X_VCPKG_ASSET_SOURCES";
