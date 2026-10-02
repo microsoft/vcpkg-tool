@@ -340,10 +340,10 @@ namespace
                                         return fs.almost_canonical(default_visual_studio_path, VCPKG_LINE_INFO);
                                     })
                                     .value_or(Path{}))
+, scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
+            , m_registries_cache(compute_registries_cache_root(fs, args))
             , m_default_platform_toolset(args.default_platform_toolset.value_or(std::string{}))
             , m_default_platform_toolset_version(args.default_platform_toolset_version.value_or(std::string{}))
-            , scripts(process_input_directory(fs, root, args.scripts_root_dir.get(), "scripts", VCPKG_LINE_INFO))
-            , m_registries_cache(compute_registries_cache_root(fs, args))
         {
             Debug::println("Using builtin-ports: ", m_builtin_ports);
         }
