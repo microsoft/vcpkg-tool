@@ -938,6 +938,7 @@
   "HelpEnvCommand": "Creates a clean shell environment for development or compiling",
   "HelpExampleCommand": "For more help (including examples) see https://learn.microsoft.com/vcpkg",
   "HelpExampleManifest": "Example manifest:",
+  "HelpHostInfoCommand": "Displays information about the host and the vcpkg configuration in effect",
   "HelpInstallCommand": "Installs a package",
   "HelpManifestConstraints": "Manifests can place three kinds of constraints upon the versions used",
   "HelpMinVersion": "Vcpkg will select the minimum version found that matches all applicable constraints, including the version from the baseline specified at top-level as well as any \"version>=\" constraints in the graph.",
