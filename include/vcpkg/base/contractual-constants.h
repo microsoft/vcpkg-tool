@@ -508,6 +508,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableCodebuildBuildId = "CODEBUILD_BUILD_ID";
     inline constexpr StringLiteral EnvironmentVariableCurlCaBundle = "CURL_CA_BUNDLE";
     inline constexpr StringLiteral EnvironmentVariableDestDir = "DESTDIR";
+    inline constexpr StringLiteral EnvironmentVariableDeveloperDir = "DEVELOPER_DIR";
     inline constexpr StringLiteral EnvironmentVariableEditor = "EDITOR";
     inline constexpr StringLiteral EnvironmentVariableGitCeilingDirectories = "GIT_CEILING_DIRECTORIES";
     inline constexpr StringLiteral EnvironmentVariableGitHubActions = "GITHUB_ACTIONS";
@@ -531,6 +532,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableJenkinsHome = "JENKINS_HOME";
     inline constexpr StringLiteral EnvironmentVariableJenkinsUrl = "JENKINS_URL";
     inline constexpr StringLiteral EnvironmentVariableLocalAppData = "LOCALAPPDATA";
+    inline constexpr StringLiteral EnvironmentVariableMacosxDeploymentTarget = "MACOSX_DEPLOYMENT_TARGET";
     inline constexpr StringLiteral EnvironmentVariableNoProxy = "NO_PROXY";
     inline constexpr StringLiteral EnvironmentVariableOverlayTriplets = "VCPKG_OVERLAY_TRIPLETS";
     inline constexpr StringLiteral EnvironmentVariablePath = "PATH";
@@ -539,6 +541,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableProgramFilesX86 = "ProgramFiles(x86)";
     inline constexpr StringLiteral EnvironmentVariableProgramW6432 = "ProgramW6432";
     inline constexpr StringLiteral EnvironmentVariablePythonPath = "PYTHONPATH";
+    inline constexpr StringLiteral EnvironmentVariableSdkRoot = "SDKROOT";
     inline constexpr StringLiteral EnvironmentVariableSystemDrive = "SystemDrive";
     inline constexpr StringLiteral EnvironmentVariableSystemRoot = "SystemRoot";
     inline constexpr StringLiteral EnvironmentVariableTeamcityVersion = "TEAMCITY_VERSION";
@@ -546,6 +549,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableTravis = "TRAVIS";
     inline constexpr StringLiteral EnvironmentVariableUserprofile = "USERPROFILE";
     inline constexpr StringLiteral EnvironmentVariableVCInstallDir = "VCINSTALLDIR";
+    inline constexpr StringLiteral EnvironmentVariableVCToolsVersion = "VCToolsVersion";
     inline constexpr StringLiteral EnvironmentVariableVSCmdSkipSendTelemetry = "VSCMD_SKIP_SENDTELEMETRY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgBinaryCacheCompressionLevel =
         "VCPKG_BINARY_CACHE_COMPRESSION_LEVEL";
@@ -569,7 +573,10 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgUseNuGetCache = "VCPKG_USE_NUGET_CACHE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgVisualStudioPath = "VCPKG_VISUAL_STUDIO_PATH";
     inline constexpr StringLiteral EnvironmentVariableVsLang = "VSLANG";
+    inline constexpr StringLiteral EnvironmentVariableVscmdArgHostArch = "VSCMD_ARG_HOST_ARCH";
     inline constexpr StringLiteral EnvironmentVariableVscmdArgTgtArch = "VSCMD_ARG_TGT_ARCH";
+    inline constexpr StringLiteral EnvironmentVariableVscmdVer = "VSCMD_VER";
+    inline constexpr StringLiteral EnvironmentVariableWindowsSdkVersion = "WindowsSDKVersion";
     inline constexpr StringLiteral EnvironmentVariableXVcpkgAssetSources = "X_VCPKG_ASSET_SOURCES";
     inline constexpr StringLiteral EnvironmentVariableXVcpkgIgnoreLockFailures = "X_VCPKG_IGNORE_LOCK_FAILURES";
     inline constexpr StringLiteral EnvironmentVariableXVcpkgNuGetIDPrefix = "X_VCPKG_NUGET_ID_PREFIX";
