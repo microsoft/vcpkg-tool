@@ -1,0 +1,37 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)RestoreEnvVars.task" />
+  <Import Project="$(MSBuildThisFileDirectory)GetGlobalProperties.task" />
+  <PropertyGroup>
+    <SpecialCharacters>semicolon%3Bpercent%25apostrophe%27paren%28%29dollar%24at%40</SpecialCharacters>
+    <ExpectedHostTriplet>host%3Bwith%25percent%27apostrophe%28%29%24%40</ExpectedHostTriplet>
+    <ExpectedEnvironmentValue>left%3Bright%25literal</ExpectedEnvironmentValue>
+  </PropertyGroup>
+  <Target Name="VcpkgInstallImplementation">
+    <GetGlobalProperties>
+      <Output TaskParameter="GlobalPropertyNames" PropertyName="InstallGlobalPropertyNames" />
+    </GetGlobalProperties>
+    <ItemGroup>
+      <UnexpectedGlobalProperties Include="$([MSBuild]::Unescape($(InstallGlobalPropertyNames)))"
+                                  Exclude="_ZVcpkgMSBuildStampFile;_ZVcpkgRoot;_ZVcpkgHostTripletSuffix;_ZVcpkgInstalledDir;_ZVcpkgExecutable;_ZVcpkgHostTripletParameter;VcpkgTriplet;_ZVcpkgManifestRoot;VcpkgAdditionalInstallOptions;_ZVcpkgEnvVars" />
+    </ItemGroup>
+    <RestoreEnvVars VcpkgEnvVars="$(_ZVcpkgEnvVars)" Condition="'$(_ZVcpkgEnvVars)' != ''" />
+    <PropertyGroup>
+      <ActualEnvironmentValue>$([System.Environment]::GetEnvironmentVariable('X_VCPKG_ESCAPING_TEST'))</ActualEnvironmentValue>
+    </PropertyGroup>
+    <Error Condition="'$(ActualEnvironmentValue)' != '$(ExpectedEnvironmentValue)'"
+           Text="The forwarded environment value was incorrectly escaped." />
+    <Error Condition="'$(VcpkgAdditionalInstallOptions)' != '--overlay-ports=fixture;--binarysource=clear'"
+           Text="Install options were lost or incorrectly escaped: $(VcpkgAdditionalInstallOptions)" />
+    <Error Condition="'$(VcpkgTriplet)' != 'x64-windows'" Text="The explicit triplet was lost." />
+    <Error Condition="'@(UnexpectedGlobalProperties)' != ''"
+           Text="Unrelated global properties leaked into the install child: @(UnexpectedGlobalProperties)" />
+    <Error Condition="'$(_ZVcpkgRoot)' == '' or '$(_ZVcpkgManifestRoot)' == '' or '$(_ZVcpkgInstalledDir)' == '' or '$(_ZVcpkgMSBuildStampFile)' == '' or '$(_ZVcpkgExecutable)' == ''"
+           Text="Required install properties were lost." />
+    <Error Condition="$(_ZVcpkgRoot.Contains('special-characters')) and (!$(_ZVcpkgRoot.Contains($(SpecialCharacters))) or !$(_ZVcpkgManifestRoot.Contains($(SpecialCharacters))) or !$(_ZVcpkgInstalledDir.Contains($(SpecialCharacters))) or !$(_ZVcpkgMSBuildStampFile.Contains($(SpecialCharacters))) or !$(_ZVcpkgExecutable.Contains($(SpecialCharacters))))"
+           Text="Special characters in install paths were lost or incorrectly escaped." />
+    <Error Condition="$(_ZVcpkgRoot.Contains('special-characters')) and ('$(_ZVcpkgHostTripletSuffix)' != '$(ExpectedHostTriplet).' or '$(_ZVcpkgHostTripletParameter)' != '&quot;--host-triplet=$(ExpectedHostTriplet)&quot;')"
+           Text="Special characters in host triplet properties were lost or incorrectly escaped." />
+    <MakeDir Directories="$(_ZVcpkgRoot)" />
+    <Message Text="Validated install properties for $(_ZVcpkgRoot)" Importance="High" />
+  </Target>
+</Project>
