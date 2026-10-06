@@ -18,6 +18,20 @@ To run the e2e test run the following command:
 `VCPKGExe`: The path to the vcpkg executable. Default `./vcpkg`  
 `Filter`: The name of the tests. The names are the filenames in the folder `azure-pipelines/end-to-end-tests-dir`.
 
+### MSBuild manifest install properties
+
+On Windows, select the `integrate-install-properties` suite to test the MSBuild
+integration from the checkout supplied through `VcpkgRoot`:
+
+```powershell
+pwsh azure-pipelines\end-to-end-tests.ps1 -Filter '^integrate-install-properties\.ps1$' -VcpkgRoot D:\vcpkg -VcpkgExe D:\vcpkg\vcpkg.exe
+```
+
+The suite runs MSBuild through `vcpkg env` and copies the integration into the test
+working directory, replacing only the install child with property assertions. It
+covers project-local, global, and mixed-case install options, removal of unrelated
+globals, special characters in paths and host parameters, and environment-value
+restoration. It does not install packages or change machine-wide integration.
 
 ## Environment Variables
 
