@@ -261,6 +261,8 @@ endif()
 
 # === Target: vcpkglib ===
 
+include(CheckSymbolExists)
+
 add_library(vcpkglib OBJECT
     ${VCPKGLIB_BASE_SOURCES}
     ${VCPKGLIB_SOURCES}
@@ -274,6 +276,13 @@ target_compile_definitions(vcpkglib PUBLIC
     VCPKG_BASE_VERSION=${VCPKG_BASE_VERSION}
     _FILE_OFFSET_BITS=64
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "OpenBSD")
+    check_symbol_exists("getexecpath" "unistd.h" HAVE_GETEXECPATH)
+    if(HAVE_GETEXECPATH)
+        target_compile_definitions(vcpkglib PRIVATE HAVE_GETEXECPATH)
+    endif()
+endif()
 
 target_link_libraries(vcpkglib PUBLIC CURL::libcurl)
 
