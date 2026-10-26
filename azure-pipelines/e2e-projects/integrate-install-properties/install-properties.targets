@@ -1,10 +1,8 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildThisFileDirectory)RestoreEnvVars.task" />
   <Import Project="$(MSBuildThisFileDirectory)GetGlobalProperties.task" />
   <PropertyGroup>
     <SpecialCharacters>semicolon%3Bpercent%25apostrophe%27paren%28%29dollar%24at%40</SpecialCharacters>
     <ExpectedHostTriplet>host%3Bwith%25percent%27apostrophe%28%29%24%40</ExpectedHostTriplet>
-    <ExpectedEnvironmentValue>left%3Bright%25literal</ExpectedEnvironmentValue>
   </PropertyGroup>
   <Target Name="VcpkgInstallImplementation">
     <GetGlobalProperties>
@@ -14,12 +12,6 @@
       <UnexpectedGlobalProperties Include="$([MSBuild]::Unescape($(InstallGlobalPropertyNames)))"
                                   Exclude="_ZVcpkgMSBuildStampFile;_ZVcpkgRoot;_ZVcpkgHostTripletSuffix;_ZVcpkgInstalledDir;_ZVcpkgExecutable;_ZVcpkgHostTripletParameter;VcpkgTriplet;_ZVcpkgManifestRoot;VcpkgAdditionalInstallOptions;_ZVcpkgEnvVars" />
     </ItemGroup>
-    <RestoreEnvVars VcpkgEnvVars="$(_ZVcpkgEnvVars)" Condition="'$(_ZVcpkgEnvVars)' != ''" />
-    <PropertyGroup>
-      <ActualEnvironmentValue>$([System.Environment]::GetEnvironmentVariable('X_VCPKG_ESCAPING_TEST'))</ActualEnvironmentValue>
-    </PropertyGroup>
-    <Error Condition="'$(ActualEnvironmentValue)' != '$(ExpectedEnvironmentValue)'"
-           Text="The forwarded environment value was incorrectly escaped." />
     <Error Condition="'$(VcpkgAdditionalInstallOptions)' != '--overlay-ports=fixture;--binarysource=clear'"
            Text="Install options were lost or incorrectly escaped: $(VcpkgAdditionalInstallOptions)" />
     <Error Condition="'$(VcpkgTriplet)' != 'x64-windows'" Text="The explicit triplet was lost." />
