@@ -118,7 +118,7 @@ namespace vcpkg
         // The .mjs may exist if this is the one-liner, the Visual Studio distribution, or local development
         script_path.replace_filename(fmt::format("{}.mjs", script_name));
         script_path.make_preferred();
-        if (fs.exists(script_path, VCPKG_LINE_INFO))
+        if (fs.exists(script_path, IgnoreErrors{}))
         {
             return script_path;
         }
@@ -143,7 +143,7 @@ namespace vcpkg
         Path download_path = download_root / filename;
         if (auto sha = script_sha512.get())
         {
-            if (fs.exists(download_path, VCPKG_LINE_INFO))
+            if (fs.exists(download_path, IgnoreErrors{}))
             {
                 auto maybe_actual_hash =
                     Hash::get_file_hash_required(context, fs, download_path, Hash::Algorithm::Sha512);
@@ -157,7 +157,11 @@ namespace vcpkg
             }
         }
 
-        fs.remove(download_path, VCPKG_LINE_INFO);
+        if (!fs.remove(context, download_path) || !fs.create_directories(context, download_root))
+        {
+            return nullopt;
+        }
+
         std::string url = fmt::format("{}/{}.mjs", url_prefix, script_name);
         if (download_file_asset_cached(
                 context, null_sink, asset_cache_settings, fs, url, {}, download_path, filename, script_sha512))
@@ -165,7 +169,7 @@ namespace vcpkg
             return download_path;
         }
 
-        fs.remove(download_path, VCPKG_LINE_INFO);
+        fs.remove(download_path, IgnoreErrors{});
         return nullopt;
     }
 

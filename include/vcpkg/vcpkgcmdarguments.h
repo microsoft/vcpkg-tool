@@ -242,6 +242,11 @@ namespace vcpkg
         Optional<std::string> nuget_id_prefix;
         Optional<bool> use_nuget_cache;
         Optional<std::string> vcpkg_nuget_repository;
+        Optional<std::string> actions_cache_mode;
+        Optional<std::string> actions_cache_url;
+        Optional<std::string> actions_results_url;
+        Optional<std::string> actions_runtime_token;
+        Optional<std::string> runner_temp;
         Optional<std::string> github_repository;
         Optional<std::string> github_api_url;
         Optional<std::string> github_ref;

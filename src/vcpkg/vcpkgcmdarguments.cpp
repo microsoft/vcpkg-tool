@@ -579,6 +579,11 @@ namespace vcpkg
             return Strings::case_insensitive_ascii_equals(s, "true") || s == "1";
         });
         from_env(get_env, EnvironmentVariableVcpkgNuGetRepository, vcpkg_nuget_repository);
+        from_env(get_env, EnvironmentVariableActionsCacheMode, actions_cache_mode);
+        from_env(get_env, EnvironmentVariableActionsCacheUrl, actions_cache_url);
+        from_env(get_env, EnvironmentVariableActionsResultsUrl, actions_results_url);
+        from_env(get_env, EnvironmentVariableActionsRuntimeToken, actions_runtime_token);
+        from_env(get_env, EnvironmentVariableRunnerTemp, runner_temp);
         from_env(get_env, EnvironmentVariableGitHubRepository, github_repository);
         from_env(get_env, EnvironmentVariableGitHubApiUrl, github_api_url);
         from_env(get_env, EnvironmentVariableGitHubRef, github_ref);

@@ -1,0 +1,15 @@
+{
+  "name": "github-actions-cache-adapter",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/cache": "^6.3.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}
