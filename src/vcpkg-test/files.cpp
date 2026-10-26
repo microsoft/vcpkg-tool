@@ -897,6 +897,25 @@ TEST_CASE ("copy_file", "[files]")
     REQUIRE(!ec);
     REQUIRE(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
 
+#if defined(_WIN32)
+    // [skip_existing] while the source is held open the way CreateProcess holds an executable
+    {
+        const auto wide_existing_from = Strings::to_utf16(existing_from.native());
+        const HANDLE held_source = ::CreateFileW(wide_existing_from.c_str(),
+                                                 GENERIC_READ | GENERIC_EXECUTE,
+                                                 FILE_SHARE_READ | FILE_SHARE_DELETE,
+                                                 nullptr,
+                                                 OPEN_EXISTING,
+                                                 FILE_ATTRIBUTE_NORMAL,
+                                                 nullptr);
+        REQUIRE(held_source != INVALID_HANDLE_VALUE);
+        CHECK(!fs.copy_file(existing_from, existing_to, CopyOptions::skip_existing, ec));
+        CHECK(!ec);
+        CHECK(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
+        REQUIRE(::CloseHandle(held_source));
+    }
+#endif // ^^^ _WIN32
+
     // [overwrite_existing]
     REQUIRE(fs.copy_file(existing_from, existing_to, CopyOptions::overwrite_existing, ec));
     REQUIRE(!ec);
