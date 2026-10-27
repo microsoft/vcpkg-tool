@@ -89,6 +89,12 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
         expected = DependInfoFormat::Mermaid;
     }
 
+    SECTION ("json")
+    {
+        pa.settings.emplace("format", "json");
+        expected = DependInfoFormat::Json;
+    }
+
     auto result = determine_depend_info_mode(pa).value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(result.sort_mode == DependInfoSortMode::Topological);
     REQUIRE(result.format == expected);
@@ -190,7 +196,7 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
     {
         pa.settings.emplace("format", "frobinate");
         expected.append_raw("--format=frobinate is not a recognized format. --format must be one of `list`, `tree`, "
-                            "`mermaid`, `dot`, or `dgml`.");
+                            "`mermaid`, `dot`, `dgml`, or `json`.");
     }
 
     SECTION ("bad sort")
@@ -240,6 +246,11 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
         SECTION ("mermaid")
         {
             pa.settings.emplace("format", "mermaid");
+        }
+
+        SECTION ("json")
+        {
+            pa.settings.emplace("format", "json");
         }
     }
 
