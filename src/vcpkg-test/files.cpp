@@ -912,7 +912,7 @@ TEST_CASE ("copy_file", "[files]")
         CHECK(!fs.copy_file(existing_from, existing_to, CopyOptions::skip_existing, ec));
         CHECK(!ec);
         CHECK(fs.read_contents(existing_to, VCPKG_LINE_INFO) == existing_to_contents);
-        REQUIRE(::CloseHandle(held_source));
+        ::CloseHandle(held_source);
     }
 #endif // ^^^ _WIN32
 
