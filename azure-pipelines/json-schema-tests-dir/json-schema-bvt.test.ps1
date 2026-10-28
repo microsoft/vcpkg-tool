@@ -99,7 +99,7 @@ function GenPackageJson {
         $_Title = $_.Title
         $_Expected = $_.Expected
 
-        $_Actual = Test-Json -ea:0 -Json $_.Json -SchemaFile $_SchemaPath
+        $_Actual = Test-Json -ea:0 -Json $_.Json -SchemaFile $_SchemaPath -FetchExternalReference
         $_Result = $_.Expected -eq $_Actual ? 'Pass':'Fail'
         if ($_Result -eq 'Fail') {
             throw "$_SchemaName validate fail with $_Title, expected $_Expected"
