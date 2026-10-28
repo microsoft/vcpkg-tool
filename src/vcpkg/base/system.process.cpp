@@ -28,8 +28,9 @@ extern char** environ;
 
 #if defined(__OpenBSD__)
 extern char** environ;
-#include <sys/sysctl.h>
 #include <unistd.h>
+
+#include <sys/sysctl.h>
 #endif
 
 #if defined(__SVR4) && defined(__sun)
