@@ -35,6 +35,8 @@ namespace
                                2L); // Follow redirects, change request method based on HTTP response code.
                                     // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        const auto encoding_result = vcpkg_curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+        Checks::check_exit(VCPKG_LINE_INFO, encoding_result == CURLE_OK, vcpkg_curl_easy_strerror(encoding_result));
 
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
         vcpkg_curl_easy_setopt(
