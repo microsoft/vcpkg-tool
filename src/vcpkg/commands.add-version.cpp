@@ -44,6 +44,18 @@ namespace
         UpdateResult baseline_update;
     };
 
+    StringLiteral get_scheme_name(VersionScheme scheme)
+    {
+        switch (scheme)
+        {
+            case VersionScheme::Relaxed: return JsonIdVersion;
+            case VersionScheme::Semver: return JsonIdVersionSemver;
+            case VersionScheme::String: return JsonIdVersionString;
+            case VersionScheme::Date: return JsonIdVersionDate;
+            default: Checks::unreachable(VCPKG_LINE_INFO);
+        }
+    }
+
     void insert_version_to_json_object(Json::Object& obj, const Version& version, StringLiteral version_field)
     {
         obj.insert(version_field, Json::Value::string(version.text));
@@ -242,13 +254,8 @@ namespace
             }
         }
 
-        if (exactly_matching_sha_version_entry)
+        if (exactly_matching_sha_version_entry && exactly_matching_version_entry != exactly_matching_sha_version_entry)
         {
-            if (exactly_matching_version_entry == exactly_matching_sha_version_entry)
-            {
-                return {UpdateResult::NotUpdated, loaded_versions.versions_file_path};
-            }
-
             msg::println_warning(msg::format(msgAddVersionPortFilesShaUnchanged,
                                              msg::package_name = port_name,
                                              msg::version = port_version.version)
@@ -271,6 +278,38 @@ namespace
 
         if (exactly_matching_version_entry)
         {
+            const bool git_tree_changed = exactly_matching_version_entry->git_tree != git_tree;
+            const bool scheme_changed = exactly_matching_version_entry->version.scheme != port_version.scheme;
+            if (!git_tree_changed && !scheme_changed)
+            {
+                return {UpdateResult::NotUpdated, loaded_versions.versions_file_path};
+            }
+
+            if (!overwrite_version && !git_tree_changed)
+            {
+                msg::println_error(
+                    msg::format(msgVersionSchemeMismatch1,
+                                msg::version = exactly_matching_version_entry->version.version,
+                                msg::expected = get_scheme_name(exactly_matching_version_entry->version.scheme),
+                                msg::actual = get_scheme_name(port_version.scheme),
+                                msg::package_name = port_name)
+                        .append_raw('\n')
+                        .append(msgVersionSchemeMismatch2)
+                        .append_raw('\n')
+                        .append(msgAddVersionOverwriteOptionSuggestion, msg::option = SwitchOverwriteVersion)
+                        .append_raw('\n')
+                        .append(msgSeeURL, msg::url = docs::add_version_command_overwrite_version_opt_url)
+                        .append_raw("\n***")
+                        .append(msgAddVersionNoFilesUpdated)
+                        .append_raw("***"));
+                if (keep_going)
+                {
+                    return {UpdateResult::NotUpdated, loaded_versions.versions_file_path};
+                }
+
+                Checks::exit_fail(VCPKG_LINE_INFO);
+            }
+
             if (!overwrite_version)
             {
                 msg::println_error(
@@ -299,6 +338,7 @@ namespace
             }
 
             exactly_matching_version_entry->git_tree = git_tree;
+            exactly_matching_version_entry->version.scheme = port_version.scheme;
         }
         else if (!skip_version_format_check && port_version.version.port_version != 0 &&
                  !highest_matching_version_entry)

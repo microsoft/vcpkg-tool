@@ -590,7 +590,7 @@ DECLARE_MESSAGE(CmdAddVersionExample1,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg x-add-version <port name>")
 DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Processes versions for all ports")
-DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree of an existing version")
+DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites an existing version entry")
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
 DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
