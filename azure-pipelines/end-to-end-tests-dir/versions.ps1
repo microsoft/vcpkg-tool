@@ -316,6 +316,16 @@ Run-Vcpkg @commonArgs "--feature-flags=versions" install `
 Throw-IfFailed
 Require-FileExists $buildtreesRoot/versioning_
 
+# The packages of the plan come from the versioned provider, which must outlive the plan
+$CurrentTest = "depend-info JSON with default baseline 2"
+$output = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" depend-info --format=json `
+    "--x-manifest-root=$defaultBaseline2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfFailed
+$zlib = ($output | ConvertFrom-Json -AsHashtable)["zlib:$Triplet"]
+Throw-IfNonEqual -Actual "$($zlib['version'])#$($zlib['port-version'])" -Expected '1.2.11#8'
+Throw-IfNonEqual -Actual $zlib['host-only'] -Expected $false
+
 $CurrentTest = "using version features fails without flag"
 Run-Vcpkg @commonArgs "--feature-flags=-versions" install `
     "--dry-run" `
