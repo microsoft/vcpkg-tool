@@ -169,6 +169,15 @@ TEST_CASE ("edit distance", "[strings]")
     REQUIRE(byte_edit_distance("world", "") == 5);
 }
 
+TEST_CASE ("trim", "[strings]")
+{
+    REQUIRE(Strings::trim(StringView(" \t a b \r\n")) == "a b");
+    REQUIRE(Strings::trim(StringView("ab")) == "ab");
+    REQUIRE(Strings::trim(StringView("")).empty());
+    REQUIRE(Strings::trim(StringView(" ")).empty());
+    REQUIRE(Strings::trim(StringView("\n\t")).empty());
+}
+
 TEST_CASE ("replace_all", "[strings]")
 {
     REQUIRE(Strings::replace_all(StringView("literal"), "ter", "x") == "lixal");
