@@ -30,8 +30,10 @@ pwsh azure-pipelines\end-to-end-tests.ps1 -Filter '^integrate-install-properties
 The suite runs MSBuild through `vcpkg env` and copies the integration into the test
 working directory, replacing only the install child with property assertions. It
 covers project-local, global, and mixed-case install options, removal of unrelated
-globals, and special characters in paths and host parameters. It does not install
-packages or change machine-wide integration.
+globals, special characters in paths and host parameters, and an exact environment
+payload containing semicolons and literal percent escapes. Each case must emit its
+child validation message; a skipped install target cannot pass the suite. It does
+not install packages or change machine-wide integration.
 
 ## Environment Variables
 

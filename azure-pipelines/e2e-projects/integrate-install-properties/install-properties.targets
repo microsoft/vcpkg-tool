@@ -3,6 +3,8 @@
   <PropertyGroup>
     <SpecialCharacters>semicolon%3Bpercent%25apostrophe%27paren%28%29dollar%24at%40</SpecialCharacters>
     <ExpectedHostTriplet>host%3Bwith%25percent%27apostrophe%28%29%24%40</ExpectedHostTriplet>
+    <!-- GetVcpkgEnvVars encodes semicolons as literal %3B sequences. -->
+    <ExpectedEnvironmentEntry>____VCPKG_TEST_INSTALL_PROPERTIES=semicolon%253Bliteral%253Bpercent%2525____</ExpectedEnvironmentEntry>
   </PropertyGroup>
   <Target Name="VcpkgInstallImplementation">
     <GetGlobalProperties>
@@ -23,6 +25,11 @@
            Text="Special characters in install paths were lost or incorrectly escaped." />
     <Error Condition="$(_ZVcpkgRoot.Contains('special-characters')) and ('$(_ZVcpkgHostTripletSuffix)' != '$(ExpectedHostTriplet).' or '$(_ZVcpkgHostTripletParameter)' != '&quot;--host-triplet=$(ExpectedHostTriplet)&quot;')"
            Text="Special characters in host triplet properties were lost or incorrectly escaped." />
+    <PropertyGroup>
+      <InstallEnvironmentEntries>____$(_ZVcpkgEnvVars)____</InstallEnvironmentEntries>
+    </PropertyGroup>
+    <Error Condition="!$(InstallEnvironmentEntries.Contains($(ExpectedEnvironmentEntry)))"
+           Text="The controlled environment value was lost or incorrectly escaped in the install child." />
     <MakeDir Directories="$(_ZVcpkgRoot)" />
     <Message Text="Validated install properties for $(_ZVcpkgRoot)" Importance="High" />
   </Target>
