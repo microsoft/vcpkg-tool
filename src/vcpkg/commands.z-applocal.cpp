@@ -6,6 +6,7 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/files.h>
 #include <vcpkg/base/hash.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/util.h>
 
@@ -95,6 +96,7 @@ namespace
             , m_deployment_dir(deployment_dir)
             , m_installed_bin_dir(installed_bin_dir)
             , m_installed(installed)
+            , m_qt6_modules_dir((is_debug ? Path(installed.parent_path()) : Path(installed)) / "share/Qt6/modules")
             , m_is_debug(is_debug)
             , m_verbose(verbose)
 #if defined(_WIN32)
@@ -106,7 +108,8 @@ namespace
                   m_fs.exists(m_installed / "tools/azure-kinect-sensor-sdk/k4adeploy.ps1", VCPKG_LINE_INFO))
             , m_magnum_installed(m_fs.exists(m_installed / "bin/magnum/magnumdeploy.ps1", VCPKG_LINE_INFO) ||
                                  m_fs.exists(m_installed / "bin/magnum-d/magnumdeploy.ps1", VCPKG_LINE_INFO))
-            , m_qt_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt5_installed(m_fs.exists(m_installed / "plugins/qtdeploy.ps1", VCPKG_LINE_INFO))
+            , m_qt6_installed(m_fs.exists(m_installed / "Qt6/plugins", VCPKG_LINE_INFO))
 #if !defined(_WIN32)
             , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
 #endif // ^^^ !_WIN32
@@ -171,9 +174,13 @@ namespace
                                      imported_name);
                     }
 
-                    if (m_qt_installed)
+                    if (m_qt5_installed && Strings::case_insensitive_ascii_starts_with(imported_name, "Qt5"))
                     {
-                        deployQt(m_deployment_dir, m_installed / "plugins", imported_name);
+                        deployQt5(m_deployment_dir, m_installed_bin_dir, m_installed / "plugins", imported_name);
+                    }
+                    else if (m_qt6_installed && Strings::case_insensitive_ascii_starts_with(imported_name, "Qt6"))
+                    {
+                        deployQt6(m_deployment_dir, m_installed / "Qt6/plugins", imported_name);
                     }
 
                     resolve(m_deployment_dir / imported_name);
@@ -336,10 +343,11 @@ namespace
             }
         }
 
-        void deployQt(const Path& target_binary_dir, const Path& qt_plugins_dir, StringView target_binary_name)
+        void deployQt5(const Path& target_binary_dir,
+                       const Path& bin_dir,
+                       const Path& qt_plugins_dir,
+                       StringView target_binary_name)
         {
-            Path bin_dir = Path(qt_plugins_dir.parent_path()) / "bin";
-
             if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Cored.dll") ||
                 Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Core.dll"))
             {
@@ -524,6 +532,104 @@ namespace
             }
         }
 
+        void deployQt6(const Path& target_binary_dir, const Path& qt_plugins_dir, StringView target_binary_name)
+        {
+            static constexpr StringLiteral qt6_prefix = "Qt6";
+            static constexpr StringLiteral dll_suffix = ".dll";
+
+            if (!Strings::case_insensitive_ascii_starts_with(target_binary_name, qt6_prefix) ||
+                !Strings::case_insensitive_ascii_ends_with(target_binary_name, dll_suffix))
+            {
+                return;
+            }
+
+            if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt6Cored.dll") ||
+                Strings::case_insensitive_ascii_equals(target_binary_name, "Qt6Core.dll"))
+            {
+                std::error_code ec;
+                if (!m_fs.exists(target_binary_dir / "qt.conf", ec))
+                {
+                    m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]\n", ec);
+                }
+            }
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt6Guid.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt6Gui.dll"))
+            {
+                Debug::println("  Deploying platforms");
+
+                std::error_code ec;
+                Path new_dir = target_binary_dir / "plugins" / "platforms";
+                m_fs.create_directories(new_dir, ec);
+
+                std::vector<Path> children = m_fs.get_files_non_recursive(qt_plugins_dir / "platforms", ec);
+                for (auto&& c : children)
+                {
+                    auto c_filename = c.filename();
+                    if (Strings::case_insensitive_ascii_starts_with(c_filename, "qwindows") &&
+                        Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
+                    {
+                        deploy_binary(new_dir, qt_plugins_dir / "platforms", c_filename);
+                    }
+                }
+            }
+
+            auto module_name = target_binary_name.substr(
+                qt6_prefix.size(), target_binary_name.size() - qt6_prefix.size() - dll_suffix.size());
+            if (m_is_debug && Strings::case_insensitive_ascii_ends_with(module_name, "d"))
+            {
+                module_name = module_name.substr(0, module_name.size() - 1);
+            }
+
+            const auto module_metadata_path = m_qt6_modules_dir / Strings::concat(module_name, ".json");
+            std::error_code ec;
+            const auto module_metadata_contents = m_fs.read_contents(module_metadata_path, ec);
+            if (ec)
+            {
+                Debug::println("  Skipping Qt 6 plugin metadata ", module_metadata_path, ": ", ec.message());
+                return;
+            }
+
+            auto maybe_module_metadata = Json::parse_object(module_metadata_contents, module_metadata_path);
+            const auto module_metadata = maybe_module_metadata.get();
+            if (!module_metadata)
+            {
+                Debug::println("  Skipping invalid Qt 6 plugin metadata ",
+                               module_metadata_path,
+                               ": ",
+                               maybe_module_metadata.error());
+                return;
+            }
+
+            const auto plugin_types_value = module_metadata->get("plugin_types");
+            if (!plugin_types_value)
+            {
+                return;
+            }
+
+            const auto plugin_types = plugin_types_value->maybe_array();
+            if (!plugin_types)
+            {
+                Debug::println("  Skipping non-array plugin_types in ", module_metadata_path);
+                return;
+            }
+
+            for (const auto& plugin_type_value : *plugin_types)
+            {
+                const auto plugin_type = plugin_type_value.maybe_string();
+                if (!plugin_type)
+                {
+                    Debug::println("  Skipping non-string plugin type in ", module_metadata_path);
+                    continue;
+                }
+
+                // The Gui-specific logic above deploys only qwindows[d].dll.
+                if (*plugin_type != "platforms")
+                {
+                    deployPluginsQt(*plugin_type, target_binary_dir, qt_plugins_dir);
+                }
+            }
+        }
+
         bool deploy_binary(const Path& target_binary_dir, const Path& installed_dir, StringView target_binary_name)
         {
             auto source = installed_dir / target_binary_name;
@@ -591,6 +697,7 @@ namespace
         Path m_deployment_dir;
         Path m_installed_bin_dir;
         Path m_installed;
+        Path m_qt6_modules_dir;
         bool m_is_debug;
         bool m_verbose;
 #if defined(_WIN32)
@@ -601,7 +708,8 @@ namespace
         bool m_openni2_installed;
         bool m_azurekinectsdk_installed;
         bool m_magnum_installed;
-        bool m_qt_installed;
+        bool m_qt5_installed;
+        bool m_qt6_installed;
 #if !defined(_WIN32)
         Path m_temp_dir;
 #endif // ^^^ !_WIN32
