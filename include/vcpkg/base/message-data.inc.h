@@ -1468,11 +1468,26 @@ DECLARE_MESSAGE(ForMoreHelp,
                 "Printed before a suggestion for the user to run `vcpkg help <topic>`",
                 "For More Help")
 DECLARE_MESSAGE(GetParseFailureInfo, (), "", "Use '--debug' to get more information about the parse failures.")
-DECLARE_MESSAGE(GhaBinaryCacheDeprecated,
+DECLARE_MESSAGE(GhaAdapterUnavailable,
+                (),
+                "The term 'x-gha' is a vcpkg configuration option",
+                "vcpkg skips the x-gha binary source because github-actions-cache-adapter.mjs is not next to vcpkg "
+                "and could not be downloaded.")
+DECLARE_MESSAGE(GhaNodeUnavailable,
+                (),
+                "The term 'x-gha' is a vcpkg configuration option",
+                "vcpkg skips the x-gha binary source because Node.js could not be found or downloaded.")
+DECLARE_MESSAGE(GhaParametersMissing,
                 (msg::url),
                 "The term 'x-gha' is a vcpkg configuration option",
-                "The 'x-gha' binary caching backend has been removed. Consider using a NuGet-based binary caching "
-                "provider instead, see extended documentation at {url}.")
+                "vcpkg skips the x-gha binary source because it needs the ACTIONS_RUNTIME_TOKEN environment variable "
+                "and either ACTIONS_RESULTS_URL or, on GitHub Enterprise Server, ACTIONS_CACHE_URL. GitHub Actions "
+                "sets them only for JavaScript actions, so an earlier step of the job must make them available to "
+                "later steps. See {url} for details.")
+DECLARE_MESSAGE(GhaUploadsStopped,
+                (),
+                "The term 'x-gha' is a vcpkg configuration option",
+                "x-gha will not upload the remaining packages of this run because an upload failed.")
 DECLARE_MESSAGE(GitCommitUpdateVersionDatabase,
                 (),
                 "This is a command line; only the 'update version database' part should be localized",
@@ -1962,6 +1977,10 @@ DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
                 "",
                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                 "preceeding '?' as the second argument")
+DECLARE_MESSAGE(InvalidArgumentRequiresZeroOrOneArgument,
+                (msg::binary_source),
+                "",
+                "invalid argument: binary config '{binary_source}' requires 0 or 1 argument")
 DECLARE_MESSAGE(
     InvalidBinaryCacheCompressionLevel,
     (msg::value),
@@ -2763,6 +2782,10 @@ DECLARE_MESSAGE(RestoredPackagesFromGCS,
                 (msg::count, msg::elapsed),
                 "",
                 "Restored {count} package(s) from GCS in {elapsed}. Use --debug to see more details.")
+DECLARE_MESSAGE(RestoredPackagesFromGHA,
+                (msg::count, msg::elapsed),
+                "",
+                "Restored {count} package(s) from GitHub Actions Cache in {elapsed}. Use --debug to see more details.")
 DECLARE_MESSAGE(RestoredPackagesFromHTTP,
                 (msg::count, msg::elapsed),
                 "",

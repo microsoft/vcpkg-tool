@@ -724,6 +724,55 @@ TEST_CASE ("BinaryConfigParser GCS provider", "[binaryconfigparser]")
     }
 }
 
+TEST_CASE ("BinaryConfigParser GitHub Actions provider", "[binaryconfigparser]")
+{
+    {
+        auto parsed = parse_binary_provider_configs("x-gha", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"default"}, {"gha"}});
+        REQUIRE(state.gha_read);
+        REQUIRE(!state.gha_write);
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,read", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.gha_read);
+        REQUIRE(!state.gha_write);
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,write", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(!state.gha_read);
+        REQUIRE(state.gha_write);
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,readwrite", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.gha_read);
+        REQUIRE(state.gha_write);
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,invalid", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,readwrite,extra", {});
+        REQUIRE(!parsed.has_value());
+    }
+    {
+        auto parsed = parse_binary_provider_configs("x-gha,readwrite;clear", {});
+        auto state = parsed.value_or_exit(VCPKG_LINE_INFO);
+
+        REQUIRE(state.binary_cache_providers == std::set<StringLiteral>{{"clear"}});
+        REQUIRE(!state.gha_read);
+        REQUIRE(!state.gha_write);
+    }
+}
+
 TEST_CASE ("BinaryConfigParser HTTP provider", "[binaryconfigparser]")
 {
     {

@@ -14,6 +14,9 @@
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-artifacts.js">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>
+    <FilesToSign Include="$(IntermediateOutputPath)\github-actions-cache-adapter.js">
+      <Authenticode>Microsoft400</Authenticode>
+    </FilesToSign>
     <FilesToSign Include="$(IntermediateOutputPath)\vcpkg-init.ps1">
       <Authenticode>Microsoft400</Authenticode>
     </FilesToSign>

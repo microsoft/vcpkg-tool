@@ -46,9 +46,11 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDetectedCIEnvironment = "detected-ci-environment";
     inline constexpr StringLiteral JsonIdDetector = "detector";
     inline constexpr StringLiteral JsonIdDirect = "direct";
+    inline constexpr StringLiteral JsonIdDirectory = "directory";
     inline constexpr StringLiteral JsonIdDocumentation = "documentation";
     inline constexpr StringLiteral JsonIdDollarSchema = "$schema";
     inline constexpr StringLiteral JsonIdDownloads = "downloads";
+    inline constexpr StringLiteral JsonIdEntries = "entries";
     inline constexpr StringLiteral JsonIdError = "error";
     inline constexpr StringLiteral JsonIdExecutable = "executable";
     inline constexpr StringLiteral JsonIdFeatures = "features";
@@ -76,6 +78,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
     inline constexpr StringLiteral JsonIdMinVersion = "min-version";
     inline constexpr StringLiteral JsonIdName = "name";
+    inline constexpr StringLiteral JsonIdOperation = "operation";
     inline constexpr StringLiteral JsonIdOS = "os";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
     inline constexpr StringLiteral JsonIdOverlayTriplets = "overlay-triplets";
@@ -498,6 +501,10 @@ namespace vcpkg
     inline constexpr StringLiteral PolicySkipUsageInstallCheck = "PolicySkipUsageInstallCheck";
 
     // Environment variables are ALL_CAPS_WITH_UNDERSCORES
+    inline constexpr StringLiteral EnvironmentVariableActionsCacheMode = "ACTIONS_CACHE_MODE";
+    inline constexpr StringLiteral EnvironmentVariableActionsCacheUrl = "ACTIONS_CACHE_URL";
+    inline constexpr StringLiteral EnvironmentVariableActionsResultsUrl = "ACTIONS_RESULTS_URL";
+    inline constexpr StringLiteral EnvironmentVariableActionsRuntimeToken = "ACTIONS_RUNTIME_TOKEN";
     inline constexpr StringLiteral EnvironmentVariableAndroidNdkHome = "ANDROID_NDK_HOME";
     inline constexpr StringLiteral EnvironmentVariableAppData = "APPDATA";
     inline constexpr StringLiteral EnvironmentVariableAppveyor = "APPVEYOR";
@@ -541,6 +548,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableProgramFilesX86 = "ProgramFiles(x86)";
     inline constexpr StringLiteral EnvironmentVariableProgramW6432 = "ProgramW6432";
     inline constexpr StringLiteral EnvironmentVariablePythonPath = "PYTHONPATH";
+    inline constexpr StringLiteral EnvironmentVariableRunnerTemp = "RUNNER_TEMP";
     inline constexpr StringLiteral EnvironmentVariableSystemDrive = "SystemDrive";
     inline constexpr StringLiteral EnvironmentVariableSystemRoot = "SystemRoot";
     inline constexpr StringLiteral EnvironmentVariableTeamcityVersion = "TEAMCITY_VERSION";
