@@ -19,6 +19,25 @@ if ($IsWindows) {
 
     Require-FileExists $basicDir/mylib.dll
 
+    # Tests z-applocal tlog encoding
+    Remove-Item -LiteralPath "$basicDir/mylib.dll"
+    Run-Vcpkg z-applocal `
+            --target-binary=$basicDir/main.exe `
+            --installed-bin-dir=$basicDir/installed/bin `
+            --tlog-file=$basicDir/main.write.1u.tlog
+    Throw-IfFailed
+    $tlogBytes = [System.IO.File]::ReadAllBytes("$basicDir/main.write.1u.tlog")
+    if ($tlogBytes.Length -lt 2 -Or $tlogBytes[0] -ne 0xFF -Or $tlogBytes[1] -ne 0xFE)
+    {
+        throw "z-applocal tlog didn't start with a UTF-16LE byte order mark"
+    }
+
+    $tlogContents = [System.Text.Encoding]::Unicode.GetString($tlogBytes, 2, $tlogBytes.Length - 2)
+    if ($tlogContents -notmatch 'installed\\bin\\mylib\.dll')
+    {
+        throw "z-applocal tlog didn't contain the installed mylib.dll path"
+    }
+
     # Tests z-applocal command with no arguments
     Run-Vcpkg z-applocal
     Throw-IfNotFailed
