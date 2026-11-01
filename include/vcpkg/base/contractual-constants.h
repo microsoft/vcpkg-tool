@@ -41,6 +41,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDefaultTriplet = "default-triplet";
     inline constexpr StringLiteral JsonIdDemands = "demands";
     inline constexpr StringLiteral JsonIdDependencies = "dependencies";
+    inline constexpr StringLiteral JsonIdDepth = "depth";
     inline constexpr StringLiteral JsonIdDescription = "description";
     inline constexpr StringLiteral JsonIdDetectedCIEnvironment = "detected-ci-environment";
     inline constexpr StringLiteral JsonIdDetector = "detector";
@@ -57,6 +58,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdGitTree = "git-tree";
     inline constexpr StringLiteral JsonIdHomepage = "homepage";
     inline constexpr StringLiteral JsonIdHost = "host";
+    inline constexpr StringLiteral JsonIdHostOnly = "host-only";
     inline constexpr StringLiteral JsonIdHostTriplet = "host-triplet";
     inline constexpr StringLiteral JsonIdId = "id";
     inline constexpr StringLiteral JsonIdIndirect = "indirect";

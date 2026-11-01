@@ -1,5 +1,6 @@
 #include <vcpkg/base/contractual-constants.h>
 #include <vcpkg/base/expected.h>
+#include <vcpkg/base/json.h>
 #include <vcpkg/base/strings.h>
 #include <vcpkg/base/util.h>
 #include <vcpkg/base/xmlserializer.h>
@@ -15,6 +16,8 @@
 #include <vcpkg/packagespec.h>
 #include <vcpkg/portfileprovider.h>
 #include <vcpkg/registries.h>
+#include <vcpkg/sourceparagraph.h>
+#include <vcpkg/spdx.h>
 #include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
@@ -119,10 +122,10 @@ namespace
         };
     }
 
+    // Returns one element per element of install_actions, in the same order.
     std::vector<PackageDependInfo> extract_depend_info(const std::vector<InstallPlanAction>& install_actions,
                                                        const Triplet& default_triplet,
-                                                       const Triplet& host_triplet,
-                                                       const int max_depth)
+                                                       const Triplet& host_triplet)
     {
         const bool is_native = default_triplet == host_triplet;
         auto decorated_name = [&default_triplet, &host_triplet, is_native](const PackageSpec& spec) -> std::string {
@@ -151,7 +154,83 @@ namespace
         }
 
         assign_depth_to_dependencies(out, package_dependencies);
-        Util::erase_remove_if(out, [max_depth](auto&& info) { return info.depth > max_depth; });
+        return out;
+    }
+
+    bool evaluate_platform(const PlatformExpression::Expr& platform,
+                           const PackageSpec& spec,
+                           const CMakeVars::CMakeVarProvider& var_provider,
+                           Triplet host_triplet)
+    {
+        // same as the evaluation of dependencies when creating the install plan
+        return platform.is_empty() || platform.evaluate(var_provider.get_or_load_dep_info_vars(spec, host_triplet));
+    }
+
+    // depend_info must be the result of extract_depend_info(install_actions, ...)
+    std::vector<DependInfoPackage> extract_depend_info_packages(const std::vector<InstallPlanAction>& install_actions,
+                                                                const std::vector<PackageDependInfo>& depend_info,
+                                                                const CMakeVars::CMakeVarProvider& var_provider,
+                                                                Triplet host_triplet)
+    {
+        Checks::check_exit(VCPKG_LINE_INFO, install_actions.size() == depend_info.size());
+        std::vector<DependInfoPackage> out;
+        out.reserve(install_actions.size());
+        for (size_t i = 0; i < install_actions.size(); ++i)
+        {
+            const auto& action = install_actions[i];
+            const auto& scf = *action.source_control_file_and_location().source_control_file;
+            const auto& core = *scf.core_paragraph;
+
+            // The install plan only knows the triplets of the dependencies. If the host triplet is the target
+            // triplet, a dependency declared with "host": true can't be distinguished from a normal one there, so
+            // look at the declarations of the features in the plan.
+            std::set<PackageSpec> non_host_dependencies;
+            for (auto&& feature_dependencies : action.feature_dependencies)
+            {
+                const auto* dependencies = scf.find_dependencies_for_feature(feature_dependencies.first);
+                if (!dependencies) continue;
+                for (auto&& dependency : *dependencies)
+                {
+                    if (!dependency.host &&
+                        evaluate_platform(dependency.platform, action.spec, var_provider, host_triplet))
+                    {
+                        non_host_dependencies.emplace(dependency.name, action.spec.triplet());
+                    }
+                }
+            }
+
+            DependInfoPackage package;
+            package.spec = action.spec;
+            package.version = core.version;
+            for (auto&& feature : action.feature_list)
+            {
+                if (feature != FeatureNameCore)
+                {
+                    package.features.push_back(feature);
+                }
+            }
+
+            Util::sort(package.features);
+            package.depth = depend_info[i].depth;
+            auto license = calculate_spdx_license(action);
+            if (!license.empty() && license != SpdxNoAssertion)
+            {
+                package.license = std::move(license);
+            }
+
+            if (!core.homepage.empty())
+            {
+                package.homepage = core.homepage;
+            }
+
+            for (auto&& dependency : action.package_dependencies)
+            {
+                package.dependencies.push_back({dependency, !Util::Sets::contains(non_host_dependencies, dependency)});
+            }
+
+            out.push_back(std::move(package));
+        }
+
         return out;
     }
 
@@ -255,6 +334,89 @@ namespace vcpkg
         return s;
     }
 
+    void mark_host_only_packages(std::vector<DependInfoPackage>& packages, View<PackageSpec> roots)
+    {
+        std::map<PackageSpec, DependInfoPackage*> by_spec;
+        for (auto&& package : packages)
+        {
+            package.host_only = true;
+            by_spec.emplace(package.spec, &package);
+        }
+
+        std::vector<DependInfoPackage*> pending;
+        auto visit = [&](const PackageSpec& spec) {
+            auto it = by_spec.find(spec);
+            if (it != by_spec.end() && it->second->host_only)
+            {
+                it->second->host_only = false;
+                pending.push_back(it->second);
+            }
+        };
+
+        for (auto&& root : roots)
+        {
+            visit(root);
+        }
+
+        while (!pending.empty())
+        {
+            auto package = pending.back();
+            pending.pop_back();
+            for (auto&& dependency : package->dependencies)
+            {
+                if (!dependency.host)
+                {
+                    visit(dependency.spec);
+                }
+            }
+        }
+    }
+
+    std::string create_json_as_string(const std::vector<DependInfoPackage>& packages)
+    {
+        Json::Object obj;
+        for (auto&& package : packages)
+        {
+            auto& package_obj = obj.insert(package.spec.to_string(), Json::Object());
+            package_obj.insert(JsonIdName, package.spec.name());
+            package_obj.insert(JsonIdTriplet, package.spec.triplet().canonical_name());
+            package_obj.insert(JsonIdVersion, package.version.text);
+            package_obj.insert(JsonIdPortVersion, Json::Value::integer(package.version.port_version));
+            auto& features = package_obj.insert(JsonIdFeatures, Json::Array());
+            for (auto&& feature : package.features)
+            {
+                features.push_back(feature);
+            }
+
+            package_obj.insert(JsonIdDepth, Json::Value::integer(package.depth));
+            package_obj.insert(JsonIdHostOnly, Json::Value::boolean(package.host_only));
+            if (auto license = package.license.get())
+            {
+                package_obj.insert(JsonIdLicense, *license);
+            }
+            else
+            {
+                package_obj.insert(JsonIdLicense, Json::Value::null(nullptr));
+            }
+
+            if (auto homepage = package.homepage.get())
+            {
+                package_obj.insert(JsonIdHomepage, *homepage);
+            }
+
+            auto& dependencies = package_obj.insert(JsonIdDependencies, Json::Array());
+            for (auto&& dependency : package.dependencies)
+            {
+                auto& dependency_obj = dependencies.push_back(Json::Object());
+                dependency_obj.insert(JsonIdName, dependency.spec.name());
+                dependency_obj.insert(JsonIdTriplet, dependency.spec.triplet().canonical_name());
+                dependency_obj.insert(JsonIdHost, Json::Value::boolean(dependency.host));
+            }
+        }
+
+        return Json::stringify(obj);
+    }
+
     // These command metadata must share "critical" values (switches, number of arguments).
     // They exist only to provide better example strings.
     constexpr CommandMetadata CommandDependInfoMetadata{
@@ -288,6 +450,7 @@ namespace vcpkg
         static constexpr StringLiteral SwitchFormatDot = "dot";
         static constexpr StringLiteral SwitchFormatDgml = "dgml";
         static constexpr StringLiteral SwitchFormatMermaid = "mermaid";
+        static constexpr StringLiteral SwitchFormatJson = "json";
 
         auto& settings = args.settings;
 
@@ -316,6 +479,10 @@ namespace vcpkg
                 else if (as_lower == SwitchFormatMermaid)
                 {
                     maybe_format.emplace(DependInfoFormat::Mermaid);
+                }
+                else if (as_lower == SwitchFormatJson)
+                {
+                    maybe_format.emplace(DependInfoFormat::Json);
                 }
                 else
                 {
@@ -406,7 +573,8 @@ namespace vcpkg
                     break;
                 case DependInfoFormat::Dot:
                 case DependInfoFormat::Dgml:
-                case DependInfoFormat::Mermaid: return msg::format_error(msgCmdDependInfoShowDepthFormatMismatch);
+                case DependInfoFormat::Mermaid:
+                case DependInfoFormat::Json: return msg::format_error(msgCmdDependInfoShowDepthFormatMismatch);
                 default: Checks::unreachable(VCPKG_LINE_INFO);
             }
         }
@@ -478,7 +646,10 @@ namespace vcpkg
         const auto unsupported_port_action = UnsupportedPortAction::Warn;
 
         ActionPlan action_plan;
-        // this needs to be kept alive because the ActionPlan has pointers into it
+        // the requested packages, without host dependencies of the manifest
+        std::vector<PackageSpec> roots;
+        // these need to be kept alive because the ActionPlan has pointers into them
+        std::unique_ptr<IFullVersionedPortfileProvider> verprovider;
         std::unique_ptr<IOverlayProvider> oprovider;
         if (manifest)
         {
@@ -492,10 +663,17 @@ namespace vcpkg
             auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
 
             auto dependencies = get_manifest_dependencies(*manifest_scf, features);
+            for (auto&& dependency : dependencies)
+            {
+                if (!dependency.host && evaluate_platform(dependency.platform, toplevel, var_provider, host_triplet))
+                {
+                    roots.emplace_back(dependency.name, toplevel.triplet());
+                }
+            }
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
-            auto verprovider = make_versioned_portfile_provider(*registry_set);
+            verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
             auto extended_overlay_port_directories = paths.overlay_ports;
@@ -524,6 +702,7 @@ namespace vcpkg
                     return check_and_get_full_package_spec(arg, default_triplet, paths.get_triplet_db())
                         .value_or_exit(VCPKG_LINE_INFO);
                 });
+            roots = Util::fmap(specs, [](const FullPackageSpec& spec) { return spec.package_spec; });
 
             // By passing an empty status_db, we should get a plan containing all dependencies.
             // All actions in the plan should be install actions, as there's no installed packages to remove.
@@ -544,7 +723,21 @@ namespace vcpkg
         }
 
         std::vector<PackageDependInfo> depend_info =
-            extract_depend_info(action_plan.install_actions, default_triplet, host_triplet, strategy.max_depth);
+            extract_depend_info(action_plan.install_actions, default_triplet, host_triplet);
+
+        if (strategy.format == DependInfoFormat::Json)
+        {
+            auto packages =
+                extract_depend_info_packages(action_plan.install_actions, depend_info, var_provider, host_triplet);
+            mark_host_only_packages(packages, roots);
+            Util::erase_remove_if(packages,
+                                  [&](const DependInfoPackage& package) { return package.depth > strategy.max_depth; });
+            msg::write_unlocalized_text_to_stdout(Color::none, create_json_as_string(packages));
+            Checks::exit_success(VCPKG_LINE_INFO);
+        }
+
+        Util::erase_remove_if(depend_info,
+                              [&](const PackageDependInfo& info) { return info.depth > strategy.max_depth; });
 
         if (strategy.format == DependInfoFormat::Dot)
         {

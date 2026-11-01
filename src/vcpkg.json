@@ -6,7 +6,6 @@
       "features": [
         "brotli",
         "http2",
-        "non-http",
         "ssl",
         "zstd"
       ],

@@ -340,47 +340,6 @@ namespace
     }
 
 #if defined(_WIN32)
-    struct FileHandle
-    {
-        HANDLE h_file;
-        FileHandle() = delete;
-        FileHandle(const FileHandle&) = delete;
-        FileHandle& operator=(const FileHandle&) = delete;
-
-        FileHandle(const wchar_t* file_name,
-                   DWORD desired_access,
-                   DWORD share_mode,
-                   DWORD creation_disposition,
-                   DWORD flags_and_attributes,
-                   std::error_code& ec) noexcept
-            : h_file(::CreateFileW(
-                  file_name, desired_access, share_mode, nullptr, creation_disposition, flags_and_attributes, 0))
-        {
-            if (h_file == INVALID_HANDLE_VALUE)
-            {
-                const auto last_error = static_cast<int>(GetLastError());
-                ec.assign(last_error, std::system_category());
-            }
-            else
-            {
-                ec.clear();
-            }
-        }
-
-        // bug in MSVC considers h_file uninitialized:
-        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-        VCPKG_MSVC_WARNING(push)
-        VCPKG_MSVC_WARNING(disable : 6001)
-        ~FileHandle()
-        {
-            if (h_file != INVALID_HANDLE_VALUE)
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
-            }
-        }
-        VCPKG_MSVC_WARNING(pop)
-    };
-
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -3816,13 +3775,8 @@ namespace vcpkg
                     }
                 }
 
-                // open handles to both files in exclusive mode to implement the equivalent() check
-                FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
-                if (ec)
-                {
-                    return false;
-                }
-                FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
+                // skip_existing: no equivalent() check; opening the files exclusively would block running the source
+                ec.clear();
                 return false;
             }
 

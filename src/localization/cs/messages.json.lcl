@@ -2721,24 +2721,24 @@
       </Item>
       <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
+          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Zvolí výstupní formát, jeden z těchto formátů: list, tree, mermaid, dot nebo dgml]]></Val>
+            <Val><![CDATA[Zvolí výstupní formát, jeden z těchto formátů: `list`, `tree`, `mermaid`, `dot`, `dgml`, nebo `json`]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--format={value} není rozpoznaný formát. Argument --format musí být list, tree, mermaid, dot nebo dgml.]]></Val>
+            <Val><![CDATA[--format={value} není rozpoznaný formát. Argument --format musí být `list`, `tree`, `mermaid`, `dot`, `dgml`, nebo `json`.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />

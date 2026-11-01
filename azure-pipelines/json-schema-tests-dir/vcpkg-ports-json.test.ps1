@@ -8,7 +8,7 @@ Get-ChildItem -Directory -Path (Join-Path $VcpkgRoot 'ports')
     $PortJsonPath = Join-Path $PortDir 'vcpkg.json'
     $Schema = $using:VcpkgPortSchemaPath
 
-    $_Actual = Test-Json -ea:0 -LiteralPath $PortJsonPath -SchemaFile $Schema
+    $_Actual = Test-Json -ea:0 -LiteralPath $PortJsonPath -SchemaFile $Schema -FetchExternalReference
     [pscustomobject]@{
         PortName = $PortName
         Actual   = $_Actual

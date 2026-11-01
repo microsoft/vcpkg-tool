@@ -1,4 +1,4 @@
-﻿{
+{
   "ABaseline": "una línea base",
   "ABaselineObject": "un objeto de línea base",
   "ABoolean": "un booleano",
@@ -264,8 +264,8 @@
   "CmdDeactivateSynopsis": "Quita todas las activaciones de artefactos del shell actual.",
   "CmdDependInfoExample1": "vcpkg depend-info <nombre del puerto>",
   "CmdDependInfoFormatConflict": "Formatos en conflicto especificados. Solo se acepta --format, --dgml o --dot.",
-  "CmdDependInfoFormatHelp": "Elige el formato de salida, uno de los siguientes: \"list\", \"tree\", \"hair\", \"dot\" o \"dgml\".",
-  "CmdDependInfoFormatInvalid": "--format={value} no es un formato reconocido. --format debe ser \"list\", \"tree\", \"mermaid\", \"dot\" o \"dgml\".",
+  "CmdDependInfoFormatHelp": "Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`",
+  "CmdDependInfoFormatInvalid": "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`.",
   "CmdDependInfoOptDepth": "Muestra la profundidad de la recursión en la salida \"list\"",
   "CmdDependInfoOptMaxRecurse": "Establece la profundidad máxima de recursión. Por defecto es sin límite",
   "CmdDependInfoOptSort": "Elige el orden de clasificación para el formato \"list\", uno de entre \"lexicográfico\", \"topológico\" (por defecto), \"reverse\"",

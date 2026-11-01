@@ -1,4 +1,4 @@
-﻿{
+{
   "ABaseline": "기준선",
   "ABaselineObject": "기준 개체",
   "ABoolean": "부울",
@@ -264,8 +264,8 @@
   "CmdDeactivateSynopsis": "현재 셸에서 모든 아티팩트 활성화 제거",
   "CmdDependInfoExample1": "vcpkg depend-info <포트 이름>",
   "CmdDependInfoFormatConflict": "충돌하는 형식이 지정되었습니다. --format, --dgml 또는 --dot 중 하나만 허용됩니다.",
-  "CmdDependInfoFormatHelp": "출력 형식, `list', `tree`, `mermaid`, `dot` 또는 `dgml` 중 하나 선택",
-  "CmdDependInfoFormatInvalid": "--format={value}은(는) 인식할 수 있는 형식이 아닙니다. --format은 `list`, `tree`, `mermaid`, `dot` 또는 `dgml` 중 하나여야 합니다.",
+  "CmdDependInfoFormatHelp": "Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`",
+  "CmdDependInfoFormatInvalid": "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`.",
   "CmdDependInfoOptDepth": "`list` 출력에 재귀 깊이를 표시합니다.",
   "CmdDependInfoOptMaxRecurse": "최대 재귀 깊이를 설정합니다. 기본값은 제한이 없습니다.",
   "CmdDependInfoOptSort": "`list` 형식, `lexicographical`, `topological`(기본값), `reverse` 중 하나에 대한 정렬 순서를 선택합니다.",
