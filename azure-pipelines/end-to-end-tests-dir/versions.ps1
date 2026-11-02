@@ -46,6 +46,28 @@ $portsRedirectArgsIncomplete = @(
 Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
+# x-add-version --all validates manifests with recorded git trees
+Set-Content -LiteralPath "$versionFilesPath/ports/cat/vcpkg.json" `
+    -Value '{"name":"cat","version":"1.0"}' -Encoding Ascii -NoNewline
+Run-Vcpkg @portsRedirectArgsOK x-add-version cat --overwrite-version --skip-formatting-check
+Throw-IfFailed
+$versionFileSnapshotBefore = Get-VersionFileSnapshot "$versionFilesPath/versions"
+foreach ($overwriteArgs in @(@(), @("--overwrite-version"))) {
+    $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version --all @overwriteArgs
+    Throw-IfNotFailed
+    if ($output -notmatch "cat is not properly formatted") {
+        throw "Expected formatting validation for a port whose git tree is already recorded"
+    }
+
+    $versionFileSnapshotAfter = Get-VersionFileSnapshot "$versionFilesPath/versions"
+    Throw-IfNonEqual $versionFileSnapshotAfter $versionFileSnapshotBefore
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all --skip-formatting-check
+Throw-IfFailed
+Copy-Item -LiteralPath "$versionFilesPathSources/ports/cat/vcpkg.json" "$versionFilesPath/ports/cat/vcpkg.json"
+Copy-Item -LiteralPath "$versionFilesPathSources/versions/c-/cat.json" "$versionFilesPath/versions/c-/cat.json"
+
 # x-add-version --all removes stale baseline entries
 Set-Content -LiteralPath "$versionFilesPath/versions/baseline.json" -Value @"
 {
@@ -361,6 +383,16 @@ Run-Vcpkg @commonArgs "--feature-flags=versions" install `
     "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
 Throw-IfFailed
 Require-FileExists $buildtreesRoot/versioning_
+
+# The packages of the plan come from the versioned provider, which must outlive the plan
+# depend-info JSON with default baseline 2
+$output = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" depend-info --format=json `
+    "--x-manifest-root=$defaultBaseline2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfFailed
+$zlib = ($output | ConvertFrom-Json -AsHashtable)["zlib:$Triplet"]
+Throw-IfNonEqual -Actual "$($zlib['version'])#$($zlib['port-version'])" -Expected '1.2.11#8'
+Throw-IfNonEqual -Actual $zlib['host-only'] -Expected $false
 
 # Reject versioning features when the versions feature flag is disabled
 Run-Vcpkg @commonArgs "--feature-flags=-versions" install `

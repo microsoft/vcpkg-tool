@@ -648,7 +648,8 @@ namespace vcpkg
         ActionPlan action_plan;
         // the requested packages, without host dependencies of the manifest
         std::vector<PackageSpec> roots;
-        // this needs to be kept alive because the ActionPlan has pointers into it
+        // these need to be kept alive because the ActionPlan has pointers into them
+        std::unique_ptr<IFullVersionedPortfileProvider> verprovider;
         std::unique_ptr<IOverlayProvider> oprovider;
         if (manifest)
         {
@@ -672,7 +673,7 @@ namespace vcpkg
 
             const bool add_builtin_ports_directory_as_overlay =
                 registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
-            auto verprovider = make_versioned_portfile_provider(*registry_set);
+            verprovider = make_versioned_portfile_provider(*registry_set);
             auto baseprovider = make_baseline_provider(*registry_set);
 
             auto extended_overlay_port_directories = paths.overlay_ports;
