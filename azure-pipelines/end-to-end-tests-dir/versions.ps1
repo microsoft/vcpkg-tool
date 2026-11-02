@@ -48,6 +48,28 @@ Write-Host $CurrentTest
 Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
+$CurrentTest = "x-add-version --all validates manifests with recorded git trees"
+Set-Content -LiteralPath "$versionFilesPath/ports/cat/vcpkg.json" `
+    -Value '{"name":"cat","version":"1.0"}' -Encoding Ascii -NoNewline
+Run-Vcpkg @portsRedirectArgsOK x-add-version cat --overwrite-version --skip-formatting-check
+Throw-IfFailed
+$versionFileSnapshotBefore = Get-VersionFileSnapshot "$versionFilesPath/versions"
+foreach ($overwriteArgs in @(@(), @("--overwrite-version"))) {
+    $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version --all @overwriteArgs
+    Throw-IfNotFailed
+    if ($output -notmatch "cat is not properly formatted") {
+        throw "Expected formatting validation for a port whose git tree is already recorded"
+    }
+
+    $versionFileSnapshotAfter = Get-VersionFileSnapshot "$versionFilesPath/versions"
+    Throw-IfNonEqual $versionFileSnapshotAfter $versionFileSnapshotBefore
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all --skip-formatting-check
+Throw-IfFailed
+Copy-Item -LiteralPath "$versionFilesPathSources/ports/cat/vcpkg.json" "$versionFilesPath/ports/cat/vcpkg.json"
+Copy-Item -LiteralPath "$versionFilesPathSources/versions/c-/cat.json" "$versionFilesPath/versions/c-/cat.json"
+
 $CurrentTest = "x-add-version --all rewrites baseline"
 Set-Content -LiteralPath "$versionFilesPath/versions/baseline.json" -Value @"
 {
