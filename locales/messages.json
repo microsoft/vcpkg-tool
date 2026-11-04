@@ -340,7 +340,7 @@
   "CmdAddVersionExample1": "vcpkg x-add-version <port name>",
   "_CmdAddVersionExample1.comment": "This is a command line, only the <>s part should be localized",
   "CmdAddVersionOptAll": "Processes versions for all ports",
-  "CmdAddVersionOptOverwriteVersion": "Overwrites git-tree of an existing version",
+  "CmdAddVersionOptOverwriteVersion": "Overwrites an existing version entry",
   "CmdAddVersionOptSkipFormatChk": "Skips the formatting check of vcpkg.json files",
   "CmdAddVersionOptSkipVersionFormatChk": "Skips the version format check",
   "CmdAddVersionOptVerbose": "Prints success messages rather than only errors",
