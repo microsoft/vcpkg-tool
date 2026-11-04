@@ -248,7 +248,14 @@ namespace vcpkg
         auto status_db = database_sync(fs, paths.installed(), installed_lock);
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan);
+        if (action_plan.install_actions.empty() && action_plan.remove_actions.empty())
+        {
+            msg::println(msgInstalledRequestedPackages);
+        }
+        else
+        {
+            print_plan(action_plan);
+        }
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
