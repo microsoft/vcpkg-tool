@@ -593,11 +593,12 @@ DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Processes versions for all ports")
 DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree of an existing version")
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
-DECLARE_MESSAGE(CmdAddVersionOptVerbose,
-                (),
-                "'--all', '--verbose', and '--no-verbose' are switches and should not be localized.",
-                "Prints success messages rather than only errors. Defaults to off with --all and on otherwise; override "
-                "with --verbose or --no-verbose")
+DECLARE_MESSAGE(
+    CmdAddVersionOptVerbose,
+    (),
+    "'--all', '--verbose', and '--no-verbose' are switches and should not be localized.",
+    "Prints success messages rather than only errors. Defaults to off with --all and on otherwise; override "
+    "with --verbose or --no-verbose")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
