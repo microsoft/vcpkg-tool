@@ -117,7 +117,7 @@ namespace vcpkg
             msg::println(msgAllShasValid);
         }
 
-        if (!url_to_fixed_sha.empty() && Util::Sets::contains(parsed.switches, SwitchFix))
+        if (!url_to_fixed_sha.empty() && parsed.switch_on(SwitchFix))
         {
             Json::Object as_object = Json::parse_object(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
             int fixed = 0;

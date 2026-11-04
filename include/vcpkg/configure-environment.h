@@ -49,7 +49,7 @@ namespace vcpkg
         {SwitchVersion, msgArtifactsOptionVersion},
     };
 
-    // Copies the switches and settings, but not multisettings from parsed to appended_to, and checks that the switches
-    // that apply to artifacts meet semantic rules like only one operating system being selected.
+    // Copies enabled switches and settings, but not multisettings from parsed to appended_to, and checks that the
+    // switches that apply to artifacts meet semantic rules like only one operating system being selected.
     void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed);
 }

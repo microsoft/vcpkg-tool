@@ -42,13 +42,13 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
-        if (!Util::Vectors::contains(options.switches, SwitchXJson))
+        if (!options.switch_on(SwitchXJson))
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
-        const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);
-        const bool transitive = Util::Sets::contains(options.switches, SwitchXTransitive);
+        const bool installed = options.switch_on(SwitchXInstalled);
+        const bool transitive = options.switch_on(SwitchXTransitive);
 
         if (transitive && !installed)
         {

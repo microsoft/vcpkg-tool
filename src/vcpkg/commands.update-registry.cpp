@@ -37,7 +37,7 @@ namespace vcpkg
     void command_update_registry_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed = args.parse_arguments(CommandUpdateRegistryMetadata);
-        const bool all = Util::Sets::contains(parsed.switches, SwitchAll);
+        const bool all = parsed.switch_on(SwitchAll);
         auto&& command_arguments = parsed.command_arguments;
         if (all)
         {

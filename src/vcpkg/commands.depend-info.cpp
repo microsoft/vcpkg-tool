@@ -491,7 +491,7 @@ namespace vcpkg
             }
         }
 
-        if (Util::Sets::contains(args.switches, SwitchDot))
+        if (args.switch_on(SwitchDot))
         {
             if (emplace_inconsistent(maybe_format, DependInfoFormat::Dot))
             {
@@ -499,7 +499,7 @@ namespace vcpkg
             }
         }
 
-        if (Util::Sets::contains(args.switches, SwitchDgml))
+        if (args.switch_on(SwitchDgml))
         {
             if (emplace_inconsistent(maybe_format, DependInfoFormat::Dgml))
             {
@@ -542,7 +542,7 @@ namespace vcpkg
         DependInfoStrategy result{maybe_sort_mode.value_or(DependInfoSortMode::Topological),
                                   maybe_format.value_or(DependInfoFormat::List),
                                   INT_MAX,
-                                  Util::Sets::contains(args.switches, SwitchShowDepth)};
+                                  args.switch_on(SwitchShowDepth)};
 
         {
             auto it = settings.find(SwitchMaxRecurse);
@@ -617,7 +617,7 @@ namespace vcpkg
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
-            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+            if (options.switch_on(SwitchXNoDefaultFeatures))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
                 failure = true;

@@ -228,8 +228,8 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandFindMetadata);
-        const bool full_description = Util::Sets::contains(options.switches, SwitchXFullDesc);
-        const bool enable_json = Util::Sets::contains(options.switches, SwitchXJson);
+        const bool full_description = options.switch_on(SwitchXFullDesc);
+        const bool enable_json = options.switch_on(SwitchXJson);
         auto&& selector = options.command_arguments[0];
         Optional<StringView> filter;
         if (options.command_arguments.size() == 2)

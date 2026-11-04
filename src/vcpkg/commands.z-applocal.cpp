@@ -652,7 +652,7 @@ namespace vcpkg
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
-        const bool verbose = Util::Sets::contains(parsed.switches, SwitchVerbose);
+        const bool verbose = parsed.switch_on(SwitchVerbose);
         const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {

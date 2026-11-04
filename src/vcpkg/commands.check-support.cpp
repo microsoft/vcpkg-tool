@@ -118,7 +118,7 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandCheckSupportMetadata);
-        const bool use_json = Util::Sets::contains(options.switches, SwitchXJson);
+        const bool use_json = options.switch_on(SwitchXJson);
 
         Json::Array json_to_print; // only used when `use_json`
 

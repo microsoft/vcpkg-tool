@@ -462,6 +462,7 @@ namespace vcpkg
 {
     static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
         {SwitchAll, msgCmdTestFeaturesAll},
+        {SwitchEnforceCascades, msgCmdTestFeaturesEnforceCascades},
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
         {SwitchNoCombined, msgCmdTestFeaturesNoCombined},
@@ -495,11 +496,13 @@ namespace vcpkg
         ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
-        const auto all_ports = Util::Sets::contains(options.switches, SwitchAll);
+        const auto all_ports = options.switch_on(SwitchAll);
+        const auto enforce_cascades = options.read_switch(SwitchEnforceCascades);
+        const auto enforce_marked_cascades = enforce_cascades ? *enforce_cascades : all_ports;
 
-        const auto test_feature_core = !Util::Sets::contains(options.switches, SwitchNoCore);
-        const auto test_features_combined = !Util::Sets::contains(options.switches, SwitchNoCombined);
-        const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
+        const auto test_feature_core = !options.switch_on(SwitchNoCore);
+        const auto test_features_combined = !options.switch_on(SwitchNoCombined);
+        const auto test_features_separately = !options.switch_on(SwitchNoSeparated);
 
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
@@ -819,7 +822,7 @@ namespace vcpkg
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
                 handle_cascade_feature_test_result(diagnostics,
-                                                   all_ports,
+                                                   enforce_marked_cascades,
                                                    spec,
                                                    ci_feature_baseline_file_name,
                                                    baseline,
@@ -838,8 +841,12 @@ namespace vcpkg
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
-                handle_cascade_feature_test_result(
-                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, iter->display_name());
+                handle_cascade_feature_test_result(diagnostics,
+                                                   enforce_marked_cascades,
+                                                   spec,
+                                                   ci_feature_baseline_file_name,
+                                                   baseline,
+                                                   iter->display_name());
                 continue;
             }
 
@@ -920,7 +927,7 @@ namespace vcpkg
 
                     handle_cascade_feature_test_result(
                         diagnostics,
-                        all_ports,
+                        enforce_marked_cascades,
                         spec,
                         ci_feature_baseline_file_name,
                         baseline,

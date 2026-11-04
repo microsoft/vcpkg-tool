@@ -136,11 +136,11 @@ namespace vcpkg
         const auto& current_configuration = paths.get_configuration();
         const auto parsed = args.parse_arguments(CommandNewMetadata);
 
-        const bool option_application = Util::Sets::contains(parsed.switches, SwitchApplication);
-        const bool option_single_file = Util::Sets::contains(parsed.switches, SwitchSingleFile);
-        const bool option_version_relaxed = Util::Sets::contains(parsed.switches, SwitchVersionRelaxed);
-        const bool option_version_date = Util::Sets::contains(parsed.switches, SwitchVersionDate);
-        const bool option_version_string = Util::Sets::contains(parsed.switches, SwitchVersionString);
+        const bool option_application = parsed.switch_on(SwitchApplication);
+        const bool option_single_file = parsed.switch_on(SwitchSingleFile);
+        const bool option_version_relaxed = parsed.switch_on(SwitchVersionRelaxed);
+        const bool option_version_date = parsed.switch_on(SwitchVersionDate);
+        const bool option_version_string = parsed.switch_on(SwitchVersionString);
 
         const std::string* name = parsed.read_setting(SwitchName);
         const std::string* version = parsed.read_setting(SwitchVersion);
