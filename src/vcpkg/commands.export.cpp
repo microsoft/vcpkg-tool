@@ -304,14 +304,14 @@ namespace
 
         const auto options = args.parse_arguments(CommandExportMetadata);
 
-        ret.dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
-        ret.raw = Util::Sets::contains(options.switches, SwitchRaw);
-        ret.nuget = Util::Sets::contains(options.switches, SwitchNuGet);
-        ret.zip = Util::Sets::contains(options.switches, SwitchZip);
-        ret.seven_zip = Util::Sets::contains(options.switches, SwitchSevenZip);
+        ret.dry_run = options.switch_on(SwitchDryRun);
+        ret.raw = options.switch_on(SwitchRaw);
+        ret.nuget = options.switch_on(SwitchNuGet);
+        ret.zip = options.switch_on(SwitchZip);
+        ret.seven_zip = options.switch_on(SwitchSevenZip);
         ret.maybe_output = Util::lookup_value_copy(options.settings, SwitchOutput);
-        ret.all_installed = Util::Sets::contains(options.switches, SwitchXAllInstalled);
-        ret.dereference_symlinks = Util::Sets::contains(options.switches, SwitchDereferenceSymlinks);
+        ret.all_installed = options.switch_on(SwitchXAllInstalled);
+        ret.dereference_symlinks = options.switch_on(SwitchDereferenceSymlinks);
         const auto* output_dir_opt = Util::lookup_value(options.settings, SwitchOutputDir);
 
         if (paths.manifest_mode_enabled())

@@ -227,6 +227,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchDownloadsRoot = "downloads-root";
     inline constexpr StringLiteral SwitchDryRun = "dry-run";
     inline constexpr StringLiteral SwitchEditable = "editable";
+    inline constexpr StringLiteral SwitchEnforceCascades = "enforce-cascades";
     inline constexpr StringLiteral SwitchEnforcePortChecks = "enforce-port-checks";
     inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";

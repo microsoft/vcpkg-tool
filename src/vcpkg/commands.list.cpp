@@ -110,7 +110,7 @@ namespace vcpkg
             database_load(paths.get_filesystem(), paths.installed(), installed_lock);
         auto installed_ipv = get_installed_ports(status_paragraphs);
 
-        const auto output_json = Util::Sets::contains(options.switches, SwitchXJson);
+        const auto output_json = options.switch_on(SwitchXJson);
         if (installed_ipv.empty())
         {
             if (output_json)
@@ -131,7 +131,7 @@ namespace vcpkg
                       return lhs->package.display_name() < rhs->package.display_name();
                   });
 
-        const auto enable_fulldesc = Util::Sets::contains(options.switches, SwitchXFullDesc.to_string());
+        const auto enable_fulldesc = options.switch_on(SwitchXFullDesc);
 
         if (!options.command_arguments.empty())
         {

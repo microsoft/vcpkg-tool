@@ -48,6 +48,25 @@ Write-Host $CurrentTest
 Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
+$CurrentTest = "x-add-version verbosity overrides defaults"
+foreach ($mode in @("cat", "--all")) {
+    foreach ($verbosity in @("", "--verbose", "--no-verbose")) {
+        $verbosityArgs = @()
+        if ($verbosity) {
+            $verbosityArgs += $verbosity
+        }
+
+        $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version $mode @verbosityArgs
+        Throw-IfFailed
+        if ($verbosity -eq "--verbose" -or ($verbosity -eq "" -and $mode -eq "cat")) {
+            Throw-IfNonContains -Expected "version 1.0 is already in " -Actual $output
+        } else {
+            Throw-IfContains -Expected "version 1.0 is already in " -Actual $output
+        }
+    }
+}
+Copy-Item -LiteralPath "$versionFilesPathSources/versions/baseline.json" "$versionFilesPath/versions/baseline.json"
+
 $CurrentTest = "x-add-version --all validates manifests with recorded git trees"
 Set-Content -LiteralPath "$versionFilesPath/ports/cat/vcpkg.json" `
     -Value '{"name":"cat","version":"1.0"}' -Encoding Ascii -NoNewline

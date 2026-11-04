@@ -84,13 +84,12 @@ namespace
     constexpr const StringLiteral* ArtifactTargetPlatformSwitchNamesStorage[] = {
         &SwitchTargetX86, &SwitchTargetX64, &SwitchTargetArm, &SwitchTargetArm64};
 
-    bool more_than_one_mapped(View<const StringLiteral*> candidates,
-                              const std::set<StringLiteral, std::less<>>& switches)
+    bool more_than_one_mapped(View<const StringLiteral*> candidates, const ParsedArguments& parsed)
     {
         bool seen = false;
         for (auto&& candidate : candidates)
         {
-            if (Util::Sets::contains(switches, *candidate))
+            if (parsed.switch_on(*candidate))
             {
                 if (seen)
                 {
@@ -255,23 +254,25 @@ namespace vcpkg
 
     void forward_common_artifacts_arguments(std::vector<std::string>& appended_to, const ParsedArguments& parsed)
     {
-        auto&& switches = parsed.switches;
-        for (auto&& parsed_switch : switches)
+        for (auto&& parsed_switch : parsed.switches)
         {
-            appended_to.push_back(fmt::format("--{}", parsed_switch));
+            if (parsed.switch_on(parsed_switch.first))
+            {
+                appended_to.push_back(fmt::format("--{}", parsed_switch.first));
+            }
         }
 
-        if (more_than_one_mapped(ArtifactOperatingSystemsSwitchNamesStorage, parsed.switches))
+        if (more_than_one_mapped(ArtifactOperatingSystemsSwitchNamesStorage, parsed))
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneOperatingSystem);
         }
 
-        if (more_than_one_mapped(ArtifactHostPlatformSwitchNamesStorage, parsed.switches))
+        if (more_than_one_mapped(ArtifactHostPlatformSwitchNamesStorage, parsed))
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneHostPlatform);
         }
 
-        if (more_than_one_mapped(ArtifactTargetPlatformSwitchNamesStorage, parsed.switches))
+        if (more_than_one_mapped(ArtifactTargetPlatformSwitchNamesStorage, parsed))
         {
             Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgArtifactsSwitchOnlyOneTargetPlatform);
         }

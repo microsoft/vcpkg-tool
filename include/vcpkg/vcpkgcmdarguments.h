@@ -16,18 +16,19 @@
 
 #include <map>
 #include <memory>
-#include <set>
 #include <vector>
 
 namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::set<StringLiteral, std::less<>> switches;
+        std::map<StringLiteral, bool, std::less<>> switches;
         std::map<StringLiteral, std::string, std::less<>> settings;
         std::map<StringLiteral, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
+        const bool* read_switch(StringLiteral switch_name) const noexcept;
+        bool switch_on(StringLiteral switch_name) const noexcept;
 
         std::vector<std::string> command_arguments;
     };

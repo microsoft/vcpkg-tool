@@ -200,7 +200,7 @@ namespace vcpkg
                                                    args.ignore_lock_failures};
         StatusParagraphs status_db = database_sync(paths.get_filesystem(), paths.installed(), installed_lock);
         std::vector<PackageSpec> specs;
-        if (Util::Sets::contains(options.switches, SwitchOutdated))
+        if (options.switch_on(SwitchOutdated))
         {
             if (options.command_arguments.size() != 0)
             {
@@ -235,9 +235,9 @@ namespace vcpkg
             });
         }
 
-        const Purge purge = Util::Sets::contains(options.switches, SwitchPurge) ? Purge::YES : Purge::NO;
-        const bool is_recursive = Util::Sets::contains(options.switches, SwitchRecurse);
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        const Purge purge = options.switch_on(SwitchPurge) ? Purge::YES : Purge::NO;
+        const bool is_recursive = options.switch_on(SwitchRecurse);
+        const bool dry_run = options.switch_on(SwitchDryRun);
 
         const auto plan = create_remove_plan(specs, status_db);
 

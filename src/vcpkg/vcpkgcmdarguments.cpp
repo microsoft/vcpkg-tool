@@ -108,16 +108,16 @@ namespace
 
             if (switch_.helpmsg)
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()))
                 {
-                    output.switches.emplace(switch_.name);
+                    output.switches.emplace(switch_.name, parse_result);
                 }
             }
             else
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result))
                 {
-                    output.switches.emplace(switch_.name);
+                    output.switches.emplace(switch_.name, parse_result);
                 }
             }
         }
@@ -192,6 +192,23 @@ namespace
 
 namespace vcpkg
 {
+    const bool* ParsedArguments::read_switch(StringLiteral switch_name) const noexcept
+    {
+        auto loc = switches.find(switch_name);
+        if (loc == switches.end())
+        {
+            return nullptr;
+        }
+
+        return &loc->second;
+    }
+
+    bool ParsedArguments::switch_on(StringLiteral switch_name) const noexcept
+    {
+        auto value = read_switch(switch_name);
+        return value && *value;
+    }
+
     const std::string* ParsedArguments::read_setting(StringLiteral setting) const noexcept
     {
         auto loc = settings.find(setting);

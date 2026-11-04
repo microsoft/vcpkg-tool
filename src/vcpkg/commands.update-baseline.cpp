@@ -382,9 +382,9 @@ namespace vcpkg
     {
         auto options = args.parse_arguments(CommandUpdateBaselineMetadata);
 
-        const bool add_builtin_baseline = Util::Sets::contains(options.switches, SwitchAddInitialBaseline);
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
-        const bool quiet = Util::Sets::contains(options.switches, SwitchQuiet);
+        const bool add_builtin_baseline = options.switch_on(SwitchAddInitialBaseline);
+        const bool dry_run = options.switch_on(SwitchDryRun);
+        const bool quiet = options.switch_on(SwitchQuiet);
 
         auto configuration = paths.get_configuration();
 

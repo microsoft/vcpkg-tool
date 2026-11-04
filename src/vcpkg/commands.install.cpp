@@ -126,7 +126,7 @@ namespace vcpkg
         {
             features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
         }
-        if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+        if (options.switch_on(SwitchXNoDefaultFeatures))
         {
             features.emplace_back(FeatureNameCore);
         }
@@ -1312,30 +1312,27 @@ namespace vcpkg
         const ParsedArguments options =
             args.parse_arguments(manifest ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
-        const bool use_head_version = Util::Sets::contains(options.switches, (SwitchHead));
-        const bool no_downloads = Util::Sets::contains(options.switches, (SwitchNoDownloads));
-        const bool only_downloads = Util::Sets::contains(options.switches, (SwitchOnlyDownloads));
-        const bool no_build_missing = Util::Sets::contains(options.switches, SwitchOnlyBinarycaching);
-        const bool is_recursive = Util::Sets::contains(options.switches, (SwitchRecurse));
-        const bool is_editable =
-            Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
-        const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
-        const bool clean_buildtrees_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
-        const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild));
-        const bool clean_downloads_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanDownloadsAfterBuild));
+        const bool dry_run = options.switch_on(SwitchDryRun);
+        const bool use_head_version = options.switch_on((SwitchHead));
+        const bool no_downloads = options.switch_on((SwitchNoDownloads));
+        const bool only_downloads = options.switch_on((SwitchOnlyDownloads));
+        const bool no_build_missing = options.switch_on(SwitchOnlyBinarycaching);
+        const bool is_recursive = options.switch_on((SwitchRecurse));
+        // CMake variable arguments make the build non-hermetic, like edits, so it must not be cached.
+        const bool is_editable = options.switch_on((SwitchEditable)) || cmake_args_sets_variable(args);
+        const bool clean_after_build = options.switch_on((SwitchCleanAfterBuild));
+        const bool clean_buildtrees_after_build = options.switch_on((SwitchCleanBuildtreesAfterBuild));
+        const bool clean_packages_after_build = options.switch_on((SwitchCleanPackagesAfterBuild));
+        const bool clean_downloads_after_build = options.switch_on((SwitchCleanDownloadsAfterBuild));
+        // only-downloads requires keep-going because it runs build commands that intentionally fail.
         const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::Yes : KeepGoing::No;
+            options.switch_on(SwitchKeepGoing) || only_downloads ? KeepGoing::Yes : KeepGoing::No;
         const bool prohibit_backcompat_features =
-            Util::Sets::contains(options.switches, (SwitchXProhibitBackcompatFeatures)) ||
-            Util::Sets::contains(options.switches, (SwitchEnforcePortChecks));
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
-        const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
-        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
+            options.switch_on((SwitchXProhibitBackcompatFeatures)) || options.switch_on((SwitchEnforcePortChecks));
+        const auto unsupported_port_action =
+            options.switch_on(SwitchAllowUnsupported) ? UnsupportedPortAction::Warn : UnsupportedPortAction::Error;
+        const bool print_cmake_usage = !options.switch_on(SwitchNoPrintUsage);
+        const bool skip_install_if_cached = options.switch_on(SwitchSkipInstallIfCached);
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
@@ -1373,7 +1370,7 @@ namespace vcpkg
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
-            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+            if (options.switch_on(SwitchXNoDefaultFeatures))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
                 failure = true;

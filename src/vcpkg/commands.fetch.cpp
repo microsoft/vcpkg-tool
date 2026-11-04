@@ -32,7 +32,7 @@ namespace vcpkg
     void command_fetch_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         const auto parsed = args.parse_arguments(CommandFetchMetadata);
-        const bool stderr_status = Util::Sets::contains(parsed.switches, STDERR_STATUS[0].name);
+        const bool stderr_status = parsed.switch_on(STDERR_STATUS[0].name);
         const std::string tool = parsed.command_arguments[0];
         if (const auto* tool_path =
                 paths.get_tool_path(stderr_status ? stderr_diagnostic_context : console_diagnostic_context, tool))

@@ -114,11 +114,11 @@ namespace vcpkg
         ProcessLaunchSettings settings;
         auto& build_env = settings.environment.emplace(env_cache.get_action_env(paths, pre_build_info, toolset));
 
-        const bool add_bin = Util::Sets::contains(options.switches, SwitchBin);
-        const bool add_include = Util::Sets::contains(options.switches, SwitchInclude);
-        const bool add_debug_bin = Util::Sets::contains(options.switches, SwitchDebugBin);
-        const bool add_tools = Util::Sets::contains(options.switches, SwitchTools);
-        const bool add_python = Util::Sets::contains(options.switches, SwitchPython);
+        const bool add_bin = options.switch_on(SwitchBin);
+        const bool add_include = options.switch_on(SwitchInclude);
+        const bool add_debug_bin = options.switch_on(SwitchDebugBin);
+        const bool add_tools = options.switch_on(SwitchTools);
+        const bool add_python = options.switch_on(SwitchPython);
 
         std::vector<std::string> path_vars;
         const auto current_triplet_path = paths.installed().triplet_dir(triplet);
