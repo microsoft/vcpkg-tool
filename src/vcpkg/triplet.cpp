@@ -64,22 +64,33 @@ namespace vcpkg
         return fmt::format("{}-{}", get_host_processor(), get_host_os_name());
     }
 
-    Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
+    std::string default_triplet_name(const VcpkgCmdArguments& args)
     {
         if (auto triplet_name = args.triplet.get())
         {
-            check_triplet(*triplet_name, database).value_or_exit(VCPKG_LINE_INFO);
-            return Triplet::from_canonical_name(*triplet_name);
+            return *triplet_name;
         }
 
-        return default_host_triplet(args, database);
+        return default_host_triplet_name(args);
+    }
+
+    std::string default_host_triplet_name(const VcpkgCmdArguments& args)
+    {
+        return args.host_triplet.value_or(system_triplet_canonical_name());
+    }
+
+    Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
+    {
+        auto triplet_name = default_triplet_name(args);
+        check_triplet(triplet_name, database).value_or_exit(VCPKG_LINE_INFO);
+        return Triplet::from_canonical_name(std::move(triplet_name));
     }
 
     Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database)
     {
-        auto host_triplet_name = args.host_triplet.value_or(system_triplet_canonical_name());
+        auto host_triplet_name = default_host_triplet_name(args);
         check_triplet(host_triplet_name, database).value_or_exit(VCPKG_LINE_INFO);
-        return Triplet::from_canonical_name(host_triplet_name);
+        return Triplet::from_canonical_name(std::move(host_triplet_name));
     }
 
     TripletFile::TripletFile(StringView name, StringView location) : name(name.data(), name.size()), location(location)

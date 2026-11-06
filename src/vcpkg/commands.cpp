@@ -27,6 +27,7 @@
 #include <vcpkg/commands.h>
 #include <vcpkg/commands.hash.h>
 #include <vcpkg/commands.help.h>
+#include <vcpkg/commands.host-info.h>
 #include <vcpkg/commands.init-registry.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.integrate.h>
@@ -96,6 +97,7 @@ namespace vcpkg
         {CommandFindMetadata, command_find_and_exit},
         {CommandFormatManifestMetadata, command_format_manifest_and_exit},
         {CommandHelpMetadata, command_help_and_exit},
+        {CommandHostInfoMetadata, command_host_info_and_exit},
         {CommandIntegrateMetadata, command_integrate_and_exit},
         {CommandLicenseReportMetadata, command_license_report_and_exit},
         {CommandListMetadata, command_list_and_exit},
@@ -209,6 +211,7 @@ namespace vcpkg
         format_command_usage_entry(table, CommandCiVerifyVersionsMetadata);
         format_command_usage_entry(table, CommandContactMetadata);
         format_command_usage_entry(table, CommandFetchMetadata);
+        format_command_usage_entry(table, CommandHostInfoMetadata);
         format_command_usage_entry(table, CommandIntegrateMetadata);
         table.blank();
 
