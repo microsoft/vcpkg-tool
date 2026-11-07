@@ -20,6 +20,8 @@
 #include <vcpkg/archives.h>
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/binarycaching.private.h>
+#include <vcpkg/commands.version.h>
+#include <vcpkg/configure-environment.h>
 #include <vcpkg/dependencies.h>
 #include <vcpkg/documentation.h>
 #include <vcpkg/metrics.h>
@@ -1351,6 +1353,172 @@ namespace
         Path m_tool;
     };
 
+    // GitHub supports only @actions/cache as a client of the Actions cache, so x-gha runs it through a Node script.
+    struct GhaCacheAdapter
+    {
+        GhaCacheAdapter(const Path& node, Path&& script) : m_node(node), m_script(std::move(script)) { }
+
+        // Each entry pairs a cache key with the name of an archive in `directory`.
+        bool run(DiagnosticContext& context,
+                 StringLiteral operation,
+                 const Path& directory,
+                 View<std::pair<std::string, std::string>> entries) const
+        {
+            Json::Array entries_json;
+            for (auto&& entry : entries)
+            {
+                auto& entry_json = entries_json.push_back(Json::Object{});
+                entry_json.insert(JsonIdKey, entry.first);
+                entry_json.insert(JsonIdPath, entry.second);
+            }
+
+            Json::Object request;
+            request.insert(JsonIdOperation, operation);
+            request.insert(JsonIdDirectory, directory.native());
+            request.insert(JsonIdEntries, std::move(entries_json));
+
+            auto cmd = Command{m_node}.string_arg(m_script);
+            RedirectedProcessLaunchSettings settings;
+            settings.stdin_content = Json::stringify(request);
+            settings.echo_in_debug = EchoInDebug::Show;
+            auto maybe_output = cmd_execute_and_capture_output(context, cmd, settings);
+            return check_zero_exit_code(context, cmd, maybe_output, settings.echo_in_debug) != nullptr;
+        }
+
+    private:
+        Path m_node;
+        Path m_script;
+    };
+
+    std::string make_gha_cache_key(const PackageSpec& spec, StringView abi)
+    {
+        return fmt::format("vcpkg-{}-{}", spec.name(), abi);
+    }
+
+    // @actions/cache hashes this name into the cache version, so it must not depend on where vcpkg is or on the
+    // numbering that some commands add to package directories.
+    std::string make_gha_archive_name(StringView abi) { return Strings::concat(abi, ".zip"); }
+
+    struct GhaBinaryProvider : ZipReadBinaryProvider
+    {
+        GhaBinaryProvider(const ZipTool& zip, Path&& directory, std::shared_ptr<const GhaCacheAdapter> adapter)
+            : ZipReadBinaryProvider(zip), m_directory(std::move(directory)), m_adapter(std::move(adapter))
+        {
+        }
+
+        void acquire_zips(DiagnosticContext& context,
+                          const Filesystem& fs,
+                          View<const InstallPlanAction*> actions,
+                          Span<Optional<ZipResource>> out_zip_paths) const override
+        {
+            WarningDiagnosticContext wdc{context};
+            // The adapter reports hits by leaving archives here, so archives from an earlier run must not remain.
+            if (!fs.remove_all(wdc, m_directory) || !fs.create_directories(wdc, m_directory))
+            {
+                return;
+            }
+
+            std::vector<std::pair<std::string, std::string>> entries;
+            entries.reserve(actions.size());
+            for (auto&& action : actions)
+            {
+                const auto& abi = action->package_abi_or_exit(VCPKG_LINE_INFO);
+                entries.emplace_back(make_gha_cache_key(action->spec, abi), make_gha_archive_name(abi));
+            }
+
+            // A failure for some entries still leaves the others usable.
+            (void)m_adapter->run(wdc, "restore", m_directory, entries);
+            for (size_t idx = 0; idx < actions.size(); ++idx)
+            {
+                auto archive_path = m_directory / entries[idx].second;
+                if (fs.exists(archive_path, IgnoreErrors{}))
+                {
+                    out_zip_paths[idx].emplace(std::move(archive_path), RemoveWhen::always);
+                }
+            }
+        }
+
+        // Checking would cost a cache request per package, so availability stays unknown.
+        void precheck(DiagnosticContext&,
+                      const Filesystem&,
+                      View<const InstallPlanAction*>,
+                      Span<CacheAvailability>) const override
+        {
+        }
+
+        LocalizedString restored_message(size_t count,
+                                         std::chrono::high_resolution_clock::duration elapsed) const override
+        {
+            return msg::format(msgRestoredPackagesFromGHA, msg::count = count, msg::elapsed = ElapsedTime(elapsed));
+        }
+
+    private:
+        Path m_directory;
+        std::shared_ptr<const GhaCacheAdapter> m_adapter;
+    };
+
+    struct GhaBinaryPushProvider : IWriteBinaryProvider
+    {
+        GhaBinaryPushProvider(Path&& directory, std::shared_ptr<const GhaCacheAdapter> adapter)
+            : m_directory(std::move(directory)), m_adapter(std::move(adapter))
+        {
+        }
+
+        size_t push_success(DiagnosticContext& context,
+                            const Filesystem& fs,
+                            const BinaryPackageWriteInfo& request) override
+        {
+            if (!request.zip_path || m_stopped) return 0;
+            const auto& zip_path = *request.zip_path.get();
+            const std::pair<std::string, std::string> entry{make_gha_cache_key(request.spec, request.package_abi),
+                                                            make_gha_archive_name(request.package_abi)};
+            const auto archive_path = m_directory / entry.second;
+
+            WarningDiagnosticContext wdc{context};
+            std::error_code ec;
+            fs.create_directories(m_directory, ec);
+            if (!ec)
+            {
+                fs.remove(archive_path, IgnoreErrors{});
+                fs.create_hard_link(zip_path, archive_path, ec);
+                if (ec)
+                {
+                    fs.copy_file(zip_path, archive_path, CopyOptions::overwrite_existing, ec);
+                }
+            }
+
+            if (ec)
+            {
+                wdc.report(DiagnosticLine{DiagKind::Warning,
+                                          msg::format(msgFailedToStoreBinaryCache, msg::path = archive_path)
+                                              .append_raw('\n')
+                                              .append_raw(ec.message())});
+                return 0;
+            }
+
+            const bool stored = m_adapter->run(wdc, "save", m_directory, {&entry, 1});
+            fs.remove(archive_path, IgnoreErrors{});
+            if (!stored)
+            {
+                // @actions/cache retries each request for about 30 seconds, so the remaining uploads would most
+                // likely stall the same way.
+                m_stopped = true;
+                wdc.report(DiagnosticLine{DiagKind::Warning, msg::format(msgGhaUploadsStopped)});
+                return 0;
+            }
+
+            return 1;
+        }
+
+        bool needs_nuspec_data() const override { return false; }
+        bool needs_zip_file() const override { return true; }
+
+    private:
+        Path m_directory;
+        std::shared_ptr<const GhaCacheAdapter> m_adapter;
+        bool m_stopped = false;
+    };
+
     struct GcsStorageTool : IObjectStorageTool
     {
         GcsStorageTool(const Path& tool) : m_tool(tool) { }
@@ -2167,7 +2335,16 @@ namespace
             }
             else if (segments[0].second == "x-gha")
             {
-                add_warning(msg::format(msgGhaBinaryCacheDeprecated, msg::url = docs::binarycaching_url));
+                // Scheme: x-gha[,<readwrite>]
+                if (segments.size() > 2)
+                {
+                    return add_error(
+                        msg::format(msgInvalidArgumentRequiresZeroOrOneArgument, msg::binary_source = "x-gha"),
+                        segments[2].first);
+                }
+
+                handle_readwrite(state->gha_read, state->gha_write, segments, 1);
+                state->binary_cache_providers.insert("gha");
             }
             else if (segments[0].second == "http")
             {
@@ -2718,6 +2895,7 @@ namespace vcpkg
                 {"default", DefineMetric::BinaryCachingDefault},
                 {"files", DefineMetric::BinaryCachingFiles},
                 {"gcs", DefineMetric::BinaryCachingGcs},
+                {"gha", DefineMetric::BinaryCachingGha},
                 {"http", DefineMetric::BinaryCachingHttp},
                 {"nuget", DefineMetric::BinaryCachingNuGet},
                 {"upkg", DefineMetric::BinaryCachingUpkg},
@@ -2795,10 +2973,72 @@ namespace vcpkg
                     return false;
                 }
             }
+            const auto is_set = [](const Optional<std::string>& value) { return !value.value_or("").empty(); };
+            if ((s.gha_read || s.gha_write) && (!is_set(args.actions_runtime_token) ||
+                                                !(is_set(args.actions_results_url) || is_set(args.actions_cache_url))))
+            {
+                // x-gha may be set for a whole job, including steps that never get the credentials.
+                context.report(DiagnosticLine{
+                    DiagKind::Warning, msg::format(msgGhaParametersMissing, msg::url = docs::binarycaching_url)});
+                s.gha_read = false;
+                s.gha_write = false;
+            }
+
+            // Matches @actions/cache, which skips whatever ACTIONS_CACHE_MODE does not permit.
+            const auto gha_cache_mode =
+                Strings::ascii_to_lowercase(Strings::trim(args.actions_cache_mode.value_or("")));
+            if (gha_cache_mode == "none" || gha_cache_mode == "write-only")
+            {
+                s.gha_read = false;
+            }
+            if (gha_cache_mode == "none" || gha_cache_mode == "read")
+            {
+                s.gha_write = false;
+            }
+
+            std::shared_ptr<const GhaCacheAdapter> gha_adapter;
+            // @actions/cache passes paths to tar unquoted, so it already needs RUNNER_TEMP to be free of whitespace.
+            const auto gha_staging = is_set(args.runner_temp)
+                                         ? Path{*args.runner_temp.get()} / fmt::format("vcpkg-gha-{}", get_process_id())
+                                         : buildtrees / ".gha";
+            if (s.gha_read || s.gha_write)
+            {
+                Optional<std::string> script_sha512;
+#if defined(VCPKG_GITHUB_ACTIONS_CACHE_ADAPTER_SHA)
+                script_sha512.emplace(MACRO_TO_STRING(VCPKG_GITHUB_ACTIONS_CACHE_ADAPTER_SHA));
+#endif
+                WarningDiagnosticContext wdc{context};
+                auto maybe_script = provision_node_component(wdc,
+                                                             get_exe_path_of_current_process(),
+                                                             paths.get_asset_cache_settings(),
+                                                             fs,
+                                                             paths.downloads,
+                                                             "github-actions-cache-adapter",
+                                                             script_sha512);
+                auto script = maybe_script.get();
+                if (!script)
+                {
+                    context.report(DiagnosticLine{DiagKind::Warning, msg::format(msgGhaAdapterUnavailable)});
+                }
+                else if (const auto* node = tools.get_tool_path(wdc, fs, Tools::NODE))
+                {
+                    gha_adapter = std::make_shared<const GhaCacheAdapter>(*node, std::move(*script));
+                }
+                else
+                {
+                    context.report(DiagnosticLine{DiagKind::Warning, msg::format(msgGhaNodeUnavailable)});
+                }
+
+                if (!gha_adapter)
+                {
+                    s.gha_read = false;
+                    s.gha_write = false;
+                }
+            }
 
             if (!s.archives_to_read.empty() || !s.url_templates_to_get.empty() || !s.gcs_read_prefixes.empty() ||
                 !s.aws_read_prefixes.empty() || !s.cos_read_prefixes.empty() || !s.upkg_templates_to_get.empty() ||
-                !s.azcopy_read_templates.empty())
+                !s.azcopy_read_templates.empty() || s.gha_read)
             {
                 ZipTool zip_tool;
                 if (!zip_tool.setup(context, fs, tools))
@@ -2856,6 +3096,12 @@ namespace vcpkg
                     m_config.read.push_back(
                         std::make_unique<AzCopyStorageProvider>(zip_tool, buildtrees, std::move(prefix), azcopy_tool));
                 }
+
+                if (s.gha_read)
+                {
+                    m_config.read.push_back(
+                        std::make_unique<GhaBinaryProvider>(zip_tool, gha_staging / "restore", gha_adapter));
+                }
             }
             if (!s.upkg_templates_to_put.empty())
             {
@@ -2897,6 +3143,10 @@ namespace vcpkg
             {
                 m_config.write.push_back(
                     std::make_unique<ObjectStoragePushProvider>(std::move(s.cos_write_prefixes), cos_tool));
+            }
+            if (s.gha_write)
+            {
+                m_config.write.push_back(std::make_unique<GhaBinaryPushProvider>(gha_staging / "push", gha_adapter));
             }
 
             if (!s.sources_to_read.empty() || !s.configs_to_read.empty() || !s.sources_to_write.empty() ||
