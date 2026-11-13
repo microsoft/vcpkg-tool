@@ -23,6 +23,7 @@ namespace vcpkg
         BinaryCachingDefault,
         BinaryCachingFiles,
         BinaryCachingGcs,
+        BinaryCachingGha,
         BinaryCachingHttp,
         BinaryCachingNuGet,
         BinaryCachingSource,
