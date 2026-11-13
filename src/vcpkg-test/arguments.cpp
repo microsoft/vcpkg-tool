@@ -4,6 +4,7 @@
 #include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/strings.h>
 
+#include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <map>
@@ -134,10 +135,64 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 
         REQUIRE(opts.settings["b"] == "c");
         REQUIRE(opts.settings.find("d") == opts.settings.end());
-        REQUIRE(opts.switches.find("a") != opts.switches.end());
+        REQUIRE(opts.switch_on("a"));
         REQUIRE(opts.settings.find("c") == opts.settings.end());
         REQUIRE(opts.command_arguments.size() == 0);
     }
+}
+
+TEST_CASE ("Command switches preserve explicit false values", "[arguments]")
+{
+    CommandSwitch switches[] = {{"enabled", {}}, {"documented", "A documented switch"}};
+    CommandMetadata metadata = {
+        "command", {}, {}, Undocumented, AutocompletePriority::Public, 0, 0, {switches, {}, {}}, nullptr};
+    std::vector<std::string> arguments;
+    bool expected_value = false;
+    SECTION ("Unspecified")
+    {
+    }
+    SECTION ("Enabled")
+    {
+        arguments = {"--enabled", "--documented"};
+        expected_value = true;
+    }
+    SECTION ("Disabled")
+    {
+        arguments = {"--no-enabled", "--no-documented"};
+    }
+
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(arguments.data(), arguments.data() + arguments.size());
+    auto parsed = args.parse_arguments(metadata);
+    for (auto&& switch_ : switches)
+    {
+        auto value = parsed.read_switch(switch_.name);
+        if (arguments.empty())
+        {
+            CHECK(value == nullptr);
+            CHECK(!parsed.switch_on(switch_.name));
+        }
+        else
+        {
+            REQUIRE(value != nullptr);
+            CHECK(*value == expected_value);
+            CHECK(parsed.switches.at(switch_.name) == expected_value);
+            CHECK(parsed.switch_on(switch_.name) == expected_value);
+        }
+    }
+}
+
+TEST_CASE ("Forwarding artifact arguments ignores disabled switches", "[arguments]")
+{
+    ParsedArguments parsed;
+    parsed.switches = {{SwitchWindows, true},
+                       {SwitchLinux, false},
+                       {SwitchX64, true},
+                       {SwitchArm64, false},
+                       {SwitchTargetX64, true},
+                       {SwitchTargetArm64, false}};
+    std::vector<std::string> forwarded;
+    forward_common_artifacts_arguments(forwarded, parsed);
+    CHECK(forwarded == std::vector<std::string>{"--target:x64", "--windows", "--x64"});
 }
 
 TEST_CASE ("vcpkg_root parse with arg separator", "[arguments]")

@@ -593,7 +593,12 @@ DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Processes versions for all ports")
 DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites an existing version entry")
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
-DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(
+    CmdAddVersionOptVerbose,
+    (),
+    "'--all', '--verbose', and '--no-verbose' are switches and should not be localized.",
+    "Prints success messages rather than only errors. Defaults to off with --all and on otherwise; override "
+    "with --verbose or --no-verbose")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
@@ -870,6 +875,12 @@ DECLARE_MESSAGE(CmdSetInstalledSynopsis,
                 "",
                 "Installs, upgrades, or removes packages such that that installed matches exactly those supplied")
 DECLARE_MESSAGE(CmdTestFeaturesAll, (), "", "Runs tests for all ports")
+DECLARE_MESSAGE(
+    CmdTestFeaturesEnforceCascades,
+    (),
+    "'--all', '--enforce-cascades', and '--no-enforce-cascades' are switches and should not be localized.",
+    "Reports cascades without an explicit baseline expectation as errors. Defaults to on with --all and off "
+    "otherwise; override with --enforce-cascades or --no-enforce-cascades")
 DECLARE_MESSAGE(
     CmdTestCIFeatureBaseline,
     (),

@@ -1,0 +1,33 @@
+<Project DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <IntegrationRoot>$(TestRoot)integration\</IntegrationRoot>
+  </PropertyGroup>
+  <Target Name="Test">
+    <Error Condition="'$(TestRoot)' == '' or '$(SourceIntegrationRoot)' == ''"
+           Text="Specify TestRoot and SourceIntegrationRoot to run the manifest property tests." />
+    <ItemGroup>
+      <IntegrationFiles Include="$(SourceIntegrationRoot)*.props;$(SourceIntegrationRoot)*.targets" />
+      <SupportFiles Include="$(SourceIntegrationRoot)support\**\*" />
+      <TestCase Include="global">
+        <OptionsProperty>VcpkgAdditionalInstallOptions=--overlay-ports=fixture%3B--binarysource=clear;</OptionsProperty>
+      </TestCase>
+      <TestCase Include="local" />
+      <TestCase Include="mixed-case">
+        <OptionsProperty>vCpKgAdDiTiOnAlInStAlLoPtIoNs=--overlay-ports=fixture%3B--binarysource=clear;</OptionsProperty>
+      </TestCase>
+      <TestCase Include="special-characters">
+        <PathSuffix>semicolon%3Bpercent%25apostrophe%27paren%28%29dollar%24at%40</PathSuffix>
+      </TestCase>
+    </ItemGroup>
+    <Copy SourceFiles="@(IntegrationFiles)"
+          DestinationFiles="@(IntegrationFiles -> '$(IntegrationRoot)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(SupportFiles)"
+          DestinationFiles="@(SupportFiles -> '$(IntegrationRoot)support\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)install-properties.targets"
+          DestinationFiles="$(IntegrationRoot)support\InstallImplementation.targets" />
+    <MSBuild Projects="$(MSBuildThisFileDirectory)manifest-consumer.proj"
+             Targets="VcpkgInstallManifestDependencies"
+             Properties="IntegrationRoot=$(IntegrationRoot);TestRoot=$(TestRoot)%(TestCase.Identity)%(TestCase.PathSuffix)\;Configuration=Debug;Platform=x64;VcpkgTriplet=x64-windows;UnrelatedGlobalProperty=must-not-leak;%(TestCase.OptionsProperty)" />
+    <Message Text="PASS: local, global, mixed-case, and special-character install properties; unrelated globals removed." Importance="High" />
+  </Target>
+</Project>

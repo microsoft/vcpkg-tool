@@ -45,8 +45,8 @@ namespace vcpkg
         (void)host_triplet;
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPrintUsageMetadata);
-        const bool generated_only = Util::Sets::contains(options.switches, SwitchGenerated);
-        const bool affirm = Util::Sets::contains(options.switches, SwitchAffirm);
+        const bool generated_only = options.switch_on(SwitchGenerated);
+        const bool affirm = options.switch_on(SwitchAffirm);
 
         const FullPackageSpec spec =
             check_and_get_full_package_spec(options.command_arguments[0], default_triplet, paths.get_triplet_db())

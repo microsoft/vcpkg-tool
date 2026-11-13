@@ -144,6 +144,17 @@ vcpkg-self-cascade[never]:$Triplet only supports windows & !windows
 "@ -Actual $output
 Throw-IfNonContains -Expected "error: vcpkg-self-cascade[core,cascade]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-self-cascade[never]:$Triplet only supports windows & !windows" -Actual $output
 
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg vcpkg-self-cascade --enforce-cascades
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Expected "error: vcpkg-self-cascade[core,cascade]:$Triplet was unexpectedly a cascading failure" -Actual $output
+
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --no-enforce-cascades
+Throw-IfFailed
+Throw-IfContains -Expected "was unexpectedly a cascading failure" -Actual $output
+Throw-IfNonContains -Expected "All feature tests passed." -Actual $output
+
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-self-cascade.txt"
 Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgSelfCascadePortsArg --all --ci-feature-baseline $ciFeatureBaseline
 Throw-IfFailed
@@ -177,7 +188,46 @@ $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-por
 Throw-IfFailed
 Throw-IfNonContains -Expected "All feature tests passed." -Actual $output
 
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-fail-feature-cascades-port-fail.txt"
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-fail-feature-cascades --ci-feature-baseline $ciFeatureBaseline
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Expected @"
+note: consider adding the following line:
+vcpkg-fail-feature-cascades[cascade](!windows | windows) = cascade
+"@ -Actual $output
+Throw-IfContains -Expected "$($ciFeatureBaseline):1:1: note: consider adding the following line:" -Actual $output
+Throw-IfContains -Expected "vcpkg-fail-feature-cascades[cascade]:$Triplet = cascade" -Actual $output
+
 $vcpkgRequiresFeatureArg = New-TestPortsRootArg vcpkg-requires-feature vcpkg-fail-if-depended-upon
+
+$ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-requires-feature-port-fail.txt"
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg vcpkg-requires-feature --ci-feature-baseline $ciFeatureBaseline
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Expected "error: vcpkg-requires-feature[core,cascades]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core]:$Triplet" -Actual $output
+Throw-IfNonContains -Expected @"
+$($ciFeatureBaseline):1:1: note: consider adding the following line:
+vcpkg-requires-feature[cascades]:$Triplet = cascade
+"@ -Actual $output
+Throw-IfNonContains -Expected "Dependency vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0 will not build => cascade" -Actual $output
+Throw-IfNonContains -Expected "error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[core,is-a-default-feature]:$Triplet@0" -Actual $output
+Throw-IfContains -Expected "consider changing this to =cascade instead" -Actual $output
+
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg --all --ci-feature-baseline $ciFeatureBaseline
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Expected "error: vcpkg-fail-if-depended-upon[core]:$Triplet build failed but was expected to pass" -Actual $output
+Throw-IfNonContains -Expected "error: vcpkg-requires-feature[core,cascades]:$Triplet was unexpectedly a cascading failure" -Actual $output
+Throw-IfNonContains -Expected @"
+$($ciFeatureBaseline):1:1: note: consider adding the following line:
+vcpkg-requires-feature[cascades]:$Triplet = cascade
+"@ -Actual $output
+Throw-IfContains -Expected "error: vcpkg-requires-feature[core]:$Triplet" -Actual $output
+Throw-IfContains -Expected "consider changing this to =cascade instead" -Actual $output
 
 Remove-Problem-Matchers
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg vcpkg-requires-feature
@@ -218,6 +268,20 @@ error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was
 Throw-IfNonContains -Expected $expected -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/vcpkg-requires-feature-add-required.txt"
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg vcpkg-requires-feature --enforce-cascades
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfNonContains -Expected "error: vcpkg-requires-feature[core,cascades]:$Triplet was unexpectedly a cascading failure" -Actual $output
+Throw-IfNonContains -Expected "error: vcpkg-requires-feature[core,a,b,b-required,c,cascades,fails]:$Triplet was unexpectedly a cascading failure" -Actual $output
+
+Remove-Problem-Matchers
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgRequiresFeatureArg --all --no-enforce-cascades
+Restore-Problem-Matchers
+Throw-IfNotFailed
+Throw-IfContains -Expected "was unexpectedly a cascading failure" -Actual $output
+Throw-IfNonContains -Expected "error: vcpkg-fail-if-depended-upon[core]:$Triplet build failed but was expected to pass" -Actual $output
+
 Remove-Problem-Matchers
 $output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs "--x-builtin-ports-root=$PSScriptRoot/../e2e-ports" vcpkg-requires-feature --ci-feature-baseline $ciFeatureBaseline
 Restore-Problem-Matchers
@@ -363,14 +427,15 @@ Throw-IfNonContains -Expected $expected -Actual $output
 
 $ciFeatureBaseline = "$PSScriptRoot/../e2e-assets/ci-feature-baseline/unexpected-cascade-port-fail.txt"
 Remove-Problem-Matchers
-$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg --all --ci-feature-baseline $ciFeatureBaseline
+$output = Run-VcpkgAndCaptureOutput x-test-features @commonArgs $vcpkgDependsOnFailCoreArg --all --no-enforce-cascades --ci-feature-baseline $ciFeatureBaseline
 Restore-Problem-Matchers
 Throw-IfNotFailed
 $expected = @"
 $($ciFeatureBaseline):1:1: error: vcpkg-depends-on-fail-core[core]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[a,core]:$Triplet
 $($ciFeatureBaseline):1:1: note: consider changing this to =cascade instead
 $($ciFeatureBaseline):1:1: error: vcpkg-depends-on-fail-core[core,x]:$Triplet was unexpectedly a cascading failure because the following dependencies are unavailable: vcpkg-fail-if-depended-upon[a,core,is-a-default-feature]:$Triplet@0
-$($ciFeatureBaseline):1:1: note: consider changing this to =cascade instead
+$($ciFeatureBaseline):1:1: note: consider adding the following line:
+vcpkg-depends-on-fail-core[x]:$Triplet = cascade
 "@
 Throw-IfNonContains -Expected $expected -Actual $output
 

@@ -98,7 +98,7 @@ namespace
                                                      const ParsedArguments& options,
                                                      const std::vector<std::string>& ports)
     {
-        if (Util::Sets::contains(options.switches, SwitchAll))
+        if (options.switch_on(SwitchAll))
         {
             const auto& fs = paths.get_filesystem();
             auto packages = fs.get_files_non_recursive(paths.packages(), VCPKG_LINE_INFO);
@@ -124,7 +124,7 @@ namespace
             });
         }
 
-        if (Util::Sets::contains(options.switches, SwitchBuildtrees))
+        if (options.switch_on(SwitchBuildtrees))
         {
             return Util::fmap(ports, [&](const std::string& port_name) -> std::string {
                 return fmt::format(R"###("{}")###", paths.build_dir(port_name));

@@ -418,11 +418,12 @@ namespace vcpkg
     void command_add_version_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
     {
         auto parsed_args = args.parse_arguments(CommandAddVersionMetadata);
-        bool add_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
-        const bool overwrite_version = Util::Sets::contains(parsed_args.switches, SwitchOverwriteVersion);
-        const bool skip_formatting_check = Util::Sets::contains(parsed_args.switches, SwitchSkipFormattingCheck);
-        const bool skip_version_format_check = Util::Sets::contains(parsed_args.switches, SwitchSkipVersionFormatCheck);
-        const bool verbose = !add_all || Util::Sets::contains(parsed_args.switches, SwitchVerbose);
+        bool add_all = parsed_args.switch_on(SwitchAll);
+        const bool overwrite_version = parsed_args.switch_on(SwitchOverwriteVersion);
+        const bool skip_formatting_check = parsed_args.switch_on(SwitchSkipFormattingCheck);
+        const bool skip_version_format_check = parsed_args.switch_on(SwitchSkipVersionFormatCheck);
+        const auto verbose_switch = parsed_args.read_switch(SwitchVerbose);
+        const bool verbose = verbose_switch ? *verbose_switch : !add_all;
 
         auto& fs = paths.get_filesystem();
         const auto& builtin_ports_directory = paths.builtin_ports_directory();

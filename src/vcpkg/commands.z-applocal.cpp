@@ -111,6 +111,14 @@ namespace
             , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
 #endif // ^^^ !_WIN32
         {
+#if defined(_WIN32)
+            if (m_tlog_file)
+            {
+                // tlogs are UTF-16LE with a BOM, matching what applocal.ps1 and MSBuild write
+                static constexpr wchar_t utf16le_bom = L'\uFEFF';
+                Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.write(&utf16le_bom, sizeof(wchar_t), 1) == 1);
+            }
+#endif // ^^^ _WIN32
         }
 
         void resolve(const Path& binary)
@@ -644,7 +652,7 @@ namespace vcpkg
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
-        const bool verbose = Util::Sets::contains(parsed.switches, SwitchVerbose);
+        const bool verbose = parsed.switch_on(SwitchVerbose);
         const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {

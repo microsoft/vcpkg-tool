@@ -248,7 +248,14 @@ namespace vcpkg
         auto status_db = database_sync(fs, paths.installed(), installed_lock);
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan);
+        if (action_plan.install_actions.empty() && action_plan.remove_actions.empty())
+        {
+            msg::println(msgInstalledRequestedPackages);
+        }
+        else
+        {
+            print_plan(action_plan);
+        }
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
@@ -356,19 +363,15 @@ namespace vcpkg
                 .value_or_exit(VCPKG_LINE_INFO);
         });
 
-        const auto only_downloads =
-            Util::Sets::contains(options.switches, SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
+        const auto only_downloads = options.switch_on(SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
+        // only-downloads requires keep-going because it runs build commands that intentionally fail.
         const auto keep_going =
-            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes
-                ? KeepGoing::Yes
-                : KeepGoing::No;
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
-        const auto prohibit_backcompat_features = Util::Sets::contains(options.switches, SwitchEnforcePortChecks)
-                                                      ? BackcompatFeatures::Prohibit
-                                                      : BackcompatFeatures::Allow;
-        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
+            options.switch_on(SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes ? KeepGoing::Yes : KeepGoing::No;
+        const auto unsupported_port_action =
+            options.switch_on(SwitchAllowUnsupported) ? UnsupportedPortAction::Warn : UnsupportedPortAction::Error;
+        const auto prohibit_backcompat_features =
+            options.switch_on(SwitchEnforcePortChecks) ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow;
+        const bool skip_install_if_cached = options.switch_on(SwitchSkipInstallIfCached);
 
         const BuildPackageOptions build_options{
             BuildMissing::Yes,
@@ -413,19 +416,18 @@ namespace vcpkg
             {},
             packages_dir_assigner,
             {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
-        command_set_installed_and_exit_ex(
-            args,
-            paths,
-            default_triplet,
-            host_triplet,
-            build_options,
-            *cmake_vars,
-            installed_lock,
-            std::move(action_plan),
-            Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
-            pkgsconfig,
-            false,
-            skip_install_if_cached);
+        command_set_installed_and_exit_ex(args,
+                                          paths,
+                                          default_triplet,
+                                          host_triplet,
+                                          build_options,
+                                          *cmake_vars,
+                                          installed_lock,
+                                          std::move(action_plan),
+                                          options.switch_on(SwitchDryRun) ? DryRun::Yes : DryRun::No,
+                                          options.switch_on(SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
+                                          pkgsconfig,
+                                          false,
+                                          skip_install_if_cached);
     }
 } // namespace vcpkg
