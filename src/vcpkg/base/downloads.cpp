@@ -375,6 +375,8 @@ namespace vcpkg
         return file->read(buffer, size, nitems);
     }
 
+    static size_t discard_response_callback(char*, size_t size, size_t nmemb, void*) { return size * nmemb; }
+
     bool store_to_asset_cache(DiagnosticContext& context,
                               StringView raw_url,
                               const SanitizedUrl& sanitized_url,
@@ -407,6 +409,7 @@ namespace vcpkg
         vcpkg_curl_easy_setopt(curl, CURLOPT_READDATA, static_cast<void*>(&fileptr));
         vcpkg_curl_easy_setopt(curl, CURLOPT_READFUNCTION, &read_file_callback);
         vcpkg_curl_easy_setopt(curl, CURLOPT_INFILESIZE_LARGE, static_cast<curl_off_t>(file_size));
+        vcpkg_curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &discard_response_callback);
 
         auto result = vcpkg_curl_easy_perform(curl);
         if (result != CURLE_OK)
