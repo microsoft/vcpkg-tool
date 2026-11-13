@@ -58,6 +58,9 @@ namespace std
 
 namespace vcpkg
 {
+    // The names the default triplets are given, before they are checked.
+    std::string default_triplet_name(const VcpkgCmdArguments& args);
+    std::string default_host_triplet_name(const VcpkgCmdArguments& args);
     Triplet default_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
     Triplet default_host_triplet(const VcpkgCmdArguments& args, const TripletDatabase& database);
 
