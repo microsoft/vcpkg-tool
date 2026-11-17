@@ -149,7 +149,7 @@ namespace vcpkg
         {StringMetric::CiOwnerId, "ci_owner_id", "0"},
         {StringMetric::CiProjectId, "ci_project_id", "0"},
         {StringMetric::CommandArgs, "command_args", "0000000011111111aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffff"},
-        {StringMetric::CommandContext, "command_context", "artifact"},
+        {StringMetric::CommandContext, "command_context", "port"},
         {StringMetric::CommandName, "command_name", "z-preregister-telemetry"},
         {StringMetric::DeploymentKind, "deployment_kind", "Git"},
         {StringMetric::DetectedCiEnvironment, "detected_ci_environment", "Generic"},

@@ -149,7 +149,6 @@ namespace vcpkg
 
         bool use_git_default_registry() const;
 
-        const Path& artifacts() const;
         const Path& registries_cache() const;
     };
 }

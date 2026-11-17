@@ -592,7 +592,6 @@ namespace vcpkg
                   args.exact_abi_tools_versions.value_or(false) ? RequireExactVersions::YES : RequireExactVersions::NO))
             , m_env_cache(m_ff_settings.compiler_tracking)
             , triplets_dirs()
-            , m_artifacts_dir(downloads / "artifacts")
         {
             if (auto i = m_installed.get())
             {
@@ -621,8 +620,6 @@ namespace vcpkg
         const std::unique_ptr<ToolCache> m_tool_cache;
         EnvCache m_env_cache;
         std::vector<Path> triplets_dirs;
-        const Path m_artifacts_dir;
-
         Optional<ManifestAndPath> m_manifest_doc;
         ConfigurationAndSource m_config;
     };
@@ -1350,6 +1347,5 @@ namespace vcpkg
 
     bool VcpkgPaths::use_git_default_registry() const { return m_pimpl->m_bundle.use_git_registry; }
 
-    const Path& VcpkgPaths::artifacts() const { return m_pimpl->m_artifacts_dir; }
     const Path& VcpkgPaths::registries_cache() const { return m_pimpl->m_registries_cache; }
 } // namespace vcpkg

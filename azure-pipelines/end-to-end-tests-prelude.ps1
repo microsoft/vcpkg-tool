@@ -140,15 +140,6 @@ function Run-VcpkgImplAndCaptureOutput {
     return $result.Replace("`r`n", "`n")
 }
 
-function Run-VcpkgShellAndCaptureOutput {
-    Param(
-        [Parameter(ValueFromRemainingArguments)]
-        [string[]]$TestArgs
-    )
-
-    return Run-VcpkgImplAndCaptureOutput -ThisVcpkg $VcpkgPs1 -TestArgs $TestArgs
-}
-
 function Run-VcpkgAndCaptureOutput {
     Param(
         [Parameter(ValueFromRemainingArguments)]

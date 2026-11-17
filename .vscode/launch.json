@@ -18,36 +18,6 @@
       "cwd": "${workspaceRoot}/out/build/linux-debug",
       "args": [
       ]
-    },
-    {
-      "name": "vcpkg-ce cli",
-      "request": "launch",
-      "type": "node",
-      "program": "${workspaceRoot}/ce/ce/dist/main.js",
-      "console": "integratedTerminal",
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
-      "outFiles": [
-        "${workspaceFolder}/ce/ce/*/dist/**/*.js",
-        "!**/node_modules/**"
-      ]
-    },
-    {
-      "name": "vcpkg-artifacts mocha",
-      "type": "node",
-      "request": "launch",
-      "cwd": "${workspaceFolder}/vcpkg-artifacts",
-      "program": "${workspaceFolder}/vcpkg-artifacts/node_modules/mocha/bin/mocha.js",
-      "args": [
-        "--import=tsx",
-        "--no-timeout"
-      ],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "skipFiles": [
-        "<node_internals>/**"
-      ]
     }
   ]
 }

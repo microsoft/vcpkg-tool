@@ -9,8 +9,6 @@ namespace vcpkg
 
     // JSON IDs are lowercase separated by dashes
     inline constexpr StringLiteral JsonIdAbi = "abi";
-    inline constexpr StringLiteral JsonIdAcquiredArtifacts = "acquired-artifacts";
-    inline constexpr StringLiteral JsonIdActivatedArtifacts = "activated-artifacts";
     inline constexpr StringLiteral JsonIdAlgorithm = "algorithm";
     inline constexpr StringLiteral JsonIdAllCapsSHA256 = "SHA256";
     inline constexpr StringLiteral JsonIdAllCapsSHA512 = "SHA512";
