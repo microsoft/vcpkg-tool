@@ -53,12 +53,10 @@ namespace vcpkg
 
         const ParsedArguments options = args.parse_arguments(CommandUpgradeMetadata);
 
-        const bool no_dry_run = Util::Sets::contains(options.switches, SwitchNoDryRun);
-        const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, SwitchNoKeepGoing) ? KeepGoing::No : KeepGoing::Yes;
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
+        const bool no_dry_run = options.switch_on(SwitchNoDryRun);
+        const KeepGoing keep_going = options.switch_on(SwitchNoKeepGoing) ? KeepGoing::No : KeepGoing::Yes;
+        const auto unsupported_port_action =
+            options.switch_on(SwitchAllowUnsupported) ? UnsupportedPortAction::Warn : UnsupportedPortAction::Error;
 
         static const BuildPackageOptions build_options{
             BuildMissing::Yes,

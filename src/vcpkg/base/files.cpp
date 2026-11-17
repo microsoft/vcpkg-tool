@@ -340,47 +340,6 @@ namespace
     }
 
 #if defined(_WIN32)
-    struct FileHandle
-    {
-        HANDLE h_file;
-        FileHandle() = delete;
-        FileHandle(const FileHandle&) = delete;
-        FileHandle& operator=(const FileHandle&) = delete;
-
-        FileHandle(const wchar_t* file_name,
-                   DWORD desired_access,
-                   DWORD share_mode,
-                   DWORD creation_disposition,
-                   DWORD flags_and_attributes,
-                   std::error_code& ec) noexcept
-            : h_file(::CreateFileW(
-                  file_name, desired_access, share_mode, nullptr, creation_disposition, flags_and_attributes, 0))
-        {
-            if (h_file == INVALID_HANDLE_VALUE)
-            {
-                const auto last_error = static_cast<int>(GetLastError());
-                ec.assign(last_error, std::system_category());
-            }
-            else
-            {
-                ec.clear();
-            }
-        }
-
-        // bug in MSVC considers h_file uninitialized:
-        // https://developercommunity.visualstudio.com/t/Spurious-warning-C6001-Using-uninitial/1299941
-        VCPKG_MSVC_WARNING(push)
-        VCPKG_MSVC_WARNING(disable : 6001)
-        ~FileHandle()
-        {
-            if (h_file != INVALID_HANDLE_VALUE)
-            {
-                Checks::check_exit(VCPKG_LINE_INFO, ::CloseHandle(h_file));
-            }
-        }
-        VCPKG_MSVC_WARNING(pop)
-    };
-
     struct RemoveAllErrorInfo
     {
         std::error_code ec;
@@ -3816,13 +3775,8 @@ namespace vcpkg
                     }
                 }
 
-                // open handles to both files in exclusive mode to implement the equivalent() check
-                FileHandle source_handle(wide_source.c_str(), FILE_READ_DATA, 0, OPEN_EXISTING, 0, ec);
-                if (ec)
-                {
-                    return false;
-                }
-                FileHandle destination_handle(wide_destination.c_str(), FILE_WRITE_DATA, 0, OPEN_EXISTING, 0, ec);
+                // skip_existing: no equivalent() check; opening the files exclusively would block running the source
+                ec.clear();
                 return false;
             }
 
@@ -3857,17 +3811,29 @@ namespace vcpkg
                 return false;
             }
 
-            int open_options = O_WRONLY | O_CREAT;
+            const mode_t open_mode = source_stat.st_mode | 0222; // ensure the file is created writable
+            int open_options = O_WRONLY;
             if (options != CopyOptions::overwrite_existing && options != CopyOptions::update_existing)
             {
                 // the standard wording suggests that we should create a file through a broken symlink which would
                 // forbid use of O_EXCL. However, implementations like boost::copy_file don't do this and doing it
                 // would introduce more potential for TOCTOU bugs
-                open_options |= O_EXCL;
+                open_options |= O_CREAT | O_EXCL;
             }
 
-            const mode_t open_mode = source_stat.st_mode | 0222; // ensure the file is created writable
             PosixFd destination_fd{destination.c_str(), open_options, open_mode, ec};
+            bool destination_was_created = false;
+            if (ec == std::errc::no_such_file_or_directory &&
+                (options == CopyOptions::overwrite_existing || options == CopyOptions::update_existing))
+            {
+                destination_fd = PosixFd{destination.c_str(), O_WRONLY | O_CREAT | O_EXCL, open_mode, ec};
+                destination_was_created = !ec;
+                if (ec == std::errc::file_exists)
+                {
+                    destination_fd = PosixFd{destination.c_str(), O_WRONLY, ec};
+                }
+            }
+
             if (ec)
             {
                 if (options == CopyOptions::skip_existing && ec == std::errc::file_exists)
@@ -3897,7 +3863,8 @@ namespace vcpkg
                 return false;
             }
 
-            if (options == CopyOptions::update_existing && destination_stat.st_mtime >= source_stat.st_mtime)
+            if (options == CopyOptions::update_existing && !destination_was_created &&
+                destination_stat.st_mtime >= source_stat.st_mtime)
             {
                 ec.clear();
                 return false;
@@ -4105,6 +4072,7 @@ namespace vcpkg
                                                msg::system_api = "futimens",
                                                msg::exit_code = local_errno,
                                                msg::error_msg = std::system_category().message(local_errno))});
+                return false;
             }
 
             return true;
@@ -4190,11 +4158,11 @@ namespace vcpkg
             {
                 Checks::check_exit(VCPKG_LINE_INFO, handle == INVALID_HANDLE_VALUE);
                 handle = CreateFileW(native.c_str(),
-                                     GENERIC_READ,
+                                     FILE_GENERIC_READ | DELETE,
                                      0 /* no sharing */,
                                      nullptr /* no security attributes */,
                                      OPEN_ALWAYS,
-                                     FILE_ATTRIBUTE_NORMAL,
+                                     FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
                                      nullptr /* no template file */);
                 if (handle != INVALID_HANDLE_VALUE)
                 {
@@ -4229,7 +4197,7 @@ namespace vcpkg
             Path p;
             bool locked = false;
             ExclusiveFileLock(const Path& path, std::error_code& ec)
-                : fd(path.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, ec), p(path)
+                : fd(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, ec), p(path)
             {
             }
 
@@ -4260,6 +4228,8 @@ namespace vcpkg
             {
                 if (locked)
                 {
+                    // Do not unlink this file before unlocking. Another process may already have this file open while
+                    // waiting on flock(); unlinking here would let later processes create and lock a different inode.
                     Checks::check_exit(VCPKG_LINE_INFO, fd && fd.flock(LOCK_UN) == 0);
                 }
             }

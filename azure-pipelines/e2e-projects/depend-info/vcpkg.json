@@ -1,0 +1,14 @@
+{
+  "dependencies": [
+    {
+      "name": "vcpkg-depend-info-root",
+      "features": [
+        "apache"
+      ]
+    },
+    {
+      "name": "vcpkg-depend-info-tool",
+      "host": true
+    }
+  ]
+}

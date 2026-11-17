@@ -1,0 +1,1 @@
+vcpkg-fail-feature-cascades = fail

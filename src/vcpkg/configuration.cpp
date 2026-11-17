@@ -677,17 +677,12 @@ namespace vcpkg
                                                                        StringView url,
                                                                        std::string reference)
     {
-        auto res = paths.git_fetch_from_remote_registry(url, reference);
-        if (auto p = res.get())
-        {
-            return Optional<std::string>(std::move(*p));
-        }
-        else
-        {
-            return msg::format(msgUpdateBaselineRemoteGitError, msg::url = url)
-                .append_raw('\n')
-                .append_raw(Strings::trim(res.error()));
-        }
+        return paths.get_installed_lockfile()
+            .get_or_fetch(paths, url, reference)
+            .then([&](const LockFile::Entry& lock_entry) -> ExpectedL<Optional<std::string>> {
+                return lock_entry.ensure_up_to_date(paths).map(
+                    [&](Unit) { return Optional<std::string>(lock_entry.commit_id()); });
+            });
     }
 
     ExpectedL<Optional<std::string>> RegistryConfig::get_latest_baseline(const VcpkgPaths& paths) const

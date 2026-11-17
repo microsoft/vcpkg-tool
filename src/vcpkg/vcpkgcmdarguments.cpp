@@ -1,4 +1,5 @@
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
 #include <vcpkg/base/system.h>
@@ -107,16 +108,16 @@ namespace
 
             if (switch_.helpmsg)
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result, switch_.helpmsg.to_string()))
                 {
-                    output.switches.emplace(switch_.name);
+                    output.switches.emplace(switch_.name, parse_result);
                 }
             }
             else
             {
-                if (cmd_parser.parse_switch(name, tag, parse_result) && parse_result)
+                if (cmd_parser.parse_switch(name, tag, parse_result))
                 {
-                    output.switches.emplace(switch_.name);
+                    output.switches.emplace(switch_.name, parse_result);
                 }
             }
         }
@@ -191,6 +192,23 @@ namespace
 
 namespace vcpkg
 {
+    const bool* ParsedArguments::read_switch(StringLiteral switch_name) const noexcept
+    {
+        auto loc = switches.find(switch_name);
+        if (loc == switches.end())
+        {
+            return nullptr;
+        }
+
+        return &loc->second;
+    }
+
+    bool ParsedArguments::switch_on(StringLiteral switch_name) const noexcept
+    {
+        auto value = read_switch(switch_name);
+        return value && *value;
+    }
+
     const std::string* ParsedArguments::read_setting(StringLiteral setting) const noexcept
     {
         auto loc = settings.find(setting);
@@ -395,6 +413,10 @@ namespace vcpkg
             args.cli_overlay_triplets,
             msg::format(msgOverlayTripletDirectoriesHelp,
                         msg::env_var = format_environment_variable(EnvironmentVariableOverlayTriplets)));
+        args.parser.parse_option(SwitchBinaryCacheCompressionLevel,
+                                 StabilityTag::Standard,
+                                 args.binary_cache_compression_level,
+                                 msg::format(msgBinaryCacheCompressionLevelHelp));
         args.parser.parse_multi_option(
             SwitchBinarysource, StabilityTag::Standard, args.cli_binary_sources, msg::format(msgBinarySourcesArg));
         args.parser.parse_multi_option(SwitchCMakeArgs, StabilityTag::Standard, args.cmake_args);
@@ -568,13 +590,14 @@ namespace vcpkg
         from_env(get_env, EnvironmentVariableXVcpkgRegistriesCache, registries_cache_dir);
         from_env(get_env, EnvironmentVariableVcpkgVisualStudioPath, default_visual_studio_path);
         from_env(get_env, EnvironmentVariableVcpkgBinarySources, env_binary_sources);
+        from_env(get_env, EnvironmentVariableVcpkgBinaryCacheCompressionLevel, binary_cache_compression_level);
         from_env(get_env, EnvironmentVariableXVcpkgNuGetIDPrefix, nuget_id_prefix);
         use_nuget_cache = get_env(EnvironmentVariableVcpkgUseNuGetCache).map([](const std::string& s) {
             return Strings::case_insensitive_ascii_equals(s, "true") || s == "1";
         });
         from_env(get_env, EnvironmentVariableVcpkgNuGetRepository, vcpkg_nuget_repository);
         from_env(get_env, EnvironmentVariableGitHubRepository, github_repository);
-        from_env(get_env, EnvironmentVariableGitHubServerUrl, github_server_url);
+        from_env(get_env, EnvironmentVariableGitHubApiUrl, github_api_url);
         from_env(get_env, EnvironmentVariableGitHubRef, github_ref);
         from_env(get_env, EnvironmentVariableGitHubSha, github_sha);
         from_env(get_env, EnvironmentVariableGitHubJob, github_job);
@@ -820,5 +843,20 @@ namespace vcpkg
         }
         if (asset_sources_template.empty()) return nullopt;
         return Optional<std::string>(std::move(asset_sources_template));
+    }
+
+    bool VcpkgCmdArguments::parse_binary_cache_compression_level(DiagnosticContext& context, Optional<int>& out) const
+    {
+        out = nullopt;
+        if (const auto value = binary_cache_compression_level.get())
+        {
+            if (value->size() != 1 || (*value)[0] < '0' || (*value)[0] > '9')
+            {
+                context.report_error(msg::format(msgInvalidBinaryCacheCompressionLevel, msg::value = *value));
+                return false;
+            }
+            out = (*value)[0] - '0';
+        }
+        return true;
     }
 }

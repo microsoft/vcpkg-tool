@@ -18,10 +18,19 @@ TEST_CASE ("platform-expression-identifier-os", "[platform-expression]")
     REQUIRE(m_osx);
     auto m_linux = parse_expr("linux");
     REQUIRE(m_linux);
+    auto m_apple = parse_expr("apple");
+    REQUIRE(m_apple);
+    auto m_bsd = parse_expr("bsd");
+    REQUIRE(m_bsd);
+    auto m_xbox = parse_expr("xbox");
+    REQUIRE(m_xbox);
 
     auto& windows = *m_windows.get();
     auto& osx = *m_osx.get();
     auto& linux = *m_linux.get();
+    auto& apple = *m_apple.get();
+    auto& bsd = *m_bsd.get();
+    auto& xbox = *m_xbox.get();
 
     CHECK(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
     CHECK(windows.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
@@ -37,6 +46,39 @@ TEST_CASE ("platform-expression-identifier-os", "[platform-expression]")
     CHECK_FALSE(linux.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
     CHECK(linux.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
     CHECK_FALSE(linux.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+
+    CHECK_FALSE(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK_FALSE(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+    CHECK(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "iOS"}}));
+    CHECK(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "tvOS"}}));
+    CHECK(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "watchOS"}}));
+    CHECK(apple.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "visionOS"}}));
+
+    CHECK_FALSE(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", ""}}));
+    CHECK_FALSE(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"}}));
+    CHECK_FALSE(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Linux"}}));
+    CHECK_FALSE(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "Darwin"}}));
+    CHECK(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "FreeBSD"}}));
+    CHECK(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "OpenBSD"}}));
+    CHECK(bsd.evaluate({{"VCPKG_CMAKE_SYSTEM_NAME", "NetBSD"}}));
+
+    CHECK_FALSE(xbox.evaluate({}));
+    CHECK_FALSE(xbox.evaluate({{"VCPKG_XBOX_CONSOLE_TARGET", ""}}));
+    CHECK(xbox.evaluate({{"VCPKG_XBOX_CONSOLE_TARGET", "scarlett"}}));
+    CHECK(xbox.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", ""},
+        {"VCPKG_XBOX_CONSOLE_TARGET", "scarlett"},
+    }));
+    CHECK_FALSE(xbox.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore"},
+        {"VCPKG_XBOX_CONSOLE_TARGET", "scarlett"},
+    }));
+    CHECK_FALSE(xbox.evaluate({
+        {"VCPKG_CMAKE_SYSTEM_NAME", "Linux"},
+        {"VCPKG_XBOX_CONSOLE_TARGET", "scarlett"},
+    }));
 }
 
 TEST_CASE ("platform-expression-identifier-arch", "[platform-expression]")

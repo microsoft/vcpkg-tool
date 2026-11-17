@@ -6,7 +6,7 @@
 #include <vcpkg/base/util.h>
 
 #include <vcpkg/commands.z-check-tools-sha.h>
-#include <vcpkg/tools.test.h>
+#include <vcpkg/tools.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 namespace vcpkg
@@ -117,7 +117,7 @@ namespace vcpkg
             msg::println(msgAllShasValid);
         }
 
-        if (!url_to_fixed_sha.empty() && Util::Sets::contains(parsed.switches, SwitchFix))
+        if (!url_to_fixed_sha.empty() && parsed.switch_on(SwitchFix))
         {
             Json::Object as_object = Json::parse_object(content, file_to_check).value_or_exit(VCPKG_LINE_INFO);
             int fixed = 0;

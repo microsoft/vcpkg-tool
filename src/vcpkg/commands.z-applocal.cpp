@@ -74,15 +74,9 @@ namespace
 
     BinaryPathDecodedInfo decode_from_canonical_bin_dir(const Path& canonical_bin_dir)
     {
-        auto maybe_installed_root = canonical_bin_dir.parent_path();
-        static constexpr StringLiteral debug_suffix = "\\debug";
-        const bool is_debug = Strings::case_insensitive_ascii_ends_with(maybe_installed_root, debug_suffix);
-        if (is_debug)
-        {
-            maybe_installed_root = maybe_installed_root.substr(0, maybe_installed_root.size() - debug_suffix.size());
-        }
-
-        return BinaryPathDecodedInfo{maybe_installed_root, is_debug};
+        Path installed_root = canonical_bin_dir.parent_path();
+        const bool is_debug = Strings::case_insensitive_ascii_equals(installed_root.filename(), "debug");
+        return BinaryPathDecodedInfo{installed_root, is_debug};
     }
 
     struct AppLocalInvocation
@@ -92,6 +86,7 @@ namespace
                            const Path& installed_bin_dir,
                            const Path& installed,
                            bool is_debug,
+                           bool verbose,
 #if defined(_WIN32)
                            WriteFilePointer&& tlog_file,
 #endif // ^^^ _WIN32
@@ -101,6 +96,7 @@ namespace
             , m_installed_bin_dir(installed_bin_dir)
             , m_installed(installed)
             , m_is_debug(is_debug)
+            , m_verbose(verbose)
 #if defined(_WIN32)
             , m_tlog_file(std::move(tlog_file))
 #endif // ^^^ _WIN32
@@ -115,15 +111,26 @@ namespace
             , m_temp_dir(m_fs.create_or_get_temp_directory(VCPKG_LINE_INFO))
 #endif // ^^^ !_WIN32
         {
+#if defined(_WIN32)
+            if (m_tlog_file)
+            {
+                // tlogs are UTF-16LE with a BOM, matching what applocal.ps1 and MSBuild write
+                static constexpr wchar_t utf16le_bom = L'\uFEFF';
+                Checks::check_exit(VCPKG_LINE_INFO, m_tlog_file.write(&utf16le_bom, sizeof(wchar_t), 1) == 1);
+            }
+#endif // ^^^ _WIN32
         }
 
         void resolve(const Path& binary)
         {
-            msg::print(LocalizedString::from_raw(binary)
-                           .append_raw(": ")
-                           .append_raw(MessagePrefix)
-                           .append(msgApplocalProcessing)
-                           .append_raw('\n'));
+            if (m_verbose)
+            {
+                msg::print(LocalizedString::from_raw(binary)
+                               .append_raw(": ")
+                               .append_raw(MessagePrefix)
+                               .append(msgApplocalProcessing)
+                               .append_raw('\n'));
+            }
 
             auto dll_file = m_fs.open_for_read(binary, VCPKG_LINE_INFO);
             const auto dll_metadata = vcpkg::try_read_dll_metadata_required(dll_file).value_or_exit(VCPKG_LINE_INFO);
@@ -139,12 +146,13 @@ namespace
 
             for (auto&& imported_name : imported_names)
             {
-                if (m_searched.find(imported_name) != m_searched.end())
+                const auto normalized_imported_name = Strings::ascii_to_lowercase(imported_name);
+                if (m_searched.find(normalized_imported_name) != m_searched.end())
                 {
                     Debug::println(" ", imported_name, "previously searched - Skip");
                     continue;
                 }
-                m_searched.insert(imported_name);
+                m_searched.insert(normalized_imported_name);
 
                 Path target_binary_dir = binary.parent_path();
                 Path installed_item_file_path = m_installed_bin_dir / imported_name;
@@ -166,14 +174,9 @@ namespace
 
                     if (m_magnum_installed)
                     {
-                        if (m_is_debug)
-                        {
-                            deployMagnum(target_binary_dir, m_installed / "bin/magnum-d", imported_name);
-                        }
-                        else
-                        {
-                            deployMagnum(target_binary_dir, m_installed / "bin/magnum", imported_name);
-                        }
+                        deployMagnum(target_binary_dir,
+                                     m_installed / (m_is_debug ? "bin/magnum-d" : "bin/magnum"),
+                                     imported_name);
                     }
 
                     if (m_qt_installed)
@@ -201,7 +204,7 @@ namespace
                                         const Path& installed_dir,
                                         const std::string& target_binary_name)
         {
-            if (target_binary_name == "k4a.dll")
+            if (Strings::case_insensitive_ascii_equals(target_binary_name, "k4a.dll"))
             {
                 std::string binary_name = "depthengine_2_0.dll";
                 Path inst_dir = installed_dir / "tools/azure-kinect-sensor-sdk";
@@ -216,7 +219,7 @@ namespace
                            const Path& installed_dir,
                            const std::string& target_binary_name)
         {
-            if (target_binary_name == "OpenNI2.dll")
+            if (Strings::case_insensitive_ascii_equals(target_binary_name, "OpenNI2.dll"))
             {
                 Debug::println("  Deploying OpenNI2 Initialization");
                 deploy_binary(target_binary_dir, installed_dir / "bin/OpenNI2", "OpenNI.ini");
@@ -230,7 +233,12 @@ namespace
 
                 for (auto&& c : children)
                 {
-                    deploy_binary(drivers, installed_dir / "bin/OpenNI2/Drivers", c.filename().to_string());
+                    const auto filename = c.filename();
+                    if (Strings::case_insensitive_ascii_ends_with(filename, ".dll") ||
+                        Strings::case_insensitive_ascii_ends_with(filename, ".ini"))
+                    {
+                        deploy_binary(drivers, installed_dir / "bin/OpenNI2/Drivers", filename);
+                    }
                 }
             }
         }
@@ -254,8 +262,17 @@ namespace
                 std::vector<Path> children = m_fs.get_files_non_recursive(magnum_plugins_dir / plugins_subdir_name, ec);
                 for (auto c : children)
                 {
-                    deploy_binary(new_dir, magnum_plugins_dir / plugins_subdir_name, c.filename().to_string());
-                    resolve(c);
+                    const auto filename = c.filename();
+                    const bool is_dll = Strings::case_insensitive_ascii_ends_with(filename, ".dll");
+                    if (is_dll || Strings::case_insensitive_ascii_ends_with(filename, ".conf") ||
+                        Strings::case_insensitive_ascii_ends_with(filename, ".pdb"))
+                    {
+                        deploy_binary(new_dir, magnum_plugins_dir / plugins_subdir_name, filename);
+                        if (is_dll)
+                        {
+                            resolve(c);
+                        }
+                    }
                 }
             }
             else
@@ -270,22 +287,26 @@ namespace
         {
             Debug::println("Deploying magnum plugins");
 
-            if (target_binary_name == "MagnumAudio.dll" || target_binary_name == "MagnumAudio-d.dll")
+            if (Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumAudio.dll") ||
+                Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumAudio-d.dll"))
             {
                 deployPluginsMagnum("audioimporters", target_binary_dir, magnum_plugins_dir);
             }
-            else if (target_binary_name == "MagnumText.dll" || target_binary_name == "MagnumText-d.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumText.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumText-d.dll"))
             {
                 deployPluginsMagnum("fonts", target_binary_dir, magnum_plugins_dir);
                 deployPluginsMagnum("fontconverters", target_binary_dir, magnum_plugins_dir);
             }
-            else if (target_binary_name == "MagnumTrade.dll" || target_binary_name == "MagnumTrade-d.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumTrade.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumTrade-d.dll"))
             {
                 deployPluginsMagnum("importers", target_binary_dir, magnum_plugins_dir);
                 deployPluginsMagnum("imageconverters", target_binary_dir, magnum_plugins_dir);
                 deployPluginsMagnum("sceneconverters", target_binary_dir, magnum_plugins_dir);
             }
-            else if (target_binary_name == "MagnumShaderTools.dll" || target_binary_name == "MagnumShaderTools-d.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumShaderTools.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "MagnumShaderTools-d.dll"))
             {
                 deployPluginsMagnum("shaderconverters", target_binary_dir, magnum_plugins_dir);
             }
@@ -310,10 +331,10 @@ namespace
                 for (auto&& c : children)
                 {
                     const auto c_filename = c.filename();
-                    if (c_filename.ends_with(".dll"))
+                    if (Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
                     {
                         deploy_binary(new_dir, qt_plugins_dir / plugins_subdir_name, c_filename);
-                        resolve(c);
+                        resolve(new_dir / c_filename);
                     }
                 }
             }
@@ -327,7 +348,8 @@ namespace
         {
             Path bin_dir = Path(qt_plugins_dir.parent_path()) / "bin";
 
-            if (target_binary_name == "Qt5Cored.dll" || target_binary_name == "Qt5Core.dll")
+            if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Cored.dll") ||
+                Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Core.dll"))
             {
                 std::error_code ec;
                 if (!m_fs.exists(target_binary_dir / "qt.conf", ec))
@@ -335,7 +357,8 @@ namespace
                     m_fs.write_contents(target_binary_dir / "qt.conf", "[Paths]\n", ec);
                 }
             }
-            else if (target_binary_name == "Qt5Guid.dll" || target_binary_name == "Qt5Gui.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Guid.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Gui.dll"))
             {
                 Debug::println("  Deploying platforms");
 
@@ -347,7 +370,8 @@ namespace
                 for (auto&& c : children)
                 {
                     auto c_filename = c.filename();
-                    if (c_filename.starts_with("qwindows") && c_filename.ends_with(".dll"))
+                    if (Strings::case_insensitive_ascii_starts_with(c_filename, "qwindows") &&
+                        Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
                     {
                         deploy_binary(new_dir, qt_plugins_dir / "platforms", c_filename);
                     }
@@ -358,7 +382,8 @@ namespace
                 deployPluginsQt("platforminputcontexts", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("styles", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name == "Qt5Networkd.dll" || target_binary_name == "Qt5Network.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Networkd.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Network.dll"))
             {
                 deployPluginsQt("bearer", target_binary_dir, qt_plugins_dir);
 
@@ -367,43 +392,49 @@ namespace
                 for (auto&& c : children)
                 {
                     const auto c_filename = c.filename();
-                    if (c_filename.starts_with("libcrypto-") && c_filename.ends_with(".dll"))
+                    if (Strings::case_insensitive_ascii_starts_with(c_filename, "libcrypto-") &&
+                        Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
                     {
                         deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
 
-                    if (c_filename.starts_with("libssl-") && c_filename.ends_with(".dll"))
+                    if (Strings::case_insensitive_ascii_starts_with(c_filename, "libssl-") &&
+                        Strings::case_insensitive_ascii_ends_with(c_filename, ".dll"))
                     {
                         deploy_binary(target_binary_dir, bin_dir, c_filename);
                     }
                 }
             }
-            else if (target_binary_name == "Qt5Sqld.dll" || target_binary_name == "Qt5Sql.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Sqld.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Sql.dll"))
             {
                 deployPluginsQt("sqldrivers", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name == "Qt5Multimediad.dll" || target_binary_name == "Qt5Multimedia.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Multimediad.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Multimedia.dll"))
             {
                 deployPluginsQt("audio", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("mediaservice", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("playlistformats", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name == "Qt5PrintSupportd.dll" || target_binary_name == "Qt5PrintSupport.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5PrintSupportd.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5PrintSupport.dll"))
             {
                 deployPluginsQt("printsupport", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name == "Qt5Qmld.dll" || target_binary_name == "Qt5Qml.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Qmld.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Qml.dll"))
             {
                 std::error_code ec;
                 if (!m_fs.exists(target_binary_dir / "qml", ec))
                 {
                     if (m_fs.exists(bin_dir / "../qml", ec))
                     {
-                        m_fs.copy_regular_recursive(bin_dir / "../qml", target_binary_dir, VCPKG_LINE_INFO);
+                        m_fs.copy_regular_recursive(bin_dir / "../qml", target_binary_dir / "qml", VCPKG_LINE_INFO);
                     }
                     else if (m_fs.exists(bin_dir / "../../qml", ec))
                     {
-                        m_fs.copy_regular_recursive(bin_dir / "../../qml", target_binary_dir, VCPKG_LINE_INFO);
+                        m_fs.copy_regular_recursive(bin_dir / "../../qml", target_binary_dir / "qml", VCPKG_LINE_INFO);
                     }
                     else
                     {
@@ -435,7 +466,8 @@ namespace
                 deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name == "Qt5Quickd.dll" || target_binary_name == "Qt5Quick.dll")
+            else if (Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Quickd.dll") ||
+                     Strings::case_insensitive_ascii_equals(target_binary_name, "Qt5Quick.dll"))
             {
                 std::vector<std::string> libs = {"Qt5QuickControls2.dll",
                                                  "Qt5QuickControls2d.dll",
@@ -457,36 +489,44 @@ namespace
                 deployPluginsQt("scenegraph", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("qmltooling", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5Declarative") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5Declarative") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("qml1tooling", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5Positioning") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5Positioning") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("position", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5Location") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5Location") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("geoservices", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5Sensors") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5Sensors") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("sensors", target_binary_dir, qt_plugins_dir);
                 deployPluginsQt("sensorgestures", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5WebEngineCore") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5WebEngineCore") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("qtwebengine", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt53DRenderer") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt53DRenderer") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("sceneparsers", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5TextToSpeech") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5TextToSpeech") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("texttospeech", target_binary_dir, qt_plugins_dir);
             }
-            else if (target_binary_name.starts_with("Qt5SerialBus") && target_binary_name.ends_with(".dll"))
+            else if (Strings::case_insensitive_ascii_starts_with(target_binary_name, "Qt5SerialBus") &&
+                     Strings::case_insensitive_ascii_ends_with(target_binary_name, ".dll"))
             {
                 deployPluginsQt("canbus", target_binary_dir, qt_plugins_dir);
             }
@@ -514,7 +554,11 @@ namespace
             }
             else if (!ec)
             {
-                msg::println(msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
+                if (m_verbose)
+                {
+                    msg::println(
+                        msgInstallSkippedUpToDateFile, msg::path_source = source, msg::path_destination = target);
+                }
             }
             else if (is_not_found_errc(ec))
             {
@@ -556,6 +600,7 @@ namespace
         Path m_installed_bin_dir;
         Path m_installed;
         bool m_is_debug;
+        bool m_verbose;
 #if defined(_WIN32)
         WriteFilePointer m_tlog_file;
 #endif // ^^^ _WIN32
@@ -568,6 +613,10 @@ namespace
 #if !defined(_WIN32)
         Path m_temp_dir;
 #endif // ^^^ !_WIN32
+    };
+
+    constexpr CommandSwitch SWITCHES[] = {
+        {SwitchVerbose, msgCmdZApplocalOptVerbose},
     };
 
     constexpr CommandSetting SETTINGS[] = {
@@ -596,13 +645,14 @@ namespace vcpkg
         AutocompletePriority::Internal,
         0,
         0,
-        {{}, SETTINGS},
+        {SWITCHES, SETTINGS},
         nullptr,
     };
 
     void command_z_applocal_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed = args.parse_arguments(CommandZApplocalMetadata);
+        const bool verbose = parsed.switch_on(SwitchVerbose);
         const auto target_binary = parsed.settings.find(SwitchTargetBinary);
         if (target_binary == parsed.settings.end())
         {
@@ -621,11 +671,14 @@ namespace vcpkg
 
         // the first binary is special in that it might not be a DLL or might not exist
         const Path target_binary_path = target_binary->second;
-        msg::print(LocalizedString::from_raw(target_binary_path)
-                       .append_raw(": ")
-                       .append_raw(MessagePrefix)
-                       .append(msgApplocalProcessing)
-                       .append_raw('\n'));
+        if (verbose)
+        {
+            msg::print(LocalizedString::from_raw(target_binary_path)
+                           .append_raw(": ")
+                           .append_raw(MessagePrefix)
+                           .append(msgApplocalProcessing)
+                           .append_raw('\n'));
+        }
 
         std::error_code ec;
         auto dll_file = fs.open_for_read(target_binary_path, ec);
@@ -677,6 +730,7 @@ namespace vcpkg
                                       target_installed_bin_dir,
                                       decoded.installed_root,
                                       decoded.is_debug,
+                                      verbose,
 #if defined(_WIN32)
                                       maybe_create_log(parsed.settings, SwitchTLogFile, fs),
 #endif // ^^^ _WIN32

@@ -59,7 +59,9 @@ namespace
             port_name,
             PortLocation(*extracted_tree,
                          Paragraphs::builtin_git_tree_spdx_location(version_entry.git_tree),
-                         PortSourceKind::Git));
+                         std::string(),
+                         PortSourceKind::Git,
+                         version_entry.git_tree));
         auto scfl = load_result.maybe_scfl.get();
         if (!scfl)
         {
@@ -519,8 +521,8 @@ namespace vcpkg
     {
         auto parsed_args = args.parse_arguments(CommandCiVerifyVersionsMetadata);
 
-        bool verbose = Util::Sets::contains(parsed_args.switches, SwitchVerbose);
-        bool verify_git_trees = Util::Sets::contains(parsed_args.switches, SwitchVerifyGitTrees);
+        bool verbose = parsed_args.switch_on(SwitchVerbose);
+        bool verify_git_trees = parsed_args.switch_on(SwitchVerifyGitTrees);
 
         auto port_git_trees =
             paths.get_builtin_ports_directory_trees(console_diagnostic_context).value_or_exit(VCPKG_LINE_INFO);

@@ -1,0 +1,42 @@
+{
+  "name": "vcpkg-depend-info-root",
+  "version": "1.0",
+  "port-version": 2,
+  "homepage": "https://example.com/vcpkg-depend-info-root",
+  "license": "MIT",
+  "dependencies": [
+    {
+      "name": "vcpkg-depend-info-both",
+      "host": true
+    },
+    "vcpkg-depend-info-both",
+    {
+      "name": "vcpkg-depend-info-platform",
+      "host": true
+    },
+    {
+      "name": "vcpkg-depend-info-platform",
+      "platform": "!native"
+    },
+    {
+      "name": "vcpkg-depend-info-tool",
+      "host": true
+    },
+    {
+      "name": "vcpkg-license-features",
+      "features": [
+        "bsd-3-clause"
+      ]
+    },
+    "vcpkg-license-null"
+  ],
+  "features": {
+    "apache": {
+      "description": "Adds a license and a dependency",
+      "license": "Apache-2.0",
+      "dependencies": [
+        "vcpkg-license-mit"
+      ]
+    }
+  }
+}

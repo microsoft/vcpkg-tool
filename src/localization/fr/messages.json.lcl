@@ -1705,6 +1705,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BinaryCacheCompressionLevelHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Binary cache ZIP compression level (0-9). Overrides VCPKG_BINARY_CACHE_COMPRESSION_LEVEL; unset uses the archive tool default.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Niveau de compression ZIP du cache binaire (0-9). Remplace VCPKG_BINARY_CACHE_COMPRESSION_LEVEL ; unset utilise l’outil d’archivage par défaut.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinaryCacheSubmissionFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[binary cache submission failed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Échec de l’envoi du cache binaire]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Binary caching sources. See 'vcpkg help binarycaching']]></Val>
@@ -2703,24 +2721,24 @@
       </Item>
       <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
+          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Choisit le format de sortie, l’un des `list`, `tree`, `mermaid`, `dot` ou `dgml`]]></Val>
+            <Val><![CDATA[Choisit le format de sortie, parmi les suivants : `list`, `tree`, `mermaid`, `dot`, `dgml` ou `json`]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--format={value} n’est pas un format reconnu. --format doit être l’un des `list`, `tree`, `mermaid`, `dot` ou `dgml`.]]></Val>
+            <Val><![CDATA[--format={value} n’est pas un format reconnu. --format doit être l’un des suivants : `list`, `tree`, `mermaid`, `dot`, `dgml` ou `json`.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -3463,6 +3481,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdPrintUsageSwitchAffirm" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Affirms that generated usage is correct and removes 'may not be correct' warnings from the output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Permet d’affirmer que l’utilisation générée est correcte et de supprimer les avertissements « peut ne pas être correcte » de la sortie]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSwitchGenerated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Print heuristic usage even if a usage file is installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Imprimer l’utilisation heuristique même si un fichier d’utilisation est installé]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints usage information for a single installed port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Permet d’imprimer les informations d’utilisation pour un seul port installé]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
@@ -3730,6 +3775,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateBaselineOptQuiet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Does not print the port version diff after updating baselines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[N’imprime pas la différence de version du port après la mise à jour des lignes de base]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
@@ -3879,6 +3933,15 @@
           <Val><![CDATA[URL to download and store if missing from cache]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[URL à télécharger et à stocker en cas d’absence dans le cache]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZApplocalOptVerbose" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints which dependencies are being processed and which are already up to date]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Permet d’afficher les dépendances en cours de traitement et celles qui sont déjà à jour]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4453,6 +4516,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Direct dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dépendances directes]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6883,6 +6955,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";HelpTxtOptSkipInstallIfCached" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips the installation of packages if every package is already cached]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Ignore l’installation des paquets si tous les paquets sont déjà mis en cache]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";HelpTxtOptUseHeadVersion" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Installs the libraries on the command line using the latest upstream sources (classic mode)]]></Val>
@@ -7573,6 +7654,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidBinaryCacheCompressionLevel" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid binary cache compression level '{value}'. --binary-cache-compression-level and VCPKG_BINARY_CACHE_COMPRESSION_LEVEL require a single digit (0-9).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Niveau de compression du cache binaire non valide : « {value} ». --binary-cache-compression-level et VCPKG_BINARY_CACHE_COMPRESSION_LEVEL doivent être définis sur un seul chiffre (0-9).]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidBuildInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid BUILD_INFO file for package: {error_msg}]]></Val>
@@ -7734,6 +7824,15 @@
           <Val><![CDATA[invalid format string: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[format de chaîne non valide : {actual}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidGitObjectSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[SHA d’objet Git non valide : {sha}. Une chaîne hexadécimale en minuscules de 40 caractères est attendue.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9043,6 +9142,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageNotInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is not installed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec} n’est pas installé.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Packages directory (experimental)]]></Val>
@@ -9052,6 +9160,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesCached" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All packages already exist in the binary cache. Installation skipped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Tous les paquets existent déjà dans le cache binaire. L’installation est ignorée.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9819,10 +9936,13 @@
       </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          <Val><![CDATA[There were no changes in the ports.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Il n’y a eu aucune modification dans les ports entre les deux validations.]]></Val>
+            <Val><![CDATA[Aucune modification n’a été apportée aux ports.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9870,6 +9990,15 @@
           <Val><![CDATA[previous declaration was here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[la déclaration précédente était ici]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Lire la Déclaration de confidentialité de Microsoft sur {url}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10429,6 +10558,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg collecte des données d’utilisation afin de nous aider à améliorer votre expérience.]A;Les données collectées par Microsoft sont anonymes.]A;Vous pouvez désactiver la télémétrie en réexécutant le script bootstrap-vcpkg avec -disableMetrics, en transmettant --disable-metrics à vcpkg sur la ligne de commande ou en définissant la variable d’environnement VCPKG_DISABLE_METRICS.]A;]A;Voir plus d’informations sur la télémétrie de vcpkg à l’adresse {url}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -10452,6 +10590,15 @@
           <Val><![CDATA[To update these packages and all dependencies, run]A;{command_name} upgrade']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Pour mettre à jour ces packages et toutes les dépendances, exécutez]A;{command_name} la mise à niveau']]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolDataEntryVersionMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata must contain at least one of 'version' or 'min-version']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Les métadonnées de l’outil doivent contenir au moins l’une des valeurs « version » ou « min-version »]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10492,15 +10639,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ToolOfVersionXNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Une version appropriée de {tool_name} est introuvable (v{version} requise) et ne peut pas télécharger automatiquement une version portable. Installez une version plus récente de {tool_name}]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";TotalInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Total install time: {elapsed}]]></Val>
@@ -10533,6 +10671,15 @@
           <Val><![CDATA[Trailing comma in an object]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[Virgule de fin dans un objet]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TransitiveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Transitive dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Dépendances transitives]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11443,6 +11590,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateBaselineNewDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name}: new: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name} : nouveau : {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
@@ -11463,27 +11619,42 @@
       </Item>
       <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Val><![CDATA[registry '{url}' not updated: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[registre '{url}' pas mis à jour : '{value}']]></Val>
+            <Val><![CDATA[Registre '{url}' non mis à jour : {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UpdateBaselineRemovedDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Val><![CDATA[{package_name}: removed: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[git n’a pas pu récupérer les '{url}' du dépôt distant]]></Val>
+            <Val><![CDATA[{package_name} : supprimé : {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Val><![CDATA[updated registry '{url}': {old_value} -> {new_value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[Registre '{url}' mis à jour : base de référence '{old_value}' -> '{new_value}']]></Val>
+            <Val><![CDATA[Registre « {url} » mis à jour : {old_value} -> {new_value}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineVersionUpdates" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updating baselines has resulted in the following version updates:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[La mise à jour des lignes de base a entraîné les mises à jour de version suivantes :]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11667,12 +11838,12 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg artifacts will be removed shortly after July 1, 2026.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-artifacts est expérimental et peut changer à tout moment.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts sera supprimé peu après le 1er juillet 2026.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />

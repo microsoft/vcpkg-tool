@@ -302,6 +302,9 @@ namespace vcpkg
         void print_updates();
         void wait_for_async_complete_and_join();
 
+    protected:
+        BinaryCache(const Filesystem& fs, MessageSink& message_sink);
+
     private:
         struct ActionToPush
         {
@@ -310,6 +313,7 @@ namespace vcpkg
         };
 
         ZipTool m_zip_tool;
+        Optional<int> m_compression_level;
         bool m_needs_nuspec_data = false;
         bool m_needs_zip_file = false;
 

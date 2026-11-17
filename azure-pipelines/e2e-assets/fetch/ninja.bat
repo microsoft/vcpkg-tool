@@ -1,1 +1,1 @@
-@echo 0.0.0
+@echo %VCPKG_TEST_NINJA_VERSION%

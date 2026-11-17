@@ -1,5 +1,6 @@
 #include <vcpkg/base/system-headers.h>
 
+#include <vcpkg/base/checks.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/setup-messages.h>
@@ -291,6 +292,7 @@ namespace vcpkg
 namespace vcpkg::msg
 {
     // basic implementation - the write_unlocalized_text_to_stdout
+    // Write failures cannot be localized because localized output uses these functions and could recurse.
 #if defined(_WIN32)
     static bool is_console(HANDLE h)
     {
@@ -304,7 +306,16 @@ namespace vcpkg::msg
     {
         if (!success)
         {
-            ::fwprintf(stderr, L"[DEBUG] Failed to write to stdout: %lu\n", GetLastError());
+            const DWORD last_error = ::GetLastError();
+            if (last_error == ERROR_BROKEN_PIPE || last_error == ERROR_NO_DATA)
+            {
+                // the stream's reader (e.g. a pager) closed the pipe; exit with a failure code rather than
+                // crashing via abort(). clear debugging first so cleanup doesn't re-write to the broken pipe.
+                Debug::g_debugging = false;
+                Checks::final_cleanup_and_exit(EXIT_FAILURE);
+            }
+
+            ::fwprintf(stderr, L"vcpkg standard stream write failed: %lu\n", last_error);
             std::abort();
         }
     }
@@ -379,7 +390,21 @@ namespace vcpkg::msg
             auto written = ::write(fd, ptr, to_write);
             if (written == -1)
             {
-                ::fprintf(stderr, "[DEBUG] Failed to print to stdout: %d\n", errno);
+                if (errno == EINTR)
+                {
+                    // interrupted by a signal before writing anything; retry
+                    continue;
+                }
+
+                if (errno == EPIPE)
+                {
+                    // the stream's reader (e.g. a pager) closed the pipe; exit with a failure code rather than
+                    // crashing via abort(). clear debugging first so cleanup doesn't re-write to the broken pipe.
+                    Debug::g_debugging = false;
+                    Checks::final_cleanup_and_exit(EXIT_FAILURE);
+                }
+
+                ::fprintf(stderr, "vcpkg standard stream write failed: %d\n", errno);
                 std::abort();
             }
             ptr += written;

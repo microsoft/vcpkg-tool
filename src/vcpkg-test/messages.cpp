@@ -7,6 +7,24 @@
 
 using namespace vcpkg;
 
+TEST_CASE ("DiagnosticLine with_pre_note", "[messages]")
+{
+    const DiagnosticLine original{
+        DiagKind::Warning, "test-origin", TextRowCol{2, 3}, LocalizedString::from_raw("diagnostic message")};
+
+    const auto copied = original.with_pre_note(msgBinaryCacheSubmissionFailed);
+    CHECK(original.to_string() == "test-origin:2:3: warning: diagnostic message");
+    CHECK(copied.kind() == DiagKind::Warning);
+    CHECK(copied.to_string() == "test-origin:2:3: warning: binary cache submission failed: diagnostic message");
+
+    auto moved =
+        DiagnosticLine{
+            DiagKind::Error, "other-origin", TextRowCol{4, 5}, LocalizedString::from_raw("other diagnostic message")}
+            .with_pre_note(msgBinaryCacheSubmissionFailed);
+    CHECK(moved.kind() == DiagKind::Error);
+    CHECK(moved.to_string() == "other-origin:4:5: error: binary cache submission failed: other diagnostic message");
+}
+
 TEST_CASE ("append floating list", "[LocalizedString]")
 {
     const auto a = LocalizedString::from_raw("a");

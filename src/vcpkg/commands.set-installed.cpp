@@ -2,11 +2,13 @@
 #include <vcpkg/base/downloads.h>
 #include <vcpkg/base/json.h>
 #include <vcpkg/base/system.debug.h>
+#include <vcpkg/base/util.h>
 
 #include <vcpkg/binarycaching.h>
 #include <vcpkg/cmakevars.h>
 #include <vcpkg/commands.install.h>
 #include <vcpkg/commands.set-installed.h>
+#include <vcpkg/dependencies.h>
 #include <vcpkg/input.h>
 #include <vcpkg/installeddatabase.h>
 #include <vcpkg/installedpaths.h>
@@ -50,7 +52,9 @@ namespace vcpkg
     };
 
     Optional<Json::Object> create_dependency_graph_snapshot(const VcpkgCmdArguments& args,
-                                                            const ActionPlan& action_plan)
+                                                            const ActionPlan& action_plan,
+                                                            Triplet default_triplet,
+                                                            Triplet host_triplet)
     {
         const auto github_ref = args.github_ref.get();
         const auto github_sha = args.github_sha.get();
@@ -61,10 +65,12 @@ namespace vcpkg
         {
             Json::Object snapshot;
             {
+                std::string correlator = fmt::format(
+                    "{}-{}-target-{}-host-{}", *github_workflow, *github_job, default_triplet, host_triplet);
+
                 Json::Object job;
                 job.insert(JsonIdId, Json::Value::string(*github_run_id));
-                job.insert(JsonIdCorrelator,
-                           Json::Value::string(fmt::format("{}-{}", *github_workflow, *github_run_id)));
+                job.insert(JsonIdCorrelator, Json::Value::string(std::move(correlator)));
                 snapshot.insert(JsonIdJob, std::move(job));
             } // destroy job
 
@@ -77,7 +83,7 @@ namespace vcpkg
                 Json::Object detector;
                 detector.insert(JsonIdName, Json::Value::string("vcpkg"));
                 detector.insert(JsonIdUrl, Json::Value::string("https://github.com/microsoft/vcpkg"));
-                detector.insert(JsonIdVersion, Json::Value::string("1.0.0"));
+                detector.insert(JsonIdVersion, Json::Value::string("2.0.0"));
                 snapshot.insert(JsonIdDetector, std::move(detector));
             } // destroy detector
 
@@ -85,7 +91,7 @@ namespace vcpkg
             for (auto&& action : action_plan.install_actions)
             {
                 auto spec = action.spec.to_string();
-                map.emplace(spec, fmt::format("pkg:github/vcpkg/{}@{}", spec, action.version));
+                map.emplace(spec, make_vcpkg_purl(action));
             }
 
             Json::Object manifest;
@@ -103,7 +109,10 @@ namespace vcpkg
                 const auto& pkg_url = found->second;
                 Json::Object resolved_item;
                 resolved_item.insert(JsonIdPackageUnderscoreUrl, pkg_url);
-                resolved_item.insert(JsonIdRelationship, Json::Value::string(JsonIdDirect));
+                resolved_item.insert(JsonIdRelationship,
+                                     Json::Value::string(action.request_type == RequestType::USER_REQUESTED
+                                                             ? JsonIdDirect
+                                                             : JsonIdIndirect));
 
                 Json::Array deps_list;
                 for (auto&& dep : action.package_dependencies)
@@ -183,6 +192,7 @@ namespace vcpkg
 
     void command_set_installed_and_exit_ex(const VcpkgCmdArguments& args,
                                            const VcpkgPaths& paths,
+                                           Triplet default_triplet,
                                            Triplet host_triplet,
                                            const BuildPackageOptions& build_options,
                                            const CMakeVars::CMakeVarProvider& cmake_vars,
@@ -212,7 +222,7 @@ namespace vcpkg
         if (paths.manifest_mode_enabled() && paths.get_feature_flags().dependency_graph)
         {
             msg::println(msgDependencyGraphCalculation);
-            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan);
+            auto maybe_snapshot = create_dependency_graph_snapshot(args, action_plan, default_triplet, host_triplet);
             auto snapshot = maybe_snapshot.get();
             auto github_token = args.github_token.get();
             auto github_repository = args.github_repository.get();
@@ -221,7 +231,7 @@ namespace vcpkg
             {
                 WarningDiagnosticContext wdc{console_diagnostic_context};
                 dependency_graph_success = submit_github_dependency_graph_snapshot(
-                    wdc, args.github_server_url, *github_token, *github_repository, *snapshot);
+                    wdc, args.github_api_url, *github_token, *github_repository, *snapshot);
                 if (dependency_graph_success)
                 {
                     msg::println(msgDependencyGraphSuccess);
@@ -238,7 +248,14 @@ namespace vcpkg
         auto status_db = database_sync(fs, paths.installed(), installed_lock);
         adjust_action_plan_to_status_db(action_plan, status_db);
 
-        print_plan(action_plan);
+        if (action_plan.install_actions.empty() && action_plan.remove_actions.empty())
+        {
+            msg::println(msgInstalledRequestedPackages);
+        }
+        else
+        {
+            print_plan(action_plan);
+        }
 
         if (auto p_pkgsconfig = maybe_pkgconfig.get())
         {
@@ -346,19 +363,15 @@ namespace vcpkg
                 .value_or_exit(VCPKG_LINE_INFO);
         });
 
-        const auto only_downloads =
-            Util::Sets::contains(options.switches, SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
+        const auto only_downloads = options.switch_on(SwitchOnlyDownloads) ? OnlyDownloads::Yes : OnlyDownloads::No;
+        // only-downloads requires keep-going because it runs build commands that intentionally fail.
         const auto keep_going =
-            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes
-                ? KeepGoing::Yes
-                : KeepGoing::No;
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
-        const auto prohibit_backcompat_features = Util::Sets::contains(options.switches, SwitchEnforcePortChecks)
-                                                      ? BackcompatFeatures::Prohibit
-                                                      : BackcompatFeatures::Allow;
-        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
+            options.switch_on(SwitchKeepGoing) || only_downloads == OnlyDownloads::Yes ? KeepGoing::Yes : KeepGoing::No;
+        const auto unsupported_port_action =
+            options.switch_on(SwitchAllowUnsupported) ? UnsupportedPortAction::Warn : UnsupportedPortAction::Error;
+        const auto prohibit_backcompat_features =
+            options.switch_on(SwitchEnforcePortChecks) ? BackcompatFeatures::Prohibit : BackcompatFeatures::Allow;
+        const bool skip_install_if_cached = options.switch_on(SwitchSkipInstallIfCached);
 
         const BuildPackageOptions build_options{
             BuildMissing::Yes,
@@ -403,18 +416,18 @@ namespace vcpkg
             {},
             packages_dir_assigner,
             {nullptr, host_triplet, unsupported_port_action, UseHeadVersion::No, Editable::No});
-        command_set_installed_and_exit_ex(
-            args,
-            paths,
-            host_triplet,
-            build_options,
-            *cmake_vars,
-            installed_lock,
-            std::move(action_plan),
-            Util::Sets::contains(options.switches, SwitchDryRun) ? DryRun::Yes : DryRun::No,
-            Util::Sets::contains(options.switches, SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
-            pkgsconfig,
-            false,
-            skip_install_if_cached);
+        command_set_installed_and_exit_ex(args,
+                                          paths,
+                                          default_triplet,
+                                          host_triplet,
+                                          build_options,
+                                          *cmake_vars,
+                                          installed_lock,
+                                          std::move(action_plan),
+                                          options.switch_on(SwitchDryRun) ? DryRun::Yes : DryRun::No,
+                                          options.switch_on(SwitchNoPrintUsage) ? PrintUsage::No : PrintUsage::Yes,
+                                          pkgsconfig,
+                                          false,
+                                          skip_install_if_cached);
     }
 } // namespace vcpkg

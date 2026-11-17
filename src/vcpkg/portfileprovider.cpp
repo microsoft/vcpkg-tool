@@ -25,10 +25,14 @@ namespace
         switch (kind)
         {
             case OverlayPortKind::Directory:
-                return PortLocation{directory / port_name, no_assertion, PortSourceKind::Overlay};
-            case OverlayPortKind::Builtin:
                 return PortLocation{
-                    directory / port_name, Paragraphs::builtin_port_spdx_location(port_name), PortSourceKind::Builtin};
+                    directory / port_name, std::string{}, std::string{}, PortSourceKind::Overlay, StringView{}};
+            case OverlayPortKind::Builtin:
+                return PortLocation{directory / port_name,
+                                    Paragraphs::builtin_port_spdx_location(port_name),
+                                    std::string(),
+                                    PortSourceKind::Builtin,
+                                    StringView{}};
             case OverlayPortKind::Unknown:
             case OverlayPortKind::Port:
             default: Checks::unreachable(VCPKG_LINE_INFO);
@@ -59,7 +63,8 @@ namespace vcpkg
             }
 
             auto maybe_scfl =
-                Paragraphs::try_load_port(fs, PortLocation{m_directory, no_assertion, PortSourceKind::Overlay})
+                Paragraphs::try_load_port(
+                    fs, PortLocation{m_directory, std::string{}, std::string{}, PortSourceKind::Overlay, StringView{}})
                     .maybe_scfl;
             if (auto scfl = maybe_scfl.get())
             {
@@ -431,17 +436,7 @@ namespace vcpkg
                 {
                     if (auto reg = m_registry_set.registry_for_port(name))
                     {
-                        if (auto entry = reg->get_port_entry(name))
-                        {
-                            entry_it = m_entry_cache.emplace(name.to_string(), std::move(entry)).first;
-                        }
-                        else
-                        {
-                            entry_it = m_entry_cache
-                                           .emplace(name.to_string(),
-                                                    msg::format(msgPortDoesNotExist, msg::package_name = name))
-                                           .first;
-                        }
+                        entry_it = m_entry_cache.emplace(name.to_string(), reg->get_port_entry(name)).first;
                     }
                     else
                     {

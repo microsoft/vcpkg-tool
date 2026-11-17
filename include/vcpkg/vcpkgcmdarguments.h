@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vcpkg/base/fwd/diagnostics.h>
 #include <vcpkg/base/fwd/system.process.h>
 
 #include <vcpkg/fwd/vcpkgcmdarguments.h>
@@ -15,18 +16,19 @@
 
 #include <map>
 #include <memory>
-#include <set>
 #include <vector>
 
 namespace vcpkg
 {
     struct ParsedArguments
     {
-        std::set<StringLiteral, std::less<>> switches;
+        std::map<StringLiteral, bool, std::less<>> switches;
         std::map<StringLiteral, std::string, std::less<>> settings;
         std::map<StringLiteral, std::vector<std::string>, std::less<>> multisettings;
 
         const std::string* read_setting(StringLiteral setting) const noexcept;
+        const bool* read_switch(StringLiteral switch_name) const noexcept;
+        bool switch_on(StringLiteral switch_name) const noexcept;
 
         std::vector<std::string> command_arguments;
     };
@@ -236,11 +238,13 @@ namespace vcpkg
 
         std::vector<std::string> cli_binary_sources;
         Optional<std::string> env_binary_sources;
+        Optional<std::string> binary_cache_compression_level;
+        bool parse_binary_cache_compression_level(DiagnosticContext& context, Optional<int>& out) const;
         Optional<std::string> nuget_id_prefix;
         Optional<bool> use_nuget_cache;
         Optional<std::string> vcpkg_nuget_repository;
         Optional<std::string> github_repository;
-        Optional<std::string> github_server_url;
+        Optional<std::string> github_api_url;
         Optional<std::string> github_ref;
         Optional<std::string> github_sha;
         Optional<std::string> ci_repository_id;

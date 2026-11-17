@@ -126,7 +126,7 @@ namespace vcpkg
         {
             features.insert(features.end(), manifest_feature_it->second.begin(), manifest_feature_it->second.end());
         }
-        if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+        if (options.switch_on(SwitchXNoDefaultFeatures))
         {
             features.emplace_back(FeatureNameCore);
         }
@@ -934,7 +934,7 @@ namespace vcpkg
                                          const ReadOnlyFilesystem& fs,
                                          const InstalledPaths& installed)
     {
-        auto message = get_cmake_usage(fs, installed, bpgh).message;
+        auto message = get_cmake_usage(fs, installed, bpgh, false).message;
         if (!message.empty())
         {
             auto existing = printed_usages.lower_bound(message);
@@ -1018,27 +1018,15 @@ namespace vcpkg
         return std::string(res);
     }
 
-    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
-                                   const InstalledPaths& installed,
-                                   const BinaryParagraph& bpgh)
+    CMakeUsageInfo get_cmake_usage_from_generated(const ReadOnlyFilesystem& fs,
+                                                  const InstalledPaths& installed,
+                                                  const BinaryParagraph& bpgh,
+                                                  bool affirm)
     {
         CMakeUsageInfo ret;
+        ret.generated_usage_accurate = affirm || fs.is_regular_file(installed.usage_accurate_file(bpgh.spec));
 
         std::error_code ec;
-
-        auto usage_file = installed.usage_file(bpgh.spec);
-        if (fs.is_regular_file(usage_file))
-        {
-            ret.usage_file = true;
-            auto contents = fs.read_contents(usage_file, ec);
-            if (!ec)
-            {
-                ret.message = std::move(contents);
-                ret.message.push_back('\n');
-            }
-
-            return ret;
-        }
 
         struct ConfigPackage
         {
@@ -1161,7 +1149,10 @@ namespace vcpkg
             if (has_targets_for_output)
             {
                 auto msg = msg::format(msgCMakeTargetsUsage, msg::package_name = bpgh.spec.name()).append_raw("\n\n");
-                msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                if (!ret.generated_usage_accurate)
+                {
+                    msg.append_indent().append(msgCMakeTargetsUsageHeuristicMessage).append_raw('\n');
+                }
 
                 for (auto&& package_targets_pair : ret.cmake_targets_map)
                 {
@@ -1245,6 +1236,31 @@ namespace vcpkg
         return ret;
     }
 
+    CMakeUsageInfo get_cmake_usage(const ReadOnlyFilesystem& fs,
+                                   const InstalledPaths& installed,
+                                   const BinaryParagraph& bpgh,
+                                   bool affirm)
+    {
+        CMakeUsageInfo ret;
+
+        auto usage_file = installed.usage_file(bpgh.spec);
+        if (fs.is_regular_file(usage_file))
+        {
+            ret.usage_file = true;
+            std::error_code ec;
+            auto contents = fs.read_contents(usage_file, ec);
+            if (!ec)
+            {
+                ret.message = std::move(contents);
+                ret.message.push_back('\n');
+            }
+
+            return ret;
+        }
+
+        return get_cmake_usage_from_generated(fs, installed, bpgh, affirm);
+    }
+
     static bool cmake_args_sets_variable(const VcpkgCmdArguments& args)
     {
         return Util::any_of(args.cmake_args, [](StringView s) { return s.starts_with("-D"); });
@@ -1296,30 +1312,27 @@ namespace vcpkg
         const ParsedArguments options =
             args.parse_arguments(manifest ? CommandInstallMetadataManifest : CommandInstallMetadataClassic);
 
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
-        const bool use_head_version = Util::Sets::contains(options.switches, (SwitchHead));
-        const bool no_downloads = Util::Sets::contains(options.switches, (SwitchNoDownloads));
-        const bool only_downloads = Util::Sets::contains(options.switches, (SwitchOnlyDownloads));
-        const bool no_build_missing = Util::Sets::contains(options.switches, SwitchOnlyBinarycaching);
-        const bool is_recursive = Util::Sets::contains(options.switches, (SwitchRecurse));
-        const bool is_editable =
-            Util::Sets::contains(options.switches, (SwitchEditable)) || cmake_args_sets_variable(args);
-        const bool clean_after_build = Util::Sets::contains(options.switches, (SwitchCleanAfterBuild));
-        const bool clean_buildtrees_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanBuildtreesAfterBuild));
-        const bool clean_packages_after_build = Util::Sets::contains(options.switches, (SwitchCleanPackagesAfterBuild));
-        const bool clean_downloads_after_build =
-            Util::Sets::contains(options.switches, (SwitchCleanDownloadsAfterBuild));
+        const bool dry_run = options.switch_on(SwitchDryRun);
+        const bool use_head_version = options.switch_on((SwitchHead));
+        const bool no_downloads = options.switch_on((SwitchNoDownloads));
+        const bool only_downloads = options.switch_on((SwitchOnlyDownloads));
+        const bool no_build_missing = options.switch_on(SwitchOnlyBinarycaching);
+        const bool is_recursive = options.switch_on((SwitchRecurse));
+        // CMake variable arguments make the build non-hermetic, like edits, so it must not be cached.
+        const bool is_editable = options.switch_on((SwitchEditable)) || cmake_args_sets_variable(args);
+        const bool clean_after_build = options.switch_on((SwitchCleanAfterBuild));
+        const bool clean_buildtrees_after_build = options.switch_on((SwitchCleanBuildtreesAfterBuild));
+        const bool clean_packages_after_build = options.switch_on((SwitchCleanPackagesAfterBuild));
+        const bool clean_downloads_after_build = options.switch_on((SwitchCleanDownloadsAfterBuild));
+        // only-downloads requires keep-going because it runs build commands that intentionally fail.
         const KeepGoing keep_going =
-            Util::Sets::contains(options.switches, SwitchKeepGoing) || only_downloads ? KeepGoing::Yes : KeepGoing::No;
+            options.switch_on(SwitchKeepGoing) || only_downloads ? KeepGoing::Yes : KeepGoing::No;
         const bool prohibit_backcompat_features =
-            Util::Sets::contains(options.switches, (SwitchXProhibitBackcompatFeatures)) ||
-            Util::Sets::contains(options.switches, (SwitchEnforcePortChecks));
-        const auto unsupported_port_action = Util::Sets::contains(options.switches, SwitchAllowUnsupported)
-                                                 ? UnsupportedPortAction::Warn
-                                                 : UnsupportedPortAction::Error;
-        const bool print_cmake_usage = !Util::Sets::contains(options.switches, SwitchNoPrintUsage);
-        const bool skip_install_if_cached = Util::Sets::contains(options.switches, SwitchSkipInstallIfCached);
+            options.switch_on((SwitchXProhibitBackcompatFeatures)) || options.switch_on((SwitchEnforcePortChecks));
+        const auto unsupported_port_action =
+            options.switch_on(SwitchAllowUnsupported) ? UnsupportedPortAction::Warn : UnsupportedPortAction::Error;
+        const bool print_cmake_usage = !options.switch_on(SwitchNoPrintUsage);
+        const bool skip_install_if_cached = options.switch_on(SwitchSkipInstallIfCached);
 
         get_global_metrics_collector().track_bool(BoolMetric::InstallManifestMode, manifest);
 
@@ -1357,7 +1370,7 @@ namespace vcpkg
                 msg::println_error(msgErrorRequirePackagesList);
                 failure = true;
             }
-            if (Util::Sets::contains(options.switches, SwitchXNoDefaultFeatures))
+            if (options.switch_on(SwitchXNoDefaultFeatures))
             {
                 msg::println_error(msgErrorInvalidClassicModeOption, msg::option = SwitchXNoDefaultFeatures);
                 failure = true;
@@ -1453,6 +1466,7 @@ namespace vcpkg
             track_manifest_metrics(dependencies, manifest_core);
             command_set_installed_and_exit_ex(args,
                                               paths,
+                                              default_triplet,
                                               host_triplet,
                                               build_package_options,
                                               var_provider,

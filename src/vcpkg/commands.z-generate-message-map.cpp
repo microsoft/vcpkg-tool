@@ -143,7 +143,7 @@ namespace vcpkg
     void command_z_generate_default_message_map_and_exit(const VcpkgCmdArguments& args, const Filesystem& fs)
     {
         auto parsed_args = args.parse_arguments(CommandZGenerateDefaultMessageMapMetadata);
-        const bool output_comments = !Util::Sets::contains(parsed_args.switches, SwitchNoOutputComments);
+        const bool output_comments = !parsed_args.switch_on(SwitchNoOutputComments);
 
         auto messages = msg::get_sorted_english_messages();
 

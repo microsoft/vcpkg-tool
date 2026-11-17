@@ -1,0 +1,7 @@
+{
+  "name": "vcpkg-depend-info-tool",
+  "version": "0",
+  "dependencies": [
+    "vcpkg-license-bsd"
+  ]
+}

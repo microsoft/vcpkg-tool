@@ -68,7 +68,7 @@ namespace vcpkg
     };
 
     template<class F>
-    inline void execute_in_parallel(size_t work_count, F work) noexcept
+    inline void execute_in_parallel(size_t work_count, size_t max_concurrency, F work) noexcept
     {
         if (work_count == 0)
         {
@@ -89,7 +89,7 @@ namespace vcpkg
                          nullptr);
         if (ptp_work)
         {
-            auto max_threads = (std::min)(work_count, static_cast<size_t>(get_concurrency()));
+            auto max_threads = (std::min)({work_count, max_concurrency, static_cast<size_t>(get_concurrency())});
             max_threads = (std::min)(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
             // start at 1 to account for the running thread
             for (size_t i = 1; i < max_threads; ++i)
@@ -99,6 +99,12 @@ namespace vcpkg
         }
 
         context.run();
+    }
+
+    template<class F>
+    inline void execute_in_parallel(size_t work_count, F work) noexcept
+    {
+        execute_in_parallel(work_count, SIZE_MAX, work);
     }
 #else  // ^^^ _WIN32 / !_WIN32 vvv
     struct JThread
@@ -120,7 +126,7 @@ namespace vcpkg
     };
 
     template<class F>
-    inline void execute_in_parallel(size_t work_count, F work) noexcept
+    inline void execute_in_parallel(size_t work_count, size_t max_concurrency, F work) noexcept
     {
         if (work_count == 0)
         {
@@ -132,9 +138,8 @@ namespace vcpkg
             work(size_t{});
             return;
         }
-
         WorkCallbackContext<F> context{work, work_count};
-        auto max_threads = std::min(work_count, static_cast<size_t>(get_concurrency()));
+        auto max_threads = std::min({work_count, max_concurrency, static_cast<size_t>(get_concurrency())});
         max_threads = std::min(max_threads, (SIZE_MAX - work_count) + 1u); // to avoid overflow in fetch_add
         auto bg_thread_count = max_threads - 1;
         std::vector<JThread> bg_threads;
@@ -154,6 +159,12 @@ namespace vcpkg
 
         context.run();
         // destroying workers joins
+    }
+
+    template<class F>
+    inline void execute_in_parallel(size_t work_count, F work) noexcept
+    {
+        execute_in_parallel(work_count, SIZE_MAX, work);
     }
 #endif // ^^^ !_WIN32
 

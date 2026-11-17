@@ -190,11 +190,11 @@ namespace
 
     void handle_cascade_feature_test_result(DiagnosticVec& diagnostics,
                                             bool enforce_marked_cascades,
-                                            const FullPackageSpec& spec,
+                                            const SpecToTest& spec,
                                             const std::string* ci_feature_baseline_file_name,
                                             const CiFeatureBaselineEntry* baseline,
                                             std::string&& cascade_reason,
-                                            LocalizedString&& fix_msg = {})
+                                            LocalizedString&& unsupported_dependency_suggestion = {})
     {
         auto outcome = expected_outcome(baseline, spec.features);
         switch (outcome.value)
@@ -210,24 +210,50 @@ namespace
             case CiFeatureBaselineOutcome::ConfigurationFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
-                if (!fix_msg.empty())
+                if (!unsupported_dependency_suggestion.empty())
                 {
-                    add_diagnostic(diagnostics, spec, DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                    add_diagnostic(diagnostics,
+                                   spec,
+                                   DiagnosticLine{DiagKind::Note, std::move(unsupported_dependency_suggestion)});
                 }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedFail:
             case CiFeatureBaselineOutcome::FeatureFail:
                 add_build_cascade_diagnostic(
                     diagnostics, spec, ci_feature_baseline_file_name, outcome.loc, std::move(cascade_reason));
-                add_diagnostic(diagnostics,
-                               spec,
-                               DiagnosticLine{DiagKind::Note,
-                                              *ci_feature_baseline_file_name,
-                                              TextRowCol{outcome.loc.row, outcome.loc.column},
-                                              msg::format(msgUnexpectedStateCascadePortNote)});
-                if (!fix_msg.empty())
+                if (outcome.value == CiFeatureBaselineOutcome::FeatureFail || spec.kind == SpecToTestKind::Core)
                 {
-                    add_diagnostic(diagnostics, spec, DiagnosticLine{DiagKind::Note, std::move(fix_msg)});
+                    // feature fail or core-test port fail cascaded; suggest changing the entry to cascade
+                    add_diagnostic(diagnostics,
+                                   spec,
+                                   DiagnosticLine{DiagKind::Note,
+                                                  *ci_feature_baseline_file_name,
+                                                  TextRowCol{outcome.loc.row, outcome.loc.column},
+                                                  msg::format(msgUnexpectedStateCascadePortNote)});
+                }
+                else if (spec.kind == SpecToTestKind::Separate && unsupported_dependency_suggestion.empty())
+                {
+                    // separate test inherited a port-wide fail with no support suggestion; add a feature cascade
+                    add_diagnostic(
+                        diagnostics,
+                        spec,
+                        DiagnosticLine{DiagKind::Note,
+                                       *ci_feature_baseline_file_name,
+                                       TextRowCol{outcome.loc.row, outcome.loc.column},
+                                       std::move(msg::format(msgUnexpectedStateCascadeSuggestLine)
+                                                     .append_raw('\n')
+                                                     .append_raw(fmt::format("{}[{}]:{} = cascade",
+                                                                             spec.package_spec.name(),
+                                                                             spec.separate_feature,
+                                                                             spec.package_spec.triplet())))});
+                }
+
+                if (!unsupported_dependency_suggestion.empty())
+                {
+                    // statically unsupported dependencies supplied a support-expression suggestion; emit it unchanged
+                    add_diagnostic(diagnostics,
+                                   spec,
+                                   DiagnosticLine{DiagKind::Note, std::move(unsupported_dependency_suggestion)});
                 }
                 break;
             case CiFeatureBaselineOutcome::PortMarkedCascade:
@@ -462,6 +488,7 @@ namespace vcpkg
 {
     static constexpr CommandSwitch TEST_FEATURES_SWITCHES[] = {
         {SwitchAll, msgCmdTestFeaturesAll},
+        {SwitchEnforceCascades, msgCmdTestFeaturesEnforceCascades},
         {SwitchNoCore, msgCmdTestFeaturesNoCore},
         {SwitchNoSeparated, msgCmdTestFeaturesNoSeparated},
         {SwitchNoCombined, msgCmdTestFeaturesNoCombined},
@@ -495,11 +522,13 @@ namespace vcpkg
         ParsedArguments options = args.parse_arguments(CommandTestFeaturesMetadata);
         const auto& settings = options.settings;
 
-        const auto all_ports = Util::Sets::contains(options.switches, SwitchAll);
+        const auto all_ports = options.switch_on(SwitchAll);
+        const auto enforce_cascades = options.read_switch(SwitchEnforceCascades);
+        const auto enforce_marked_cascades = enforce_cascades ? *enforce_cascades : all_ports;
 
-        const auto test_feature_core = !Util::Sets::contains(options.switches, SwitchNoCore);
-        const auto test_features_combined = !Util::Sets::contains(options.switches, SwitchNoCombined);
-        const auto test_features_separately = !Util::Sets::contains(options.switches, SwitchNoSeparated);
+        const auto test_feature_core = !options.switch_on(SwitchNoCore);
+        const auto test_features_combined = !options.switch_on(SwitchNoCombined);
+        const auto test_features_separately = !options.switch_on(SwitchNoSeparated);
 
         BinaryCache binary_cache(fs);
         if (!binary_cache.install_providers(console_diagnostic_context, args, paths))
@@ -793,22 +822,23 @@ namespace vcpkg
                         exprs.push_back(entry.second);
                     }
                 }
-                LocalizedString fix_msg;
+                LocalizedString unsupported_dependency_suggestion;
                 if (!exprs.empty())
                 {
                     auto all_or = PlatformExpression::Expr::And(std::move(exprs)).negate().simplify();
-                    fix_msg = msg::format(msgUnexpectedStateCascadeSuggestLine).append_raw('\n');
+                    unsupported_dependency_suggestion =
+                        msg::format(msgUnexpectedStateCascadeSuggestLine).append_raw('\n');
                     if (spec.kind == SpecToTestKind::Core)
                     {
-                        fix_msg.append_raw(
+                        unsupported_dependency_suggestion.append_raw(
                             fmt::format("{}({}) = cascade", spec.package_spec.name(), to_string(all_or)));
                     }
                     else if (spec.kind == SpecToTestKind::Separate)
                     {
-                        fix_msg.append_raw(fmt::format("{}[{}]({}) = cascade",
-                                                       spec.package_spec.name(),
-                                                       spec.separate_feature,
-                                                       to_string(all_or)));
+                        unsupported_dependency_suggestion.append_raw(fmt::format("{}[{}]({}) = cascade",
+                                                                                 spec.package_spec.name(),
+                                                                                 spec.separate_feature,
+                                                                                 to_string(all_or)));
                     }
                 }
 
@@ -819,12 +849,12 @@ namespace vcpkg
                                .append_raw(Strings::join("\n", out))
                                .append_raw('\n'));
                 handle_cascade_feature_test_result(diagnostics,
-                                                   all_ports,
+                                                   enforce_marked_cascades,
                                                    spec,
                                                    ci_feature_baseline_file_name,
                                                    baseline,
                                                    Strings::join(", ", out),
-                                                   std::move(fix_msg));
+                                                   std::move(unsupported_dependency_suggestion));
                 continue;
             }
 
@@ -838,8 +868,12 @@ namespace vcpkg
                 iter != install_plan.install_actions.end())
             {
                 msg::println(msgDependencyWillFail, msg::feature_spec = iter->display_name());
-                handle_cascade_feature_test_result(
-                    diagnostics, all_ports, spec, ci_feature_baseline_file_name, baseline, iter->display_name());
+                handle_cascade_feature_test_result(diagnostics,
+                                                   enforce_marked_cascades,
+                                                   spec,
+                                                   ci_feature_baseline_file_name,
+                                                   baseline,
+                                                   iter->display_name());
                 continue;
             }
 
@@ -920,7 +954,7 @@ namespace vcpkg
 
                     handle_cascade_feature_test_result(
                         diagnostics,
-                        all_ports,
+                        enforce_marked_cascades,
                         spec,
                         ci_feature_baseline_file_name,
                         baseline,

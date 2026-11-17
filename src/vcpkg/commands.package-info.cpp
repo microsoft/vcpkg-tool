@@ -42,13 +42,13 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandPackageInfoMetadata);
-        if (!Util::Vectors::contains(options.switches, SwitchXJson))
+        if (!options.switch_on(SwitchXJson))
         {
             Checks::msg_exit_with_message(VCPKG_LINE_INFO, msgMissingOption, msg::option = SwitchXJson);
         }
 
-        const bool installed = Util::Sets::contains(options.switches, SwitchXInstalled);
-        const bool transitive = Util::Sets::contains(options.switches, SwitchXTransitive);
+        const bool installed = options.switch_on(SwitchXInstalled);
+        const bool transitive = options.switch_on(SwitchXTransitive);
 
         if (transitive && !installed)
         {
@@ -59,6 +59,7 @@ namespace vcpkg
         }
 
         auto& fs = paths.get_filesystem();
+        bool any_errors = false;
         if (installed)
         {
             InstalledDatabaseLock installed_lock{
@@ -95,6 +96,11 @@ namespace vcpkg
                                               std::make_move_iterator(deps.end()));
                     }
                 }
+                else
+                {
+                    msg::println_error(msgPackageNotInstalled, msg::spec = spec);
+                    any_errors = true;
+                }
             }
             response.insert("results", std::move(results));
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
@@ -124,15 +130,20 @@ namespace vcpkg
                 if (results.contains(pkg)) continue;
 
                 auto maybe_scfl = provider.get_control_file(pkg);
-
-                Json::Object obj;
                 if (auto pscfl = maybe_scfl.get())
                 {
                     results.insert(pkg, serialize_manifest(*pscfl->source_control_file));
+                }
+                else
+                {
+                    msg::println(Color::error, maybe_scfl.error());
+                    any_errors = true;
                 }
             }
             response.insert("results", std::move(results));
             msg::write_unlocalized_text_to_stdout(Color::none, Json::stringify(response));
         }
+
+        Checks::exit_with_code(VCPKG_LINE_INFO, any_errors ? EXIT_FAILURE : EXIT_SUCCESS);
     }
 } // namespace vcpkg

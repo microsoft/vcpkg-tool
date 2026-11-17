@@ -34,7 +34,7 @@ namespace vcpkg
     {
         msg::default_output_stream = OutputStream::StdErr;
         const ParsedArguments options = args.parse_arguments(CommandSearchMetadata);
-        const bool full_description = Util::Sets::contains(options.switches, SwitchXFullDesc);
+        const bool full_description = options.switch_on(SwitchXFullDesc);
         Optional<StringView> filter;
         if (!options.command_arguments.empty())
         {
@@ -42,6 +42,6 @@ namespace vcpkg
         }
 
         perform_find_port_and_exit(
-            paths, full_description, Util::Sets::contains(options.switches, SwitchXJson), filter, paths.overlay_ports);
+            paths, full_description, options.switch_on(SwitchXJson), filter, paths.overlay_ports);
     }
 } // namespace vcpkg

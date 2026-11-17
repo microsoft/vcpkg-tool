@@ -41,6 +41,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdDefaultTriplet = "default-triplet";
     inline constexpr StringLiteral JsonIdDemands = "demands";
     inline constexpr StringLiteral JsonIdDependencies = "dependencies";
+    inline constexpr StringLiteral JsonIdDepth = "depth";
     inline constexpr StringLiteral JsonIdDescription = "description";
     inline constexpr StringLiteral JsonIdDetectedCIEnvironment = "detected-ci-environment";
     inline constexpr StringLiteral JsonIdDetector = "detector";
@@ -57,8 +58,10 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdGitTree = "git-tree";
     inline constexpr StringLiteral JsonIdHomepage = "homepage";
     inline constexpr StringLiteral JsonIdHost = "host";
+    inline constexpr StringLiteral JsonIdHostOnly = "host-only";
     inline constexpr StringLiteral JsonIdHostTriplet = "host-triplet";
     inline constexpr StringLiteral JsonIdId = "id";
+    inline constexpr StringLiteral JsonIdIndirect = "indirect";
     inline constexpr StringLiteral JsonIdInstalled = "installed";
     inline constexpr StringLiteral JsonIdJob = "job";
     inline constexpr StringLiteral JsonIdKey = "key";
@@ -71,6 +74,7 @@ namespace vcpkg
     inline constexpr StringLiteral JsonIdManifests = "manifests";
     inline constexpr StringLiteral JsonIdMessage = "message";
     inline constexpr StringLiteral JsonIdMicrosoft = "microsoft";
+    inline constexpr StringLiteral JsonIdMinVersion = "min-version";
     inline constexpr StringLiteral JsonIdName = "name";
     inline constexpr StringLiteral JsonIdOS = "os";
     inline constexpr StringLiteral JsonIdOverlayPorts = "overlay-ports";
@@ -133,6 +137,14 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxDocumentNamespace = "documentNamespace";
     inline constexpr StringLiteral SpdxDownloadLocation = "downloadLocation";
     inline constexpr StringLiteral SpdxElementId = "spdxElementId";
+    inline constexpr StringLiteral SpdxExternalReferenceCategory = "referenceCategory";
+    inline constexpr StringLiteral SpdxExternalReferenceCategoryPackageManager = "PACKAGE-MANAGER";
+    inline constexpr StringLiteral SpdxExternalReferenceCategoryPersistentId = "PERSISTENT-ID";
+    inline constexpr StringLiteral SpdxExternalReferenceLocator = "referenceLocator";
+    inline constexpr StringLiteral SpdxExternalReferenceType = "referenceType";
+    inline constexpr StringLiteral SpdxExternalReferenceTypeGitoid = "gitoid";
+    inline constexpr StringLiteral SpdxExternalReferenceTypePurl = "purl";
+    inline constexpr StringLiteral SpdxExternalRefs = "externalRefs";
     inline constexpr StringLiteral SpdxFileName = "fileName";
     inline constexpr StringLiteral SpdxGenerates = "GENERATES";
     inline constexpr StringLiteral SpdxLicenseConcluded = "licenseConcluded";
@@ -147,7 +159,7 @@ namespace vcpkg
     inline constexpr StringLiteral SpdxRelatedSpdxElement = "relatedSpdxElement";
     inline constexpr StringLiteral SpdxRelationshipType = "relationshipType";
     inline constexpr StringLiteral SpdxSpdxId = "SPDXID";
-    inline constexpr StringLiteral SpdxTwoTwo = "SPDX-2.2";
+    inline constexpr StringLiteral SpdxTwoThree = "SPDX-2.3";
     inline constexpr StringLiteral SpdxVersion = "spdxVersion";
     inline constexpr StringLiteral SpdxVersionInfo = "versionInfo";
 
@@ -175,6 +187,7 @@ namespace vcpkg
     // Switches are lowercase separated by dashes
     inline constexpr StringLiteral SwitchAbiToolsUseExactVersions = "abi-tools-use-exact-versions";
     inline constexpr StringLiteral SwitchAddInitialBaseline = "add-initial-baseline";
+    inline constexpr StringLiteral SwitchAffirm = "affirm";
     inline constexpr StringLiteral SwitchAll = "all";
     inline constexpr StringLiteral SwitchAllowUnexpectedPassing = "allow-unexpected-passing";
     inline constexpr StringLiteral SwitchAllowUnsupported = "allow-unsupported";
@@ -183,6 +196,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchBaseline = "baseline";
     inline constexpr StringLiteral SwitchBin = "bin";
     inline constexpr StringLiteral SwitchBinarycaching = "binarycaching";
+    inline constexpr StringLiteral SwitchBinaryCacheCompressionLevel = "binary-cache-compression-level";
     inline constexpr StringLiteral SwitchBinarysource = "binarysource";
     inline constexpr StringLiteral SwitchBuildtrees = "buildtrees";
     inline constexpr StringLiteral SwitchBuildtreesRoot = "buildtrees-root";
@@ -210,6 +224,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchDownloadsRoot = "downloads-root";
     inline constexpr StringLiteral SwitchDryRun = "dry-run";
     inline constexpr StringLiteral SwitchEditable = "editable";
+    inline constexpr StringLiteral SwitchEnforceCascades = "enforce-cascades";
     inline constexpr StringLiteral SwitchEnforcePortChecks = "enforce-port-checks";
     inline constexpr StringLiteral SwitchFailingAbiLog = "failing-abi-log";
     inline constexpr StringLiteral SwitchFailureLogs = "failure-logs";
@@ -217,6 +232,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchFix = "fix";
     inline constexpr StringLiteral SwitchForMergeWith = "for-merge-with";
     inline constexpr StringLiteral SwitchFormat = "format";
+    inline constexpr StringLiteral SwitchGenerated = "generated";
     inline constexpr StringLiteral SwitchHead = "head";
     inline constexpr StringLiteral SwitchHeader = "header";
     inline constexpr StringLiteral SwitchHostTriplet = "host-triplet";
@@ -257,6 +273,7 @@ namespace vcpkg
     inline constexpr StringLiteral SwitchPrintmetrics = "printmetrics";
     inline constexpr StringLiteral SwitchPurge = "purge";
     inline constexpr StringLiteral SwitchPython = "python";
+    inline constexpr StringLiteral SwitchQuiet = "quiet";
     inline constexpr StringLiteral SwitchRaw = "raw";
     inline constexpr StringLiteral SwitchRecurse = "recurse";
     inline constexpr StringLiteral SwitchRegistriesCache = "registries-cache";
@@ -336,6 +353,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileTools = "tools";
     inline constexpr StringLiteral FileUpdates = "updates";
     inline constexpr StringLiteral FileUsage = "usage";
+    inline constexpr StringLiteral FileUsageAccurate = "usage-accurate";
     inline constexpr StringLiteral FileVcpkg = "vcpkg";
     inline constexpr StringLiteral FileVcpkgAbiInfo = "vcpkg_abi_info.txt";
     inline constexpr StringLiteral FileVcpkgBundleDotJson = "vcpkg-bundle.json";
@@ -345,6 +363,7 @@ namespace vcpkg
     inline constexpr StringLiteral FileVcpkgPathTxt = "vcpkg.path.txt";
     inline constexpr StringLiteral FileVcpkgPortConfig = "vcpkg-port-config.cmake";
     inline constexpr StringLiteral FileVcpkgRunningLock = "vcpkg-running.lock";
+    inline constexpr StringLiteral FileVcpkgSpdxResourcesJson = "vcpkg-spdx-resources.json";
     inline constexpr StringLiteral FileVcpkgSpdxJson = "vcpkg.spdx.json";
     inline constexpr StringLiteral FileVcpkgUserProps = "vcpkg.user.props";
     inline constexpr StringLiteral FileVcpkgUserTargets = "vcpkg.user.targets";
@@ -474,6 +493,8 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableCIProjectId = "CI_PROJECT_ID";
     inline constexpr StringLiteral EnvironmentVariableCircleCI = "CIRCLECI";
     inline constexpr StringLiteral EnvironmentVariableCodebuildBuildId = "CODEBUILD_BUILD_ID";
+    inline constexpr StringLiteral EnvironmentVariableCurlCaBundle = "CURL_CA_BUNDLE";
+    inline constexpr StringLiteral EnvironmentVariableDestDir = "DESTDIR";
     inline constexpr StringLiteral EnvironmentVariableEditor = "EDITOR";
     inline constexpr StringLiteral EnvironmentVariableGitCeilingDirectories = "GIT_CEILING_DIRECTORIES";
     inline constexpr StringLiteral EnvironmentVariableGitHubActions = "GITHUB_ACTIONS";
@@ -484,6 +505,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableGitHubRepositoryOwnerId = "GITHUB_REPOSITORY_OWNER_ID";
     inline constexpr StringLiteral EnvironmentVariableGitHubRunId = "GITHUB_RUN_ID";
     inline constexpr StringLiteral EnvironmentVariableGitHubServerUrl = "GITHUB_SERVER_URL";
+    inline constexpr StringLiteral EnvironmentVariableGitHubApiUrl = "GITHUB_API_URL";
     inline constexpr StringLiteral EnvironmentVariableGitHubSha = "GITHUB_SHA";
     inline constexpr StringLiteral EnvironmentVariableGitHubToken = "GITHUB_TOKEN";
     inline constexpr StringLiteral EnvironmentVariableGitHubWorkflow = "GITHUB_WORKFLOW";
@@ -512,6 +534,8 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableUserprofile = "USERPROFILE";
     inline constexpr StringLiteral EnvironmentVariableVCInstallDir = "VCINSTALLDIR";
     inline constexpr StringLiteral EnvironmentVariableVSCmdSkipSendTelemetry = "VSCMD_SKIP_SENDTELEMETRY";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgBinaryCacheCompressionLevel =
+        "VCPKG_BINARY_CACHE_COMPRESSION_LEVEL";
     inline constexpr StringLiteral EnvironmentVariableVcpkgBinarySources = "VCPKG_BINARY_SOURCES";
     inline constexpr StringLiteral EnvironmentVariableVcpkgCommand = "VCPKG_COMMAND";
     inline constexpr StringLiteral EnvironmentVariableVcpkgDefaultBinaryCache = "VCPKG_DEFAULT_BINARY_CACHE";
@@ -528,6 +552,7 @@ namespace vcpkg
     inline constexpr StringLiteral EnvironmentVariableVcpkgNuGetRepository = "VCPKG_NUGET_REPOSITORY";
     inline constexpr StringLiteral EnvironmentVariableVcpkgOverlayPorts = "VCPKG_OVERLAY_PORTS";
     inline constexpr StringLiteral EnvironmentVariableVcpkgRoot = "VCPKG_ROOT";
+    inline constexpr StringLiteral EnvironmentVariableVcpkgSSLRevokeBestEffort = "VCPKG_SSL_REVOKE_BEST_EFFORT";
     inline constexpr StringLiteral EnvironmentVariableVcpkgUseNuGetCache = "VCPKG_USE_NUGET_CACHE";
     inline constexpr StringLiteral EnvironmentVariableVcpkgVisualStudioPath = "VCPKG_VISUAL_STUDIO_PATH";
     inline constexpr StringLiteral EnvironmentVariableVsLang = "VSLANG";

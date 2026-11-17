@@ -99,8 +99,8 @@ namespace vcpkg
         auto& fs = paths.get_filesystem();
         bool has_error = false;
 
-        const bool format_all = Util::Sets::contains(parsed_args.switches, SwitchAll);
-        const bool convert_control = Util::Sets::contains(parsed_args.switches, SwitchConvertControl);
+        const bool format_all = parsed_args.switch_on(SwitchAll);
+        const bool convert_control = parsed_args.switch_on(SwitchConvertControl);
 
         if (!format_all && convert_control)
         {

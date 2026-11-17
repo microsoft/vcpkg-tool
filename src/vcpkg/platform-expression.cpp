@@ -43,6 +43,7 @@ namespace vcpkg::PlatformExpression
         tvos,
         watchos,
         visionos,
+        apple,
         ohos,
 
         static_link,
@@ -81,6 +82,7 @@ namespace vcpkg::PlatformExpression
             {"tvos", Identifier::tvos},
             {"watchos", Identifier::watchos},
             {"visionos", Identifier::visionos},
+            {"apple", Identifier::apple},
             {"ohos", Identifier::ohos},
             {"static", Identifier::static_link},
             {"staticcrt", Identifier::static_crt},
@@ -696,7 +698,9 @@ namespace vcpkg::PlatformExpression
                         case Identifier::osx: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin");
                         case Identifier::uwp:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "WindowsStore");
-                        case Identifier::xbox: return true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
+                        case Identifier::xbox:
+                            return !true_if_exists_and_nonempty("VCPKG_CMAKE_SYSTEM_NAME") &&
+                                   true_if_exists_and_nonempty("VCPKG_XBOX_CONSOLE_TARGET");
                         case Identifier::android: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Android");
                         case Identifier::emscripten:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Emscripten");
@@ -709,6 +713,12 @@ namespace vcpkg::PlatformExpression
                         case Identifier::watchos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS");
                         case Identifier::visionos:
                             return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
+                        case Identifier::apple:
+                            return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "Darwin") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "iOS") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "tvOS") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "watchOS") ||
+                                   true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "visionOS");
                         case Identifier::ohos: return true_if_exists_and_equal("VCPKG_CMAKE_SYSTEM_NAME", "OHOS");
                         case Identifier::static_link:
                             return true_if_exists_and_equal("VCPKG_LIBRARY_LINKAGE", "static");

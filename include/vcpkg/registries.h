@@ -25,6 +25,8 @@ namespace vcpkg
 {
     inline constexpr StringLiteral builtin_registry_git_url = "https://github.com/microsoft/vcpkg";
 
+    bool is_builtin_git_registry_url(StringView url);
+
     struct LockFile
     {
         struct EntryData

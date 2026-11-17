@@ -583,6 +583,43 @@ TEST_CASE ("git_version_db_parsing", "[registries]")
     CHECK(!r.messages().any_errors());
 }
 
+TEST_CASE ("git_version_db_rejects_invalid_git_tree", "[registries]")
+{
+    Json::Reader r{"test"};
+    auto test_json = parse_json(R"json(
+[
+    {
+        "git-tree": "not-a-git-tree",
+        "version-string": "1.0"
+    }
+]
+)json");
+
+    GitVersionDbEntryArrayDeserializer().visit(r, test_json);
+    CHECK(r.messages().any_errors());
+}
+
+TEST_CASE ("builtin git registry url detection", "[registries]")
+{
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg/"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg\\"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git/"));
+    CHECK(is_builtin_git_registry_url("https://github.com/microsoft/vcpkg.git\\"));
+    CHECK(is_builtin_git_registry_url("https://github.com/Microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg/"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg\\"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git/"));
+    CHECK(is_builtin_git_registry_url("git@github.com:microsoft/vcpkg.git\\"));
+    CHECK(is_builtin_git_registry_url("git@github.com:Microsoft/vcpkg.git"));
+
+    CHECK_FALSE(is_builtin_git_registry_url("https://github.com/example/vcpkg"));
+    CHECK_FALSE(is_builtin_git_registry_url("git@github.com:example/vcpkg"));
+}
+
 TEST_CASE ("filesystem_version_db_parsing", "[registries]")
 {
     FilesystemVersionDbEntryArrayDeserializer filesystem_version_db("a/b");

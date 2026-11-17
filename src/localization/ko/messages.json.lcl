@@ -1705,6 +1705,24 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";BinaryCacheCompressionLevelHelp" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Binary cache ZIP compression level (0-9). Overrides VCPKG_BINARY_CACHE_COMPRESSION_LEVEL; unset uses the archive tool default.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이진 캐시 ZIP 압축 수준(0~9)입니다. VCPKG_BINARY_CACHE_COMPRESSION_LEVEL을 재정의합니다. 설정하지 않으면 보관 도구의 기본값을 사용합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";BinaryCacheSubmissionFailed" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[binary cache submission failed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이진 캐시 제출 실패]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";BinarySourcesArg" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Binary caching sources. See 'vcpkg help binarycaching']]></Val>
@@ -2703,24 +2721,24 @@
       </Item>
       <Item ItemId=";CmdDependInfoFormatHelp" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
+          <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[출력 형식, `list', `tree`, `mermaid`, `dot` 또는 `dgml` 중 하나 선택]]></Val>
+            <Val><![CDATA[출력 형식으로 `list`, `tree`, `mermaid`, `dot`, `dgml` 또는 `json` 중 하나를 선택하세요.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[Choose output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";CmdDependInfoFormatInvalid" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
+          <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[--format={value}은(는) 인식할 수 있는 형식이 아닙니다. --format은 `list`, `tree`, `mermaid`, `dot` 또는 `dgml` 중 하나여야 합니다.]]></Val>
+            <Val><![CDATA[--format={value}은(는) 인식할 수 있는 형식이 아닙니다. --format은 `list`, `tree`, `mermaid`, `dot`, `dgml` 또는 `json` 중 하나여야 합니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `dot`, or `dgml`.]]></Val>
+            <Val><![CDATA[--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />
@@ -3463,6 +3481,33 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdPrintUsageSwitchAffirm" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Affirms that generated usage is correct and removes 'may not be correct' warnings from the output]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[생성된 사용 정보가 올바른지 확인하고, 출력에서 '정확하지 않을 수 있음' 경고를 제거합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSwitchGenerated" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Print heuristic usage even if a usage file is installed]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[사용 파일이 설치되어 있어도 추론된 사용 정보를 표시합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdPrintUsageSynopsis" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints usage information for a single installed port]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[설치된 단일 포트에 대한 사용 정보를 표시합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdRegenerateOptDryRun" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Does not actually perform the action, shows only what would be done]]></Val>
@@ -3730,6 +3775,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";CmdUpdateBaselineOptQuiet" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Does not print the port version diff after updating baselines]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준을 업데이트한 후 포트 버전 diff를 출력하지 않음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";CmdUpdateBaselineSynopsis" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Updates baselines of git registries in a manifest to those registries' HEAD commit]]></Val>
@@ -3879,6 +3933,15 @@
           <Val><![CDATA[URL to download and store if missing from cache]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[캐시에서 누락된 경우 다운로드 및 저장할 URL]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";CmdZApplocalOptVerbose" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Prints which dependencies are being processed and which are already up to date]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[어떤 종속성을 처리 중인지, 그리고 어떤 종속성이 이미 최신 상태인지 표시합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -4453,6 +4516,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Detecting compiler hash for triplet "{triplet}"...]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";DirectDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Direct dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[직접 종속성]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -6380,7 +6452,7 @@
         <Str Cat="Text">
           <Val><![CDATA[**Experimental: will change or be removed without warning**]A;Adds a Google Cloud Storage (GCS) source. Uses the gsutil CLI for uploads and downloads. Prefix should include the gs:// scheme and be suffixed with a "/".]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[**실험적: 경고 없이 변경되거나 제거됩니다**]A;Google Cloud Storage(GCS) 원본을 추가합니다. 업로드 및 다운로드에 gsutil CLI를 사용합니다. 접두사는 gs:// 체계를 포함해야 하며 "/"로 접미사를 붙여야 합니다.]]></Val>
+            <Val><![CDATA[**실험적: 경고 없이 변경되거나 제거됩니다**]A;Google 클라우드 스토리지(GCS) 원본을 추가합니다. 업로드 및 다운로드에 gsutil CLI를 사용합니다. 접두사는 gs:// 체계를 포함해야 하며 "/"로 접미사를 붙여야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -6880,6 +6952,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[Allow removal of packages as part of installation.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";HelpTxtOptSkipInstallIfCached" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Skips the installation of packages if every package is already cached]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[모든 패키지가 이미 캐시된 경우 패키지 설치를 건너뜁니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -7573,6 +7654,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";InvalidBinaryCacheCompressionLevel" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Invalid binary cache compression level '{value}'. --binary-cache-compression-level and VCPKG_BINARY_CACHE_COMPRESSION_LEVEL require a single digit (0-9).]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[이진 캐시 압축 수준 '{value}'이 잘못되었습니다. --binary-cache-compression-level 및 VCPKG_BINARY_CACHE_COMPRESSION_LEVEL에는 한 자릿수(0-9)가 필요합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";InvalidBuildInfo" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Invalid BUILD_INFO file for package: {error_msg}]]></Val>
@@ -7734,6 +7824,15 @@
           <Val><![CDATA[invalid format string: {actual}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[잘못된 서식 문자열: {actual}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";InvalidGitObjectSha" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[잘못된 Git 객체 SHA: {sha}. 40자의 소문자 16진수 문자열이 필요합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -9043,6 +9142,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";PackageNotInstalled" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{spec} is not installed.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{spec}이(가) 설치되지 않았습니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";PackageRootDir" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Packages directory (experimental)]]></Val>
@@ -9052,6 +9160,15 @@
           <Prev Cat="Text">
             <Val><![CDATA[(Experimental) Specify the packages root directory.]]></Val>
           </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PackagesCached" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[All packages already exist in the binary cache. Installation skipped.]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[모든 패키지가 이진 캐시에 이미 있습니다. 설치를 건너뛰었습니다.]]></Val>
+          </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9819,10 +9936,13 @@
       </Item>
       <Item ItemId=";PortsNoDiff" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          <Val><![CDATA[There were no changes in the ports.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[두 커밋 사이의 포트에 변경 내용이 없습니다.]]></Val>
+            <Val><![CDATA[포트에 변경 내용이 없습니다.]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[There were no changes in the ports between the two commits.]]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
@@ -9870,6 +9990,15 @@
           <Val><![CDATA[previous declaration was here]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이전 선언 참조가 있음]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";PrivacyNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Read the Microsoft Privacy Statement at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[Microsoft 개인정보처리방침({url}) 읽기]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10429,6 +10558,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";TelemetryNotice" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[vcpkg collects usage data in order to help us improve your experience.]A;The data collected by Microsoft is anonymous.]A;You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, passing --disable-metrics to vcpkg on the command line, or by setting the VCPKG_DISABLE_METRICS environment variable.]A;]A;Read more about vcpkg telemetry at {url}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[vcpkg는 사용량 현황 데이터를 수집하여 사용자 환경을 개선하는 데 도움을 줍니다.]A;Microsoft가 수집하는 데이터는 익명입니다.]A;-bootstrap-vcpkg 스크립트를 -disableMetrics와 함께 다시 실행하거나, 명령줄에서 vcpkg에 --disable-metrics를 전달하거나, VCPKG_DISABLE_METRICS 환경 변수를 설정하면 원격 분석을 사용하지 않도록 설정할 수 있습니다.]A;]A;vcpkg 원격 분석({url})에 관해 자세히 알아보기]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";TheInfoBlockIsDeprecatedForConsistencyWithVcpkgjsonMoveInfoMembersToTheOutside" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[The info block is deprecated for consistency with vcpkg.json; move info members to the outside.]]></Val>
@@ -10452,6 +10590,15 @@
           <Val><![CDATA[To update these packages and all dependencies, run]A;{command_name} upgrade']]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[이러한 패키지 및 모든 종속성을 업데이트하려면 ]A;{command_name} 업그레이드'를 실행합니다.]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";ToolDataEntryVersionMissing" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[tool metadata must contain at least one of 'version' or 'min-version']]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[도구 메타데이터에는 'version' 또는 'min-version' 중 하나 이상이 포함되어야 합니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -10492,15 +10639,6 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";ToolOfVersionXNotFound" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
-        <Str Cat="Text">
-          <Val><![CDATA[A suitable version of {tool_name} was not found (required v{version}) and unable to automatically download a portable one. Please install a newer version of {tool_name}]]></Val>
-          <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[적합한 버전의 {tool_name}을(를) 찾을 수 없으며(v{version} 필요) 이식 가능한 버전을 자동으로 다운로드할 수 없습니다. 최신 버전의 {tool_name}을(를) 설치하세요.]]></Val>
-          </Tgt>
-        </Str>
-        <Disp Icon="Str" />
-      </Item>
       <Item ItemId=";TotalInstallTime" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[Total install time: {elapsed}]]></Val>
@@ -10533,6 +10671,15 @@
           <Val><![CDATA[Trailing comma in an object]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
             <Val><![CDATA[개체의 후행 쉼표]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";TransitiveDependencies" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Transitive dependencies]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[전이적 종속성]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11443,6 +11590,15 @@
         </Str>
         <Disp Icon="Str" />
       </Item>
+      <Item ItemId=";UpdateBaselineNewDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[{package_name}: new: {version}]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[{package_name}: 새 버전: {version}]]></Val>
+          </Tgt>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
       <Item ItemId=";UpdateBaselineNoConfiguration" ItemType="0" PsrId="306" Leaf="true">
         <Str Cat="Text">
           <Val><![CDATA[neither `vcpkg.json` nor `vcpkg-configuration.json` exist to update.]]></Val>
@@ -11463,27 +11619,42 @@
       </Item>
       <Item ItemId=";UpdateBaselineNoUpdate" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          <Val><![CDATA[registry '{url}' not updated: {value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[레지스트리 '{url}'이(가) 업데이트되지 않았습니다. '{value}']]></Val>
+            <Val><![CDATA[레지스트리 '{url}'이(가) 업데이트되지 않았습니다. {value}]]></Val>
           </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[registry '{url}' not updated: '{value}']]></Val>
+          </Prev>
         </Str>
         <Disp Icon="Str" />
       </Item>
-      <Item ItemId=";UpdateBaselineRemoteGitError" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
+      <Item ItemId=";UpdateBaselineRemovedDependencyVersion" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[git failed to fetch remote repository '{url}']]></Val>
+          <Val><![CDATA[{package_name}: removed: {version}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[git에서 원격 리포지토리 '{url}'을(를) 가져오지 못했습니다.]]></Val>
+            <Val><![CDATA[{package_name}: 제거됨: {version}]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
       </Item>
       <Item ItemId=";UpdateBaselineUpdatedBaseline" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          <Val><![CDATA[updated registry '{url}': {old_value} -> {new_value}]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[업데이트된 레지스트리 '{url}': 기준 '{old_value}' -> '{new_value}']]></Val>
+            <Val><![CDATA['{url}' 레지스트리 업데이트됨: {old_value} -> {new_value}]]></Val>
+          </Tgt>
+          <Prev Cat="Text">
+            <Val><![CDATA[updated registry '{url}': baseline '{old_value}' -> '{new_value}']]></Val>
+          </Prev>
+        </Str>
+        <Disp Icon="Str" />
+      </Item>
+      <Item ItemId=";UpdateBaselineVersionUpdates" ItemType="0" PsrId="306" Leaf="true">
+        <Str Cat="Text">
+          <Val><![CDATA[Updating baselines has resulted in the following version updates:]]></Val>
+          <Tgt Cat="Text" Stat="Loc" Orig="New">
+            <Val><![CDATA[기준을 업데이트한 결과 다음 버전 업데이트가 있습니다.]]></Val>
           </Tgt>
         </Str>
         <Disp Icon="Str" />
@@ -11667,12 +11838,12 @@
       </Item>
       <Item ItemId=";VcpkgCeIsExperimental" ItemType="0" PsrId="306" InstFlg="true" Leaf="true">
         <Str Cat="Text">
-          <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
+          <Val><![CDATA[vcpkg artifacts will be removed shortly after July 1, 2026.]]></Val>
           <Tgt Cat="Text" Stat="Loc" Orig="New">
-            <Val><![CDATA[vcpkg-artifacts는 실험적이며 언제든지 변경될 수 있습니다.]]></Val>
+            <Val><![CDATA[vcpkg 아티팩트가 2026년 7월 1일 직후에 제거됩니다.]]></Val>
           </Tgt>
           <Prev Cat="Text">
-            <Val><![CDATA[vcpkg-ce ('configure environment') is experimental and may change at any time.]]></Val>
+            <Val><![CDATA[vcpkg-artifacts is experimental and may change at any time.]]></Val>
           </Prev>
         </Str>
         <Disp Icon="Str" />

@@ -28,12 +28,29 @@ namespace
 {
     using namespace vcpkg;
 
+    constexpr StringLiteral builtin_registry_git_url_with_dot_git = "https://github.com/microsoft/vcpkg.git";
+    constexpr StringLiteral builtin_registry_git_url_git_form = "git@github.com:microsoft/vcpkg";
+    constexpr StringLiteral builtin_registry_git_url_git_form_with_dot_git = "git@github.com:microsoft/vcpkg.git";
+
     struct GitTreeStringDeserializer : Json::StringDeserializer
     {
         LocalizedString type_name() const override { return msg::format(msgAGitObjectSha); }
+        Optional<std::string> visit_string(Json::Reader& r, StringView sv) const override;
 
         static const GitTreeStringDeserializer instance;
     };
+
+    Optional<std::string> GitTreeStringDeserializer::visit_string(Json::Reader& r, StringView sv) const
+    {
+        if (is_git_sha(sv))
+        {
+            return sv.to_string();
+        }
+
+        r.add_generic_error(type_name(), msg::format(msgInvalidGitObjectSha, msg::sha = sv));
+        return std::string();
+    }
+
     const GitTreeStringDeserializer GitTreeStringDeserializer::instance;
 
     struct RegistryPathStringDeserializer : Json::StringDeserializer
@@ -880,7 +897,9 @@ namespace
                            port_name,
                            PortLocation{std::move(p),
                                         Paragraphs::builtin_git_tree_spdx_location(it->git_tree),
-                                        PortSourceKind::Builtin})
+                                        std::string(),
+                                        PortSourceKind::Builtin,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }
@@ -900,7 +919,9 @@ namespace
         }
 
         return Paragraphs::try_load_port_required(
-                   fs, port_name, PortLocation{it->p, no_assertion, PortSourceKind::Filesystem})
+                   fs,
+                   port_name,
+                   PortLocation{it->p, std::string{}, std::string{}, PortSourceKind::Filesystem, StringView{}})
             .maybe_scfl;
     }
     // } FilesystemRegistryEntry::RegistryEntry
@@ -967,7 +988,12 @@ namespace
                 return Paragraphs::try_load_port_required(
                            parent.m_paths.get_filesystem(),
                            port_name,
-                           PortLocation{p, fmt::format("git+{}@{}", parent.m_repo, it->git_tree), PortSourceKind::Git})
+                           PortLocation{std::move(p),
+                                        fmt::format("git+{}@{}", parent.m_repo, it->git_tree),
+                                        is_builtin_git_registry_url(parent.m_repo) ? std::string()
+                                                                                   : std::string(parent.m_repo),
+                                        PortSourceKind::Git,
+                                        it->git_tree})
                     .maybe_scfl;
             });
     }
@@ -1069,6 +1095,19 @@ namespace
 
 namespace vcpkg
 {
+    bool is_builtin_git_registry_url(StringView url)
+    {
+        if (!url.empty() && (url.back() == '/' || url.back() == '\\'))
+        {
+            url = url.substr(0, url.size() - 1);
+        }
+
+        return Strings::case_insensitive_ascii_equals(url, builtin_registry_git_url) ||
+               Strings::case_insensitive_ascii_equals(url, builtin_registry_git_url_with_dot_git) ||
+               Strings::case_insensitive_ascii_equals(url, builtin_registry_git_url_git_form) ||
+               Strings::case_insensitive_ascii_equals(url, builtin_registry_git_url_git_form_with_dot_git);
+    }
+
     ExpectedL<LockFile::Entry> LockFile::get_or_fetch(const VcpkgPaths& paths, StringView repo, StringView reference)
     {
         auto range = lockdata.equal_range(repo);

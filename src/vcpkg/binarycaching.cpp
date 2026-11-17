@@ -36,6 +36,7 @@ namespace
 {
     // The length of an ABI in the binary cache
     static constexpr size_t ABI_LENGTH = 64;
+    static constexpr size_t OBJECT_STORAGE_DOWNLOAD_CONCURRENCY = 8;
 
     struct ConfigSegmentsParser : ParserBase
     {
@@ -211,6 +212,45 @@ namespace
         context.report(DiagnosticLine{DiagKind::Note, dir, msg::format(msgWhileClearingThis)});
         return false;
     }
+
+    struct BinaryCacheUploadDiagnosticContext final : DiagnosticContext
+    {
+        explicit BinaryCacheUploadDiagnosticContext(DiagnosticContext& inner_context) : inner_context(inner_context) { }
+
+        void report(const DiagnosticLine& line) override
+        {
+            switch (line.kind())
+            {
+                case DiagKind::Error:
+                case DiagKind::Warning: inner_context.report(line.with_pre_note(msgBinaryCacheSubmissionFailed)); break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(line); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+        void report(DiagnosticLine&& line) override
+        {
+            switch (line.kind())
+            {
+                case DiagKind::Error:
+                case DiagKind::Warning:
+                    inner_context.report(std::move(line).with_pre_note(msgBinaryCacheSubmissionFailed));
+                    break;
+                case DiagKind::None:
+                case DiagKind::Message:
+                case DiagKind::Note: inner_context.report(std::move(line)); break;
+                default: Checks::unreachable(VCPKG_LINE_INFO);
+            }
+        }
+
+        void statusln(const LocalizedString& message) override { inner_context.statusln(message); }
+        void statusln(LocalizedString&& message) override { inner_context.statusln(std::move(message)); }
+        void statusln(const MessageLine& message) override { inner_context.statusln(message); }
+        void statusln(MessageLine&& message) override { inner_context.statusln(std::move(message)); }
+
+        DiagnosticContext& inner_context;
+    };
 
 #ifdef _WIN32
     bool directory_last_write_time(DiagnosticContext& context, const Filesystem& fs, const Path& dir)
@@ -742,6 +782,7 @@ namespace
         {
             return subcommand("push")
                 .string_arg(nupkg_path)
+                .string_arg("-SkipDuplicate")
                 .string_arg("-Timeout")
                 .string_arg(m_timeout)
                 .string_arg(src.option)
@@ -1030,12 +1071,12 @@ namespace
                           View<const InstallPlanAction*> actions,
                           Span<Optional<ZipResource>> out_zip_paths) const override
         {
-            for (size_t idx = 0; idx < actions.size(); ++idx)
-            {
+            std::vector<FullyBufferedDiagnosticContext> diagnostic_contexts(actions.size());
+            execute_in_parallel(actions.size(), OBJECT_STORAGE_DOWNLOAD_CONCURRENCY, [&](size_t idx) {
                 auto&& action = *actions[idx];
                 const auto& abi = action.package_abi_or_exit(VCPKG_LINE_INFO);
                 auto tmp = make_temp_archive_path(m_buildtrees, action.spec, abi);
-                WarningDiagnosticContext wdc{context};
+                WarningDiagnosticContext wdc{diagnostic_contexts[idx]};
                 auto res = m_tool->download_file(wdc, make_object_path(m_prefix, abi), tmp);
                 if (auto cache_result = res.get())
                 {
@@ -1044,6 +1085,11 @@ namespace
                         out_zip_paths[idx].emplace(std::move(tmp), RemoveWhen::always);
                     }
                 }
+            });
+
+            for (auto&& diagnostic_context : diagnostic_contexts)
+            {
+                std::move(diagnostic_context).report_to(context);
             }
         }
 
@@ -2545,11 +2591,11 @@ namespace vcpkg
             {
                 if (cache_result[i] == CacheAvailability::available)
                 {
-                    statuses[i]->mark_available(provider.get());
+                    statuses[indexes[i]]->mark_available(provider.get());
                 }
                 else if (cache_result[i] == CacheAvailability::unavailable)
                 {
-                    statuses[i]->mark_unavailable(provider.get());
+                    statuses[indexes[i]]->mark_unavailable(provider.get());
                 }
             }
         }
@@ -2622,6 +2668,11 @@ namespace vcpkg
                                         const VcpkgCmdArguments& args,
                                         const VcpkgPaths& paths)
     {
+        if (!args.parse_binary_cache_compression_level(context, m_compression_level))
+        {
+            return false;
+        }
+
         auto& fs = paths.get_filesystem();
         auto& tools = paths.get_tool_cache();
         if (args.binary_caching_enabled())
@@ -2893,8 +2944,9 @@ namespace vcpkg
 
         return true;
     }
-    BinaryCache::BinaryCache(const Filesystem& fs)
-        : m_fs(fs), m_bg_msg_sink(stdout_sink), m_push_thread(&BinaryCache::push_thread_main, this)
+    BinaryCache::BinaryCache(const Filesystem& fs) : BinaryCache(fs, stdout_sink) { }
+    BinaryCache::BinaryCache(const Filesystem& fs, MessageSink& message_sink)
+        : m_fs(fs), m_bg_msg_sink(message_sink), m_push_thread(&BinaryCache::push_thread_main, this)
     {
     }
     BinaryCache::~BinaryCache() { wait_for_async_complete_and_join(); }
@@ -2982,7 +3034,8 @@ namespace vcpkg
                 if (m_needs_zip_file)
                 {
                     Path zip_path = action_to_push.request.package_dir + ".zip";
-                    if (m_zip_tool.compress_directory_to_zip(pdc, m_fs, action_to_push.request.package_dir, zip_path))
+                    if (m_zip_tool.compress_directory_to_zip(
+                            pdc, m_fs, action_to_push.request.package_dir, zip_path, m_compression_level))
                     {
                         action_to_push.request.zip_path = std::move(zip_path);
                     }
@@ -2993,7 +3046,8 @@ namespace vcpkg
                 {
                     if (!provider->needs_zip_file() || action_to_push.request.zip_path.has_value())
                     {
-                        num_destinations += provider->push_success(pdc, m_fs, action_to_push.request);
+                        BinaryCacheUploadDiagnosticContext upload_context{pdc};
+                        num_destinations += provider->push_success(upload_context, m_fs, action_to_push.request);
                     }
                 }
 

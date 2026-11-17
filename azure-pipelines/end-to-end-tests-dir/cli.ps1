@@ -25,6 +25,29 @@ if (-Not ($out.StartsWith('Synopsis: Displays specific help topic')))
     throw 'Bad help help output'
 }
 
+# A closed stdout pipe should terminate vcpkg without aborting.
+$ports = Get-ChildItem -LiteralPath (Join-Path $VcpkgRoot 'ports') -Directory |
+    Select-Object -First 500 -ExpandProperty Name
+$responseFile = Join-Path $WorkingRoot 'closed-stdout-pipe.rsp'
+@("--vcpkg-root=$VcpkgRoot", 'x-package-info', '--x-json') + $ports |
+    Set-Content -LiteralPath $responseFile -Encoding utf8
+$closesStdinExe = Join-Path (Split-Path -Parent $VcpkgExe) "closes-stdin$executableExtension"
+if ($IsWindows)
+{
+    $command = "`"$VcpkgExe`" `"@$responseFile`" 2>`"$stderrFile`" | `"$closesStdinExe`""
+    & $env:COMSPEC /d /c $command
+}
+else
+{
+    & /bin/sh -c '"$0" "@$1" 2>"$2" | "$3"' $VcpkgExe $responseFile $stderrFile $closesStdinExe
+}
+
+$stderr = Get-Content -LiteralPath $stderrFile -Raw
+if (-Not [string]::IsNullOrEmpty($stderr))
+{
+    throw "Writing to a closed stdout pipe produced stderr: $stderr"
+}
+
 $out = Run-VcpkgAndCaptureStdErr -TestArgs @('help', 'not-a-topic')
 Throw-IfNotFailed
 if (-Not ($out.StartsWith('error: unknown topic not-a-topic')))

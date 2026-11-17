@@ -11,10 +11,19 @@ function Refresh-VersionFiles() {
     git -C $versionFilesPath @gitConfigOptions commit -m testing
 }
 
+function Get-VersionFileSnapshot([string]$Root) {
+    return (Get-ChildItem -LiteralPath $Root -Recurse -File |
+        Sort-Object FullName |
+        ForEach-Object {
+            $relativePath = $_.FullName.Substring($Root.Length).TrimStart('\', '/')
+            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash
+            "$relativePath`:$hash"
+        }) -join "`n"
+}
+
 Refresh-VersionFiles
 
 # Ensure transitive packages can be used even if they add version constraints
-$CurrentTest = "transitive constraints without baseline"
 Run-Vcpkg install @commonArgs --dry-run `
     "--x-builtin-ports-root=$versionFilesPath/transitive-constraints/ports" `
     "--x-manifest-root=$versionFilesPath/transitive-constraints"
@@ -33,12 +42,52 @@ $portsRedirectArgsIncomplete = @(
     "--x-builtin-ports-root=$versionFilesPath/ports-incomplete",
     "--x-builtin-registry-versions-dir=$VersionFilesRoot/versions-incomplete"
 )
-$CurrentTest = "x-verify-ci-versions (All files OK)"
-Write-Host $CurrentTest
+# Verify a complete versions database
 Run-Vcpkg @portsRedirectArgsOK x-ci-verify-versions --verbose
 Throw-IfFailed
 
-$CurrentTest = "x-add-version --all rewrites baseline"
+# x-add-version verbosity overrides defaults
+foreach ($mode in @("cat", "--all")) {
+    foreach ($verbosity in @("", "--verbose", "--no-verbose")) {
+        $verbosityArgs = @()
+        if ($verbosity) {
+            $verbosityArgs += $verbosity
+        }
+
+        $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version $mode @verbosityArgs
+        Throw-IfFailed
+        if ($verbosity -eq "--verbose" -or ($verbosity -eq "" -and $mode -eq "cat")) {
+            Throw-IfNonContains -Expected "version 1.0 is already in " -Actual $output
+        } else {
+            Throw-IfContains -Expected "version 1.0 is already in " -Actual $output
+        }
+    }
+}
+Copy-Item -LiteralPath "$versionFilesPathSources/versions/baseline.json" "$versionFilesPath/versions/baseline.json"
+
+# x-add-version --all validates manifests with recorded git trees
+Set-Content -LiteralPath "$versionFilesPath/ports/cat/vcpkg.json" `
+    -Value '{"name":"cat","version":"1.0"}' -Encoding Ascii -NoNewline
+Run-Vcpkg @portsRedirectArgsOK x-add-version cat --overwrite-version --skip-formatting-check
+Throw-IfFailed
+$versionFileSnapshotBefore = Get-VersionFileSnapshot "$versionFilesPath/versions"
+foreach ($overwriteArgs in @(@(), @("--overwrite-version"))) {
+    $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version --all @overwriteArgs
+    Throw-IfNotFailed
+    if ($output -notmatch "cat is not properly formatted") {
+        throw "Expected formatting validation for a port whose git tree is already recorded"
+    }
+
+    $versionFileSnapshotAfter = Get-VersionFileSnapshot "$versionFilesPath/versions"
+    Throw-IfNonEqual $versionFileSnapshotAfter $versionFileSnapshotBefore
+}
+
+Run-Vcpkg @portsRedirectArgsOK x-add-version --all --skip-formatting-check
+Throw-IfFailed
+Copy-Item -LiteralPath "$versionFilesPathSources/ports/cat/vcpkg.json" "$versionFilesPath/ports/cat/vcpkg.json"
+Copy-Item -LiteralPath "$versionFilesPathSources/versions/c-/cat.json" "$versionFilesPath/versions/c-/cat.json"
+
+# x-add-version --all removes stale baseline entries
 Set-Content -LiteralPath "$versionFilesPath/versions/baseline.json" -Value @"
 {
   "default": {
@@ -90,7 +139,7 @@ Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
 }
 "@
 
-$CurrentTest = "x-add-version --all creates baseline"
+# x-add-version --all creates a missing baseline
 Remove-Item -LiteralPath "$versionFilesPath/versions/baseline.json"
 Run-Vcpkg @portsRedirectArgsOK x-add-version --all
 Throw-IfFailed
@@ -117,7 +166,7 @@ Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
 }
 "@
 
-$CurrentTest = "x-add-version --all recreates versions directory"
+# x-add-version --all recreates a missing versions directory
 Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/versions"
 Run-Vcpkg @portsRedirectArgsOK x-add-version --all
 Throw-IfFailed
@@ -146,39 +195,41 @@ Require-JsonFileEquals "$versionFilesPath/versions/baseline.json" @"
 Remove-Item -Recurse -Force -LiteralPath "$versionFilesPath/versions"
 Copy-Item -Recurse "$versionFilesPathSources/versions" "$versionFilesPath/versions"
 
-$CurrentTest = "x-verify-ci-versions (Incomplete)"
+# Reject an incomplete versions database
 Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfNotFailed
 
-$CurrentTest = "x-add-version cat"
+# A failed x-add-version invocation must not change any version files
+$versionFileSnapshotBefore = Get-VersionFileSnapshot "$VersionFilesRoot/versions-incomplete"
+Run-Vcpkg @portsRedirectArgsIncomplete x-add-version dog fish
+Throw-IfNotFailed
+$versionFileSnapshotAfter = Get-VersionFileSnapshot "$VersionFilesRoot/versions-incomplete"
+Throw-IfNonEqual $versionFileSnapshotAfter $versionFileSnapshotBefore
+
 # Do not fail if there's nothing to update
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version cat
 Throw-IfFailed
 
-$CurrentTest = "x-add-version dog"
 # Local version is not in baseline and versions file
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version dog
 Throw-IfFailed
 
-$CurrentTest = "x-add-version duck"
 # Missing versions file
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version duck
 Throw-IfFailed
 
-$CurrentTest = "x-add-version ferret"
 # Missing versions file and missing baseline entry
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version ferret
 Throw-IfFailed
 
-$CurrentTest = "x-add-version fish (must fail)"
 # Discrepancy between local SHA and SHA in fish.json. Requires --overwrite-version.
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish
 Throw-IfNotFailed
-$CurrentTest = "x-add-version fish --overwrite-version"
+
+# --overwrite-version replaces the recorded git tree when the port contents change
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version fish --overwrite-version --skip-version-format-check
 Throw-IfFailed
 
-$CurrentTest = "x-add-version mouse"
 # Missing baseline entry
 Run-Vcpkg @portsRedirectArgsIncomplete x-add-version mouse
 Throw-IfFailed
@@ -188,7 +239,6 @@ Run-Vcpkg @portsRedirectArgsIncomplete x-ci-verify-versions --verbose
 Throw-IfFailed
 
 # Validate port-version
-$CurrentTest = "x-add-version octopus"
 Set-EmptyTestPort -Name octopus -Version 1.0 -PortVersion "1" -PortsRoot "$versionFilesPath/ports"
 $output = Run-VcpkgAndCaptureOutput @portsRedirectArgsOK x-add-version octopus
 Throw-IfNotFailed
@@ -231,7 +281,61 @@ Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
 git -C $versionFilesPath @gitConfigOptions commit -m "add octopus 2.0#3"
 
-$CurrentTest = "default baseline"
+# Changing only the version scheme must be picked up by --overwrite-version
+Set-EmptyTestPort -Name squid -Version 1.0.0 -PortsRoot "$versionFilesPath/ports"
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfFailed
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "add squid 1.0.0"
+
+function Get-SquidVersionEntry {
+    return (Get-Content -Raw -LiteralPath "$versionFilesPath/versions/s-/squid.json" | ConvertFrom-Json).versions[0]
+}
+
+$squidJson = @"
+{
+  "name": "squid",
+  "version-semver": "1.0.0"
+}
+
+"@
+Set-Content -Value $squidJson -LiteralPath "$versionFilesPath/ports/squid/vcpkg.json" -Encoding Ascii -NoNewline
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "squid uses version-semver"
+
+# Reject a version scheme change without --overwrite-version
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfNotFailed
+
+# --overwrite-version updates both the git tree and version scheme
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid --overwrite-version
+Throw-IfFailed
+$squidEntry = Get-SquidVersionEntry
+if ($squidEntry.'version-semver' -ne '1.0.0' -or $null -ne $squidEntry.version) {
+    throw "Expected --overwrite-version to record squid 1.0.0 as version-semver"
+}
+
+# The git tree is already correct and only the recorded scheme is stale
+$squidVersionsFile = "$versionFilesPath/versions/s-/squid.json"
+$staleSchemeContent = (Get-Content -Raw -LiteralPath $squidVersionsFile).Replace('"version-semver"', '"version"')
+Set-Content -Value $staleSchemeContent -LiteralPath $squidVersionsFile -NoNewline -Encoding Ascii
+
+# Reject a stale version scheme even when the git tree matches
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid
+Throw-IfNotFailed
+
+# --overwrite-version repairs the version scheme even when the git tree is unchanged
+Run-Vcpkg @portsRedirectArgsOK x-add-version squid --overwrite-version
+Throw-IfFailed
+$squidEntry = Get-SquidVersionEntry
+if ($squidEntry.'version-semver' -ne '1.0.0' -or $null -ne $squidEntry.version) {
+    throw "Expected --overwrite-version to fix the stale version scheme of squid 1.0.0"
+}
+
+git -C $versionFilesPath @gitConfigOptions add -A
+git -C $versionFilesPath @gitConfigOptions commit -m "squid version database uses version-semver"
+
+# Reject a builtin baseline that cannot be checked out
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root=$versionFilesPath/default-baseline-1
 Throw-IfNotFailed
 if ($out -notmatch ".*error: while checking out baseline\.*")
@@ -239,7 +343,7 @@ if ($out -notmatch ".*error: while checking out baseline\.*")
     throw "Expected to fail due to missing baseline"
 }
 
-$CurrentTest = "mismatched version database"
+# Reject a port whose version differs from its version database entry
 $out = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" install --x-manifest-root="$PSScriptRoot/../e2e-ports/mismatched-version-database"
 Throw-IfNotFailed
 if (($out -notmatch ".*error: Failed to load port because versions are inconsistent*") -or
@@ -263,7 +367,7 @@ Throw-IfFailed
 git -C $versionFilesPath @gitConfigOptions add -A
 git -C $versionFilesPath @gitConfigOptions commit -m "set zlib-1.2.11-9"
 
-$CurrentTest = "without default baseline 2 -- enabling versions should not change behavior"
+# Enabling versions without a builtin baseline must not change behavior
 Remove-Item -Recurse $buildtreesRoot/versioning_ -ErrorAction SilentlyContinue
 Run-Vcpkg @commonArgs "--feature-flags=versions" install `
     "--dry-run" `
@@ -272,7 +376,7 @@ Run-Vcpkg @commonArgs "--feature-flags=versions" install `
 Throw-IfFailed
 Require-FileNotExists $buildtreesRoot/versioning_
 
-$CurrentTest = "default baseline 2"
+# A builtin baseline enables versioned dependency resolution
 $baselinedVcpkgJson = @"
 {
   "name": "default-baseline-test-2",
@@ -299,7 +403,17 @@ Run-Vcpkg @commonArgs "--feature-flags=versions" install `
 Throw-IfFailed
 Require-FileExists $buildtreesRoot/versioning_
 
-$CurrentTest = "using version features fails without flag"
+# The packages of the plan come from the versioned provider, which must outlive the plan
+# depend-info JSON with default baseline 2
+$output = Run-VcpkgAndCaptureOutput @commonArgs "--feature-flags=versions" depend-info --format=json `
+    "--x-manifest-root=$defaultBaseline2" `
+    "--x-builtin-registry-versions-dir=$versionFilesPath/versions"
+Throw-IfFailed
+$zlib = ($output | ConvertFrom-Json -AsHashtable)["zlib:$Triplet"]
+Throw-IfNonEqual -Actual "$($zlib['version'])#$($zlib['port-version'])" -Expected '1.2.11#8'
+Throw-IfNonEqual -Actual $zlib['host-only'] -Expected $false
+
+# Reject versioning features when the versions feature flag is disabled
 Run-Vcpkg @commonArgs "--feature-flags=-versions" install `
     "--dry-run" `
     "--x-manifest-root=$defaultBaseline2" `

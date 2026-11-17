@@ -211,18 +211,18 @@ namespace vcpkg
         Filesystem,
     };
 
-    struct NoAssertionTag
-    {
-    };
-
-    inline constexpr NoAssertionTag no_assertion;
-
     struct PortLocation
     {
-        explicit PortLocation(const Path& port_directory, NoAssertionTag, PortSourceKind kind);
-        explicit PortLocation(Path&& port_directory, NoAssertionTag, PortSourceKind kind);
-        explicit PortLocation(const Path& port_directory, std::string&& spdx_location, PortSourceKind kind);
-        explicit PortLocation(Path&& port_directory, std::string&& spdx_location, PortSourceKind kind);
+        explicit PortLocation(const Path& port_directory,
+                              std::string&& spdx_location,
+                              std::string&& spdx_repository_url,
+                              PortSourceKind kind,
+                              StringView git_tree);
+        explicit PortLocation(Path&& port_directory,
+                              std::string&& spdx_location,
+                              std::string&& spdx_repository_url,
+                              PortSourceKind kind,
+                              StringView git_tree);
         PortLocation(const PortLocation&) = default;
         PortLocation(PortLocation&&) = default;
         PortLocation& operator=(const PortLocation&) = default;
@@ -234,7 +234,13 @@ namespace vcpkg
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
 
+        /// The repository URL portion of spdx_location for git registries. Empty otherwise.
+        std::string spdx_repository_url;
+
         PortSourceKind kind;
+
+        /// The Git tree object ID for a versioned registry port. Empty otherwise.
+        std::string git_tree;
     };
 
     /// <summary>
@@ -306,7 +312,8 @@ namespace vcpkg
                 scf = std::make_unique<SourceControlFile>(source_control_file->clone());
             }
 
-            return SourceControlFileAndLocation{std::move(scf), control_path, spdx_location, kind};
+            return SourceControlFileAndLocation{
+                std::move(scf), control_path, spdx_location, spdx_repository_url, kind, git_tree};
         }
 
         std::unique_ptr<SourceControlFile> source_control_file;
@@ -316,7 +323,13 @@ namespace vcpkg
         /// See https://spdx.github.io/spdx-spec/package-information/#77-package-download-location-field
         std::string spdx_location;
 
+        /// The repository URL portion of spdx_location for git registries. Empty otherwise.
+        std::string spdx_repository_url;
+
         PortSourceKind kind = PortSourceKind::Unknown;
+
+        /// The Git tree object ID for a versioned registry port. Empty otherwise.
+        std::string git_tree;
     };
 
     void print_error_message(const LocalizedString& message);

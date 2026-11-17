@@ -46,6 +46,92 @@ struct KnowNothingBinaryProvider : IReadBinaryProvider
     }
 };
 
+struct TestPrecheckBinaryProvider : IReadBinaryProvider
+{
+    using Result = std::pair<const char*, CacheAvailability>;
+
+    explicit TestPrecheckBinaryProvider(std::vector<Result> results) : results(std::move(results)) { }
+
+    void fetch(DiagnosticContext&,
+               const Filesystem&,
+               View<const InstallPlanAction*>,
+               Span<RestoreResult>) const override
+    {
+        FAIL("unexpected call to fetch");
+    }
+
+    void precheck(DiagnosticContext&,
+                  const Filesystem& fs,
+                  View<const InstallPlanAction*> actions,
+                  Span<CacheAvailability> out_status) const override
+    {
+        REQUIRE(&fs == &always_failing_filesystem);
+        REQUIRE(actions.size() == results.size());
+        REQUIRE(out_status.size() == results.size());
+        for (size_t i = 0; i < actions.size(); ++i)
+        {
+            CHECK(actions[i]->package_abi_or_exit(VCPKG_LINE_INFO) == results[i].first);
+            out_status[i] = results[i].second;
+        }
+    }
+
+    LocalizedString restored_message(size_t, std::chrono::high_resolution_clock::duration) const override
+    {
+        return LocalizedString::from_raw("Test");
+    }
+
+    std::vector<Result> results;
+};
+
+struct TestMessageSink : MessageSink
+{
+    void println(const MessageLine& line) override { lines.push_back(line.to_string()); }
+    void println(MessageLine&& line) override { lines.push_back(line.to_string()); }
+
+    bool contains_line(const std::string& expected) const
+    {
+        for (const auto& line : lines)
+        {
+            if (line == expected) return true;
+        }
+
+        return false;
+    }
+
+    std::vector<std::string> lines;
+};
+
+struct TestWriteBinaryProvider : IWriteBinaryProvider
+{
+    TestWriteBinaryProvider(bool upload_fails) : upload_fails(upload_fails) { }
+
+    size_t push_success(DiagnosticContext& context, const Filesystem&, const BinaryPackageWriteInfo&) override
+    {
+        if (upload_fails)
+        {
+            context.report(DiagnosticLine{DiagKind::Warning, LocalizedString::from_raw("provider-specific failure")});
+            return 0;
+        }
+
+        return 1;
+    }
+
+    bool needs_nuspec_data() const override { return false; }
+    bool needs_zip_file() const override { return false; }
+
+    bool upload_fails;
+};
+
+struct TestBinaryCache : BinaryCache
+{
+    TestBinaryCache(const Filesystem& fs, MessageSink& message_sink) : BinaryCache(fs, message_sink) { }
+
+    void install_write_provider(std::unique_ptr<IWriteBinaryProvider>&& provider)
+    {
+        m_config.write.push_back(std::move(provider));
+    }
+};
+
 TEST_CASE ("CacheStatus operations", "[BinaryCache]")
 {
     KnowNothingBinaryProvider know_nothing;
@@ -370,6 +456,42 @@ Description:
     REQUIRE(fbdc.empty());
 }
 
+TEST_CASE ("precheck maps filtered provider results to the original actions", "[BinaryCache]")
+{
+    ReadOnlyBinaryCache uut;
+    uut.install_read_provider(
+        std::make_unique<TestPrecheckBinaryProvider>(std::vector<TestPrecheckBinaryProvider::Result>{
+            {"abi-a", CacheAvailability::available}, {"abi-b", CacheAvailability::unavailable}}));
+    uut.install_read_provider(std::make_unique<TestPrecheckBinaryProvider>(
+        std::vector<TestPrecheckBinaryProvider::Result>{{"abi-b", CacheAvailability::available}}));
+
+    SourceControlFileAndLocation scfl{Test::make_control_file("test-package", ""), Path{}};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    std::vector<InstallPlanAction> actions;
+    for (const auto abi : {"abi-a", "abi-b"})
+    {
+        actions.push_back(InstallPlanAction{PackageSpec{"test-package", Test::X64_WINDOWS},
+                                            scfl,
+                                            packages_dir_assigner,
+                                            RequestType::USER_REQUESTED,
+                                            UseHeadVersion::No,
+                                            Editable::No,
+                                            {},
+                                            {},
+                                            {}});
+        auto& abi_info = actions.back().abi_info.emplace();
+        abi_info.package_abi = abi;
+    }
+
+    const auto action_ptrs = Util::fmap(
+        actions, [](const InstallPlanAction& action) { return static_cast<const InstallPlanAction*>(&action); });
+    FullyBufferedDiagnosticContext fbdc;
+    const auto result = uut.precheck(fbdc, always_failing_filesystem, action_ptrs);
+
+    REQUIRE(result == std::vector<CacheAvailability>{CacheAvailability::available, CacheAvailability::available});
+    REQUIRE(fbdc.empty());
+}
+
 TEST_CASE ("XmlSerializer", "[XmlSerializer]")
 {
     XmlSerializer xml;
@@ -537,6 +659,54 @@ TEST_CASE ("Synchronizer operations", "[BinaryCache]")
         REQUIRE(result.jobs_submitted == 2);
         REQUIRE(result.jobs_completed == 2);
         REQUIRE(result.submission_complete);
+    }
+}
+
+TEST_CASE ("Binary cache upload failure logging", "[BinaryCache]")
+{
+    auto pghs = Paragraphs::parse_paragraphs(R"(
+Source: test-port
+Version: 1
+Description: test port
+)",
+                                             "<testdata>");
+    REQUIRE(pghs.has_value());
+    auto maybe_scf = SourceControlFile::parse_control_file("test-origin", std::move(*pghs.get()));
+    REQUIRE(maybe_scf.has_value());
+    SourceControlFileAndLocation scfl{std::move(*maybe_scf.get()), Path()};
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    InstallPlanAction action(PackageSpec{"test-port", Test::X64_WINDOWS},
+                             scfl,
+                             packages_dir_assigner,
+                             RequestType::USER_REQUESTED,
+                             UseHeadVersion::No,
+                             Editable::No,
+                             {},
+                             {},
+                             {});
+    action.abi_info = AbiInfo{};
+    action.abi_info.get()->package_abi = "packageabi";
+
+    const std::string expected_warning = "warning: binary cache submission failed: provider-specific failure";
+
+    SECTION ("all uploads succeed")
+    {
+        TestMessageSink message_sink;
+        TestBinaryCache binary_cache{always_failing_filesystem, message_sink};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(false));
+        binary_cache.push_success(CleanPackages::No, action);
+        binary_cache.wait_for_async_complete_and_join();
+        CHECK_FALSE(message_sink.contains_line(expected_warning));
+    }
+
+    SECTION ("upload fails")
+    {
+        TestMessageSink message_sink;
+        TestBinaryCache binary_cache{always_failing_filesystem, message_sink};
+        binary_cache.install_write_provider(std::make_unique<TestWriteBinaryProvider>(true));
+        binary_cache.push_success(CleanPackages::No, action);
+        binary_cache.wait_for_async_complete_and_join();
+        CHECK(message_sink.contains_line(expected_warning));
     }
 }
 

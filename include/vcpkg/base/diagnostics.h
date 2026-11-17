@@ -64,6 +64,8 @@ namespace vcpkg
         LocalizedString to_json_reader_string(const std::string& path, const LocalizedString& type) const;
 
         DiagKind kind() const noexcept { return m_kind; }
+        DiagnosticLine with_pre_note(const msg::MessageT<>& message) const&;
+        DiagnosticLine with_pre_note(const msg::MessageT<>& message) &&;
         // Returns this DiagnosticLine with kind == Error reduced to Warning.
         DiagnosticLine reduce_to_warning() const&;
         DiagnosticLine reduce_to_warning() &&;

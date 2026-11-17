@@ -1,22 +1,23 @@
 . $PSScriptRoot/../end-to-end-tests-prelude.ps1
 
 $publicCommands = @(
-    'install'
-    'search'
-    'remove'
-    'list'
-    'update'
+    'cache'
+    'contact'
+    'create'
+    'edit'
+    'export'
     'hash'
     'help'
+    'install'
     'integrate'
-    'export'
-    'edit'
-    'create'
+    'list'
     'owns'
-    'cache'
-    'version'
-    'contact'
+    'print-usage'
+    'remove'
+    'search'
+    'update'
     'upgrade'
+    'version'
 )
 
 $privateCommands = @(

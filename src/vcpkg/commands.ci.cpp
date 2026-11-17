@@ -489,10 +489,9 @@ namespace vcpkg
 
         auto baseline_iter = settings.find(SwitchCIBaseline);
         const std::string* ci_baseline_file_name = nullptr;
-        const bool allow_unexpected_passing = Util::Sets::contains(options.switches, SwitchAllowUnexpectedPassing);
+        const bool allow_unexpected_passing = options.switch_on(SwitchAllowUnexpectedPassing);
         CiBaselineData baseline_data;
-        auto skip_failures =
-            Util::Sets::contains(options.switches, SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
+        auto skip_failures = options.switch_on(SwitchSkipFailures) ? SkipFailures::Yes : SkipFailures::No;
         if (baseline_iter == settings.end())
         {
             if (allow_unexpected_passing)
@@ -520,7 +519,7 @@ namespace vcpkg
         }
 
         const std::unordered_set<std::string> parent_hashes = parse_parent_hashes(settings, paths);
-        const auto is_dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        const auto is_dry_run = options.switch_on(SwitchDryRun);
         const IBuildLogsRecorder* build_logs_recorder = &null_build_logs_recorder;
         Optional<CiBuildLogsRecorder> build_logs_recorder_storage;
         {
@@ -549,7 +548,7 @@ namespace vcpkg
         const ElapsedTimer timer;
 
         Optional<CiRandomizer> randomizer;
-        if (Util::Sets::contains(options.switches, SwitchXRandomize))
+        if (options.switch_on(SwitchXRandomize))
         {
             randomizer.emplace();
         }
@@ -683,8 +682,7 @@ namespace vcpkg
         if (it_xunit != settings.end())
         {
             XunitWriter xunitTestResults;
-            const auto& xunit_results =
-                Util::Sets::contains(options.switches, SwitchXXUnitAll) ? ci_full_results : ci_plan_results;
+            const auto& xunit_results = options.switch_on(SwitchXXUnitAll) ? ci_full_results : ci_plan_results;
             for (auto&& xunit_result : xunit_results)
             {
                 xunitTestResults.add_test_results(xunit_result.first, xunit_result.second);

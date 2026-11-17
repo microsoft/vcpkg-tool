@@ -89,11 +89,14 @@ namespace vcpkg
         using string_t = std::string;
 #endif
         void add_entry(StringView key, StringView value);
+        void add_remove_entry(StringView key);
         Optional<std::string> remove_entry(StringView key);
         const string_t& get() const;
+        const std::vector<std::string>& remove_entries() const;
 
     private:
         string_t m_env_data;
+        std::vector<std::string> m_remove_entries;
     };
 
     const Environment& get_clean_environment();

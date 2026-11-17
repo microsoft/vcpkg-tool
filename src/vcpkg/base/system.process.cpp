@@ -20,10 +20,17 @@ extern char** environ;
 #include <mach-o/dyld.h>
 #endif
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__)
 extern char** environ;
 #include <sys/sysctl.h>
 #include <sys/wait.h>
+#endif
+
+#if defined(__OpenBSD__)
+extern char** environ;
+#include <unistd.h>
+
+#include <sys/sysctl.h>
 #endif
 
 #if defined(__SVR4) && defined(__sun)
@@ -168,7 +175,7 @@ namespace vcpkg
         if (content.empty() || Strings::find_first_of(content,
                                                       " \t\n\r\"\\`$,;&^|'()"
 #if !defined(_WIN32)
-                                                      "*?[#"
+                                                      "*?[#<>~{}"
 #endif // ^^^ !_WIN32
                                                       ) != content.end())
         {
@@ -198,8 +205,9 @@ namespace vcpkg
 #else
             // On non-Windows, `\` is the escape character and always requires doubling. Inner double-quotes must be
             // escaped. Additionally, '`' and '$' must be escaped or they will retain their special meaning in the
-            // shell. Characters like '*', '?', '[', and '#' are handled by deciding to quote the whole argument;
-            // once inside double quotes, they no longer need per-character escaping before invoking /bin/sh.
+            // shell. Characters like '*', '?', '[', '#', '<', '>', '~', '{', and '}' are handled by deciding to
+            // quote the whole argument; once inside double quotes, they no longer need per-character escaping
+            // before invoking /bin/sh.
             target.push_back('"');
             for (auto ch : content)
             {
@@ -248,6 +256,11 @@ namespace vcpkg
         Checks::check_exit(VCPKG_LINE_INFO, len > 0, "Could not determine current executable path.");
         return Path(exePath, len - 1);
 #elif defined(__OpenBSD__)
+        char buf[PATH_MAX];
+        char* exePath = nullptr;
+#if defined(HAVE_GETEXECPATH)
+        if (getexecpath(buf, sizeof(buf)) == 0) exePath = buf;
+#else
         int mib[4] = {CTL_KERN, KERN_PROC_ARGS, getpid(), KERN_PROC_ARGV};
         size_t argc = 0;
         auto argc_query = sysctl(mib, 4, nullptr, &argc, nullptr, 0);
@@ -256,8 +269,8 @@ namespace vcpkg
         std::vector<char*> argv(argc);
         auto argv_query = sysctl(mib, 4, &argv[0], &argc, nullptr, 0);
         Checks::check_exit(VCPKG_LINE_INFO, argv_query == 0, "Could not determine current executable path.");
-        char buf[PATH_MAX];
-        char* exePath(realpath(argv[0], buf));
+        exePath = realpath(argv[0], buf);
+#endif
         Checks::check_exit(VCPKG_LINE_INFO, exePath != nullptr, "Could not determine current executable path.");
         return Path(exePath);
 #elif defined(__SVR4) && defined(__sun)
@@ -651,6 +664,8 @@ namespace vcpkg
             "Z_VCPKG_UNDO",
             // Ensures that the escape hatch persists to recursive vcpkg invocations like x-download
             "VCPKG_KEEP_ENV_VARS",
+            // Enable REVOKE_BEST_EFFORT for libcurl downloads (same as curl --ssl-revoke-best-effort)
+            "VCPKG_SSL_REVOKE_BEST_EFFORT",
             // Enables Xbox SDKs
             "GameDKLatest",
             "GRDKLatest",
@@ -763,6 +778,8 @@ namespace vcpkg
 #endif
     }
 
+    void Environment::add_remove_entry(StringView key) { m_remove_entries.emplace_back(key.to_string()); }
+
     Optional<std::string> Environment::remove_entry(StringView key)
     {
 #if defined(_WIN32)
@@ -863,6 +880,7 @@ namespace vcpkg
     }
 
     const Environment::string_t& Environment::get() const { return m_env_data; }
+    const std::vector<std::string>& Environment::remove_entries() const { return m_remove_entries; }
 
     const Environment& get_clean_environment()
     {
@@ -1558,7 +1576,20 @@ namespace vcpkg
 
         if (const auto env = settings.environment.get())
         {
-            real_command_line_builder.raw_arg(env->get());
+            if (env->remove_entries().empty())
+            {
+                real_command_line_builder.raw_arg(env->get());
+            }
+            else
+            {
+                real_command_line_builder.raw_arg("env");
+                for (const auto& remove_var : env->remove_entries())
+                {
+                    real_command_line_builder.raw_arg("-u");
+                    real_command_line_builder.string_arg(remove_var);
+                }
+                real_command_line_builder.raw_arg(env->get());
+            }
         }
 
         real_command_line_builder.raw_arg(cmd.command_line());
@@ -1777,8 +1808,23 @@ namespace
 
         if (auto env_unpacked = settings.environment.get())
         {
-            actual_cmd_line.append(env_unpacked->get());
-            actual_cmd_line.push_back(' ');
+            if (env_unpacked->remove_entries().empty())
+            {
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
+            else
+            {
+                actual_cmd_line.append("env");
+                for (const auto& remove_var : env_unpacked->remove_entries())
+                {
+                    actual_cmd_line.append(" -u ");
+                    append_shell_escaped(actual_cmd_line, remove_var);
+                }
+                actual_cmd_line.push_back(' ');
+                actual_cmd_line.append(env_unpacked->get());
+                actual_cmd_line.push_back(' ');
+            }
         }
 
         const auto unwrapped_to_execute = cmd.command_line();

@@ -16,11 +16,10 @@ extends:
     template: azure-pipelines/MicroBuild.1ES.Official.yml@CustomPipelineTemplates
     parameters:
       pool:
-        name: 'VSEngSS-MicroBuild2022-1ES'
+        name: 'VSEng-MicroBuildVSStable'
       sdl:
         sourceAnalysisPool:
-          name: VSEngSS-MicroBuild2022-1ES
-          image: server2022-microbuildVS2022-1es
+          name: 'VSEng-MicroBuildVSStable'
           os: windows
       stages:
         - stage: stage

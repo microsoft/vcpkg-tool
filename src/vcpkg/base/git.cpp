@@ -242,7 +242,8 @@ namespace vcpkg
         launch_settings.encoding = Encoding::Utf8WithNulls;
         Optional<std::vector<GitLSTreeEntry>> result;
 
-        StringView args[] = {StringLiteral{"ls-tree"}, treeish, StringLiteral{"--full-tree"}, StringLiteral{"-z"}};
+        StringView args[] = {
+            StringLiteral{"ls-tree"}, StringLiteral{"--full-tree"}, StringLiteral{"-z"}, StringLiteral{"--"}, treeish};
         auto cmd = make_git_command(git_exe, locator, args);
         auto maybe_ls_tree_result = run_cmd_trim(context, cmd, launch_settings);
         if (auto ls_tree_output = maybe_ls_tree_result.get())
@@ -283,7 +284,7 @@ namespace vcpkg
             return false;
         }
 
-        StringView read_tree_args[] = {StringLiteral{"read-tree"}, treeish};
+        StringView read_tree_args[] = {StringLiteral{"read-tree"}, StringLiteral{"--"}, treeish};
         auto read_tree_cmd = make_git_command(git_exe, locator, read_tree_args);
         if (run_cmd_git_with_index(context, read_tree_cmd, git_tree_index).has_value())
         {
@@ -311,7 +312,7 @@ namespace vcpkg
     Optional<std::string> git_merge_base(
         DiagnosticContext& context, const Path& git_exe, GitRepoLocator locator, StringView commit1, StringView commit2)
     {
-        StringView args[] = {StringLiteral{"merge-base"}, commit1, commit2};
+        StringView args[] = {StringLiteral{"merge-base"}, StringLiteral{"--"}, commit1, commit2};
         auto cmd = make_git_command(git_exe, locator, args);
         auto maybe_merge_base_output = run_cmd_trim(context, cmd);
         if (auto output = maybe_merge_base_output.get())
@@ -552,7 +553,7 @@ namespace vcpkg
     {
         // Resolve any commit-ish (for example, annotated tags) to a commit object.
         const auto commitish = fmt::format("{}^{{commit}}", git_commit_id);
-        StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-e"}, commitish};
+        StringView args[] = {StringLiteral{"cat-file"}, StringLiteral{"-e"}, StringLiteral{"--"}, commitish};
         auto cmd =
             make_git_command(git_exe, GitRepoLocator{GitRepoLocatorKind::CurrentDirectory, builtin_ports_dir}, args);
         auto maybe_output = cmd_execute_and_capture_output(context, cmd);

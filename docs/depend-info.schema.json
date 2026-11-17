@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/depend-info.schema.json",
+  "title": "vcpkg depend-info --format=json",
+  "description": "The packages of the install plan computed by `vcpkg depend-info`, keyed by package spec (name:triplet).",
+  "type": "object",
+  "additionalProperties": {
+    "$ref": "#/definitions/package"
+  },
+  "definitions": {
+    "package": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The name of the port.",
+          "type": "string"
+        },
+        "triplet": {
+          "description": "The triplet the package is built for.",
+          "type": "string"
+        },
+        "version": {
+          "description": "The version of the port selected by the install plan, without the port-version.",
+          "type": "string"
+        },
+        "port-version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "features": {
+          "description": "The features of the port selected by the install plan, without core.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "depth": {
+          "description": "The length of the longest dependency path from a requested package to this package.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "host-only": {
+          "description": "Whether the package is only reachable from the requested packages by traversing a host dependency. Host dependencies of the manifest are not requested packages in this sense. This is computed from the declarations of the dependencies, so it also works when the host triplet is the target triplet.",
+          "type": "boolean"
+        },
+        "license": {
+          "description": "The SPDX license expression of the port combined with the licenses of the selected features, as in the SBOM vcpkg generates for the package. null if no license is declared. Ports declaring \"license\": null contribute LicenseRef-vcpkg-null.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "homepage": {
+          "description": "The homepage of the port, if declared.",
+          "type": "string"
+        },
+        "dependencies": {
+          "description": "The packages this package depends on in the install plan.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/dependency"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "triplet",
+        "version",
+        "port-version",
+        "features",
+        "depth",
+        "host-only",
+        "license",
+        "dependencies"
+      ]
+    },
+    "dependency": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "triplet": {
+          "type": "string"
+        },
+        "host": {
+          "description": "true if the depending package declares this dependency only with \"host\": true (after evaluating platform expressions).",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "triplet",
+        "host"
+      ]
+    }
+  }
+}

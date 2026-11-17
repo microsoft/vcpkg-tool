@@ -45,6 +45,7 @@ BeforeAll {
             'new'
             'owns'
             'portsdiff'
+            'print-usage'
             'remove'
             'search'
             'update'

@@ -5,357 +5,6 @@
 
 using namespace vcpkg;
 
-TEST_CASE ("replace CMake variable", "[spdx]")
-{
-    static constexpr StringLiteral str{"lorem ip${VERSION}"};
-    {
-        auto res = replace_cmake_var(str, "VERSION", "sum");
-        REQUIRE(res == "lorem ipsum");
-    }
-    {
-        auto res = replace_cmake_var(str, "VERSiON", "sum");
-        REQUIRE(res == "lorem ip${VERSION}");
-    }
-}
-
-TEST_CASE ("extract first cmake invocation args", "[spdx]")
-{
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum()", "lorem_ipsum");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsummmmm() lorem_ipsum(asdf)", "lorem_ipsum");
-        REQUIRE(res == "asdf");
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc)", "lorem_ipsu");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum(abc", "lorem_ipsum");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum    (abc)    ", "lorem_ipsum");
-        REQUIRE(res == "abc");
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum   x (abc)    ", "lorem_ipsum");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipum(abc)", "lorem_ipsum");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum( )", "lorem_ipsum");
-        REQUIRE(res == " ");
-    }
-    {
-        auto res = extract_first_cmake_invocation_args("lorem_ipsum_", "lorem_ipsum");
-        REQUIRE(res.empty());
-    }
-}
-
-TEST_CASE ("extract arg from cmake invocation args", "[spdx]")
-{
-    {
-        auto res = extract_arg_from_cmake_invocation_args("loremipsum", "lorem");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value", "lorem");
-        REQUIRE(res == "value");
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("loremipsum lorem value       ", "lorem");
-        REQUIRE(res == "value");
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem", "lorem");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem \"", "lorem");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem   ", "lorem");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem ipsum", "lorem");
-        REQUIRE(res == "ipsum");
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum", "lorem");
-        REQUIRE(res.empty());
-    }
-    {
-        auto res = extract_arg_from_cmake_invocation_args("lorem \"ipsum\"", "lorem");
-        REQUIRE(res == "ipsum");
-    }
-}
-
-TEST_CASE ("spdx run resource heuristics", "[spdx]")
-{
-    auto portfile_cmake = R"(
-vcpkg_download_distfile(ARCHIVE
-    URLS "https://vcpkg-download-distfile.dev/${VERSION}.tar.gz"
-         "https://vcpkg-download-distfile.dev/${VERSION}-other.tar.gz"
-    FILENAME "distfile-${VERSION}.tar.gz"
-    SHA512 distfile_test_1
-)
-vcpkg_from_github(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO from/github
-    REF v${VERSION}
-    SHA512 from_github_test_1
-    HEAD_REF devel
-)
-vcpkg_from_gitlab(
-    OUT_SOURCE_PATH SOURCE_PATH
-    GITLAB_URL https://from.gitlab.org
-    REPO from/gitlab
-    REF "${VERSION}"
-    SHA512 from_gitlab_test_1
-)
-vcpkg_from_sourceforge(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO sourceforge
-    REF sourceforge
-    FILENAME "sourceforge-${VERSION}.tar.gz"
-    SHA512 sourceforge_test_1
-    )
-vcpkg_from_bitbucket(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO from/bitbucket
-    REF "v${VERSION}"
-    SHA512 from_bitbucket_test_1
-    HEAD_REF master
-)
-vcpkg_download_distfile(ARCHIVE
-    URLS "https://vcpkg-download-distfile.dev/${VERSION}.tar.gz"
-         "https://vcpkg-download-distfile.dev/${VERSION}-other.tar.gz"
-    FILENAME "distfile-${VERSION}.tar.gz"
-    SHA512 distfile_test_2
-)
-vcpkg_from_github(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO from/github
-    REF v${VERSION}
-    SHA512 from_github_test_2
-    HEAD_REF devel
-)
-vcpkg_from_gitlab(
-    OUT_SOURCE_PATH SOURCE_PATH
-    GITLAB_URL https://from.gitlab.org
-    REPO from/gitlab
-    REF "${VERSION}"
-    SHA512 from_gitlab_test_2
-)
-vcpkg_from_sourceforge(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO sourceforge
-    REF sourceforge
-    FILENAME "sourceforge-${VERSION}.tar.gz"
-    SHA512 sourceforge_test_2
-    )
-vcpkg_from_bitbucket(
-    OUT_SOURCE_PATH SOURCE_PATH
-    REPO from/bitbucket
-    REF "v${VERSION}"
-    SHA512 from_bitbucket_test_2
-    HEAD_REF master
-)
-vcpkg_from_git(
-    OUT_SOURCE_PATH SOURCE_PATH
-    URL https://from-git-1.dev
-    REF "${VERSION}"
-    HEAD_REF main
-)
-vcpkg_from_git(
-    OUT_SOURCE_PATH SOURCE_PATH
-    URL https://from-git-2.dev
-    REF "${VERSION}"
-    HEAD_REF main
-)
-    )";
-    auto expected = Json::parse(R"json(
-{
-  "packages": [
-    {
-      "SPDXID": "SPDXRef-resource-0",
-      "name": "from/github",
-      "downloadLocation": "git+https://github.com/from/github@v3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_github_test_1"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-1",
-      "name": "from/github",
-      "downloadLocation": "git+https://github.com/from/github@v3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_github_test_2"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-2",
-      "name": "from/gitlab",
-      "downloadLocation": "git+https://from.gitlab.org/from/gitlab@3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_gitlab_test_1"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-3",
-      "name": "from/gitlab",
-      "downloadLocation": "git+https://from.gitlab.org/from/gitlab@3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_gitlab_test_2"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-4",
-      "name": "https://from-git-1.dev",
-      "downloadLocation": "git+https://from-git-1.dev@3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION"
-    },
-    {
-      "SPDXID": "SPDXRef-resource-5",
-      "name": "https://from-git-2.dev",
-      "downloadLocation": "git+https://from-git-2.dev@3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION"
-    },
-    {
-      "SPDXID": "SPDXRef-resource-6",
-      "name": "distfile-3.2.1.tar.gz",
-      "packageFileName": "distfile-3.2.1.tar.gz",
-      "downloadLocation": "https://vcpkg-download-distfile.dev/3.2.1.tar.gz",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "distfile_test_1"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-7",
-      "name": "distfile-3.2.1.tar.gz",
-      "packageFileName": "distfile-3.2.1.tar.gz",
-      "downloadLocation": "https://vcpkg-download-distfile.dev/3.2.1.tar.gz",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "distfile_test_2"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-8",
-      "name": "sourceforge-3.2.1.tar.gz",
-      "packageFileName": "sourceforge-3.2.1.tar.gz",
-      "downloadLocation": "https://sourceforge.net/projects/sourceforge/files/sourceforge/sourceforge-3.2.1.tar.gz",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "sourceforge_test_1"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-9",
-      "name": "sourceforge-3.2.1.tar.gz",
-      "packageFileName": "sourceforge-3.2.1.tar.gz",
-      "downloadLocation": "https://sourceforge.net/projects/sourceforge/files/sourceforge/sourceforge-3.2.1.tar.gz",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "sourceforge_test_2"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-10",
-      "name": "from/bitbucket",
-      "downloadLocation": "git+https://bitbucket.com/from/bitbucket@v3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_bitbucket_test_1"
-        }
-      ]
-    },
-    {
-      "SPDXID": "SPDXRef-resource-11",
-      "name": "from/bitbucket",
-      "downloadLocation": "git+https://bitbucket.com/from/bitbucket@v3.2.1",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "from_bitbucket_test_2"
-        }
-      ]
-    }
-  ]
-})json",
-                                "test")
-                        .value(VCPKG_LINE_INFO);
-
-    auto generated_spdx = run_resource_heuristics(portfile_cmake, "3.2.1");
-    auto spdx_str = Json::stringify(generated_spdx);
-    auto res = Json::parse(spdx_str, "test").value(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.value, res.value);
-}
-
 TEST_CASE ("spdx maximum serialization", "[spdx]")
 {
     PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
@@ -389,8 +38,8 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
 
     static constexpr StringLiteral expected_text = R"json(
 {
-  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
-  "spdxVersion": "SPDX-2.2",
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "documentNamespace": "https://test-document-namespace",
@@ -450,7 +99,14 @@ TEST_CASE ("spdx maximum serialization", "[spdx]")
       "copyrightText": "NOASSERTION",
       "summary": "summary",
       "description": "description",
-      "comment": "This is the port (recipe) consumed by vcpkg."
+      "comment": "This is the port (recipe) consumed by vcpkg.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:vcpkg/zlib@1.0?port_version=5&triplet=arm-uwp&vcs_url=git%3A%2F%2Fsome-vcs-url"
+        }
+      ]
     },
     {
       "name": "zlib:arm-uwp",
@@ -561,8 +217,8 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
 
     static constexpr StringLiteral expected_text = R"json(
 {
-  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
-  "spdxVersion": "SPDX-2.2",
+  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json",
+  "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "documentNamespace": "https://test-document-namespace-2",
@@ -604,7 +260,14 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
       "licenseConcluded": "NOASSERTION",
       "licenseDeclared": "NOASSERTION",
       "copyrightText": "NOASSERTION",
-      "comment": "This is the port (recipe) consumed by vcpkg."
+      "comment": "This is the port (recipe) consumed by vcpkg.",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:vcpkg/zlib@1.0?triplet=arm-uwp"
+        }
+      ]
     },
     {
       "name": "zlib:arm-uwp",
@@ -651,7 +314,38 @@ TEST_CASE ("spdx minimum serialization", "[spdx]")
     CHECK(!read_spdx_license_text(expected_text, "test").has_value());
 }
 
-TEST_CASE ("spdx concat resources", "[spdx]")
+static Optional<std::string> port_external_ref(StringView sbom, StringView reference_type)
+{
+    auto parsed = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
+    const auto external_refs = parsed.value.object(VCPKG_LINE_INFO)["packages"]
+                                   .array(VCPKG_LINE_INFO)[0]
+                                   .object(VCPKG_LINE_INFO)["externalRefs"]
+                                   .array(VCPKG_LINE_INFO);
+    for (const auto& external_ref_value : external_refs)
+    {
+        const auto external_ref = external_ref_value.object(VCPKG_LINE_INFO);
+        if (external_ref["referenceType"].string(VCPKG_LINE_INFO) == reference_type)
+        {
+            return external_ref["referenceLocator"].string(VCPKG_LINE_INFO).to_string();
+        }
+    }
+
+    return nullopt;
+}
+
+static std::string port_purl(StringView sbom) { return port_external_ref(sbom, "purl").value_or_exit(VCPKG_LINE_INFO); }
+
+static std::string port_download_location(StringView sbom)
+{
+    auto parsed = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
+    return parsed.value.object(VCPKG_LINE_INFO)["packages"]
+        .array(VCPKG_LINE_INFO)[0]
+        .object(VCPKG_LINE_INFO)["downloadLocation"]
+        .string(VCPKG_LINE_INFO)
+        .to_string();
+}
+
+TEST_CASE ("spdx purl omits empty version", "[spdx]")
 {
     PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
     PackageSpec spec{"zlib", Test::ARM_UWP};
@@ -659,95 +353,139 @@ TEST_CASE ("spdx concat resources", "[spdx]")
     auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
     auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
     cpgh.name = "zlib";
-    cpgh.version_scheme = VersionScheme::String;
+    cpgh.version = Version{"", 1};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib?triplet=arm-uwp");
+}
+
+TEST_CASE ("spdx purl percent-encodes the version", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0+r2", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0%2Br2?triplet=arm-uwp");
+}
+
+TEST_CASE ("spdx purl includes vcs_url for a builtin git-tree", "[spdx]")
+{
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Builtin;
+    scfl.spdx_location = "git+https://github.com/Microsoft/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    scfl.git_tree = "84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
     cpgh.version = Version{"1.0", 0};
 
     InstallPlanAction ipa(
         spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
     auto& abi = *(ipa.abi_info = AbiInfo{}).get();
-    abi.package_abi = "deadbeef";
+    abi.package_abi = "ABIHASH";
 
-    auto doc1 = Json::parse(R"json(
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    // The default microsoft/vcpkg registry is Builtin, so the locator has no repository_url.
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2FMicrosoft%2Fvcpkg%40"
+                             "84a143e4caf6b70db57f28d04c41df4a85c480fa");
+    CHECK(port_download_location(sbom) ==
+          "git+https://github.com/Microsoft/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa");
+    CHECK(port_external_ref(sbom, "gitoid").value_or_exit(VCPKG_LINE_INFO) ==
+          "gitoid:tree:sha1:84a143e4caf6b70db57f28d04c41df4a85c480fa");
+}
+
+TEST_CASE ("spdx purl includes repository_url and vcs_url for a non-default git registry", "[spdx]")
 {
-  "relationships": [ "r1", "r2", "r3" ],
-  "files": [ "f1", "f2", "f3" ]
-})json",
-                            "test")
-                    .value(VCPKG_LINE_INFO)
-                    .value.object(VCPKG_LINE_INFO);
-    auto doc2 = Json::parse(R"json(
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Git;
+    scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    scfl.spdx_repository_url = "https://github.com/azure-sdk/vcpkg";
+    scfl.git_tree = "84a143e4caf6b70db57f28d04c41df4a85c480fa";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
+
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    // repository_url is the registry URL with the git+ prefix and @git-tree stripped; vcs_url keeps both.
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?repository_url=https%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg"
+                             "&triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg%40"
+                             "84a143e4caf6b70db57f28d04c41df4a85c480fa");
+    CHECK(port_download_location(sbom) ==
+          "git+https://github.com/azure-sdk/vcpkg@84a143e4caf6b70db57f28d04c41df4a85c480fa");
+    CHECK(port_external_ref(sbom, "gitoid").value_or_exit(VCPKG_LINE_INFO) ==
+          "gitoid:tree:sha1:84a143e4caf6b70db57f28d04c41df4a85c480fa");
+}
+
+TEST_CASE ("spdx purl uses the dedicated repository_url field for git registries", "[spdx]")
 {
-  "packages": [ "p1", "p2", "p3" ],
-  "files": [ "f4", "f5" ]
-})json",
-                            "test")
-                    .value(VCPKG_LINE_INFO)
-                    .value.object(VCPKG_LINE_INFO);
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Git;
+    scfl.spdx_location = "git+https://github.com/azure-sdk/vcpkg";
+    scfl.spdx_repository_url = "https://example.com/registry";
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
 
-    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now+1", "ns", {std::move(doc1), std::move(doc2)});
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
 
-    auto expected = Json::parse(R"json(
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?repository_url=https%3A%2F%2Fexample.com%2Fregistry"
+                             "&triplet=arm-uwp"
+                             "&vcs_url=git%2Bhttps%3A%2F%2Fgithub.com%2Fazure-sdk%2Fvcpkg");
+}
+
+TEST_CASE ("spdx purl omits vcs_url and repository_url for overlay ports", "[spdx]")
 {
-  "$schema": "https://raw.githubusercontent.com/spdx/spdx-spec/v2.2.1/schemas/spdx-schema.json",
-  "spdxVersion": "SPDX-2.2",
-  "dataLicense": "CC0-1.0",
-  "SPDXID": "SPDXRef-DOCUMENT",
-  "documentNamespace": "ns",
-  "name": "zlib:arm-uwp@1.0 deadbeef",
-  "creationInfo": {
-    "creators": [
-      "Tool: vcpkg-2999-12-31-unknownhash"
-    ],
-    "created": "now+1"
-  },
-  "relationships": [
-    {
-      "spdxElementId": "SPDXRef-port",
-      "relationshipType": "GENERATES",
-      "relatedSpdxElement": "SPDXRef-binary"
-    },
-    "r1",
-    "r2",
-    "r3"
-  ],
-  "packages": [
-    {
-      "name": "zlib",
-      "SPDXID": "SPDXRef-port",
-      "versionInfo": "1.0",
-      "downloadLocation": "NOASSERTION",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "comment": "This is the port (recipe) consumed by vcpkg."
-    },
-    {
-      "name": "zlib:arm-uwp",
-      "SPDXID": "SPDXRef-binary",
-      "versionInfo": "deadbeef",
-      "downloadLocation": "NONE",
-      "licenseConcluded": "NOASSERTION",
-      "licenseDeclared": "NOASSERTION",
-      "copyrightText": "NOASSERTION",
-      "comment": "This is a binary package built by vcpkg."
-    },
-    "p1",
-    "p2",
-    "p3"
-  ],
-  "files": [
-    "f1",
-    "f2",
-    "f3",
-    "f4",
-    "f5"
-  ]
-})json",
-                                "test")
-                        .value(VCPKG_LINE_INFO);
+    PackagesDirAssigner packages_dir_assigner{"test_packages_root"};
+    PackageSpec spec{"zlib", Test::ARM_UWP};
+    SourceControlFileAndLocation scfl;
+    scfl.kind = PortSourceKind::Overlay;
+    auto& scf = *(scfl.source_control_file = std::make_unique<SourceControlFile>());
+    auto& cpgh = *(scf.core_paragraph = std::make_unique<SourceParagraph>());
+    cpgh.name = "zlib";
+    cpgh.version = Version{"1.0", 0};
 
-    auto doc = Json::parse(sbom, "test").value(VCPKG_LINE_INFO);
-    Test::check_json_eq(expected.value, doc.value);
+    InstallPlanAction ipa(
+        spec, scfl, packages_dir_assigner, RequestType::USER_REQUESTED, UseHeadVersion::No, Editable::No, {}, {}, {});
+    auto& abi = *(ipa.abi_info = AbiInfo{}).get();
+    abi.package_abi = "ABIHASH";
+
+    const auto sbom = create_spdx_sbom(ipa, {}, {}, {}, {}, "now", "https://test-document-namespace", {});
+    CHECK(port_purl(sbom) == "pkg:vcpkg/zlib@1.0?triplet=arm-uwp");
+    CHECK(!port_external_ref(sbom, "gitoid").has_value());
 }
 
 TEST_CASE ("spdx license parse edge cases", "[spdx]")

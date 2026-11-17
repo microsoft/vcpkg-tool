@@ -35,10 +35,42 @@ namespace
                                2L); // Follow redirects, change request method based on HTTP response code.
                                     // https://curl.se/libcurl/c/CURLOPT_FOLLOWLOCATION.html#CURLFOLLOWOBEYCODE
         vcpkg_curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request_headers.get());
+        vcpkg_curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
 
         // don't send headers to proxy CONNECT ; this intentionally fails on older versions of libcurl
         vcpkg_curl_easy_setopt(
             curl, static_cast<CURLoption>(229) /* CURLOPT_HEADEROPT */, (1L << 0) /* CURLHEADER_SEPARATE */);
+
+        static const auto maybe_ca_bundle = get_environment_variable_nonempty(EnvironmentVariableCurlCaBundle);
+        if (const auto ca_bundle = maybe_ca_bundle.get())
+        {
+            vcpkg_curl_easy_setopt(curl, CURLOPT_CAINFO, ca_bundle->c_str());
+        }
+
+        // Track SSL options as a bitmask to avoid clobbering flags if more are added in the future
+        long ssl_options = 0L;
+
+#if defined(CURLSSLOPT_REVOKE_BEST_EFFORT)
+        // Fix for schannel missing certificate revocation list errors with proxy server.
+        const auto maybe_revoke_best_effort =
+            get_environment_variable_nonempty(EnvironmentVariableVcpkgSSLRevokeBestEffort);
+        if (const auto revoke_best_effort = maybe_revoke_best_effort.get())
+        {
+            // Only applied if VCPKG_SSL_REVOKE_BEST_EFFORT is explicitly set to "1"
+            if (*revoke_best_effort == "1")
+            {
+                ssl_options |= CURLSSLOPT_REVOKE_BEST_EFFORT;
+            }
+        }
+#endif
+
+#if LIBCURL_VERSION_NUM >= 0x071900 // 7.25.0
+        // Apply accumulated SSL options if any were set
+        if (ssl_options != 0L)
+        {
+            vcpkg_curl_easy_setopt(curl, CURLOPT_SSL_OPTIONS, ssl_options);
+        }
+#endif
     }
 }
 
@@ -285,18 +317,18 @@ namespace vcpkg
     }
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
-                                                 const Optional<std::string>& maybe_github_server_url,
+                                                 const Optional<std::string>& maybe_github_api_url,
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot)
     {
         std::string uri;
-        if (auto github_server_url = maybe_github_server_url.get())
+        if (auto github_api_url = maybe_github_api_url.get())
         {
-            uri = *github_server_url;
-            uri.append("/api/v3");
+            uri = *github_api_url;
         }
-        else
+
+        if (uri.empty())
         {
             uri = "https://api.github.com";
         }
@@ -613,7 +645,11 @@ namespace vcpkg
             return DownloadPrognosis::OtherError;
         }
 
-        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+        if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+        {
+            return DownloadPrognosis::OtherError;
+        }
+
         return DownloadPrognosis::Success;
     }
 
@@ -800,7 +836,11 @@ namespace vcpkg
                             *out_sha512 = std::move(hash_result.hash);
                         }
 
-                        fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+                        if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+                        {
+                            return DownloadPrognosis::OtherError;
+                        }
+
                         return DownloadPrognosis::Success;
                     }
 
@@ -834,7 +874,11 @@ namespace vcpkg
 
         if (fs.exists(download_path_part_path, VCPKG_LINE_INFO))
         {
-            fs.rename(download_path_part_path, download_path, VCPKG_LINE_INFO);
+            if (!fs.rename_or_delete(context, download_path_part_path, download_path).has_value())
+            {
+                return DownloadPrognosis::OtherError;
+            }
+
             return DownloadPrognosis::Success;
         }
 

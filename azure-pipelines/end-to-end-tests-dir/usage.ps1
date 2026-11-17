@@ -70,3 +70,77 @@ foreach ($prohibitedUsage in $prohibitedUsages) {
         throw "The usage text contains the prohibited entry:`n$prohibitedUsage"
     }
 }
+
+Refresh-TestRoot
+
+$usageInfoArgs = $commonArgs + @("--overlay-ports=$PSScriptRoot/../e2e-ports", "--overlay-triplets=$PSScriptRoot/../overlay-triplets")
+
+Run-Vcpkg install @usageInfoArgs vcpkg-explicit-usage-generated vcpkg-hello-world-1
+Throw-IfFailed
+
+$out = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $out -Expected @"
+This is some usage text explicitly set by the port.
+
+This output should end up on the console.
+
+
+"@
+
+$generated = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $generated -Expected @"
+vcpkg-explicit-usage-generated provides CMake targets:
+
+  find_package(explicit-usage-generated CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE explicit-usage-generated::explicit-usage-generated)
+
+
+"@
+
+$generatedExplicit = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', 'vcpkg-explicit-usage-generated'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $generatedExplicit -Expected $generated
+
+$generatedHeuristic = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', 'vcpkg-hello-world-1'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $generatedHeuristic -Expected @"
+vcpkg-hello-world-1 provides CMake targets:
+
+  # this is heuristically generated, and may not be correct
+  find_package(hello-world-1 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE hello-world-1::hello-world-1)
+
+
+"@
+
+$generatedAffirm = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--generated', '--affirm', 'vcpkg-hello-world-1'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $generatedAffirm -Expected @"
+vcpkg-hello-world-1 provides CMake targets:
+
+  find_package(hello-world-1 CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE hello-world-1::hello-world-1)
+
+
+"@
+
+$defaultAffirm = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', '--affirm', 'vcpkg-hello-world-1'))
+Throw-IfFailed
+Throw-IfNonEqual -Actual $defaultAffirm -Expected $generatedAffirm
+
+$missing = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', 'not-a-real-port'))
+Throw-IfNotFailed
+Throw-IfNonEqual -Actual $missing -Expected "error: not-a-real-port:$Triplet is not installed.`n"
+
+Run-Vcpkg install @usageInfoArgs "vcpkg-empty-port:$HostE2ETriplet"
+Throw-IfFailed
+
+$wrongTriplet = Run-VcpkgAndCaptureStdErr -TestArgs ($usageInfoArgs + @('print-usage', "vcpkg-empty-port:$Triplet"))
+Throw-IfNotFailed
+Throw-IfNonEqual -Actual $wrongTriplet -Expected @"
+warning: vcpkg-empty-port:$Triplet is not installed, but vcpkg-empty-port is installed for $HostE2ETriplet. Did you mean vcpkg-empty-port:${HostE2ETriplet}?
+error: vcpkg-empty-port:$Triplet is not installed.
+
+"@

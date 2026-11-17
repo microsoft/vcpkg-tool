@@ -275,7 +275,23 @@ int __stdcall entry()
     // Setting delete on close before we do anything means the file will get deleted for us if we crash
     set_delete_on_close_flag(std_out, out_file, TRUE);
 
-    const HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
+    HINTERNET session = WinHttpOpen(L"tls12-download/1.0", access_type, proxy_setting, proxy_bypass_setting, 0);
+    if (!session)
+    {
+        last_error = GetLastError();
+        if (last_error != ERROR_INVALID_PARAMETER)
+        {
+            abort_api_failure_with_last_error(std_out, L"WinHttpOpen", last_error);
+        }
+
+        write_message(std_out,
+                      L"\r\nwarning: WinHttpOpen rejected HTTPS_PROXY/NO_PROXY (error 87). "
+                      L"Falling back to Windows/IE proxy settings, or a direct connection if no explicit proxy is "
+                      L"configured.\r\n");
+        access_type = WINHTTP_ACCESS_TYPE_NO_PROXY;
+        session = WinHttpOpen(L"tls12-download/1.0", access_type, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    }
+
     if (!session)
     {
         abort_api_failure(std_out, L"WinHttpOpen");

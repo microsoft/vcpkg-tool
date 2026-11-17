@@ -47,8 +47,14 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
 
     SECTION ("dot")
     {
-        pa.switches.insert("dot");
+        pa.switches.emplace("dot", true);
         expected = DependInfoFormat::Dot;
+    }
+
+    SECTION ("disabled graph switches")
+    {
+        pa.switches.emplace("dot", false);
+        pa.switches.emplace("dgml", false);
     }
 
     SECTION ("dot format")
@@ -59,14 +65,14 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
 
     SECTION ("dot and format")
     {
-        pa.switches.insert("dot");
+        pa.switches.emplace("dot", true);
         pa.settings.emplace("format", "dot");
         expected = DependInfoFormat::Dot;
     }
 
     SECTION ("dgml")
     {
-        pa.switches.insert("dgml");
+        pa.switches.emplace("dgml", true);
         expected = DependInfoFormat::Dgml;
     }
 
@@ -78,7 +84,7 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
 
     SECTION ("dgml and format")
     {
-        pa.switches.insert("dgml");
+        pa.switches.emplace("dgml", true);
         pa.settings.emplace("format", "dgml");
         expected = DependInfoFormat::Dgml;
     }
@@ -87,6 +93,12 @@ TEST_CASE ("determine_depend_info_mode formats", "[depend-info]")
     {
         pa.settings.emplace("format", "mermaid");
         expected = DependInfoFormat::Mermaid;
+    }
+
+    SECTION ("json")
+    {
+        pa.settings.emplace("format", "json");
+        expected = DependInfoFormat::Json;
     }
 
     auto result = determine_depend_info_mode(pa).value_or_exit(VCPKG_LINE_INFO);
@@ -173,7 +185,7 @@ TEST_CASE ("determine_depend_info_mode max_depth", "[depend-info]")
 TEST_CASE ("determine_depend_info_mode show_depth", "[depend-info]")
 {
     ParsedArguments pa;
-    pa.switches.emplace("show-depth");
+    pa.switches.emplace("show-depth", true);
     auto result = determine_depend_info_mode(pa).value_or_exit(VCPKG_LINE_INFO);
     REQUIRE(result.sort_mode == DependInfoSortMode::Topological);
     REQUIRE(result.format == DependInfoFormat::List);
@@ -190,7 +202,7 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
     {
         pa.settings.emplace("format", "frobinate");
         expected.append_raw("--format=frobinate is not a recognized format. --format must be one of `list`, `tree`, "
-                            "`mermaid`, `dot`, or `dgml`.");
+                            "`mermaid`, `dot`, `dgml`, or `json`.");
     }
 
     SECTION ("bad sort")
@@ -206,12 +218,12 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
 
         SECTION ("dot")
         {
-            pa.switches.emplace("dot");
+            pa.switches.emplace("dot", true);
         }
 
         SECTION ("dgml")
         {
-            pa.switches.emplace("dot");
+            pa.switches.emplace("dot", true);
         }
     }
 
@@ -224,7 +236,7 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
 
     SECTION ("show depth with graphs")
     {
-        pa.switches.emplace("show-depth");
+        pa.switches.emplace("show-depth", true);
         expected.append_raw("--show-depth can only be used with `list` and `tree` formats.");
 
         SECTION ("dot")
@@ -240,6 +252,11 @@ TEST_CASE ("determine_depend_info_mode errors", "[depend-info]")
         SECTION ("mermaid")
         {
             pa.settings.emplace("format", "mermaid");
+        }
+
+        SECTION ("json")
+        {
+            pa.settings.emplace("format", "json");
         }
     }
 

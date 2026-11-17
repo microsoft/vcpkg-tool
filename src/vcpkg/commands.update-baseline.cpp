@@ -3,9 +3,15 @@
 #include <vcpkg/base/messages.h>
 #include <vcpkg/base/util.h>
 
+#include <vcpkg/cmakevars.h>
+#include <vcpkg/commands.install.h>
 #include <vcpkg/commands.update-baseline.h>
 #include <vcpkg/configuration.h>
+#include <vcpkg/dependencies.h>
+#include <vcpkg/installeddatabase.h>
+#include <vcpkg/portfileprovider.h>
 #include <vcpkg/sourceparagraph.h>
+#include <vcpkg/triplet.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 #include <vcpkg/vcpkgpaths.h>
 
@@ -13,6 +19,247 @@ using namespace vcpkg;
 
 namespace
 {
+    struct ProtoManifestVersionSnapshotEntry
+    {
+        std::string port_name;
+        Triplet triplet;
+        Version version;
+        RequestType request_type;
+
+        ProtoManifestVersionSnapshotEntry(std::string port_name,
+                                          Triplet triplet,
+                                          Version version,
+                                          RequestType request_type)
+            : port_name(std::move(port_name)), triplet(triplet), version(std::move(version)), request_type(request_type)
+        {
+        }
+    };
+
+    template<class Iterator>
+    bool exactly_one_version(Iterator first, Iterator last)
+    {
+        if (first == last)
+        {
+            // No versions available, so not exactly one version.
+            return false;
+        }
+
+        auto next = first;
+        while (++next != last)
+        {
+            if (next->version != first->version)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    ManifestVersionSnapshot create_manifest_version_snapshot(const VcpkgPaths& paths,
+                                                             const ManifestAndPath& manifest,
+                                                             const ConfigurationAndSource& configuration,
+                                                             const ParsedArguments& options,
+                                                             CMakeVars::CMakeVarProvider& var_provider,
+                                                             Triplet default_triplet,
+                                                             Triplet host_triplet)
+    {
+        auto registry_set = configuration.instantiate_registry_set(paths);
+        auto manifest_scf = parse_manifest_scf_or_exit(manifest, paths, registry_set->is_default_builtin_registry());
+        const auto& manifest_core = *manifest_scf->core_paragraph;
+        PackageSpec toplevel{manifest_core.name, default_triplet};
+
+        const auto features = get_manifest_features(options, manifest_core, var_provider, toplevel, host_triplet);
+        const auto dependencies = get_manifest_dependencies(*manifest_scf, features);
+
+        const bool add_builtin_ports_directory_as_overlay =
+            registry_set->is_default_builtin_registry() && !paths.use_git_default_registry();
+        auto extended_overlay_port_directories = paths.overlay_ports;
+        if (add_builtin_ports_directory_as_overlay)
+        {
+            extended_overlay_port_directories.builtin_overlay_port_dir.emplace(paths.builtin_ports_directory());
+        }
+
+        auto verprovider = make_versioned_portfile_provider(*registry_set);
+        auto baseprovider = make_baseline_provider(*registry_set);
+        auto oprovider = make_manifest_provider(
+            paths.get_filesystem(), extended_overlay_port_directories, manifest.path, std::move(manifest_scf));
+        PackagesDirAssigner packages_dir_assigner{paths.packages()};
+        ActionPlan install_plan =
+            create_versioned_install_plan(
+                *verprovider,
+                *baseprovider,
+                *oprovider,
+                var_provider,
+                dependencies,
+                manifest_core.overrides,
+                toplevel,
+                packages_dir_assigner,
+                {nullptr, host_triplet, UnsupportedPortAction::Error, UseHeadVersion::No, Editable::No})
+                .value_or_exit(VCPKG_LINE_INFO);
+
+        Util::erase_remove_if(install_plan.install_actions,
+                              [&toplevel](auto&& action) { return action.spec == toplevel; });
+
+        std::vector<ProtoManifestVersionSnapshotEntry> proto_versions;
+        for (const auto& action : install_plan.install_actions)
+        {
+            proto_versions.emplace_back(action.spec.name(), action.spec.triplet(), action.version, action.request_type);
+        }
+
+        std::sort(proto_versions.begin(), proto_versions.end(), [](const auto& lhs, const auto& rhs) {
+            if (lhs.port_name != rhs.port_name) return lhs.port_name < rhs.port_name;
+            return lhs.triplet < rhs.triplet;
+        });
+
+        ManifestVersionSnapshot versions;
+        auto first = proto_versions.begin();
+        while (first != proto_versions.end())
+        {
+            // form [first, last) entries for the same port name
+            auto last = first;
+            do
+            {
+                ++last;
+            } while (last != proto_versions.end() && last->port_name == first->port_name);
+
+            RequestType request_type = RequestType::UNKNOWN;
+            for (auto it = first; it != last; ++it)
+            {
+                if (it->request_type == RequestType::USER_REQUESTED)
+                {
+                    request_type = RequestType::USER_REQUESTED;
+                    break;
+                }
+                if (it->request_type == RequestType::AUTO_SELECTED)
+                {
+                    request_type = RequestType::AUTO_SELECTED;
+                }
+            }
+
+            std::vector<ManifestVersionSnapshotVersionEntry> port_versions;
+            for (auto it = first; it != last; ++it)
+            {
+                port_versions.emplace_back(it->triplet, it->version);
+            }
+
+            versions.emplace_back(first->port_name, std::move(port_versions), request_type);
+            first = last;
+        }
+
+        return versions;
+    }
+
+    void print_version_snapshot_diff_lines(const msg::MessageT<>& header, std::vector<std::string>&& lines)
+    {
+        if (lines.empty())
+        {
+            return;
+        }
+
+        Util::sort_unique_erase(lines);
+        msg::print(msg::format(header).append_raw(":\n"));
+        for (const auto& line : lines)
+        {
+            msg::write_unlocalized_text(Color::none, line);
+            msg::write_unlocalized_text(Color::none, "\n");
+        }
+
+        msg::write_unlocalized_text(Color::none, "\n");
+    }
+
+    void add_whole_port_version_snapshot_diff(PrintableVersionDiff& diff,
+                                              const ManifestVersionSnapshotEntry& port,
+                                              const msg::MessageT<msg::package_name_t, msg::version_t>& message)
+    {
+        if (exactly_one_version(port.versions.begin(), port.versions.end()))
+        {
+            diff.add_version_snapshot_diff_line(
+                port.request_type,
+                msg::format(message, msg::package_name = port.port_name, msg::version = port.versions.front().version)
+                    .extract_data());
+            return;
+        }
+
+        for (const auto& entry : port.versions)
+        {
+            diff.add_version_snapshot_diff_line(
+                port.request_type,
+                msg::format(message,
+                            msg::package_name = fmt::format("{}:{}", port.port_name, entry.triplet.canonical_name()),
+                            msg::version = entry.version)
+                    .extract_data());
+        }
+    }
+
+    void add_port_version_snapshot_diff(PrintableVersionDiff& diff,
+                                        const ManifestVersionSnapshotEntry& previous,
+                                        const ManifestVersionSnapshotEntry& current)
+    {
+        // If each plan selects only one version for this port, the triplet membership is immaterial to the report.
+        if (exactly_one_version(previous.versions.begin(), previous.versions.end()) &&
+            exactly_one_version(current.versions.begin(), current.versions.end()))
+        {
+            if (previous.versions.front().version != current.versions.front().version)
+            {
+                diff.add_version_snapshot_diff_line(current.request_type,
+                                                    fmt::format("{}: {} -> {}",
+                                                                current.port_name,
+                                                                previous.versions.front().version,
+                                                                current.versions.front().version));
+            }
+
+            return;
+        }
+
+        auto old_version = previous.versions.begin();
+        auto new_version = current.versions.begin();
+        const auto old_end = previous.versions.end();
+        const auto new_end = current.versions.end();
+        // Both snapshots use the same triplet order; match only legs actually present.
+        while (old_version != old_end || new_version != new_end)
+        {
+            if (new_version == new_end || (old_version != old_end && old_version->triplet != new_version->triplet &&
+                                           old_version->triplet < new_version->triplet))
+            {
+                diff.add_version_snapshot_diff_line(
+                    previous.request_type,
+                    msg::format(msgUpdateBaselineRemovedDependencyVersion,
+                                msg::package_name =
+                                    fmt::format("{}:{}", current.port_name, old_version->triplet.canonical_name()),
+                                msg::version = old_version->version)
+                        .extract_data());
+                ++old_version;
+            }
+            else if (old_version == old_end || old_version->triplet != new_version->triplet)
+            {
+                diff.add_version_snapshot_diff_line(
+                    current.request_type,
+                    msg::format(msgUpdateBaselineNewDependencyVersion,
+                                msg::package_name =
+                                    fmt::format("{}:{}", current.port_name, new_version->triplet.canonical_name()),
+                                msg::version = new_version->version)
+                        .extract_data());
+                ++new_version;
+            }
+            else
+            {
+                if (old_version->version != new_version->version)
+                {
+                    diff.add_version_snapshot_diff_line(current.request_type,
+                                                        fmt::format("{}:{}: {} -> {}",
+                                                                    current.port_name,
+                                                                    new_version->triplet.canonical_name(),
+                                                                    old_version->version,
+                                                                    new_version->version));
+                }
+
+                ++old_version;
+                ++new_version;
+            }
+        }
+    }
+
     void update_baseline_in_config(const VcpkgPaths& paths, RegistryConfig& reg)
     {
         auto url = reg.pretty_location();
@@ -47,12 +294,75 @@ namespace
     constexpr CommandSwitch switches[] = {
         {SwitchAddInitialBaseline, msgCmdUpdateBaselineOptInitial},
         {SwitchDryRun, msgCmdUpdateBaselineOptDryRun},
+        {SwitchQuiet, msgCmdUpdateBaselineOptQuiet},
     };
 
 } // unnamed namespace
 
 namespace vcpkg
 {
+    void PrintableVersionDiff::add_version_snapshot_diff_line(RequestType request_type, std::string&& line)
+    {
+        if (request_type == RequestType::USER_REQUESTED)
+        {
+            direct_dependencies.push_back(std::move(line));
+            return;
+        }
+
+        transitive_dependencies.push_back(std::move(line));
+    }
+
+    void PrintableVersionDiff::print()
+    {
+        const bool has_changes = !direct_dependencies.empty() || !transitive_dependencies.empty();
+        if (has_changes)
+        {
+            msg::println(msgUpdateBaselineVersionUpdates);
+            msg::write_unlocalized_text(Color::none, "\n");
+        }
+
+        print_version_snapshot_diff_lines(msgDirectDependencies, std::move(direct_dependencies));
+        print_version_snapshot_diff_lines(msgTransitiveDependencies, std::move(transitive_dependencies));
+        if (!has_changes)
+        {
+            msg::println(msgPortsNoDiff);
+        }
+    }
+
+    PrintableVersionDiff calculate_version_snapshot_diff(const ManifestVersionSnapshot& previous,
+                                                         const ManifestVersionSnapshot& current)
+    {
+        PrintableVersionDiff diff;
+
+        auto old_port = previous.begin();
+        auto new_port = current.begin();
+        while (old_port != previous.end() || new_port != current.end())
+        {
+            if (new_port == current.end() || (old_port != previous.end() && old_port->port_name < new_port->port_name))
+            {
+                // whole port is in the old plan but removed in this one
+                add_whole_port_version_snapshot_diff(diff, *old_port, msgUpdateBaselineRemovedDependencyVersion);
+
+                ++old_port;
+            }
+            else if (old_port == previous.end() || new_port->port_name < old_port->port_name)
+            {
+                // whole port is new in this plan
+                add_whole_port_version_snapshot_diff(diff, *new_port, msgUpdateBaselineNewDependencyVersion);
+
+                ++new_port;
+            }
+            else
+            {
+                add_port_version_snapshot_diff(diff, *old_port, *new_port);
+                ++old_port;
+                ++new_port;
+            }
+        }
+
+        return diff;
+    }
+
     constexpr CommandMetadata CommandUpdateBaselineMetadata{
         "x-update-baseline",
         msgCmdUpdateBaselineSynopsis,
@@ -65,18 +375,24 @@ namespace vcpkg
         nullptr,
     };
 
-    void command_update_baseline_and_exit(const VcpkgCmdArguments& args, const VcpkgPaths& paths)
+    void command_update_baseline_and_exit(const VcpkgCmdArguments& args,
+                                          const VcpkgPaths& paths,
+                                          Triplet default_triplet,
+                                          Triplet host_triplet)
     {
         auto options = args.parse_arguments(CommandUpdateBaselineMetadata);
 
-        const bool add_builtin_baseline = Util::Sets::contains(options.switches, SwitchAddInitialBaseline);
-        const bool dry_run = Util::Sets::contains(options.switches, SwitchDryRun);
+        const bool add_builtin_baseline = options.switch_on(SwitchAddInitialBaseline);
+        const bool dry_run = options.switch_on(SwitchDryRun);
+        const bool quiet = options.switch_on(SwitchQuiet);
 
         auto configuration = paths.get_configuration();
 
         const auto* manifest_ptr = paths.get_manifest();
         const bool has_manifest = manifest_ptr != nullptr;
         auto manifest = has_manifest ? *manifest_ptr : ManifestAndPath{};
+        const auto old_configuration = configuration;
+        const auto old_manifest = manifest;
 
         if (configuration.source == ConfigurationSource::None && !has_manifest)
         {
@@ -152,6 +468,23 @@ namespace vcpkg
         if (!dry_run && has_manifest)
         {
             paths.get_filesystem().write_contents(manifest.path, Json::stringify(manifest.manifest), VCPKG_LINE_INFO);
+        }
+
+        if (has_manifest && !quiet)
+        {
+            InstallAndBuildDatabaseLock installed_lock{paths.get_filesystem(),
+                                                       paths.installed(),
+                                                       paths.buildtrees(),
+                                                       paths.packages(),
+                                                       args.wait_for_lock,
+                                                       args.ignore_lock_failures};
+            auto var_provider_storage = CMakeVars::make_triplet_cmake_var_provider(paths, installed_lock);
+            auto& var_provider = *var_provider_storage;
+            const auto previous_snapshot = create_manifest_version_snapshot(
+                paths, old_manifest, old_configuration, options, var_provider, default_triplet, host_triplet);
+            const auto current_snapshot = create_manifest_version_snapshot(
+                paths, manifest, configuration, options, var_provider, default_triplet, host_triplet);
+            calculate_version_snapshot_diff(previous_snapshot, current_snapshot).print();
         }
 
         Checks::exit_success(VCPKG_LINE_INFO);

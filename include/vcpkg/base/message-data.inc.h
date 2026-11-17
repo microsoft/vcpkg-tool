@@ -242,10 +242,6 @@ DECLARE_MESSAGE(AToolDataArray, (), "", "an array of tool metadata")
 DECLARE_MESSAGE(AToolDataFile, (), "", "a tool data file")
 DECLARE_MESSAGE(AToolDataOS, (), "", "a tool data operating system")
 DECLARE_MESSAGE(AToolDataVersion, (), "", "a tool data version")
-DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
-                (msg::version),
-                "",
-                "document schema version {version} is not supported by this version of vcpkg")
 DECLARE_MESSAGE(AttemptingToSetBuiltInBaseline,
                 (),
                 "",
@@ -299,6 +295,15 @@ DECLARE_MESSAGE(BaselineOnlyPlatformExpressionOrTriplet,
                 (),
                 "",
                 "You can not specify a platform expression and a triplet")
+DECLARE_MESSAGE(BinaryCacheCompressionLevelHelp,
+                (),
+                "",
+                "Binary cache ZIP compression level (0-9). Overrides VCPKG_BINARY_CACHE_COMPRESSION_LEVEL; "
+                "unset uses the archive tool default.")
+DECLARE_MESSAGE(BinaryCacheSubmissionFailed,
+                (),
+                "This is a standardized prefix prepended to binary cache upload failure diagnostics.",
+                "binary cache submission failed")
 DECLARE_MESSAGE(BinarySourcesArg,
                 (),
                 "'vcpkg help binarycaching' is a command line and should not be localized",
@@ -531,10 +536,15 @@ DECLARE_MESSAGE(CmdAddVersionExample1,
                 "This is a command line, only the <>s part should be localized",
                 "vcpkg x-add-version <port name>")
 DECLARE_MESSAGE(CmdAddVersionOptAll, (), "", "Processes versions for all ports")
-DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites git-tree of an existing version")
+DECLARE_MESSAGE(CmdAddVersionOptOverwriteVersion, (), "", "Overwrites an existing version entry")
 DECLARE_MESSAGE(CmdAddVersionOptSkipFormatChk, (), "", "Skips the formatting check of vcpkg.json files")
 DECLARE_MESSAGE(CmdAddVersionOptSkipVersionFormatChk, (), "", "Skips the version format check")
-DECLARE_MESSAGE(CmdAddVersionOptVerbose, (), "", "Prints success messages rather than only errors")
+DECLARE_MESSAGE(
+    CmdAddVersionOptVerbose,
+    (),
+    "'--all', '--verbose', and '--no-verbose' are switches and should not be localized.",
+    "Prints success messages rather than only errors. Defaults to off with --all and on otherwise; override "
+    "with --verbose or --no-verbose")
 DECLARE_MESSAGE(CmdBootstrapStandaloneSynopsis, (), "", "Bootstraps a vcpkg root from only a vcpkg binary")
 DECLARE_MESSAGE(CmdBuildExternalExample1,
                 (),
@@ -593,12 +603,12 @@ DECLARE_MESSAGE(CmdDependInfoFormatConflict,
 DECLARE_MESSAGE(CmdDependInfoFormatHelp,
                 (),
                 "The alternatives in ``s must not be localized.",
-                "Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, or `dgml`")
-DECLARE_MESSAGE(
-    CmdDependInfoFormatInvalid,
-    (msg::value),
-    "The alternatives in ``s must not be localized. {value} is what the user specified.",
-    "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, `dot`, or `dgml`.")
+                "Chooses output format, one of `list`, `tree`, `mermaid`, `dot`, `dgml`, or `json`")
+DECLARE_MESSAGE(CmdDependInfoFormatInvalid,
+                (msg::value),
+                "The alternatives in ``s must not be localized. {value} is what the user specified.",
+                "--format={value} is not a recognized format. --format must be one of `list`, `tree`, `mermaid`, "
+                "`dot`, `dgml`, or `json`.")
 DECLARE_MESSAGE(CmdDependInfoShowDepthFormatMismatch,
                 (),
                 "",
@@ -750,6 +760,12 @@ DECLARE_MESSAGE(CmdPortsdiffExample2,
                 "This is a command line, only the parts in <>s should be localized",
                 "vcpkg portsdiff <from> <to>")
 DECLARE_MESSAGE(CmdPortsdiffSynopsis, (), "", "Diffs changes in port versions between commits")
+DECLARE_MESSAGE(CmdPrintUsageSynopsis, (), "", "Prints usage information for a single installed port")
+DECLARE_MESSAGE(CmdPrintUsageSwitchAffirm,
+                (),
+                "",
+                "Affirms that generated usage is correct and removes 'may not be correct' warnings from the output")
+DECLARE_MESSAGE(CmdPrintUsageSwitchGenerated, (), "", "Print heuristic usage even if a usage file is installed")
 DECLARE_MESSAGE(CmdRemoveExample1,
                 (),
                 "This is a command line, only the part <package name> should be localized.",
@@ -785,6 +801,12 @@ DECLARE_MESSAGE(CmdSetInstalledSynopsis,
                 "Installs, upgrades, or removes packages such that that installed matches exactly those supplied")
 DECLARE_MESSAGE(CmdTestFeaturesAll, (), "", "Runs tests for all ports")
 DECLARE_MESSAGE(
+    CmdTestFeaturesEnforceCascades,
+    (),
+    "'--all', '--enforce-cascades', and '--no-enforce-cascades' are switches and should not be localized.",
+    "Reports cascades without an explicit baseline expectation as errors. Defaults to on with --all and off "
+    "otherwise; override with --enforce-cascades or --no-enforce-cascades")
+DECLARE_MESSAGE(
     CmdTestCIFeatureBaseline,
     (),
     "",
@@ -799,6 +821,7 @@ DECLARE_MESSAGE(CmdUpdateBaselineOptInitial,
                 (),
                 "",
                 "Adds a `builtin-baseline` to a vcpkg.json that doesn't already have it")
+DECLARE_MESSAGE(CmdUpdateBaselineOptQuiet, (), "", "Does not print the port version diff after updating baselines")
 DECLARE_MESSAGE(CmdUpdateBaselineSynopsis,
                 (),
                 "",
@@ -816,6 +839,10 @@ DECLARE_MESSAGE(
     (),
     "",
     "Copies a binary's dependencies from the installed tree to where that binary's location for app-local deployment")
+DECLARE_MESSAGE(CmdZApplocalOptVerbose,
+                (),
+                "",
+                "Prints which dependencies are being processed and which are already up to date")
 DECLARE_MESSAGE(CmdZExtractExample1,
                 (),
                 "This is a command line, only the parts in <>s should be localized",
@@ -962,6 +989,7 @@ DECLARE_MESSAGE(DependencyWillFail,
                 "'cascade' is a keyword and should not be translated",
                 "Dependency {feature_spec} will not build => cascade")
 DECLARE_MESSAGE(DetectCompilerHash, (msg::triplet), "", "Detecting compiler hash for triplet {triplet}...")
+DECLARE_MESSAGE(DirectDependencies, (), "", "Direct dependencies")
 DECLARE_MESSAGE(DirectoriesRelativeToThePackageDirectoryHere,
                 (),
                 "",
@@ -1847,6 +1875,12 @@ DECLARE_MESSAGE(InvalidArgumentRequiresValidToken,
                 "",
                 "invalid argument: binary config '{binary_source}' requires a SAS token without a "
                 "preceeding '?' as the second argument")
+DECLARE_MESSAGE(
+    InvalidBinaryCacheCompressionLevel,
+    (msg::value),
+    "{value} is the supplied compression level.",
+    "Invalid binary cache compression level '{value}'. "
+    "--binary-cache-compression-level and VCPKG_BINARY_CACHE_COMPRESSION_LEVEL require a single digit (0-9).")
 DECLARE_MESSAGE(InvalidBuildInfo, (msg::error_msg), "", "Invalid BUILD_INFO file for package: {error_msg}")
 DECLARE_MESSAGE(
     InvalidBuiltInBaseline,
@@ -1890,6 +1924,10 @@ DECLARE_MESSAGE(InvalidFormatString,
                 (msg::actual),
                 "{actual} is the provided format string",
                 "invalid format string: {actual}")
+DECLARE_MESSAGE(InvalidGitObjectSha,
+                (msg::sha),
+                "",
+                "invalid git object SHA: {sha}. Expected a 40-character lowercase hexadecimal string.")
 DECLARE_MESSAGE(InvalidHexDigit, (), "", "Invalid hex digit in unicode escape")
 DECLARE_MESSAGE(InvalidIntegerConst, (msg::count), "", "Invalid integer constant: {count}")
 DECLARE_MESSAGE(InvalidLibraryMissingLinkerMembers, (), "", "Library was invalid: could not find a linker member.")
@@ -2223,6 +2261,7 @@ DECLARE_MESSAGE(PackageLicenseSpdxThisInstall,
                 (),
                 "",
                 "Packages installed in this vcpkg installation declare the following licenses:")
+DECLARE_MESSAGE(PackageNotInstalled, (msg::spec), "", "{spec} is not installed.")
 DECLARE_MESSAGE(PackageLicenseUnknown,
                 (),
                 "",
@@ -2568,7 +2607,7 @@ DECLARE_MESSAGE(PortMissingManifest2,
                 "",
                 "{package_name} port manifest missing (no vcpkg.json or CONTROL file)")
 DECLARE_MESSAGE(PortNotSupported, (msg::package_name, msg::triplet), "", "{package_name} is not supported on {triplet}")
-DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports between the two commits.")
+DECLARE_MESSAGE(PortsNoDiff, (), "", "There were no changes in the ports.")
 DECLARE_MESSAGE(PortsRemoved, (msg::count), "", "The following {count} ports were removed:")
 DECLARE_MESSAGE(PortsUpdated, (msg::count), "", "The following {count} ports were updated:")
 DECLARE_MESSAGE(PortSupportsField, (msg::supports_expression), "", "(supports: \"{supports_expression}\")")
@@ -2581,6 +2620,7 @@ DECLARE_MESSAGE(PortVersionControlMustBeANonNegativeInteger, (), "", "\"Port-Ver
 DECLARE_MESSAGE(PrebuiltPackages, (), "", "There are packages that have not been built. To build them run:")
 DECLARE_MESSAGE(PrecheckBinaryCache, (), "", "Checking the binary cache...")
 DECLARE_MESSAGE(PreviousDeclarationWasHere, (), "", "previous declaration was here")
+DECLARE_MESSAGE(PrivacyNotice, (msg::url), "", "Read the Microsoft Privacy Statement at {url}")
 DECLARE_MESSAGE(ProgramReturnedNonzeroExitCode,
                 (msg::tool_name, msg::exit_code),
                 "The program's console output is appended after this.",
@@ -2741,18 +2781,30 @@ DECLARE_MESSAGE(SystemApiErrorMessage,
                 (msg::system_api, msg::exit_code, msg::error_msg),
                 "",
                 "calling {system_api} failed with {exit_code} ({error_msg})")
+DECLARE_MESSAGE(TelemetryNotice,
+                (msg::url),
+                "",
+                "vcpkg collects usage data in order to help us improve your experience.\n"
+                "The data collected by Microsoft is anonymous.\n"
+                "You can opt-out of telemetry by re-running the bootstrap-vcpkg script with -disableMetrics, "
+                "passing --disable-metrics to vcpkg on the command line, "
+                "or by setting the VCPKG_DISABLE_METRICS environment variable.\n\n"
+                "Read more about vcpkg telemetry at {url}")
+DECLARE_MESSAGE(ToolDataEntryVersionMissing,
+                (),
+                "",
+                "tool metadata must contain at least one of 'version' or 'min-version'")
+DECLARE_MESSAGE(ToolDataFileSchemaVersionNotSupported,
+                (msg::version),
+                "",
+                "document schema version {version} is not supported by this version of vcpkg")
+DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(
     ToolHashMismatch,
     (msg::tool_name, msg::expected, msg::actual),
     "{expected} and {actual} are SHA512 hashes in hex format.",
     "{tool_name} appears to be already downloaded, but has an incorrect hash. Expected {expected} but was {actual}")
-DECLARE_MESSAGE(ToolFetchFailed, (msg::tool_name), "", "Could not fetch {tool_name}.")
 DECLARE_MESSAGE(ToolInWin10, (), "", "This utility is bundled with Windows 10 or later.")
-DECLARE_MESSAGE(ToolOfVersionXNotFound,
-                (msg::tool_name, msg::version),
-                "",
-                "A suitable version of {tool_name} was not found (required v{version}) and unable to automatically "
-                "download a portable one. Please install a newer version of {tool_name}")
 DECLARE_MESSAGE(ToRemovePackages,
                 (msg::command_name),
                 "",
@@ -2768,6 +2820,7 @@ DECLARE_MESSAGE(ToUpdatePackages,
                 "To update these packages and all dependencies, run\n{command_name} upgrade'")
 DECLARE_MESSAGE(TrailingCommaInArray, (), "", "Trailing comma in array")
 DECLARE_MESSAGE(TrailingCommaInObj, (), "", "Trailing comma in an object")
+DECLARE_MESSAGE(TransitiveDependencies, (), "", "Transitive dependencies")
 DECLARE_MESSAGE(TripletLabel, (), "", "Triplet:")
 DECLARE_MESSAGE(TripletFileNotFound, (msg::triplet), "", "Triplet file {triplet}.cmake not found")
 DECLARE_MESSAGE(TwoFeatureFlagsSpecified,
@@ -3015,15 +3068,26 @@ DECLARE_MESSAGE(UpdateBaselineNoExistingBuiltinBaseline,
                 "",
                 "the manifest file currently does not contain a `builtin-baseline` field; in order to "
                 "add one, pass the --{option} switch.")
+DECLARE_MESSAGE(UpdateBaselineNewDependencyVersion,
+                (msg::package_name, msg::version),
+                "example of {package_name} is zlib. example of {version} is 1.3.2#1",
+                "{package_name}: new: {version}")
 DECLARE_MESSAGE(UpdateBaselineNoUpdate,
                 (msg::url, msg::value),
                 "example of {value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                "registry '{url}' not updated: '{value}'")
-DECLARE_MESSAGE(UpdateBaselineRemoteGitError, (msg::url), "", "git failed to fetch remote repository '{url}'")
+                "registry '{url}' not updated: {value}")
+DECLARE_MESSAGE(UpdateBaselineRemovedDependencyVersion,
+                (msg::package_name, msg::version),
+                "example of {package_name} is zlib. example of {version} is 1.3.2#1",
+                "{package_name}: removed: {version}")
+DECLARE_MESSAGE(UpdateBaselineVersionUpdates,
+                (),
+                "",
+                "Updating baselines has resulted in the following version updates:")
 DECLARE_MESSAGE(UpdateBaselineUpdatedBaseline,
                 (msg::url, msg::old_value, msg::new_value),
                 "example of {old_value}, {new_value} is '5507daa796359fe8d45418e694328e878ac2b82f'",
-                "updated registry '{url}': baseline '{old_value}' -> '{new_value}'")
+                "updated registry '{url}': {old_value} -> {new_value}")
 DECLARE_MESSAGE(
     UpgradeInManifest,
     (),

@@ -1,0 +1,14 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Platform>x64</Platform>
+    <Configuration>Debug</Configuration>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgAutoBootstrap>false</VcpkgAutoBootstrap>
+    <VcpkgRoot>$(TestRoot)</VcpkgRoot>
+    <VcpkgManifestRoot>$(TestRoot)</VcpkgManifestRoot>
+    <VcpkgHostTriplet Condition="$(TestRoot.Contains('special-characters'))">host%3Bwith%25percent%27apostrophe%28%29%24%40</VcpkgHostTriplet>
+    <TLogLocation>$(TestRoot)</TLogLocation>
+    <VcpkgAdditionalInstallOptions>--overlay-ports=fixture;--binarysource=clear</VcpkgAdditionalInstallOptions>
+  </PropertyGroup>
+  <Import Project="$(IntegrationRoot)vcpkg.targets" />
+</Project>

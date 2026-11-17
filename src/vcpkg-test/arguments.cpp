@@ -1,6 +1,7 @@
 #include <vcpkg-test/util.h>
 
 #include <vcpkg/base/contractual-constants.h>
+#include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/strings.h>
 
 #include <vcpkg/vcpkgcmdarguments.h>
@@ -133,9 +134,49 @@ TEST_CASE ("VcpkgCmdArguments from argument sequence with valued options", "[arg
 
         REQUIRE(opts.settings["b"] == "c");
         REQUIRE(opts.settings.find("d") == opts.settings.end());
-        REQUIRE(opts.switches.find("a") != opts.switches.end());
+        REQUIRE(opts.switch_on("a"));
         REQUIRE(opts.settings.find("c") == opts.settings.end());
         REQUIRE(opts.command_arguments.size() == 0);
+    }
+}
+
+TEST_CASE ("Command switches preserve explicit false values", "[arguments]")
+{
+    CommandSwitch switches[] = {{"enabled", {}}, {"documented", "A documented switch"}};
+    CommandMetadata metadata = {
+        "command", {}, {}, Undocumented, AutocompletePriority::Public, 0, 0, {switches, {}, {}}, nullptr};
+    std::vector<std::string> arguments;
+    bool expected_value = false;
+    SECTION ("Unspecified")
+    {
+    }
+    SECTION ("Enabled")
+    {
+        arguments = {"--enabled", "--documented"};
+        expected_value = true;
+    }
+    SECTION ("Disabled")
+    {
+        arguments = {"--no-enabled", "--no-documented"};
+    }
+
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(arguments.data(), arguments.data() + arguments.size());
+    auto parsed = args.parse_arguments(metadata);
+    for (auto&& switch_ : switches)
+    {
+        auto value = parsed.read_switch(switch_.name);
+        if (arguments.empty())
+        {
+            CHECK(value == nullptr);
+            CHECK(!parsed.switch_on(switch_.name));
+        }
+        else
+        {
+            REQUIRE(value != nullptr);
+            CHECK(*value == expected_value);
+            CHECK(parsed.switches.at(switch_.name) == expected_value);
+            CHECK(parsed.switch_on(switch_.name) == expected_value);
+        }
     }
 }
 
@@ -198,4 +239,47 @@ TEST_CASE ("CMake debugger flags", "[arguments]")
     REQUIRE(cmake_configure_debug.value == "\\\\.\\pipe\\configure-pipe");
     REQUIRE(cmake_configure_debug.is_port_affected("7zip"));
     REQUIRE(cmake_configure_debug.is_port_affected("zlib"));
+}
+
+TEST_CASE ("Binary cache compression level", "[arguments]")
+{
+    FullyBufferedDiagnosticContext context;
+    Optional<int> level;
+    auto args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+    REQUIRE(args.parse_binary_cache_compression_level(context, level));
+    REQUIRE_FALSE(level.has_value());
+
+    for (int i = 0; i <= 9; ++i)
+    {
+        const auto value = std::to_string(i);
+        std::map<StringLiteral, std::string, std::less<>> env = {
+            {EnvironmentVariableVcpkgBinaryCacheCompressionLevel, value}};
+        args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+        args.imbue_from_fake_environment(env);
+        REQUIRE(args.parse_binary_cache_compression_level(context, level));
+        REQUIRE(level == i);
+
+        for (const auto& cli : std::vector<std::vector<std::string>>{{"--binary-cache-compression-level=" + value},
+                                                                     {"--binary-cache-compression-level", value}})
+        {
+            args = VcpkgCmdArguments::create_from_arg_sequence(cli.data(), cli.data() + cli.size());
+            env[EnvironmentVariableVcpkgBinaryCacheCompressionLevel] = "invalid";
+            args.imbue_from_fake_environment(env);
+            REQUIRE(args.parse_binary_cache_compression_level(context, level));
+            REQUIRE(level == i);
+        }
+    }
+
+    for (const auto& value : {"", "-1", "10", "01", "+1", "1.0", " 1", "1 ", "fast", "1;echo"})
+    {
+        INFO(value);
+        std::vector<std::string> cli = {std::string("--binary-cache-compression-level=") + value};
+        args = VcpkgCmdArguments::create_from_arg_sequence(cli.data(), cli.data() + cli.size());
+        REQUIRE_FALSE(args.parse_binary_cache_compression_level(context, level));
+        REQUIRE_FALSE(level.has_value());
+
+        args = VcpkgCmdArguments::create_from_arg_sequence(nullptr, nullptr);
+        args.imbue_from_fake_environment({{EnvironmentVariableVcpkgBinaryCacheCompressionLevel, value}});
+        REQUIRE_FALSE(args.parse_binary_cache_compression_level(context, level));
+    }
 }

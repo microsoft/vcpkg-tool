@@ -64,7 +64,7 @@ namespace vcpkg
             sha = sha_it->second;
         }
 
-        if (Util::Sets::contains(parsed.switches, SwitchSkipSha512))
+        if (parsed.switch_on(SwitchSkipSha512))
         {
             if (sha.has_value())
             {
@@ -99,7 +99,7 @@ namespace vcpkg
         auto sha = get_sha512_check(parsed);
 
         // Is this a store command?
-        if (Util::Sets::contains(parsed.switches, SwitchStore))
+        if (parsed.switch_on(SwitchStore))
         {
             auto s = fs.status(file, VCPKG_LINE_INFO);
             if (s != FileType::regular)
@@ -143,16 +143,15 @@ namespace vcpkg
                 urls = it_urls->second;
             }
 
-            if (download_file_asset_cached(
-                    console_diagnostic_context,
-                    Util::Sets::contains(parsed.switches, SwitchZMachineReadableProgress) ? out_sink : null_sink,
-                    asset_cache_settings,
-                    fs,
-                    urls,
-                    headers,
-                    file,
-                    display_path,
-                    sha))
+            if (download_file_asset_cached(console_diagnostic_context,
+                                           parsed.switch_on(SwitchZMachineReadableProgress) ? out_sink : null_sink,
+                                           asset_cache_settings,
+                                           fs,
+                                           urls,
+                                           headers,
+                                           file,
+                                           display_path,
+                                           sha))
             {
                 Checks::exit_success(VCPKG_LINE_INFO);
             }

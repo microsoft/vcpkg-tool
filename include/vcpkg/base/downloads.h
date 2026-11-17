@@ -32,7 +32,7 @@ namespace vcpkg
                                              View<std::string> headers);
 
     bool submit_github_dependency_graph_snapshot(DiagnosticContext& context,
-                                                 const Optional<std::string>& maybe_github_server_url,
+                                                 const Optional<std::string>& maybe_github_api_url,
                                                  const std::string& github_token,
                                                  const std::string& github_repository,
                                                  const Json::Object& snapshot);
