@@ -12,6 +12,5 @@ CMakeLists.txt.user
 /build*
 /cmake-build-*
 /out
-/vcpkg-artifacts/node_modules/
 /vcpkg-root
 /work

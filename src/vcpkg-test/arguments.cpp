@@ -4,7 +4,6 @@
 #include <vcpkg/base/diagnostics.h>
 #include <vcpkg/base/strings.h>
 
-#include <vcpkg/configure-environment.h>
 #include <vcpkg/vcpkgcmdarguments.h>
 
 #include <map>
@@ -179,20 +178,6 @@ TEST_CASE ("Command switches preserve explicit false values", "[arguments]")
             CHECK(parsed.switch_on(switch_.name) == expected_value);
         }
     }
-}
-
-TEST_CASE ("Forwarding artifact arguments ignores disabled switches", "[arguments]")
-{
-    ParsedArguments parsed;
-    parsed.switches = {{SwitchWindows, true},
-                       {SwitchLinux, false},
-                       {SwitchX64, true},
-                       {SwitchArm64, false},
-                       {SwitchTargetX64, true},
-                       {SwitchTargetArm64, false}};
-    std::vector<std::string> forwarded;
-    forward_common_artifacts_arguments(forwarded, parsed);
-    CHECK(forwarded == std::vector<std::string>{"--target:x64", "--windows", "--x64"});
 }
 
 TEST_CASE ("vcpkg_root parse with arg separator", "[arguments]")

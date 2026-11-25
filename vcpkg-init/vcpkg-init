@@ -4,7 +4,7 @@
 # Licensed under the MIT License.
 
 # wrapper script for vcpkg
-# this is intended to be dot-sourced and then you can use the vcpkg-shell() function.
+# this is intended to be dot-sourced and then you can use vcpkg
 
 # check to see if we've been dot-sourced (should work for most POSIX shells)
 sourced=0
@@ -28,16 +28,20 @@ if [ $sourced -eq 0 ]; then
   exit
 fi
 
-Z_VCPKG_bootstrap() {
-  VCPKG_BASE_VERSION='latest'
+if [ -n "$VCPKG_ROOT" ]; then
+  export VCPKG_ROOT=$VCPKG_ROOT
+else
+  export VCPKG_ROOT=~/.vcpkg
+fi;
 
-  if [ $VCPKG_BASE_VERSION != 'latest' ] \
-      && [ -f "${VCPKG_ROOT}/vcpkg" ] \
-      && [ -f "${VCPKG_ROOT}/vcpkg-version.txt" ] \
-      && [ "$(cat "${VCPKG_ROOT}/vcpkg-version.txt")" = $VCPKG_BASE_VERSION ]; then
-    return 0;
-  fi
+mkdir -p "$VCPKG_ROOT"
 
+VCPKG_BASE_VERSION='latest'
+
+if [ $VCPKG_BASE_VERSION = 'latest' ] \
+    || [ ! -f "${VCPKG_ROOT}/vcpkg" ] \
+    || [ ! -f "${VCPKG_ROOT}/vcpkg-version.txt" ] \
+    || [ "$(cat "${VCPKG_ROOT}/vcpkg-version.txt")" != $VCPKG_BASE_VERSION ]; then
   echo installing vcpkg in $VCPKG_ROOT
 
   if [ "$(uname)" = "Darwin" ]; then
@@ -55,56 +59,13 @@ Z_VCPKG_bootstrap() {
 
   chmod +x "${VCPKG_ROOT}/vcpkg"
   "${VCPKG_ROOT}/vcpkg" bootstrap-standalone
-  return 0;
-}
-
-Z_VCPKG_cleanup() {
-  # clear things that we're not going to need for the long term
-  if [ -f "${Z_VCPKG_POSTSCRIPT}" ]; then
-    command rm "${Z_VCPKG_POSTSCRIPT}"
+  if [ $? -eq 1 ]; then
+    return 1;
   fi
-  unset Z_VCPKG_POSTSCRIPT
-  unset -f Z_VCPKG_bootstrap > /dev/null 2>&1
-}
-
-if [ -n "$VCPKG_ROOT" ]; then
-  export VCPKG_ROOT=$VCPKG_ROOT
-else
-  export VCPKG_ROOT=~/.vcpkg
-fi;
-
-mkdir -p "$VCPKG_ROOT"
-
-Z_VCPKG_bootstrap
-if [ $? -eq 1 ]; then
-  Z_VCPKG_cleanup
-  return 1;
 fi
 
 # So, we're the real script then.
-vcpkg-shell() {
-  # set the response file
-  # Generate 32 bits of randomness, to avoid clashing with concurrent executions.
-  export Z_VCPKG_POSTSCRIPT="$(mktemp).sh"
-
-  # call vcpkg
-  # it picks up the Z_VCPKG_POSTSCRIPT environment variable to know where to dump the postscript
-  "${VCPKG_ROOT}/vcpkg" $@
-
-  # Call the post-invocation script if it is present, then delete it.
-  # This allows the invocation to potentially modify the caller's environment (e.g. PATH)
-  if [ -f "${Z_VCPKG_POSTSCRIPT}" ]; then
-    . "${Z_VCPKG_POSTSCRIPT}"
-    command rm "${Z_VCPKG_POSTSCRIPT}"
-    unset Z_VCPKG_POSTSCRIPT
-  fi
-
-  Z_VCPKG_cleanup
-}
-
 # did they dotsource and have args go ahead and run it then!
 if [ "$#" -gt "0" ]; then
-  vcpkg-shell $@
+  "${VCPKG_ROOT}/vcpkg" $@
 fi
-
-Z_VCPKG_cleanup

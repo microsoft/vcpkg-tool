@@ -35,16 +35,12 @@ with any additional questions or comments.
 ## Windows Contributing Prerequisites
 
 * Install Visual Studio and the C++ workload
-* Install Node.JS by downloading a 16.x copy from https://nodejs.org/en/
-* `npm install -g @microsoft/rush`
 
 ## Ubuntu 22.04 Contributing Prerequisites
 
 ```
-curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt update
-sudo apt install nodejs cmake ninja-build gcc build-essential git zip unzip
-sudo npm install -g @microsoft/rush
+sudo apt install cmake ninja-build gcc build-essential git zip unzip
 ```
 
 # License

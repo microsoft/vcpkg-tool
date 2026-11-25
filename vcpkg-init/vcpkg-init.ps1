@@ -6,7 +6,7 @@ if #ftw NEQ '' goto :init
 # Licensed under the MIT License.
 
 # wrapper script for vcpkg
-# this is intended to be dot-sourced and then you can use the vcpkg-shell() function
+# this is intended to be dot-sourced and then you can use vcpkg
 
 # Workaround for $IsWindows not existing in Windows PowerShell
 if (-Not (Test-Path variable:IsWindows)) {
@@ -78,29 +78,8 @@ if(-Not (bootstrap-vcpkg)) {
 }
 
 # Export vcpkg to the current shell.
-New-Module -name vcpkg -ArgumentList @($VCPKG) -ScriptBlock {
-  param($VCPKG)
-  function vcpkg-shell() {
-    # setup the postscript file
-    # Generate 31 bits of randomness, to avoid clashing with concurrent executions.
-    $env:Z_VCPKG_POSTSCRIPT = Join-Path ([System.IO.Path]::GetTempPath()) "VCPKG_tmp_$(Get-Random -SetSeed $PID).ps1"
-    & $VCPKG @args
-    # dot-source the postscript file to modify the environment
-    if (Test-Path $env:Z_VCPKG_POSTSCRIPT) {
-      $postscr = Get-Content -Raw $env:Z_VCPKG_POSTSCRIPT
-      if( $postscr ) {
-        iex $postscr
-      }
-
-      Remove-Item -Force -ea 0 $env:Z_VCPKG_POSTSCRIPT
-    }
-
-    Remove-Item env:Z_VCPKG_POSTSCRIPT
-  }
-} | Out-Null
-
 if ($args.Count -ne 0) {
-  return vcpkg-shell @args
+  return & $VCPKG @args
 }
 
 return
@@ -141,12 +120,9 @@ IF ERRORLEVEL 1 (
 
 SET Z_POWERSHELL_EXE=
 
-:: Install the doskey
-DOSKEY vcpkg-shell="%VCPKG_ROOT%\vcpkg-cmd.cmd" $*
-
 :: If there were any arguments, also invoke vcpkg with them
 IF "%1"=="" GOTO fin
-CALL "%VCPKG_ROOT%\vcpkg-cmd.cmd" %*
+  "%VCPKG_ROOT%\vcpkg.exe" %*
 :fin
 
 EXIT /B

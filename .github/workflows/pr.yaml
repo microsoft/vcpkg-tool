@@ -19,11 +19,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "24.x"
-          cache: 'npm'
-          cache-dependency-path: vcpkg-artifacts/package-lock.json
       - uses: lukka/get-cmake@f86dd60acae0d132056913e248bdabf0e0580b7a # v4.4.5
         with:
           cmakeVersion: 3.22.1 # ubuntu 22.04
@@ -51,7 +46,6 @@ jobs:
         shell: pwsh
         run: |
           git add -u
-          git restore --staged vcpkg-artifacts/.npmrc
           git diff --cached --stat --exit-code
           if ($LASTEXITCODE -ne 0) {
             git config user.name $(git log -1 --pretty=format:'%an')

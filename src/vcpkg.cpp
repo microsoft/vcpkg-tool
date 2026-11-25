@@ -131,6 +131,14 @@ namespace
             Checks::exit_fail(VCPKG_LINE_INFO);
         }
 
+        for (const auto& removed_command : removed_artifacts_commands)
+        {
+            if (Strings::case_insensitive_ascii_equals(removed_command, args.get_command()))
+            {
+                Checks::msg_exit_with_error(VCPKG_LINE_INFO, msgVcpkgArtifactsHasBeenRemoved);
+            }
+        }
+
         if (const auto command_function = choose_command(args.get_command(), basic_commands))
         {
             get_global_metrics_collector().track_string(StringMetric::CommandName, command_function->metadata.name);

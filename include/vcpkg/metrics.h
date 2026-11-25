@@ -55,8 +55,6 @@ namespace vcpkg
 
     enum class StringMetric
     {
-        AcquiredArtifacts,
-        ActivatedArtifacts,
         CiOwnerId,
         CiProjectId,
         CommandArgs,

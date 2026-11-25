@@ -1,16 +1,4 @@
 {
-  "js/ts.tsdk.path": "./vcpkg-artifacts/node_modules/typescript/lib",
-  "eslint.workingDirectories": [
-    {
-      "changeProcessCWD": true,
-      "directory": "./vcpkg-artifacts",
-    }
-  ],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "explicit"
-  },
-  "eslint.format.enable": true,
   "files.eol": "\n",
   "files.associations": {
     "any": "cpp",
@@ -83,13 +71,11 @@
   },
   "C_Cpp.default.compileCommands": [
       "${workspaceFolder}/out/build/Win-x64-Debug/compile_commands.json",
-      "${workspaceFolder}/out/build/Win-x64-Debug-WithArtifacts/compile_commands.json",
       "${workspaceFolder}/out/build/Win-x64-Debug-NoAnalyze/compile_commands.json",
       "${workspaceFolder}/out/build/Win-x64-Debug-Official/compile_commands.json",
       "${workspaceFolder}/out/build/Win-x64-Release/compile_commands.json",
       "${workspaceFolder}/out/build/Win-x64-Release-Official/compile_commands.json",
       "${workspaceFolder}/out/build/windows-ci/compile_commands.json",
-      "${workspaceFolder}/out/build/linux-with-artifacts/compile_commands.json",
       "${workspaceFolder}/out/build/linux-debug/compile_commands.json",
       "${workspaceFolder}/out/build/linux-ci/compile_commands.json",
       "${workspaceFolder}/out/build/linux-codespaces/compile_commands.json",

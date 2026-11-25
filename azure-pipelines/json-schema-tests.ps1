@@ -27,7 +27,6 @@ $VcpkgRoot = & {
 } | Get-Item | Select-Object -ExpandProperty FullName
 
 $VcpkgJsonSchema = @{
-    Artifact      = 'artifact.schema.json'
     Configuration = 'vcpkg-configuration.schema.json'
     Definitions   = 'vcpkg-schema-definitions.schema.json'
     Port          = 'vcpkg.schema.json'
