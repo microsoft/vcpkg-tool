@@ -1687,6 +1687,10 @@ DECLARE_MESSAGE(HelpEditCommand,
 DECLARE_MESSAGE(HelpEnvCommand, (), "", "Creates a clean shell environment for development or compiling")
 DECLARE_MESSAGE(HelpExampleCommand, (), "", "For more help (including examples) see https://learn.microsoft.com/vcpkg")
 DECLARE_MESSAGE(HelpExampleManifest, (), "", "Example manifest:")
+DECLARE_MESSAGE(HelpHostInfoCommand,
+                (),
+                "",
+                "Displays information about the host and the vcpkg configuration in effect")
 DECLARE_MESSAGE(HelpInstallCommand, (), "", "Installs a package")
 DECLARE_MESSAGE(HelpManifestConstraints,
                 (),
@@ -1804,6 +1808,11 @@ DECLARE_MESSAGE(HelpVersionScheme, (), "", "A dot-separated sequence of numbers 
 DECLARE_MESSAGE(HelpVersionSchemes, (), "", "The following versioning schemes are accepted.")
 DECLARE_MESSAGE(HelpVersionSemverScheme, (), "", "A Semantic Version 2.0 (2.1.0-rc2)")
 DECLARE_MESSAGE(HelpVersionStringScheme, (), "", "An exact, incomparable version (Vista)")
+DECLARE_MESSAGE(HostInfoAssetSourcesInvalid,
+                (),
+                "",
+                "the asset sources are not valid. The parser's error is not shown, because it would show "
+                "them with any credentials in them")
 DECLARE_MESSAGE(
     IgnoringVcpkgRootEnvironment,
     (msg::path, msg::actual, msg::value),

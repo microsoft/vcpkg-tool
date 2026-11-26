@@ -321,6 +321,9 @@ namespace vcpkg
         void track_environment_metrics() const;
 
         Optional<std::string> asset_sources_template() const;
+        // Drops the asset sources from both the environment and the command
+        // line, for a command that reports them rather than using them.
+        void clear_asset_sources() noexcept;
 
         const std::vector<std::string>& get_forwardable_arguments() const noexcept;
 

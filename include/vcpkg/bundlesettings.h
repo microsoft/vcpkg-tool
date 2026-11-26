@@ -2,6 +2,7 @@
 
 #include <vcpkg/base/fwd/expected.h>
 #include <vcpkg/base/fwd/file-contents.h>
+#include <vcpkg/base/fwd/files.h>
 #include <vcpkg/base/fwd/optional.h>
 #include <vcpkg/base/fwd/stringview.h>
 
@@ -28,6 +29,10 @@ namespace vcpkg
     };
 
     ExpectedL<BundleSettings> try_parse_bundle_settings(const FileContents& bundle_contents);
+
+    // The settings in the vcpkg-bundle.json next to the vcpkg executable, or the
+    // defaults if there is none or it does not parse.
+    BundleSettings load_bundle_settings(const ReadOnlyFilesystem& fs);
 }
 
 VCPKG_FORMAT_WITH_TO_STRING_LITERAL_NONMEMBER(vcpkg::DeploymentKind);
