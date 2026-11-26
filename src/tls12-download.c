@@ -5,6 +5,7 @@
 #pragma warning(disable : 28301)
 #include <Windows.h>
 #include <process.h>
+#include <wincrypt.h>
 #include <winhttp.h>
 
 #include <Softpub.h>
@@ -168,6 +169,96 @@ static void set_delete_on_close_flag(const HANDLE std_out, const HANDLE target, 
     {
         abort_api_failure(std_out, L"SetFileInformationByHandle");
     }
+}
+
+static BOOL bytes_equal(const BYTE* lhs, const BYTE* rhs, DWORD count)
+{
+    for (DWORD i = 0; i < count; ++i)
+    {
+        if (lhs[i] != rhs[i])
+        {
+            return FALSE;
+        }
+    }
+
+    return TRUE;
+}
+
+// Allowed Microsoft Code Signing intermediate certificate SHA-256 thumbprints:
+// - Microsoft Code Signing PCA 2024 (CN=Microsoft Code Signing PCA 2024, O=Microsoft Corporation, C=US)
+//   3DADFAF812DD1BBAEF45834CCBD188F3CD97139E2ED1ACA69C2DD63082142F8F
+// - Microsoft Code Signing PCA 2011 (CN=Microsoft Code Signing PCA 2011, O=Microsoft Corporation, L=Redmond,
+//   S=Washington, C=US)
+//   56DA8722AFD94066FFE1E4595473A4854892B843A0827D53FB7D8F4AEED1E18B
+static const BYTE allowed_microsoft_code_signing_intermediates[][32] = {
+    {0x3D, 0xAD, 0xFA, 0xF8, 0x12, 0xDD, 0x1B, 0xBA, 0xEF, 0x45, 0x83, 0x4C, 0xCB, 0xD1, 0x88, 0xF3,
+     0xCD, 0x97, 0x13, 0x9E, 0x2E, 0xD1, 0xAC, 0xA6, 0x9C, 0x2D, 0xD6, 0x30, 0x82, 0x14, 0x2F, 0x8F},
+    {0x56, 0xDA, 0x87, 0x22, 0xAF, 0xD9, 0x40, 0x66, 0xFF, 0xE1, 0xE4, 0x59, 0x54, 0x73, 0xA4, 0x85,
+     0x48, 0x92, 0xB8, 0x43, 0xA0, 0x82, 0x7D, 0x53, 0xFB, 0x7D, 0x8F, 0x4A, 0xEE, 0xD1, 0xE1, 0x8B},
+};
+
+static BOOL is_chained_to_microsoft_code_signing_cert(HANDLE state_data)
+{
+    CRYPT_PROVIDER_DATA* prov_data = WTHelperProvDataFromStateData(state_data);
+    if (!prov_data)
+    {
+        return FALSE;
+    }
+
+    CRYPT_PROVIDER_SGNR* signer = WTHelperGetProvSignerFromChain(prov_data, 0, FALSE, 0);
+    if (!signer || !signer->pChainContext)
+    {
+        return FALSE;
+    }
+
+    CERT_CHAIN_POLICY_PARA policy_para = {0};
+    policy_para.cbSize = sizeof(policy_para);
+    policy_para.dwFlags = MICROSOFT_ROOT_CERT_CHAIN_POLICY_CHECK_APPLICATION_ROOT_FLAG;
+
+    CERT_CHAIN_POLICY_STATUS policy_status = {0};
+    policy_status.cbSize = sizeof(policy_status);
+
+    if (!CertVerifyCertificateChainPolicy(
+            CERT_CHAIN_POLICY_MICROSOFT_ROOT, signer->pChainContext, &policy_para, &policy_status) ||
+        policy_status.dwError != 0)
+    {
+        return FALSE;
+    }
+
+    for (DWORD i = 1; i < signer->csCertChain; ++i)
+    {
+        CRYPT_PROVIDER_CERT* prov_cert = WTHelperGetProvCertFromChain(signer, i);
+        if (!prov_cert || !prov_cert->pCert)
+        {
+            continue;
+        }
+
+        BYTE sha256_hash[32];
+        DWORD hash_size = sizeof(sha256_hash);
+        if (!CryptHashCertificate(0,
+                                  CALG_SHA_256,
+                                  0,
+                                  prov_cert->pCert->pbCertEncoded,
+                                  prov_cert->pCert->cbCertEncoded,
+                                  sha256_hash,
+                                  &hash_size) ||
+            hash_size != sizeof(sha256_hash))
+        {
+            continue;
+        }
+
+        for (size_t j = 0; j < sizeof(allowed_microsoft_code_signing_intermediates) /
+                                   sizeof(allowed_microsoft_code_signing_intermediates[0]);
+             ++j)
+        {
+            if (bytes_equal(sha256_hash, allowed_microsoft_code_signing_intermediates[j], sizeof(sha256_hash)))
+            {
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
 }
 
 // these are sucked out to avoid
@@ -440,9 +531,15 @@ int __stdcall entry()
     GUID wt_policy_guid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
 
     LONG trust_validation_result = WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
+    BOOL is_microsoft_signed = FALSE;
+    if (trust_validation_result == 0)
+    {
+        is_microsoft_signed = is_chained_to_microsoft_code_signing_cert(wtd.hWVTStateData);
+    }
+
     wtd.dwStateAction = WTD_STATEACTION_CLOSE;
     (void)WinVerifyTrust(INVALID_HANDLE_VALUE, &wt_policy_guid, &wtd);
-    if (trust_validation_result == 0)
+    if (trust_validation_result == 0 && is_microsoft_signed)
     {
         set_delete_on_close_flag(std_out, out_file, FALSE);
         write_message(std_out, L" done.\r\n");
@@ -451,7 +548,15 @@ int __stdcall entry()
     {
         exit_code = 1;
         write_message(std_out, L" failed! ");
-        write_hex(std_out, (DWORD)trust_validation_result);
+        if (trust_validation_result != 0)
+        {
+            write_hex(std_out, (DWORD)trust_validation_result);
+        }
+        else
+        {
+            write_message(std_out, L"Not signed by a Microsoft code signing certificate.");
+        }
+
         write_message(std_out, L" Deleted!\r\n");
     }
 

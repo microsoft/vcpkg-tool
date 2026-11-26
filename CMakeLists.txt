@@ -602,7 +602,7 @@ if(VCPKG_BUILD_TLS12_DOWNLOADER)
     add_executable(tls12-download ${TLS12_DOWNLOAD_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/src/vcpkg.manifest")
     set_property(TARGET tls12-download PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded")
     set_property(TARGET tls12-download APPEND PROPERTY LINK_OPTIONS "$<IF:$<CONFIG:Debug>,,/ENTRY:entry>")
-    target_link_libraries(tls12-download winhttp wintrust shell32)
+    target_link_libraries(tls12-download winhttp wintrust crypt32 shell32)
     set_property(TARGET tls12-download PROPERTY PDB_NAME "tls12-download${VCPKG_PDB_SUFFIX}")
 endif()
 
