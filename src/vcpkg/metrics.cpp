@@ -114,6 +114,7 @@ namespace vcpkg
         {DefineMetric::BinaryCachingDefault, "binarycaching_default"},
         {DefineMetric::BinaryCachingFiles, "binarycaching_files"},
         {DefineMetric::BinaryCachingGcs, "binarycaching_gcs"},
+        {DefineMetric::BinaryCachingGha, "binarycaching_gha"},
         {DefineMetric::BinaryCachingHttp, "binarycaching_http"},
         {DefineMetric::BinaryCachingNuGet, "binarycaching_nuget"},
         {DefineMetric::BinaryCachingSource, "binarycaching-source"},

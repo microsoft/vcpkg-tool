@@ -13,5 +13,6 @@ CMakeLists.txt.user
 /cmake-build-*
 /out
 /vcpkg-artifacts/node_modules/
+/github-actions-cache-adapter/node_modules/
 /vcpkg-root
 /work
